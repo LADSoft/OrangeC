@@ -506,6 +506,7 @@ static int inasm_structsize(void)
             case BasicType::char_:
             case BasicType::unsigned_char_:
             case BasicType::signed_char_:
+            case BasicType::char8_t_:
                 return ISZ_UCHAR;
             case BasicType::bool_:
                 return ISZ_BOOLEAN;

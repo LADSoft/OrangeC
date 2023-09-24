@@ -1306,7 +1306,7 @@ LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** cast
             }
             strcpy(buf, overloadNameTab[*ov = CI_CAST]);
         }
-        else if (lex->data->type == l_astr)
+        else if (lex->data->type == l_astr || lex->data->type == l_u8str)
         {
             LEXLIST* placeholder = lex;
             Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)lex->data->value.s.w;

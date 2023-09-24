@@ -827,6 +827,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::long_long_:
                     *in++ = 'L';
                     break;
+                case BasicType::char8_t_:
                 case BasicType::unsigned_char_:
                     *in++ = 'u';
                 case BasicType::char_:

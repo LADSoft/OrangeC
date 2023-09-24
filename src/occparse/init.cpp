@@ -411,6 +411,7 @@ static int dumpBits(std::list<INITIALIZER*>::iterator &it)
             case BasicType::char_:
             case BasicType::unsigned_char_:
             case BasicType::signed_char_:
+            case BasicType::char8_t_:
                 Optimizer::genbyte(resolver);
                 break;
             case BasicType::short_:
@@ -1041,6 +1042,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             case BasicType::char_:
             case BasicType::unsigned_char_:
             case BasicType::signed_char_:
+            case BasicType::char8_t_:
                 Optimizer::genbyte(i);
                 break;
             case BasicType::short_:
@@ -1625,6 +1627,9 @@ static LEXLIST* initialize_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** rtype, EX
     switch (tp)
     {
         default:
+        case l_u8str:
+            *rtype = &stdchar8_tptr;
+            break;
         case l_astr:
             *rtype = &stdstring;
             break;
@@ -1660,7 +1665,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
     else
     {
         if (!lex || (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr &&
-                     lex->data->type != l_Ustr && lex->data->type != l_msilstr))
+                     lex->data->type != l_Ustr && lex->data->type != l_msilstr && lex->data->type != l_u8str))
         {
             lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
             if (!tp)
@@ -1903,6 +1908,7 @@ enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
         case BasicType::signed_char_:
             en = ExpressionNode::l_c_;
             break;
+        case BasicType::char8_t_:
         case BasicType::unsigned_char_:
             en = ExpressionNode::l_uc_;
             break;
@@ -2351,10 +2357,10 @@ static int str_candidate(LEXLIST* lex, TYPE* tp)
     if (bt->type == BasicType::string_)
         return true;
     if (bt->type == BasicType::pointer_)
-        if (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr)
+        if (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr || lex->data->type == l_u8str)
         {
             bt = basetype(bt->btp);
-            if (bt->type == BasicType::short_ || bt->type == BasicType::unsigned_short_ || bt->type == BasicType::wchar_t_ || bt->type == BasicType::char_ ||
+            if (bt->type == BasicType::char8_t_ || bt->type == BasicType::short_ || bt->type == BasicType::unsigned_short_ || bt->type == BasicType::wchar_t_ || bt->type == BasicType::char_ ||
                 bt->type == BasicType::unsigned_char_ || bt->type == BasicType::signed_char_ || bt->type == BasicType::char16_t_ || bt->type == BasicType::char32_t_)
                 return true;
         }
@@ -2618,6 +2624,10 @@ static LEXLIST* read_strings(LEXLIST* lex, std::list<INITIALIZER*>** next, AGGRE
     lex = concatStringsInternal(lex, &string, 0);
     switch (string->strtype)
     {
+        case l_u8str:
+            if (btp->type != BasicType::char8_t_ && btp->type != BasicType::char_ && btp->type != BasicType::unsigned_char_ && btp->type != BasicType::signed_char_)
+                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+            break;
         case l_astr:
             if (btp->type != BasicType::char_ && btp->type != BasicType::unsigned_char_ && btp->type != BasicType::signed_char_)
                 error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
@@ -3857,6 +3867,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         case BasicType::unsigned_short_:
         case BasicType::int_:
         case BasicType::unsigned_:
+        case BasicType::char8_t_:
         case BasicType::char16_t_:
         case BasicType::char32_t_:
         case BasicType::long_:

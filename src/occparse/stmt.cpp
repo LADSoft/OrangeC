@@ -98,6 +98,7 @@ static int endline;
 static int caseLevel = 0;
 static int controlSequences;
 static int expressions;
+static bool canFallThrough;
 
 static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, std::list<BLOCKDATA*>& parent, int asExpression);
 static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol);
@@ -496,6 +497,7 @@ static LEXLIST* statement_break(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
         error(ERR_BREAK_NO_LOOP);
     else
     {
+        canFallThrough = true;
         STATEMENT* st;
         currentLineData(parent, lex, 0);
         if (last != parent.end())
@@ -540,6 +542,9 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     {
         switchstmt->needlabel = false;
         parent.front()->needlabel = false;
+        if (!canFallThrough && !basisAttribs.uninheritable.fallthrough)
+            error(ERR_FALLTHROUGH);
+        canFallThrough = true;
     }
 
     lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
@@ -613,6 +618,7 @@ static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCK
         error(ERR_CONTINUE_NO_LOOP);
     else
     {
+        canFallThrough = true;
         STATEMENT* st;
         if (last != parent.end())
             thunkRetDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
@@ -649,6 +655,9 @@ static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKD
         error(ERR_DEFAULT_NO_SWITCH);
     else
     {
+        if (!canFallThrough && !basisAttribs.uninheritable.fallthrough)
+            error(ERR_FALLTHROUGH);
+        canFallThrough = true;
         STATEMENT* st = stmtNode(lex, parent, StatementNode::label_);
         st->label = codeLabel++;
         if ((*defaultableStatement)->defaultlabel != -1)
@@ -1880,6 +1889,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         before->needlabel = true;
         parent.pop_front();
         AddBlock(lex, parent, block);
+        canFallThrough = true;
     }
     else if (MATCHKW(lex, Keyword::star_))
     {
@@ -1908,6 +1918,7 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         }
         before->needlabel = true;
         parent.pop_front();
+        canFallThrough = true;
     }
     else
     {
@@ -2113,6 +2124,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     TYPE* returntype = nullptr;
     EXPRESSION* destexp = nullptr;
 
+    canFallThrough = true;
     if (funcsp->sb->attribs.inheritable.linkage3 == Linkage::noreturn_)
         error(ERR_NORETURN);
     funcsp->sb->retcount++;
@@ -2593,6 +2605,8 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
 }
 static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
+    bool oldfallthrough = canFallThrough;
+    canFallThrough = true;
     auto before = parent.front();
     BLOCKDATA* switchstmt = Allocate<BLOCKDATA>();
     STATEMENT* st;
@@ -2660,6 +2674,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
     AddBlock(lex, parent, switchstmt);
+    canFallThrough = oldfallthrough;
     return lex;
 }
 static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
@@ -2832,6 +2847,26 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
                 callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&init, sym->tp, exp, 0, false);
                 sym->sb->dest = init;
+            }
+        }
+    }
+    if (select)
+    {
+        auto exp1 = select;
+        if (exp1->type == ExpressionNode::thisref_)
+        {
+            exp1 = exp1->left;
+        }
+        if (exp1->type == ExpressionNode::func_)
+        {
+            auto sp = exp1->v.func->sp;
+            if (sp->sb->attribs.uninheritable.nodiscard)
+            {
+                if (!sp->sb->isConstructor && !sp->sb->isDestructor)
+                {
+                    if (!isvoid(basetype(sp->tp)->btp))
+                        error(ERR_RETURN_VALUE_NO_DISCARD);
+                }
             }
         }
     }
@@ -3250,13 +3285,16 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
     switch (KW(lex))
     {
         case Keyword::try_:
+            canFallThrough = false;
             lex = statement_try(lex, funcsp, parent);
             break;
         case Keyword::catch_:
+            canFallThrough = false;
             error(ERR_CATCH_WITHOUT_TRY);
             lex = statement_catch(lex, funcsp, parent, 1, 1, 1);
             break;
         case Keyword::begin_: {
+            canFallThrough = parent.front()->type == Keyword::switch_;
             lex = compound(lex, funcsp, parent, false);
             before->nosemi = true;
             auto il = parent.begin();
@@ -3270,17 +3308,21 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             /* don't know how it could get here :) */
             //			error(ERR_UNEXPECTED_END_OF_BLOCKDATA);
             //			lex = getsym();
+            canFallThrough = false;
             before->hassemi = true;
             expressionStatements.pop();
             return lex;
         case Keyword::do_:
+            canFallThrough = false;
             lex = statement_do(lex, funcsp, parent);
             break;
         case Keyword::while_:
+            canFallThrough = false;
             lex = statement_while(lex, funcsp, parent);
             expressionStatements.pop();
             return lex;
         case Keyword::for_:
+            canFallThrough = false;
             lex = statement_for(lex, funcsp, parent);
             expressionStatements.pop();
             return lex;
@@ -3288,9 +3330,11 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             lex = statement_switch(lex, funcsp, parent);
             break;
         case Keyword::if_:
+            canFallThrough = false;
             lex = statement_if(lex, funcsp, parent);
             break;
         case Keyword::else_:
+            canFallThrough = false;
             error(ERR_MISPLACED_ELSE);
             skip(&lex, Keyword::else_);
             before->nosemi = true;
@@ -3343,21 +3387,26 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                 HandleEndOfCase(parent);
             break;
         case Keyword::semicolon_:
+            canFallThrough = false;
             break;
         case Keyword::asm_:
+            canFallThrough = false;
             lex = statement_asm(lex, funcsp, parent);
             expressionStatements.pop();
             return lex;
         case Keyword::seh_try_:
+            canFallThrough = false;
             lex = statement_SEH(lex, funcsp, parent);
             break;
         case Keyword::seh_catch_:
         case Keyword::seh_finally_:
         case Keyword::seh_fault_:
+            canFallThrough = false;
             error(ERR_SEH_HANDLER_WITHOUT_TRY);
             lex = statement_SEH(lex, funcsp, parent);
             break;
         default: {
+            canFallThrough = false;
             bool structured = false;
 
             if (((startOfType(lex, &structured, false) &&
@@ -3438,6 +3487,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
     }
     else
         before->hassemi = false;
+    basisAttribs = {};
     return lex;
 }
 static bool thunkmainret(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool always)

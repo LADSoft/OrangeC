@@ -151,7 +151,7 @@ private:
         char32_t_, mutable_, nullptr_, noexcept_, thread_local_, constexpr_,
         rangefor_,
         /* Extended */
-        has_c_attribute_, ckdadd_, ckdsub_, ckdmul_,
+        char8_t_, has_c_attribute_, ckdadd_, ckdsub_, ckdmul_,
         atomic_flag_test_set_, atomic_flag_clear_, atomic_kill_dependency_,
         /* Clang compatibility for atomics */
         c11_atomic_init_, c11_atomic_thread_fence_, c11_atomic_signal_fence_,
@@ -271,7 +271,7 @@ typedef struct
          * basic types, type comparisons (LOSTCONV) depends on the ordering,
          * and the debug info has a table indexed by type
          */
-        bit_, bool_, signed_char_, char_, unsigned_char_, char8_t, short_, char16_t_, unsigned_short_,
+        bit_, bool_, signed_char_, char_, unsigned_char_, char8_t_, short_, char16_t_, unsigned_short_,
         wchar_t_, enum_, int_, inative_, char32_t_, unsigned_, unative_, long_, unsigned_long_, long_long_,
         unsigned_long_long_, bitint_,  unsigned_bitint_, float_, double_, long_double_, float__imaginary_,
         double__imaginary_, long_double_imaginary_, float__complex_,

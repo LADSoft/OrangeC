@@ -498,6 +498,7 @@ Optimizer::st_type Optimizer::SymbolManager::Get(Parser::BasicType type)
         case BasicType::inative_:
         case BasicType::bitint_:
             return st_i;
+        case BasicType::char8_t_:
         case BasicType::unsigned_char_:
         case BasicType::unsigned_short_:
         case BasicType::char16_t_:

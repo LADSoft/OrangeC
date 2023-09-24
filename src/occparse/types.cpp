@@ -430,6 +430,9 @@ TYPE* typenum(char* buf, TYPE* tp)
         case BasicType::int_:
             strcpy(buf, tn_int);
             break;
+        case BasicType::char8_t_:
+            strcpy(buf, tn_char8_t);
+            break;
         case BasicType::char16_t_:
             strcpy(buf, tn_char16_t);
             break;

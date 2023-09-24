@@ -6528,6 +6528,14 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 getSuffixedChar(lex, funcsp, tp, exp);
             lex = getsym();
             break;
+        case l_u8chr:
+            *exp = intNode(ExpressionNode::c_uc_, lex->data->value.i);
+            (*exp)->type = ExpressionNode::c_uc_;
+            *tp = &stdunsignedchar;
+            if (lex->data->suffix)
+                getSuffixedChar(lex, funcsp, tp, exp);
+            lex = getsym();
+            break;
         case l_uchr:
             *exp = intNode(ExpressionNode::c_u16_, lex->data->value.i);
             (*exp)->type = ExpressionNode::c_u16_;

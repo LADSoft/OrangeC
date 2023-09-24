@@ -639,8 +639,16 @@ int getChar(const unsigned char** source, e_lexType* tp)
     {
         if (*p == 'u')
         {
-            v = l_uchr;
-            p++;
+            if (p[1] == '8')
+            {
+                v = l_u8chr;
+                p+=2;
+            }
+            else
+            {
+                v = l_uchr;
+                p++;
+            }
         }
         else if (*p == 'U')
         {
@@ -654,7 +662,7 @@ int getChar(const unsigned char** source, e_lexType* tp)
         do
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
-        i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+        i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : v == l_u8chr ? 1 : 2, &p);
         if (i == INT_MIN)
         {
             error(ERR_INVALID_CHAR_CONSTANT);

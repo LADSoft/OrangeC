@@ -1863,6 +1863,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
 
     strcpy(newName, tagname);
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+    ParseAttributeSpecifiers(&lex, funcsp, true);
     if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && KW(lex) == Keyword::colon_)
     {
         lex = getsym();
@@ -5725,6 +5726,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
         }
         else if (!asExpression && MATCHKW(lex, Keyword::namespace_))
         {
+            
+            int count = 0;
             bool linked;
             struct _ccNamespaceData nsData;
             if (!IsCompiler())
@@ -5738,20 +5741,33 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             lex = getsym();
+            hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
             lex = insertNamespace(lex, linkage, storage_class_in, &linked);
             if (linked)
             {
-                if (needkw(&lex, Keyword::begin_))
+                ++ count;
+                while (linked && MATCHKW(lex, Keyword::classsel_))
+                {
+                    lex = getsym();
+                    lex = insertNamespace(lex, linkage, storage_class_in, &linked);
+                    if (linked)
+                        ++count;
+                }
+                if (count > 1 && (hasAttributes || linkage == Linkage::inline_))
+                {
+                    errorsym(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, nameSpaceList.front());
+                } 
+                if (linked && needkw(&lex, Keyword::begin_))
                 {
                     while (lex && !MATCHKW(lex, Keyword::end_))
                     {
                         lex = declare(lex, nullptr, nullptr, storage_class, defaultLinkage, emptyBlockdata, true, false, false, access);
                     }
+                    if (!IsCompiler() && lex)
+                        nsData.endline = lex->data->errline;
+                    needkw(&lex, Keyword::end_);
                 }
-                if (!IsCompiler() && lex)
-                    nsData.endline = lex->data->errline;
-                needkw(&lex, Keyword::end_);
-                if (linked)
+                for (; count; count--)
                 {
                     SYMBOL* sp = nameSpaceList.front();
                     sp->sb->value.i--;

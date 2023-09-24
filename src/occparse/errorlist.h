@@ -592,6 +592,7 @@ ERRLIST(ERR_RETURN_VALUE_NO_DISCARD, 525, "Return value may not be discarded",
         CE_ERROR)
 ERRLIST(ERR_FALLTHROUGH, 526, "Switch case falls through",
         CE_TRIVIALWARNING)
+ERRLIST(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, 527, "Nested inline declaration for '%s' cannot be inline and cannot have attributes", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

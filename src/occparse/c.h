@@ -1149,6 +1149,7 @@ enum e_lexType
     l_msilstr,
     l_achr,
     l_wchr,
+    l_u8chr,
     l_uchr,
     l_Uchr,
     l_qualifiedname,

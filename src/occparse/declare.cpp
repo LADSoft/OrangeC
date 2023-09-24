@@ -2520,6 +2520,11 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         break;
                 }
                 break;
+            case Keyword::char8_t_:
+                if (type != BasicType::none_)
+                    flagerror = true;
+                type = BasicType::char8_t_;
+                break;
             case Keyword::char16_t_:
                 if (type != BasicType::none_)
                     flagerror = true;
@@ -6919,6 +6924,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                     {
                         if (ismemberdata(sp))
                             error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
+                        else if (Optimizer::cparams.c_dialect >= Dialect::c2x && isfunction(sp->tp))
+                            error(ERR_CONSTEXPR_MUST_BE_OBJECT);
                         else
                             CheckIsLiteralClass(sp->tp);
                     }

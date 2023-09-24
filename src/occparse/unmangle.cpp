@@ -53,6 +53,7 @@ const char* tn_floatimaginary = "float imaginary";
 const char* tn_doubleimaginary = "double imaginary";
 const char* tn_longdoubleimaginary = "long double imaginary";
 const char* tn_wchar_t = "wchar_t";
+const char* tn_char8_t = "char8_t";
 const char* tn_char16_t = "char16_t";
 const char* tn_char32_t = "char32_t";
 

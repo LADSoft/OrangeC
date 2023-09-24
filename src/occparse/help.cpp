@@ -262,6 +262,7 @@ bool isint(TYPE* tp)
         {
             case BasicType::bool_:
             case BasicType::int_:
+            case BasicType::char8_t_:
             case BasicType::char16_t_:
             case BasicType::char32_t_:
             case BasicType::unsigned_:
@@ -685,9 +686,11 @@ LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
     STRING* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
     while (lex && (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr ||
-                   lex->data->type == l_Ustr || lex->data->type == l_msilstr))
+                   lex->data->type == l_Ustr || lex->data->type == l_msilstr || lex->data->type == l_u8str ))
     {
-        if (lex->data->type == l_msilstr)
+        if (lex->data->type == l_u8str)
+            type = l_u8str;
+        else if (lex->data->type == l_msilstr)
             type = l_msilstr;
         else if (lex->data->type == l_Ustr)
             type = l_Ustr;
@@ -855,6 +858,9 @@ void deref(TYPE* tp, EXPRESSION** exp)
             else
                 en = ExpressionNode::l_c_;
             break;
+        case BasicType::char8_t_:
+            en = ExpressionNode::l_uc_;
+            break;
         case BasicType::signed_char_:
             en = ExpressionNode::l_c_;
             break;
@@ -986,6 +992,9 @@ int sizeFromType(TYPE* tp)
                 rv = ISZ_UCHAR;
             else
                 rv = -ISZ_UCHAR;
+            break;
+        case BasicType::char8_t_:
+            rv = ISZ_UCHAR;
             break;
         case BasicType::signed_char_:
             rv = -ISZ_UCHAR;
@@ -1120,6 +1129,7 @@ void cast(TYPE* tp, EXPRESSION** exp)
         case BasicType::signed_char_:
             en = ExpressionNode::x_c_;
             break;
+        case BasicType::char8_t_:
         case BasicType::unsigned_char_:
             en = ExpressionNode::x_uc_;
             break;
@@ -2015,6 +2025,9 @@ static TYPE* inttype(BasicType t1)
         case BasicType::int_:
         case BasicType::inative_:
             return &stdint;
+        case BasicType::char8_t_:
+            return &stdchar8_t;
+            break;
         case BasicType::char16_t_:
             return &stdchar16t;
         case BasicType::char32_t_:

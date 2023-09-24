@@ -225,6 +225,7 @@ KEYWORD keywords[] = {
     {"__attribute__", 13, Keyword::attribute_, 0, TT_VAR},
     {"__catch", 7, Keyword::seh_catch_, KW_MSIL, TT_CONTROL},
     {"__cdecl", 7, Keyword::cdecl_, 0, TT_LINKAGE},
+    {"__char8_t", 9, Keyword::char8_t_, KW_C2X, TT_BASETYPE | TT_INT},
     {"__char16_t", 10, Keyword::char16_t_, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
     {"__char32_t", 10, Keyword::char32_t_, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
     {"__cpblk", 7, Keyword::cpblk_, KW_MSIL, TT_OPERATOR | TT_UNARY},
@@ -294,13 +295,14 @@ KEYWORD keywords[] = {
     {"catch", 5, Keyword::catch_, KW_CPLUSPLUS, TT_CONTROL},
     {"cdecl", 5, Keyword::cdecl_, 0, TT_LINKAGE},
     {"char", 4, Keyword::char_, 0, TT_BASETYPE | TT_INT},
+    {"char8_t", 7, Keyword::char8_t_, KW_C2X, TT_BASETYPE | TT_INT},
     {"char16_t", 8, Keyword::char16_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
     {"char32_t", 8, Keyword::char32_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
     {"class", 5, Keyword::class_, KW_CPLUSPLUS, TT_BASETYPE | TT_STRUCT},
     {"compl", 5, Keyword::complx_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"const", 5, Keyword::const_, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
     {"const_cast", 10, Keyword::const_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS, (unsigned long)TT_DECLARE},
+    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS | KW_C2X, TT_DECLARE},
     {"continue", 8, Keyword::continue_, 0, TT_CONTROL},
     {"decltype", 8, Keyword::decltype_, KW_CPLUSPLUS, TT_OPERATOR},
     {"default", 7, Keyword::default_, 0, TT_CONTROL},
@@ -1817,7 +1819,7 @@ LEXLIST* getsym(void)
         else if ((strptr = getString(&linePointer, &tp)) != nullptr)
         {
             lex->data->value.s.w = (LCHAR*)strptr;
-            lex->data->type = tp == l_u8str ? l_astr : tp;
+            lex->data->type = tp;
             lex->data->suffix = nullptr;
             if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {

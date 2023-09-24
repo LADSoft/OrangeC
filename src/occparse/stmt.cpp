@@ -818,7 +818,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                 if (MATCHKW(lex, Keyword::begin_))
                 {
                     TYPE* matchtp = &stdint;
-                    EXPRESSION *begin, *end;
+                    EXPRESSION *begin, *size;
                     std::deque<std::pair<TYPE*, EXPRESSION*>> save;
                     std::list<INITLIST*>* lst = nullptr;
                     lex = getInitList(lex, funcsp, &lst);
@@ -897,7 +897,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             else
                             {
                                 st = stmtNode(lex, parent, StatementNode::expr_);
-                                deref(&stdpointer, &base);
+                                deref(matchtp, &base);
                                 st->select = exprNode(ExpressionNode::assign_, base, lstitem->exp);
                             }
                         }
@@ -910,17 +910,18 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         }
 
                         begin = val;
-                        end = exprNode(ExpressionNode::add_, val, intNode(ExpressionNode::c_i_, offset));
+                        size = intNode(ExpressionNode::c_i_, offset / matchtp->size);
                     }
                     else
                     {
                         select = anonymousVar(StorageClass::auto_, &stdint);
-                        begin = end = select;
+                        begin = select;
+                        size = intNode(ExpressionNode::c_i_, 0);
                     }
                     selectTP = InitializerListType(matchtp);
                     std::list<INITIALIZER*>* init = nullptr;
                     initInsert(&init, &stdpointer, begin, 0, false);
-                    initInsert(&init, &stdpointer, end, stdpointer.size, false);
+                    initInsert(&init, &stdpointer, size, stdpointer.size, false);
                     TYPE* tp2 = MakeType(BasicType::pointer_, &stdpointer);
                     tp2->size = 2 * stdpointer.size;
                     tp2->array = true;

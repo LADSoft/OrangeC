@@ -2447,7 +2447,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             if (arg.second->byTemplate.args)
                 dropStructureDeclaration();
             arg.second->packed = false;
-            if (!MATCHKW(lex, Keyword::class_))
+            if (!MATCHKW(lex, Keyword::class_) && !MATCHKW(lex, Keyword::typename_))
             {
                 error(ERR_TEMPLATE_TEMPLATE_PARAMETER_MUST_NAME_CLASS);
             }

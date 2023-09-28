@@ -1725,7 +1725,8 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
 
 #define MMAP_DEFAULT(s)             win32mmap(s)
 #define MUNMAP_DEFAULT(a, s)        win32munmap((a), (s))
-#define DIRECT_MMAP_DEFAULT(s)      win32direct_mmap(s)
+//#define DIRECT_MMAP_DEFAULT(s)      win32direct_mmap(s)
+#define DIRECT_MMAP_DEFAULT(s)      win32mmap(s)
 #endif /* WIN32 */
 #endif /* HAVE_MMAP */
 

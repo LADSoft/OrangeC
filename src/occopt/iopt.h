@@ -248,6 +248,11 @@ struct TempInfo
     struct quad* storesUses;
     struct Block* blockDefines;
     InstructionList* instructionUses;
+    // originally instructionUses was a linked list; the first element of the list (last thing inserted)
+    // was checked in rewritex86.cpp.   When I changed it to a set and used the QUAD address as the set element type
+    // this became wrong but the results were sometimes erratic, which could cause builds to fail.
+    // so we introduced this field to bring things back to the original stable condition.
+    QUAD* instructionUsesLast;
     BITINT* conflicts;
     IMODE* spillVar;
     IMODE* spillAlias;

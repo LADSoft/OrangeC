@@ -791,6 +791,7 @@ void InsertUses(Optimizer::QUAD* ins, int tnum)
     if (!tempInfo[tnum]->instructionUses)
         tempInfo[tnum]->instructionUses = new InstructionList;
     tempInfo[tnum]->instructionUses->insert(ins);
+    tempInfo[tnum]->instructionUsesLast = ins;
 }
 void RemoveInstruction(Optimizer::QUAD* ins)
 {

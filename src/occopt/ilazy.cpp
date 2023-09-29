@@ -383,17 +383,24 @@ static void CalculateTransparent(void)
                 next = next->fwd;
             }
             complementmap(tempBytes3);
-            for (i = 0; i < termCount; i++)
+            for (j = 0; j < n; j++)
             {
-                if (!isset(tempBytes3, i))
+                if (tempBytes3[j] != (BITINT)-1)
                 {
-                    if (tempInfo[termMapUp[i]]->terms)
+                    int k = j * BITINTBITS;
+                    for (i = k; i < k + BITINTBITS && i < termCount; i++)
                     {
-                        andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
-                    }
-                    if (tempInfo[termMapUp[i]]->indTerms)
-                    {
-                        andmap(tail->transparent, tempInfo[termMapUp[i]]->indTerms);
+                        if (!isset(tempBytes3, i))
+                        {
+                            if (tempInfo[termMapUp[i]]->terms)
+                            {
+                                andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
+                            }
+                            if (tempInfo[termMapUp[i]]->indTerms)
+                            {
+                                andmap(tail->transparent, tempInfo[termMapUp[i]]->indTerms);
+                            }
+                        }
                     }
                 }
             }
@@ -403,12 +410,19 @@ static void CalculateTransparent(void)
             setmap(tempBytes, false);
             AliasStruct(tempBytes, tail->ans, tail->dc.left, tail->dc.right);
             complementmap(tempBytes);
-            for (i = 0; i < termCount; i++)
+            for (j = 0; j < n; j++)
             {
-                if (!isset(tempBytes, i))
+                if (tempBytes[j] != (BITINT)-1)
                 {
-                    if (tempInfo[termMapUp[i]]->terms)
-                        andmap(tempBytes, tempInfo[termMapUp[i]]->terms);
+                    int k = j * BITINTBITS;
+                    for (i = k; i < k + BITINTBITS && i < termCount; i++)
+                    {
+                        if (!isset(tempBytes, i))
+                        {
+                            if (tempInfo[termMapUp[i]]->terms)
+                                andmap(tempBytes, tempInfo[termMapUp[i]]->terms);
+                        }
+                    }
                 }
             }
             andmap(tail->transparent, tempBytes);
@@ -462,13 +476,20 @@ static void CalculateTransparent(void)
                         ormap(tempBytes, tempBytes2);
                     }
                 }
-                for (i = 0; i < termCount; i++)
+                for (j = 0; j < n; j++)
                 {
-                    if (isset(tempBytes, i))
+                    if (tempBytes[j] != (BITINT)0)
                     {
-                        clearbit(tail->transparent, i);
-                        if (tempInfo[termMapUp[i]]->terms)
-                            andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
+                        int k = j * BITINTBITS;
+                        for (i = k; i < k + BITINTBITS && i < termCount; i++)
+                        {
+                            if (isset(tempBytes, i))
+                            {
+                                clearbit(tail->transparent, i);
+                                if (tempInfo[termMapUp[i]]->terms)
+                                    andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
+                            }
+                        }
                     }
                 }
             }
@@ -904,7 +925,8 @@ static void CalculateIsolated(void)
 }
 static void GatherTerms(void)
 {
-    int i;
+    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
+    int i, j, k;
     QUAD* tail = intermed_tail;
     while (tail && !tail->transparent)
         tail = tail->back;
@@ -1058,10 +1080,17 @@ static void GatherTerms(void)
                     {
                         andmap(tempBytes, loadTerms[tail->ans]);
                     }
-                    for (int i = 0; i < termCount; i++)
+                    for (j = 0; j < n; j++)
                     {
-                        if (!isset(tempBytes, i) && tempInfo[termMap[i]]->indTerms)
-                            andmap(immediateTerms[tail->dc.left], tempInfo[termMap[i]]->indTerms);
+                        if (tempBytes3[j] != (BITINT)-1)
+                        {
+                            int k = j * BITINTBITS;
+                            for (i = k; i < k + BITINTBITS && i < termCount; i++)
+                            {
+                                if (!isset(tempBytes, i) && tempInfo[termMap[i]]->indTerms)
+                                    andmap(immediateTerms[tail->dc.left], tempInfo[termMap[i]]->indTerms);
+                            }
+                        }
                     }
                 }
             }
@@ -1095,19 +1124,38 @@ static void GatherTerms(void)
     }
     for (auto&& t : immediateTerms)
     {
-        for (int i = 0; i < termCount; i++)
+        if (t.second)
         {
-            if (t.second && !isset(t.second, i) && tempInfo[termMapUp[i]]->terms)
+            for (j = 0; j < n; j++)
             {
-                andmap(tempInfo[termMapUp[i]]->terms, t.second);
+                if (t.second[j] != (BITINT)-1)
+                {
+                    int k = j * BITINTBITS;
+                    for (i = k; i < k + BITINTBITS && i < termCount; i++)
+                    {
+                        if (!isset(t.second, i) && tempInfo[termMapUp[i]]->terms)
+                        {
+                            andmap(tempInfo[termMapUp[i]]->terms, t.second);
+                        }
+                    }
+                }
             }
         }
     }
-    for (i = 0; i < termCount; i++)
-        if (!isset(uivBytes, i) && tempInfo[termMapUp[i]]->terms)
+    for (j = 0; j < n; j++)
+    {
+        if (uivBytes[j] != (BITINT)-1)
         {
-            andmap(uivBytes, tempInfo[termMapUp[i]]->terms);
+            int k = j * BITINTBITS;
+            for (i = k; i < k + BITINTBITS && i < termCount; i++)
+            {
+                if (!isset(uivBytes, i) && tempInfo[termMapUp[i]]->terms)
+                {
+                    andmap(uivBytes, tempInfo[termMapUp[i]]->terms);
+                }
+            }
         }
+    }
 }
 static void CalculateOCPAndRO(void)
 {
@@ -1373,31 +1421,40 @@ static void HandleRO(QUAD* after, int tn)
 }
 static void MoveExpressions(void)
 {
-    int i, j;
-    for (i = 0; i < termCount; i++)
+    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
+    int i, j, k;
+    for (j = 0; j < n; j++)
     {
-        if (isset(ocpTerms, i))
+        if (ocpTerms[j] != (BITINT)-1)
         {
-            int j;
-            int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;;
-            // this is split into two lines as the fact that InitTempOpt could move 
-            // the underlying store for tempInfo confused the VC++ optimizer...
-            auto temp = InitTempOpt(size, size);
-            tempInfo[termMapUp[i]]->copy = temp;
-            for (j = 0; j < fwdBlocks; j++)
+            int k = j * BITINTBITS;
+            for (i = k; i < k + BITINTBITS && i < termCount; i++)
             {
-
-                QUAD* head = forwardOrder[j]->head;
-                while (head != forwardOrder[j]->tail->fwd)
+                if (isset(ocpTerms, i))
                 {
-                    if (head->OCP)
+                    int j;
+                    int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;
+                    ;
+                    // this is split into two lines as the fact that InitTempOpt could move
+                    // the underlying store for tempInfo confused the VC++ optimizer...
+                    auto temp = InitTempOpt(size, size);
+                    tempInfo[termMapUp[i]]->copy = temp;
+                    for (j = 0; j < fwdBlocks; j++)
                     {
-                        if (isset(head->OCP, i))
+
+                        QUAD* head = forwardOrder[j]->head;
+                        while (head != forwardOrder[j]->tail->fwd)
                         {
-                            HandleOCP(head, termMapUp[i]);
+                            if (head->OCP)
+                            {
+                                if (isset(head->OCP, i))
+                                {
+                                    HandleOCP(head, termMapUp[i]);
+                                }
+                            }
+                            head = head->fwd;
                         }
                     }
-                    head = head->fwd;
                 }
             }
         }

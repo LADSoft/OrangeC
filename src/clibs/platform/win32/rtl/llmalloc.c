@@ -33,7 +33,7 @@
 void* __ll_malloc(size_t size)
 {
     void* address;
-    if ((address = VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE)) == 0)
+    if ((address = VirtualAlloc(0, size, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE)) == 0)
     {
         errno = _dos_errno = ENOMEM;
         return 0;

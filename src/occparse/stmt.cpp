@@ -1668,9 +1668,15 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     int addedBlock = 0;
     bool needlabelif;
     bool needlabelelse = false;
+    bool isconstexpr = false;
     int ifbranch = codeLabel++;
     lex = getsym();
     inLoopOrConditional++;
+    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::constexpr_))
+    {
+        isconstexpr = true;
+        lex = getsym();
+    }
     if (MATCHKW(lex, Keyword::openpa_))
     {
         lex = getsym();
@@ -1682,6 +1688,8 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
         lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
         if (MATCHKW(lex, Keyword::closepa_))
         {
+            if (isconstexpr && !IsConstantExpression(select, false, true))
+                error(ERR_CONSTANT_VALUE_EXPECTED);
             bool optimized = false;
             std::list<STATEMENT*>::iterator sti;
             currentLineData(parent, lex, 0);

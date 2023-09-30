@@ -2593,7 +2593,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 }
                 arg.second->byNonType.txttype = txttype;
                 if (basetype(tp)->type != BasicType::templateparam_ && basetype(tp)->type != BasicType::templateselector_ &&
-                    basetype(tp)->type != BasicType::enum_ && !isint(tp) && !ispointer(tp) && basetype(tp)->type != BasicType::lref_ &&
+                    basetype(tp)->type != BasicType::enum_ && !isint(tp) && !ispointer(tp) && basetype(tp)->type != BasicType::lref_ && basetype(tp)->type != BasicType::auto_ && 
                     (!templateNestingCount || basetype(tp)->type != BasicType::any_))
                 {
                     error(ERR_NONTYPE_TEMPLATE_PARAMETER_INVALID_TYPE);
@@ -6886,6 +6886,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     itDest->second->byNonType.val = exp1;
                     if (!templatecomparetypes(itDest->second->byNonType.tp, tp1, true))
                     {
+                        if (itDest->second->byNonType.tp->type == BasicType::auto_)
+                            itDest->second->byNonType.tp = tp1;
                         if (!ispointer(tp1) && !isint(tp1) && !isconstzero(tp1, exp1))
                         {
                             parsingDefaultTemplateArgs--;

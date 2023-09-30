@@ -1399,6 +1399,8 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     *expr = modify(*expr, *tp);
     if (*tp && (isvoid(*tp) || ismsil(*tp)))
         error(ERR_NOT_AN_ALLOWED_TYPE);
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        RemoveSizeofOperators(*expr);
     optimize_for_constants(expr);
     ConstExprPatch(expr);
     if (*tp)

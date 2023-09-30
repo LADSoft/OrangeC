@@ -795,7 +795,7 @@ void InsertUses(Optimizer::QUAD* ins, int tnum)
 }
 void RemoveInstruction(Optimizer::QUAD* ins)
 {
-    if (ins->dc.opcode == i_assn && ins->dc.left->retval)
+    if (ins->dc.opcode == i_assn && ins->dc.left->retval && architecture != ARCHITECTURE_MSIL)
     {
         // this is so we can inform the backend that the store is gone, e.g. so any fstp will not disappear entirely
         Optimizer::QUAD* find = ins->back;

@@ -251,6 +251,7 @@ KEYWORD keywords[] = {
     {"__offsetof", 10, Keyword::offsetof_, 0, TT_VAR},
     {"__pascal", 8, Keyword::pascal_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__property", 10, Keyword::property_, KW_MSIL, TT_LINKAGE},
+    {"__restrict", 10, Keyword::restrict_, KW_C99 | KW_CPLUSPLUS, TT_POINTERQUAL | TT_TYPEQUAL},
     {"__rtllinkage", 12, Keyword::rtllinkage_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__stdcall", 9, Keyword::stdcall_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__string", 8, Keyword::string_, KW_MSIL, TT_BASETYPE},

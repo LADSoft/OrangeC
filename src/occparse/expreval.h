@@ -28,7 +28,14 @@ bool smallint(TYPE* tp);
 bool largenum(TYPE* tp);
 bool isTemplatedPointer(TYPE* tp);
 EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags = 0);
-void eval_unary_plus(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
+void eval_unary_left_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST *start, TYPE* lefttp,
+                     EXPRESSION* leftexp, bool ismutable, int flags);
+void eval_unary_right_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST *start, TYPE* lefttp,
+                     EXPRESSION* leftexp, bool ismutable, int flags);
+void eval_binary_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST *leftstart, TYPE* lefttp,
+                    EXPRESSION* leftexp, LEXLIST *rightstart, TYPE* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
+void eval_unary_plus(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, TYPE* lefttp,
+                     EXPRESSION* leftexp, bool ismutable, int flags);
 void eval_unary_minus(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
 void eval_unary_not(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
 void eval_unary_complement(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);

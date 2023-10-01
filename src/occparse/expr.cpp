@@ -6123,13 +6123,103 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                         needkw(&lex, Keyword::closepa_);
                         break;
                     }
+                    else if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+                    {
+                        // unary left folding
+                        lex = getsym();
+                        if (Optimizer::cparams.prm_cplusplus && KWTYPE(lex, TT_OPERATOR))
+                        {
+                            auto lexin = lex;
+                            lex = getsym();
+                            if (!KWTYPE(lexin, TT_ASSIGN | TT_BINARY))
+                            {
+                                error(ERR_FOLDING_USES_INVALID_OPERATOR);
+                                errskim(&lex, skim_closepa);
+                            }
+                            else
+                            {
+                                auto start = lex;
+                                lex = expression_cast(lex, funcsp, atp, tp, exp, nullptr, flags);
+                                if (!*tp)
+                                {
+                                    *tp = &stdint;
+                                    error(ERR_EXPRESSION_SYNTAX);
+                                    errskim(&lex, skim_closepa);
+                                }
+                                else
+                                {
+                                    eval_unary_left_fold(lexin, funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
+                                    needkw(&lex, Keyword::closepa_);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            error(ERR_FOLDING_NEEDS_OPERATOR);
+                            errskim(&lex, skim_closepa);
+                        }
+                        break;
+                    }
                     else
                     {
                         LEXLIST* start = lex;
-                        lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR));
+                        lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, (flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD)) | _F_EXPRESSIONINPAREN);
                         if (!*tp)
+                        {
+                            *tp = &stdint;
                             error(ERR_EXPRESSION_SYNTAX);
-                        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+                            errskim(&lex, skim_closepa);
+                        }
+                        else if (Optimizer::cparams.prm_cplusplus && KWTYPE(lex, TT_OPERATOR))
+                        {
+                            // unary right folding, or binary folding
+                            auto lexin = lex;
+                            lex = getsym();
+                            if (!KWTYPE(lexin, TT_ASSIGN | TT_BINARY))
+                            {
+                                error(ERR_FOLDING_USES_INVALID_OPERATOR);
+                                errskim(&lex, skim_closepa);
+                            }
+                            else
+                            {
+                                if (!MATCHKW(lex, Keyword::ellipse_))
+                                {
+                                    diag("expression_primary: variadic folding missing ellipse");
+                                }
+                                else
+                                {
+                                    lex = getsym();
+                                }
+                                if (Optimizer::cparams.prm_cplusplus && KWTYPE(lex, TT_OPERATOR))
+                                {
+                                    // binary folding
+                                    if (!MATCHKW(lex, lexin->data->kw->key))
+                                    {
+                                        error(ERR_BINARY_FOLDING_OPERATOR_MISMATCH);
+                                    }
+                                    lex = getsym();
+                                    TYPE *tp1 = nullptr;
+                                    EXPRESSION* exp1 = nullptr;
+                                    auto start2 = lex;
+                                    lex = expression_cast(lex, funcsp, atp, &tp1, &exp1, nullptr,
+                                                          flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD));
+                                    if (!tp1)
+                                    {
+                                        error(ERR_EXPRESSION_SYNTAX);
+                                        errskim(&lex, skim_closepa);
+                                    }
+                                    else
+                                    {
+                                        eval_binary_fold(lexin, funcsp, atp, tp, exp, start, *tp, *exp, start2, tp1, exp1, false, flags);
+                                    }
+                                }
+                                else
+                                {
+                                    eval_unary_right_fold(lexin, funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
+                                }
+                            }
+                        }
+                        else if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
                         {
                             // lose p
                             lex = getsym();
@@ -7188,7 +7278,7 @@ LEXLIST* expression_unary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
             lex = expression_cast(lex, funcsp, atp, tp, exp, &localMutable, flags);
             if (*tp)
             {
-                eval_unary_autoincdec(lexin, funcsp, atp, tp, exp, *tp, *exp, false, flags);
+                eval_unary_autoincdec(lexin, funcsp, atp, tp, exp, *tp, *exp, localMutable, flags);
             }
             break;
         case Keyword::sizeof_:
@@ -7455,7 +7545,23 @@ static LEXLIST* expression_pm(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         TYPE* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
         lex = getsym();
-        lex = expression_cast(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
+        lex = expression_cast(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
         eval_binary_pm(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
     }
     return lex;
@@ -7472,13 +7578,29 @@ static LEXLIST* expression_times(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
         TYPE* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
         lex = getsym();
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
         lex = expression_pm(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
         if (!tp1)
         {
             *tp = nullptr;
             return lex;
         }
-        eval_binary_times(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+        eval_binary_times(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
     }
     return lex;
 }
@@ -7495,13 +7617,29 @@ static LEXLIST* expression_add(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
         TYPE* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
         lex = getsym();
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
         lex = expression_times(lex, funcsp, atp, &tp1, &exp1, nullptr, flags);
         if (!tp1)
         {
             *tp = nullptr;
             return lex;
         }
-        eval_binary_add(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+        eval_binary_add(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
     }
     return lex;
 }
@@ -7517,13 +7655,29 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
         enum ExpressionNode type;
         auto lexin = lex;
         lex = getsym();
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
         lex = expression_add(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
         if (!tp1)
         {
             *tp = nullptr;
             return lex;
         }
-        eval_binary_shift(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+        eval_binary_shift(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
     }
     return lex;
 }
@@ -7555,14 +7709,29 @@ static LEXLIST* expression_inequality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, T
         {
             auto lexin = lex;
             lex = getsym();
-
+            if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+            {
+                if (!(flags & _F_EXPRESSIONINPAREN))
+                {
+                    lex = getsym();
+                    error(ERR_FOLDING_NEEDS_PARENTHESIS);
+                }
+                else if (flags & _F_NOVARIADICFOLD)
+                {
+                    lex = getsym();
+                    error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+                }
+                else
+                    lex = backupsym();
+                return lex;
+            }
             lex = expression_shift(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
             if (!tp1)
             {
                 *tp = nullptr;
                 return lex;
             }
-            eval_binary_inequality(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+            eval_binary_inequality(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
         }
     }
     return lex;
@@ -7579,13 +7748,29 @@ static LEXLIST* expression_equality(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYP
         EXPRESSION* exp1 = nullptr;
         auto lexin = lex;
         lex = getsym();
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
         lex = expression_inequality(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
         if (!tp1)
         {
             *tp = nullptr;
             return lex;
         }
-        eval_binary_equality(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+        eval_binary_equality(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
     }
     return lex;
 }
@@ -7706,7 +7891,23 @@ static LEXLIST* binop(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRES
         }
         auto lexin = lex;
         lex = getsym();
-        lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, nullptr, flags);
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
+        lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
         if (!tp1)
         {
             *tp = nullptr;
@@ -7777,6 +7978,22 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         else if (isvoid(*tp) || ismsil(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
         isCallNoreturnFunction = false;
         if (MATCHKW(lex, Keyword::colon_))
         {
@@ -7788,7 +8005,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         }
         else
         {
-            lex = expression_comma(lex, funcsp, nullptr, &tph, &eph, nullptr, flags);
+            lex = expression_comma(lex, funcsp, nullptr, &tph, &eph, nullptr, flags | _F_NOVARIADICFOLD);
         }
         bool oldCallExit = isCallNoreturnFunction;
         isCallNoreturnFunction = false;
@@ -7799,7 +8016,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         else if (MATCHKW(lex, Keyword::colon_))
         {
             lex = getsym();
-            lex = expression_assign(lex, funcsp, nullptr, &tpc, &epc, nullptr, flags);
+            lex = expression_assign(lex, funcsp, nullptr, &tpc, &epc, nullptr, flags | _F_NOVARIADICFOLD);
             isCallNoreturnFunction &= oldCallExit;
             if (!tpc)
             {
@@ -8197,6 +8414,22 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         {
             case Keyword::assign_:
                 lex = getsym();
+                if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+                {
+                    if (!(flags & _F_EXPRESSIONINPAREN))
+                    {
+                        lex = getsym();
+                        error(ERR_FOLDING_NEEDS_PARENTHESIS);
+                    }
+                    else if (flags & _F_NOVARIADICFOLD)
+                    {
+                        lex = getsym();
+                        error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+                    }
+                    else
+                        lex = backupsym();
+                    return lex;
+                }
                 if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::begin_))
                 {
                     if (isstructured(*tp))
@@ -8224,9 +8457,8 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     }
                     else
                     {
-                        lex = getsym();
                         ++inAssignRHS;
-                        lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
+                        lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
                         --inAssignRHS;
                         if (!needkw(&lex, Keyword::end_))
                         {
@@ -8238,7 +8470,7 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 else
                 {
                     ++inAssignRHS;
-                    lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
+                    lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
                     --inAssignRHS;
                 }
                 break;
@@ -8248,8 +8480,24 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             case Keyword::asor_:
             case Keyword::asxor_:
                 lex = getsym();
+                if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+                {
+                    if (!(flags & _F_EXPRESSIONINPAREN))
+                    {
+                        lex = getsym();
+                        error(ERR_FOLDING_NEEDS_PARENTHESIS);
+                    }
+                    else if (flags & _F_NOVARIADICFOLD)
+                    {
+                        lex = getsym();
+                        error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+                    }
+                    else
+                        lex = backupsym();
+                    return lex;
+                }
                 ++inAssignRHS;
-                lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags);
+                lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
                 --inAssignRHS;
                 break;
             case Keyword::asmod_:
@@ -8258,8 +8506,24 @@ LEXLIST* expression_assign(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             case Keyword::astimes_:
             case Keyword::asdivide_:
                 lex = getsym();
+                if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+                {
+                    if (!(flags & _F_EXPRESSIONINPAREN))
+                    {
+                        lex = getsym();
+                        error(ERR_FOLDING_NEEDS_PARENTHESIS);
+                    }
+                    else if (flags & _F_NOVARIADICFOLD)
+                    {
+                        lex = getsym();
+                        error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+                    }
+                    else
+                        lex = backupsym();
+                    return lex;
+                }
                 ++inAssignRHS;
-                lex = expression_assign(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags);
+                lex = expression_assign(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
                 --inAssignRHS;
                 break;
             default:
@@ -8285,6 +8549,22 @@ LEXLIST* expression_comma(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EX
         TYPE* tp1 = nullptr;
         auto lexin = lex;
         lex = getsym();
+        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
+        {
+            if (!(flags & _F_EXPRESSIONINPAREN))
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_PARENTHESIS);
+            }
+            else if (flags & _F_NOVARIADICFOLD)
+            {
+                lex = getsym();
+                error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
+            }
+            else
+                lex = backupsym();
+            return lex;
+        }
         lex = expression_assign(lex, funcsp, atp, &tp1, &exp1, nullptr, flags);
         if (!tp1)
         {

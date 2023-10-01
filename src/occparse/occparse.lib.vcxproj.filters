@@ -284,5 +284,8 @@
     <ClInclude Include="expreval.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="errorlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

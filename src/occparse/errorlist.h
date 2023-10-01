@@ -592,7 +592,25 @@ ERRLIST(ERR_RETURN_VALUE_NO_DISCARD, 525, "Return value may not be discarded",
         CE_ERROR)
 ERRLIST(ERR_FALLTHROUGH, 526, "Switch case falls through",
         CE_TRIVIALWARNING)
-ERRLIST(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, 527, "Nested inline declaration for '%s' cannot be inline and cannot have attributes", CE_ERROR)
+ERRLIST(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, 527,
+        "Nested inline declaration for '%s' cannot be inline and cannot have attributes", CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_PARENTHESIS, 528, "Variadic folding must be enclosed in parenthesis",
+        CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION, 529,
+        "Variadic folding needs a simple expression", CE_ERROR)
+ERRLIST(ERR_FOLDING_USES_INVALID_OPERATOR, 530, "Variadic folding uses invalid operator", CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_OPERATOR, 531, "Variadic folding needs operator", CE_ERROR)
+ERRLIST(ERR_UNARY_LEFT_FOLDING_NEEDS_VARIADIC_TEMPLATE, 532,
+        "Variadic unary left folding needs a variadic template in the LHS expression",
+        CE_ERROR)
+ERRLIST(ERR_UNARY_RIGHT_FOLDING_NEEDS_VARIADIC_TEMPLATE, 533,
+        "Variadic unary right folding needs a variadic template in the RHS expression",
+        CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE, 534, "Variadic binary folding needs variadic template in one of the expressions", CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_TOO_MANY_VARIADIC_TEMPLATES, 535,
+        "Variadic binary folding cannot have variadic template in both expressions", CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_OPERATOR_MISMATCH, 536, "Variadic binary folding has mismatched operators", CE_ERROR)
+
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

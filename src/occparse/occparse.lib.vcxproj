@@ -79,6 +79,7 @@
     <ClInclude Include="declcons.h" />
     <ClInclude Include="declcpp.h" />
     <ClInclude Include="dsw.h" />
+    <ClInclude Include="errorlist.h" />
     <ClInclude Include="expr.h" />
     <ClInclude Include="exprcpp.h" />
     <ClInclude Include="expreval.h" />

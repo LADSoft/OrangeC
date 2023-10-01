@@ -1,24 +1,24 @@
 /* Software License Agreement
  *
-  *    Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *    Copyright(C) 1994-2023 David Lindauer, (LADSoft)
  *
-  *    This file is part of the Orange C Compiler package.
+ *    This file is part of the Orange C Compiler package.
  *
-  *    The Orange C Compiler package is free software: you can redistribute it and/or modify
-  *    it under the terms of the GNU General Public License as published by
-  *    the Free Software Foundation, either version 3 of the License, or
-  *    (at your option) any later version.
+ *    The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
  *
-  *    The Orange C Compiler package is distributed in the hope that it will be useful,
-  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *    GNU General Public License for more details.
+ *    The Orange C Compiler package is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
  *
-  *    You should have received a copy of the GNU General Public License
-  *    along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ *    You should have received a copy of the GNU General Public License
+ *    along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  *
-  *    contact information:
-  *        email: TouchStone222@runbox.com <David Lindauer>
+ *    contact information:
+ *        email: TouchStone222@runbox.com <David Lindauer>
  *
  */
 
@@ -76,7 +76,44 @@
 
 namespace Parser
 {
-bool isstructuredmath(TYPE * righttp, TYPE* tp2)
+typedef bool(*EvalFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, TYPE* lefttp,
+                       EXPRESSION* leftexp, TYPE* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
+
+static std::unordered_map<Keyword, EvalFunc> dispatcher = {
+    {Keyword::dotstar_, eval_binary_pm},
+    {Keyword::pointstar_, eval_binary_pm},
+    {Keyword::star_, eval_binary_times},
+    {Keyword::divide_, eval_binary_times},
+    {Keyword::mod_, eval_binary_times},
+    {Keyword::plus_, eval_binary_add},
+    {Keyword::minus_, eval_binary_add},
+    {Keyword::leftshift_, eval_binary_shift},
+    {Keyword::rightshift_, eval_binary_shift},
+    {Keyword::gt_, eval_binary_inequality}, 
+    {Keyword::geq_, eval_binary_inequality}, 
+    {Keyword::lt_, eval_binary_inequality},
+    {Keyword::leq_, eval_binary_inequality},
+    {Keyword::eq_, eval_binary_equality},
+    {Keyword::neq_, eval_binary_equality},
+    {Keyword::and_, eval_binary_logical},
+    {Keyword::or_, eval_binary_logical},
+    {Keyword::uparrow_, eval_binary_logical},
+    {Keyword::land_, eval_binary_logical},
+    {Keyword::lor_, eval_binary_logical},
+    {Keyword::assign_, eval_binary_assign},
+    {Keyword::asplus_, eval_binary_assign},
+    {Keyword::asminus_, eval_binary_assign},
+    {Keyword::astimes_, eval_binary_assign},
+    {Keyword::asdivide_, eval_binary_assign},
+    {Keyword::asmod_, eval_binary_assign},
+    {Keyword::asleftshift_, eval_binary_assign},
+    {Keyword::asrightshift_, eval_binary_assign},
+    {Keyword::asand_, eval_binary_assign},
+    {Keyword::asor_, eval_binary_assign},
+    {Keyword::asxor_, eval_binary_assign},
+    {Keyword::comma_, eval_binary_comma},
+};
+bool isstructuredmath(TYPE* righttp, TYPE* tp2)
 {
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -215,6 +252,202 @@ EXPRESSION* nodeSizeof(TYPE *tp, EXPRESSION *exp, int flags)
             exp = intNode(ExpressionNode::c_i_, tp->size);
     }
     return exp;
+}
+
+static void left_fold(LEXLIST* lex, SYMBOL *funcsp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST* start, TYPE* seedtp, EXPRESSION* seedexp, TYPE *foldtp, EXPRESSION* foldexp)
+{
+    auto it = dispatcher.find(lex->data->kw->key);
+    if (it == dispatcher.end())
+    {
+        *resulttp = foldtp;
+        *resultexp = intNode(ExpressionNode::c_i_, 0);
+        return;
+    }
+    auto kw = it->first;
+    bool first = true;
+    *resulttp = seedtp;
+    *resultexp = seedexp;
+    std::list<INITLIST*>* lptr = nullptr;
+    expandPackedInitList(&lptr, funcsp, start, foldexp);
+    if (!lptr)
+    {
+        if (!*resulttp)
+        {
+            *resulttp = &stdint;
+            *resultexp = intNode(ExpressionNode::c_i_, 0);
+        }
+        return;
+    }
+    for (auto e : *lptr)
+    {
+        if (!*resultexp)
+        {
+            *resulttp = e->tp;
+            *resultexp = e->exp;
+        }
+        else
+        {
+            std::list<struct expr*>* logicaldestructorsleft = nullptr;
+            std::list<struct expr*>* logicaldestructorsright = nullptr;
+            if (kw == Keyword::land_ || kw == Keyword::lor_)
+            {
+                if (first)
+                {
+                    first = false;
+                    GetLogicalDestructors(&logicaldestructorsleft, *resultexp);
+                    if (Optimizer::cparams.prm_cplusplus && *resulttp && isstructured(*resulttp))
+                    {
+                        if (!castToArithmeticInternal(false, resulttp, resultexp, (Keyword)-1, &stdbool, false))
+                            if (!castToArithmeticInternal(false, resulttp, resultexp, (Keyword)-1, &stdint, false))
+                                if (!castToPointer(resulttp, resultexp, (Keyword)-1, &stdpointer))
+                                    errorConversionOrCast(true, *resulttp, &stdint);
+                    }
+                }
+                GetLogicalDestructors(&logicaldestructorsright, e->exp);
+                if (Optimizer::cparams.prm_cplusplus && e->tp && isstructured(e->tp))
+                {
+                    if (!castToArithmeticInternal(false, &e->tp, &e->exp, (Keyword)-1, &stdbool, false))
+                        if (!castToArithmeticInternal(false, &e->tp, &e->exp, (Keyword)-1, &stdint, false))
+                            if (!castToPointer(&e->tp, &e->exp, (Keyword)-1, &stdpointer))
+                                errorConversionOrCast(true, e->tp, &stdint);
+                }
+            }
+            if (!it->second(lex, funcsp, nullptr, resulttp, resultexp, *resulttp, *resultexp, e->tp, e->exp, false, 0))
+            {
+                (*resultexp)->v.logicaldestructors.left = logicaldestructorsleft;
+                (*resultexp)->v.logicaldestructors.right = logicaldestructorsright;
+            }
+        }
+    }
+}
+static void right_fold(LEXLIST* lex, SYMBOL *funcsp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST* start, TYPE* seedtp, EXPRESSION* seedexp, TYPE *foldtp, EXPRESSION* foldexp)
+{
+    auto it = dispatcher.find(lex->data->kw->key);
+    if (it == dispatcher.end())
+    {
+        *resulttp = foldtp;
+        *resultexp = intNode(ExpressionNode::c_i_, 0);
+        return;
+    }
+    *resulttp = seedtp;
+    *resultexp = seedexp;
+    std::list<INITLIST*>* lptr = nullptr;
+    expandPackedInitList(&lptr, funcsp, start, foldexp);
+    if (!lptr)
+    {
+        if (!*resulttp)
+        {
+            *resulttp = &stdint;
+            *resultexp = intNode(ExpressionNode::c_i_, 0);
+        }
+        return;
+    }
+    bool first = true;
+    auto kw = it->first;
+    for (auto itr = lptr->rbegin(); itr != lptr->rend(); ++itr)
+    {
+        auto e = *itr;
+        if (!*resultexp)
+        {
+            *resulttp = e->tp;
+            *resultexp = e->exp;
+        }
+        else
+        {
+            std::list<struct expr*>* logicaldestructorsleft = nullptr;
+            std::list<struct expr*>* logicaldestructorsright = nullptr;
+            if (kw == Keyword::land_ || kw == Keyword::lor_)
+            {
+                if (first)
+                {
+                    first = false;
+                    GetLogicalDestructors(&logicaldestructorsleft, *resultexp);
+                    if (Optimizer::cparams.prm_cplusplus && *resulttp && isstructured(*resulttp))
+                    {
+                        if (!castToArithmeticInternal(false, resulttp, resultexp, (Keyword)-1, &stdbool, false))
+                            if (!castToArithmeticInternal(false, resulttp, resultexp, (Keyword)-1, &stdint, false))
+                                if (!castToPointer(resulttp, resultexp, (Keyword)-1, &stdpointer))
+                                    errorConversionOrCast(true, *resulttp, &stdint);
+                    }
+                }
+                GetLogicalDestructors(&logicaldestructorsright, e->exp);
+                if (Optimizer::cparams.prm_cplusplus && e->tp && isstructured(e->tp))
+                {
+                    if (!castToArithmeticInternal(false, &e->tp, &e->exp, (Keyword)-1, &stdbool, false))
+                        if (!castToArithmeticInternal(false, &e->tp, &e->exp, (Keyword)-1, &stdint, false))
+                            if (!castToPointer(&e->tp, &e->exp, (Keyword)-1, &stdpointer))
+                                errorConversionOrCast(true, e->tp, &stdint);
+                }
+            }
+            if (!it->second(lex, funcsp, nullptr, resulttp, resultexp, e->tp, e->exp, *resulttp, *resultexp, false, 0))
+            {
+                (*resultexp)->v.logicaldestructors.left = logicaldestructorsleft;
+                (*resultexp)->v.logicaldestructors.right = logicaldestructorsright;
+            }
+        }
+    }
+}
+
+
+void eval_unary_left_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST* start,
+    TYPE* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
+{
+    if (!hasPackedExpression(leftexp, true))
+    {
+        error(ERR_UNARY_LEFT_FOLDING_NEEDS_VARIADIC_TEMPLATE);
+        *resulttp = lefttp;
+        *resultexp = intNode(ExpressionNode::c_i_, 0);
+    }
+    else
+    {
+        left_fold(lex, funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
+    }
+}
+void eval_unary_right_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST* start,
+    TYPE* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
+{
+    if (!hasPackedExpression(leftexp, true))
+    {
+        error(ERR_UNARY_RIGHT_FOLDING_NEEDS_VARIADIC_TEMPLATE);
+        *resulttp = lefttp;
+        *resultexp = intNode(ExpressionNode::c_i_, 0);
+    }
+    else
+    {
+        right_fold(lex, funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
+    }
+}
+void eval_binary_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST* leftstart,
+    TYPE* lefttp, EXPRESSION* leftexp, LEXLIST* rightstart, TYPE* righttp, EXPRESSION* rightexp, bool ismutable,
+    int flags)
+{
+    if (!hasPackedExpression(leftexp, true))
+    {
+        // better be right fold...
+        if (!hasPackedExpression(rightexp, true))
+        {
+            error(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE);
+            *resulttp = lefttp;
+            *resultexp = intNode(ExpressionNode::c_i_, 0);
+        }
+        else
+        {
+            left_fold(lex, funcsp, resulttp, resultexp, leftstart, lefttp, leftexp, righttp, rightexp);
+        }
+    }
+    else
+    {
+        if (hasPackedExpression(rightexp, true))
+        {
+            error(ERR_BINARY_FOLDING_TOO_MANY_VARIADIC_TEMPLATES);
+            *resulttp = lefttp;
+            *resultexp = intNode(ExpressionNode::c_i_, 0);
+        }
+        else
+        {
+            right_fold(lex, funcsp, resulttp, resultexp, rightstart, righttp, rightexp, lefttp, leftexp);
+        }
+    }
 }
 
 void eval_unary_plus(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp,
@@ -1506,7 +1739,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
     else if (isvoid(*resulttp) || isvoid(righttp) || (*resulttp)->type == BasicType::aggregate_)
         error(ERR_NOT_AN_ALLOWED_TYPE);
-    else if (!isstructured(*resulttp) && ((*resulttp)->btp && !ispointer((*resulttp)->btp)) && (!isarray(*resulttp) || !basetype(*resulttp)->msil) &&
+    else if ((!templateNestingCount || instantiatingTemplate) && !isstructured(*resulttp) && /*((*resulttp)->btp && !ispointer((*resulttp)->btp)) &&*/ (!isarray(*resulttp) || !basetype(*resulttp)->msil) &&
              basetype(*resulttp)->type != BasicType::memberptr_ && basetype(*resulttp)->type != BasicType::templateparam_ &&
              basetype(*resulttp)->type != BasicType::templateselector_ && !lvalue(*resultexp) &&
              (*resultexp)->type != ExpressionNode::msil_array_access_)

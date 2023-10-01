@@ -23,6 +23,7 @@
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
     <ClCompile Include="constexpr.cpp" />
+    <ClCompile Include="expreval.cpp" />
     <ClCompile Include="ListFactory.cpp" />
     <ClCompile Include="constopt.cpp" />
     <ClCompile Include="cppbltin.cpp" />
@@ -80,6 +81,7 @@
     <ClInclude Include="dsw.h" />
     <ClInclude Include="expr.h" />
     <ClInclude Include="exprcpp.h" />
+    <ClInclude Include="expreval.h" />
     <ClInclude Include="floatconv.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="iexpr.h" />

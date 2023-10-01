@@ -2116,30 +2116,6 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
     if (packs)
     {
         return packs->size();
-        /*
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
-        for (auto it = packs->begin(); it != packs->end();)
-        {
-            if (it->second->packed)
-            {
-                if (it->second->byPack.pack && it->second->byPack.pack->size())
-                {
-                    tps.push(it);
-                    it = it->second->byPack.pack->begin();
-                }
-            }
-            if (!it->second->packed)
-            {
-                rv++;
-            }
-            ++it;
-            if (it == packs->end() && tps.size())
-            {
-                it = tps.top();
-                tps.pop();
-            }
-        }
-        */
     }
     return rv;
 }

@@ -1833,49 +1833,57 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     (*lst)->back().first = itorig->first;
                                 }
                             }
-                            else if (itorig != iteorig && itorig->second->packed)
-                            {
-                                std::list<TEMPLATEPARAMPAIR>** p;
-                                if (first)
+                            else {
+                                /*
+                                * some of the stuff in chrono is too complex for the compiler right now..
+                                if (exp && !IsConstantExpression(exp, false, false)&& (!templateNestingCount ||
+                                instantiatingTemplate)) error(ERR_CONSTANT_VALUE_EXPECTED);
+                                */
+                                if (itorig != iteorig && itorig->second->packed)
                                 {
-                                    if (!*lst)
-                                        *lst = templateParamPairListFactory.CreateList();
-                                    (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                    (*lst)->back().second->type = Keyword::int_;
-                                    (*lst)->back().second->packed = true;
-                                    if (itorig != iteorig)
-                                        (*lst)->back().first = itorig->first;
-                                    first = false;
-                                }
-                                auto last = (*lst)->back().second->byPack.pack = templateParamPairListFactory.CreateList();
-                                last->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                last->back().second->type = Keyword::int_;
-                                last->back().second->byNonType.dflt = exp;
-                                last->back().second->byNonType.tp = tp;
-                            }
-                            else
-                            {
-                                //                                checkUnpackedExpression(exp);
-                                if (!*lst)
-                                    *lst = templateParamPairListFactory.CreateList();
-                                (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                if (parsingTrailingReturnOrUsing && exp->type == ExpressionNode::templateparam_ && exp->v.sp)
-                                {
-                                    (*lst)->back().first = exp->v.sp;
-                                }
-                                else if (itorig != iteorig)
-                                {
-                                    (*lst)->back().first = itorig->first;
-                                }
-                                if (exp->type == ExpressionNode::templateparam_ && exp->v.sp->tp->templateParam->second->byClass.dflt)
-                                {
-                                    *(*lst)->back().second = *exp->v.sp->tp->templateParam->second;
+                                    std::list<TEMPLATEPARAMPAIR>** p;
+                                    if (first)
+                                    {
+                                        if (!*lst)
+                                            *lst = templateParamPairListFactory.CreateList();
+                                        (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
+                                        (*lst)->back().second->type = Keyword::int_;
+                                        (*lst)->back().second->packed = true;
+                                        if (itorig != iteorig)
+                                            (*lst)->back().first = itorig->first;
+                                        first = false;
+                                        (*lst)->back().second->byPack.pack = templateParamPairListFactory.CreateList();
+                                    }
+                                    auto last = (*lst)->back().second->byPack.pack;
+                                    last->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
+                                    last->back().second->type = Keyword::int_;
+                                    last->back().second->byNonType.dflt = exp;
+                                    last->back().second->byNonType.tp = tp;
                                 }
                                 else
                                 {
-                                    (*lst)->back().second->type = Keyword::int_;
-                                    (*lst)->back().second->byNonType.dflt = exp;
-                                    (*lst)->back().second->byNonType.tp = tp;
+                                    //                                checkUnpackedExpression(exp);
+                                    if (!*lst)
+                                        *lst = templateParamPairListFactory.CreateList();
+                                    (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
+                                    if (parsingTrailingReturnOrUsing && exp->type == ExpressionNode::templateparam_ && exp->v.sp) 
+                                    {
+                                        (*lst)->back().first = exp->v.sp;
+                                    }
+                                    else if (itorig != iteorig)
+                                    {
+                                        (*lst)->back().first = itorig->first;
+                                    }
+                                    if (exp->type == ExpressionNode::templateparam_ && exp->v.sp->tp->templateParam->second->byClass.dflt)
+                                    {
+                                        *(*lst)->back().second = *exp->v.sp->tp->templateParam->second;
+                                    }
+                                    else
+                                    {
+                                        (*lst)->back().second->type = Keyword::int_;
+                                        (*lst)->back().second->byNonType.dflt = exp;
+                                        (*lst)->back().second->byNonType.tp = tp;
+                                    }
                                 }
                             }
                         }

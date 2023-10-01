@@ -303,7 +303,7 @@ KEYWORD keywords[] = {
     {"compl", 5, Keyword::complx_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"const", 5, Keyword::const_, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
     {"const_cast", 10, Keyword::const_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS | KW_C2X, TT_DECLARE},
+    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS | KW_C2X, (unsigned long)TT_DECLARE},
     {"continue", 8, Keyword::continue_, 0, TT_CONTROL},
     {"decltype", 8, Keyword::decltype_, KW_CPLUSPLUS, TT_OPERATOR},
     {"default", 7, Keyword::default_, 0, TT_CONTROL},

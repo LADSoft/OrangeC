@@ -1076,7 +1076,7 @@ struct balance
 // clang-format on
 // clang-format off
 
-    enum _tokenTypes : unsigned long
+    enum _tokenTypes
     {
         TT_BASE = 1,
         TT_BOOL = 2,
@@ -1109,7 +1109,7 @@ struct balance
         TT_VOID = 0x10000000,
         TT_CLASS = 0x20000000,
         TT_LINKAGE = 0x40000000,
-        TT_DECLARE = 0x80000000,
+        TT_DECLARE = 0x80000000UL,
         TT_UNKNOWN = 0
     };
 // clang-format on

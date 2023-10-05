@@ -775,6 +775,7 @@ static EXPRESSION* createLambda(bool noinline)
 }
 LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
 {
+    auto declline = lines;
     LAMBDA* self;
     SYMBOL *vpl, *ths;
     SYMLIST* hrl;
@@ -1070,6 +1071,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     *exp = createLambda(0);
     *tp = lambdas.front()->cls->tp;
     lambdas.pop_front();
+    lines = declline;
     return lex;
 }
 }  // namespace Parser

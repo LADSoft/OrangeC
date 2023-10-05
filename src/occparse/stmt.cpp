@@ -3203,6 +3203,11 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 STATEMENT* s = stmtNode(lex, parent, StatementNode::varstart_);
                 s->select = stmt->select;
             }
+            else if (stmt->type == StatementNode::line_)
+            {
+                STATEMENT* s = stmtNode(lex, parent, StatementNode::line_);
+                s->lineData = stmt->lineData;
+            }
         }
     }
     if (!*exp)

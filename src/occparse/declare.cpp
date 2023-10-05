@@ -7336,6 +7336,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                     }
                                 }
                             }
+                            // get rid of line info from old declarations that didn't make it to the output file...
+                            if (storage_class_in != StorageClass::auto_ && lines)
+                                lines->clear();
                         }
                         if (sp->tp->size == 0 && basetype(sp->tp)->type != BasicType::templateparam_ &&
                             basetype(sp->tp)->type != BasicType::templateselector_ && !isarray(sp->tp))

@@ -4560,4 +4560,275 @@ void CheckIsLiteralClass(TYPE* tp)
         }
     }
 }
+static int CountMembers(SYMBOL* sym)
+{
+    int count = 0;
+    if (sym->tp->syms)
+    {
+        for (auto d : *sym->tp->syms)
+        {
+            if (ismember(d))
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
+                              std::list<BLOCKDATA*>& block)
+{
+    lex = getsym();
+    if (!ISID(lex))
+    {
+        errskim(&lex, skim_semi_declare);
+        error(ERR_IDENTIFIER_EXPECTED);
+    }
+    else
+    {
+        std::deque<std::string> identifiers;
+        do
+        {
+            identifiers.push_back(lex->data->value.s.a);
+            lex = getsym();
+            if (ISID(lex))
+                break;
+            if (MATCHKW(lex, Keyword::comma_))
+                lex = getsym();
+        } while (lex && ISID(lex));
+        needkw(&lex, Keyword::closebr_);
+        if (!needkw(&lex, Keyword::assign_))
+        {
+            errskim(&lex, skim_semi_declare);
+        }
+        else
+        {
+            EXPRESSION* exp = nullptr;
+            TYPE* tp = nullptr;
+            lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+            currentLineData(block, lex, -1);
+            if (tp == nullptr)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+                errskim(&lex, skim_semi_declare);
+            }
+            else if ((!isstructured(tp) && !isarray(tp)) || basetype(tp)->type == BasicType::union_)
+            {
+                errortype(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, tp, nullptr);
+            }
+            else if (isarray(tp))
+            {
+                auto btp = basetype(basetype(tp)->btp);
+                int count = basetype(tp)->size / btp->size;
+                if (count != identifiers.size())
+                {
+                    error(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH);
+                }
+                else
+                {
+                    auto copy = anonymousVar(storage_class, btp);
+                    if (isstructured(btp))
+                    {
+                        std::list<INITIALIZER*>* constructors = nullptr;
+
+                        for (int i = 0; i < identifiers.size(); i++)
+                        {
+                            auto src = i ? exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, i * btp->size)) : exp;
+                            auto dest = i ? exprNode(ExpressionNode::add_, copy, intNode(ExpressionNode::c_i_, i * btp->size)) : copy;
+                            TYPE* ctype = btp;
+                            auto expx = dest;
+                            callConstructorParam(&ctype, &expx, btp, src, true, false, true, false, true);
+                            if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                                storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                                storage_class != StorageClass::mutable_)
+                            {
+                                initInsert(&constructors, tp, expx, i * btp->size, true);
+                            }
+                            else
+                            {
+                                auto st = stmtNode(lex, block, StatementNode::expr_);
+                                st->select = expx;
+                            }
+         
+                        }
+                        std::list<INITIALIZER*>* destructors = nullptr;
+                        EXPRESSION* sz = nullptr;
+                        if (identifiers.size() > 1)
+                        {
+                            sz = intNode(ExpressionNode::c_i_, identifiers.size());
+                        }
+                        auto expy = copy;
+                        callDestructor(btp->sp, nullptr, &expy, sz, true, false, false, true);
+                        initInsert(&destructors, tp, expy, 0, true);
+                        if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                            storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                            storage_class != StorageClass::mutable_)
+                        {
+                            insertDynamicInitializer(copy->v.sp, constructors);
+                            insertDynamicDestructor(copy->v.sp, destructors);
+                        }
+                        else
+                        {
+                            copy->v.sp->sb->dest = destructors;
+                        }
+                    }
+                    else
+                    {
+                        auto epc = exprNode(ExpressionNode::blockassign_, copy, exp);
+                        epc->size = tp;
+                        epc->altdata = (void*)(tp);
+                        if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                            storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                            storage_class != StorageClass::mutable_)
+                        {
+                            std::list<INITIALIZER*>* constructors = initListFactory.CreateList();
+                            initInsert(&constructors, tp, epc, 0, false);
+                            insertDynamicInitializer(copy->v.sp, constructors);
+                        }
+                        else
+                        {
+                            auto st = stmtNode(lex, block, StatementNode::expr_);
+                            st->select = epc;
+                        }
+                    }
+                    int i = 0;
+                    for (auto id : identifiers)
+                    {
+                        auto sym = makeID(StorageClass::alias_, btp, nullptr, litlate(id.c_str()));
+                        InsertSymbol(sym, storage_class, linkage, false);
+                        initInsert(&sym->sb->init, btp, copy, (i++) * btp->size, true);
+                        if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
+                        {
+                            STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                            s->select = varNode(ExpressionNode::auto_, sym);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SYMBOL *one = nullptr, *two = nullptr;
+                int count = 0;
+                int offset = 0;
+                auto structsym = basetype(tp)->sp;
+                if (structsym->sb->baseClasses)
+                {
+                    for (auto b : *structsym->sb->baseClasses)
+                    {
+                        int count1 = CountMembers(b->cls);
+                        if (count1)
+                        {
+                            if (one)
+                            {
+                                two = b->cls;
+                                break;
+                            }
+                            else
+                            {
+                                one = b->cls;
+                                offset = b->offset;
+                                count = count1;
+                            }
+                        }
+                    }
+                }
+                int count1 = CountMembers(structsym);
+                if (count1)
+                {
+                    if (one)
+                    {
+                        two = structsym;
+                    }
+                    else
+                    {
+                        count = count1;
+                        offset = 0;
+                        one = structsym;
+                    }
+                }
+                if (!one)
+                {
+                    errorsym(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, structsym);
+                }
+                else if (two)
+                {
+                    errorsym2(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, two, one);
+                }
+                else if (count != identifiers.size())
+                {
+                    error(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH);
+                }
+                else
+                {
+                    if (one != structsym)
+                    {
+                         if (structsym->sb->vbaseEntries)
+                         {
+                             for (auto v : *structsym->sb->vbaseEntries)
+                                if (one == v->cls)
+                                {
+                                    offset = v->structOffset;
+                                    break;
+                                }
+                         }
+                    }
+                    auto copy = anonymousVar(storage_class, tp);
+                    std::list<INITIALIZER*>* constructors = nullptr;
+                    std::list<INITIALIZER*>* destructors = nullptr;
+
+                    auto src = exp;
+                    auto dest = copy;
+                    TYPE* ctype = tp;
+
+                    auto expx = dest;
+                    callConstructorParam(&ctype, &expx, tp, src, true, false, true, false, true);
+                    if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                        storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                        storage_class != StorageClass::mutable_)
+                    {
+                        initInsert(&constructors, tp, expx, 0, true);
+                    }
+                    else
+                    {
+                        auto st = stmtNode(lex, block, StatementNode::expr_);
+                        st->select = expx;
+                    }
+                    expx = dest;
+                    callDestructor(tp->sp, nullptr, &expx, nullptr, true, false, false, true);
+                    initInsert(&destructors, tp, expx, 0, true);
+                    if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                        storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                        storage_class != StorageClass::mutable_)
+                    {
+                        insertDynamicInitializer(copy->v.sp, constructors);
+                        insertDynamicDestructor(copy->v.sp, destructors);
+                    }
+                    else
+                    {
+                        copy->v.sp->sb->dest = destructors;
+                    }
+
+                    auto it = one->tp->syms->begin();
+                    for (auto id : identifiers)
+                    {
+                        while (!ismember(*it))
+                            ++it;
+                        auto sym = makeID(StorageClass::alias_, (*it)->tp, nullptr, litlate(id.c_str()));
+                        InsertSymbol(sym, storage_class, linkage, false);
+                        initInsert(&sym->sb->init, (*it)->tp, copy, (*it)->sb->offset + offset, true);
+                        if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
+                        {
+                            STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                            s->select = varNode(ExpressionNode::auto_, sym);
+                        }
+                        ++it;
+                    }
+                }
+            }
+        }
+    }
+    return lex;
+}
+
 }  // namespace Parser

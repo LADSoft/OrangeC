@@ -257,7 +257,7 @@ typedef struct
     {
         none_, static_, localstatic_, auto_, register_, global_, external_, templateparam_,
         parameter_, catchvar_, type_, typedef_, member_, mutable_, cast_, defunc_, label_, ulabel_,
-        overloads_, constant_, enumconstant_, absolute_,
+        overloads_, constant_, enumconstant_, absolute_, alias_,
         friendlist_, const_, tconst_, classmember_, constexpr_,
         memberreg_, namespace_, namespace_alias_, temp_, virtual_
     };

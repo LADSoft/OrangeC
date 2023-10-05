@@ -89,4 +89,6 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn);
 void CollapseReferences(TYPE* tp_in);
 EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);
 void CheckIsLiteralClass(TYPE* tp);
+LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
+                              std::list<BLOCKDATA*>& block);
 }  // namespace Parser

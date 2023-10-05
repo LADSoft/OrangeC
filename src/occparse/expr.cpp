@@ -706,6 +706,10 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             *exp = getMemberNode(sym, strSym, tp, funcsp);
                         }
                         break;
+                    case StorageClass::alias_:
+                        *exp = sym->sb->init->front()->exp;
+                        *exp = exprNode(ExpressionNode::add_, *exp, intNode(ExpressionNode::c_i_, sym->sb->init->front()->offset));
+                        break;
                     case StorageClass::type_:
                     case StorageClass::typedef_:
                         lex = prevsym(placeholder);

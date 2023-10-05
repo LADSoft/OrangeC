@@ -5811,12 +5811,24 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);
+            bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::openbr_);
+            if (bindingcandidate)
+            {
+                lex = getsym();
+                bindingcandidate = ISID(lex);
+                lex = backupsym();
+            }
             if (blocked)
             {
                 if (tp != nullptr)
                     error(ERR_TOO_MANY_TYPE_SPECIFIERS);
 
                 needsemi = false;
+            }
+            else if (bindingcandidate && tp->type == BasicType::auto_ && 
+                (storage_class_in == StorageClass::auto_ || storage_class_in == StorageClass::localstatic_ || storage_class_in == StorageClass::static_ || storage_class_in == StorageClass::global_))
+            {
+                lex = GetStructuredBinding(lex, funcsp, storage_class, linkage, block);
             }
             else
             {

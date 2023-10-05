@@ -610,7 +610,12 @@ ERRLIST(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE, 534, "Variadic binary foldin
 ERRLIST(ERR_BINARY_FOLDING_TOO_MANY_VARIADIC_TEMPLATES, 535,
         "Variadic binary folding cannot have variadic template in both expressions", CE_ERROR)
 ERRLIST(ERR_BINARY_FOLDING_OPERATOR_MISMATCH, 536, "Variadic binary folding has mismatched operators", CE_ERROR)
-
+ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, 537, "Structured binding must be to non-union structured or array type not '%s'", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, 538, "Structured binding can't be decomposed; both '%s' and '%s' have non-static members", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539,
+        "Structured binding element count must equal array size", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes")
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

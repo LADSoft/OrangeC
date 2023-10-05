@@ -8,7 +8,6 @@
 #include "Utils.h"
 #include <string>
 #include <stdio.h>
-#include "ppkw.h"
 #include <iostream>
 struct embeder_info
 {
@@ -23,7 +22,7 @@ template <typename T, bool(isSymbolChar)(const char*, bool), void(embed_elements
 class embeder
 {
   public:
-    embeder(ppInclude& includer) : includer(includer) {}
+    embeder(ppInclude<T, isSymbolChar>& includer) : includer(includer) {}
 
     std::tuple<std::vector<embeder_size>, bool> EmbedFile(std::string& input, embeder_info info)
     {
@@ -140,6 +139,6 @@ class embeder
 
 
   private:
-    ppInclude& includer;
+    ppInclude<T, isSymbolChar>& includer;
     std::string nextLine;
 };

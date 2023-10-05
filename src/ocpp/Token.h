@@ -336,15 +336,15 @@ const Token* Tokenizer<T, isSymbolChar>::Next()
     line.erase(0, n);
     if (line.empty())
         currentToken = std::make_unique<EndToken>();
-    else if (NumericToken::Start(line))
+    else if (NumericToken<isSymbolChar>::Start(line))
         currentToken = std::make_unique<NumericToken<isSymbolChar>>(line);
     else if (CharacterToken::Start(line))
         currentToken = std::make_unique<CharacterToken>(line);
     else if (StringToken::Start(line))
         currentToken = std::make_unique<StringToken>(line);
-    else if (IdentifierToken::Start(line))
+    else if (IdentifierToken<T, isSymbolChar>::Start(line))
         currentToken = std::make_unique<IdentifierToken<T, isSymbolChar>>(line, keywordTable, caseInsensitive);
-    else if (keywordTable && KeywordToken::Start(line))
+    else if (keywordTable && KeywordToken<T>::Start(line))
         currentToken = std::make_unique<KeywordToken<T>>(line, keywordTable);
     else
         currentToken = std::make_unique<ErrorToken>(line);

@@ -27,16 +27,20 @@
 
 #include <string>
 #include <memory>
+#include "ppkw.h"
 #include "Token.h"
 #include "ppCommon.h"
-
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-class ppDefine;
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-class ppInclude;
+#include "ForwardDecls.h"
 
 typedef long long PPINT;
 typedef unsigned long long PPUINT;
+static KeywordHash ppExprhash = {
+    {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
+    {"~", kw::bcompl},      {"*", kw::star},    {"/", kw::divide}, {"%", kw::mod},   {"<<", kw::leftshift},
+    {">>", kw::rightshift}, {">", kw::gt},      {"<", kw::lt},     {">=", kw::geq},  {"<=", kw::leq},
+    {"==", kw::eq},         {"!=", kw::ne},     {"|", kw::bor},    {"&", kw::band},  {"^", kw::bxor},
+    {"||", kw::lor},        {"&&", kw::land},   {"?", kw::hook},   {":", kw::colon}, {",", kw::comma},
+};
 template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppExpr
 {
@@ -49,13 +53,13 @@ class ppExpr
     }
     ~ppExpr() {}
 
-    void SetParams(ppDefine* Define) { define = Define; }
+    void SetParams(ppDefine<T, isSymbolChar>* Define) { define = Define; }
     PPINT Eval(std::string& line, bool fromConditional = false);
     std::string GetString() { return tokenizer->GetString(); }
-    void SetDefine(ppDefine* Define) { define = Define; }
-    static KeywordHash* GetHash() { return &hash; }
+    void SetDefine(ppDefine<T, isSymbolChar>* Define) { define = Define; }
+    static KeywordHash* GetHash() { return &ppExprhash; }
 
-    static void SetInclude(ppInclude* inc) { include = inc; }
+    static void SetInclude(ppInclude<T, isSymbolChar>* inc) { include = inc; }
     static void SetExpressionHandler(CompilerExpression* handler) { expressionHandler = handler; }
 
   protected:
@@ -78,18 +82,11 @@ class ppExpr
     bool floatWarned;
     bool unsignedchar;
     Dialect dialect;
-    ppDefine* define;
-    std::unique_ptr<Tokenizer<kw>> tokenizer;
+    ppDefine<T, isSymbolChar>* define;
+    std::unique_ptr<Tokenizer<T>> tokenizer;
     const Token* token;
-    constexpr KeywordHash hash = {
-        {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
-        {"~", kw::bcompl},      {"*", kw::star},    {"/", kw::divide}, {"%", kw::mod},   {"<<", kw::leftshift},
-        {">>", kw::rightshift}, {">", kw::gt},      {"<", kw::lt},     {">=", kw::geq},  {"<=", kw::leq},
-        {"==", kw::eq},         {"!=", kw::ne},     {"|", kw::bor},    {"&", kw::band},  {"^", kw::bxor},
-        {"||", kw::lor},        {"&&", kw::land},   {"?", kw::hook},   {":", kw::colon}, {",", kw::comma},
-    };
-    ;
-    static ppInclude* include;
+
+    static ppInclude<T, isSymbolChar>* include;
     static CompilerExpression* expressionHandler;
     const std::unordered_map<std::string, unsigned> cattributes = {
         {"deprecated", 202311}, {"fallthrough", 202311}, {"nodiscard", 202311}, {"noreturn", 202311}, {"maybe_unused", 202311}};
@@ -104,7 +101,7 @@ PPINT ppExpr<T, isSymbolChar>::Eval(std::string& line, bool fromConditional)
     if (fromConditional && expressionHandler)
         return expressionHandler(line);
     floatWarned = false;
-    tokenizer = std::make_unique<Tokenizer>(line, &hash);
+    tokenizer = std::make_unique<Tokenizer<T, isSymbolChar>>(line, &ppExprhash);
     token = tokenizer->Next();
     if (!token)
         return 0;

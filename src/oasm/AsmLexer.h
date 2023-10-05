@@ -26,8 +26,7 @@
 #define Lexer_h
 
 #include "Token.h"
-
-class PreProcessor;
+#include "ForwardDecls.h"
 class AsmFile;
 
 enum class kw

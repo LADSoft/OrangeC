@@ -36,8 +36,6 @@
 #include <climits>
 
 bool CharacterToken::unsignedchar;
-bool NumericToken::ansi;
-bool NumericToken::c99;
 
 typedef unsigned long long L_UINT;
 

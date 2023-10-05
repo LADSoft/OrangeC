@@ -46,11 +46,12 @@ struct MacroData
     std::vector<std::string> defaults;
     std::vector<std::string> args;
 };
-template <typename T, bool(isSymbolChar)(const char*, bool)>
+template <typename T, bool(isSymbolChar)(const char*, bool), void(embed_elements)(std::vector<embeder_size>) = nullptr>
+
 class ppMacro
 {
   public:
-    ppMacro(ppInclude& Include, ppDefine& Define, Dialect dialect) :
+    ppMacro(ppInclude<T, isSymbolChar>& Include, ppDefine<T, isSymbolChar>& Define, Dialect dialect) :
         include(Include), expr(false, dialect), define(Define), nextMacro(1), pp(nullptr)
     {
         expr.SetParams(&define);
@@ -183,7 +184,7 @@ class ppMacro
             return nullptr;
     }
     bool InMacro() { return !stack.empty(); }
-    void SetPreProcessor(PreProcessor* PP) { pp = PP; }
+    void SetPreProcessor(PreProcessor<T, isSymbolChar, embed_elements>* PP) { pp = PP; }
 
   protected:
     void GetArgs(int max, std::string& line, std::vector<std::string>& vals)
@@ -322,7 +323,7 @@ class ppMacro
         std::string name;
         int start, end;
         bool plussign;
-        Tokenizer tk(line, ppExpr::GetHash());
+        Tokenizer<T, isSymbolChar> tk(line, ppExpr<T, isSymbolChar>::GetHash());
         const Token* next = tk.Next();
         MacroData* p = nullptr;
         bool bailed = false;
@@ -505,10 +506,10 @@ class ppMacro
     }
 
   private:
-    ppInclude& include;
-    ppDefine& define;
-    ppExpr expr;
-    PreProcessor* pp;
+    ppInclude<T, isSymbolChar>& include;
+    ppDefine<T, isSymbolChar>& define;
+    ppExpr<T, isSymbolChar> expr;
+    PreProcessor<T, isSymbolChar, embed_elements>* pp;
 
     std::vector<std::unique_ptr<MacroData>> stack;
     std::unordered_map<std::string, MacroData*> macros;

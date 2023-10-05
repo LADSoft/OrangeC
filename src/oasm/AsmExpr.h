@@ -30,9 +30,9 @@
 #include "AdlStructures.h"
 
 #include "Token.h"
-class ppDefine;
+#include "ForwardDecls.h"
 class Section;
-
+extern bool IsSymbolCharRoutine(const char*, bool);
 typedef long long PPINT;
 
 class AsmExprNode : public AdlExprNode
@@ -116,7 +116,7 @@ class AsmExpr
 {
   public:
     AsmExpr() : define(nullptr), token(nullptr) {}
-    AsmExpr(ppDefine* Define) : define(Define), token(nullptr) {}
+    AsmExpr(ppDefine<kw, IsSymbolCharRoutine>* Define) : define(Define), token(nullptr) {}
     ~AsmExpr() {}
     std::shared_ptr<AsmExprNode> Build(std::string& line);
     static void ReInit();
@@ -156,8 +156,8 @@ class AsmExpr
     std::shared_ptr<AsmExprNode> logicalor();
 
   private:
-    ppDefine* define;
-    std::unique_ptr<Tokenizer> tokenizer;
+    ppDefine<kw, IsSymbolCharRoutine>* define;
+    std::unique_ptr<Tokenizer<kw, IsSymbolCharRoutine>> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static std::string currentLabel;

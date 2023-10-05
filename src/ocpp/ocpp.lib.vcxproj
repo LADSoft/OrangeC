@@ -158,6 +158,7 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="Token.cpp" />
+    <ClCompile Include="TokenSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Errors.h" />

@@ -27,16 +27,13 @@
 
 #include <list>
 #include <string>
+#include <memory>
 #include "ppExpr.h"
 #include "ppFile.h"
 #include "PipeArbitrator.h"
 #include "ppCommon.h"
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-class ppFile;
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-class ppDefine;
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-class ppCtx;
+#include "ForwardDecls.h"
+
 
 template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppInclude
@@ -60,13 +57,13 @@ class ppInclude
         noErr(NoErr),
         systemNesting(0)
     {
-        ppExpr::SetInclude(this);
+        ppExpr<T, isSymbolChar>::SetInclude(this);
         srchPath = SrchPth;
         sysSrchPath = SysSrchPth;
     }
 
     ~ppInclude() = default;
-    void SetParams(const std::string& Name, ppDefine* Define, ppCtx* Ctx)
+    void SetParams(const std::string& Name, ppDefine<T, isSymbolChar>* Define, ppCtx<T, isSymbolChar>* Ctx)
     {
         define = Define;
         ctx = Ctx;
@@ -449,7 +446,7 @@ class ppInclude
             }
             // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to
             // the cached object.
-            current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, dialect,
+            current = std::make_unique<ppFile<T, isSymbolChar>>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, dialect,
                                                asmpp, piper, dirs_traversed);
             // if (current)
             if (!current->Open())
@@ -584,15 +581,15 @@ class ppInclude
     std::set<std::string> sysIncludes;
     std::unique_ptr<ppFile<T, isSymbolChar>> current;
     std::unordered_map<std::string, int> fileMap;
-    ppDefine* define;
+    ppDefine<T, isSymbolChar>* define;
     bool unsignedchar;
     Dialect dialect;
     bool trigraphs;
     bool extendedComment;
     bool fullname;
-    ppExpr expr;
+    ppExpr<T, isSymbolChar> expr;
     static std::string srchPath, sysSrchPath;
-    ppCtx* ctx;
+    ppCtx<T, isSymbolChar>* ctx;
     std::string inProc;
     bool asmpp;
     bool forcedEOF;

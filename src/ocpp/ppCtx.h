@@ -27,8 +27,8 @@
 
 #include <deque>
 #include <string>
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-class ppDefine;
+#include "ForwardDecls.h"
+
 
 class CtxData
 {
@@ -40,7 +40,7 @@ template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppCtx
 {
   public:
-    ppCtx(ppDefine& Define) : nextId(1), define(Define) {}
+    ppCtx(ppDefine<T, isSymbolChar>& Define) : nextId(1), define(Define) {}
     ~ppCtx() {}
     int GetTopId()
     {
@@ -71,7 +71,7 @@ class ppCtx
   protected:
     std::string GetId(std::string& line)
     {
-        Tokenizer tk(line, nullptr);
+        Tokenizer<T, isSymbolChar> tk(line, nullptr);
         const Token* t = tk.Next();
         if (t->IsIdentifier())
         {
@@ -121,7 +121,7 @@ class ppCtx
 
   private:
     std::deque<std::unique_ptr<CtxData>> stack;
-    ppDefine& define;
+    ppDefine<T, isSymbolChar>& define;
     int nextId;
 };
 

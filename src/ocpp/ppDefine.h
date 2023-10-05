@@ -41,6 +41,12 @@
 #include "ppCommon.h"
 #include "ForwardDecls.h"
 typedef std::vector<std::string> DefinitionArgList;
+static KeywordHash defTokens = {
+    {"(", kw::openpa},
+    {")", kw::closepa},
+    {",", kw::comma},
+    {"...", kw::ellipses},
+};
 template <typename T, bool(isSymbolChar)(const char*, bool)>
 class ppDefine
 {
@@ -85,7 +91,7 @@ class ppDefine
             }
             return *this;
         }
-        Definition(const Definition&) : Symbol(old.GetName())
+        Definition(const Definition& old) : Symbol(old.GetName())
         {
             caseInsensitive = old.caseInsensitive;
             undefined = old.undefined;
@@ -137,7 +143,7 @@ class ppDefine
     };
 
   public:
-    ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect, bool Asmpp) :
+    ppDefine(bool UseExtensions, ppInclude<T, isSymbolChar>* Include, Dialect dialect_, bool Asmpp) :
         expr(false, dialect_),
         include(Include),
         dialect(dialect_),
@@ -155,7 +161,7 @@ class ppDefine
     }
     ~ppDefine() {}
 
-    void SetParams(ppCtx* Ctx, ppMacro* Macro)
+    void SetParams(ppCtx<T, isSymbolChar>* Ctx, ppMacro<T, isSymbolChar>* Macro)
     {
         ctx = Ctx;
         macro = Macro;
@@ -493,7 +499,7 @@ class ppDefine
                 }
             }
         }
-        Tokenizer<T, isSymbolChar> tk(line, &defTokens);
+        Tokenizer<kw, isSymbolChar> tk(line, &defTokens);
         const Token* next = tk.Next();
         bool failed = false;
         bool hasEllipses = false;
@@ -687,22 +693,17 @@ class ppDefine
 
   private:
     SymbolTable symtab;
-    ppInclude* include;
+    ppInclude<T, isSymbolChar>* include;
     std::string date;
     std::string dateiso;
     std::string time;
     std::unordered_map<std::string, std::stack<Definition*>> macroStacks;
     std::deque<TokenPos> tokenPositions;
-    constexpr KeywordHash defTokens = {
-        {"(", kw::openpa},
-        {")", kw::closepa},
-        {",", kw::comma},
-        {"...", kw::ellipses},
-    };
+    
     Dialect dialect;
-    ppExpr expr;
-    ppCtx* ctx;
-    ppMacro* macro;
+    ppExpr<T, isSymbolChar> expr;
+    ppCtx<T, isSymbolChar>* ctx;
+    ppMacro<T, isSymbolChar>* macro;
     bool asmpp;
     int counter_val;
     time_t source_date_epoch;
@@ -871,7 +872,7 @@ bool ppDefine<T, isSymbolChar>::ppNumber(const std::string& macro, int start, in
         isdigit(macro[pos]))  // we would get here with the first alpha char following the number
     {
         // backtrack through all characters that could possibly be part of the number
-        while (pos >= start && (Tokenizer::IsSymbolChar(macro.c_str() + pos, false) || macro[pos] == '.' ||
+        while (pos >= start && (isSymbolChar(macro.c_str() + pos, false) || macro[pos] == '.' ||
                                 ((macro[pos] == '-' || macro[pos] == '+') && (macro[pos - 1] == 'e' || macro[pos - 1] == 'E' ||
                                                                               macro[pos - 1] == 'p' || macro[pos - 1] == 'P'))))
         {
@@ -910,7 +911,7 @@ bool ppDefine<T, isSymbolChar>::ReplaceArgs(std::string& macro, const Definition
             if (macro[p] == waiting && NotSlashed(macro, p))
                 waiting = 0;
         }
-        else if (Tokenizer::IsSymbolChar(macro.c_str() + p, false))
+        else if (isSymbolChar(macro.c_str() + p, false))
         {
             bool doit = true;
             int q = p;
@@ -1003,7 +1004,7 @@ void ppDefine<T, isSymbolChar>::SetupAlreadyReplaced(std::string& macro)
     {
         if ((macro[p] == '"' || macro[p] == '\'') && NotSlashed(macro, p))
             instr = !instr;
-        if (Tokenizer::IsSymbolChar(macro.c_str() + p, true) && !instr)
+        if (isSymbolChar(macro.c_str() + p, true) && !instr)
         {
             int q = p;
             std::string name;
@@ -1049,8 +1050,8 @@ int ppDefine<T, isSymbolChar>::ReplaceSegment(std::string& line, int begin, int 
             p++;
             origPos++;
         }
-        else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
-                 (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
+        else if (isSymbolChar(line.c_str() + p, true) &&
+                 (p == begin || line[p - 1] == '$' || !isSymbolChar(line.c_str() + p - 1, false)))
         {
             TokenPos tokenPos;
             tokenPos.origStart = origPos;
@@ -1331,7 +1332,7 @@ void ppDefine<T, isSymbolChar>::ParseAsmSubstitutions(std::string& line)
                 }
                 else if (n == 0)
                 {
-                    if ((n < line.size() - 2) && line[n + 1] == '$' && Tokenizer::IsSymbolChar(line.c_str() + n + 2, true))
+                    if ((n < line.size() - 2) && line[n + 1] == '$' && isSymbolChar(line.c_str() + n + 2, true))
                     {
                         int n1 = ctx->GetTopId();
                         if (n1 != -1)
@@ -1484,7 +1485,5 @@ void ppDefine<T, isSymbolChar>::replaceDefined(std::string& line)
         n = line.find("defined", n);
     }
 }
-template <typename T, bool(isSymbolChar)(const char*, bool)>
-int ppDefine<T, isSymbolChar>::
 
 #endif

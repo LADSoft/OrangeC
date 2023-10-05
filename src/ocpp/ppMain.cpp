@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 #ifndef _CRT_SECURE_NO_WARNINGS
 #    define _CRT_SECURE_NO_WARNINGS
@@ -30,6 +30,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 #include "Errors.h"
+#include "TokenizerSettings.h"
 #include <cstdlib>
 #include <algorithm>
 
@@ -40,7 +41,7 @@ extern "C"
 }
 #endif
 
-//#define TESTANNOTATE
+// #define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::NoLogo(SwitchParser, '!', false, {"nologo"});
 CmdSwitchBool ppMain::ShowVersion(SwitchParser, 'v', false, {"version"});
@@ -156,17 +157,28 @@ int ppMain::Run(int argc, char* argv[])
 #else
     strcpy(buffer, argv[0]);
 #endif
-    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText,
-                                                [this]() {
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() {
         return !MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() &&
                !MakeStubsContinueUser.GetValue();
-        }
-    );
+    });
     if (files.size() < 2)
         ToolChain::Usage(usageText);
-
-    Tokenizer::SetAnsi(disableExtensions.GetValue());
-    Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue() || c2xMode.GetValue());
+    TokenizerSettings::Instance()->SetExtensionsDisabled(disableExtensions.GetValue());
+    auto ModesToDialect = [](bool c99, bool c11, bool c2x) {
+        if (c2x)
+        {
+            return Dialect::c2x;
+        }
+        if (c11)
+        {
+            return Dialect::c11;
+        }
+        if (c99)
+        {
+            return Dialect::c99;
+        }
+    };
+    TokenizerSettings::Instance()->SetDialect(ModesToDialect(c99Mode.GetValue(), c11Mode.GetValue(), c2xMode.GetValue()));
     for (int i = 1; i < files.size(); i++)
     {
         bool cplusplus = false;
@@ -188,10 +200,10 @@ int ppMain::Run(int argc, char* argv[])
             dialect = Dialect::c99;
         else
             dialect = Dialect::c89;
-        PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
-                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect,
-                        !disableExtensions.GetValue(),
-                        (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
+        PreProcessor<kw> pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(),
+                            false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect,
+                            !disableExtensions.GetValue(),
+                            (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
         if (c2xMode.GetValue())
         {
             std::string ver = "202311L";
@@ -300,10 +312,11 @@ int ppMain::Run(int argc, char* argv[])
 #ifdef TESTANNOTATE
             TestCharInfo(outstream, pp, working);
 #endif
-            working.erase(std::remove(working.begin(), working.end(), ppDefine::MACRO_PLACEHOLDER), working.end());
+            working.erase(std::remove(working.begin(), working.end(), ppDefine<kw, IsSymbolCharOrDefault>::MACRO_PLACEHOLDER),
+                          working.end());
             if (assembly.GetValue())
             {
-                int npos = working.find_first_not_of(" \t\r\n\v");
+                size_t npos = working.find_first_not_of(" \t\r\n\v");
                 if (npos != std::string::npos)
                 {
                     if (working[npos] == '%')
@@ -329,7 +342,7 @@ int ppMain::Run(int argc, char* argv[])
                             std::string name;
                             PPINT value = 0;
                             npos = working.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                            if (npos == std::string::npos || !Tokenizer::IsSymbolChar(working.c_str() + npos, true))
+                            if (npos == std::string::npos || !IsSymbolCharOrDefault(working.c_str() + npos, true))
                             {
                                 Errors::Error("Expected identifier");
                             }
@@ -337,7 +350,7 @@ int ppMain::Run(int argc, char* argv[])
                             {
                                 int npos1 = npos;
 
-                                while (npos1 != working.size() && Tokenizer::IsSymbolChar(working.c_str() + npos1, false))
+                                while (npos1 != working.size() && IsSymbolCharOrDefault(working.c_str() + npos1, false))
                                     npos1++;
                                 name = working.substr(npos, npos1 - npos);
                                 if (!isspace(working[npos1]))
@@ -353,7 +366,7 @@ int ppMain::Run(int argc, char* argv[])
                                     }
                                     else
                                     {
-                                        ppExpr e(false, dialect);
+                                        ppExpr<kw, IsSymbolCharOrDefault> e(false, dialect);
                                         std::string temp = working.substr(npos);
                                         value = e.Eval(temp);
                                         if (value < INT_MIN || value >= UINT_MAX)
@@ -404,8 +417,9 @@ int ppMain::Run(int argc, char* argv[])
                     outFile = outFile.substr(0, end);
                 outFile += ".d";
             }
-            ::MakeStubs stubber(pp, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(), MakeStubsPhonyTargets.GetValue(),
-                                inFile, outFile, MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
+            ::MakeStubs<kw, IsSymbolCharOrDefault, nullptr> stubber(pp, MakeStubsUser.GetValue() || MakeStubsContinueUser.GetValue(),
+                                                           MakeStubsPhonyTargets.GetValue(), inFile, outFile,
+                                                           MakeStubsTargets.GetValue(), MakeStubsQuotedTargets.GetValue());
             stubber.Run(MakeStubs.GetValue() || MakeStubsUser.GetValue() ? outstream : nullptr);
         }
         if (outstream != &std::cout)

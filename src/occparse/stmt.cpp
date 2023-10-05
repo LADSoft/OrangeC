@@ -242,17 +242,19 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
     {
         if (declaration)
             *declaration = true;
-        if ((Optimizer::cparams.prm_cplusplus && kw != Keyword::do_ && kw != Keyword::else_) ||
+        if ((Optimizer::cparams.prm_cplusplus && declaration) ||
             (Optimizer::cparams.c_dialect >= Dialect::c99 && (kw == Keyword::for_ || kw == Keyword::rangefor_)))
         {
             // empty
+            if (declaration)
+                *declaration = true;
         }
         else
         {
             error(ERR_NO_DECLARATION_HERE);
         }
         /* fixme need type */
-        lex = autodeclare(lex, funcsp, &tp, exp, parent, (kw != Keyword::for_) | (kw == Keyword::rangefor_ ? _F_NOCHECKAUTO : 0));
+        lex = autodeclare(lex, funcsp, &tp, exp, parent, (kw != Keyword::for_ && kw != Keyword::if_ && kw != Keyword::switch_) | (kw == Keyword::rangefor_ ? _F_NOCHECKAUTO : 0));
         if (tp->type == BasicType::memberptr_)
         {
             *exp = exprNode(ExpressionNode::mp_as_bool_, *exp, nullptr);
@@ -281,7 +283,8 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         }
     }
 
-    if (Optimizer::cparams.prm_cplusplus && tp && isstructured(tp) && kw != Keyword::for_ && kw != Keyword::rangefor_)
+    if (Optimizer::cparams.prm_cplusplus && tp && isstructured(tp) && kw != Keyword::for_ && kw != Keyword::rangefor_ &&
+        ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration))
     {
         if (!castToArithmeticInternal(false, &tp, exp, (Keyword) - 1, &stdbool, false))
             if (!castToArithmeticInternal(false, &tp, exp, (Keyword) - 1, &stdint, false))
@@ -1664,7 +1667,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
 static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
 {
     STATEMENT *st, *lastLabelStmt;
-    EXPRESSION* select = nullptr;
+    EXPRESSION* select = nullptr, *init = nullptr;
     int addedBlock = 0;
     bool needlabelif;
     bool needlabelelse = false;
@@ -1685,7 +1688,22 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
-        lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
+        bool declaration = false;
+        lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, &declaration);
+        if (declaration)
+        {
+            if (!needkw(&lex, Keyword::semicolon_))
+            {
+                error(ERR_FOR_NEEDS_SEMI);
+                errskim(&lex, skim_closepa);
+                skip(&lex, Keyword::closepa_);
+            }
+            else
+            {
+                init = select;
+                lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
+            }
+        }
         if (MATCHKW(lex, Keyword::closepa_))
         {
             if (isconstexpr && !IsConstantExpression(select, false, true))
@@ -1694,6 +1712,11 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             std::list<STATEMENT*>::iterator sti;
             currentLineData(parent, lex, 0);
             lex = getsym();
+            if (init)
+            {
+                st = stmtNode(lex, parent, StatementNode::expr_);
+                st->select = init;
+            }
             st = stmtNode(lex, parent, StatementNode::notselect_);
             st->label = ifbranch;
             st->select = select;
@@ -2618,7 +2641,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     auto before = parent.front();
     BLOCKDATA* switchstmt = Allocate<BLOCKDATA>();
     STATEMENT* st;
-    EXPRESSION* select = nullptr;
+    EXPRESSION* select = nullptr, *init = nullptr;
     int addedBlock = 0;
     funcsp->sb->noinline = true;
     switchstmt->breaklabel = codeLabel++;
@@ -2636,11 +2659,31 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
-        lex = selection_expression(lex, parent, &select, funcsp, Keyword::switch_, nullptr);
+        bool declaration = false;
+        lex = selection_expression(lex, parent, &select, funcsp, Keyword::switch_, &declaration);
+        if (declaration)
+        {
+            if (!needkw(&lex, Keyword::semicolon_))
+            {
+                error(ERR_FOR_NEEDS_SEMI);
+                errskim(&lex, skim_closepa);
+                skip(&lex, Keyword::closepa_);
+            }
+            else
+            {
+                init = select;
+                lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
+            }
+        }
         if (MATCHKW(lex, Keyword::closepa_))
         {
             currentLineData(parent, lex, 0);
             lex = getsym();
+            if (init)
+            {
+                st = stmtNode(lex, parent, StatementNode::expr_);
+                st->select = init;
+            }
             st = stmtNode(lex, parent, StatementNode::switch_);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
@@ -2710,7 +2753,8 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
-        lex = selection_expression(lex, parent, &select, funcsp, Keyword::while_, nullptr);
+        bool declaration = false;
+        lex = selection_expression(lex, parent, &select, funcsp, Keyword::while_, &declaration);
         if (!MATCHKW(lex, Keyword::closepa_))
         {
             error(ERR_WHILE_NEEDS_CLOSEPA);

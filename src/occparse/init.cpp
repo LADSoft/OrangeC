@@ -3146,6 +3146,10 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                             }
                             return exp1;
                         });
+                    if (assn && exp1->type == ExpressionNode::thisref_ && exp1->left->v.func->sp->sb->isExplicit)
+                    {
+                        error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
+                    }
                     if (isautotype(tp1))
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), true))
@@ -3231,11 +3235,20 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                                                   }
                                                   return exp1;
                                               });
-                        funcparams->arguments = initListListFactory.CreateList();
-                        auto arg = Allocate<INITLIST>();
-                        funcparams->arguments->push_back(arg);
-                        arg->tp = tp1;
-                        arg->exp = exp1;
+                        if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0)) 
+                        {
+                            // elide copy constructor...
+                            exp = exp1;
+                            constructed = true;
+                        }
+                        else
+                        {
+                            funcparams->arguments = initListListFactory.CreateList();
+                            auto arg = Allocate<INITLIST>();
+                            funcparams->arguments->push_back(arg);
+                            arg->tp = tp1;
+                            arg->exp = exp1;
+                        }
                     }
                 }
             }
@@ -3269,6 +3282,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             {
                 // default constructor without param list
             }
+            
             if (!constructed)
             {
                 bool toContinue = true;
@@ -3677,7 +3691,47 @@ static LEXLIST* initialize_bit(LEXLIST* lex, SYMBOL* funcsp, int offset, Storage
     errskim(&lex, skim_comma);
     return lex;
 }
-static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, TYPE* itype, std::list<INITIALIZER*>** init,
+static void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName)
+{
+    std::stack<EXPRESSION**> stk;
+    stk.push(exp);
+    while (!stk.empty())
+    {
+        exp = stk.top();
+        stk.pop();
+        if ((*exp)->left)
+            stk.push(&(*exp)->left);
+        if ((*exp)->right)
+            stk.push(&(*exp)->right);
+        switch ((*exp)->type)
+        {
+            case ExpressionNode::auto_:
+            case ExpressionNode::global_: {
+                if (name == (*exp)->v.sp)
+                {
+                    (*exp)->v.sp = newName;
+                }
+            }
+                break;
+            case ExpressionNode::thisref_:
+            {
+                stk.push(&(*exp)->left->v.func->thisptr);
+            }
+            break;
+        }
+    }
+}
+static void ReplaceLambdaInit(TYPE** tp, EXPRESSION** exp, SYMBOL* newName)
+{  
+    // get the temporary address
+    auto name = *exp;
+    while (name->type == ExpressionNode::void_)
+        name = name->right;
+    name->v.sp->sb->allocate = false;
+    ReplaceVarRef(exp, name->v.sp, newName);
+}
+static LEXLIST* initialize_auto(LEXLIST * lex, SYMBOL * funcsp, int offset, StorageClass sc, TYPE* itype,
+                                std::list<INITIALIZER*>** init,
                                 std::list<INITIALIZER*>** dest, SYMBOL* sym)
 {
     TYPE* tp;
@@ -3699,6 +3753,11 @@ static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, Storag
         TYPE* tp = nullptr;
         EXPRESSION* exp;
         lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        if (isstructured(tp) && basetype(tp)->sp->sb->islambda)
+        {
+            // this is part of copy elision for lambda declarations
+            ReplaceLambdaInit(&tp, &exp, sym);
+        }
         if (!tp)
             error(ERR_EXPRESSION_SYNTAX);
         else

@@ -1554,6 +1554,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                         else if ((Optimizer::cparams.prm_cplusplus) && !basetype(initItem->basetp)->sp->sb->trivialCons)
                         {
+                            // LAMBDA CAPTURE COPY HERE
+                            // either this copy or the copy in lambda.cpp should be elided
+                            // however, both intermediates seem used elsewhere and I don't feel like
+                            // unraveling the problem right now
                             TYPE* ctype = initItem->basetp;
                             callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
                             exp = expsym;

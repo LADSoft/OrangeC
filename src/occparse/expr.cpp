@@ -3387,24 +3387,28 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
                         auto exp = consexp;
                         callConstructorParam(&ctype, &exp, sym->tp, paramexp, true, true, implicit, false, true);
-                        if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
+                        // copy elision
+                        if (p->exp->type != ExpressionNode::thisref_ || comparetypes(sym->tp, p->exp->left->v.func->thistp, 0))
                         {
-                            if (temp->v.func->returnEXP)
+                            if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
                             {
-                                temp->v.func->returnEXP = consexp;
+                                if (temp->v.func->returnEXP)
+                                {
+                                    temp->v.func->returnEXP = consexp;
+                                }
+                                else
+                                {
+                                    if (p->exp->type == ExpressionNode::thisref_ && p->exp->left->v.func->thisptr)
+                                        p->exp->left->v.func->thisptr = consexp;
+                                    p->exp = paramexp;
+                                }
                             }
                             else
                             {
-                                if (p->exp->type == ExpressionNode::thisref_ && p->exp->left->v.func->thisptr)
-                                    p->exp->left->v.func->thisptr = consexp;
-                                p->exp = paramexp;
+                                p->exp = exp;
                             }
+                            p->exp = exprNode(ExpressionNode::void_, p->exp, consexp);
                         }
-                        else
-                        {
-                            p->exp = exp;
-                        }
-                        p->exp = exprNode(ExpressionNode::void_, p->exp, consexp);
                     }
                     else if (basetype(sym->tp)->sp->sb->trivialCons)
                     {
@@ -8312,6 +8316,10 @@ LEXLIST* expression_throw(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
                 {
                     if (cons->sb->defaulted)
                         createConstructor(basetype(tp1)->sp, cons);
+                }
+                if (cons && cons->sb->isExplicit)
+                {
+                    error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
                 }
             }
             sym = (SYMBOL*)basetype(sym->tp)->syms->front();

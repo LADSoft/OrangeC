@@ -7292,8 +7292,16 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                         STATEMENT* st;
                                         currentLineData(block, hold, 0);
                                         st = stmtNode(hold, block, StatementNode::expr_);
-                                        st->select =
-                                            convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);\
+                                        if (!isstructured(sp->tp) || !basetype(sp->tp)->sp->sb->islambda)
+                                        {
+                                            st->select =
+                                                convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                        }
+                                        else
+                                        {
+                                            // this is part of copy elision for lambda declarations
+                                            st->select = sp->sb->init->front()->exp;
+                                        }
                                         int offset = 0;
                                         if (sp->sb->runtimeSym)
                                         {

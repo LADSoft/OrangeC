@@ -2250,7 +2250,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                             ctype = tp = tp1;
                             basetype(funcsp->tp)->btp = tp1;
                         }
-                        else if (!comparetypes(tp, tp1, true))
+                        else if (comparetypes(tp, tp1, true))
                         {
                             implicit = true;
                         }
@@ -2279,6 +2279,8 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         returnexp = exp1;
                         maybeConversion = false;
                         implicit = true;
+                        if (exptemp->v.func->sp->sb->isExplicit)
+                            error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
                     }
                     else
                     {
@@ -3001,6 +3003,12 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
             else
             {
                 lex = declare(lex, funcsp, &tp, StorageClass::catchvar_, Linkage::none_, parent, false, true, false, AccessLevel::public_);
+            }
+            if (tp && isstructured(tp))
+            {
+                auto cc = getCopyCons(basetype(tp)->sp, false);
+                if (cc && cc->sb->isExplicit)
+                    error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             }
             if (needkw(&lex, Keyword::closepa_))
             {

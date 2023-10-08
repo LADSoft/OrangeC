@@ -284,7 +284,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
     }
 
     if (Optimizer::cparams.prm_cplusplus && tp && isstructured(tp) && kw != Keyword::for_ && kw != Keyword::rangefor_ &&
-        ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration))
+        ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration || !*declaration))
     {
         if (!castToArithmeticInternal(false, &tp, exp, (Keyword) - 1, &stdbool, false))
             if (!castToArithmeticInternal(false, &tp, exp, (Keyword) - 1, &stdint, false))
@@ -295,7 +295,9 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         error(ERR_EXPRESSION_SYNTAX);
     else if (kw == Keyword::switch_ && !isint(tp) && basetype(tp)->type != BasicType::enum_)
         error(ERR_SWITCH_SELECTION_INTEGRAL);
-    else if (kw != Keyword::for_ && kw != Keyword::rangefor_ && isstructured(tp))
+    else if (kw != Keyword::for_ && kw != Keyword::rangefor_ && isstructured(tp) &&
+             ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration || !*declaration))
+
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
     }
@@ -1690,19 +1692,11 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
         }
         bool declaration = false;
         lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, &declaration);
-        if (declaration)
+        if (declaration && MATCHKW(lex, Keyword::semicolon_))
         {
-            if (!needkw(&lex, Keyword::semicolon_))
-            {
-                error(ERR_FOR_NEEDS_SEMI);
-                errskim(&lex, skim_closepa);
-                skip(&lex, Keyword::closepa_);
-            }
-            else
-            {
-                init = select;
-                lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
-            }
+            lex = getsym();
+            init = select;
+            lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
         }
         if (MATCHKW(lex, Keyword::closepa_))
         {
@@ -2278,9 +2272,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         returntype = tp;
                         returnexp = exp1;
                         maybeConversion = false;
-                        implicit = true;
-                        if (exptemp->v.func->sp->sb->isExplicit)
-                            error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
+                        implicit = false;
                     }
                     else
                     {

@@ -3388,7 +3388,9 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         auto exp = consexp;
                         callConstructorParam(&ctype, &exp, sym->tp, paramexp, true, true, implicit, false, true);
                         // copy elision
-                        if (p->exp->type != ExpressionNode::thisref_ || comparetypes(sym->tp, p->exp->left->v.func->thistp, 0))
+                        if (p->exp->type != ExpressionNode::thisref_ || !p->exp->left->v.func->thistp ||
+                            (!comparetypes(sym->tp, p->exp->left->v.func->thistp, 0) &&
+                             !sameTemplate(sym->tp, p->exp->left->v.func->thistp)) || !exp || exp->type != ExpressionNode::thisref_ || !matchesCopy(exp->left->v.func->sp, false))
                         {
                             if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
                             {

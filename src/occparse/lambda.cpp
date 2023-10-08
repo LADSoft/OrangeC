@@ -747,10 +747,6 @@ static EXPRESSION* createLambda(bool noinline)
                     }
                     if (isstructured(ctp))
                     {
-                        // LAMBDA CAPTURE COPY HERE
-                        // either this copy or the copy in help.cpp should be elided
-                        // however, both intermediates seem used elsewhere and I don't feel like
-                        // unraveling the problem right now
                         if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false, true))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;

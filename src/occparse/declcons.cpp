@@ -551,21 +551,24 @@ bool matchesDefaultConstructor(SYMBOL* sp)
 }
 bool matchesCopy(SYMBOL* sp, bool move)
 {
-    auto it = basetype(sp->tp)->syms->begin();
-    ++it;
-    if (it != basetype(sp->tp)->syms->end())
+    if (sp->sb->parentClass)
     {
-        SYMBOL* arg1 = *it;
+        auto it = basetype(sp->tp)->syms->begin();
         ++it;
-        if (it == basetype(sp->tp)->syms->end() || (*it)->sb->init || (*it)->sb->deferredCompile || (*it)->sb->constop)
+        if (it != basetype(sp->tp)->syms->end())
         {
-            if (basetype(arg1->tp)->type == (move ? BasicType::rref_ : BasicType::lref_))
+            SYMBOL* arg1 = *it;
+            ++it;
+            if (it == basetype(sp->tp)->syms->end() || (*it)->sb->init || (*it)->sb->deferredCompile || (*it)->sb->constop)
             {
-                TYPE* tp = basetype(arg1->tp)->btp;
-                if (isstructured(tp))
-                    if (basetype(tp)->sp == sp->sb->parentClass || basetype(tp)->sp == sp->sb->parentClass->sb->mainsym ||
-                        basetype(tp)->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
-                        return true;
+                if (basetype(arg1->tp)->type == (move ? BasicType::rref_ : BasicType::lref_))
+                {
+                    TYPE* tp = basetype(arg1->tp)->btp;
+                    if (isstructured(tp))
+                        if (basetype(tp)->sp == sp->sb->parentClass || basetype(tp)->sp == sp->sb->parentClass->sb->mainsym ||
+                            basetype(tp)->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
+                            return true;
+                }
             }
         }
     }

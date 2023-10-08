@@ -14,7 +14,7 @@
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  * 
- *     You should have received a copy of the GNU General Public License
+
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
@@ -3146,10 +3146,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                             }
                             return exp1;
                         });
-                    if (assn && exp1->type == ExpressionNode::thisref_ && exp1->left->v.func->sp->sb->isExplicit)
-                    {
-                        error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
-                    }
                     if (isautotype(tp1))
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), true))
@@ -3235,7 +3231,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                                                   }
                                                   return exp1;
                                               });
-                        if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0)) 
+                        if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0) && matchesCopy(exp1->left->v.func->sp, false))
                         {
                             // elide copy constructor...
                             exp = exp1;

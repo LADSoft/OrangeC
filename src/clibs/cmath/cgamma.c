@@ -275,7 +275,7 @@ if((creal(x) < -14.0) || (cimag(x) < -14.0))
 	    w = clgam(1.0 - x);
 	    c = LOGPI - clog( u ) - w;
 	    /* Adjust for reduced sine arg.  */
-	    cimag(c) += PI * p;
+	    c += PI * p * I;
 	  }
 	goto ldone;
 	}

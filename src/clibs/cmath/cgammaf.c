@@ -265,7 +265,7 @@ if((crealf(x) < -7.0f) || (cimagf(x) < -7.0f))
 	    w = clgamf(1.0f - x);
 	    c = LOGPI - clogf( u ) - w;
 	    /* Adjust for reduced sine arg.  */
-	    cimagf(c) += PIF * p;
+	    c += PIF * p * I;
 	  }
 	goto ldone;
 	}

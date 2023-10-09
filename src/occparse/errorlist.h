@@ -615,7 +615,7 @@ ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, 538, "Structured binding can'
 ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539,
         "Structured binding element count must equal array size", CE_ERROR)
 ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ", CE_ERROR)
-ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes")
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

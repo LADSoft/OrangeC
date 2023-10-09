@@ -3067,6 +3067,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             bool isconversion;
             bool isList = MATCHKW(lex, Keyword::begin_);
             bool constructed = false;
+            bool tryelide = false;
             exp = baseexp;
             if (assn || arrayMember)
             {
@@ -3231,20 +3232,13 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                                                   }
                                                   return exp1;
                                               });
-                        if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0) && matchesCopy(exp1->left->v.func->sp, false))
-                        {
-                            // elide copy constructor...
-                            exp = exp1;
-                            constructed = true;
-                        }
-                        else
-                        {
-                            funcparams->arguments = initListListFactory.CreateList();
-                            auto arg = Allocate<INITLIST>();
-                            funcparams->arguments->push_back(arg);
-                            arg->tp = tp1;
-                            arg->exp = exp1;
-                        }
+                        funcparams->arguments = initListListFactory.CreateList();
+                        auto arg = Allocate<INITLIST>();
+                        funcparams->arguments->push_back(arg);
+                        arg->tp = tp1;
+                        arg->exp = exp1;
+                        if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0) && !exp1->left->v.func->returnEXP)
+                            tryelide = true;
                     }
                 }
             }
@@ -3290,7 +3284,12 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 if (toContinue)
                     callConstructor(&ctype, &exp, funcparams, false, nullptr, true, maybeConversion, implicit, false,
                                     isList ? _F_INITLIST : 0, false, true);
-                if (funcparams->sp)  // may be an error
+                // copy constructor elision
+                if (tryelide && exp->type == ExpressionNode::thisref_ && exp->left->v.func->thistp && comparetypes(itype, exp->left->v.func->thistp, 0) && exp->left->v.func->sp->sb->isConstructor && matchesCopy(exp->left->v.func->sp, false))
+                {
+                     exp = funcparams->arguments->back()->exp;
+                }
+                else if (funcparams->sp)  // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)

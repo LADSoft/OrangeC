@@ -331,7 +331,7 @@ static void cloneTemplateParams(SYMBOL* func)
     func->templateParams = templateParamPairListFactory.CreateList();
     int index = 0;
     auto second = Allocate<TEMPLATEPARAM>();
-    second->type = Keyword::new_;
+    second->type = TplType::new_;
     func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
     for (auto arg : *basetype(func->tp)->syms)
     {
@@ -343,7 +343,7 @@ static void cloneTemplateParams(SYMBOL* func)
             auto first = Allocate<SYMBOL>();
             *first = *arg;
             first->sb = nullptr;
-            second->type = Keyword::typename_;
+            second->type = TplType::typename_;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
             arg->tp->templateParam = &func->templateParams->back();
             arg->templateParams = templateParamPairListFactory.CreateList();
@@ -355,7 +355,7 @@ static void convertCallToTemplate(SYMBOL* func)
 {
     func->templateParams = templateParamPairListFactory.CreateList();
     auto second = Allocate<TEMPLATEPARAM>();
-    second->type = Keyword::new_;
+    second->type = TplType::new_;
     func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
 
     if (isautotype(lambdas.front()->functp))
@@ -369,7 +369,7 @@ static void convertCallToTemplate(SYMBOL* func)
             auto first = Allocate<SYMBOL>();
             *first = *arg;
             first->sb = nullptr;
-            second->type = Keyword::typename_;
+            second->type = TplType::typename_;
             second->index = index++;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
             arg->tp = MakeType(BasicType::templateparam_);

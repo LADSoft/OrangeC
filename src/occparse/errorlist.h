@@ -616,6 +616,7 @@ ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539,
         "Structured binding element count must equal array size", CE_ERROR)
 ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ", CE_ERROR)
 ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
+ERRLIST(ERR_CANNOT_DEDUCE_TEMPLATE, 542, "Cannot deduce template from '%s'", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

@@ -484,13 +484,13 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     bool bySpecial = false;
-    if (params &&  params->size() && params->front().second->type == Keyword::new_ &&
+    if (params &&  params->size() && params->front().second->type == TplType::new_ &&
         ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->front().second->bySpecialization.types)))
     {
         params = params->front().second->bySpecialization.types;
         bySpecial = true;
     }
-    if (sym->tp->type == BasicType::templateparam_ && sym->tp->templateParam->second->type == Keyword::template_)
+    if (sym->tp->type == BasicType::templateparam_ && sym->tp->templateParam->second->type == TplType::template_)
     {
         auto sp = sym->tp->templateParam->second->byTemplate.val;
         if (sp)
@@ -523,7 +523,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
         {
             switch (it->second->type)
             {
-            case Keyword::typename_:
+            case TplType::typename_:
                 if (it->second->packed)
                 {
                     if (it->second->byPack.pack)
@@ -568,7 +568,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                     }
                 }
                 break;
-            case Keyword::template_:
+            case TplType::template_:
                 if (it->second->packed)
                     *buf++ = 'e';
                 /*
@@ -591,7 +591,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                     buf = getName(buf, it->second->byTemplate.dflt);
                 }
                 break;
-            case Keyword::int_:
+            case TplType::int_:
                 if (it->second->packed)
                 {
                     *buf++ = 'e';
@@ -895,7 +895,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'v';
                     break;
                 case BasicType::templateparam_:
-                    if (tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val &&
+                    if (tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val &&
                         basetype(tp->templateParam->second->byClass.val)->type != BasicType::templateparam_)
                         in = mangleType(in, tp->templateParam->second->byClass.val, false);
                     else
@@ -986,7 +986,7 @@ static bool validType(TYPE* tp, bool byVal)
         {
             for (auto tpl : *tp->sp->templateParams)
             {
-                if (tpl.second->type == Keyword::typename_)
+                if (tpl.second->type == TplType::typename_)
                 {
                     if (tpl.second->packed)
                     {
@@ -1023,7 +1023,7 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
 {
 
     mangledNamesCount = 0;
-    if (!params || !params->size() || (params->size() == 1 && params->front().second->type == Keyword::new_))
+    if (!params || !params->size() || (params->size() == 1 && params->front().second->type == TplType::new_))
         result = "v";
     else
         result = "";
@@ -1031,7 +1031,7 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
     {
         for (auto&& param : *params)
         {
-            if (param.second->type != Keyword::new_)
+            if (param.second->type != TplType::new_)
             {
                 char buf[8000];
                 void* dflt;
@@ -1060,17 +1060,17 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                             return false;
                         switch (param.second->type)
                         {
-                            case Keyword::typename_:
+                            case TplType::typename_:
                                 if (!validType((TYPE*)dflt, byVal))
                                     return false;
                                 result += 'c';
                                 *(mangleType(buf, (TYPE*)dflt, true)) = 0;
                                 break;
-                            case Keyword::int_:
+                            case TplType::int_:
                                 result += 'i';
                                 *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
                                 break;
-                            case Keyword::template_:
+                            case TplType::template_:
                                 result += 't';
                                 *mangleTemplate(buf, (SYMBOL*)dflt, tpl.second->byTemplate.args) = 0;
                                 break;
@@ -1098,19 +1098,19 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                     buf[0] = 0;
                     switch (param.second->type)
                     {
-                        case Keyword::typename_:
+                        case TplType::typename_:
                             if (!validType((TYPE*)dflt, byVal))
                                 return false;
                             result += 'c';
                             *(mangleType(buf, (TYPE*)dflt, true)) = 0;
                             break;
-                        case Keyword::int_:
+                        case TplType::int_:
                             if (((EXPRESSION*)dflt)->type == ExpressionNode::templateparam_)
                                 return false;
                             result += 'i';
                             *mangleExpression(buf, (EXPRESSION*)dflt) = 0;
                             break;
-                        case Keyword::template_:
+                        case TplType::template_:
                             result += 't';
                             *mangleTemplate(buf, (SYMBOL*)dflt, param.second->byTemplate.args) = 0;
                             break;

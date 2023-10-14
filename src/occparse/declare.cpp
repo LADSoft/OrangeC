@@ -498,7 +498,7 @@ LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass stora
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage, &linkage2, &linkage3, AccessLevel::public_,
-                       &notype, &defd, nullptr, nullptr, false, false, inUsing, false, false);
+                       &notype, &defd, nullptr, nullptr, nullptr, false, false, inUsing, false, false);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3, &notype, false,
                         false, beforeOnly, false); /* fixme at file scope init */
@@ -2442,7 +2442,7 @@ static bool isPointer(LEXLIST* lex)
 }
 LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
                       enum Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
-                      bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
+                      bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
                       bool constexpression)
 {
     enum BasicType type = BasicType::none_;
@@ -2992,7 +2992,7 @@ founddecltype:
                             sp->templateParams = lst;
                             sp->templateParams->push_front(TEMPLATEPARAMPAIR());
                             sp->templateParams->front().second = Allocate<TEMPLATEPARAM>();
-                            sp->templateParams->front().second->type = Keyword::new_;
+                            sp->templateParams->front().second->type = TplType::new_;
                         }
 
                         tn = sp->tp;
@@ -3016,7 +3016,7 @@ founddecltype:
                             *templateArg = true;
                         if (!tpx->templateParam->second->packed)
                         {
-                            if (tpx->templateParam->second->type == Keyword::typename_)
+                            if (tpx->templateParam->second->type == TplType::typename_)
                             {
                                 tn = tpx->templateParam->second->byClass.val;
                                 if (*tp && tn)
@@ -3041,7 +3041,7 @@ founddecltype:
                                     errorsym(ERR_NOT_A_TEMPLATE, sp);
                                 }
                             }
-                            else if (tpx->templateParam->second->type == Keyword::template_)
+                            else if (tpx->templateParam->second->type == TplType::template_)
                             {
                                 if (MATCHKW(lex, Keyword::lt_))
                                 {
@@ -3083,7 +3083,7 @@ founddecltype:
                                         auto tnew = templateParamPairListFactory.CreateList();
                                         while (itl != itle && ito != itoe)
                                         {
-                                            if (ito->second->type == Keyword::new_)
+                                            if (ito->second->type == TplType::new_)
                                             {
                                                 tnew->push_back(TEMPLATEPARAMPAIR{ nullptr, ito->second });
                                             }
@@ -3229,6 +3229,8 @@ founddecltype:
                                     if (instantiatingMemberFuncClass &&
                                         instantiatingMemberFuncClass->sb->parentClass == sp->sb->parentClass)
                                         sp = instantiatingMemberFuncClass;
+                                    else if (deduceTemplate)
+                                        *deduceTemplate = MustSpecialize(sp->name);
                                     else
                                         SpecializationError(sp);
                                 }
@@ -4738,7 +4740,7 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                 else
                 {
                     TEMPLATEPARAM* templateParam = Allocate<TEMPLATEPARAM>();
-                    templateParam->type = Keyword::new_;
+                    templateParam->type = TplType::new_;
                     lex = GetTemplateArguments(lex, funcsp, *sp, &templateParam->bySpecialization.types);
                     lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                     if (*tp && isfunction(*tp))
@@ -5571,7 +5573,8 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
             {
                 foundType = true;
                 lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
-                                   notype, defd, consdest, templateArg, *storage_class == StorageClass::typedef_, true, false,
+                                   notype, defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true,
+                                   false,
                                    asFriend ? *asFriend : false, *constexpression);
             }
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
@@ -5585,7 +5588,8 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
         {
             foundType = true;
             lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
-                               defd, consdest, templateArg, *storage_class == StorageClass::typedef_, true, false, asFriend ? *asFriend : false,
+                               defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true, false,
+                               asFriend ? *asFriend : false,
                                *constexpression);
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
                 *storage_class = StorageClass::static_;

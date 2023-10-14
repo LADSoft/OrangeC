@@ -82,6 +82,7 @@ TYPE* TemplateLookupTypeFromDeclType(TYPE* tp);
 TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
 SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 void NormalizePacked(TYPE* tpo);
+void ClearArgValues(std::list<TEMPLATEPARAMPAIR>* params, bool specialized);
 void ScrubTemplateValues(SYMBOL* func);
 void PushPopTemplateArgs(SYMBOL* func, bool push);
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args);

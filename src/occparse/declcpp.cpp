@@ -75,7 +75,7 @@ char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
 int parsingUsing;
 
-static bool MustSpecialize(const char* name)
+bool MustSpecialize(const char* name)
 {
     if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
         return false;
@@ -1282,7 +1282,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 bcsym = nullptr;
             }
             else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel ||
-                               bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == Keyword::template_))
+                               bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == TplType::template_))
             {
                 if (bcsym->tp->type == BasicType::templateparam_)
                 {
@@ -1468,7 +1468,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->second->packed)
             {
-                if (bcsym->tp->templateParam->second->type != Keyword::typename_)
+                if (bcsym->tp->templateParam->second->type != TplType::typename_)
                     error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
                 else if (bcsym->tp->templateParam->second->byPack.pack)
                 {
@@ -1498,7 +1498,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->second->packed)
             {
-                if (bcsym->tp->templateParam->second->type != Keyword::typename_)
+                if (bcsym->tp->templateParam->second->type != TplType::typename_)
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 else
                 {
@@ -1818,12 +1818,12 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
     {
         for (auto&& tpl : *tplx)
         {
-            if (tpl.second->packed && tpl.first && tpl.second->type == Keyword::typename_)
+            if (tpl.second->packed && tpl.first && tpl.second->type == TplType::typename_)
             {
                 arg[(*count)++] = /*sym*/ tpl.first;
                 NormalizePacked(tpl.first->tp);
             }
-            else if (tpl.second->type == Keyword::int_)
+            else if (tpl.second->type == TplType::int_)
             {
                 if (tpl.second->byNonType.dflt)
                 {
@@ -1841,7 +1841,7 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
                     }
                 }
             }
-            else if (tpl.second->type == Keyword::typename_)
+            else if (tpl.second->type == TplType::typename_)
             {
                 if (tpl.second->byClass.dflt)
                 {
@@ -1962,7 +1962,7 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
                         break;
                     }
             }
-            else if (tpl.second->type == Keyword::int_)
+            else if (tpl.second->type == TplType::int_)
             {
                 if (tpl.second->byNonType.dflt)
                 {
@@ -1973,7 +1973,7 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
                     tparam->byNonType.val = ReplicatePackedVars(count, arg, tpl.second->byNonType.dflt, index);
                 }
             }
-            else if (tpl.second->type == Keyword::typename_)
+            else if (tpl.second->type == TplType::typename_)
             {
                 if (tpl.second->byClass.dflt)
                 {
@@ -2106,7 +2106,7 @@ void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, std
     for (int i = 0; i < n; i++)
     {
         dest->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
-        dest->front().second->type = Keyword::int_;
+        dest->front().second->type = TplType::int_;
         dest->front().second->byNonType.dflt = ReplicatePackedVars(count, arg, pattern, i);
     }
 }
@@ -2329,7 +2329,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                             for (auto i : *l.second->byPack.pack)
                                 stk.push(i.second);
                     }
-                    else if (l.second->type != Keyword::new_)
+                    else if (l.second->type != TplType::new_)
                         stk.push(l.second);
                 }
                 while (!stk.empty())
@@ -3895,7 +3895,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                         }
                         else if (tp->type == BasicType::templateparam_)
                         {
-                            if (tp->templateParam->second->type == Keyword::typename_)
+                            if (tp->templateParam->second->type == TplType::typename_)
                             {
                                 if (tp->templateParam->second->packed)
                                 {
@@ -4554,7 +4554,7 @@ void CheckIsLiteralClass(TYPE* tp)
             else if (basetype(tp)->sp->templateParams)
             {
                 for (auto&& tpl : *basetype(tp)->sp->templateParams)
-                    if (tpl.second->type == Keyword::typename_ && tpl.second->byClass.val)
+                    if (tpl.second->type == TplType::typename_ && tpl.second->byClass.val)
                         CheckIsLiteralClass(tpl.second->byClass.val);               
             }
         }

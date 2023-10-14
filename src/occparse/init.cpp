@@ -3849,7 +3849,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
             }
             tp = nullptr;
         }
-        else if (basetype(ts->tp)->templateParam->second->type == Keyword::typename_)
+        else if (basetype(ts->tp)->templateParam->second->type == TplType::typename_)
         {
             tp = basetype(ts->tp)->templateParam->second->byClass.val;
             if (!tp)
@@ -3863,7 +3863,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
             }
             sym = tp->sp;
         }
-        else if (basetype(ts->tp)->templateParam->second->type == Keyword::delete_)
+        else if (basetype(ts->tp)->templateParam->second->type == TplType::delete_)
         {
             std::list<TEMPLATEPARAMPAIR>* args = basetype(ts->tp)->templateParam->second->byDeferred.args;
             sym = tp->templateParam->first;

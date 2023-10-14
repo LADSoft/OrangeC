@@ -83,7 +83,7 @@ bool istype(SYMBOL* sym)
 {
     if (!sym->sb || sym->sb->storage_class == StorageClass::templateparam_)
     {
-        return sym->tp->templateParam->second->type == Keyword::typename_ || sym->tp->templateParam->second->type == Keyword::template_;
+        return sym->tp->templateParam->second->type == TplType::typename_ || sym->tp->templateParam->second->type == TplType::template_;
     }
     return (sym->tp->type != BasicType::templateselector_ && sym->sb->storage_class == StorageClass::type_) || sym->sb->storage_class == StorageClass::typedef_;
 }
@@ -114,7 +114,7 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
             if (!member)
             {
                 lines = old;
-                return tparam->second->type == Keyword::typename_ || tparam->second->type == Keyword::template_;
+                return tparam->second->type == TplType::typename_ || tparam->second->type == TplType::template_;
             }
         }
     }
@@ -132,9 +132,9 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
         {
             if (sym->tp->type == BasicType::templateparam_)
             {
-                if (sym->tp->templateParam->second->type == Keyword::typename_ && sym->tp->templateParam->second->byClass.val)
+                if (sym->tp->templateParam->second->type == TplType::typename_ && sym->tp->templateParam->second->byClass.val)
                     *structured = isstructured(sym->tp->templateParam->second->byClass.val);
-                else if (sym->tp->templateParam->second->type == Keyword::template_)
+                else if (sym->tp->templateParam->second->type == TplType::template_)
                     *structured = true;
             }
             else
@@ -282,7 +282,7 @@ bool isint(TYPE* tp)
             case BasicType::unsigned_bitint_:
                 return true;
             case BasicType::templateparam_:
-                if (tp->templateParam->second->type == Keyword::int_)
+                if (tp->templateParam->second->type == TplType::int_)
                     return isint(tp->templateParam->second->byNonType.tp);
                 return false;
             default:

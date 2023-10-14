@@ -674,9 +674,10 @@ typedef struct sym
     const char* name;
     TYPE* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
-    unsigned packed : 1;       // packed template param instance
-    unsigned synthesized : 1;  // packed template param was synthesized during parsing
-    int parserSet : 1;         /* sent to parser already*/
+    unsigned short utilityIndex;
+    unsigned short packed : 1;       // packed template param instance
+    unsigned short synthesized : 1;  // packed template param was synthesized during parsing
+    unsigned short parserSet : 1;    /* sent to parser already*/
     struct _symbody
     {
         const char* decoratedName; /* symbol name with decorations, as used in output format */
@@ -916,6 +917,14 @@ typedef struct _vbaseEntry
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;
+enum class TplType
+{
+    new_,
+    delete_,
+    int_,
+    typename_,
+    template_
+};
 
 typedef struct _templateParam
 {
@@ -924,7 +933,7 @@ typedef struct _templateParam
     // template = template parameter
     // new = specialization
     // first in the list is always the specialization specifier
-    Keyword type;
+    enum class TplType type;
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;
@@ -936,6 +945,7 @@ typedef struct _templateParam
     int replaced : 1;  // replaced during type alias substitution
     int deduced : 1;   // filled in during deduction
     int specializationParam : 1; // specialization paramneter
+    int flag : 1; // utility flag
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;
@@ -1245,12 +1255,12 @@ constexpr inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ ||
 constexpr inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
-            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == Keyword::int_ && __isref((x)->templateParam->second->byNonType.tp));
+            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
 }
 constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
 constexpr inline bool ispointer(TYPE* x)
 {
-    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == Keyword::int_ &&
+    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
                                             __ispointer((x)->templateParam->second->byNonType.tp));
 }
 

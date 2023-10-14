@@ -2256,7 +2256,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     init->sp = sp;
                 if (sp && sp->tp->type == BasicType::templateparam_)
                 {
-                    if (sp->tp->templateParam->second->type == Keyword::typename_)
+                    if (sp->tp->templateParam->second->type == TplType::typename_)
                     {
                         if (sp->tp->templateParam->second->packed)
                         {

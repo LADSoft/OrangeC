@@ -2608,7 +2608,7 @@ int opt0(EXPRESSION** node)
                 {
                     if (ts->tp->type == BasicType::templateparam_)
                     {
-                        if (ts->tp->templateParam->second->type != Keyword::template_)
+                        if (ts->tp->templateParam->second->type != TplType::template_)
                             break;
                         ts = ts->tp->templateParam->second->byTemplate.val;
                         if (!ts)
@@ -2689,7 +2689,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == Keyword::int_)
+            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
@@ -2712,7 +2712,7 @@ int opt0(EXPRESSION** node)
                         }
                     }
                 }
-                if (found && found->second->type == Keyword::int_)
+                if (found && found->second->type == TplType::int_)
                 {
                     if (found->second->byNonType.val && !found->second->packed)
                         *node = found->second->byNonType.val;

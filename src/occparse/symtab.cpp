@@ -524,9 +524,9 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
                     ++tpr;
                     for  ( ; tpl != tple  && tpr != tpre; ++tpl, ++tpr)
                     {
-                        if (tpl->second->type == Keyword::int_ && tpl->second->byNonType.tp->type == BasicType::templateselector_)
+                        if (tpl->second->type == TplType::int_ && tpl->second->byNonType.tp->type == BasicType::templateselector_)
                             break;
-                        if (tpr->second->type == Keyword::int_ && tpr->second->byNonType.tp->type == BasicType::templateselector_)
+                        if (tpr->second->type == TplType::int_ && tpr->second->byNonType.tp->type == BasicType::templateselector_)
                             break;
                     }
                     if (tpl == tple && tpr == tpre)

@@ -40,6 +40,7 @@ typedef struct
     SYMBOL* name;
 } THUNK;
 
+bool MustSpecialize(const char* name);
 void SpecializationError(char* str);
 void SpecializationError(SYMBOL* sym);
 void dumpVTab(SYMBOL* sym);

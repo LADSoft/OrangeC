@@ -512,13 +512,13 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             }
         }
         if ((!sym->sb || sym->sb->storage_class == StorageClass::templateparam_) && sym->tp->type == BasicType::templateparam_ &&
-            (sym->tp->templateParam->second->type != Keyword::int_ ||
-             (sym->tp->templateParam->second->type == Keyword::int_ && sym->tp->templateParam->second->byNonType.val)))
+            (sym->tp->templateParam->second->type != TplType::int_ ||
+             (sym->tp->templateParam->second->type == TplType::int_ && sym->tp->templateParam->second->byNonType.val)))
         {
             switch (sym->tp->templateParam->second->type)
             {
-                case Keyword::typename_:
-                case Keyword::template_:
+                case TplType::typename_:
+                case TplType::template_:
                     lex = prevsym(placeholder);
                     *tp = nullptr;
                     if ((flags & (_F_SIZEOF | _F_PACKABLE)) == (_F_SIZEOF | _F_PACKABLE))
@@ -544,7 +544,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
                     }
                     return lex;
-                case Keyword::int_:
+                case TplType::int_:
                     if (sym->tp->templateParam->second->packed)
                     {
                         if (packIndex >= 0)
@@ -597,7 +597,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                 if (s.tmpl)
                                     rv = templatesearch((*tp)->templateParam->first->name, s.tmpl);
                             }
-                            if (rv && rv->tp->templateParam->second->type == Keyword::typename_)
+                            if (rv && rv->tp->templateParam->second->type == TplType::typename_)
                                 *tp = rv->tp->templateParam->second->byClass.val;
                         }
                     }
@@ -614,7 +614,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             if (sym->tp->type == BasicType::templateparam_)
             {
 
-                if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) || sym->tp->templateParam->second->type == Keyword::int_) &&
+                if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) || sym->tp->templateParam->second->type == TplType::int_) &&
                     sym->tp->templateParam->second->packed)
                 {
                     if (packIndex >= 0)
@@ -629,7 +629,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         }
                         if (itt != ite)
                         {
-                            if (itt->second->type == Keyword::int_ && !itt->second->packsym)
+                            if (itt->second->type == TplType::int_ && !itt->second->packsym)
                             {
                                 *tp = itt->second->byNonType.tp;
                                 if ((*tp)->type == BasicType::templateparam_)
@@ -959,7 +959,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             {
                 if (*exp && (*exp)->type != ExpressionNode::packedempty_ && !sym->tp->templateParam->second->packed)
                 {
-                    if (sym->tp->templateParam->second->type == Keyword::int_)
+                    if (sym->tp->templateParam->second->type == TplType::int_)
                         *tp = sym->tp->templateParam->second->byNonType.tp;
                     else
                         *tp = &stdint;
@@ -1283,8 +1283,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         bool notype = false;
         TYPE* tp1 = nullptr;
         lex = getsym();
-        lex = getBasicType(lex, funcsp, &tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
-                           nullptr, nullptr, false, true, false, false, false);
+        lex = getBasicType(lex, funcsp, &tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1328,8 +1327,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
             bool defd = false;
             bool notype = false;
             TYPE* tp1 = nullptr;
-            lex = getBasicType(lex, funcsp, &tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype,
-                               &defd, nullptr, nullptr, false, true, false, false, false);
+            lex = getBasicType(lex, funcsp, &tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1353,8 +1351,8 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                 {
                     lex = getsym();
                     tp1 = nullptr;
-                    lex = getBasicType(lex, funcsp, &tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_,
-                                       &notype, &defd, nullptr, nullptr, false, true, false, false, false);
+                    lex = getBasicType(lex, funcsp, &tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false,
+                                       false);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
@@ -2701,7 +2699,7 @@ TYPE* InitializerListType(TYPE* arg)
         {
             std::list<TEMPLATEPARAMPAIR>* tplp = templateParamPairListFactory.CreateList();
             auto tpl = Allocate<TEMPLATEPARAM>();
-            tpl->type = Keyword::typename_;
+            tpl->type = TplType::typename_;
             tpl->byClass.dflt = arg;
             tplp->push_back(TEMPLATEPARAMPAIR{ nullptr, tpl });
             auto sym1 = GetClassTemplate(sym, tplp, true);
@@ -3908,13 +3906,13 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
             auto second = Allocate<TEMPLATEPARAM>();
             *second = *tpl.second;
             rv->push_back(TEMPLATEPARAMPAIR{ tpl.first, second });
-            if (tpl.second->type == Keyword::typename_ && !tpl.second->packed && tpl.second->byClass.dflt &&
+            if (tpl.second->type == TplType::typename_ && !tpl.second->packed && tpl.second->byClass.dflt &&
                 basetype(tpl.second->byClass.dflt)->type == BasicType::templateparam_)
             {
                 *rv->back().second = *basetype(tpl.second->byClass.dflt)->templateParam->second;
                 rv->back().first = basetype(tpl.second->byClass.dflt)->templateParam->first;
             }
-            else if (tpl.second->type == Keyword::int_ && tpl.second->byNonType.dflt && tpl.second->byNonType.dflt->type == ExpressionNode::templateparam_)
+            else if (tpl.second->type == TplType::int_ && tpl.second->byNonType.dflt && tpl.second->byNonType.dflt->type == ExpressionNode::templateparam_)
             {
                 *rv->back().second = *tpl.second->byNonType.dflt->v.sp->tp->templateParam->second;
                 rv->back().first = tpl.second->byNonType.dflt->v.sp->tp->templateParam->first;
@@ -4041,7 +4039,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         {
             if (tpx->type == BasicType::templateparam_)
             {
-                if (tpx->templateParam->second->type == Keyword::typename_ && tpx->templateParam->second->byClass.val)
+                if (tpx->templateParam->second->type == TplType::typename_ && tpx->templateParam->second->byClass.val)
                 {
                     tpx = tpx->templateParam->second->byClass.val;
                     if (tpx->sp && tpx->sp->sb->storage_class == StorageClass::typedef_)

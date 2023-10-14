@@ -169,7 +169,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
-        if (tp->templateParam && tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val)
+        if (tp->templateParam && tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
     if (isconst(tp))
@@ -239,7 +239,7 @@ static char* RTTIGetName(char* buf, TYPE* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
-        if (tp->templateParam && tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val)
+        if (tp->templateParam && tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
     mangledNamesCount = 0;
@@ -796,7 +796,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
                 TYPE* tp = (TYPE*)p->data;
                 if (tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
                 {
-                    if (tp->templateParam->second->type == Keyword::typename_)
+                    if (tp->templateParam->second->type == TplType::typename_)
                     {
                         if (tp->templateParam->second->byPack.pack)
                         {

@@ -427,7 +427,7 @@ LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
                 {
                     if (nsv || strSym)
                     {
-                        errorNotMember(strSym, nsv->front(), (*rsp)->name);
+                        errorNotMember(strSym, nsv->front(), (*rsp)->sb->decoratedName);
                     }
                     *rsp = nullptr;
                 }
@@ -6275,7 +6275,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 else
                                     spi = rvl.front();
                             else
-                                errorNotMember(strSym, nsv->front(), sp->name);
+                                errorNotMember(strSym, nsv->front(), sp->sb->decoratedName);
                         }
                         else
                         {
@@ -6321,7 +6321,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                     if (!sp->sb->instantiated)
                                         ScrubTemplateValues(sp);
                                 }
-                                if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
+                                if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring || storage_class_in == StorageClass::member_)
                                 {
                                     sym = searchOverloads(sp, spi->tp->syms);
                                     TYPE* retVal;
@@ -6477,17 +6477,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 if ((nsv || strSym) && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_ &&
                                     (!inTemplate || !sp->templateParams))
                                 {
-                                    char buf[256];
-                                    if (!strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]))
-                                        strcpy(buf, strSym->name);
-                                    else if (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
-                                    {
-                                        buf[0] = '~';
-                                        strcpy(buf + 1, strSym->name);
-                                    }
-                                    else
-                                        strcpy(buf, sp->name);
-                                    errorNotMember(strSym, nsv->front(), buf);
+                                    errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->sb->decoratedName);
                                 }
                                 spi = nullptr;
                             }
@@ -6498,7 +6488,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                             if (strSym && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
                             {
-                                errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->name);
+                                errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->sb->decoratedName);
                             }
                         }
                         else
@@ -6555,6 +6545,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                             {
                                 if (!strSym || !strSym->sb->templateLevel || spi->sb->templateLevel != sp->sb->templateLevel + 1)
                                     errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+                            }
+                            if (spi && spi->sb->parentClass && storage_class_in == StorageClass::member_)
+                            {
+                                errorsym(ERR_CLASS_MEMBER_ALREADY_DECLARED, spi);
                             }
                             if (isfunction(spi->tp))
                             {

@@ -12548,7 +12548,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, std::list<NAMESPACEVAL
         if (rvl)
             spi = rvl;
         else
-            errorNotMember(strSym, nsv->front(), sym->name);
+            errorNotMember(strSym, nsv->front(), sym->sb->decoratedName);
     }
     else
     {
@@ -12985,7 +12985,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, std::list<NAMES
             if (rvl)
                 spi = rvl;
             else
-                errorNotMember(strSym, nsv->front(), sym->name);
+                errorNotMember(strSym, nsv->front(), sym->sb->decoratedName);
         }
         else
         {

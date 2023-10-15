@@ -593,6 +593,11 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
             unmang1(unopped, name + 1, last, false);
         }
     }
+    else if (*name == '@')
+    {
+        *unopped = 0;
+        unmangle(unopped, name);
+    }
     else
     {
         strcpy(unopped, name);

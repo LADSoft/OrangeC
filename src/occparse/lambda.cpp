@@ -164,6 +164,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
         {
             SYMBOL* lthis = lambdas.front()->lthis;
             SYMBOL* base = basetype(lambdas.front()->lthis->tp)->btp->sp;
+            lthis = basetype(basetype(lthis->tp)->btp)->sp;
             if (lthis->sb->mainsym)
                 lthis = lthis->sb->mainsym;
             if (base->sb->mainsym)
@@ -176,7 +177,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                     // have to try to replicate the symbol into the current context
                     for (auto cil = cilb ; cil != cile; ++cil )
                     {
-                        if ((*cil)->captureMode == cmNone)
+                        if ((*cil)->captureMode == cmNone && !lambdas.front()->captureThis)
                         {
                             if (isExplicit)
                             {
@@ -188,7 +189,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                                     break;
                                 }
                             }
-                            else
+                            else if (cil != cilb)
                             {
                                 errorflg = true;
                                 errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
@@ -889,6 +890,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                     }
                     localMode = cmValue;
+                    lex = getsym();
                 }
                 if (ISID(lex))
                 {
@@ -959,6 +961,10 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
             } while (MATCHKW(lex, Keyword::comma_));
+        }
+        else
+        {
+            self->captureThis = MATCHKW(lex, Keyword::closebr_);
         }
         needkw(&lex, Keyword::closebr_);
     }

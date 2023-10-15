@@ -388,8 +388,8 @@ ERRLIST(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, 346, "Identifier '%s' cannot 
 ERRLIST(ERR_LAMBDA_CANNOT_CAPTURE, 347, "Lambda function outside function scope cannot capture variables", CE_ERROR)
 ERRLIST(ERR_INVALID_LAMBDA_CAPTURE_MODE, 348, "Invalid lambda capture mode", CE_ERROR)
 ERRLIST(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES, 349, "Capture item listed multiple times", CE_ERROR)
-ERRLIST(ERR_EXPLICIT_CAPTURE_BLOCKED, 350, "Explicit capture blocked", CE_ERROR)
-ERRLIST(ERR_IMPLICIT_CAPTURE_BLOCKED, 351, "Implicit capture blocked", CE_ERROR)
+ERRLIST(ERR_EXPLICIT_CAPTURE_BLOCKED, 350, "Explicit capture of '%s' blocked", CE_ERROR)
+ERRLIST(ERR_IMPLICIT_CAPTURE_BLOCKED, 351, "Implicit capture of '%s' blocked", CE_ERROR)
 ERRLIST(ERR_CANNOT_DEFAULT_PARAMETERS_WITH_LAMBDA, 352, "Cannot default parameters of lambda function", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_THIS, 353, "Cannot capture this", CE_ERROR)
 ERRLIST(ERR_MUST_CAPTURE_AUTO_VARIABLE, 354, "Must capture variables with 'auto' storage class or 'this'", CE_ERROR)
@@ -617,6 +617,7 @@ ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539,
 ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ", CE_ERROR)
 ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
 ERRLIST(ERR_CANNOT_DEDUCE_TEMPLATE, 542, "Cannot deduce template from '%s'", CE_ERROR)
+ERRLIST(ERR_CLASS_MEMBER_ALREADY_DECLARED, 543, "Member '%s' has already been declared or defined", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

@@ -1193,7 +1193,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 }
                 if (nsv)
                 {
-                    errorNotMember(strSym, nsv->front(), sym->name);
+                    errorNotMember(strSym, nsv->front(), sym->sb->decoratedName);
                 }
                 if (sym->sb->storage_class != StorageClass::overloads_)
                 {
@@ -6022,7 +6022,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 case Keyword::this_:
                     if (lambdas.size())
                     {
-                        lambda_capture(nullptr, cmThis, false);
+                        lambda_capture(nullptr, cmThis, true);
                         if (lambdas.front()->captureThis)
                         {
                             SYMBOL* ths = search(lambdas.front()->cls->tp->syms, "$this");

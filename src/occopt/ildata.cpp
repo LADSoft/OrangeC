@@ -107,7 +107,7 @@ int registersAssigned;
 bool syntaxOnly;
 
 std::deque<BaseData*> baseData;
-static bool virtualMode;
+static Optimizer::VirtualType virtualMode;
 
 void InitIntermediate()
 {
@@ -523,11 +523,11 @@ void startupseg(void) { enterseg(startupxseg); }
 void rundownseg(void) { enterseg(rundownxseg); }
 void tlsstartupseg(void) { enterseg(tlssuseg); }
 void tlsrundownseg(void) { enterseg(tlsrdseg); }
-void gen_virtual(Optimizer::SimpleSymbol* sym, int data)
+void gen_virtual(Optimizer::SimpleSymbol* sym, VirtualType data)
 {
     exitseg();
     auto v = AddData(DT_VIRTUAL);
-    v->symbol.i = data;
+    v->symbol.i = (int)data;
     v->symbol.sym = sym;
     virtualMode = data;
     //    globalCache.push_back(v->symbol.sym);

@@ -1163,7 +1163,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || tmpl))
     {
         funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), Optimizer::vt_code);
     }
     else
     {

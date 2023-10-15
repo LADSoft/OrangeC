@@ -208,7 +208,7 @@ void dumpVTab(SYMBOL* sym)
         int count = 0;
 
         Optimizer::dseg();
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), true);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), Optimizer::vt_data);
         if (xtSym)
             Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
         else
@@ -222,7 +222,7 @@ void dumpVTab(SYMBOL* sym)
             Optimizer::cseg();
             for (i = 0; i < count; i++)
             {
-                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
+                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), Optimizer::vt_code);
                 Optimizer::gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func),
                                    Optimizer::SymbolManager::Get(thunks[i].name));
                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));

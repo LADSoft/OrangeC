@@ -32,6 +32,13 @@
 
 namespace Optimizer
 {
+enum VirtualType
+{
+    vt_code,
+    vt_data,
+    vt_startup,
+    vt_rundown
+};
 enum FunctionFlags
 {
     FF_USES_SETJMP = 1,
@@ -285,7 +292,7 @@ void startupseg(void);
 void rundownseg(void);
 void tlsstartupseg(void);
 void tlsrundownseg(void);
-void gen_virtual(Optimizer::SimpleSymbol* sym, int data);
+void gen_virtual(Optimizer::SimpleSymbol* sym, VirtualType data);
 void gen_endvirtual(Optimizer::SimpleSymbol* sym);
 void align(int size);
 void gen_funcref(Optimizer::SimpleSymbol* sym);

@@ -503,7 +503,7 @@ void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init)
         }
     }
 }
-static void callDynamic(const char* name, int startupType, int index, std::list<STATEMENT*>* st)
+static void callDynamic(const char* name, int startupType, int index, std::list<STATEMENT*>* st, bool virt = false)
 {
     if (IsCompiler())
     {
@@ -516,14 +516,24 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
             st->push_front(stbegin);
             st->push_back(stend);
             char fullName[512];
-            Optimizer::my_sprintf(fullName, "%s_%d", name, index);
+            if (index != -1)
+                Optimizer::my_sprintf(fullName, "%s_%d", name, index);
+            else
+                Utils::StrCpy(fullName, name);
             SYMBOL* funcsp;
             TYPE* tp = MakeType(BasicType::ifunc_, MakeType(BasicType::void_));
             tp->syms = symbols.CreateSymbolTable();
-            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp, nullptr, fullName);
+            if (index == -1)
+                funcsp =
+                    makeID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp,
+                                 nullptr, litlate(fullName));
+            else
+                funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp, nullptr, fullName);
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
             funcsp->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
             funcsp->sb->inlineFunc.stmt->front()->lower = st;
+            if (virt)
+                funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
             tp->sp = funcsp;
             SetLinkerNames(funcsp, Linkage::none_);
             startlab = Optimizer::nextLabel++;
@@ -533,11 +543,24 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
 
             if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
             {
+                SYMBOL* name = nullptr;
                 if (startupType == STARTUP_TYPE_STARTUP)
                     Optimizer::startupseg();
                 else
                     Optimizer::rundownseg();
+                if (virt)
+                {
+                    Utils::StrCat(fullName, startupType == STARTUP_TYPE_STARTUP? "_startup" : "_rundown");
+                    name = makeID(StorageClass::global_, &stdint, nullptr, litlate(fullName));
+                    SetLinkerNames(name, Linkage::cpp_, false);
+                    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(name), startupType == STARTUP_TYPE_STARTUP?Optimizer::vt_startup : Optimizer::vt_rundown);
+                }
                 Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), CPP_BASE_PRIO + preProcessor->GetCppPrio(), startupType);
+                if (virt)
+                {
+                    Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(name));
+
+                }
             }
         }
     }
@@ -844,6 +867,42 @@ static void GetStructData(EXPRESSION* in, EXPRESSION** exp, int* ofs)
             break;
     }
 }
+void CreateInlineConstructor(SYMBOL* sym) 
+{
+    if (IsCompiler())
+    {
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        EXPRESSION *exp = nullptr;
+        std::list<STATEMENT*> st;
+        exp = convertInitToExpression(sym->sb->init->front()->basetp,
+                                        sym, nullptr, nullptr, sym->sb->init, nullptr, false);
+        st.push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::expr_));
+        optimize_for_constants(&exp);
+        st.back()->select = exp;
+        char buf[4000];
+        sprintf(buf, "initializer@%s", sym->name);
+        callDynamic(buf, STARTUP_TYPE_STARTUP, -1, &st, true);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+    }
+}
+void CreateInlineDestructor(SYMBOL* sym)
+{
+    if (IsCompiler())
+    {
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        std::list<STATEMENT*> st;
+        EXPRESSION* exp = convertInitToExpression(sym->sb->dest->front()->basetp, sym, nullptr,
+                                                    nullptr, sym->sb->dest, nullptr, true);
+        auto stmt = stmtNode(nullptr, emptyBlockdata, StatementNode::expr_);
+        optimize_for_constants(&exp);
+        stmt->select = exp;
+        st.push_back(stmt);
+        char buf[4000];
+        sprintf(buf, "destructor@%s", sym->name);
+        callDynamic(buf, STARTUP_TYPE_RUNDOWN, -1, &st, true);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+    }
+}
 int dumpInit(SYMBOL* sym, INITIALIZER* init)
 {
     if (IsCompiler())
@@ -905,7 +964,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         temp->push_back(init);
                         insertTLSInitializer(sym, temp);
                     }
-                    else if (sym->sb->storage_class != StorageClass::localstatic_)
+                    else if (sym->sb->storage_class != StorageClass::localstatic_ && !sym->sb->attribs.inheritable.isInline)
                     {
                         std::list<INITIALIZER*>* temp = initListFactory.CreateList();
                         temp->push_back(init);
@@ -3292,7 +3351,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 else if (funcparams->sp)  // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
             }
-            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)
+            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember && !base->sb->attribs.inheritable.isInline)
             {
                 it = nullptr;
                 initInsert(&it, itype, exp, offset, true);
@@ -3305,7 +3365,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 *init = it;
             }
             exp = baseexp;
-            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && sc != StorageClass::localstatic_ && !arrayMember)
+            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+                sc != StorageClass::mutable_ && sc != StorageClass::localstatic_ && !arrayMember &&
+                !base->sb->attribs.inheritable.isInline)
             {
                 it = nullptr;
                 callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
@@ -3370,7 +3432,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 }
                 if (it)
                 {
-                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)
+                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                        !base->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(base, it);
                     }
@@ -3407,7 +3471,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             exp = exprNode(ExpressionNode::assign_, exprNode(ExpressionNode::l_object_, getThisNode(base), nullptr), exp);
             exp->left->v.tp = itype;
             initInsert(&it, itype, exp, offset, true);
-            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)
+            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                !base->sb->attribs.inheritable.isInline)
             {
                 insertDynamicInitializer(base, it);
             }
@@ -3482,8 +3548,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                         initInsert(&it, itype, exp1, offset, true);
                     }
                 }
-                if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ &&
-                    !arrayMember)
+                if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                    !base->sb->attribs.inheritable.isInline)
                 {
                     insertDynamicInitializer(base, it);
                 }
@@ -3552,8 +3618,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 {
                     std::list<INITIALIZER*>* it = nullptr;
                     initInsert(&it, itype, exp1, offset, false);
-                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ &&
-                        !arrayMember)
+                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                        !base->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(base, it);
                     }
@@ -3635,7 +3701,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                     last += s;
                 }
             }
-            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_)
+            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                sc != StorageClass::member_ && sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline &&
+                !base->sb->attribs.inheritable.isInline)
             {
                 *init = nullptr;
                 insertDynamicInitializer(base, first);
@@ -3658,7 +3726,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 tn->size = n * s;
                 tn->esize = sz;
             }
-            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_)
+            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+                sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline)
             {
                 callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
                 initInsert(&first, tn, exp, last, false);
@@ -3778,7 +3847,7 @@ static LEXLIST* initialize_auto(LEXLIST * lex, SYMBOL * funcsp, int offset, Stor
             EXPRESSION* expl = getThisNode(sym);
             initInsert(init, sym->tp, exp, offset, false);
             if (sym->sb->storage_class != StorageClass::auto_ && sym->sb->storage_class != StorageClass::parameter_ &&
-                sym->sb->storage_class != StorageClass::member_ && sym->sb->storage_class != StorageClass::mutable_)
+                sym->sb->storage_class != StorageClass::member_ && sym->sb->storage_class != StorageClass::mutable_ && !sym->sb->attribs.inheritable.isInline)
             {
                 callDestructor(basetype(sym->tp)->sp, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
@@ -4357,8 +4426,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 if (test)
                 {
                     initInsert(&init, z, exp, 0, true);
-                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::localstatic_ && storage_class_in != StorageClass::parameter_ &&
-                        storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
+                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::localstatic_ && storage_class_in != StorageClass::parameter_ && storage_class_in != StorageClass::member_ &&
+                        storage_class_in != StorageClass::mutable_ && !sym->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(sym, init);
                     }
@@ -4370,8 +4439,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     exp = baseexp;
                     callDestructor(z->sp, nullptr, &exp, sz, true, false, false, true);
                     initInsert(&init, z, exp, 0, true);
-                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::parameter_ && storage_class_in != StorageClass::member_ &&
-                        storage_class_in != StorageClass::mutable_)
+                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::parameter_ && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_ &&
+                        !sym->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicDestructor(sym, init);
                     }
@@ -4602,6 +4671,12 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                 InsertInlineData(sym);
             }
+        }
+        else if (sym->sb->attribs.inheritable.isInline)
+        {
+            // so it won't show up in the output file unless used...
+            sym->sb->attribs.inheritable.linkage4 = Linkage::none_;
+            InsertInlineData(sym);
         }
         else
         {

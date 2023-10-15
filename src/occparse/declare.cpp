@@ -5677,6 +5677,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                  bool needsemi, int asExpression, bool inTemplate, AccessLevel access)
 {
     bool isExtern = false;
+    bool isInline = false;
     TYPE* btp;
     SYMBOL* sp;
     enum StorageClass storage_class_in = storage_class;
@@ -5698,6 +5699,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
     {
         if (MATCHKW(lex, Keyword::inline_))
         {
+            isInline = true;
             linkage = Linkage::inline_;
             lex = getsym();
             ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -5846,6 +5848,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                 }
                 do
                 {
+                    if (isInline)
+                        linkage = Linkage::inline_;
                     bool isTemplatedCast = false;
                     TYPE* tp1 = tp;
                     std::list<NAMESPACEVALUEDATA*>* oldGlobals = nullptr;
@@ -5937,7 +5941,6 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                     }
                     if (linkage == Linkage::inline_)
                     {
-                        linkage = Linkage::none_;
                         if (Optimizer::cparams.prm_cplusplus)
                         {
                             linkage4 = Linkage::virtual_;
@@ -6944,7 +6947,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                     sizeQualifiers(tp1);
                     if (sp->sb->attribs.inheritable.isInline)
                     {
-                        if (!isfunction(sp->tp))
+                        if (!isfunction(sp->tp) && 
+                            ((sp->sb->storage_class != StorageClass::global_ && sp->sb->storage_class != StorageClass::static_) || sp->sb->parentClass))
                             error(ERR_INLINE_NOT_ALLOWED);
                     }
                     if (inTemplate && templateNestingCount == 1)

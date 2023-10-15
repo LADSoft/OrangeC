@@ -91,6 +91,7 @@ static void inInsert(SYMBOL* sym) { didInlines.insert(sym->sb->decoratedName); }
 static void UndoPreviousCodegen(SYMBOL* sym) {}
 static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& uninit);
 
+
 void dumpInlines(void)
 {
     if (IsCompiler())
@@ -194,9 +195,10 @@ void dumpInlines(void)
                 }
                 inlineLocalUninitializers.clear();
             } while (!done);
+            std::stack<SYMBOL*> destructors;
             for (auto sym : inlineData)
             {
-                if (sym->sb->attribs.inheritable.linkage2 != Linkage::import_)
+                if (sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ && sym->sb->attribs.inheritable.linkage2 != Linkage::import_)
                 {
                     if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate && (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
                     {
@@ -247,7 +249,7 @@ void dumpInlines(void)
                                 dropStructureDeclaration();
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
-                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
+                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
                             if (sym->sb->init)
                             {
                                 if (isstructured(sym->tp) || isarray(sym->tp))
@@ -266,6 +268,10 @@ void dumpInlines(void)
                                 Optimizer::genstorage(basetype(sym->tp)->size);
                             }
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+                            if (sym->sb->dest)
+                                destructors.push(sym);
+                            if (sym->sb->init && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                                CreateInlineConstructor(sym);
                         }
                     }
                     else
@@ -279,7 +285,7 @@ void dumpInlines(void)
                             else
                             {
                                 inInsert(sym);
-                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
+                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
                                 if (sym->sb->init)
                                 {
                                     if (isstructured(sym->tp) || isarray(sym->tp))
@@ -296,10 +302,20 @@ void dumpInlines(void)
                                 else
                                     Optimizer::genstorage(basetype(sym->tp)->size);
                                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+                                if (sym->sb->dest)
+                                    destructors.push(sym);
+                                if (sym->sb->init && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                                    CreateInlineConstructor(sym);
                             }
                         }
                     }
                 }
+            }
+            // have to do these backwards...
+            while (!destructors.empty())
+            {
+                CreateInlineDestructor(destructors.top());
+                destructors.pop();
             }
         }
     }
@@ -310,7 +326,7 @@ void dumpImportThunks(void)
     {
         for (auto sym : importThunks)
         {
-            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), false);
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_code);
             Optimizer::gen_importThunk(Optimizer::SymbolManager::Get((sym)->sb->mainsym));
             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
         }
@@ -323,7 +339,7 @@ void dumpvc1Thunks(void)
         Optimizer::cseg();
         for (auto sym : *vc1Thunks)
         {
-            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), false);
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_code);
             Optimizer::gen_vc1(Optimizer::SymbolManager::Get(sym));
             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
         }
@@ -378,7 +394,7 @@ static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& unini
 
     iexpr_func_init();
     gen_func(varNode(ExpressionNode::global_, newFunc), 1);
-    Optimizer::gen_virtual(currentFunction, false);
+    Optimizer::gen_virtual(currentFunction, Optimizer::vt_code);
     Optimizer::addblock(-1);
     Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
     codeLabelOffset = Optimizer::nextLabel - INT_MIN;

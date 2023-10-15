@@ -903,6 +903,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                     case StorageClass::static_:
                         sym->sb->attribs.inheritable.used = true;
                     case StorageClass::global_:
+                        if (sym->sb->attribs.inheritable.isInline)
+                            sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     case StorageClass::external_: {
                         tagNonConst(funcsp, sym->tp);
                         SYMBOL* tpl = sym;

@@ -356,7 +356,20 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         sectofs = Optimizer::MAX_SEGS - sectofs;
         for (auto v : virtuals)
         {
-            v->SetAlign(v->GetName()[2] == 'c' ? segAligns[Optimizer::codeseg] : segAligns[Optimizer::dataseg]);
+            int align;
+            switch (v->GetName()[2])
+            {
+                case 'c':
+                    align = segAligns[Optimizer::codeseg];
+                    break;
+                case 'd':
+                    align = segAligns[Optimizer::dataseg];
+                    break;
+                default:
+                    align = 2;
+                    break;
+            }
+            v->SetAlign(align);
 
             ObjSection* s = v->CreateObject(factory);
             if (s)
@@ -850,10 +863,22 @@ void outcode_put_label(int lab) { InsertLabel(lab); }
 void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
 {
     char buf[4096];
-    if (data)
-        strcpy(buf, "vsd@");
-    else
-        strcpy(buf, "vsc@");
+    switch (data)
+    {
+        case Optimizer::vt_code:
+        default:
+            strcpy(buf, "vsc@");
+            break;
+        case Optimizer::vt_data:
+            strcpy(buf, "vsd@");
+            break;
+        case Optimizer::vt_startup:
+            strcpy(buf, "vss@");
+            break;
+        case Optimizer::vt_rundown:
+            strcpy(buf, "vsr@");
+            break;
+    }
     strcpy(buf + 3 + (sym->outputName[0] != '@'), sym->outputName);
     std::shared_ptr<Section> virtsect = std::make_shared<Section>(buf, virtualSegmentNumber++);
     virtualSyms[virtsect] = sym;
@@ -869,7 +894,10 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) { outcode_enterseg(oa_currentSeg); }
+void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) 
+{ 
+    outcode_enterseg(oa_currentSeg); 
+}
 
 /*-------------------------------------------------------------------------*/
 

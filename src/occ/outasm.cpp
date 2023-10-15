@@ -1461,15 +1461,25 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
             oa_currentSeg = Optimizer::noseg;
             ColumnPosition(8);
 #ifdef IEEE
-            if (sym->outputName[0] == '@')
-                if (virtual_mode)
-                    AsmOutput("section vsd%s virtual\n", sym->outputName);
-                else
-                    AsmOutput("section vsc%s virtual\n", sym->outputName);
-            else if (virtual_mode)
-                AsmOutput("section vsd@%s virtual\n", sym->outputName);
-            else
-                AsmOutput("section vsc@%s virtual\n", sym->outputName);
+            const char* name = sym->outputName;
+            if (name[0] == '@')
+                name++;
+            switch (virtual_mode)
+            {
+                case Optimizer::vt_code:
+                default:
+                    AsmOutput("section vsc@%s virtual\n", name);
+                    break;
+                case Optimizer::vt_data:
+                    AsmOutput("section vsd@%s virtual\n", name);
+                    break;
+                case Optimizer::vt_startup:
+                    AsmOutput("section vss@%s virtual\n", name);
+                    break;
+                case Optimizer::vt_rundown:
+                    AsmOutput("section vsr@%s virtual\n", name);
+                    break;
+            }
 #else
             AsmOutput("SECTION @%s VIRTUAL\n", sym->outputName);
 #endif
@@ -1504,17 +1514,44 @@ void oa_gen_endvirtual(Optimizer::SimpleSymbol* sym)
             ColumnPosition(8);
             AsmOutput("ends\n");
         }
-        else if (virtual_mode)
-            oa_enterseg(Optimizer::dataseg);
         else
-            oa_enterseg(Optimizer::codeseg);
+        {
+            switch (virtual_mode)
+            {
+                case Optimizer::vt_code:
+                default:
+                    oa_enterseg(Optimizer::codeseg);
+                    break;
+                case Optimizer::vt_data:
+                    oa_enterseg(Optimizer::dataseg);
+                    break;
+                case Optimizer::vt_startup:
+                    oa_enterseg(Optimizer::startupxseg);
+                    break;
+                case Optimizer::vt_rundown:
+                    oa_enterseg(Optimizer::rundownxseg);
+                    break;
+            }
+        }
     }
     else
     {
-        if (virtual_mode)
-            oa_enterseg(Optimizer::dataseg);
-        else
-            oa_enterseg(Optimizer::codeseg);
+        switch (virtual_mode)
+        {
+            case Optimizer::vt_code:
+            default:
+                oa_enterseg(Optimizer::codeseg);
+                break;
+            case Optimizer::vt_data:
+                oa_enterseg(Optimizer::dataseg);
+                break;
+            case Optimizer::vt_startup:
+                oa_enterseg(Optimizer::startupxseg);
+                break;
+            case Optimizer::vt_rundown:
+                oa_enterseg(Optimizer::rundownxseg);
+                break;
+        }
         outcode_end_virtual_seg(sym);
     }
 }

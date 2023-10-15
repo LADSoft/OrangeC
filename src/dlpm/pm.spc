@@ -15,9 +15,11 @@ partition {
     region {} vsd* [ align = 8, roundsize = 4];
 	_INITSTART = $;
 	region {} cstartup [ align = 2];
+        region {} vss* [ align = 2];
 	_INITEND = $;
 	_EXITSTART = $;
 	region {} crundown [ align = 2];
+        region {} vsr* [ align = 2];
 	_EXITEND = $;
     region {} string [ align = 2];
 	INITSIZE = $ - RAMBASE;

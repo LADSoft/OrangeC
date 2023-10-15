@@ -304,7 +304,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
 
     Optimizer::cseg();
     Optimizer::SymbolManager::Get(xtSym)->generated = true;
-    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), false);
+    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), Optimizer::vt_code);
     if (sym)
     {
         Optimizer::genref(Optimizer::SymbolManager::Get(sym), 0);
@@ -821,7 +821,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
         xcSym->sb->decoratedName = xcSym->name;
         Optimizer::cseg();
         Optimizer::SymbolManager::Get(xcSym)->generated = true;
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xcSym), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xcSym), Optimizer::vt_code);
         switch (funcsp->sb->xcMode)
         {
             case xc_none:
@@ -940,7 +940,7 @@ void XTDumpTab(SYMBOL* funcsp)
         }
         throwSym = DumpXCSpecifiers(funcsp);
         Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab)->generated = true;
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), Optimizer::vt_code);
 
         if (throwSym)
         {

@@ -53,6 +53,8 @@ void init_init(void);
 EXPRESSION* stringlit(STRING* s);
 EXPRESSION* ConvertToMSILString(EXPRESSION* val);
 int genstring(STRING* str);
+void CreateInlineConstructor(SYMBOL* sym);
+void CreateInlineDestructor(SYMBOL* sym);
 void dumpLits(void);
 void dumpStartups(void);
 void insert_file_constructor(SYMBOL* sym);

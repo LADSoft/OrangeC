@@ -4987,6 +4987,7 @@ static bool sameTypedef(TYPE* tp1, TYPE* tp2)
 }
 static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
+    RequiresDialect::Keyword(Dialect::c11, "_Generic");
     lex = getsym();
     if (!needkw(&lex, Keyword::openpa_))
     {
@@ -5306,6 +5307,7 @@ static Parser::LEXLIST* atomic_modify_specific_op(Parser::LEXLIST* lex, Parser::
 }
 static LEXLIST* expression_atomic_func(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
+    RequiresDialect::Feature(Dialect::c11, "Atomic Functions");
     Keyword kw = KW(lex);
     lex = getsym();
     if (needkw(&lex, Keyword::openpa_))
@@ -6135,7 +6137,9 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     }
                     else if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
                     {
+
                         // unary left folding
+                        RequiresDialect::Feature(Dialect::cpp17, "Fold expressions");
                         lex = getsym();
                         if (Optimizer::cparams.prm_cplusplus && KWTYPE(lex, TT_OPERATOR))
                         {
@@ -6183,6 +6187,7 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                         else if (Optimizer::cparams.prm_cplusplus && KWTYPE(lex, TT_OPERATOR))
                         {
                             // unary right folding, or binary folding
+                            RequiresDialect::Feature(Dialect::cpp17, "Fold expressions");
                             auto lexin = lex;
                             lex = getsym();
                             if (!KWTYPE(lexin, TT_ASSIGN | TT_BINARY))
@@ -7367,8 +7372,8 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         std::list<INITIALIZER*>* temp = nullptr;
                         INITIALIZER* init = nullptr;
                         SYMBOL* sym = nullptr;
-                        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
-                            error(ERR_C99_STYLE_INITIALIZATION_USED);
+                        if (!Optimizer::cparams.prm_cplusplus)
+                            RequiresDialect::Feature(Dialect::c99, "Compound Literals");
                         if (Optimizer::cparams.prm_cplusplus)
                         {
                             sym = makeID(StorageClass::auto_, *tp, nullptr, AnonymousName());

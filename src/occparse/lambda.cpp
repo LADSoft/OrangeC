@@ -377,6 +377,9 @@ static void convertCallToTemplate(SYMBOL* func)
             arg->tp->templateParam = &func->templateParams->back();
         }
     }
+    if (func->templateParams->size())
+        RequiresDialect::Feature(Dialect::cpp14, "Generic lambdas");
+
     func->sb->templateLevel = templateNestingCount;
     func->sb->parentTemplate = func;
 }
@@ -567,7 +570,9 @@ static bool lambda_get_template_state(SYMBOL* func)
     for (auto sym : *basetype(func->tp)->syms)
     {
         if (isautotype(sym->tp))
+        {
             return true;
+        }
     }
     return false;
 }
@@ -900,6 +905,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     lex = getsym();
                     if (MATCHKW(lex, Keyword::assign_))
                     {
+                        RequiresDialect::Feature(Dialect::cpp14, "Lambda Capture Expressions");
                         TYPE* tp = NULL;
                         EXPRESSION* exp;
                         lex = getsym();

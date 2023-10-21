@@ -3070,8 +3070,8 @@ auto InitializeSimpleAggregate(LEXLIST*& lex, TYPE* itype, bool needend, int off
         if (!desc || !gotcomma || !needend)
             break;
     }
-    if (c99 && Optimizer::cparams.c_dialect < Dialect::c99)
-        error(ERR_C99_STYLE_INITIALIZATION_USED);
+    if (c99)
+        RequiresDialect::Feature(Dialect::c99, "Structure Designators");
     if (toomany)
         error(ERR_TOO_MANY_INITIALIZERS);
     if (desc)
@@ -3789,10 +3789,13 @@ static void ReplaceLambdaInit(TYPE** tp, EXPRESSION** exp, SYMBOL* newName)
 {  
     // get the temporary address
     auto name = *exp;
-    while (name->type == ExpressionNode::void_)
-        name = name->right;
-    name->v.sp->sb->allocate = false;
-    ReplaceVarRef(exp, name->v.sp, newName);
+    if (name->type == ExpressionNode::void_)
+    {
+        while (name->type == ExpressionNode::void_)
+            name = name->right;
+        name->v.sp->sb->allocate = false;
+        ReplaceVarRef(exp, name->v.sp, newName);
+    }
 }
 static LEXLIST* initialize_auto(LEXLIST * lex, SYMBOL * funcsp, int offset, StorageClass sc, TYPE* itype,
                                 std::list<INITIALIZER*>** init,
@@ -4672,9 +4675,10 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 InsertInlineData(sym);
             }
         }
-        else if (sym->sb->attribs.inheritable.isInline)
+        else if (sym->sb->attribs.inheritable.isInline && !isfunction(sym->tp))
         {
             // so it won't show up in the output file unless used...
+            RequiresDialect::Feature(Dialect::cpp17, "Inline variables");
             sym->sb->attribs.inheritable.linkage4 = Linkage::none_;
             InsertInlineData(sym);
         }

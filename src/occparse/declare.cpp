@@ -1864,8 +1864,9 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
     strcpy(newName, tagname);
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
     ParseAttributeSpecifiers(&lex, funcsp, true);
-    if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && KW(lex) == Keyword::colon_)
+    if (KW(lex) == Keyword::colon_)
     {
+        RequiresDialect::Feature(Dialect::c2x, "Underlying enum type");
         lex = getsym();
         lex = get_type_id(lex, &fixedType, funcsp, StorageClass::cast_, false, true, false);
         if (!fixedType || !isint(fixedType))
@@ -2161,6 +2162,7 @@ static LEXLIST* getPointerQualifiers(LEXLIST* lex, TYPE** tp, bool allowstatic)
                 tpn->type = BasicType::const_;
                 break;
             case Keyword::atomic_:
+                RequiresDialect::Keyword(Dialect::c11, "_Atomic");
                 lex = getsym();
                 if (MATCHKW(lex, Keyword::openpa_))
                 {
@@ -2617,6 +2619,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         type = BasicType::unative_;
                         break;
                     case BasicType::bitint_:
+                        RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
                         type = BasicType::unsigned_bitint_;
                         lex = getsym();
                         needkw(&lex, Keyword::openpa_);
@@ -2654,6 +2657,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                 }
                 break;
             case Keyword::bitint_:
+                RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
                 switch (type)
                 { 
                     case BasicType::unsigned_:
@@ -2877,6 +2881,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
             }
                 break;
             case Keyword::atomic_:
+                RequiresDialect::Keyword(Dialect::c11, "_Atomic");
                 lex = getsym();
                 if (needkw(&lex, Keyword::openpa_))
                 {
@@ -3413,22 +3418,22 @@ exit:
         {
             case BasicType::bool_:
                 if (!Optimizer::cparams.prm_cplusplus)
-                    errorstr(ERR_TYPE_C99, "_Bool");
+                    RequiresDialect::Keyword(Dialect::c99, "_Bool");
                 break;
             case BasicType::long_long_:
             case BasicType::unsigned_long_long_:
                 if (!int64 && !Optimizer::cparams.prm_cplusplus)
-                    errorstr(ERR_TYPE_C99, "long long");
+                    RequiresDialect::Keyword(Dialect::c99, "long long");
                 break;
             case BasicType::float__complex_:
             case BasicType::double__complex_:
             case BasicType::long_double_complex_:
-                errorstr(ERR_TYPE_C99, "_Complex");
+                RequiresDialect::Keyword(Dialect::c99, "_Complex");
                 break;
             case BasicType::long_double_imaginary_:
             case BasicType::float__imaginary_:
             case BasicType::double__imaginary_:
-                errorstr(ERR_TYPE_C99, "_Imaginary");
+                RequiresDialect::Keyword(Dialect::c99, "_Imaginary");
                 break;
             default:
                 break;
@@ -3502,8 +3507,7 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
     lex = getPointerQualifiers(lex, quals, true);
     if (MATCHKW(lex, Keyword::star_))
     {
-        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
-            error(ERR_VLA_c99);
+        RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
         if (storage_class != StorageClass::parameter_)
             error(ERR_UNSIZED_VLA_PARAMETER);
         lex = getsym();
@@ -3526,12 +3530,17 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
             tpc = &stdint;
             error(ERR_EXPRESSION_SYNTAX);
         }
-        if (*quals && Optimizer::cparams.c_dialect < Dialect::c99)
+        if (*quals)
         {
-            error(ERR_ARRAY_QUALIFIERS_C99);
+            RequiresDialect::Feature(Dialect::c99, "Array Qualifiers");
+            for (auto t = *quals; t; t = t->btp)
+                if (t->type == BasicType::static_)
+                {
+                    RequiresDialect::Feature(Dialect::c11, "'static' array qualifier");
+                }
+            if (storage_class != StorageClass::parameter_)
+                error(ERR_ARRAY_QUAL_PARAMETER_ONLY);
         }
-        if (*quals && storage_class != StorageClass::parameter_)
-            error(ERR_ARRAY_QUAL_PARAMETER_ONLY);
     }
     else
     {
@@ -3558,7 +3567,11 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
         if (!unsized)
         {
             if (empty)
+            {
+                if (storage_class == StorageClass::member_)
+                    RequiresDialect::Feature(Dialect::c99, "Flexible Arrays");
                 tpp->size = 0;
+            }
             else
             {
                 if (!isint(tpc))
@@ -3579,8 +3592,8 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
                 }
                 else
                 {
-                    if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus && !templateNestingCount && !msil)
-                        error(ERR_VLA_c99);
+                    if (!templateNestingCount && !msil)
+                        RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
                     tpp->esize = constant;
                     tpp->etype = tpc;
                     *vla = !msil && !templateNestingCount;
@@ -4164,8 +4177,9 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
             
         }
     }
-    else if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c2x && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
+    else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
     {
+        RequiresDialect::Removed(Dialect::c2x, "K&R prototypes");
         SYMBOL* spo = nullptr;
         sp->sb->oldstyle = true;
         if (sp->sb->storage_class != StorageClass::member_ && sp->sb->storage_class != StorageClass::mutable_)
@@ -5751,6 +5765,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
             lex = insertNamespace(lex, linkage, storage_class_in, &linked);
             if (linked)
             {
+                if (MATCHKW(lex, Keyword::classsel_))
+                {
+                    RequiresDialect::Feature(Dialect::cpp17, "Nested Namespace Definitions");
+                }
                 ++ count;
                 while (linked && MATCHKW(lex, Keyword::classsel_))
                 {
@@ -5834,6 +5852,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
             else if (bindingcandidate && tp->type == BasicType::auto_ && 
                 (storage_class_in == StorageClass::auto_ || storage_class_in == StorageClass::localstatic_ || storage_class_in == StorageClass::static_ || storage_class_in == StorageClass::global_))
             {
+                RequiresDialect::Feature(Dialect::cpp17, "Structured binding declarations");
                 lex = GetStructuredBinding(lex, funcsp, storage_class, linkage, block);
             }
             else
@@ -6225,6 +6244,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 error(ERR_VOID_NOT_ALLOWED);
                         if (sp->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                         {
+                            RequiresDialect::Keyword(Dialect::c11, "_Thread_local");
                             if (isfunction(tp1))
                                 error(ERR_FUNC_NOT_THREAD_LOCAL);
                             if (sp->sb->storage_class != StorageClass::external_ && sp->sb->storage_class != StorageClass::global_ &&
@@ -6973,7 +6993,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                         }
                         if (basetype(sp->tp)->type == BasicType::func_)
                         {
-                            if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate && MATCHKW(lex, Keyword::begin_))
+                            if (isautotype(basetype(sp->tp)->btp))
+                                RequiresDialect::Feature(Dialect::cpp14, "Return value deduction");
+                            if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate &&
+                                MATCHKW(lex, Keyword::begin_))
                                 errorsym(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == StorageClass::localstatic_)
                                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
@@ -7191,6 +7214,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);
                             }
+                            if (inTemplate)
+                                RequiresDialect::Feature(Dialect::cpp14, "Variable Templates");
                             if (sp->sb->storage_class == StorageClass::virtual_)
                             {
                                 errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);
@@ -7249,6 +7274,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                                  0); /* also reserves space */
                                 if (sp->sb->parentClass && sp->sb->storage_class == StorageClass::global_)
                                 {
+
                                     if (sp->templateParams && sp->templateParams->size() == 1)
                                     {
                                         SetLinkerNames(sp, Linkage::cdecl_);

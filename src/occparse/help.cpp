@@ -1589,8 +1589,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (found)
                     {
                         /* some members are non-constant expressions */
-                        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
-                            error(ERR_C99_NON_CONSTANT_INITIALIZATION);
+                        if (!Optimizer::cparams.prm_cplusplus)
+                            RequiresDialect::Feature(Dialect::c99, "Field initialization with non-constant");
                         if (!sym)
                         {
                             expsym = anonymousVar(StorageClass::auto_, initItem->basetp);

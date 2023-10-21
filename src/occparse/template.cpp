@@ -82,7 +82,7 @@ std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 
 struct templateListData* currents;
 
-static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst);
+static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst, bool templateParam = false);
 std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations);
 static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, INITLIST** args);
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal);
@@ -2313,7 +2313,7 @@ static LEXLIST* TemplateHeader(LEXLIST* lex, SYMBOL* funcsp, std::list<TEMPLATEP
             if (MATCHKW(lex, Keyword::gt_) || MATCHKW(lex, Keyword::rightshift_))
                 break;
             args->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
-            lex = TemplateArg(lex, funcsp, args->back(), &lst);
+            lex = TemplateArg(lex, funcsp, args->back(), &lst, true);
             if (args)
             {
                 if (!structSyms)
@@ -2348,7 +2348,7 @@ static LEXLIST* TemplateHeader(LEXLIST* lex, SYMBOL* funcsp, std::list<TEMPLATEP
     inTemplateHeader--;
     return lex;
 }
-static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst)
+static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst, bool templateParam)
 {
     LEXLIST* current = lex;
     LEXLIST* txttype = nullptr;
@@ -2357,8 +2357,8 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
         TYPE *tp, *tp1;
         EXPRESSION* exp1;
         SYMBOL* sp;
-        case Keyword::class_:
         case Keyword::typename_:
+        case Keyword::class_:
             arg.second->type = TplType::typename_;
             arg.second->packed = false;
             lex = getsym();
@@ -2461,6 +2461,8 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             }
             else
             {
+                if (MATCHKW(lex, Keyword::typename_))
+                    RequiresDialect::Feature(Dialect::cpp17, "'typename' in template template parameter");
                 lex = getsym();
             }
             if (MATCHKW(lex, Keyword::ellipse_))
@@ -2601,10 +2603,13 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 }
                 arg.second->byNonType.txttype = txttype;
                 if (basetype(tp)->type != BasicType::templateparam_ && basetype(tp)->type != BasicType::templateselector_ &&
-                    basetype(tp)->type != BasicType::enum_ && !isint(tp) && !ispointer(tp) && basetype(tp)->type != BasicType::lref_ && basetype(tp)->type != BasicType::auto_ && 
+                    basetype(tp)->type != BasicType::enum_ && !isint(tp) && !ispointer(tp) && basetype(tp)->type != BasicType::lref_ && 
                     (!templateNestingCount || basetype(tp)->type != BasicType::any_))
                 {
-                    error(ERR_NONTYPE_TEMPLATE_PARAMETER_INVALID_TYPE);
+                    if (basetype(tp)->type == BasicType::auto_)
+                        RequiresDialect::Feature(Dialect::cpp17, "auto as non-type template parameter type");
+                    else
+                        error(ERR_NONTYPE_TEMPLATE_PARAMETER_INVALID_TYPE);
                 }
                 if (sp)
                 {

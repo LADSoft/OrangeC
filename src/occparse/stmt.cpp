@@ -241,13 +241,13 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
     if (startOfType(lex, &structured, false) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)))
     {
         if (declaration)
+        {
             *declaration = true;
+        }
         if ((Optimizer::cparams.prm_cplusplus && declaration) ||
             (Optimizer::cparams.c_dialect >= Dialect::c99 && (kw == Keyword::for_ || kw == Keyword::rangefor_)))
         {
             // empty
-            if (declaration)
-                *declaration = true;
         }
         else
         {
@@ -261,6 +261,8 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
             (*exp)->size = tp;
             tp = &stdint;
         }
+        if ((kw == Keyword::if_ || kw == Keyword::switch_) && MATCHKW(lex, Keyword::semicolon_))
+            RequiresDialect::Feature(Dialect::cpp17, "Initializer in if or switch statement");
     }
     else
     {
@@ -293,7 +295,8 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
     }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
-    else if (kw == Keyword::switch_ && !isint(tp) && basetype(tp)->type != BasicType::enum_)
+    else if (kw == Keyword::switch_ && !isint(tp) && tp->type != BasicType::enum_ &&
+             (!isautotype(tp) || !isint(LookupTypeFromExpression(*exp, nullptr, false))))
         error(ERR_SWITCH_SELECTION_INTEGRAL);
     else if (kw != Keyword::for_ && kw != Keyword::rangefor_ && isstructured(tp) &&
              ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration || !*declaration))
@@ -1679,6 +1682,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     inLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::constexpr_))
     {
+        RequiresDialect::Feature(Dialect::cpp17, "Compile-time static if");
         isconstexpr = true;
         lex = getsym();
     }
@@ -3473,10 +3477,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                 MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::constexpr_) || MATCHKW(lex, Keyword::decltype_) ||
                 MATCHKW(lex, Keyword::static_assert_))
             {
-                if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
-                {
-                    error(ERR_NO_DECLARATION_HERE);
-                }
+                RequiresDialect::Feature(Dialect::c99, "Intermingled declarations");
                 if (viacontrol)
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
@@ -3801,7 +3802,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
             // Keeping this here prevents nonsensical errors such as "FUNCTION SHOULD RETURN VALUE!!!!" when a function is marked
             // noreturn. Noreturn functions can have non-void return types in order for things to work such as in ObjIeee.h's ThrowSyntax functions
         }
-        else if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c2x || Optimizer::cparams.prm_cplusplus)
+        else if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus)
         {
             if (!thunkmainret(funcsp, parent, false))
             {

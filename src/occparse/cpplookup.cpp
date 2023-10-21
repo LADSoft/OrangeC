@@ -264,6 +264,8 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             lex = getDeclType(lex, theCurrentFunc, &tp);
             if (!tp || (!isstructured(tp) && tp->type != BasicType::templatedecltype_) || !MATCHKW(lex, Keyword::classsel_))
                 break;
+            if (isautotype(tp))
+                RequiresDialect::Feature(Dialect::cpp14, "decltype(auto)");
             lex = getsym();
             if (tp->type == BasicType::templatedecltype_)
             {

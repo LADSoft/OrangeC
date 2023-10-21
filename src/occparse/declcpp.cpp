@@ -2921,6 +2921,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 }
 LEXLIST* handleStaticAssert(LEXLIST* lex)
 {
+    RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
     if (!needkw(&lex, Keyword::openpa_))
     {
         errskim(&lex, skim_closepa);
@@ -3868,365 +3869,359 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
     bool rv = false;
-    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
+    while (MATCHKW(*lex, Keyword::alignas_) || MATCHKW(*lex, Keyword::attribute_) || MATCHKW(*lex, Keyword::openbr_))
     {
-        while (MATCHKW(*lex, Keyword::alignas_) || MATCHKW(*lex, Keyword::attribute_) ||
-               ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && MATCHKW(*lex, Keyword::openbr_)))
+        if (MATCHKW(*lex, Keyword::attribute_))
         {
-            if (MATCHKW(*lex, Keyword::attribute_))
+            ParseOut___attribute__(lex, funcsp);
+        }
+        else if (MATCHKW(*lex, Keyword::alignas_))
+        {
+            RequiresDialect::Keyword(Dialect::c2x, "alignas");
+            rv = true;
+            *lex = getsym();
+            if (needkw(lex, Keyword::openpa_))
             {
-                ParseOut___attribute__(lex, funcsp);
-            }
-            else if (MATCHKW(*lex, Keyword::alignas_))
-            {
-                rv = true;
-                *lex = getsym();
-                if (needkw(lex, Keyword::openpa_))
+                int align = 1;
+                if (startOfType(*lex, nullptr, false))
                 {
-                    int align = 1;
-                    if (startOfType(*lex, nullptr, false))
-                    {
-                        TYPE* tp = nullptr;
-                        *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast_, false, true, false);
+                    TYPE* tp = nullptr;
+                    *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast_, false, true, false);
 
-                        if (!tp)
+                    if (!tp)
+                    {
+                        error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    else if (tp->type == BasicType::templateparam_)
+                    {
+                        if (tp->templateParam->second->type == TplType::typename_)
                         {
-                            error(ERR_TYPE_NAME_EXPECTED);
-                        }
-                        else if (tp->type == BasicType::templateparam_)
-                        {
-                            if (tp->templateParam->second->type == TplType::typename_)
+                            if (tp->templateParam->second->packed)
                             {
-                                if (tp->templateParam->second->packed)
+                                std::list<TEMPLATEPARAMPAIR>* packs = tp->templateParam->second->byPack.pack;
+                                if (!MATCHKW(*lex, Keyword::ellipse_))
                                 {
-                                    std::list<TEMPLATEPARAMPAIR>* packs = tp->templateParam->second->byPack.pack;
-                                    if (!MATCHKW(*lex, Keyword::ellipse_))
-                                    {
-                                        error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
-                                    }
-                                    else
-                                    {
-                                        *lex = getsym();
-                                    }
-                                    if (packs)
-                                    {
-                                        for (auto&& pack : *packs)
-                                        {
-                                            int v = getAlign(StorageClass::global_, pack.second->byClass.val);
-                                            if (v > align)
-                                                align = v;
-                                        }
-                                    }
+                                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                 }
                                 else
                                 {
-                                    // it will only get here while parsing the template...
-                                    // when generating the instance the class member will already be
-                                    // filled in so it will get to the below...
-                                    if (tp->templateParam->second->byClass.val)
-                                        align = getAlign(StorageClass::global_, tp->templateParam->second->byClass.val);
+                                    *lex = getsym();
                                 }
-                            }
-                        }
-                        else
-                        {
-                            align = getAlign(StorageClass::global_, tp);
-                        }
-                    }
-                    else
-                    {
-                        TYPE* tp = nullptr;
-                        EXPRESSION* exp = nullptr;
-
-                        *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                        if (!tp || !isint(tp))
-                            error(ERR_NEED_INTEGER_TYPE);
-                        else
-                        {
-                            if (!isintconst(exp))
-                            {
-                                align = 1;
-                                if (exp->type != ExpressionNode::templateparam_)
+                                if (packs)
                                 {
-                                    error(ERR_CONSTANT_VALUE_EXPECTED);
-                                }
-                                else if (exp->v.templateParam && exp->v.templateParam->second->byNonType.val)
-                                {
-                                    exp = exp->v.templateParam->second->byNonType.val;
-                                    if (!isintconst(exp))
-                                        error(ERR_CONSTANT_VALUE_EXPECTED);
-                                    align = exp->v.i;
+                                    for (auto&& pack : *packs)
+                                    {
+                                        int v = getAlign(StorageClass::global_, pack.second->byClass.val);
+                                        if (v > align)
+                                            align = v;
+                                    }
                                 }
                             }
                             else
                             {
-                                align = exp->v.i;
+                                // it will only get here while parsing the template...
+                                // when generating the instance the class member will already be
+                                // filled in so it will get to the below...
+                                if (tp->templateParam->second->byClass.val)
+                                    align = getAlign(StorageClass::global_, tp->templateParam->second->byClass.val);
                             }
                         }
-                    }
-                    needkw(lex, Keyword::closepa_);
-                    basisAttribs.inheritable.structAlign = align;
-                    if (basisAttribs.inheritable.structAlign > 0x10000 ||
-                        (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
-                        error(ERR_INVALID_ALIGNMENT);
-                }
-            }
-            else if (MATCHKW(*lex, Keyword::openbr_))
-            {
-                *lex = getsym();
-                if (MATCHKW(*lex, Keyword::openbr_))
-                {
-                    const std::string occNamespace = "occ";
-                    const std::string gccNamespace = "gnu";
-                    const std::string clangNamespace = "clang";
-                    rv = true;
-                    *lex = getsym();
-                    if (!MATCHKW(*lex, Keyword::closebr_))
-                    {
-                        while (*lex)
-                        {
-                            bool special = false;
-                            if (!ISID(*lex))
-                            {
-                                *lex = getsym();
-                                error(ERR_IDENTIFIER_EXPECTED);
-                            }
-                            else
-                            {
-                                using namespace std::literals;
-                                std::string stripped_ver = StripUnderscores((std::string)(*lex)->data->value.s.a);
-                                if (stripped_ver == occNamespace)
-                                {
-                                    *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::classsel_))
-                                    {
-                                        *lex = getsym();
-                                        if (!ISID(*lex))
-                                        {
-                                            *lex = getsym();
-                                            error(ERR_IDENTIFIER_EXPECTED);
-                                        }
-                                        else if (*lex)
-                                        {
-                                            std::string name = (*lex)->data->value.s.a;
-                                            name = StripUnderscores(name);
-                                            auto searchedName = occCPPStyleAttribNames.find(name);
-                                            if (searchedName != occCPPStyleAttribNames.end())
-                                            {
-                                                switch (searchedName->second)
-                                                {
-                                                    case 23:
-                                                        basisAttribs.inheritable.zstring = true;
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                          occNamespace.c_str());
-                                            }
-                                            *lex = getsym();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
-                                    }
-                                }
-                                else if (stripped_ver == clangNamespace)
-                                {
-                                    *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::classsel_))
-                                    {
-                                        *lex = getsym();
-                                        if (!ISID(*lex))
-                                        {
-                                            *lex = getsym();
-                                            error(ERR_IDENTIFIER_EXPECTED);
-                                        }
-                                        else if (*lex)
-                                        {
-                                            std::string name = (*lex)->data->value.s.a;
-                                            name = StripUnderscores(name);
-                                            auto searchedName = clangCPPStyleAttribNames.find(name);
-                                            if (searchedName != clangCPPStyleAttribNames.end())
-                                            {
-                                                switch (searchedName->second)
-                                                {
-                                                    case 28:
-                                                        basisAttribs.inheritable.linkage2 = Linkage::internal_;
-                                                        break;
-                                                    case 29:
-                                                        basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                          clangNamespace.c_str());
-                                            }
-                                            *lex = getsym();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
-                                    }
-                                }
-                                else if (stripped_ver == gccNamespace)
-                                {
-                                    *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::classsel_))
-                                    {
-                                        *lex = getsym();
-                                        if (!ISID(*lex))
-                                        {
-                                            *lex = getsym();
-                                            error(ERR_IDENTIFIER_EXPECTED);
-                                        }
-                                        else if (*lex)
-                                        {
-                                            // note: these are only the namespaced names listed, the ___attribute__ names are
-                                            // unlisted here as they don't exist in GCC and we want ours to follow theirs for actual
-                                            // consistency reasons.
-                                            std::string name = (*lex)->data->value.s.a;
-                                            name = StripUnderscores(name);
-                                            auto searchedName = gccCPPStyleAttribNames.find(name);
-                                            if (searchedName != gccCPPStyleAttribNames.end())
-                                            {
-                                                switch (searchedName->second)
-                                                {
-                                                    case 25:
-                                                        if (basisAttribs.inheritable.linkage2 != Linkage::none_)
-                                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                                        basisAttribs.inheritable.linkage2 = Linkage::export_;
-                                                        break;
-                                                    case 26:
-                                                        if (basisAttribs.inheritable.linkage2 != Linkage::none_)
-                                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                                        basisAttribs.inheritable.linkage2 = Linkage::import_;
-                                                        break;
-                                                    case 27:
-                                                        if (basisAttribs.inheritable.linkage != Linkage::none_)
-                                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                                        basisAttribs.inheritable.linkage = Linkage::stdcall_;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                          gccNamespace.c_str());
-                                            }
-                                            *lex = getsym();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
-                                    }
-                                }
-                                else
-                                {
-
-                                    if (stripped_ver == "noreturn"s)
-                                    {
-                                        *lex = getsym();
-                                        special = true;
-                                        if (basisAttribs.inheritable.linkage3 != Linkage::none_)
-                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                        basisAttribs.inheritable.linkage3 = Linkage::noreturn_;
-                                    }
-                                    else if (stripped_ver == "carries_dependency"s)
-                                    {
-                                        *lex = getsym();
-                                        special = true;
-                                    }
-                                    else if (stripped_ver == "fallthrough"s)
-                                    {
-                                        *lex = getsym();
-                                        basisAttribs.uninheritable.fallthrough = true;
-                                    }
-                                    else if (stripped_ver == "maybe_unused"s)
-                                    {
-                                        *lex = getsym();
-                                        basisAttribs.uninheritable.maybe_unused = true;
-
-                                    }
-                                    else if (stripped_ver == "nodiscard"s)
-                                    {
-                                        *lex = getsym();
-                                        basisAttribs.uninheritable.nodiscard = true;
-                                    }
-                                    else
-                                    {
-                                        if (stripped_ver == "deprecated"s)
-                                            basisAttribs.uninheritable.deprecationText = (char*)-1;
-                                        *lex = getsym();
-                                        if (MATCHKW(*lex, Keyword::classsel_))
-                                        {
-                                            *lex = getsym();
-                                            if (!ISID(*lex))
-                                                error(ERR_IDENTIFIER_EXPECTED);
-                                            *lex = getsym();
-                                        }
-                                    }
-                                }
-                            }
-                            if (MATCHKW(*lex, Keyword::openpa_))
-                            {
-                                if (special)
-                                    error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
-                                *lex = getsym();
-                                if (basisAttribs.uninheritable.deprecationText)
-                                {
-                                    if ((*lex)->data->type == l_astr)
-                                    {
-                                        char buf[1024];
-                                        int i;
-                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
-                                        for (i = 0; i < 1024 && i < xx->count; i++)
-                                            buf[i] = (char)xx->str[i];
-                                        buf[i] = 0;
-                                        basisAttribs.uninheritable.deprecationText = litlate(buf);
-                                        *lex = getsym();
-                                    }
-                                }
-
-                                else
-                                    while (*lex && !MATCHKW(*lex, Keyword::closepa_))
-                                    {
-                                        balancedAttributeParameter(lex);
-                                    }
-                                needkw(lex, Keyword::closepa_);
-                            }
-                            if (MATCHKW(*lex, Keyword::ellipse_))
-                                *lex = getsym();
-                            if (!MATCHKW(*lex, Keyword::comma_))
-                                break;
-                            *lex = getsym();
-                        }
-                        if (needkw(lex, Keyword::closebr_))
-                            needkw(lex, Keyword::closebr_);
                     }
                     else
                     {
-                        // empty
-                        *lex = getsym();
-                        needkw(lex, Keyword::closebr_);
+                        align = getAlign(StorageClass::global_, tp);
                     }
                 }
                 else
                 {
-                    *lex = backupsym();
-                    break;
+                    TYPE* tp = nullptr;
+                    EXPRESSION* exp = nullptr;
+
+                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                    if (!tp || !isint(tp))
+                        error(ERR_NEED_INTEGER_TYPE);
+                    else
+                    {
+                        if (!isintconst(exp))
+                        {
+                            align = 1;
+                            if (exp->type != ExpressionNode::templateparam_)
+                            {
+                                error(ERR_CONSTANT_VALUE_EXPECTED);
+                            }
+                            else if (exp->v.templateParam && exp->v.templateParam->second->byNonType.val)
+                            {
+                                exp = exp->v.templateParam->second->byNonType.val;
+                                if (!isintconst(exp))
+                                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                                align = exp->v.i;
+                            }
+                        }
+                        else
+                        {
+                            align = exp->v.i;
+                        }
+                    }
                 }
+                needkw(lex, Keyword::closepa_);
+                basisAttribs.inheritable.structAlign = align;
+                if (basisAttribs.inheritable.structAlign > 0x10000 ||
+                    (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                    error(ERR_INVALID_ALIGNMENT);
             }
         }
-    }
-    else
-    {
-        ParseOut___attribute__(lex, funcsp);
+        else if (MATCHKW(*lex, Keyword::openbr_))
+        {
+            *lex = getsym();
+            if (MATCHKW(*lex, Keyword::openbr_))
+            {
+                RequiresDialect::Feature(Dialect::c2x, "Attribute specifiers");
+                const std::string occNamespace = "occ";
+                const std::string gccNamespace = "gnu";
+                const std::string clangNamespace = "clang";
+                rv = true;
+                *lex = getsym();
+                if (!MATCHKW(*lex, Keyword::closebr_))
+                {
+                    while (*lex)
+                    {
+                        bool special = false;
+                        if (!ISID(*lex))
+                        {
+                            *lex = getsym();
+                            error(ERR_IDENTIFIER_EXPECTED);
+                        }
+                        else
+                        {
+                            using namespace std::literals;
+                            std::string stripped_ver = StripUnderscores((std::string)(*lex)->data->value.s.a);
+                            if (stripped_ver == occNamespace)
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, Keyword::classsel_))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        std::string name = (*lex)->data->value.s.a;
+                                        name = StripUnderscores(name);
+                                        auto searchedName = occCPPStyleAttribNames.find(name);
+                                        if (searchedName != occCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 23:
+                                                    basisAttribs.inheritable.zstring = true;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                        occNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                }
+                            }
+                            else if (stripped_ver == clangNamespace)
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, Keyword::classsel_))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        std::string name = (*lex)->data->value.s.a;
+                                        name = StripUnderscores(name);
+                                        auto searchedName = clangCPPStyleAttribNames.find(name);
+                                        if (searchedName != clangCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 28:
+                                                    basisAttribs.inheritable.linkage2 = Linkage::internal_;
+                                                    break;
+                                                case 29:
+                                                    basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                        clangNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
+                                }
+                            }
+                            else if (stripped_ver == gccNamespace)
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, Keyword::classsel_))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        // note: these are only the namespaced names listed, the ___attribute__ names are
+                                        // unlisted here as they don't exist in GCC and we want ours to follow theirs for actual
+                                        // consistency reasons.
+                                        std::string name = (*lex)->data->value.s.a;
+                                        name = StripUnderscores(name);
+                                        auto searchedName = gccCPPStyleAttribNames.find(name);
+                                        if (searchedName != gccCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 25:
+                                                    if (basisAttribs.inheritable.linkage2 != Linkage::none_)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = Linkage::export_;
+                                                    break;
+                                                case 26:
+                                                    if (basisAttribs.inheritable.linkage2 != Linkage::none_)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = Linkage::import_;
+                                                    break;
+                                                case 27:
+                                                    if (basisAttribs.inheritable.linkage != Linkage::none_)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage = Linkage::stdcall_;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                        gccNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
+                                }
+                            }
+                            else
+                            {
+
+                                if (stripped_ver == "noreturn"s)
+                                {
+                                    *lex = getsym();
+                                    special = true;
+                                    if (basisAttribs.inheritable.linkage3 != Linkage::none_)
+                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                    basisAttribs.inheritable.linkage3 = Linkage::noreturn_;
+                                }
+                                else if (stripped_ver == "carries_dependency"s)
+                                {
+                                    *lex = getsym();
+                                    special = true;
+                                }
+                                else if (stripped_ver == "fallthrough"s)
+                                {
+                                    *lex = getsym();
+                                    basisAttribs.uninheritable.fallthrough = true;
+                                }
+                                else if (stripped_ver == "maybe_unused"s)
+                                {
+                                    *lex = getsym();
+                                    basisAttribs.uninheritable.maybe_unused = true;
+
+                                }
+                                else if (stripped_ver == "nodiscard"s)
+                                {
+                                    *lex = getsym();
+                                    basisAttribs.uninheritable.nodiscard = true;
+                                }
+                                else
+                                {
+                                    if (stripped_ver == "deprecated"s)
+                                        basisAttribs.uninheritable.deprecationText = (char*)-1;
+                                    *lex = getsym();
+                                    if (MATCHKW(*lex, Keyword::classsel_))
+                                    {
+                                        *lex = getsym();
+                                        if (!ISID(*lex))
+                                            error(ERR_IDENTIFIER_EXPECTED);
+                                        *lex = getsym();
+                                    }
+                                }
+                            }
+                        }
+                        if (MATCHKW(*lex, Keyword::openpa_))
+                        {
+                            if (special)
+                                error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
+                            *lex = getsym();
+                            if (basisAttribs.uninheritable.deprecationText)
+                            {
+                                if ((*lex)->data->type == l_astr)
+                                {
+                                    char buf[1024];
+                                    int i;
+                                    Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
+                                    for (i = 0; i < 1024 && i < xx->count; i++)
+                                        buf[i] = (char)xx->str[i];
+                                    buf[i] = 0;
+                                    basisAttribs.uninheritable.deprecationText = litlate(buf);
+                                    *lex = getsym();
+                                }
+                            }
+
+                            else
+                                while (*lex && !MATCHKW(*lex, Keyword::closepa_))
+                                {
+                                    balancedAttributeParameter(lex);
+                                }
+                            needkw(lex, Keyword::closepa_);
+                        }
+                        if (MATCHKW(*lex, Keyword::ellipse_))
+                            *lex = getsym();
+                        if (!MATCHKW(*lex, Keyword::comma_))
+                            break;
+                        *lex = getsym();
+                    }
+                    if (needkw(lex, Keyword::closebr_))
+                        needkw(lex, Keyword::closebr_);
+                }
+                else
+                {
+                    // empty
+                    *lex = getsym();
+                    needkw(lex, Keyword::closebr_);
+                }
+            }
+            else
+            {
+                *lex = backupsym();
+                break;
+            }
+        }
     }
     return rv;
 }
@@ -4467,6 +4462,8 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
     }
     needkw(&lex, Keyword::closepa_);
+    if (*tn && isautotype(*tn))
+        RequiresDialect::Feature(Dialect::cpp14, "decltype(auto)");
     return lex;
 }
 
@@ -4815,6 +4812,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                         while (!ismember(*it))
                             ++it;
                         auto sym = makeID(StorageClass::alias_, (*it)->tp, nullptr, litlate(id.c_str()));
+                        SetLinkerNames(sym, Linkage::cdecl_);
                         InsertSymbol(sym, storage_class, linkage, false);
                         initInsert(&sym->sb->init, (*it)->tp, copy, (*it)->sb->offset + offset, true);
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)

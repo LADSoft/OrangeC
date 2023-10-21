@@ -747,6 +747,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             }
             else if (deduceTemplate && (Optimizer::architecture != ARCHITECTURE_MSIL))
             {
+                RequiresDialect::Feature(Dialect::cpp17, "Class template argument deduction");
                 lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
                 if (funcparams->arguments)
                 {

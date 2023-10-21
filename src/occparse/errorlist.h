@@ -124,7 +124,7 @@ ERRLIST(ERR_ARRAY_INDEX_INTEGER_TYPE, 92, "Array size specifier must be of integ
 ERRLIST(ERR_ARRAY_NEED_CLOSEBRACKET, 93, "Array declaration or use needs closebracket", CE_ERROR)
 ERRLIST(ERR_INVALID_ARRAY_INDEX, 94, "Array initialization designator not within array bounds", CE_ERROR)
 ERRLIST(ERR_ARRAY_INVALID_INDEX, 95, "Array must have at least one element", CE_ERROR)
-ERRLIST(ERR_EMPTY_ARRAY_LAST, 96, "Nonsized array must be last element of structure", CE_ERROR)
+ERRLIST(ERR_EMPTY_ARRAY_LAST, 96, "Flexible array must be last element of structure", CE_ERROR)
 ERRLIST(ERR_ARRAY_EXPECTED, 97, "Array expected", CE_ERROR)
 ERRLIST(ERR_ARRAY_INDEX_OUT_OF_RANGE, 98, "Array designator out of range", CE_ERROR)
 ERRLIST(ERR_TYPE_MISMATCH_FUNC_DECLARATION, 99, "Type mismatch in redeclaration of function '%s'", CE_ERROR)
@@ -208,7 +208,7 @@ ERRLIST(ERR_DOWHILE_NEEDS_OPENPA, 173, "do-while statement needs open parenthesi
 ERRLIST(ERR_DOWHILE_NEEDS_CLOSEPA, 174, "do-while statement needs close parenthesis", CE_ERROR)
 ERRLIST(ERR_WHILE_NEEDS_OPENPA, 175, "while statement needs open parenthesis", CE_ERROR)
 ERRLIST(ERR_WHILE_NEEDS_CLOSEPA, 176, "while statement needs close parenthesis", CE_ERROR)
-ERRLIST(ERR_FOR_NEEDS_SEMI, 177, "for statement needs semicolon", CE_ERROR)
+ERRLIST(ERR_FOR_NEEDS_SEMI, 177, "Control statement needs semicolon", CE_ERROR)
 ERRLIST(ERR_FOR_NEEDS_OPENPA, 178, "for statement needs open parenthesis", CE_ERROR)
 ERRLIST(ERR_FOR_NEEDS_CLOSEPA, 179, "for statement needs close parenthesis", CE_ERROR)
 ERRLIST(ERR_IF_NEEDS_OPENPA, 180, "if statement needs open parenthesis", CE_ERROR)
@@ -618,6 +618,9 @@ ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element
 ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
 ERRLIST(ERR_CANNOT_DEDUCE_TEMPLATE, 542, "Cannot deduce template from '%s'", CE_ERROR)
 ERRLIST(ERR_CLASS_MEMBER_ALREADY_DECLARED, 543, "Member '%s' has already been declared or defined", CE_ERROR)
+ERRLIST(ERR_FEATURE_AVAILABLE_IN, 544, "The feature '%s' requires '%s'", CE_ERROR)
+ERRLIST(ERR_FEATURE_NOT_AVAILABLE_IN, 545, "The feature '%s' is not available starting in '%s'", CE_WARNING)
+ERRLIST(ERR_KEYWORD_AVAILABLE_IN, 546, "The keyword '%s' requires '%s'", CE_WARNING)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

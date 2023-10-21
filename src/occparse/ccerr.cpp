@@ -515,6 +515,60 @@ int printerr(int err, const char* file, int line, ...)
     va_end(arg);
     return canprint;
 }
+
+bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
+{
+    static std::unordered_map<Dialect, const char*> lookup = {
+        {Dialect::c89, "C89"},     {Dialect::c99, "C99"},     {Dialect::c11, "C11"},    {Dialect::c2x, "C23"},
+        {Dialect::cpp11, "C++11"}, {Dialect::cpp14, "C++14"}, {Dialect::cpp17, "C++17"}};
+    if (cpp >= Dialect::c89 && cpp < Dialect::cpp11)
+    {
+        if (!Optimizer::cparams.prm_cplusplus)
+            if (err == ERR_FEATURE_NOT_AVAILABLE_IN)
+            {
+                if (Optimizer::cparams.c_dialect >= cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+            else
+            {
+                if (Optimizer::cparams.c_dialect < cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+    }
+    else if (cpp >= Dialect::cpp11)
+
+    {
+        if (Optimizer::cparams.prm_cplusplus)
+            if (err == ERR_FEATURE_NOT_AVAILABLE_IN)
+            {
+                if (Optimizer::cparams.cpp_dialect >= cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+            else
+            {
+                if (Optimizer::cparams.cpp_dialect < cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+    }
+    return false;
+}
+
+bool RequiresDialect::Feature(Dialect cpp, const char* feature) { return Base(cpp, ERR_FEATURE_AVAILABLE_IN, feature); }
+bool RequiresDialect::Removed(Dialect cpp, const char* feature) { return Base(cpp, ERR_FEATURE_NOT_AVAILABLE_IN, feature); }
+bool RequiresDialect::Keyword(Dialect cpp, const char* keyword) { return Base(cpp, ERR_KEYWORD_AVAILABLE_IN, keyword); }
+
 void pperror(int err, int data) { printerr(err, nullptr, 0, data); }
 void pperrorstr(int err, const char* str) { printerr(err, nullptr, 0, str); }
 void preverror(int err, const char* name, const char* origFile, int origLine)

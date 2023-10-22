@@ -842,9 +842,8 @@ typedef struct sym
                                                      // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
         std::list<struct init *>* init, *lastInit, *dest;
-        // order is important for this next, a comparison is done based on this ordering
         // clang-format off
-            enum e_xc xcMode;
+            enum e_xc xcMode, xcModeSpecified;
         // clang-format on
         struct xcept* xc;
         std::list<struct sym*>* friends;

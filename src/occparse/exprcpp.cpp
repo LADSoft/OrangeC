@@ -1184,6 +1184,8 @@ bool doConstCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcsp
         while (isref(*newType))
             *newType = basetype(*newType)->btp;
     }
+    if (!compareXC(*newType, oldType))
+        return false;
     // as long as the types match except for any changes to const and
     // it is not a function or memberptr we can convert it.
     if (comparetypes(*newType, oldType, 2))

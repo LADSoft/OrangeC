@@ -2122,6 +2122,10 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                     break;
                             }
                         }
+                        if (!compareXC(decl->tp , (*itp)->tp))
+                        {
+                            errorConversionOrCast(true, (*itp)->tp, decl->tp);
+                        }
                         if (isref(decl->tp))
                         {
                             TYPE* tpb = basetype(basetype(decl->tp)->btp);

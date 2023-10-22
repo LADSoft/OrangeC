@@ -1705,6 +1705,10 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
                 errorConversionOrCast(true, righttp, *resulttp);
         }
     }
+    if (!compareXC(*resulttp, righttp))
+    {
+        errorConversionOrCast(true, righttp, *resulttp);
+    }
     if (rightexp->type == ExpressionNode::pc_ || (rightexp->type == ExpressionNode::func_ && !rightexp->v.func->ascall))
     {
         if (Optimizer::architecture == ARCHITECTURE_MSIL)

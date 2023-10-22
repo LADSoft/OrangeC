@@ -1795,6 +1795,10 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
             else if (!ispointer(tp) && (tp->btp && !ispointer(tp->btp)) && !isfunction(tp) && !isint(tp) &&
                      tp->type != BasicType::aggregate_)
                 error(ERR_INVALID_POINTER_CONVERSION);
+            else if (!compareXC(itype, tp))
+            {
+                errorConversionOrCast(true, tp, itype);
+            }
             else if (isfunction(tp) || tp->type == BasicType::aggregate_)
             {
                 if (!isfuncptr(itype) || !comparetypes(basetype(itype)->btp, tp, true))

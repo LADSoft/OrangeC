@@ -198,7 +198,7 @@ void dumpInlines(void)
             std::stack<SYMBOL*> destructors;
             for (auto sym : inlineData)
             {
-                if (sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ && sym->sb->attribs.inheritable.linkage2 != Linkage::import_)
+                if ((!sym->sb->attribs.inheritable.isInlineData || sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_) && sym->sb->attribs.inheritable.linkage2 != Linkage::import_)
                 {
                     if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate && (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
                     {

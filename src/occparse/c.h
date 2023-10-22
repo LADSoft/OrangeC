@@ -652,7 +652,8 @@ struct attributes
         unsigned used : 1;                              /* value has been fetched */
         unsigned nonstring : 1;                         /* value is not a zero terminated string */
         unsigned zstring : 1;                           // (argument) was tagged as a zero terminated string
-        unsigned isInline : 1;                          /* function is inlined */
+        unsigned isInline : 1;                          /* function or data is inlined */
+        unsigned isInlineData : 1;                      /* data is inlined */
         unsigned excludeFromExplicitInstantiation : 1;  // template member should be instantiated implicitly
     } inheritable;
     struct

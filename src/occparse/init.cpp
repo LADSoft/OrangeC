@@ -4675,11 +4675,12 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 InsertInlineData(sym);
             }
         }
-        else if (sym->sb->attribs.inheritable.isInline && !isfunction(sym->tp))
+        else if (sym->sb->attribs.inheritable.isInline && !isfunction(sym->tp) && !sym->sb->parentClass && !sym->sb->templateLevel)
         {
             // so it won't show up in the output file unless used...
             RequiresDialect::Feature(Dialect::cpp17, "Inline variables");
             sym->sb->attribs.inheritable.linkage4 = Linkage::none_;
+            sym->sb->attribs.inheritable.isInlineData = true;
             InsertInlineData(sym);
         }
         else

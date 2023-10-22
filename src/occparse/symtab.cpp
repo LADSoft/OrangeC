@@ -219,9 +219,16 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     tps = tps->btp;
                 while (tpn != tpn->rootType && tpn->type != BasicType::typedef_ && tpn->type != BasicType::const_ && tpn->type != BasicType::volatile_)
                     tpn = tpn->btp;
+                if (basetype(tpn)->nullptrType != basetype(tps)->nullptrType)
+                {
+                    matchOverloadLevel--;
+                    return false;
+                }
                 if (tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_ && (ispointer(tpn) || ispointer(tps)))
                 {
-                    while (ispointer(tpn) && ispointer(tps) && tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_)
+
+                    while (ispointer(tpn) && ispointer(tps) && tpn->type != BasicType::typedef_ &&
+                                                tps->type != BasicType::typedef_)
                     {
                         if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                         {
@@ -247,6 +254,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 }
                 tpn = basetype(tpn);
                 tps = basetype(tps);
+
                 if (tpn->type == BasicType::templateparam_)
                 {
                     if (tps->type != BasicType::templateparam_)
@@ -455,6 +463,10 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         return true;
                     }
                     else if ((tpn->type == BasicType::templateparam_ || tps->type == BasicType::templateparam_) && tpn->type != tps->type)
+                    {
+                        return false;
+                    }
+                    else if (basetype(told)->sp->sb->castoperator)
                     {
                         return false;
                     }

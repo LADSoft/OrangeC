@@ -6341,7 +6341,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                     if (!sp->sb->instantiated)
                                         ScrubTemplateValues(sp);
                                 }
-                                if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring || storage_class_in == StorageClass::member_)
+                                if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
                                 {
                                     sym = searchOverloads(sp, spi->tp->syms);
                                     TYPE* retVal;

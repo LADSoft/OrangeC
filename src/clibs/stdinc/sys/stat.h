@@ -122,7 +122,6 @@ struct _stat32i64
         short st_uid;
         short st_gid;
         int st_rdev;
-    dev_t         st_rdev;
     __int64        st_size;
     __time_t_32     st_atime;
     __time_t_32     st_mtime;

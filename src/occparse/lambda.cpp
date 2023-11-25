@@ -1115,6 +1115,12 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
 
         }
     }
+    else
+    {
+        auto ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
+        SetLinkerNames(ths, Linkage::cdecl_);
+        lambda_insert(ths, lambdas.front());
+    }
     if (MATCHKW(lex, Keyword::begin_))
     {
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);

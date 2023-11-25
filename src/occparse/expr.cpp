@@ -6031,14 +6031,19 @@ static LEXLIST* expression_primary(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                         lambda_capture(nullptr, cmThis, true);
                         if (lambdas.front()->captureThis)
                         {
-                            SYMBOL* ths = search(lambdas.front()->cls->tp->syms, "$this");
+                            SYMBOL* ths = search(lambdas.front()->cls->tp->syms, lambdas.front()->thisByVal ? "*this" : "$this");
                             if (ths)
                             {
                                 *tp = MakeType(BasicType::pointer_, basetype(lambdas.front()->lthis->tp)->btp);
-                                *exp = varNode(ExpressionNode::auto_, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
+                                *exp =
+                                    varNode(ExpressionNode::auto_, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
                                 deref(&stdpointer, exp);
-                                *exp = exprNode(ExpressionNode::structadd_, *exp, intNode(ExpressionNode::c_i_, ths->sb->offset));
-                                deref(&stdpointer, exp);
+                                *exp =
+                                    exprNode(ExpressionNode::structadd_, *exp, intNode(ExpressionNode::c_i_, ths->sb->offset));
+                                if (!lambdas.front()->thisByVal)
+                                {
+                                    deref(&stdpointer, exp);
+                                }
                             }
                             else
                             {

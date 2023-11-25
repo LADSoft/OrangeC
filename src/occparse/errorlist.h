@@ -621,6 +621,10 @@ ERRLIST(ERR_CLASS_MEMBER_ALREADY_DECLARED, 543, "Member '%s' has already been de
 ERRLIST(ERR_FEATURE_AVAILABLE_IN, 544, "The feature '%s' requires '%s'", CE_ERROR)
 ERRLIST(ERR_FEATURE_NOT_AVAILABLE_IN, 545, "The feature '%s' is not available starting in '%s'", CE_WARNING)
 ERRLIST(ERR_KEYWORD_AVAILABLE_IN, 546, "The keyword '%s' requires '%s'", CE_WARNING)
+ERRLIST(ERR_CANNOT_CAPTURE_BY_VALUE, 547, "Cannot explicitly capture '&%s' when default capture mode is by-reference (&)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_BY_REFERENCE, 548, "Cannot explicitly capture '%s' when default capture mode is by-value (=)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_THIS_BY_VALUE, 549, "Cannot explicitly capture 'this' default capture mode is by-value (=)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE, 550, "Cannot explicitly capture '*this' when default capture mode is by-reference (&)", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

@@ -242,12 +242,14 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             }
             else
             {
-                SYMBOL* sym = search(lambdas.front()->cls->tp->syms, "$this");
+                SYMBOL* sym = search(lambdas.front()->cls->tp->syms, lambdas.front()->thisByVal ? "*this" : "$this");
                 enclosing = basetype(lambdas.front()->lthis->tp)->btp->sp;
                 if (sym)
                 {
                     deref(&stdpointer, &en);
                     en = exprNode(ExpressionNode::add_, en, intNode(ExpressionNode::c_i_, sym->sb->offset));
+                    if (!lambdas.front()->thisByVal)
+                        deref(&stdpointer, &en);
                 }
                 else
                 {
@@ -255,7 +257,10 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
                 }
             }
         }
-        deref(&stdpointer, &en);
+        else
+        {
+            deref(&stdpointer, &en);
+        }
         if (enclosing != memberSym->sb->parentClass && enclosing->sb->mainsym != memberSym->sb->parentClass)
         {
             if (toError && classRefCount(memberSym->sb->parentClass, enclosing) != 1)

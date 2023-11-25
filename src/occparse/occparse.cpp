@@ -236,7 +236,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     0,     /* icd flags */
     0,     /* verbosity */
     Dialect::c11,
-    Dialect::cpp14,
+    Dialect::cpp17,
     true,  /* optimize_for_speed */
     false, /* optimize_for_size */
     false, /* optimize_for_float_access */

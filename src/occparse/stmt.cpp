@@ -295,7 +295,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
     }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
-    else if (kw == Keyword::switch_ && !isint(tp) && tp->type != BasicType::enum_ &&
+    else if (kw == Keyword::switch_ && !isint(tp) && basetype(tp)->type != BasicType::enum_ &&
              (!isautotype(tp) || !isint(LookupTypeFromExpression(*exp, nullptr, false))))
         error(ERR_SWITCH_SELECTION_INTEGRAL);
     else if (kw != Keyword::for_ && kw != Keyword::rangefor_ && isstructured(tp) &&

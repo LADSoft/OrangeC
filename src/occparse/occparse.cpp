@@ -428,6 +428,7 @@ void compile(bool global)
         if (!Optimizer::cparams.prm_assemble && Optimizer::cparams.prm_debug)
             debug_dumptypedefs(globalNameSpace);
         Optimizer::libIncludes = preProcessor->GetIncludeLibs();
+        Optimizer::dseg(); // so we can tack various data on in the optimizer...
     }
     findUnusedStatics(globalNameSpace);
     dumperrs(stdout);

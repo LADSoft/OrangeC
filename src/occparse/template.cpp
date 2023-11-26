@@ -16,7 +16,7 @@
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * pu
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
@@ -5777,6 +5777,8 @@ static bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass,
                     }
                 }
                 if (isarray(Pb) != isarray(Ab))
+                    return false;
+                if (Pb->nullptrType != Ab->nullptrType)
                     return false;
                 P = Pb->btp;
                 A = Ab->btp;
@@ -12395,6 +12397,11 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     TYPE* basetp = sp->tp->btp;
     while (ispointer(basetp))
         basetp = basetp->btp;
+    if (basetp->type == BasicType::typedef_)
+    {
+        if (basetp->btp->type == BasicType::templateparam_)
+            basetp = basetp->btp;
+    }
     if (basetp->type == BasicType::templatedecltype_)
     {
         rv = CopySymbol(sp);

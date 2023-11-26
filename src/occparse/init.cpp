@@ -4130,21 +4130,19 @@ void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& 
                     RecalculateVariableTemplateInitializers(ilbegin, ilend, out, base->cls->tp, bcoffset);
                     bcoffset += base->cls->tp->size;
                 }
+        offset = bcoffset;
         while (desc)
         {
             sym = *desc->it;
             if (ismember(sym))
             {
                 if (InitVariableMatches(sym, (*ilbegin)->fieldsp))
+                {
                     RecalculateVariableTemplateInitializers(ilbegin, ilend, out, sym->tp, offset + sym->sb->offset);
+                    offset += sym->tp->size;
+                }
             }
             increment_desc(&desc, &cache);
-        }
-        if ((*ilbegin)->basetp == 0)
-        {
-            auto init = Allocate<INITIALIZER>();
-            init->offset = tp->size;
-            (*out)->push_back(init);
         }
     }
     else if (isarray(tp))
@@ -4165,20 +4163,27 @@ void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& 
                     offset += tp->btp->size;
                 }
         }
-        if ((*ilbegin)->basetp == 0)
-        {
-            auto init = Allocate<INITIALIZER>();
-            init->offset = tp->size;
-            (*out)->push_back(init);
-        }
     }
     else
     {
         auto init = Allocate<INITIALIZER>();
-        init->offset = tp->size;
+        init->offset = 0;
         init->basetp = tp;
+        TEMPLATEPARAM tpx = {};
+        tpx.type = TplType::int_;
+        tpx.byNonType.dflt = (*ilbegin)->exp;
+        tpx.byNonType.tp = tp;
+        std::list<TEMPLATEPARAMPAIR> aa = {{nullptr, &tpx}};
+        auto bb = ResolveTemplateSelectors(nullptr, &aa, false);
+        init->exp = bb->front().second->byNonType.dflt;
         (*out)->push_back(init);
         ++ilbegin;
+    }
+    if ((*ilbegin)->basetp == 0)
+    {
+        auto init = Allocate<INITIALIZER>();
+        init->offset = offset;
+        (*out)->push_back(init);
     }
 }
 LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,

@@ -1057,11 +1057,14 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
-                for (auto cons : *basetype(consovl->tp)->syms)
+                if (consovl)
                 {
-                    if (matchesCopy(cons, true))
-                        if (!cons->sb->trivialCons)
-                            return true;
+                    for (auto cons : *basetype(consovl->tp)->syms)
+                    {
+                        if (matchesCopy(cons, true))
+                            if (!cons->sb->trivialCons)
+                                return true;
+                    }
                 }
             }
         }
@@ -1118,11 +1121,14 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
-                for (auto cons : *basetype(consovl->tp)->syms)
+                if (consovl)
                 {
-                    if (matchesCopy(cons, true))
-                        if (!cons->sb->trivialCons)
-                            return true;
+                    for (auto cons : *basetype(consovl->tp)->syms)
+                    {
+                        if (matchesCopy(cons, true))
+                            if (!cons->sb->trivialCons)
+                                return true;
+                    }
                 }
             }
         }

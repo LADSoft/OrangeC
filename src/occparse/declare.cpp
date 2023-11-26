@@ -1105,7 +1105,8 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
                 needkw(&lex, Keyword::colon_);
                 break;
             default:
-                lex = declare(lex, nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false, currentAccess);
+                lex = declare(lex, nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
+                              currentAccess);
                 break;
         }
     }
@@ -1514,7 +1515,11 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     }
     else
     {
-        if (asfriend && sp->sb->templateLevel)
+        if (!sp->sb && sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->byTemplate.val)
+        {
+            sp = sp->tp->templateParam->second->byTemplate.val;
+        }
+        if (asfriend && sp->sb && sp->sb->templateLevel)
         {
             sp = sp->sb->parentTemplate;
         }
@@ -1609,7 +1614,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                 std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
                 lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->front().second->bySpecialization.types);
             }
-            else if (sp->sb->templateLevel)
+            else if (!sp->sb || sp->sb->templateLevel)
             {
                 if ((MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
                 {
@@ -1619,7 +1624,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                 {
                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                     lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
-                    sp = GetClassTemplate(sp, lst, false);
+                    if (sp->sb)
+                        sp = GetClassTemplate(sp, lst, false);
                 }
             }
         }
@@ -1630,16 +1636,19 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     }
     if (sp)
     {
-        if (uuid)
-            sp->sb->uuid = uuid;
-        if (access != sp->sb->access && sp->tp->syms && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+        if (sp->sb)
         {
-            errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
-        }
-        lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, anonymous ? table : nullptr);
-        if (constexpression)
-        {
-            error(ERR_CONSTEXPR_NO_STRUCT);
+            if (uuid)
+                sp->sb->uuid = uuid;
+            if (access != sp->sb->access && sp->tp->syms && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+            {
+                errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
+            }
+            lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, anonymous ? table : nullptr);
+            if (constexpression)
+            {
+                error(ERR_CONSTEXPR_NO_STRUCT);
+            }
         }
         *tp = sp->tp;
     }

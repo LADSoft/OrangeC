@@ -64,7 +64,10 @@
 #include "iexpr.h"
 #include "ioptimizer.h"
 #include "using.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "constopt.h"
 #include "FNV_hash.h"
 

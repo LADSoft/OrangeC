@@ -28,7 +28,10 @@
 #include <unordered_set>
 #include "ccerr.h"
 #include "config.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "stmt.h"
 #include "mangle.h"
 #include "initbackend.h"

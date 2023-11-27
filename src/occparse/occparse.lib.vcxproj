@@ -55,7 +55,10 @@
     <ClCompile Include="stmt.cpp" />
     <ClCompile Include="SymbolManager.cpp" />
     <ClCompile Include="symtab.cpp" />
-    <ClCompile Include="template.cpp" />
+    <ClCompile Include="templatedecl.cpp" />
+    <ClCompile Include="templatededuce.cpp" />
+    <ClCompile Include="templateinst.cpp" />
+    <ClCompile Include="templateutil.cpp" />
     <ClCompile Include="types.cpp" />
     <ClCompile Include="unmangle.cpp" />
     <ClCompile Include="wseh.cpp" />
@@ -106,7 +109,10 @@
     <ClInclude Include="stmt.h" />
     <ClInclude Include="SymbolManager.h" />
     <ClInclude Include="symtab.h" />
-    <ClInclude Include="template.h" />
+    <ClInclude Include="templatedecl.h" />
+    <ClInclude Include="templatededuce.h" />
+    <ClInclude Include="templateinst.h" />
+    <ClInclude Include="templateutil.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="unmangle.h" />
     <ClInclude Include="winmode.h" />

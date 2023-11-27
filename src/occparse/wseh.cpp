@@ -24,7 +24,10 @@
 
 #include "compiler.h"
 #include "ccerr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "config.h"
 #include "initbackend.h"
 #include "stmt.h"

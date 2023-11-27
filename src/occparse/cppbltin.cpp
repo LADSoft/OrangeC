@@ -32,7 +32,10 @@
 #include "beinterf.h"
 #include "libcxx.h"
 #include "ccerr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "symtab.h"
 #include "stmt.h"
 namespace Parser

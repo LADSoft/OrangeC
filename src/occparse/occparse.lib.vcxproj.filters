@@ -90,9 +90,6 @@
     <ClCompile Include="symtab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="template.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="types.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -133,6 +130,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="expreval.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="templatedecl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="templatededuce.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="templateinst.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="templateutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -254,9 +263,6 @@
     <ClInclude Include="symtab.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="template.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -285,6 +291,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="errorlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="templatedecl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="templatededuce.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="templateinst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="templateutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

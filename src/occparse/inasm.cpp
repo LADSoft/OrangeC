@@ -45,7 +45,10 @@
 #include "memory.h"
 #include "inline.h"
 #include "help.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "symtab.h"
 
 namespace Parser

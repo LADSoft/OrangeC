@@ -23,13 +23,15 @@
  */
 
 #include "compiler.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "initbackend.h"
 #include "unmangle.h"
 #include "OptUtils.h"
 #include "help.h"
 #include "ccerr.h"
-#include "template.h"
 #include "declare.h"
 #include "declcpp.h"
 #include "symtab.h"

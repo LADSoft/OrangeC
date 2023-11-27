@@ -39,7 +39,10 @@
 #include "lex.h"
 #include "istmt.h"
 #include "init.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "symtab.h"
 #include "ListFactory.h"
 namespace Parser

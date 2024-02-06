@@ -1,6 +1,6 @@
 <CC386PROJECT>
 	<VERSION ID="5"/>
-	<WORKAREA NAME="C:\Users\David Lindauer\Documents\Orange C Projects\examples\windows examples\windows examples.cwa"/>
+	<WORKAREA NAME="C:\orange\examples\win32\windows examples.cwa"/>
 	<TARGET TITLE="xmlview">
 		<PROPERTIES>
 			<PROFILE NAME="WIN32" TYPE="DEBUG">

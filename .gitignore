@@ -68,7 +68,6 @@ q2.*
 /src/occ/Release/
 /src/occ/parse86/Release/
 /src/occ/preproc/Release/
-/src/ocide/Release/
 /src/ocl/Release/
 /src/ocpp/Release/
 /src/ogrep/Release/
@@ -89,7 +88,6 @@ q2.*
 /src/occ/Debug/
 /src/occ/parse86/Debug/
 /src/occ/preproc/Debug/
-/src/ocide/Debug/
 /src/ocl/Debug/
 /src/ocpp/Debug/
 /src/ogrep/Debug/

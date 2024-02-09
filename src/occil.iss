@@ -7,12 +7,12 @@ AppName=Orange C MSIL Version
 AppVerName=Orange C MSIL Version 6.21
 OutputBaseFileName=setup
 AppPublisher=LADSoft
-AppPublisherURL=http:\\members.tripod.com\~ladsoft
-AppSupportURL=http:\\members.tripod.com\~ladsoft
-AppUpdatesURL=http:\\members.tripod.com\~ladsoft
+AppPublisherURL=https://ladsoft.tripod.com
+AppSupportURL=https://ladsoft.tripod.com
+AppUpdatesURL=https://ladsoft.tripod.com
 DefaultDirName={pf}\Orange C MSIL
 DefaultGroupName=Orange C MSIL
-SetupIconFile=c:\orangec\src\ocide\res\prj.ico
+SetupIconFile=c:\orangec\src\prj.ico
 ;AlwaysCreateUninstallIcon=yes
 LicenseFile=License.txt
 ;BackColor=clRed
@@ -35,24 +35,23 @@ ChangesEnvironment=yes
 BeveledLabel=Orange C MSIL, Copyright (C) LADSoft, 2016-2017
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4; 
-Name: "addtopath"; Description: "Add Orange C MSIL to the path"; GroupDescription: "General:"; Flags: checkedonce;  
+Name: "addtopath"; Description: "Add Orange C MSIL to the path"; GroupDescription: "General:"; Flags: checkedonce;
 
 [Files]
-Source: "C:\occil\license.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
-Source: "C:\occil\berkely.lic"; DestDir: "{app}\"; Flags: IgnoreVersion; 
-Source: "C:\occil\DotNetPELib.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
-Source: "C:\occil\occil.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
-Source: "C:\occil\copying"; DestDir: "{app}\"; Flags: IgnoreVersion; 
+Source: "C:\occil\license.txt"; DestDir: "{app}\"; Flags: IgnoreVersion;
+Source: "C:\occil\berkely.lic"; DestDir: "{app}\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib.txt"; DestDir: "{app}\"; Flags: IgnoreVersion;
+Source: "C:\occil\occil.txt"; DestDir: "{app}\"; Flags: IgnoreVersion;
+Source: "C:\occil\copying"; DestDir: "{app}\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\occil.cfg"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\occil.exe"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\netlink.exe"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\occmsil.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\lscrtlil.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion gacinstall; StrongAssemblyName: "lsmsilcrtl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=bc9b111235642d7d, ProcessorArchitecture=x86"
-Source: "C:\occil\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion; 
-Source: "C:\occil\include\sys\*.*"; DestDir: "{app}\include\sys"; Flags: IgnoreVersion; 
-Source: "C:\occil\include\win32\*.*"; DestDir: "{app}\include\win32\"; Flags: IgnoreVersion; 
+Source: "C:\occil\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion;
+Source: "C:\occil\include\sys\*.*"; DestDir: "{app}\include\sys"; Flags: IgnoreVersion;
+Source: "C:\occil\include\win32\*.*"; DestDir: "{app}\include\win32\"; Flags: IgnoreVersion;
 
 Source: "C:\occil\DotNetPELib\*.*"; DestDir: "{app}\DotNetPELib\"; Flags: IgnoreVersion;
 Source: "C:\occil\DotNetPELib\test\*.*"; DestDir: "{app}\DotNetPELib\test\"; Flags: IgnoreVersion;
@@ -68,7 +67,7 @@ Source: "C:\occil\examples\msil\*.*"; DestDir: "{app}\examples\msil\"; Flags: Ig
 
 [Registry]
 
-Root: HKCU; SubKey: "Environment"; ValueType: string; ValueName: "OCCIL_ROOT"; ValueData: "{app}"; 
+Root: HKCU; SubKey: "Environment"; ValueType: string; ValueName: "OCCIL_ROOT"; ValueData: "{app}";
 
 [Code]
 #ifdef UNICODE

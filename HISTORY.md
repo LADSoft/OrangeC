@@ -1,5 +1,8 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
+## Unreleased
+* project: remove last pieces of OCIDE, now a separate project
+
 ## Version 6.0.73
 * project: update sqlite3 to latest version
 * olink: fix bug with debug info for type information

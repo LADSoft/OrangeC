@@ -1896,7 +1896,11 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                     tp = MakeType(BasicType::pointer_, tp);
                 }
                 arg.second->byNonType.tp = tp;
-                if (!isint(tp) && !ispointer(tp))
+                auto tp2 = tp;
+                while (ispointer(tp2))
+                    tp2 = basetype(tp2)->btp;
+                tp2 = basetype(tp2);
+                if (!isint(tp) && (!ispointer(tp) || tp2->type == BasicType::templateselector_))
                 {
                     LEXLIST* end = lex;
                     LEXLIST** cur = &txttype;

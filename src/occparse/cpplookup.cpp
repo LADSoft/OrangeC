@@ -4818,38 +4818,41 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     }
                     if (islrqual(sym->tp) || isrrqual(sym->tp))
                     {
-                        bool lref = lvalue(f->thisptr);
-                        auto strtype = basetype(f->thistp)->btp;
-                        if (isstructured(strtype) && f->thisptr->type != ExpressionNode::not__lvalue_)
+                        if (f->thisptr)
                         {
-                            if (strtype->lref)
-                                lref = true;
-                            else if (!strtype->rref)
+                            bool lref = lvalue(f->thisptr);
+                            auto strtype = basetype(f->thistp)->btp;
+                            if (isstructured(strtype) && f->thisptr->type != ExpressionNode::not__lvalue_)
                             {
-                                EXPRESSION* expx = f->thisptr;
-                                if (expx->type == ExpressionNode::thisref_)
-                                    expx = expx->left;
-                                if (expx->type == ExpressionNode::func_)
+                                if (strtype->lref)
+                                    lref = true;
+                                else if (!strtype->rref)
                                 {
-                                    if (expx->v.func->returnSP)
+                                    EXPRESSION* expx = f->thisptr;
+                                    if (expx->type == ExpressionNode::thisref_)
+                                        expx = expx->left;
+                                    if (expx->type == ExpressionNode::func_)
                                     {
-                                        if (!expx->v.func->returnSP->sb->anonymous)
-                                            lref = true;
+                                        if (expx->v.func->returnSP)
+                                        {
+                                            if (!expx->v.func->returnSP->sb->anonymous)
+                                                lref = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        lref = true;
                                     }
                                 }
-                                else
-                                {
-                                    lref = true;
-                                }
                             }
-                        }
-                        if (isrrqual(sym->tp))
-                        {
-                            if (lref)
+                            if (isrrqual(sym->tp))
+                            {
+                                if (lref)
+                                    return false;
+                            }
+                            else if (!lref)
                                 return false;
                         }
-                        else if (!lref)
-                            return false;
                     }
                     m = 0;
                     if (((f->thisptr && isconstexpr(f->thisptr)) ||

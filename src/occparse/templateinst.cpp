@@ -2037,7 +2037,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         structLevel = oldStructLevel;
                         SetAlternateLex(nullptr);
                         lex = start;
-                        if (tp1->type == BasicType::any_)
+                        TYPE* tp2 = tp1;
+                        while (ispointer(tp2))
+                            tp2 = basetype(tp2)->btp;
+                        if (tp2->type == BasicType::any_)
                         {
                             parsingDefaultTemplateArgs--;
                             while (pushCount--)

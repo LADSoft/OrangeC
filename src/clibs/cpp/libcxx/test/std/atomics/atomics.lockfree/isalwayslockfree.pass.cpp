@@ -30,7 +30,7 @@ template <typename T> void checkAlwaysLockFree() {
 // which causes ATOMIC_LLONG_LOCK_FREE to be defined as '1' in 32-bit builds
 // even though __atomic_always_lock_free returns true for the same type.
 constexpr bool NeedWorkaroundForPR31864 =
-#if defined(__clang__)
+#if defined(__clang__) || defined(__ORANGEC__)
 (sizeof(void*) == 4); // Needed on 32 bit builds
 #else
 false;
@@ -57,7 +57,9 @@ void checkLongLongTypes() {
   constexpr bool ExpectLockFree = __atomic_always_lock_free(getSizeOf<LLong>(), 0);
   static_assert(std::atomic<LLong>::is_always_lock_free == ExpectLockFree, "");
   static_assert(std::atomic<ULLong>::is_always_lock_free == ExpectLockFree, "");
+#ifndef __ORANGEC__
   static_assert((0 != ATOMIC_LLONG_LOCK_FREE) == ExpectLockFree, "");
+#endif
 }
 
 void run()

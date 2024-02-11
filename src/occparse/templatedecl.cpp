@@ -1968,8 +1968,39 @@ static bool matchArg(TEMPLATEPARAMPAIR& param, TEMPLATEPARAMPAIR& arg)
     else if (param.second->type == TplType::template_)
     {
         if (arg.second->byTemplate.dflt)
-            if (!exactMatchOnTemplateParams(param.second->byTemplate.args, arg.second->byTemplate.dflt->templateParams))
+        {
+            auto ito = param.second->byTemplate.args->begin();
+            auto itoe = param.second->byTemplate.args->end();
+            auto its = arg.second->byTemplate.dflt->templateParams->begin();
+            auto itse = arg.second->byTemplate.dflt->templateParams->end();
+            ++its;
+            for (; ito != itoe && its != itse; ++ito, ++its)
+            {
+                if (ito->second->type != its->second->type)
+                {
+                    return false;
+                }
+                if (ito->second->packed)
+                {
+                    auto itt = ito;
+                    ++itt;
+                    if (itt != itoe)
+                    {
+                        return false;
+                    }
+                    for (; its != itse && its->second->type == ito->second->type; ++its);
+                    --its;
+                }
+                else if (its->second->packed && !ito->second->packed)
+                {
+                    return false;
+                }
+            }
+            if (itoe != ito || itse != its)
+            {
                 return false;
+            }
+        }
     }
     return true;
 }

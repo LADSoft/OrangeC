@@ -4831,6 +4831,11 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
             std::list<TEMPLATEPARAMPAIR>* tpxx = (*last)->v.func->templateParams;
             if (tpxx)
             {
+                if ((*last)->v.func->sp->tp->type != BasicType::aggregate_)
+                {
+                    (*last)->v.func->sp = (*last)->v.func->sp->sb->overloadName;
+                    (*last)->v.func->functp = (*last)->v.func->sp->tp;
+                }
                 auto x1 = (*last)->v.func->templateParams = templateParamPairListFactory.CreateList();
                 for (auto tpx : *tpxx)
                 {
@@ -5605,7 +5610,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
         rv->sb->mainsym = sp;
         if (!templateNestingCount)
         {
-            basetp = SpecifyArgType(basetp->sp, basetp, nullptr, nullptr, sp->templateParams, sp->sb->typeAlias);
+            basetp = SpecifyArgType(basetp->sp, basetp, nullptr, nullptr, args, sp->sb->typeAlias);
             rv->tp = TemplateLookupTypeFromDeclType(basetp);
             if (!rv->tp)
                 rv->tp = &stdany;

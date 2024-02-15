@@ -1,0 +1,135 @@
+[From zrdx.txt, converted to UTF-8 and run through Google Translate]
+
+                      Zurenava DOS extender(ZRDX).
+             DOS4GW compatible DOS extender, beta version 0.50.
+        Copyright(C) 1998-1999 by Sergey Belyakov(S.Belyakov@chat.ru).
+                     Homepage:http://www.zrdx.da.ru
+    maillist: http://zrdx.listbot.com, mailto:zrdx-subscribe@listbot.com
+     (announcements of new versions, operational information about found errors).
+
+   ZRDX version 0.50 is distributed as freeware and can be freely copied
+and be used for any purpose, both non-commercial and commercial. On
+development and use of ZRDX-based product programs created by
+by modifying and/or adding to the original source code or binary
+ZRDX code does not impose any restrictions.
+   All rights to the ZRDX source code belong to the author, Sergei Belyakov.
+   ZRDX is provided "as is". The author does not guarantee that ZRDX does not contain
+errors and shall not be liable for any damages incurred by anyone in
+connection with the use or non-use of ZRDX.
+
+                 Brief description of purpose and capabilities.
+   zrdx can be used to execute programs designed for
+dos4gw, pmode/w, dos32a, wdosx using Watcom C++ compilers,
+TMT pascal, LadSoft C, etc. Available to applications running under zrdx
+all physical memory (up to 4G), all dpmi functions (int 31h) in exact accordance
+with dpmi 0.9 specification, with the exception of functions 0A00h-0B03h. Dos
+the expander provides translation of all functions that pmode/w translates,
+with the exception of identification, and almost everyone that dos4gw broadcasts.
+If you use only standard libraries, then the supported functions
+enough for normal operation, and if you directly call DOS, then
+a complete list of broadcast functions and broadcast methods can be viewed
+in the source file src/extender.asm.
+   To package executable modules, it is recommended to use the upx packer,
+which is much more efficient than pmwlite.
+
+                     How to use the ZRXBIND utility.
+   The DOS extender zrdx is a program that is attached to the beginning
+main module, after startup it switches to protected mode, and
+loads the main module in it. DOS4GW and others like that work the same way
+DOS extenders.
+To attach zrdx to an already linked program, you must use
+zrxbind with -r or -c switches. With the -r(replace) switch, zrxbind replaces the old stub
+on your own and makes a safety copy (if there is no -n key). With the -c(copy) switch
+zrxbind copies the specified program to a new file, replacing stub in the new file
+and leaving the old one unchanged.
+For example:
+   "zrxbind -r -n doom.exe" attaches zrdx to the file "doom.exe" without doing
+insurance copy.
+   "zrxbind -c doom.exe doomz.exe" creates the file "doomz.exe", appending to it
+zrdx, and leaves the "doom.exe" file unchanged.
+
+   To attach stub zrdx to a program at link time, it
+needs to be pulled out of zrxbind. To do this, use the -w switch.
+For example, the command "zrxbind -w zrdx.exe" will write stub to the file "zrdx.exe" and
+it can be linked by specifying wlink for the linker
+option stub=zrdx.exe.
+
+                      ZRXSETUP utility and its options.
+    zrxsetup is intended for additional configuration of the DOS extender.
+The list of keys can be obtained by running zrxsetup /?.
+The parameter specifies the name of the file with the bound zrdx or the stub itself, which
+needs to be configured. If no additional key is specified, then
+zrxsetup displays a message about the current configuration. If the keys are specified, then
+after the same message it is written which parameters and how they were changed and the new
+the value is stored in a file.
+Description of keys:
+/X<hex number> - maximum size of allocated memory in raw/xms mode.
+   Since the xms/raw interface does not allow you to normally change the amount of memory "by
+   go", then by default zrdx takes over all available memory. If
+   the program will then launch another one, then the expanded memory will not be
+   available. Therefore, for optimal execution of exec one should evaluate
+   the maximum required amount of memory, and specify it with this parameter.
+   In vcpi and dpmi modes this problem does not occur. In vcpi zrdx captures
+   pages only as memory is required by the client, and in dpmi all this
+   determined by dpmi server.
+/L<hex number> - determines how much lower memory should be left free.
+   When the zrdx server dpmi is initialized, all remaining available memory will be
+   along with the extended one, it is connected to the general memory pool of the dpmi server. So
+   Thus, decreasing this parameter leads to an increase in the total memory capacity,
+   available to the client. If an application needs to exec, it's best to leave
+   this parameter is at its maximum value (0F000h). If exec is not needed, then
+   it can be set according to the amount of lower memory that
+   additionally needed by the program (for example, allocated via int 31h, ax=100h).
+   The minimum value is 0. Minimizing this parameter will allow normal
+   execute small programs even with complete lack of extended memory.
+/T<hex number> - determines the length of the dos extender clipboard.
+   Since DOS can only work with low memory, and advanced parameters
+   functions can be located anywhere to transfer such parameters between
+   dos and the application use a specially allocated clipboard.
+   So, when reading a file, DOS Extender can split one long read into
+   several short ones and after each copy the clipboard to
+   the corresponding buffer area specified by the client. The longer the clipboard,
+   the less reading required. Thus, increasing the length of the clipboard
+   allows you to somewhat speed up "long" disk operations, but at the same time
+   reduces the amount of free lower memory.
+/M<1/0> - order of detection of protected mode interfaces,
+   0 - dpmi/vcpi/xms/raw, 1 - vcpi/dpmi/xms/raw.
+   According to the standard, the first option is recommended (that is, give preference
+   dpmi), however in practice some dpmi servers are characterized by increased
+   glitchyness or, for example, providing vmm while it is completely
+   not needed and gets in the way. Therefore, most dos extenders, including dos4gw,
+   give preference to vcpi (if it exists, of course).
+/B<1/0> - allows you to enable/disable the issuance of a copyright banner at startup
+   extender dos. Comments are unnecessary; banners - push :).
+
+   You may have noticed that there are much fewer parameters than in
+pmode/w or dos32a. This can be explained mainly by the fact that the zrdx core is much
+more capable of dynamic configuration. So, point by point:
+- zrdx dynamically allocates space for page tables (and main memory
+   too) in vcpi mode as the client requests memory. Moreover, page
+   tables are allocated only in the upper memory and the total amount of addressable memory
+   reaches 4 gigabytes.
+- zrdx dynamically allocates pages for physical space mapping
+   to linear (if there is free memory, of course). The total volume of this
+   mapping can reach 4 gigabytes, if there are 4 megabytes of free
+   memory.
+- zrdx dynamically allocates space for LDT. At start under LDT it is given
+   one page (511 selectors), further, if more selectors are needed,
+   LDT will be updated with new pages up to 8191 selectors.
+- zrdx uses a fundamentally different stack management system, and does not
+   needs to be fine tuned. The only thing that could be customized is
+   this is the total volume of the associated DOS stack (only one is needed), however 512
+   the default bytes are more than enough for this.
+- It would be possible to customize the number of real mode callbacks, but if the program
+   requires more than 20 of them, it will not work in dpmi mode, since
+   Most dpmi servers provide exactly 20 real mode callbacks.
+
+                       Purpose of the VMM.ASM file.
+   If desired, you can build an experimental version with vmm support.
+To do this, you need to comment out the line Release = 1 in the segdefs.asm file and
+uncomment VMM=1. This system has not been finalized and is not supported.
+freeing up pages under vcpi, so it should only be run in
+raw/xms. In addition, the function of unlocking pages is not implemented, and not completely
+correct work with the swap file (it needs to be re-opened every time it changes
+length and delete when finished). In terms of speed, vmm works no worse than in
+dos4gw.

@@ -2669,10 +2669,26 @@ int opt0(EXPRESSION** node)
                                 EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
                                 FUNCTIONCALL funcparams = { };
                                 funcparams.arguments = (*find).arguments;
+                                funcparams.templateParams = (*find).templateParams;
+                                funcparams.ascall = true;
+
+                                STRUCTSYM t = { };
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, 0);
                                 if (sp1)
                                 {
-                                    sym = sp1;
+                                    EXPRESSION exp1 = { }, * exp2 = &exp1;;
+                                    funcparams.fcall = exp;
+                                    funcparams.sp = sp1;
+                                    funcparams.functp = sp1->tp;
+//                                    funcparams.templateParams = nullptr;
+                                    exp1.type = ExpressionNode::func_;
+                                    exp1.v.func = &funcparams;
+                                    optimize_for_constants(&exp2);
+                                    if (exp1.type != ExpressionNode::thisref_ && exp1.type != ExpressionNode::func_)
+                                    {
+                                        *node = copy_expression(&exp1);
+                                        return true;
+                                    }
                                 }
                             }
                             ++find;
@@ -3446,9 +3462,9 @@ int typedconsts(EXPRESSION* node1)
             }
             else if (node1->left->type == ExpressionNode::global_)
             {
-                if (node1->left->v.sp->sb->storage_class == StorageClass::constant_ && isintconst(node1->left->v.sp->sb->init->front()->exp))
+                if ((node1->left->v.sp->sb->storage_class == StorageClass::constant_ && isintconst(node1->left->v.sp->sb->init->front()->exp)))
                 {
-                    optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
+                    optimize_for_constants(&node1->left->v.sp->sb->init->front()->exp);
                     *node1 = *node1->left->v.sp->sb->init->front()->exp;
                     rv = true;
                 }

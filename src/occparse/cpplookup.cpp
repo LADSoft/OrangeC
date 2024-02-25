@@ -220,8 +220,24 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
     }
     return nullptr;
 }
+static void GetUsingName(char* buf)
+{
+    STRUCTSYM s;
+    s.str = getStructureDeclaration();
+    if (s.str)
+    {
+        addStructureDeclaration(&s);
+        auto sp = classsearch(buf, false, false, false);
+        dropStructureDeclaration();
+        if (sp && sp->sb && sp->sb->usingTypedef)
+        {
+            if (isstructured(sp->tp))
+                strcpy(buf, basetype(sp->tp)->sp->name);
+        }
+    }
+}
 LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
-                    bool isType)
+                    bool isType, int flags)
 {
     (void)tagsOnly;
     (void)storage_class;
@@ -294,6 +310,9 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
         {
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             lex = getsym();
+
+            GetUsingName(buf);
+
             if (!templateSelector)
                 templateSelector = templateSelectorListFactory.CreateVector();
             templateSelector->push_back(TEMPLATESELECTOR{});
@@ -469,6 +488,8 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             }
             else
             {
+                GetUsingName(buf);
+
                 if (structLevel && !templateNestingCount && strSym->sb->templateLevel &&
                     (!strSym->sb->instantiated || strSym->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
                 {
@@ -605,7 +626,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 if (hasTemplateArgs)
                 {
-                    deferred = inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing;
+                    deferred = inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing || (flags & _F_NOEVAL);
                     if (currentsp)
                     {
                         sp = currentsp;
@@ -1127,7 +1148,7 @@ LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         return lex;
     }
 
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType);
+    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType, 0);
     if (Optimizer::cparams.prm_cplusplus)
     {
 
@@ -1164,9 +1185,9 @@ LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         }
         else
         {
+            char buf[512];
             if (!ISID(lex))
             {
-                char buf[512];
                 int ovdummy;
                 lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
                 *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
@@ -1186,7 +1207,16 @@ LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
                 }
                 else
                 {
-                    *sym = finishSearch(lex->data->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
+                    if (encloser)
+                    {
+                        strcpy(buf, lex->data->value.s.a);
+                        GetUsingName(buf);
+                        *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
+                    }
+                    else
+                    {
+                        *sym = finishSearch(lex->data->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
+                    }
                     if (!*sym)
                         encloser = nullptr;
                     if (errIfNotFound && !*sym)
@@ -1349,7 +1379,7 @@ LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** cast
     return lex;
 }
 LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
-                       bool tagsOnly, bool membersOnly, char* idname)
+                       bool tagsOnly, bool membersOnly, char* idname, int flags)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
@@ -1386,7 +1416,7 @@ LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
         }
         return lex;
     }
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, StorageClass::global_, false);
+    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, StorageClass::global_, false, flags);
     if (MATCHKW(lex, Keyword::complx_))
     {
         lex = getsym();
@@ -4818,17 +4848,18 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     }
                     if (islrqual(sym->tp) || isrrqual(sym->tp))
                     {
-                        if (f->thisptr)
+                        auto thisptr = f->thistp ? f->thisptr : f->arguments->size() ? f->arguments->front()->exp : nullptr;
+                        if (thisptr)
                         {
-                            bool lref = lvalue(f->thisptr);
-                            auto strtype = basetype(f->thistp)->btp;
-                            if (isstructured(strtype) && f->thisptr->type != ExpressionNode::not__lvalue_)
+                            bool lref = lvalue(thisptr);
+                            auto strtype = basetype(tpthis)->btp;
+                            if (isstructured(strtype) && thisptr->type != ExpressionNode::not__lvalue_)
                             {
                                 if (strtype->lref)
                                     lref = true;
                                 else if (!strtype->rref)
                                 {
-                                    EXPRESSION* expx = f->thisptr;
+                                    EXPRESSION* expx = thisptr;
                                     if (expx->type == ExpressionNode::thisref_)
                                         expx = expx->left;
                                     if (expx->type == ExpressionNode::func_)
@@ -5803,6 +5834,7 @@ static bool ValidForDeduction(SYMBOL* s)
     }
     return deduced;
 }
+int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, int flags)
 {

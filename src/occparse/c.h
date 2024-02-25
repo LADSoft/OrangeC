@@ -736,6 +736,7 @@ typedef struct sym
         unsigned constexpression : 1;  /* declared with constexpression */
         unsigned addressTaken : 1;     /* address taken */
         unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
+        unsigned usingTypedef : 1;     /* typedef defined as a 'using' statement */
         unsigned redeclared : 1;       /* symbol was declared more than once */
         unsigned thisPtr : 1;          /*is a this pointer*/
         unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */

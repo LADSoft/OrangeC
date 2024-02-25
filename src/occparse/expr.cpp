@@ -455,7 +455,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
     if (Optimizer::cparams.prm_cplusplus ||
         ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions))
     {
-        lex = id_expression(lex, funcsp, &sym, &strSym, &nsv, nullptr, false, false, idname);
+        lex = id_expression(lex, funcsp, &sym, &strSym, &nsv, nullptr, false, false, idname, flags);
     }
     else
     {
@@ -1443,7 +1443,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     STRUCTSYM l;
                     l.str = basetype(*tp)->sp;
                     addStructureDeclaration(&l);
-                    lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr);
+                    lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr, 0);
                     dropStructureDeclaration();
                     if (!sp2)
                     {
@@ -1510,7 +1510,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                 STRUCTSYM l;
                 l.str = basetype(*tp)->sp;
                 addStructureDeclaration(&l);
-                lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr);
+                lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr, 0);
                 dropStructureDeclaration();
             }
             else

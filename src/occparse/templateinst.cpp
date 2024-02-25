@@ -1888,6 +1888,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>* dest,
                               std::list<TEMPLATEPARAMPAIR>* src, std::list<TEMPLATEPARAMPAIR>* enclosing)
 {
+    auto sp = declareSym;
     std::list<TEMPLATEPARAMPAIR>* defaults = nullptr;
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
@@ -2006,7 +2007,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     char buf[256];
                     strcpy(buf, lex->data->value.s.a);
                     lex =
-                        id_expression(lex, nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf);
+                        id_expression(lex, nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf, 0);
 
                     if (!itDest->second->byTemplate.val)
                     {

@@ -3274,7 +3274,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
                     bool throughClass = false;
                     parsingTrailingReturnOrUsing++;
-                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr);
+                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr, 0);
                     if (sym)
                     {
                         tp = sym->tp;
@@ -3334,6 +3334,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 }
                 if (storage_class == StorageClass::member_)
                     sp->sb->parentClass = getStructureDeclaration();
+                sp->sb->usingTypedef = true;
                 SetLinkerNames(sp, Linkage::cdecl_);
                 InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
                 if (sp_out)

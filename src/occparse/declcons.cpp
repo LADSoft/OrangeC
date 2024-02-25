@@ -155,7 +155,7 @@ LEXLIST* FindClass(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym)
 
     if (MATCHKW(lex, Keyword::classsel_))
         namespaceOnly = true;
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, true, StorageClass::global_, false);
+    lex = nestedPath(lex, &encloser, &ns, &throughClass, true, StorageClass::global_, false, 0);
     lex = getIdName(lex, funcsp, buf, &ov, &castType);
     if (buf[0])
     {

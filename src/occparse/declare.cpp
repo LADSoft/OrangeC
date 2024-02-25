@@ -4856,7 +4856,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
                 pack = true;
                 lex = getsym();
             }
-            lex = nestedPath(lex, &strSymX, &nsvX, &throughClass, false, storage_class, false);
+            lex = nestedPath(lex, &strSymX, &nsvX, &throughClass, false, storage_class, false, 0);
             inTemplateSpecialization = oldTemplateSpecialization;
             if (strSymX)
             {

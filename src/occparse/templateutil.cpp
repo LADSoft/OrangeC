@@ -2102,41 +2102,107 @@ static void FixIntSelectors(EXPRESSION** exp)
         std::deque<EXPRESSION*> expressions;
         if (currentx)
         {
-            for (auto current : *currentx)
+            for (auto&& current : *currentx)
             {
                 if (current.second->type == TplType::typename_)
                 {
-                    types.push_back(current.second->byClass.dflt);
-                    if (current.second->byClass.val)
-                        current.second->byClass.dflt = current.second->byClass.val;
+                    if (current.second->packed)
+                    {
+                        if (current.second->byPack.pack)
+                        {
+                            for (auto&& current2 : *current.second->byPack.pack)
+                            {
+                                types.push_back(current2.second->byClass.dflt);
+                                if (current2.second->byClass.val)
+                                    current2.second->byClass.dflt = current2.second->byClass.val;
+
+                            }
+                        }
+                    }
+                    else
+                    {
+                        types.push_back(current.second->byClass.dflt);
+                        if (current.second->byClass.val)
+                            current.second->byClass.dflt = current.second->byClass.val;
+                    }
                 }
                 else if (current.second->type == TplType::int_)
                 {
-                    expressions.push_back(current.second->byNonType.dflt);
-                    if (current.second->byNonType.val)
-                        current.second->byNonType.dflt = current.second->byNonType.val;
+                    if (current.second->packed)
+                    {
+                        if (current.second->byPack.pack)
+                        {
+                            for (auto&& current2 : *current.second->byPack.pack)
+                            {
+                                expressions.push_back(current2.second->byNonType.dflt);
+                                if (current2.second->byNonType.val)
+                                    current2.second->byNonType.dflt = current2.second->byNonType.val;
+
+                            }
+                        }
+                    }
+                    else
+                    {
+                        expressions.push_back(current.second->byNonType.dflt);
+                        if (current.second->byNonType.val)
+                            current.second->byNonType.dflt = current.second->byNonType.val;
+                    }
                 }
             }
         }
         optimize_for_constants(exp);
         if (orig)
         {
-            for (auto current : *orig)
+            for (auto&& current : *orig)
             {
                 if (current.second->type == TplType::typename_)
                 {
-                    if (!types.empty())
+                    if (current.second->packed)
                     {
-                        current.second->byClass.dflt = types.front();
-                        types.pop_front();
+                        if (current.second->byPack.pack)
+                        {
+                            for (auto&& current2 : *current.second->byPack.pack)
+                            {
+                                if (!types.empty())
+                                {
+                                    current2.second->byClass.dflt = types.front();
+                                    types.pop_front();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!types.empty())
+                        {
+                            current.second->byClass.dflt = types.front();
+                            types.pop_front();
+                        }
                     }
                 }
                 else if (current.second->type == TplType::int_)
                 {
-                    if (!expressions.empty())
+                    if (current.second->packed)
                     {
-                        current.second->byNonType.dflt = expressions.front();
-                        expressions.pop_front();
+                        if (current.second->byPack.pack)
+                        {
+                            for (auto&& current2 : *current.second->byPack.pack)
+                            {
+                                if (!types.empty())
+                                {
+                                    current2.second->byNonType.dflt = expressions.front();
+                                    expressions.pop_front();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!expressions.empty())
+                        {
+                            current.second->byNonType.dflt = expressions.front();
+                            expressions.pop_front();
+                        }
                     }
                 }
             }

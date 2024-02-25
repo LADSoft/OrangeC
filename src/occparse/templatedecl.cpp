@@ -924,7 +924,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             {
                                 std::list<NAMESPACEVALUEDATA*>* nsv;
                                 lex = prevsym(start);
-                                lex = nestedPath(lex, &name, &nsv, nullptr, false, StorageClass::parameter_, false);
+                                lex = nestedPath(lex, &name, &nsv, nullptr, false, StorageClass::parameter_, false, 0);
                                 if (name && name->tp->type == BasicType::templateselector_)
                                 {
                                     lex = getsym();
@@ -1683,7 +1683,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 SYMBOL *sym = nullptr, *strsym = nullptr;
                 std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
 
-                lex = nestedPath(lex, &strsym, &nsv, nullptr, false, StorageClass::global_, false);
+                lex = nestedPath(lex, &strsym, &nsv, nullptr, false, StorageClass::global_, false, 0);
                 if (strsym)
                 {
                     if (strsym->tp->type == BasicType::templateselector_)
@@ -3125,7 +3125,7 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, AccessLevel access, S
                 SYMBOL* cls = nullptr;
                 SYMBOL* strSym = nullptr;
                 std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
-                lex = id_expression(lex, funcsp, &cls, &strSym, &nsv, nullptr, false, false, idname);
+                lex = id_expression(lex, funcsp, &cls, &strSym, &nsv, nullptr, false, false, idname, 0);
                 if (!cls || !isstructured(cls->tp))
                 {
                     if (!cls)

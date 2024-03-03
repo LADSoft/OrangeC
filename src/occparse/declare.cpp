@@ -5803,15 +5803,18 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                 }
                 for (; count; count--)
                 {
-                    SYMBOL* sp = nameSpaceList.front();
-                    sp->sb->value.i--;
-                    nameSpaceList.pop_front();
-                    globalNameSpace->pop_front();
-                    if (!IsCompiler())
+                    if (nameSpaceList.size()) /// in case of error
                     {
-                        if (!sp->sb->ccNamespaceData)
-                            sp->sb->ccNamespaceData = ccNameSpaceDataListFactory.CreateList();
-                        sp->sb->ccNamespaceData->push_front(&nsData);
+                        SYMBOL* sp = nameSpaceList.front();
+                        sp->sb->value.i--;
+                        nameSpaceList.pop_front();
+                        globalNameSpace->pop_front();
+                        if (!IsCompiler())
+                        {
+                            if (!sp->sb->ccNamespaceData)
+                                sp->sb->ccNamespaceData = ccNameSpaceDataListFactory.CreateList();
+                            sp->sb->ccNamespaceData->push_front(&nsData);
+                        }
                     }
                 }
                 needsemi = false;

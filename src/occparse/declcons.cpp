@@ -3013,6 +3013,8 @@ static void undoBases(std::list<BLOCKDATA*>& b, SYMBOL* against, std::list<BASEC
 }
 void thunkDestructorTail(std::list<BLOCKDATA*>& b, SYMBOL* sp, SYMBOL* dest, SymbolTable<SYMBOL>* syms, bool defaulted)
 {
+    if (!sp) // error....
+        return;
     InsertInline(sp);
     if (sp->tp->type != BasicType::union_)
     {

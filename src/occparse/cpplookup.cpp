@@ -5012,18 +5012,55 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     }
                     else if ((*ita)->initializer_list)
                     {
+                        int n1 = m;
                         getSingleConversion(initializerListType, ita != itae ? (*ita)->tp : (*itt)->tp, ita != itae ? (*ita)->exp : nullptr, &m,
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
+                        for (int i = n1; i < m; i++)
+                        {
+                            if (seq[i] == CV_NONE)
+                            {
+                                seq[n1++] = CV_NONE;
+                                m = n1;
+                                break;
+                            }
+                        }
+                        for (int i = n1; i < m; i++)
+                        {
+                            if (seq[i] == CV_USER)
+                            {
+                                seq[n1++] = CV_IDENTITY;
+                                m = n1;
+                                break;
+                            }
+                        }
                     }
                     else if ((*ita)->tp && (*ita)->exp)  // might be an empty initializer list...
                     {
+                        int n1 = m;
                         getSingleConversion((basetype(tp1)->sp)->tp, ita != itae ? (*ita)->tp : (*itt)->tp, ita != itae ? (*ita)->exp : nullptr, &m,
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
+                        for (int i = n1; i < m; i++)
+                        {
+                            if (seq[i] == CV_NONE)
+                            {
+                                seq[n1++] = CV_NONE;
+                                m = n1;
+                                break;
+                            }
+                        }
+                        for (int i = n1; i < m; i++)
+                        {
+                            if (seq[i] == CV_USER)
+                            {
+                                seq[n1++] = CV_IDENTITY;
+                                m = n1;
+                                break;
+                            }
+                        }
                     }
                 }
                 else if (ita != itae && ((*ita)->nested || (!(*ita)->tp && !(*ita)->exp)))
                 {
-
                     seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
                     if (basetype(tp)->type == BasicType::lref_)
                     {
@@ -5071,6 +5108,11 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 else
                 {
+                    if (ita != itae)
+                    {
+                        if ((*ita)->initializer_list)
+                            seq[m++] = CV_QUALS;  // have to make a distinction between an initializer list and the same func without one...
+                    }
                     TYPE* tp2 = tp;
                     if (isref(tp2))
                         tp2 = basetype(tp2)->btp;

@@ -75,6 +75,8 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
                   SYMBOL* sym, bool arrayMember, int flags);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
 void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& ilbegin, std::list<INITIALIZER*>::iterator& ilend, std::list<INITIALIZER*>** out, TYPE* tp, int offset);
+void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName);
+void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, EXPRESSION* newName);
 LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
                     int flags);
 }  // namespace Parser

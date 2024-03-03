@@ -2175,7 +2175,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                             refa = BasicType::lref_;
 
                     }
-                    if (refa == BasicType::rref_ && expa && !ta->rref && !basetype(ta)->rref)
+                    if (ta && refa == BasicType::rref_ && expa && !ta->rref && !basetype(ta)->rref)
                     {
                         if (expa->type != ExpressionNode::thisref_ && expa->type != ExpressionNode::func_)
                             refa = BasicType::lref_;
@@ -3848,6 +3848,8 @@ void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
     bool func = false;
     bool func2 = false;
     bool notlval = false;
+    if (expa && expa->type == ExpressionNode::void_ && expa->left->type == ExpressionNode::blockclear_)
+        expa = expa->right;
     if (tpp)
     {
         TYPE *tpp1 = tpp;

@@ -2281,6 +2281,25 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         maybeConversion = false;
                         implicit = false;
                     }
+                    else if (exptemp->type == ExpressionNode::void_)
+                    {
+                        // a list of initializers into a temp var...   we don't want to do a constructor here because we just constructe it...
+                        // so replace the expression
+                        while (exptemp->type == ExpressionNode::void_) exptemp = exptemp->right;
+                        if (exptemp->type == ExpressionNode::auto_)
+                        {
+                            exptemp->v.sp->sb->destructed = true;
+                        }
+                        auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
+                        deref(&stdpointer, &targetPointer);
+                        auto targetExpr = exprNode(ExpressionNode::assign_, targetPointer, en);
+                        ReplaceVarRef(&exp1, exptemp->v.sp, targetPointer);
+                        exp1 = exprNode(ExpressionNode::void_, targetExpr, exp1);
+                        returntype = tp;
+                        returnexp = exp1;
+                        maybeConversion = false;
+                        implicit = false;
+                    }
                     else
                     {
                         bool nonconst = funcsp->sb->nonConstVariableUsed;
@@ -2299,19 +2318,19 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         returntype = tp;
                         // try the rref constructor first
                         if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
-                                            false, false))
+                            false, false))
                         {
                             if (funcparams->sp && matchesCopy(funcparams->sp, true))
                             {
                                 switch (exp1->type)
                                 {
-                                    case ExpressionNode::global_:
-                                    case ExpressionNode::auto_:
-                                    case ExpressionNode::threadlocal_:
-                                        exp1->v.sp->sb->dest = nullptr;
-                                        break;
-                                    default:
-                                        break;
+                                case ExpressionNode::global_:
+                                case ExpressionNode::auto_:
+                                case ExpressionNode::threadlocal_:
+                                    exp1->v.sp->sb->dest = nullptr;
+                                    break;
+                                default:
+                                    break;
                                 }
                             }
                         }
@@ -2322,12 +2341,13 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                             basetype(tp1)->rref = false;
                             basetype(tp1)->lref = true;
                             callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
-                                            false, true);
+                                false, true);
                         }
                         basetype(tp1)->rref = oldrref;
                         basetype(tp1)->lref = oldlref;
                         funcsp->sb->nonConstVariableUsed = nonconst;
                         returnexp = en;
+
                     }
                 }
             }
@@ -2402,9 +2422,28 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         }
                         else if (!isstructured(tp) || !basetype(tp)->sp->sb->structuredAliasType)
                         {
-                            returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
-                            returnexp->size = tp;
-                            returnexp->altdata = (void*)(basetype(tp));
+                            if (Optimizer::cparams.prm_cplusplus && returnexp->type == ExpressionNode::void_)
+                            {
+                                // a list of initializers into a temp var...   we don't want to do a constructor here because we just constructe it...
+                                // so replace the expression
+                                auto exptemp = returnexp;
+                                while (exptemp->type == ExpressionNode::void_) exptemp = exptemp->right;
+                                if (exptemp->type == ExpressionNode::auto_)
+                                {
+                                    exptemp->v.sp->sb->destructed = true;
+                                }
+                                auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
+                                deref(&stdpointer, &targetPointer);
+                                auto targetExpr = exprNode(ExpressionNode::assign_, targetPointer, en);
+                                ReplaceVarRef(&returnexp, exptemp->v.sp, targetPointer);
+                                returnexp = exprNode(ExpressionNode::void_, targetExpr, returnexp);
+                            }
+                            else
+                            {
+                                returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
+                                returnexp->size = tp;
+                                returnexp->altdata = (void*)(basetype(tp));
+                            }
                         }
                         else
                         {

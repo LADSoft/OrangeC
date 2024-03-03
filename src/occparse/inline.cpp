@@ -194,7 +194,7 @@ void dumpInlines(void)
                 }
                 for (auto&& local : inlineLocalUninitializers)
                 {
-                     DumpInlineLocalUninitializer(local);
+                    DumpInlineLocalUninitializer(local);
                 }
                 inlineLocalUninitializers.clear();
             } while (!done);

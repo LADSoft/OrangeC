@@ -55,11 +55,13 @@ namespace Parser
 int anonymousNotAlloc;
 
 static int staticanonymousIndex;
+static std::set<std::string> guardFuncs;
 
 void helpinit()
 {
     anonymousNotAlloc = 0;
     staticanonymousIndex = 1;
+    guardFuncs.clear();
 }
 void deprecateMessage(SYMBOL* sym)
 {
@@ -620,6 +622,27 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             pointerOrRef = true;
             pat = &basetype(*pat)->btp;
             nt = basetype(nt)->btp;
+        }
+        if (ispointer(*pat))
+        {
+            if (isfunction(nt))
+            {
+                while ((*pat)->type != BasicType::auto_)
+                    pat = &(*pat)->btp;
+                *pat = nt;
+                return;
+            }
+            else if (nt->type == BasicType::aggregate_)
+            {
+                while ((*pat)->type != BasicType::auto_)
+                    pat = &(*pat)->btp;
+                LookupSingleAggregate(nt, &exp, false);
+                if (exp->type == ExpressionNode::pc_)
+                {
+                    *pat = exp->v.sp->tp;
+                }
+                return;
+            }
         }
         if (ispointer(*pat))
             err = true;
@@ -1817,8 +1840,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         exp->size = tp;
         rv = exprNode(ExpressionNode::void_, exp, rv);
     }
-    if (sym && sym->sb->storage_class == StorageClass::localstatic_ && !(Optimizer::architecture == ARCHITECTURE_MSIL))
+    if (sym && sym->sb->storage_class == StorageClass::localstatic_ && !(Optimizer::architecture == ARCHITECTURE_MSIL) && guardFuncs.find(sym->sb->decoratedName) == guardFuncs.end())
     {
+        guardFuncs.insert(sym->sb->decoratedName);
         SYMBOL* guardfunc = namespacesearch("__static_guard", globalNameSpace, false, false);
         if (guardfunc)
         {

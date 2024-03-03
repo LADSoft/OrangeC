@@ -2808,12 +2808,13 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
             if (!found)
                 data->v.sp->sb->constexpression = true;
         }
+        EXPRESSION* ildest = nullptr;
         if (isstructured(initializerListType))
         {
             EXPRESSION* exp = data;
             EXPRESSION* elms = intNode(ExpressionNode::c_i_, count);
             callDestructor(basetype(initializerListType)->sp, nullptr, &exp, elms, true, false, false, true);
-            initInsert(&data->v.sp->sb->dest, tp, exp, 0, false);
+            ildest = exp;
         }
         std::deque<EXPRESSION*> listOfScalars;
         for (i = 0; i < count; i++, ++itl)
@@ -3059,6 +3060,11 @@ void CreateInitializerList(SYMBOL* func, TYPE* initializerListTemplate, TYPE* in
             initial->front()->tp = initializerListTemplate;
             initial->front()->exp = exprNode(ExpressionNode::stackblock_, exprNode(ExpressionNode::void_, rv, initList), nullptr);
             initial->front()->exp->size = initializerListTemplate;
+        }
+        if (ildest)
+        {
+            initial->front()->destructors = new std::list<EXPRESSION*>();
+            initial->front()->destructors->push_front(ildest);
         }
     }
 }

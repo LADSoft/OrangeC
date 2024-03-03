@@ -77,7 +77,6 @@ static SYMBOL* msilToString;
 static std::list<SYMBOL*> file_level_constructors;
 LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
-
 void init_init(void)
 {
     strtab.clear();
@@ -883,7 +882,9 @@ void CreateInlineConstructor(SYMBOL* sym)
         optimize_for_constants(&exp);
         st.back()->select = exp;
         char buf[4000];
-        sprintf(buf, "initializer@%s", sym->name);
+        const char* q = sym->sb->decoratedName + strlen(sym->sb->decoratedName);
+        while (isdigit(q[-1])) q--;
+        sprintf(buf, "initializer@%s_%s", sym->name, q);
         callDynamic(buf, STARTUP_TYPE_STARTUP, -1, &st, true);
         FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
@@ -901,7 +902,9 @@ void CreateInlineDestructor(SYMBOL* sym)
         stmt->select = exp;
         st.push_back(stmt);
         char buf[4000];
-        sprintf(buf, "destructor@%s", sym->name);
+        const char* q = sym->sb->decoratedName + strlen(sym->sb->decoratedName);
+        while (isdigit(q[-1])) q--;
+        sprintf(buf, "destructor@%s_%s", sym->name, sym->sb->decoratedName);
         callDynamic(buf, STARTUP_TYPE_RUNDOWN, -1, &st, true);
         FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
@@ -3762,7 +3765,7 @@ static LEXLIST* initialize_bit(LEXLIST* lex, SYMBOL* funcsp, int offset, Storage
     errskim(&lex, skim_comma);
     return lex;
 }
-static void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName)
+void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName)
 {
     std::stack<EXPRESSION**> stk;
     stk.push(exp);
@@ -3776,6 +3779,7 @@ static void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName)
             stk.push(&(*exp)->right);
         switch ((*exp)->type)
         {
+            case ExpressionNode::threadlocal_:
             case ExpressionNode::auto_:
             case ExpressionNode::global_: {
                 if (name == (*exp)->v.sp)
@@ -3789,6 +3793,43 @@ static void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName)
                 stk.push(&(*exp)->left->v.func->thisptr);
             }
             break;
+        }
+    }
+}
+void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, EXPRESSION* newName)
+{
+    std::stack<EXPRESSION**> stk;
+    stk.push(exp);
+    while (!stk.empty())
+    {
+        exp = stk.top();
+        stk.pop();
+        if ((*exp)->left)
+            stk.push(&(*exp)->left);
+        if ((*exp)->right)
+            stk.push(&(*exp)->right);
+        switch ((*exp)->type)
+        {
+            case ExpressionNode::threadlocal_:
+            case ExpressionNode::auto_:
+            case ExpressionNode::global_: {
+                if (name == (*exp)->v.sp)
+                {
+                    (*exp) = newName;
+                }
+            }
+                break;
+            case ExpressionNode::thisref_:
+            {
+                stk.push(&(*exp)->left->v.func->thisptr);
+            }
+                break;
+            case ExpressionNode::func_:
+            {
+                if ((*exp)->v.func->returnEXP)
+                    stk.push(&(*exp)->v.func->returnEXP);
+            }
+                break;
         }
     }
 }

@@ -2937,7 +2937,9 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         TYPE* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
         inConstantExpression++;
+        anonymousNotAlloc++;
         lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
+        anonymousNotAlloc--;
         expr2 = Allocate<EXPRESSION>();
         expr2->type = ExpressionNode::x_bool_;
         expr2->left = expr->type == ExpressionNode::select_ ? expr->left : expr;

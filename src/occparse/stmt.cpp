@@ -2180,6 +2180,14 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             EXPRESSION* exp1;
             LEXLIST* current = lex;
             lex = expression(lex, funcsp, nullptr, &tp1, &exp1, _F_SIZEOF);
+            if (basetype(tp1)->lref)
+            {
+                tp1 = MakeType(BasicType::lref_, tp1);
+            }
+            else if (basetype(tp1)->rref)
+            {
+                tp1 = MakeType(BasicType::rref_, tp1);
+            }
             ConstExprPatch(&exp1);
             lex = prevsym(current);
             while (tp1->type == BasicType::typedef_)

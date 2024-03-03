@@ -6298,7 +6298,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     inNothrowHandler++;
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
-                if (!(flags & _F_SIZEOF) ||
+                if (!(flags & _F_SIZEOF) || ((flags & _F_INDECLTYPE) && isautotype(basetype(found1->tp)->btp)) ||
                     ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LEXLIST*)-1))
                 {
                     if (theCurrentFunc && !found1->sb->constexpression)
@@ -6351,7 +6351,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         }
                     }
                       
-                    if (isautotype(basetype(found1->tp)->btp) && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs))
+                    if (isautotype(basetype(found1->tp)->btp) && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs || (flags & _F_INDECLTYPE)))
                     {
                         CompileInline(found1, false);
                     }  

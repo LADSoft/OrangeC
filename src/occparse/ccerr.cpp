@@ -31,7 +31,10 @@
 #include "config.h"
 #include "declare.h"
 #include "lex.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "occparse.h"
 #include "stmt.h"
 #include "unmangle.h"
@@ -396,7 +399,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
-    if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
+    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
@@ -515,6 +518,60 @@ int printerr(int err, const char* file, int line, ...)
     va_end(arg);
     return canprint;
 }
+
+bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
+{
+    static std::unordered_map<Dialect, const char*> lookup = {
+        {Dialect::c89, "C89"},     {Dialect::c99, "C99"},     {Dialect::c11, "C11"},    {Dialect::c2x, "C23"},
+        {Dialect::cpp11, "C++11"}, {Dialect::cpp14, "C++14"}, {Dialect::cpp17, "C++17"}};
+    if (cpp >= Dialect::c89 && cpp < Dialect::cpp11)
+    {
+        if (!Optimizer::cparams.prm_cplusplus)
+            if (err == ERR_FEATURE_NOT_AVAILABLE_IN)
+            {
+                if (Optimizer::cparams.c_dialect >= cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+            else
+            {
+                if (Optimizer::cparams.c_dialect < cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+    }
+    else if (cpp >= Dialect::cpp11)
+
+    {
+        if (Optimizer::cparams.prm_cplusplus)
+            if (err == ERR_FEATURE_NOT_AVAILABLE_IN)
+            {
+                if (Optimizer::cparams.cpp_dialect >= cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+            else
+            {
+                if (Optimizer::cparams.cpp_dialect < cpp)
+                {
+                    errorstr2(err, feature, lookup[cpp]);
+                    return true;
+                }
+            }
+    }
+    return false;
+}
+
+bool RequiresDialect::Feature(Dialect cpp, const char* feature) { return Base(cpp, ERR_FEATURE_AVAILABLE_IN, feature); }
+bool RequiresDialect::Removed(Dialect cpp, const char* feature) { return Base(cpp, ERR_FEATURE_NOT_AVAILABLE_IN, feature); }
+bool RequiresDialect::Keyword(Dialect cpp, const char* keyword) { return Base(cpp, ERR_KEYWORD_AVAILABLE_IN, keyword); }
+
 void pperror(int err, int data) { printerr(err, nullptr, 0, data); }
 void pperrorstr(int err, const char* str) { printerr(err, nullptr, 0, str); }
 void preverror(int err, const char* name, const char* origFile, int origLine)
@@ -592,6 +649,11 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
         {
             unmang1(unopped, name + 1, last, false);
         }
+    }
+    else if (*name == '@')
+    {
+        *unopped = 0;
+        unmangle(unopped, name);
     }
     else
     {
@@ -1297,7 +1359,7 @@ void checkUnused(SymbolTable<SYMBOL>* syms)
                     sp->sb->storage_class == StorageClass::parameter_)
                     errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
             }
-            else
+            else if (!sp->sb->attribs.uninheritable.maybe_unused)
             {
                 if (sp->sb->storage_class == StorageClass::parameter_)
                     errorsym(ERR_UNUSED_PARAMETER, sp);
@@ -1343,7 +1405,8 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                 {
                     currentErrorLine = 0;
                     if (sp->sb->storage_class == StorageClass::static_ && !sp->sb->attribs.inheritable.used)
-                        errorsym(ERR_UNUSED_STATIC, sp);
+                        if (!sp->sb->attribs.uninheritable.maybe_unused)
+                            errorsym(ERR_UNUSED_STATIC, sp);
                     currentErrorLine = 0;
                     if (sp->sb->storage_class == StorageClass::global_ || sp->sb->storage_class == StorageClass::static_ ||
                         sp->sb->storage_class == StorageClass::localstatic_)
@@ -1445,6 +1508,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::nullptr_:
         case ExpressionNode::memberptr_:
         case ExpressionNode::structelem_:
+        case ExpressionNode::c_bitint_:
+        case ExpressionNode::c_ubitint_:
             break;
         case ExpressionNode::global_:
         case ExpressionNode::pc_:
@@ -1471,6 +1536,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::l_s_:
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_l_:
+        case ExpressionNode::l_bitint_:
         case ExpressionNode::l_p_:
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
@@ -1483,6 +1549,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
             if (node->left->type == ExpressionNode::auto_)
@@ -1524,6 +1591,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::x_us_:
         case ExpressionNode::x_l_:
         case ExpressionNode::x_ul_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_p_:
         case ExpressionNode::x_fp_:
         case ExpressionNode::x_sp_:
@@ -1637,7 +1706,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::sizeofellipse_:
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         default:
             diag("assignmentUsages");
@@ -1708,6 +1777,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::l_s_:
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_l_:
+        case ExpressionNode::l_bitint_:
         case ExpressionNode::l_p_:
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
@@ -1720,6 +1790,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::literalclass_:
@@ -1752,6 +1823,8 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::x_bit_:
         case ExpressionNode::x_s_:
         case ExpressionNode::x_us_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_l_:
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_p_:
@@ -1851,7 +1924,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::templateselector_:
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         default:
             diag("rv |= checkDefaultExpression");

@@ -37,7 +37,10 @@
 #include "initbackend.h"
 #include "init.h"
 #include "declare.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "floatconv.h"
 #include "memory.h"
 #include "help.h"
@@ -77,7 +80,8 @@ static int isoptconst(EXPRESSION* en)
 {
     if (!en)
         return false;
-    return isintconst(en) || optimizerfloatconst(en);
+    return isintconst(en) || optimizerfloatconst(en) || en->type == ExpressionNode::c_bitint_ ||
+           en->type == ExpressionNode::c_ubitint_;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1356,7 +1360,7 @@ int opt0(EXPRESSION** node)
         return false;
     switch (ep->type)
     {
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         case ExpressionNode::l_sp_:
         case ExpressionNode::l_fp_:
@@ -1381,6 +1385,8 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_f_:
         case ExpressionNode::l_d_:
         case ExpressionNode::l_ld_:
@@ -1440,6 +1446,8 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_i_:
         case ExpressionNode::x_ui_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_inative_:
         case ExpressionNode::x_unative_:
         case ExpressionNode::x_ll_:
@@ -1474,6 +1482,20 @@ int opt0(EXPRESSION** node)
                 ep->unionoffset = ep->left->unionoffset;
                 ep->left = ep->right = nullptr;
             }
+            else if (ep->left->type == ExpressionNode::c_bitint_ || ep->left->type == ExpressionNode::c_ubitint_)
+            {
+                int sz = ep->left->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+                sz /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz /= CHAR_BIT;
+                ep->type = ep->left->type;
+                ep->v.b.bits = ep->left->v.b.bits;
+                ep->v.b.value = make_bitint(ep->v.b.bits, ep->left->v.b.value);
+                for (int i = 0; i < sz; i++)
+                {
+                    ep->v.b.value[i] = ~ep->v.b.value[i];
+                }
+            }
             return rv;
 
         case ExpressionNode::uminus_:
@@ -1482,6 +1504,24 @@ int opt0(EXPRESSION** node)
             {
                 *node = intNode(ep->left->type, -ep->left->v.i);
                 rv = true;
+            }
+            else if (ep->left->type == ExpressionNode::c_bitint_ || ep->left->type == ExpressionNode::c_ubitint_)
+            {
+                int sz = ep->left->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+                sz /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                sz /= CHAR_BIT;
+                ep->type = ep->left->type;
+                ep->v.b.bits = ep->left->v.b.bits;
+                ep->v.b.value = make_bitint(ep->v.b.bits, ep->left->v.b.value);
+                int carry = 0, c1 = 0;
+                for (int i = 0; i < sz; i++)
+                {
+                    if (!carry)
+                        c1 = ep->v.b.value[i] == 0 ? 0 : 1; 
+                    ep->v.b.value[i] = -ep->v.b.value[i] - carry;
+                    carry = carry ? 1 : c1;                    
+                }
             }
             else if (isfloatconst(ep->left))
             {
@@ -1522,6 +1562,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->right));
             if (ep->right->type == ExpressionNode::structelem_ || ep->left->type == ExpressionNode::structadd_)
                 break;
+            if (ep->type == ExpressionNode::sub_)
             {
                 // this next will normalize expressions of the form:
                 // z = (a + 5) - a
@@ -2570,7 +2611,7 @@ int opt0(EXPRESSION** node)
                 {
                     if (ts->tp->type == BasicType::templateparam_)
                     {
-                        if (ts->tp->templateParam->second->type != Keyword::template_)
+                        if (ts->tp->templateParam->second->type != TplType::template_)
                             break;
                         ts = ts->tp->templateParam->second->byTemplate.val;
                         if (!ts)
@@ -2638,7 +2679,7 @@ int opt0(EXPRESSION** node)
                         }
                         if (find == (*tsl).end() && sym)
                         {
-                            if (sym->sb->storage_class == StorageClass::const_ant_)
+                            if (sym->sb->storage_class == StorageClass::constant_)
                             {
                                 optimize_for_constants(&sym->sb->init->front()->exp);
                                 *node = sym->sb->init->front()->exp;
@@ -2651,7 +2692,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == Keyword::int_)
+            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
@@ -2674,7 +2715,7 @@ int opt0(EXPRESSION** node)
                         }
                     }
                 }
-                if (found && found->second->type == Keyword::int_)
+                if (found && found->second->type == TplType::int_)
                 {
                     if (found->second->byNonType.val && !found->second->packed)
                         *node = found->second->byNonType.val;
@@ -3051,6 +3092,8 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::l_uc_:
         case ExpressionNode::l_us_:
         case ExpressionNode::l_bool_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
@@ -3074,6 +3117,8 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_i_:
         case ExpressionNode::x_ui_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_inative_:
         case ExpressionNode::x_unative_:
         case ExpressionNode::x_p_:
@@ -3159,7 +3204,7 @@ int fold_const(EXPRESSION* node)
             if (node->left->type != ExpressionNode::func_ && node->left->type != ExpressionNode::funcret_)
                 *node = *node->left;
             break;
-        case ExpressionNode::const_ruct_: {
+        case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
             LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
             if (isarithmetic(node->v.construct.tp))
@@ -3360,6 +3405,8 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::l_ref_:
         case ExpressionNode::l_i_:
         case ExpressionNode::l_ui_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_inative_:
         case ExpressionNode::l_unative_:
         case ExpressionNode::l_l_:
@@ -3399,7 +3446,7 @@ int typedconsts(EXPRESSION* node1)
             }
             else if (node1->left->type == ExpressionNode::global_)
             {
-                if (node1->left->v.sp->sb->storage_class == StorageClass::const_ant_ && isintconst(node1->left->v.sp->sb->init->front()->exp))
+                if (node1->left->v.sp->sb->storage_class == StorageClass::constant_ && isintconst(node1->left->v.sp->sb->init->front()->exp))
                 {
                     optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
                     *node1 = *node1->left->v.sp->sb->init->front()->exp;
@@ -3534,6 +3581,28 @@ int typedconsts(EXPRESSION* node1)
                 node1->v.i = Optimizer::CastToInt(ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = ExpressionNode::c_ui_;
+                node1->left = nullptr;
+            }
+            break;
+        case ExpressionNode::x_bitint_:
+            rv |= typedconsts(node1->left);
+            if (node1->left && isoptconst(node1->left))
+            {
+                auto value = rebitint(node1, node1->left);
+                node1->unionoffset = node1->left->unionoffset;
+                node1->type = ExpressionNode::c_bitint_;
+                node1->v.b.value = value;
+                node1->left = nullptr;
+            }
+            break;
+        case ExpressionNode::x_ubitint_:
+            rv |= typedconsts(node1->left);
+            if (node1->left && isoptconst(node1->left))
+            {
+                auto value = rebitint(node1, node1->left);
+                node1->unionoffset = node1->left->unionoffset;
+                node1->type = ExpressionNode::c_ubitint_;
+                node1->v.b.value = value;
                 node1->left = nullptr;
             }
             break;

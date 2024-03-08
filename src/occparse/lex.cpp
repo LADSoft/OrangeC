@@ -26,6 +26,7 @@
  * keyword module
  */
 #include "compiler.h"
+#include "config.h"
 #include "math.h"
 #include <climits>
 #include "Utils.h"
@@ -36,14 +37,17 @@
 #include "config.h"
 #include "stmt.h"
 #include "occparse.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "constopt.h"
 #include "memory.h"
 #include "ifloatconv.h"
+#include "floatconv.h"
 #include "browse.h"
 #include "help.h"
 #include "expr.h"
-#include "template.h"
 #include "declare.h"
 #include "symtab.h"
 #include "ListFactory.h"
@@ -71,6 +75,7 @@ static int nextFree;
 static const unsigned char* linePointer;
 static std::string currentLine;
 static int lastBrowseIndex;
+static unsigned char* bitIntBuffer;
 struct ParseHold
 {
     std::string currentLine;
@@ -124,10 +129,11 @@ KEYWORD keywords[] = {
     {"]", 1, Keyword::closebr_, 0, TT_BINARY | TT_POINTER},
     {"^", 1, Keyword::uparrow_, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
     {"^=", 2, Keyword::asxor_, 0, TT_ASSIGN | TT_OPERATOR},
-    {"_Alignas", 8, Keyword::alignas_, KW_C1X, TT_CONTROL},
-    {"_Alignof", 8, Keyword::alignof_, KW_C1X, TT_UNARY | TT_OPERATOR},
-    {"_Atomic", 7, Keyword::atomic_, KW_C1X | KW_CPLUSPLUS | KW_C2X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
-    {"_Bool", 5, Keyword::bool_, KW_C99 | KW_C1X, TT_BASETYPE | TT_BOOL},
+    {"_Alignas", 8, Keyword::alignas_, KW_C1X | KW_C2X, TT_CONTROL},
+    {"_Alignof", 8, Keyword::alignof_, KW_C1X | KW_C2X, TT_UNARY | TT_OPERATOR},
+    {"_Atomic", 7, Keyword::atomic_, 0, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE},
+    {"_BitInt", 7, Keyword::bitint_, 0, TT_BASETYPE | TT_INT | TT_BASE},
+    {"_Bool", 5, Keyword::bool_, KW_C99 | KW_C1X | KW_C2X, TT_BASETYPE | TT_BOOL},
     {"_CR0", 4, Keyword::CR0_, KW_NONANSI | KW_386, TT_VAR},
     {"_CR1", 4, Keyword::CR1_, KW_NONANSI | KW_386, TT_VAR},
     {"_CR2", 4, Keyword::CR2_, KW_NONANSI | KW_386, TT_VAR},
@@ -161,15 +167,15 @@ KEYWORD keywords[] = {
     {"_FP5", 4, Keyword::F5_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
     {"_FP6", 4, Keyword::F6_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
     {"_FP7", 4, Keyword::F7_, KW_NONANSI | KW_68K | KW_386, TT_VAR},
-    {"_Generic", 8, Keyword::generic_, KW_C1X, TT_VAR},
+    {"_Generic", 8, Keyword::generic_, 0, TT_VAR},
     {"_INF", 4, Keyword::INF_, 0, TT_VAR},
     {"_Imaginary", 10, Keyword::Imaginary_, 0, TT_BASETYPE | TT_COMPLEX},
     {"_NAN", 4, Keyword::NAN_, 0, TT_VAR},
-    {"_Noreturn", 9, Keyword::noreturn_, KW_C1X, TT_LINKAGE},
+    {"_Noreturn", 9, Keyword::noreturn_, KW_C1X | KW_C2X, TT_LINKAGE},
     {"_Pragma", 7, Keyword::Pragma_, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"_SS", 3, Keyword::AD_, KW_NONANSI | KW_386, TT_VAR},
-    {"_Static_assert", 14, Keyword::static_assert_, KW_C1X, 0},
-    {"_Thread_local", 13, Keyword::thread_local_, KW_C1X, TT_LINKAGE},
+    {"_Static_assert", 14, Keyword::static_assert_, 0, 0},
+    {"_Thread_local", 13, Keyword::thread_local_, 0, TT_LINKAGE},
     {"_TR0", 4, Keyword::TR0_, KW_NONANSI | KW_386, TT_VAR},
     {"_TR1", 4, Keyword::TR1_, KW_NONANSI | KW_386, TT_VAR},
     {"_TR2", 4, Keyword::TR2_, KW_NONANSI | KW_386, TT_VAR},
@@ -221,8 +227,9 @@ KEYWORD keywords[] = {
     {"__attribute__", 13, Keyword::attribute_, 0, TT_VAR},
     {"__catch", 7, Keyword::seh_catch_, KW_MSIL, TT_CONTROL},
     {"__cdecl", 7, Keyword::cdecl_, 0, TT_LINKAGE},
-    {"__char16_t", 10, Keyword::char16_t_, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
-    {"__char32_t", 10, Keyword::char32_t_, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},
+    {"__char8_t", 9, Keyword::char8_t_, KW_C2X, TT_BASETYPE | TT_INT},
+    {"__char16_t", 10, Keyword::char16_t_, KW_CPLUSPLUS | KW_C1X | KW_C2X, TT_BASETYPE | TT_INT},
+    {"__char32_t", 10, Keyword::char32_t_, KW_CPLUSPLUS | KW_C1X | KW_C2X, TT_BASETYPE | TT_INT},
     {"__cpblk", 7, Keyword::cpblk_, KW_MSIL, TT_OPERATOR | TT_UNARY},
     {"__declspec", 10, Keyword::declspec_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__entrypoint", 12, Keyword::entrypoint_, KW_MSIL, TT_LINKAGE},
@@ -246,6 +253,7 @@ KEYWORD keywords[] = {
     {"__offsetof", 10, Keyword::offsetof_, 0, TT_VAR},
     {"__pascal", 8, Keyword::pascal_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__property", 10, Keyword::property_, KW_MSIL, TT_LINKAGE},
+    {"__restrict", 10, Keyword::restrict_, KW_C99 | KW_CPLUSPLUS, TT_POINTERQUAL | TT_TYPEQUAL},
     {"__rtllinkage", 12, Keyword::rtllinkage_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__stdcall", 9, Keyword::stdcall_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__string", 8, Keyword::string_, KW_MSIL, TT_BASETYPE},
@@ -290,13 +298,14 @@ KEYWORD keywords[] = {
     {"catch", 5, Keyword::catch_, KW_CPLUSPLUS, TT_CONTROL},
     {"cdecl", 5, Keyword::cdecl_, 0, TT_LINKAGE},
     {"char", 4, Keyword::char_, 0, TT_BASETYPE | TT_INT},
+    {"char8_t", 7, Keyword::char8_t_, KW_C2X, TT_BASETYPE | TT_INT},
     {"char16_t", 8, Keyword::char16_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
     {"char32_t", 8, Keyword::char32_t_, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
     {"class", 5, Keyword::class_, KW_CPLUSPLUS, TT_BASETYPE | TT_STRUCT},
     {"compl", 5, Keyword::complx_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"const", 5, Keyword::const_, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
     {"const_cast", 10, Keyword::const_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS, (unsigned long)TT_DECLARE},
+    {"constexpr", 9, Keyword::constexpr_, KW_CPLUSPLUS | KW_C2X, (unsigned long)TT_DECLARE},
     {"continue", 8, Keyword::continue_, 0, TT_CONTROL},
     {"decltype", 8, Keyword::decltype_, KW_CPLUSPLUS, TT_OPERATOR},
     {"default", 7, Keyword::default_, 0, TT_CONTROL},
@@ -342,13 +351,13 @@ KEYWORD keywords[] = {
     {"signed", 6, Keyword::signed_, 0, TT_BASETYPE | TT_INT},
     {"sizeof", 6, Keyword::sizeof_, 0, TT_UNARY | TT_OPERATOR},
     {"static", 6, Keyword::static_, 0, TT_STORAGE_CLASS},
-    {"static_assert", 13, Keyword::static_assert_, KW_CPLUSPLUS, 0},
+    {"static_assert", 13, Keyword::static_assert_, KW_CPLUSPLUS | KW_C2X, 0},
     {"static_cast", 11, Keyword::static_cast_, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"struct", 6, Keyword::struct_, 0, TT_BASETYPE | TT_STRUCT},
     {"switch", 6, Keyword::switch_, 0, TT_CONTROL},
     {"template", 8, Keyword::template_, KW_CPLUSPLUS, TT_CONTROL},
     {"this", 4, Keyword::this_, KW_CPLUSPLUS, TT_VAR},
-    {"thread_local", 12, Keyword::thread_local_, KW_CPLUSPLUS, TT_LINKAGE},
+    {"thread_local", 12, Keyword::thread_local_, KW_CPLUSPLUS | KW_C2X, TT_LINKAGE},
     {"throw", 5, Keyword::throw_, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
     {"true", 4, Keyword::true_, KW_CPLUSPLUS | KW_C2X, TT_VAR},
     {"try", 3, Keyword::try_, KW_CPLUSPLUS, TT_CONTROL},
@@ -356,6 +365,7 @@ KEYWORD keywords[] = {
     {"typeid", 6, Keyword::typeid_, KW_CPLUSPLUS, TT_UNKNOWN},
     {"typename", 8, Keyword::typename_, KW_CPLUSPLUS, TT_TYPENAME},
     {"typeof", 6, Keyword::typeof_, 0, TT_BASETYPE | TT_OPERATOR},
+    {"typeof_unqual", 13, Keyword::typeof_unqual_, KW_C2X, TT_BASETYPE | TT_OPERATOR},
     {"union", 5, Keyword::union_, 0, TT_BASETYPE | TT_STRUCT},
     {"unsigned", 8, Keyword::unsigned_, 0, TT_BASETYPE | TT_INT | TT_BASE},
     {"using", 5, Keyword::using_, KW_CPLUSPLUS | KW_MSIL, TT_CONTROL},
@@ -419,19 +429,17 @@ bool KWTYPE(LEXLIST* lex, unsigned types)
                 // in C++ auto is a type
                 rv = TT_BASETYPE;
             }
-            else if (Optimizer::cparams.c_dialect < Dialect::c2x)
-            {
-                // in versions of C before C2x it is a storage class
-                rv = TT_STORAGE_CLASS;
-            }
             else
             {
                 // in C2x it is a storage class if another type is present
                 // or a type if one isn't
+                // and in earlier versions of C it is a storage_class
                 lex = getsym();
                 bool s;
                 rv = startOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
                 lex = backupsym();
+                if (rv == TT_BASETYPE)
+                    RequiresDialect::Feature(Dialect::c2x, "auto as a type");
             }
         }
         else
@@ -487,18 +495,25 @@ KEYWORD* searchkw(const unsigned char** p)
                 int count = 0;
                 if (kw->matchFlags & (KW_C99 | KW_C1X | KW_C2X))
                 {
-                    if (Optimizer::cparams.c_dialect >= Dialect::c99 && (kw->matchFlags & KW_C99))
-                        count++;
-                    if (Optimizer::cparams.c_dialect >= Dialect::c11 && (kw->matchFlags & KW_C1X))
-                        count++;
-                    if (Optimizer::cparams.c_dialect >= Dialect::c2x && (kw->matchFlags & KW_C2X))
-                        count++;
-                    if (Optimizer::cparams.prm_cplusplus && (kw->matchFlags & KW_CPLUSPLUS))
-                        count++;
-                    if (!count)
+                    if (kw->matchFlags & KW_C99)
                     {
-                        errorstr(ERR_C99_KEYWORD, (char*)buf);
-                        return nullptr;
+                        if (RequiresDialect::Keyword(Dialect::c99, kw->name))
+                            return nullptr;
+                    }
+                    else if (kw->matchFlags & KW_C1X)
+                    {
+                        if (RequiresDialect::Keyword(Dialect::c11, kw->name))
+                            return nullptr;
+                    }
+                    else if (kw->matchFlags & KW_C2X)
+                    {
+                        if (RequiresDialect::Keyword(Dialect::c2x, kw->name))
+                            return nullptr;
+                    }
+                    if (kw->matchFlags & KW_CPLUSPLUS)
+                    {
+                        if (RequiresDialect::Keyword(Dialect::cpp11, kw->name))
+                            return nullptr;
                     }
                 }
                 *p = *p + len;
@@ -632,8 +647,16 @@ int getChar(const unsigned char** source, e_lexType* tp)
     {
         if (*p == 'u')
         {
-            v = l_uchr;
-            p++;
+            if (p[1] == '8')
+            {
+                v = l_u8chr;
+                p+=2;
+            }
+            else
+            {
+                v = l_uchr;
+                p++;
+            }
         }
         else if (*p == 'U')
         {
@@ -647,7 +670,7 @@ int getChar(const unsigned char** source, e_lexType* tp)
         do
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
-        i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+        i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : v == l_u8chr ? 1 : 2, &p);
         if (i == INT_MIN)
         {
             error(ERR_INVALID_CHAR_CONSTANT);
@@ -1003,16 +1026,23 @@ static int radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
-static long long getbase(int b, char** ptr)
+static long long getbase(int b, const unsigned char** ptr)
 {
     long long i;
-    char* s = *ptr;
+    const unsigned char* s = *ptr;
     int j;
     int errd = 0;
     i = 0;
+    bool hasSep = **ptr == '\'';
+
+    while (**ptr == '\'')
+        (*ptr)++;
     while ((j = radix36(**ptr)) < b)
     {
         (*ptr)++;
+        hasSep |= **ptr == '\'';
+        while (**ptr == '\'')
+            (*ptr)++;
         if (i > (llminus1 - j) / b)
             if (!errd)
             {
@@ -1021,17 +1051,28 @@ static long long getbase(int b, char** ptr)
             }
         i = i * b + j;
     }
+    if (hasSep)
+    {
+        RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+    }
     return i;
 }
 
-static void getfloatingbase(int b, FPF* rval, char** ptr)
+static void getfloatingbase(int b, FPF* rval, const unsigned char** ptr)
 {
     int j;
     FPF temp, temp1;
     rval->SetZero(0);
+    bool hasSep = **ptr == '\'';
+    while (**ptr == '\'')
+        (*ptr)++;
     while ((j = radix36(**ptr)) < b)
     {
         (*ptr)++;
+        hasSep |= **ptr == '\'';
+        while (**ptr == '\'')
+            (*ptr)++;
         temp = (unsigned long long)j;
         if (b == 10)
             rval->MultiplyPowTen(1);
@@ -1040,16 +1081,24 @@ static void getfloatingbase(int b, FPF* rval, char** ptr)
         temp1 = *rval + temp;
         *rval = temp1;
     }
+    if (hasSep)
+    {
+        RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+    }
 }
 /*
  *      getfrac - get fraction part of a floating number.
  */
-static int getfrac(int radix, char** ptr, FPF* rval)
+static int getfrac(int radix, const unsigned char** ptr, FPF* rval)
 {
     unsigned long long i = 0;
     int j, k = 0;
     FPF temp, temp1;
     int digits = 0;
+    bool hasSep = **ptr == '\'';
+    while (**ptr == '\'')
+        (*ptr)++;
     while ((j = radix36(**ptr)) < radix)
     {
         i = radix * i + j;
@@ -1067,6 +1116,14 @@ static int getfrac(int radix, char** ptr, FPF* rval)
             i = 0;
         }
         (*ptr)++;
+        hasSep |= **ptr ==  '\'';
+        while (**ptr == '\'')
+            (*ptr)++;
+    }
+    if (hasSep)
+    {
+        RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
     }
     temp = (unsigned long long)i;
     if (radix == 10)
@@ -1082,10 +1139,13 @@ static int getfrac(int radix, char** ptr, FPF* rval)
 /*
  *      getexp - get exponent part of floating number.
  */
-static int getexp(char** ptr)
+static int getexp(const unsigned char** ptr)
 {
     bool neg = false;
     int ival;
+    bool hasSep = **ptr == '\'';
+    while (**ptr == '\'')
+        (*ptr)++;
     if (**ptr == '-')
     {
         neg = true;
@@ -1099,18 +1159,118 @@ static int getexp(char** ptr)
     ival = getbase(10, ptr);
     if (neg)
         ival = -ival;
+    if (hasSep)
+    {
+        RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+    }
     return ival;
 }
 
-/*
+e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radix, long long* ival, unsigned char** bitintvalue)
+{
+    bool isunsigned = false;
+    if (tolower(**ptr) == 'u')
+    {
+        if (tolower((*ptr)[1]) != 'w' || tolower((*ptr)[2]) != 'b') return l_none;
+        *ptr += 3;
+        isunsigned = true;
+    }
+    else
+    {
+        if (tolower((*ptr)[0]) != 'w' || tolower((*ptr)[1]) != 'b')
+            return l_none;
+        *ptr += 2;
+    }
+    const int n = Optimizer::chosenAssembler->arch->bitintmax / CHAR_BIT;
+    if (!bitIntBuffer)
+        bitIntBuffer = new unsigned char[n];
+    memset(bitIntBuffer, 0, n);
+    bool hasSep = **ptr == '\'';
+    while (**ptr == '\'')
+        (*ptr)++;
+    int c;
+    int bits = 0;
+    int shift = -1;
+    if (radix == 2)
+    {
+        shift = 1;
+    }
+    else if (radix == 8)
+    {
+        shift = 3;
+    }
+    else if (radix == 16)
+    {
+        shift = 4;
+    }
+    while ((c = radix36(*base++)) < radix)
+    {
+        bool hasSep = **ptr == '\'';
+        while (**ptr == '\'')
+            (*ptr)++;
+        if (shift > 0)
+        {
+            unsigned char carry = c;
+            for (int i = 0; i < bits / CHAR_BIT + 2; i++)
+            {
+                int d = (bitIntBuffer[i] << shift) + carry;
+                bitIntBuffer[i] = d;
+                carry = d >> 8;
+            }
+            bits += shift;
+        }
+        else
+        {
+            unsigned char carry = c;
+            for (int i = 0; i < bits / CHAR_BIT + 2; i++)
+            {
+                int d = bitIntBuffer[i] * 10 + carry;
+                bitIntBuffer[i] =  d;
+                carry = d >> 8;
+            }
+            bits += 4; // conservative
+        }
+    }
+    int i;
+    for (i = n - 1; i >= 0; i--)
+    {
+        if (bitIntBuffer[i])
+            break;
+    }
+    c = bitIntBuffer[i];
+    i = i * 8;
+    int j;
+    for (j = 7; j >= 0; j--)
+    {
+        if (c & (1 << j))
+        {
+            break;
+        }
+    }
+    i += j+1;
+    if (i <= 0)
+        i++;
+    if (!isunsigned)
+        i++;
+    *ival = i; // bit count
+    *bitintvalue = make_bitint(i, bitIntBuffer);
+    if (hasSep)
+    {
+        RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+    }
+    return isunsigned ? l_ubitint : l_bitint;
+}
+
+    /*
  *      getnum - get a number from input.
  *
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival)
+e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival, unsigned char ** bitintvalue)
 {
-    char buf[200], *p = buf;
     int radix = 10;
     int floatradix = 0;
     int frac = 0;
@@ -1130,6 +1290,8 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         }
         else if ((Optimizer::cparams.prm_cplusplus || !Optimizer::cparams.prm_ansi) && (**ptr == 'b' || **ptr == 'B'))
         {
+            RequiresDialect::Feature(Dialect::c2x, "Binary Literals");
+            RequiresDialect::Feature(Dialect::cpp14, "Binary Literals");
             (*ptr)++;
             radix = 2;
         }
@@ -1143,23 +1305,25 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         radix = 16;
         (*ptr)++;
     }
-    while (((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && **ptr == '\'') || radix36(**ptr) < radix ||
+    const unsigned char* base = *ptr;
+    while (**ptr == '\'' || radix36(**ptr) < radix ||
            (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
     {
-        if (**ptr != '\'')
-            *p++ = **ptr;
         (*ptr)++;
+    }
+    if ((lastst = getBitInt(base, ptr, radix, ival, bitintvalue)) != l_none)
+    {
+        RequiresDialect::Feature(Dialect::c2x, "_Bitint Literals");
+        return lastst;
     }
     if (**ptr == '.')
     {
         hasdot = true;
         if (radix == 8)
             radix = 10;
-        *p++ = **ptr;
         (*ptr)++;
-        while (radix36(**ptr) < radix)
+        while (**ptr == '\''  || radix36(**ptr) < radix)
         {
-            *p++ = **ptr;
             (*ptr)++;
         }
     }
@@ -1176,24 +1340,20 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
 
     if (floatradix)
     {
-        *p++ = **ptr;
         (*ptr)++;
         if (**ptr == '-' || **ptr == '+')
         {
-            *p++ = **ptr;
             (*ptr)++;
         }
-        while (radix36(**ptr) < 10)
+        while (**ptr == '\''  || radix36(**ptr) < 10)
         {
-            *p++ = **ptr;
             (*ptr)++;
         }
     }
 
-    *p = 0;
     if (!floatradix && radix != 16 && Optimizer::cparams.prm_assemble)
     {
-        char* q = buf;
+        const unsigned char* q = base;
         while (*q && radix36(*q) < 10)
             q++;
         if (*q)
@@ -1212,7 +1372,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
             (*ptr)++;
         }
     }
-    p = buf;
+    const unsigned char *p = base;
     if (floatradix || hasdot)
     {
         getfloatingbase(radix, rval, &p);
@@ -1715,7 +1875,7 @@ LEXLIST* getsym(void)
         else if ((strptr = getString(&linePointer, &tp)) != nullptr)
         {
             lex->data->value.s.w = (LCHAR*)strptr;
-            lex->data->type = tp == l_u8str ? l_astr : tp;
+            lex->data->type = tp;
             lex->data->suffix = nullptr;
             if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {
@@ -1734,25 +1894,34 @@ LEXLIST* getsym(void)
             unsigned char suffix[256];
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
+            unsigned char* bitintValue;
             enum e_lexType tp;
             lex->data->suffix = nullptr;
-            if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
+            if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival, &bitintValue)) != (unsigned)INT_MIN)
             {
-                if (tp < l_f)
+                if (tp == l_bitint || tp == l_ubitint)
                 {
-                    lex->data->value.i = ival;
+                    lex->data->value.b.bits = ival;
+                    lex->data->value.b.value = bitintValue;
                 }
                 else
                 {
-                    lex->data->value.f = Allocate<FPF>();
-                    *lex->data->value.f = rval;
-                }
-                if (suffix[0])
-                {
-                    lex->data->suffix = litlate((char*)suffix);
-                    memcpy(suffix, start, end - start);
-                    suffix[end - start] = 0;
-                    lex->data->litaslit = litlate((char*)suffix);
+                    if (tp < l_f)
+                    {
+                        lex->data->value.i = ival;
+                    }
+                    else
+                    {
+                        lex->data->value.f = Allocate<FPF>();
+                        *lex->data->value.f = rval;
+                    }
+                    if (suffix[0])
+                    {
+                        lex->data->suffix = litlate((char*)suffix);
+                        memcpy(suffix, start, end - start);
+                        suffix[end - start] = 0;
+                        lex->data->litaslit = litlate((char*)suffix);
+                    }
                 }
                 lex->data->type = tp;
             }

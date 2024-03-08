@@ -35,6 +35,9 @@
 class RuleList;
 class Rule;
 class Variable;
+
+#define SpaceThunk "\xff"
+
 class Eval
 {
   public:
@@ -78,6 +81,7 @@ class Eval
         if (internalWarnings)
             warning(Warning);
     }
+    static std::string AdjustForSpaces(const std::string& in);
     static size_t MacroSpan(const std::string iline, size_t pos);
     std::string ParseMacroLine(const std::string& in);
     static Variable* LookupVariable(const std::string& name);

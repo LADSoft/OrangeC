@@ -57,15 +57,18 @@ void displayLexeme(LEXLIST* lex)
         case l_ld:
             printf("long double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
+        case l_u8str:
         case l_astr:
-            printf("ascii string: ");
         case l_msilstr:
-
         case l_wstr:
             if (lex->data->type == l_wstr)
                 printf("wide string: ");
             else if (lex->data->type == l_msilstr)
                 printf("msil string: ");
+            else if (lex->data->type == l_astr)
+                printf("ascii string: ");
+            else if (lex->data->type == l_u8str)
+                printf("utf8 string: ");
             w = lex->data->value.s.w;
             while (*w)
                 fputc(*w++, stdout);

@@ -37,7 +37,10 @@
 #include "beinterf.h"
 #include "ildata.h"
 #include "ccerr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "declcons.h"
 #include "cpplookup.h"
 #include "inline.h"
@@ -57,6 +60,7 @@ static const char* typeNames[] = {"bit",
                                   "signed char",
                                   "char",
                                   "unsigned char",
+                                  "char8_t",
                                   "short",
                                   "char16_t",
                                   "unsigned short",
@@ -71,6 +75,8 @@ static const char* typeNames[] = {"bit",
                                   "unsigned long",
                                   "long long",
                                   "unsigned long long",
+                                  "_BitInt",
+                                  "unsigned _BitInt",
                                   "float",
                                   "double",
                                   "long double",
@@ -166,7 +172,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
-        if (tp->templateParam && tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val)
+        if (tp->templateParam && tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
     if (isconst(tp))
@@ -236,7 +242,7 @@ static char* RTTIGetName(char* buf, TYPE* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
-        if (tp->templateParam && tp->templateParam->second->type == Keyword::typename_ && tp->templateParam->second->byClass.val)
+        if (tp->templateParam && tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
     mangledNamesCount = 0;
@@ -301,7 +307,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
 
     Optimizer::cseg();
     Optimizer::SymbolManager::Get(xtSym)->generated = true;
-    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), false);
+    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), Optimizer::vt_code);
     if (sym)
     {
         Optimizer::genref(Optimizer::SymbolManager::Get(sym), 0);
@@ -572,6 +578,8 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::literalclass_:
@@ -594,6 +602,8 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::x_ull_:
         case ExpressionNode::x_i_:
         case ExpressionNode::x_ui_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_inative_:
         case ExpressionNode::x_unative_:
         case ExpressionNode::x_c_:
@@ -789,7 +799,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
                 TYPE* tp = (TYPE*)p->data;
                 if (tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
                 {
-                    if (tp->templateParam->second->type == Keyword::typename_)
+                    if (tp->templateParam->second->type == TplType::typename_)
                     {
                         if (tp->templateParam->second->byPack.pack)
                         {
@@ -814,7 +824,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
         xcSym->sb->decoratedName = xcSym->name;
         Optimizer::cseg();
         Optimizer::SymbolManager::Get(xcSym)->generated = true;
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xcSym), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xcSym), Optimizer::vt_code);
         switch (funcsp->sb->xcMode)
         {
             case xc_none:
@@ -933,7 +943,7 @@ void XTDumpTab(SYMBOL* funcsp)
         }
         throwSym = DumpXCSpecifiers(funcsp);
         Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab)->generated = true;
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), Optimizer::vt_code);
 
         if (throwSym)
         {

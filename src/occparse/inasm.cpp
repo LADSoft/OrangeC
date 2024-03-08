@@ -45,7 +45,10 @@
 #include "memory.h"
 #include "inline.h"
 #include "help.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "symtab.h"
 
 namespace Parser
@@ -506,6 +509,7 @@ static int inasm_structsize(void)
             case BasicType::char_:
             case BasicType::unsigned_char_:
             case BasicType::signed_char_:
+            case BasicType::char8_t_:
                 return ISZ_UCHAR;
             case BasicType::bool_:
                 return ISZ_BOOLEAN;

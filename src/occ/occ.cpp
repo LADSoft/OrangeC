@@ -293,6 +293,7 @@ bool ProcessData(const char* name)
             Optimizer::fltexp = v->funcData->fltexp;
             Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
+            currentFunction->ellipsePos = v->funcData->ellipsePos;
             Optimizer::SetUsesESP(currentFunction->usesEsp);
             generate_instructions(Optimizer::intermed_head);
             flush_peep(currentFunction, nullptr);
@@ -332,6 +333,8 @@ bool LoadFile(SharedMemory* optimizerMem)
     dbginit();
     outcode_file_init();
     Optimizer::oinit();
+    oa_ini();
+    o_peepini();
     omfInit();
     Optimizer::SelectBackendData();
     return rv;

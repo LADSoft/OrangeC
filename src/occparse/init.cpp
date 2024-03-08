@@ -14,7 +14,7 @@
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  * 
- *     You should have received a copy of the GNU General Public License
+
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
@@ -31,7 +31,10 @@
 #include "config.h"
 #include "initbackend.h"
 #include "stmt.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "declare.h"
 #include "mangle.h"
 #include "ildata.h"
@@ -411,6 +414,7 @@ static int dumpBits(std::list<INITIALIZER*>::iterator &it)
             case BasicType::char_:
             case BasicType::unsigned_char_:
             case BasicType::signed_char_:
+            case BasicType::char8_t_:
                 Optimizer::genbyte(resolver);
                 break;
             case BasicType::short_:
@@ -502,7 +506,7 @@ void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init)
         }
     }
 }
-static void callDynamic(const char* name, int startupType, int index, std::list<STATEMENT*>* st)
+static void callDynamic(const char* name, int startupType, int index, std::list<STATEMENT*>* st, bool virt = false)
 {
     if (IsCompiler())
     {
@@ -515,14 +519,24 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
             st->push_front(stbegin);
             st->push_back(stend);
             char fullName[512];
-            Optimizer::my_sprintf(fullName, "%s_%d", name, index);
+            if (index != -1)
+                Optimizer::my_sprintf(fullName, "%s_%d", name, index);
+            else
+                Utils::StrCpy(fullName, name);
             SYMBOL* funcsp;
             TYPE* tp = MakeType(BasicType::ifunc_, MakeType(BasicType::void_));
             tp->syms = symbols.CreateSymbolTable();
-            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp, nullptr, fullName);
+            if (index == -1)
+                funcsp =
+                    makeID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp,
+                                 nullptr, litlate(fullName));
+            else
+                funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp, nullptr, fullName);
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
             funcsp->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
             funcsp->sb->inlineFunc.stmt->front()->lower = st;
+            if (virt)
+                funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
             tp->sp = funcsp;
             SetLinkerNames(funcsp, Linkage::none_);
             startlab = Optimizer::nextLabel++;
@@ -532,11 +546,24 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
 
             if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
             {
+                SYMBOL* name = nullptr;
                 if (startupType == STARTUP_TYPE_STARTUP)
                     Optimizer::startupseg();
                 else
                     Optimizer::rundownseg();
+                if (virt)
+                {
+                    Utils::StrCat(fullName, startupType == STARTUP_TYPE_STARTUP? "_startup" : "_rundown");
+                    name = makeID(StorageClass::global_, &stdint, nullptr, litlate(fullName));
+                    SetLinkerNames(name, Linkage::cpp_, false);
+                    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(name), startupType == STARTUP_TYPE_STARTUP?Optimizer::vt_startup : Optimizer::vt_rundown);
+                }
                 Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), CPP_BASE_PRIO + preProcessor->GetCppPrio(), startupType);
+                if (virt)
+                {
+                    Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(name));
+
+                }
             }
         }
     }
@@ -843,6 +870,42 @@ static void GetStructData(EXPRESSION* in, EXPRESSION** exp, int* ofs)
             break;
     }
 }
+void CreateInlineConstructor(SYMBOL* sym) 
+{
+    if (IsCompiler())
+    {
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        EXPRESSION *exp = nullptr;
+        std::list<STATEMENT*> st;
+        exp = convertInitToExpression(sym->sb->init->front()->basetp,
+                                        sym, nullptr, nullptr, sym->sb->init, nullptr, false);
+        st.push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::expr_));
+        optimize_for_constants(&exp);
+        st.back()->select = exp;
+        char buf[4000];
+        sprintf(buf, "initializer@%s", sym->name);
+        callDynamic(buf, STARTUP_TYPE_STARTUP, -1, &st, true);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+    }
+}
+void CreateInlineDestructor(SYMBOL* sym)
+{
+    if (IsCompiler())
+    {
+        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        std::list<STATEMENT*> st;
+        EXPRESSION* exp = convertInitToExpression(sym->sb->dest->front()->basetp, sym, nullptr,
+                                                    nullptr, sym->sb->dest, nullptr, true);
+        auto stmt = stmtNode(nullptr, emptyBlockdata, StatementNode::expr_);
+        optimize_for_constants(&exp);
+        stmt->select = exp;
+        st.push_back(stmt);
+        char buf[4000];
+        sprintf(buf, "destructor@%s", sym->name);
+        callDynamic(buf, STARTUP_TYPE_RUNDOWN, -1, &st, true);
+        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+    }
+}
 int dumpInit(SYMBOL* sym, INITIALIZER* init)
 {
     if (IsCompiler())
@@ -885,7 +948,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             im = init->exp->v.c->i;
             i = (long long)(f);
         }
-        else
+        else if (init->exp->type != ExpressionNode::c_bitint_ && init->exp->type != ExpressionNode::c_ubitint_)
         {
             EXPRESSION* exp = init->exp;
             while (castvalue(exp))
@@ -904,7 +967,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         temp->push_back(init);
                         insertTLSInitializer(sym, temp);
                     }
-                    else if (sym->sb->storage_class != StorageClass::localstatic_)
+                    else if (sym->sb->storage_class != StorageClass::localstatic_ && !sym->sb->attribs.inheritable.isInline)
                     {
                         std::list<INITIALIZER*>* temp = initListFactory.CreateList();
                         temp->push_back(init);
@@ -1041,6 +1104,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             case BasicType::char_:
             case BasicType::unsigned_char_:
             case BasicType::signed_char_:
+            case BasicType::char8_t_:
                 Optimizer::genbyte(i);
                 break;
             case BasicType::short_:
@@ -1104,6 +1168,46 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             case BasicType::pointer_:
                 Optimizer::genaddress(i);
                 break;
+            case BasicType::bitint_:
+            case BasicType::unsigned_bitint_: {
+                // there are a couple of problems with this, first there is the problem if we change the underlying type
+                // second some architectures might need this to be big endian
+                // fixme: endianness
+                assert(Optimizer::chosenAssembler->arch->bitintunderlying == 32);
+                int words = (tp->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
+                words /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                words *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                words /= CHAR_BIT;
+                int max = 0;
+                unsigned char* src;
+                if (init->exp->type == ExpressionNode::c_bitint_ || init->exp->type == ExpressionNode::c_ubitint_)
+                {
+                    max = (init->exp->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
+                    max /= Optimizer::chosenAssembler->arch->bitintunderlying;
+                    max *= Optimizer::chosenAssembler->arch->bitintunderlying;
+                    max /= CHAR_BIT;
+                    src = init->exp->v.b.value;
+                }
+                else
+                {
+                    max = sizeof(long long);
+                    src = (unsigned char *) & i;
+                }
+                for (i = 0; i < words && i < max; i++)
+                {
+                    Optimizer::genbyte(*src++);
+                }
+                if (i < words)
+                {
+                    auto fill = tp->type == BasicType::bitint_ && (src[-1] & 0x80000000) ? 0xff : 0;
+                    for (; i < words; i++)
+                    {
+                        Optimizer::genbyte(fill);
+                    }
+                }
+                rv = words;
+                break;
+            }
             case BasicType::far_:
             case BasicType::seg_:
             case BasicType::bit_:
@@ -1215,14 +1319,14 @@ static void dumpStaticInitializers(void)
         {
             SYMBOL* sym = (SYMBOL*)symListTail->data;
             if (sym->sb->storage_class == StorageClass::global_ || sym->sb->storage_class == StorageClass::static_ ||
-                sym->sb->storage_class == StorageClass::localstatic_ || sym->sb->storage_class == StorageClass::const_ant_)
+                sym->sb->storage_class == StorageClass::localstatic_ || sym->sb->storage_class == StorageClass::constant_)
             {
                 TYPE* tp = sym->tp;
                 TYPE* stp = tp;
                 int al;
                 while (isarray(stp))
                     stp = basetype(stp)->btp;
-                if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == StorageClass::const_ant_)
+                if ((IsConstWithArr(sym->tp) && !isvolatile(sym->tp)) || sym->sb->storage_class == StorageClass::constant_)
                 {
                     Optimizer::xconstseg();
                     sizep = &sconst;
@@ -1284,8 +1388,8 @@ static void dumpStaticInitializers(void)
                 sym->sb->offset = *sizep;
                 *sizep += basetype(tp)->size;
                 Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
-                if (sym->sb->storage_class == StorageClass::const_ant_)
-                    Optimizer::put_label(sym->sb->label);
+//                if (sym->sb->storage_class == StorageClass::constant_)
+//                    Optimizer::put_label(sym->sb->label);
                 dumpInitGroup(sym, tp);
             }
             symListTail = symListTail->next;
@@ -1357,6 +1461,8 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     *expr = modify(*expr, *tp);
     if (*tp && (isvoid(*tp) || ismsil(*tp)))
         error(ERR_NOT_AN_ALLOWED_TYPE);
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        RemoveSizeofOperators(*expr);
     optimize_for_constants(expr);
     ConstExprPatch(expr);
     if (*tp)
@@ -1517,7 +1623,10 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
                 else if ((!isarithmetic(tp) && basetype(tp)->type != BasicType::enum_) ||
                          (sc != StorageClass::auto_ && sc != StorageClass::register_ && !isarithmeticconst(exp) && !msilConstant(exp) &&
                           !Optimizer::cparams.prm_cplusplus))
-                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                    if (!isbitint(tp) || (exp->type != ExpressionNode::c_bitint_ && exp->type != ExpressionNode::c_ubitint_))
+                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                    else
+                        checkscope(tp, itype);
                 else
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, true))
@@ -1582,6 +1691,9 @@ static LEXLIST* initialize_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** rtype, EX
     switch (tp)
     {
         default:
+        case l_u8str:
+            *rtype = &stdchar8_tptr;
+            break;
         case l_astr:
             *rtype = &stdstring;
             break;
@@ -1617,7 +1729,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
     else
     {
         if (!lex || (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr &&
-                     lex->data->type != l_Ustr && lex->data->type != l_msilstr))
+                     lex->data->type != l_Ustr && lex->data->type != l_msilstr && lex->data->type != l_u8str))
         {
             lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
             if (!tp)
@@ -1686,6 +1798,10 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
             else if (!ispointer(tp) && (tp->btp && !ispointer(tp->btp)) && !isfunction(tp) && !isint(tp) &&
                      tp->type != BasicType::aggregate_)
                 error(ERR_INVALID_POINTER_CONVERSION);
+            else if (!compareXC(itype, tp))
+            {
+                errorConversionOrCast(true, tp, itype);
+            }
             else if (isfunction(tp) || tp->type == BasicType::aggregate_)
             {
                 if (!isfuncptr(itype) || !comparetypes(basetype(itype)->btp, tp, true))
@@ -1860,6 +1976,7 @@ enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
         case BasicType::signed_char_:
             en = ExpressionNode::l_c_;
             break;
+        case BasicType::char8_t_:
         case BasicType::unsigned_char_:
             en = ExpressionNode::l_uc_;
             break;
@@ -1901,6 +2018,12 @@ enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
             break;
         case BasicType::unsigned_long_long_:
             en = ExpressionNode::l_ull_;
+            break;
+        case BasicType::bitint_:
+            en = ExpressionNode::l_bitint_;
+            break;
+        case BasicType::unsigned_bitint_:
+            en = ExpressionNode::l_ubitint_;
             break;
         case BasicType::float_:
             en = ExpressionNode::l_f_;
@@ -2302,10 +2425,10 @@ static int str_candidate(LEXLIST* lex, TYPE* tp)
     if (bt->type == BasicType::string_)
         return true;
     if (bt->type == BasicType::pointer_)
-        if (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr)
+        if (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr || lex->data->type == l_Ustr || lex->data->type == l_u8str)
         {
             bt = basetype(bt->btp);
-            if (bt->type == BasicType::short_ || bt->type == BasicType::unsigned_short_ || bt->type == BasicType::wchar_t_ || bt->type == BasicType::char_ ||
+            if (bt->type == BasicType::char8_t_ || bt->type == BasicType::short_ || bt->type == BasicType::unsigned_short_ || bt->type == BasicType::wchar_t_ || bt->type == BasicType::char_ ||
                 bt->type == BasicType::unsigned_char_ || bt->type == BasicType::signed_char_ || bt->type == BasicType::char16_t_ || bt->type == BasicType::char32_t_)
                 return true;
         }
@@ -2569,6 +2692,10 @@ static LEXLIST* read_strings(LEXLIST* lex, std::list<INITIALIZER*>** next, AGGRE
     lex = concatStringsInternal(lex, &string, 0);
     switch (string->strtype)
     {
+        case l_u8str:
+            if (btp->type != BasicType::char8_t_ && btp->type != BasicType::char_ && btp->type != BasicType::unsigned_char_ && btp->type != BasicType::signed_char_)
+                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+            break;
         case l_astr:
             if (btp->type != BasicType::char_ && btp->type != BasicType::unsigned_char_ && btp->type != BasicType::signed_char_)
                 error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
@@ -2950,8 +3077,8 @@ auto InitializeSimpleAggregate(LEXLIST*& lex, TYPE* itype, bool needend, int off
         if (!desc || !gotcomma || !needend)
             break;
     }
-    if (c99 && Optimizer::cparams.c_dialect < Dialect::c99)
-        error(ERR_C99_STYLE_INITIALIZATION_USED);
+    if (c99)
+        RequiresDialect::Feature(Dialect::c99, "Structure Designators");
     if (toomany)
         error(ERR_TOO_MANY_INITIALIZERS);
     if (desc)
@@ -3006,6 +3133,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             bool isconversion;
             bool isList = MATCHKW(lex, Keyword::begin_);
             bool constructed = false;
+            bool tryelide = false;
             exp = baseexp;
             if (assn || arrayMember)
             {
@@ -3175,6 +3303,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                         funcparams->arguments->push_back(arg);
                         arg->tp = tp1;
                         arg->exp = exp1;
+                        if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0) && !exp1->left->v.func->returnEXP)
+                            tryelide = true;
                     }
                 }
             }
@@ -3208,6 +3338,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             {
                 // default constructor without param list
             }
+            
             if (!constructed)
             {
                 bool toContinue = true;
@@ -3219,10 +3350,16 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 if (toContinue)
                     callConstructor(&ctype, &exp, funcparams, false, nullptr, true, maybeConversion, implicit, false,
                                     isList ? _F_INITLIST : 0, false, true);
-                if (funcparams->sp)  // may be an error
+                // copy constructor elision
+                if (tryelide && exp->type == ExpressionNode::thisref_ && exp->left->v.func->thistp && comparetypes(itype, exp->left->v.func->thistp, 0) && exp->left->v.func->sp->sb->isConstructor && matchesCopy(exp->left->v.func->sp, false))
+                {
+                     exp = funcparams->arguments->back()->exp;
+                }
+                else if (funcparams->sp)  // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
             }
-            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)
+            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember && !base->sb->attribs.inheritable.isInline)
             {
                 it = nullptr;
                 initInsert(&it, itype, exp, offset, true);
@@ -3235,7 +3372,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 *init = it;
             }
             exp = baseexp;
-            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && sc != StorageClass::localstatic_ && !arrayMember)
+            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+                sc != StorageClass::mutable_ && sc != StorageClass::localstatic_ && !arrayMember &&
+                !base->sb->attribs.inheritable.isInline)
             {
                 it = nullptr;
                 callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
@@ -3300,7 +3439,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 }
                 if (it)
                 {
-                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)
+                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                        !base->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(base, it);
                     }
@@ -3337,7 +3478,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             exp = exprNode(ExpressionNode::assign_, exprNode(ExpressionNode::l_object_, getThisNode(base), nullptr), exp);
             exp->left->v.tp = itype;
             initInsert(&it, itype, exp, offset, true);
-            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember)
+            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                !base->sb->attribs.inheritable.isInline)
             {
                 insertDynamicInitializer(base, it);
             }
@@ -3412,8 +3555,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                         initInsert(&it, itype, exp1, offset, true);
                     }
                 }
-                if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ &&
-                    !arrayMember)
+                if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                    !base->sb->attribs.inheritable.isInline)
                 {
                     insertDynamicInitializer(base, it);
                 }
@@ -3444,7 +3587,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                             exp2->v.func->ascall = true;
                             exp2->v.func->thisptr = exp1;
                             exp2->v.func->thistp = MakeType(BasicType::pointer_, tp1);
-                            if (isstructured(basetype(sym->tp)->btp))
+                            if (isstructured(basetype(sym->tp)->btp) || isbitint(basetype(sym->tp)->btp))
                             {
                                 if (basetype(basetype(sym->tp)->btp)->sp->sb->structuredAliasType)
                                 {
@@ -3482,8 +3625,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 {
                     std::list<INITIALIZER*>* it = nullptr;
                     initInsert(&it, itype, exp1, offset, false);
-                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ &&
-                        !arrayMember)
+                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                        !base->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(base, it);
                     }
@@ -3565,7 +3708,9 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                     last += s;
                 }
             }
-            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_)
+            if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                sc != StorageClass::member_ && sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline &&
+                !base->sb->attribs.inheritable.isInline)
             {
                 *init = nullptr;
                 insertDynamicInitializer(base, first);
@@ -3588,7 +3733,8 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 tn->size = n * s;
                 tn->esize = sz;
             }
-            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ && sc != StorageClass::mutable_)
+            if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+                sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline)
             {
                 callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
                 initInsert(&first, tn, exp, last, false);
@@ -3616,7 +3762,50 @@ static LEXLIST* initialize_bit(LEXLIST* lex, SYMBOL* funcsp, int offset, Storage
     errskim(&lex, skim_comma);
     return lex;
 }
-static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, TYPE* itype, std::list<INITIALIZER*>** init,
+static void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName)
+{
+    std::stack<EXPRESSION**> stk;
+    stk.push(exp);
+    while (!stk.empty())
+    {
+        exp = stk.top();
+        stk.pop();
+        if ((*exp)->left)
+            stk.push(&(*exp)->left);
+        if ((*exp)->right)
+            stk.push(&(*exp)->right);
+        switch ((*exp)->type)
+        {
+            case ExpressionNode::auto_:
+            case ExpressionNode::global_: {
+                if (name == (*exp)->v.sp)
+                {
+                    (*exp)->v.sp = newName;
+                }
+            }
+                break;
+            case ExpressionNode::thisref_:
+            {
+                stk.push(&(*exp)->left->v.func->thisptr);
+            }
+            break;
+        }
+    }
+}
+static void ReplaceLambdaInit(TYPE** tp, EXPRESSION** exp, SYMBOL* newName)
+{  
+    // get the temporary address
+    auto name = *exp;
+    if (name->type == ExpressionNode::void_)
+    {
+        while (name->type == ExpressionNode::void_)
+            name = name->right;
+        name->v.sp->sb->allocate = false;
+        ReplaceVarRef(exp, name->v.sp, newName);
+    }
+}
+static LEXLIST* initialize_auto(LEXLIST * lex, SYMBOL * funcsp, int offset, StorageClass sc, TYPE* itype,
+                                std::list<INITIALIZER*>** init,
                                 std::list<INITIALIZER*>** dest, SYMBOL* sym)
 {
     TYPE* tp;
@@ -3638,6 +3827,11 @@ static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, Storag
         TYPE* tp = nullptr;
         EXPRESSION* exp;
         lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        if (isstructured(tp) && basetype(tp)->sp->sb->islambda)
+        {
+            // this is part of copy elision for lambda declarations
+            ReplaceLambdaInit(&tp, &exp, sym);
+        }
         if (!tp)
             error(ERR_EXPRESSION_SYNTAX);
         else
@@ -3663,7 +3857,7 @@ static LEXLIST* initialize_auto(LEXLIST* lex, SYMBOL* funcsp, int offset, Storag
             EXPRESSION* expl = getThisNode(sym);
             initInsert(init, sym->tp, exp, offset, false);
             if (sym->sb->storage_class != StorageClass::auto_ && sym->sb->storage_class != StorageClass::parameter_ &&
-                sym->sb->storage_class != StorageClass::member_ && sym->sb->storage_class != StorageClass::mutable_)
+                sym->sb->storage_class != StorageClass::member_ && sym->sb->storage_class != StorageClass::mutable_ && !sym->sb->attribs.inheritable.isInline)
             {
                 callDestructor(basetype(sym->tp)->sp, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
@@ -3734,7 +3928,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
             }
             tp = nullptr;
         }
-        else if (basetype(ts->tp)->templateParam->second->type == Keyword::typename_)
+        else if (basetype(ts->tp)->templateParam->second->type == TplType::typename_)
         {
             tp = basetype(ts->tp)->templateParam->second->byClass.val;
             if (!tp)
@@ -3748,7 +3942,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
             }
             sym = tp->sp;
         }
-        else if (basetype(ts->tp)->templateParam->second->type == Keyword::delete_)
+        else if (basetype(ts->tp)->templateParam->second->type == TplType::delete_)
         {
             std::list<TEMPLATEPARAMPAIR>* args = basetype(ts->tp)->templateParam->second->byDeferred.args;
             sym = tp->templateParam->first;
@@ -3808,6 +4002,7 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         case BasicType::unsigned_short_:
         case BasicType::int_:
         case BasicType::unsigned_:
+        case BasicType::char8_t_:
         case BasicType::char16_t_:
         case BasicType::char32_t_:
         case BasicType::long_:
@@ -3826,6 +4021,8 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         case BasicType::enum_:
         case BasicType::templateparam_:
         case BasicType::wchar_t_:
+        case BasicType::bitint_:
+        case BasicType::unsigned_bitint_:
             return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init, flags);
         case BasicType::lref_:
         case BasicType::rref_:
@@ -3936,21 +4133,19 @@ void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& 
                     RecalculateVariableTemplateInitializers(ilbegin, ilend, out, base->cls->tp, bcoffset);
                     bcoffset += base->cls->tp->size;
                 }
+        offset = bcoffset;
         while (desc)
         {
             sym = *desc->it;
             if (ismember(sym))
             {
                 if (InitVariableMatches(sym, (*ilbegin)->fieldsp))
+                {
                     RecalculateVariableTemplateInitializers(ilbegin, ilend, out, sym->tp, offset + sym->sb->offset);
+                    offset += sym->tp->size;
+                }
             }
             increment_desc(&desc, &cache);
-        }
-        if ((*ilbegin)->basetp == 0)
-        {
-            auto init = Allocate<INITIALIZER>();
-            init->offset = tp->size;
-            (*out)->push_back(init);
         }
     }
     else if (isarray(tp))
@@ -3971,20 +4166,27 @@ void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& 
                     offset += tp->btp->size;
                 }
         }
-        if ((*ilbegin)->basetp == 0)
-        {
-            auto init = Allocate<INITIALIZER>();
-            init->offset = tp->size;
-            (*out)->push_back(init);
-        }
     }
     else
     {
         auto init = Allocate<INITIALIZER>();
-        init->offset = tp->size;
+        init->offset = 0;
         init->basetp = tp;
+        TEMPLATEPARAM tpx = {};
+        tpx.type = TplType::int_;
+        tpx.byNonType.dflt = (*ilbegin)->exp;
+        tpx.byNonType.tp = tp;
+        std::list<TEMPLATEPARAMPAIR> aa = {{nullptr, &tpx}};
+        auto bb = ResolveTemplateSelectors(nullptr, &aa, false);
+        init->exp = bb->front().second->byNonType.dflt;
         (*out)->push_back(init);
         ++ilbegin;
+    }
+    if ((*ilbegin)->basetp == 0)
+    {
+        auto init = Allocate<INITIALIZER>();
+        init->offset = offset;
+        (*out)->push_back(init);
     }
 }
 LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
@@ -4239,8 +4441,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 if (test)
                 {
                     initInsert(&init, z, exp, 0, true);
-                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::localstatic_ && storage_class_in != StorageClass::parameter_ &&
-                        storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
+                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::localstatic_ && storage_class_in != StorageClass::parameter_ && storage_class_in != StorageClass::member_ &&
+                        storage_class_in != StorageClass::mutable_ && !sym->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(sym, init);
                     }
@@ -4252,8 +4454,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     exp = baseexp;
                     callDestructor(z->sp, nullptr, &exp, sz, true, false, false, true);
                     initInsert(&init, z, exp, 0, true);
-                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::parameter_ && storage_class_in != StorageClass::member_ &&
-                        storage_class_in != StorageClass::mutable_)
+                    if (storage_class_in != StorageClass::auto_ && storage_class_in != StorageClass::parameter_ && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_ &&
+                        !sym->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicDestructor(sym, init);
                     }
@@ -4431,21 +4633,24 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 if ((sym->sb->init->front()->exp && isintconst(sym->sb->init->front()->exp) &&
                      (isint(sym->tp) || basetype(sym->tp)->type == BasicType::enum_)))
                 {
-                    if (sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp)
+                    if ((sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp) ||
+                        (storage_class_in == StorageClass::global_ && Optimizer::cparams.prm_cplusplus && !(flags & _F_NOCONSTGEN)))
+                    {
                         insertInitSym(sym);
+                    }
                     sym->sb->value.i = sym->sb->init->front()->exp->v.i;
-                    sym->sb->storage_class = StorageClass::const_ant_;
+                    sym->sb->storage_class = StorageClass::constant_;
                     Optimizer::SymbolManager::Get(sym)->i = sym->sb->value.i;
                     Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::scc_constant;
                 }
             }
         }
-        else if (sym->sb->init && !inTemplate && sym->sb->init->front()->exp &&
+        else if (sym->  sb->init && !inTemplate && sym->sb->init->front()->exp &&
                  (sym->sb->constexpression || isint(sym->tp) || basetype(sym->tp)->type == BasicType::enum_))
         {
             if (sym->sb->storage_class != StorageClass::static_ && !Optimizer::cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sym);
-            sym->sb->storage_class = StorageClass::const_ant_;
+            sym->sb->storage_class = StorageClass::constant_;
             Optimizer::SymbolManager::Get(sym)->i = sym->sb->value.i;
             Optimizer::SymbolManager::Get(sym)->storage_class = Optimizer::scc_constant;
         }
@@ -4481,6 +4686,14 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                 InsertInlineData(sym);
             }
+        }
+        else if (sym->sb->attribs.inheritable.isInline && !isfunction(sym->tp) && !sym->sb->parentClass && !sym->sb->templateLevel)
+        {
+            // so it won't show up in the output file unless used...
+            RequiresDialect::Feature(Dialect::cpp17, "Inline variables");
+            sym->sb->attribs.inheritable.linkage4 = Linkage::none_;
+            sym->sb->attribs.inheritable.isInlineData = true;
+            InsertInlineData(sym);
         }
         else
         {

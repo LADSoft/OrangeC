@@ -12,7 +12,7 @@
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
+ *     GNU General Public License for more details.return
  * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
@@ -36,7 +36,10 @@
 #include "ccerr.h"
 #include "config.h"
 #include "rtti.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "iblock.h"
 #include "initbackend.h"
 #include "declcpp.h"
@@ -187,7 +190,7 @@ Optimizer::IMODE* call_library(const char* lib_name, int size)
     Optimizer::IMODE* result;
     result = set_symbol(lib_name, 1);
     Optimizer::gen_icode(Optimizer::i_gosub, 0, result, 0);
-    Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size), Optimizer::make_parmadj(size));
+    Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size < 0 ? 0 : size), Optimizer::make_parmadj(abs(size)));
     result = Optimizer::tempreg(ISZ_UINT, 0);
     result->retval = true;
     return result;
@@ -492,7 +495,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
     if (stmt != 0 && stmt->select != 0 && (!(flags & F_NORETURNVALUE)  || expressionHasSideEffects(stmt->select) || HasIncDec()))
     {
         // the return type should NOT be an array at this point unless it is a managed one...
-        if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
+        if (basetype(funcsp->tp)->btp &&
+            (isstructured(basetype(funcsp->tp)->btp) || isbitint(basetype(funcsp->tp)->btp) ||
                                           (isarray(basetype(funcsp->tp)->btp) && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
                                           basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_))
         {
@@ -696,7 +700,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             // only one return statement, label isn't needed
             // and get rid of the goto as well...
             Optimizer::QUAD* find = Optimizer::intermed_tail;
-            Optimizer::BLOCK* b = find->block;
+            Optimizer::Block* b = find->block;
             while (b == find->block && (find->dc.opcode == Optimizer::i_line || find->ignoreMe))
                 find = find->back;
             if (b == find->block && find->dc.opcode == Optimizer::i_goto && find->dc.v.label == retlab)
@@ -995,10 +999,10 @@ static Optimizer::IMODE* GetBucket(Optimizer::IMODE* mem)
     return nullptr;
 }
 /*-------------------------------------------------------------------------*/
-static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
+static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::Block* b)
 {
     Optimizer::QUAD *old, *oldit;
-    Optimizer::BLOCK* ocb = Optimizer::currentBlock;
+    Optimizer::Block* ocb = Optimizer::currentBlock;
     old = b->head->fwd;
     while (old != b->tail && old->dc.opcode != Optimizer::i_label)
         old = old->fwd;
@@ -1162,7 +1166,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || tmpl))
     {
         funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), Optimizer::vt_code);
     }
     else
     {

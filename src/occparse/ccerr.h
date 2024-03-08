@@ -45,6 +45,17 @@ void diag(const char* fmt, ...);
 
 namespace Parser
 {
+
+class RequiresDialect
+{
+  public:
+    static bool Feature(Dialect cpp, const char* feature);
+    static bool Removed(Dialect cpp, const char* feature);
+    static bool Keyword(Dialect cpp, const char* keyword);
+
+private:
+    static bool Base(Dialect cpp, int err, const char* feature);
+};
 struct ErrorNamesAndLevels
 {
     const char* name;

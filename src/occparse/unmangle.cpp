@@ -53,6 +53,7 @@ const char* tn_floatimaginary = "float imaginary";
 const char* tn_doubleimaginary = "double imaginary";
 const char* tn_longdoubleimaginary = "long double imaginary";
 const char* tn_wchar_t = "wchar_t";
+const char* tn_char8_t = "char8_t";
 const char* tn_char16_t = "char16_t";
 const char* tn_char32_t = "char32_t";
 
@@ -853,7 +854,17 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             case 'u':
                 strcpy(buf, "unsigned ");
                 buf = buf + 9;
-                if (*name == 'N')
+                if (*name == 'B')
+                {
+                    strcpy(buf, "_Bitint(");
+                    const char* p = name + 1;
+                    buf += strlen(buf);
+                    while (isdigit(*p))
+                        *buf++ = *p++;
+                    *buf++ = ')';
+                    *buf = '\0';
+                }
+                else if (*name == 'N')
                 {
                     strcpy(buf, "unative");
                 }
@@ -880,6 +891,16 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                             break;
                     }
                 break;
+            case 'B': {
+                strcpy(buf, "_Bitint(");
+                const char* p = name + 1;
+                buf += strlen(buf);
+                while (isdigit(*p))
+                    *buf++ = *p++;
+                *buf++ = ')';
+                *buf = '\0';
+                break;
+            }
             case 'M':
                 buf2[0] = 0;
                 if (*name == '#')

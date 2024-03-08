@@ -106,7 +106,11 @@ void AliasInit(void)
     processCount = 0;
     changed = false;
 }
-void AliasRundown(void) { aFree(); }
+void AliasRundown(void)
+{
+    aFree();
+    briggsFreea();
+}
 static void PrintOffs(struct UIVOffset* offs)
 {
     if (offs)
@@ -659,6 +663,18 @@ static void HandleAssn(QUAD* head)
             }
         }
     }
+    else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->dc.left->mode == i_direct && head->dc.left->offset->type == se_global)
+    {
+        // mem, temp
+        ALIASLIST* al;
+        ALIASNAME* an = LookupMem(head->dc.left);
+        ALIASADDRESS* aa;
+        an = LookupAliasName(an, 0);
+        aa = LookupAddress(an, 0);
+        al = Allocate<ALIASLIST>();
+        al->address = aa;
+        AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);        
+    }
 }
 static int InferOffset(IMODE* im)
 {
@@ -1026,7 +1042,7 @@ static void HandleParm(QUAD* head)
         }
     }
 }
-static void AliasesOneBlock(BLOCK* b)
+static void AliasesOneBlock(Block* b)
 {
     QUAD* head = b->head;
     while (head != b->tail->fwd)
@@ -1058,13 +1074,13 @@ static void AliasesOneBlock(BLOCK* b)
         head = head->fwd;
     }
 }
-static void GatherAliases(BLOCK *b)
+static void GatherAliases(Block *b)
 {
     AliasesOneBlock(b);
     for (auto d = b->dominates; d; d = d->next)
         AliasesOneBlock(d->block);
 }
-static void GatherAliases(LOOP* lp)
+static void GatherAliases(Loop* lp)
 {
     bool xchanged = changed;
     do
@@ -1073,7 +1089,7 @@ static void GatherAliases(LOOP* lp)
         changed = false;
         while (lt)
         {
-            lp = (LOOP*)lt->data;
+            lp = (Loop*)lt->data;
             if (lp->type == LT_BLOCK)
                 AliasesOneBlock(lp->entry);
             else
@@ -1544,6 +1560,8 @@ static void ScanMem(void)
 }
 void AliasPass1(void)
 {
+    sFree();
+    briggsFrees();
     AliasInit();
     // when we get here it is expected we are in SSA mode
     Createaddresses();
@@ -1551,7 +1569,7 @@ void AliasPass1(void)
     do
     {
         changed = false;
-        GatherAliases(loopArray[loopCount - 1]);
+        GatherAliases(loopArray[loopCount-1]);
     } while (changed);
 }
 void AliasPass2(void)

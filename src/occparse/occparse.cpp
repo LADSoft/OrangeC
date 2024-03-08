@@ -40,7 +40,10 @@
 #include "ccerr.h"
 #include "config.h"
 #include "declare.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateinst.h"
+#include "templateutil.h"
+#include "templatededuce.h"
 #include "stmt.h"
 #include "inasm.h"
 #include "osutil.h"
@@ -138,7 +141,6 @@ void operator delete(void* p)
 }
 
 #endif
-
 using namespace DotNetPELib;
 PELib* peLib;
 
@@ -237,7 +239,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     0,     /* icd flags */
     0,     /* verbosity */
     Dialect::c11,
-    Dialect::cpp14,
+    Dialect::cpp17,
     true,  /* optimize_for_speed */
     false, /* optimize_for_size */
     false, /* optimize_for_float_access */
@@ -429,6 +431,7 @@ void compile(bool global)
         if (!Optimizer::cparams.prm_assemble && Optimizer::cparams.prm_debug)
             debug_dumptypedefs(globalNameSpace);
         Optimizer::libIncludes = preProcessor->GetIncludeLibs();
+        Optimizer::dseg(); // so we can tack various data on in the optimizer...
     }
     findUnusedStatics(globalNameSpace);
     dumperrs(stdout);

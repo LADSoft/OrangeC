@@ -7,7 +7,7 @@
  
  By default **OCC** will spawn the necessary subprograms to generate a completed executable from a source file.
  
- A companion program, **OCL, **may be used to generate MSDOS executables which depend on one of a variety of MSDOS extenders.
+ A companion program, **OCL**, may be used to generate MSDOS executables which depend on one of a variety of MSDOS extenders.
 
 
 ## Command Line Options

@@ -33,6 +33,8 @@
 #include <iostream>
 #include <cstring>
 #include <algorithm>
+#include "Utils.h"
+
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
@@ -181,6 +183,7 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
     for (auto it = cmdFiles.begin(); rv && it != cmdFiles.end(); ++it)
     {
         auto name = *it;
+        Utils::ReplaceAll(name, SpaceThunk, " ");
         Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
         if (!v)
         {

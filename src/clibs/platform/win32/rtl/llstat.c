@@ -63,7 +63,7 @@ time_t __to_timet(FILETIME* time)
     TIME_ZONE_INFORMATION tzinfo;
     int bias;
     SYSTEMTIME stime;
-    struct tm tmx;
+    struct tm tmx = { 0 };
     time_t tempTime;
     int temp = GetTimeZoneInformation(&tzinfo);
     if (temp != TIME_ZONE_ID_INVALID)

@@ -185,6 +185,7 @@ struct SimpleSymbol
     LIST* syms;
     const char* msil;
     int templateLevel;
+    int ellipsePos;
     union
     {
         struct
@@ -493,7 +494,7 @@ struct _phiblock
 {
     struct _phiblock* next;
     int Tn;
-    struct _block* block;
+    struct Block* block;
 };
 
 typedef struct _phidata
@@ -537,7 +538,7 @@ typedef struct quad
     IMODE* ans;
     unsigned long long liveRegs;
     struct quad *fwd, *back;
-    struct _block* block;
+    struct Block* block;
     SimpleSymbol* altsp;
     SimpleType* alttp;
     RUNTIMEDATA* runtimeData;
@@ -594,6 +595,7 @@ typedef struct quad
             int atomicpostfetch : 1; /* fetch has result after operation... */
             int vararg : 1;          // msil
             int runtimeIsStore : 1;
+            int moveBarrier : 1;     /* can't move instructions past this point, e.g. for computed goto/label */
         };
         unsigned flags;
     };

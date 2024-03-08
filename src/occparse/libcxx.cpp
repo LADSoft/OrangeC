@@ -28,7 +28,10 @@
 #include "mangle.h"
 #include "initbackend.h"
 #include "cpplookup.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "declcpp.h"
 #include "ccerr.h"
 #include "declcons.h"
@@ -1449,11 +1452,11 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
         int n = e->v.i;
         decltype(args) args1 = templateParamPairListFactory.CreateList();
         auto second = Allocate<TEMPLATEPARAM>();
-        second->type = Keyword::new_;
+        second->type = TplType::new_;
         args1->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
         args1->push_back(TEMPLATEPARAMPAIR{ nullptr, it->second });
         second = Allocate<TEMPLATEPARAM>();
-        second->type = Keyword::int_;
+        second->type = TplType::int_;
         second->byNonType.tp = it->second->byClass.dflt;
         second->packed = true;
         args1->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
@@ -1461,7 +1464,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
         for (int i = 0; i < n; i++)
         {
             second = Allocate<TEMPLATEPARAM>();
-            second->type = Keyword::int_;
+            second->type = TplType::int_;
             second->byNonType.tp = it->second->byClass.dflt;
             second->byNonType.val = intNode(ExpressionNode::c_i_, i);
             last->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
@@ -1494,7 +1497,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
 {
     auto it = args->begin();
     auto ite = args->end();
-    if (it->second->type == Keyword::new_)
+    if (it->second->type == TplType::new_)
         ++it;
     if (it->second->packed)
     {
@@ -1502,7 +1505,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
             return &stdany;
         ite = it->second->byPack.pack->end();
         it = it->second->byPack.pack->begin();
-        if (it->second->type == Keyword::new_)
+        if (it->second->type == TplType::new_)
             ++it;
     }
     auto e = it->second->byNonType.val;
@@ -1518,7 +1521,7 @@ static TYPE* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
                 return &stdany;
             ite = it->second->byPack.pack->end();
             it = it->second->byPack.pack->begin();
-            if (it != ite && it->second->type == Keyword::new_)
+            if (it != ite && it->second->type == TplType::new_)
                 ++it;        
         }
         while (n-- && it != ite)

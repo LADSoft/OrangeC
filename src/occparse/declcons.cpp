@@ -28,7 +28,10 @@
 #include <unordered_set>
 #include "ccerr.h"
 #include "config.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "stmt.h"
 #include "mangle.h"
 #include "initbackend.h"
@@ -551,21 +554,24 @@ bool matchesDefaultConstructor(SYMBOL* sp)
 }
 bool matchesCopy(SYMBOL* sp, bool move)
 {
-    auto it = basetype(sp->tp)->syms->begin();
-    ++it;
-    if (it != basetype(sp->tp)->syms->end())
+    if (sp->sb->parentClass)
     {
-        SYMBOL* arg1 = *it;
+        auto it = basetype(sp->tp)->syms->begin();
         ++it;
-        if (it == basetype(sp->tp)->syms->end() || (*it)->sb->init || (*it)->sb->deferredCompile || (*it)->sb->constop)
+        if (it != basetype(sp->tp)->syms->end())
         {
-            if (basetype(arg1->tp)->type == (move ? BasicType::rref_ : BasicType::lref_))
+            SYMBOL* arg1 = *it;
+            ++it;
+            if (it == basetype(sp->tp)->syms->end() || (*it)->sb->init || (*it)->sb->deferredCompile || (*it)->sb->constop)
             {
-                TYPE* tp = basetype(arg1->tp)->btp;
-                if (isstructured(tp))
-                    if (basetype(tp)->sp == sp->sb->parentClass || basetype(tp)->sp == sp->sb->parentClass->sb->mainsym ||
-                        basetype(tp)->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
-                        return true;
+                if (basetype(arg1->tp)->type == (move ? BasicType::rref_ : BasicType::lref_))
+                {
+                    TYPE* tp = basetype(arg1->tp)->btp;
+                    if (isstructured(tp))
+                        if (basetype(tp)->sp == sp->sb->parentClass || basetype(tp)->sp == sp->sb->parentClass->sb->mainsym ||
+                            basetype(tp)->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
+                            return true;
+                }
             }
         }
     }
@@ -1054,11 +1060,14 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
-                for (auto cons : *basetype(consovl->tp)->syms)
+                if (consovl)
                 {
-                    if (matchesCopy(cons, true))
-                        if (!cons->sb->trivialCons)
-                            return true;
+                    for (auto cons : *basetype(consovl->tp)->syms)
+                    {
+                        if (matchesCopy(cons, true))
+                            if (!cons->sb->trivialCons)
+                                return true;
+                    }
                 }
             }
         }
@@ -1115,11 +1124,14 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
             if (isstructured(sp1->tp))
             {
                 SYMBOL* consovl = search(basetype(sp1->tp)->syms, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
-                for (auto cons : *basetype(consovl->tp)->syms)
+                if (consovl)
                 {
-                    if (matchesCopy(cons, true))
-                        if (!cons->sb->trivialCons)
-                            return true;
+                    for (auto cons : *basetype(consovl->tp)->syms)
+                    {
+                        if (matchesCopy(cons, true))
+                            if (!cons->sb->trivialCons)
+                                return true;
+                    }
                 }
             }
         }
@@ -2253,7 +2265,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     init->sp = sp;
                 if (sp && sp->tp->type == BasicType::templateparam_)
                 {
-                    if (sp->tp->templateParam->second->type == Keyword::typename_)
+                    if (sp->tp->templateParam->second->type == TplType::typename_)
                     {
                         if (sp->tp->templateParam->second->packed)
                         {

@@ -25,13 +25,13 @@
 
 namespace Optimizer
 {
+extern std::vector<Loop*> loopArray;
 extern int loopCount;
-extern LOOP** loopArray;
 
 void CancelInfinite(int orgBlockCount);
 void RemoveInfiniteThunks(void);
 void BuildLoopTree(void);
-bool isAncestor(LOOP* l1, LOOP* l2);
+bool isAncestor(Loop* l1, Loop* l2);
 LIST* strongRegiondfs(int tnum);
 void CalculateInduction(void);
 }  // namespace Optimizer

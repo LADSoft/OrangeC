@@ -26,6 +26,7 @@
 namespace Parser
 {
 bool comparetypes(TYPE* typ1, TYPE* typ2, int exact);
+bool compareXC(TYPE* typ1, TYPE* typ2);
 bool matchingCharTypes(TYPE* typ1, TYPE* typ2);
 void typenumptr(char* buf, TYPE* tp);
 void RenderExpr(char* buf, EXPRESSION* exp);

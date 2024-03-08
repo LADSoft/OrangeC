@@ -51,6 +51,7 @@ extern const char* tn_floatimaginary;
 extern const char* tn_doubleimaginary;
 extern const char* tn_longdoubleimaginary;
 extern const char* tn_wchar_t;
+extern const char* tn_char8_t;
 extern const char* tn_char16_t;
 extern const char* tn_char32_t;
 

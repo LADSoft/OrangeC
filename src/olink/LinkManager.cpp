@@ -302,6 +302,11 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                         LinkSymbolData* newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
                         newSymbol->SetAuxData(*it);
                         virtsections.insert(newSymbol);
+                        if (n > 0 && ((*it)->GetName()[n - 1] == 'r' || (*it)->GetName()[n - 1] == 's'))
+                        {
+                            newSymbol->SetUsed(true);
+                            LoadSectionExternals(file, (ObjSection*)newSymbol->GetAuxData());
+                        }
                     }
                     else if (!(*it1)->GetAuxData())
                     {

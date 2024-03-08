@@ -317,7 +317,7 @@ if((creall(x) < -NLGITER) || (cimagl(x) < -NLGITER))
 	    w = clgaml(1.0L - x);
 	    c = LOGPIL - clogl( u ) - w;
 	    /* Adjust for reduced sine arg.  */
-	    cimagl(c) += PIL * p;
+	    c += PIL * p * I;
 	  }
 	goto ldone;
 	}

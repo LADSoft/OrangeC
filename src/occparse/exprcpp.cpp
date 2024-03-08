@@ -30,7 +30,10 @@
 #include "initbackend.h"
 #include "stmt.h"
 #include "mangle.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "lambda.h"
 #include "declare.h"
 #include "expr.h"
@@ -242,12 +245,14 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             }
             else
             {
-                SYMBOL* sym = search(lambdas.front()->cls->tp->syms, "$this");
+                SYMBOL* sym = search(lambdas.front()->cls->tp->syms, lambdas.front()->thisByVal ? "*this" : "$this");
                 enclosing = basetype(lambdas.front()->lthis->tp)->btp->sp;
                 if (sym)
                 {
                     deref(&stdpointer, &en);
                     en = exprNode(ExpressionNode::add_, en, intNode(ExpressionNode::c_i_, sym->sb->offset));
+                    if (!lambdas.front()->thisByVal)
+                        deref(&stdpointer, &en);
                 }
                 else
                 {
@@ -255,7 +260,10 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
                 }
             }
         }
-        deref(&stdpointer, &en);
+        else
+        {
+            deref(&stdpointer, &en);
+        }
         if (enclosing != memberSym->sb->parentClass && enclosing->sb->mainsym != memberSym->sb->parentClass)
         {
             if (toError && classRefCount(memberSym->sb->parentClass, enclosing) != 1)
@@ -466,7 +474,7 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = true;
-                if (isstructured(*tp))
+                if (isstructured(*tp) || isbitint(*tp))
                 {
                     EXPRESSION* ev = anonymousVar(StorageClass::auto_, *tp);
                     SYMBOL* av = ev->v.sp;
@@ -616,16 +624,20 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
     bool defd = false;
     int consdest = false;
     bool notype = false;
+    bool deduceTemplate = false;
     if (!(flags & _F_NOEVAL))
     {
         *tp = nullptr;
-        lex = getBasicType(lex, funcsp, tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
-                           &consdest, nullptr, false, true, false, false, false);
+        lex = getBasicType(lex, funcsp, tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, &deduceTemplate, false, true, false, false, false);
         if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel))
         {
             (*tp) = basetype(*tp)->sp->tp;
             if (!(*tp)->size)
                 errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
+        }
+        if (isstructured(*tp) && deduceTemplate && !MATCHKW(lex, Keyword::openpa_))
+        {
+            SpecializationError(basetype(*tp)->sp);
         }
     }
     if (!MATCHKW(lex, Keyword::openpa_))
@@ -710,7 +722,7 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             ctype = PerformDeferredInitialization(ctype, funcsp);
             auto bcall = search(basetype(ctype)->syms, overloadNameTab[CI_FUNC]);
             FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-            if (bcall && MATCHKW(lex, Keyword::openpa_))
+            if (bcall && !deduceTemplate && MATCHKW(lex, Keyword::openpa_))
             {
                 lex = getsym();
                 if (MATCHKW(lex, Keyword::closepa_))
@@ -740,6 +752,57 @@ LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                 (*exp)->v.func->thisptr = exp1;
                 (*exp)->v.func->thistp = MakeType(BasicType::pointer_, basetype(ctype)->sp->tp);
                 lex = expression_arguments(lex, funcsp, tp, exp, 0);
+            }
+            else if (deduceTemplate && (Optimizer::architecture != ARCHITECTURE_MSIL))
+            {
+                RequiresDialect::Feature(Dialect::cpp17, "Class template argument deduction");
+                lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
+                if (funcparams->arguments)
+                {
+                    bool toconst = isconst(*tp), tovol = isconst(*tp);
+                    TYPE* thstp = MakeType(BasicType::pointer_, basetype(*tp));
+                    if (toconst)
+                        thstp = MakeType(BasicType::const_, thstp);
+                    if (tovol)
+                        thstp = MakeType(BasicType::volatile_, thstp);
+                    funcparams->thistp = thstp;
+                    funcparams->ascall = true;
+                    TYPE* tp2 = *tp;
+                    SYMBOL* sym = DeduceOverloadedClass(&tp2, exp, basetype(*tp)->sp, funcparams, flags);
+                    if (sym)
+                    {
+                        EXPRESSION* exp2 = anonymousVar(StorageClass::auto_, sym->tp);
+                        funcparams->thisptr = exp2;
+                        funcparams->sp = (*exp)->v.sp;
+                        funcparams->functp = (*exp)->v.sp->tp;
+                        funcparams->fcall = *exp;
+                        sym = exp2->v.sp;
+
+                        *exp = exprNode(ExpressionNode::func_, nullptr, nullptr);
+                        (*exp)->v.func = funcparams;
+                        *exp = exprNode(ExpressionNode::thisref_, *exp, nullptr);
+                        sym->sb->constexpression = true;
+                        optimize_for_constants(exp);
+                        if ((*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
+                            sym->sb->constexpression = false;
+                        PromoteConstructorArgs(funcparams->sp, funcparams);
+                        callDestructor(basetype(*tp)->sp, nullptr, &exp2, nullptr, true, false, false, true);
+                        initInsert(&sym->sb->dest, *tp, exp2, 0, true);
+                        // can't default destruct while deducing a template
+                    }
+                    else
+                    {
+                        errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, basetype(*tp)->sp->name);
+                        EXPRESSION* exp2 = anonymousVar(StorageClass::auto_, basetype(*tp));
+                        *exp = exp2;
+                    }
+                }
+                else
+                {
+                    errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, basetype(*tp)->sp->name);
+                    EXPRESSION* exp2 = anonymousVar(StorageClass::auto_, basetype(*tp));
+                    *exp = exp2;
+                }
             }
             else
             {
@@ -1129,6 +1192,8 @@ bool doConstCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcsp
         while (isref(*newType))
             *newType = basetype(*newType)->btp;
     }
+    if (!compareXC(*newType, oldType))
+        return false;
     // as long as the types match except for any changes to const and
     // it is not a function or memberptr we can convert it.
     if (comparetypes(*newType, oldType, 2))
@@ -2221,6 +2286,8 @@ static bool noexceptExpression(EXPRESSION* node)
         case ExpressionNode::l_bit_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::literalclass_:
@@ -2258,6 +2325,8 @@ static bool noexceptExpression(EXPRESSION* node)
         case ExpressionNode::x_p_:
         case ExpressionNode::x_fp_:
         case ExpressionNode::x_sp_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_string_:
         case ExpressionNode::x_object_:
         case ExpressionNode::trapcall_:
@@ -2336,7 +2405,7 @@ static bool noexceptExpression(EXPRESSION* node)
             rv = noexceptExpression(node->left);
             break;
         case ExpressionNode::atomic_:
-        case ExpressionNode::const_ruct_:
+        case ExpressionNode::construct_:
             break;
         case ExpressionNode::func_:
             fp = node->v.func;
@@ -2458,7 +2527,7 @@ void ResolveTemplateVariable(TYPE** ttype, EXPRESSION** texpr, TYPE* rtype, TYPE
                 type = rtype;
             auto  second = Allocate<TEMPLATEPARAM>();
 
-            second->type = Keyword::typename_;
+            second->type = TplType::typename_;
             second->byClass.dflt = type;
             params->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
             sym = GetVariableTemplate(exp->v.sp, params);

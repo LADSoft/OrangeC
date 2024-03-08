@@ -23,6 +23,7 @@
 
 CPP_DEPENDENCIES = $(wildcard *.cpp)
 H_FILES=$(wildcard *.h)
+EXCLUDE= debug.o variant.o
 
 all: $(DEPENDENCIES)
 	$(MAKE) -CSUPPORT

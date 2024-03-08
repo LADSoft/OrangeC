@@ -13,7 +13,7 @@
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
@@ -24,7 +24,10 @@
 
 #include "compiler.h"
 #include "ccerr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "mangle.h"
 #include "initbackend.h"
 #include "stmt.h"
@@ -164,6 +167,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
         {
             SYMBOL* lthis = lambdas.front()->lthis;
             SYMBOL* base = basetype(lambdas.front()->lthis->tp)->btp->sp;
+            lthis = basetype(basetype(lthis->tp)->btp)->sp;
             if (lthis->sb->mainsym)
                 lthis = lthis->sb->mainsym;
             if (base->sb->mainsym)
@@ -176,7 +180,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                     // have to try to replicate the symbol into the current context
                     for (auto cil = cilb ; cil != cile; ++cil )
                     {
-                        if ((*cil)->captureMode == cmNone)
+                        if ((*cil)->captureMode == cmNone && !lambdas.front()->captureThis)
                         {
                             if (isExplicit)
                             {
@@ -188,14 +192,14 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                                     break;
                                 }
                             }
-                            else
+                            else if (cil != cilb)
                             {
                                 errorflg = true;
                                 errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
                                 break;
                             }
                         }
-                        else if ((*cil)->captureMode == cmValue && isExplicit)
+                        else if ((*cil)->captureMode == cmValue && isExplicit && !(*cil)->thisByVal)
                         {
                             errorflg = true;
                             errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
@@ -205,7 +209,9 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                     if (!errorflg)
                     {
                         for (auto cil = cilb; cil != cile; ++cil)
+                        {
                             (*cil)->captureThis = true;
+                        }                            
                     }
                 }
                 else
@@ -331,7 +337,7 @@ static void cloneTemplateParams(SYMBOL* func)
     func->templateParams = templateParamPairListFactory.CreateList();
     int index = 0;
     auto second = Allocate<TEMPLATEPARAM>();
-    second->type = Keyword::new_;
+    second->type = TplType::new_;
     func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
     for (auto arg : *basetype(func->tp)->syms)
     {
@@ -343,7 +349,7 @@ static void cloneTemplateParams(SYMBOL* func)
             auto first = Allocate<SYMBOL>();
             *first = *arg;
             first->sb = nullptr;
-            second->type = Keyword::typename_;
+            second->type = TplType::typename_;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
             arg->tp->templateParam = &func->templateParams->back();
             arg->templateParams = templateParamPairListFactory.CreateList();
@@ -355,7 +361,7 @@ static void convertCallToTemplate(SYMBOL* func)
 {
     func->templateParams = templateParamPairListFactory.CreateList();
     auto second = Allocate<TEMPLATEPARAM>();
-    second->type = Keyword::new_;
+    second->type = TplType::new_;
     func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
 
     if (isautotype(lambdas.front()->functp))
@@ -369,13 +375,16 @@ static void convertCallToTemplate(SYMBOL* func)
             auto first = Allocate<SYMBOL>();
             *first = *arg;
             first->sb = nullptr;
-            second->type = Keyword::typename_;
+            second->type = TplType::typename_;
             second->index = index++;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
             arg->tp = MakeType(BasicType::templateparam_);
             arg->tp->templateParam = &func->templateParams->back();
         }
     }
+    if (func->templateParams->size())
+        RequiresDialect::Feature(Dialect::cpp14, "Generic lambdas");
+
     func->sb->templateLevel = templateNestingCount;
     func->sb->parentTemplate = func;
 }
@@ -541,7 +550,7 @@ static void createConverter(SYMBOL* self)
         f->sp = caller;
         f->fcall = varNode(ExpressionNode::pc_, f->sp);
         f->functp = f->sp->tp;
-        if (isstructured(basetype(caller->tp)->btp))
+        if (isstructured(basetype(caller->tp)->btp) || isbitint(basetype(caller->tp)->btp))
         {
             f->returnEXP = intNode(ExpressionNode::c_i_, 0);
             f->returnSP = basetype(basetype(caller->tp)->btp)->sp;
@@ -566,7 +575,9 @@ static bool lambda_get_template_state(SYMBOL* func)
     for (auto sym : *basetype(func->tp)->syms)
     {
         if (isautotype(sym->tp))
+        {
             return true;
+        }
     }
     return false;
 }
@@ -577,11 +588,6 @@ static void finishClass(void)
     SYMLIST* lst;
     self->sb->access = AccessLevel::private_;
 
-    if (lambdas.front()->captureThis && lambdas.size() > 1)
-    {
-        SYMBOL* parent = makeID(StorageClass::member_, &stdpointer, NULL, "$parent");
-        lambda_insert(parent, lambdas.front());
-    }
     self->sb->label = Optimizer::nextLabel++;
     self->sb->parentClass = lambdas.front()->cls;
     SetLinkerNames(self, Linkage::cdecl_);
@@ -618,6 +624,7 @@ static EXPRESSION* createLambda(bool noinline)
                          lambdas.front()->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
     SetLinkerNames(cls, Linkage::cdecl_);
     cls->sb->allocate = true;
+    cls->sb->assigned = true;
     if (lambdas.front()->enclosingFunc)
     {
         localNameSpace->front()->syms->Add(cls);
@@ -651,6 +658,7 @@ static EXPRESSION* createLambda(bool noinline)
         parentThs = varNode(ExpressionNode::auto_, (SYMBOL*)basetype(lambdas.front()->enclosingFunc->tp)->syms->front());  // this ptr
     else
         parentThs = nullptr;
+    auto thisByVal = lambdas.size() == 2 && lambdas.back()->thisByVal;
     for (auto sp : *lambdas.front()->cls->tp->syms)
     {
         EXPRESSION *en = NULL, *en1 = NULL;
@@ -676,13 +684,35 @@ static EXPRESSION* createLambda(bool noinline)
             {
                 SYMBOL* parent = search(lambdas.front()->cls->tp->syms, "$parent");
                 en1 = varNode(ExpressionNode::auto_, cls);
-                deref(&stdpointer, &en1);
+                if (!thisByVal)
+                    deref(&stdpointer, &en1);
                 en1 = exprNode(ExpressionNode::add_, en1, intNode(ExpressionNode::c_i_, parent->sb->offset));
             }
             deref(&stdpointer, &en1);
             en = exprNode(ExpressionNode::add_, clsThs, intNode(ExpressionNode::c_i_, sp->sb->offset));
             deref(&stdpointer, &en);
             en = exprNode(ExpressionNode::assign_, en, en1);
+        }
+        else if (!strcmp(sp->name, "*this"))
+        {
+            if (!parentThs)
+                continue;
+            if (lambdas.size() == 1 || !lambdas.front()->captureThis)
+            {
+                en1 = parentThs;  // get parent from function call
+            }
+            else
+            {
+                SYMBOL* parent = search(lambdas.front()->cls->tp->syms, "$parent");
+                en1 = varNode(ExpressionNode::auto_, cls);
+                deref(&stdpointer, &en1);
+                en1 = exprNode(ExpressionNode::add_, en1, intNode(ExpressionNode::c_i_, parent->sb->offset));
+            }
+            deref(&stdpointer, &en1);
+            en = exprNode(ExpressionNode::add_, clsThs, intNode(ExpressionNode::c_i_, sp->sb->offset));
+            TYPE* ctp = sp->tp;
+            if (!callConstructorParam(&ctp, &en, sp->tp, en1, true, false, true, false, true))
+                errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, sp);
         }
         else if (sp->sb->lambdaMode)
         {
@@ -769,14 +799,15 @@ static EXPRESSION* createLambda(bool noinline)
             *cur = exprNode(ExpressionNode::void_, en, NULL);
             cur = &(*cur)->right;
         }
-    }
+    } 
     *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
 LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
 {
+    auto declline = lines;
     LAMBDA* self;
-    SYMBOL *vpl, *ths;
+    SYMBOL *vpl;
     SYMLIST* hrl;
     TYPE* ltp;
     STRUCTSYM ssl;
@@ -827,11 +858,6 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             if (MATCHKW(lex, Keyword::comma_) || MATCHKW(lex, Keyword::closebr_))
             {
                 self->captureMode = cmValue;
-                skip(&lex, Keyword::comma_);
-            }
-            else
-            {
-                lex = backupsym();
             }
         }
         else if (MATCHKW(lex, Keyword::and_))
@@ -840,26 +866,34 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             if (MATCHKW(lex, Keyword::comma_) || MATCHKW(lex, Keyword::closebr_))
             {
                 self->captureMode = cmRef;
-                skip(&lex, Keyword::comma_);
             }
             else
             {
                 lex = backupsym();
             }
         }
-        if (!MATCHKW(lex, Keyword::comma_) && !MATCHKW(lex, Keyword::closebr_))
+        if (MATCHKW(lex, Keyword::comma_) || (self->captureMode == cmNone && !MATCHKW(lex, Keyword::closebr_)))
         {
             do
             {
-                enum e_cm localMode = self->captureMode;
                 if (MATCHKW(lex, Keyword::comma_))
                     skip(&lex, Keyword::comma_);
+                bool hasStar = MATCHKW(lex, Keyword::star_);
+                if (hasStar)
+                    skip(&lex, Keyword::star_);
                 if (MATCHKW(lex, Keyword::this_))
                 {
+                    if (hasStar)
+                        RequiresDialect::Feature(Dialect::cpp17, "capture of *this");
+                    enum e_cm localMode = self->captureMode;
                     lex = getsym();
-                    if (localMode == cmValue || !self->lthis)
+                    if (!hasStar && (localMode == cmValue || !self->lthis))
                     {
-                        error(ERR_CANNOT_CAPTURE_THIS);
+                        error(ERR_CANNOT_CAPTURE_THIS_BY_VALUE);
+                    }
+                    else if (hasStar && localMode == cmRef)
+                    {
+                        error(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE);
                     }
                     else
                     {
@@ -868,35 +902,52 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
                         }
                         self->captureThis = true;
+                        self->thisByVal = hasStar;
                         lambda_capture(NULL, cmThis, true);
                     }
                     continue;
                 }
-                else if (MATCHKW(lex, Keyword::and_))
+                if (hasStar)
                 {
-                    if (localMode == cmRef)
-                    {
-                        error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
-                    }
+                    error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
+                }
+                enum e_cm localMode = cmNone;
+                if (MATCHKW(lex, Keyword::and_))
+                {
                     localMode = cmRef;
                     lex = getsym();
                 }
                 else
                 {
-                    if (localMode == cmValue)
-                    {
-                        error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
-                    }
                     localMode = cmValue;
                 }
                 if (ISID(lex))
                 {
+                    if (localMode != cmNone)
+                    {
+                        if (self->captureMode == localMode)
+                        {
+                            if (localMode != cmRef)
+                            {
+                                errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, lex->data->value.s.a);
+                            }
+                            else
+                            {
+                                errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, lex->data->value.s.a);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        localMode = self->captureMode;
+                    }
                     LEXLIST* idlex = lex;
                     SYMBOL* sp;
                     LAMBDA* current;
                     lex = getsym();
                     if (MATCHKW(lex, Keyword::assign_))
                     {
+                        RequiresDialect::Feature(Dialect::cpp14, "Lambda Capture Expressions");
                         TYPE* tp = NULL;
                         EXPRESSION* exp;
                         lex = getsym();
@@ -912,7 +963,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
                             {
-                                error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
+                                errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, sp->name);
                             }
                         }
                     }
@@ -958,6 +1009,10 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
             } while (MATCHKW(lex, Keyword::comma_));
+        }
+        else
+        {
+            self->captureThis = MATCHKW(lex, Keyword::closebr_);
         }
         needkw(&lex, Keyword::closebr_);
     }
@@ -1038,9 +1093,37 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     ssl.str = self->cls;
     ssl.tmpl = NULL;
     addStructureDeclaration(&ssl);
-    ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
-    SetLinkerNames(ths, Linkage::cdecl_);
-    lambda_insert(ths, lambdas.front());
+    if (lambdas.front()->captureThis)
+    {
+        if (lambdas.size() > 1)
+        {
+            SYMBOL* parent = makeID(StorageClass::member_, &stdpointer, NULL, "$parent");
+            lambda_insert(parent, lambdas.front());
+        }
+        if (lambdas.front()->thisByVal)
+        {
+            if (lambdas.front()->enclosingFunc)
+            {
+                auto ths =
+                    makeID(StorageClass::member_, lambda_type(basetype(basetype(lambdas.front()->enclosingFunc->tp)->syms->front()->tp)->btp, cmValue), NULL, "*this");
+                SetLinkerNames(ths, Linkage::cdecl_);
+                lambda_insert(ths, lambdas.front());
+            }
+        }
+        else
+        {
+            auto ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
+            SetLinkerNames(ths, Linkage::cdecl_);
+            lambda_insert(ths, lambdas.front());
+
+        }
+    }
+    else
+    {
+        auto ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
+        SetLinkerNames(ths, Linkage::cdecl_);
+        lambda_insert(ths, lambdas.front());
+    }
     if (MATCHKW(lex, Keyword::begin_))
     {
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
@@ -1070,6 +1153,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     *exp = createLambda(0);
     *tp = lambdas.front()->cls->tp;
     lambdas.pop_front();
+    lines = declline;
     return lex;
 }
 }  // namespace Parser

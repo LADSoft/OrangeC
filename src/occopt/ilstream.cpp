@@ -812,6 +812,7 @@ static void StreamFunc(FunctionData* fd)
     StreamIndex(fd->blockCount);
     StreamIndex(fd->tempCount);
     StreamIndex(fd->exitBlock);
+    StreamIndex(fd->ellipsePos);
     StreamIndex(fd->fastcallAlias);
     StreamSymbolList(fd->variables);
     StreamSymbolList(fd->temporarySymbols);

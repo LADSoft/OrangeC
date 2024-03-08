@@ -23,16 +23,19 @@
  */
 
 #include "compiler.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "initbackend.h"
 #include "unmangle.h"
 #include "OptUtils.h"
 #include "help.h"
 #include "ccerr.h"
-#include "template.h"
 #include "declare.h"
 #include "declcpp.h"
 #include "symtab.h"
+#include "stmt.h"
 
 namespace Parser
 {
@@ -183,7 +186,7 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
         return s1 == s2;
     }
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
-        return true;
+        return typ1->bitintbits == typ2->bitintbits;
     if (isfunction(typ1) && isfunction(typ2) &&
         typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
         return true;
@@ -199,6 +202,41 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
         return true;
     }
     return false;
+}
+// this was introduced in c++17, but, since it is a major error if you do this I'm just importing it into all C++ dialects...
+bool compareXC(TYPE* typ1, TYPE* typ2)
+{
+    if (isfuncptr(typ1))
+    {
+        if (isfunction(typ2) || isfuncptr(typ2))
+        {
+            if (isfunction(typ2))
+            {
+                parseNoexcept(basetype(typ2)->sp);
+            }
+            while (ispointer(typ2))
+            {
+                typ2 = basetype(typ2)->btp;
+            }
+            while (ispointer(typ1))
+            {
+                typ1 = basetype(typ1)->btp;
+            }
+            typ1 = basetype(typ1);
+            typ2 = basetype(typ2);
+            if (isfunction(typ1))
+            {
+                parseNoexcept(typ1->sp);
+            }
+            if (isfunction(typ2))
+            {
+                parseNoexcept(typ2->sp);
+            }
+            if (typ1->sp->sb->noExcept && !typ2->sp->sb->noExcept)
+                return false;
+        }
+    }
+    return true;
 }
 bool matchingCharTypes(TYPE* typ1, TYPE* typ2)
 {
@@ -340,7 +378,8 @@ TYPE* typenum(char* buf, TYPE* tp)
             if (!tp->syms)
                 break;
             sym = tp->syms->front();
-            if (tp->syms->size() > 1 || !strcmp(sym->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
+            if (tp->syms->size() > 1 ||
+                !strcmp(sym->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
             {
                 strcpy(buf, " (*)(\?\?\?)");
                 break;
@@ -384,6 +423,7 @@ TYPE* typenum(char* buf, TYPE* tp)
                     *buf = 0;
                     typenum(buf, sym->tp);
                     buf = buf + strlen(buf);
+                    *buf++ = ',';
                     ++it;
                 }
                 if (cleanup)
@@ -429,6 +469,9 @@ TYPE* typenum(char* buf, TYPE* tp)
             buf = buf + strlen(buf);
         case BasicType::int_:
             strcpy(buf, tn_int);
+            break;
+        case BasicType::char8_t_:
+            strcpy(buf, tn_char8_t);
             break;
         case BasicType::char16_t_:
             strcpy(buf, tn_char16_t);
@@ -479,6 +522,14 @@ TYPE* typenum(char* buf, TYPE* tp)
             break;
         case BasicType::unative_:
             strcpy(buf, "native unsigned int");
+            break;
+        case BasicType::bitint_:
+            strcpy(buf, "_Bitint");
+            sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
+            break;
+        case BasicType::unsigned_bitint_:
+            strcpy(buf, "unsigned _Bitint");
+            sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
             break;
         case BasicType::void_:
             strcpy(buf, tn_void);
@@ -605,8 +656,32 @@ TYPE* typenum(char* buf, TYPE* tp)
     }
     return 0;
 }
+void xcTypeToString(char* buf, TYPE* typ)
+{
+    if (isfunction(typ) || isfuncptr(typ))
+    {
+        while (ispointer(typ))
+            typ = basetype(typ)->btp;
+        typ = basetype(typ);
+        switch (typ->sp->sb->xcMode)
+        {
+            case xc_all:
+                strcpy(buf, " noexcept(false)");
+                break;
+            case xc_none:
+                strcpy(buf, " noexcept");
+                break;
+            case xc_dynamic:
+                strcpy(buf, " throw(...)");
+                break;
+            case xc_unspecified:
+                break;
+        }
+    }
+}
 void typeToString(char* buf, TYPE* typ)
 {
+    auto typ2 = typ;
     *buf = 0;
     while (typ)
     {
@@ -616,5 +691,6 @@ void typeToString(char* buf, TYPE* typ)
             *buf++ = ',';
     }
     *buf = 0;
+    xcTypeToString(buf, typ2);
 }
 }  // namespace Parser

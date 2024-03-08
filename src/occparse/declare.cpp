@@ -37,12 +37,14 @@
 #include "mangle.h"
 #include "lex.h"
 #include "lambda.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "expr.h"
 #include "stmt.h"
 #include "help.h"
 #include "memory.h"
-#include "template.h"
 #include "cpplookup.h"
 #include "OptUtils.h"
 #include "constopt.h"
@@ -55,7 +57,6 @@
 #include "browse.h"
 #include "Property.h"
 #include "ildata.h"
-#include "template.h"
 #include "libcxx.h"
 #include "constexpr.h"
 #include "symtab.h"
@@ -427,7 +428,7 @@ LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
                 {
                     if (nsv || strSym)
                     {
-                        errorNotMember(strSym, nsv->front(), (*rsp)->name);
+                        errorNotMember(strSym, nsv->front(), (*rsp)->sb->decoratedName);
                     }
                     *rsp = nullptr;
                 }
@@ -498,7 +499,7 @@ LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass stora
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage, &linkage2, &linkage3, AccessLevel::public_,
-                       &notype, &defd, nullptr, nullptr, false, false, inUsing, false, false);
+                       &notype, &defd, nullptr, nullptr, nullptr, false, false, inUsing, false, false);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3, &notype, false,
                         false, beforeOnly, false); /* fixme at file scope init */
@@ -624,7 +625,7 @@ void calculateStructOffsets(SYMBOL* sp)
     {
         SYMBOL* p = *it;
         TYPE* tp = basetype(p->tp);
-        if (p->sb->storage_class != StorageClass::static_ && p->sb->storage_class != StorageClass::const_ant_ && p->sb->storage_class != StorageClass::external_ &&
+        if (p->sb->storage_class != StorageClass::static_ && p->sb->storage_class != StorageClass::constant_ && p->sb->storage_class != StorageClass::external_ &&
             p->sb->storage_class != StorageClass::overloads_ && p->sb->storage_class != StorageClass::enumconstant_ && !istype(p) && p != sp &&
             p->sb->parentClass == sp)
         // not function, also not injected self or base class or static variable
@@ -1105,7 +1106,8 @@ static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
                 needkw(&lex, Keyword::colon_);
                 break;
             default:
-                lex = declare(lex, nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false, currentAccess);
+                lex = declare(lex, nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
+                              currentAccess);
                 break;
         }
     }
@@ -1226,6 +1228,21 @@ static unsigned TypeCRC(SYMBOL* sp)
     }
     return crc;
 }
+static bool compareStructSyms(SymbolTable<SYMBOL>* left, SymbolTable<SYMBOL>* right)
+{
+    auto itl = left->begin();
+    auto itr = right->begin();
+    for (; itl != left->end() && itr != right->end(); ++itl, ++itr)
+    {
+        if ((*itl)->sb->offset != (*itr)->sb->offset)
+           return false;
+        if ((*itl)->tp->alignment != (*itr)->tp->alignment)
+           return false;
+        if (!comparetypes((*itl)->tp, (*itr)->tp, false))
+           return false;
+    }
+    return itl == left->end() && itr == right->end();
+}
 LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable)
 {
@@ -1240,11 +1257,15 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     if (sp->sb->attribs.inheritable.structAlign == 0)
         sp->sb->attribs.inheritable.structAlign = 1;
     structLevel++;
+    auto oldsyms = sp->tp->syms, oldtags = sp->tp->tags;
     if (hasBody)
     {
         if (sp->tp->syms || sp->tp->tags)
         {
-            preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+           if (Optimizer::cparams.c_dialect != Dialect::c2x)
+           {
+                preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+           }
         }
         sp->tp->syms = symbols.CreateSymbolTable();
         if (Optimizer::cparams.prm_cplusplus)
@@ -1272,6 +1293,16 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         sp->sb->isfinal = isfinal;
         lex = structbody(lex, funcsp, sp, defaultAccess, anonymousTable);
         *defd = true;
+    }
+    if (hasBody && Optimizer::cparams.c_dialect == Dialect::c2x)
+    {
+        if (oldsyms)
+        {
+            if (!compareStructSyms(oldsyms, sp->tp->syms))
+            {
+                preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+            }
+        }
     }
     if (inTemplate && templateNestingCount == 1)
     {
@@ -1321,7 +1352,7 @@ static unsigned char* ParseUUID(LEXLIST** lex)
     return nullptr;
 }
 static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
-                           enum AccessLevel access, bool* defd, bool constexpression)
+                           Linkage linkage2_in, enum AccessLevel access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
     SymbolTable<SYMBOL>* table = nullptr;
@@ -1338,7 +1369,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
-    enum Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+    enum Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
     *defd = false;
     switch (KW(lex))
     {
@@ -1485,7 +1516,11 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     }
     else
     {
-        if (asfriend && sp->sb->templateLevel)
+        if (!sp->sb && sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->byTemplate.val)
+        {
+            sp = sp->tp->templateParam->second->byTemplate.val;
+        }
+        if (asfriend && sp->sb && sp->sb->templateLevel)
         {
             sp = sp->sb->parentTemplate;
         }
@@ -1580,7 +1615,7 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                 std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
                 lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->front().second->bySpecialization.types);
             }
-            else if (sp->sb->templateLevel)
+            else if (!sp->sb || sp->sb->templateLevel)
             {
                 if ((MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
                 {
@@ -1590,7 +1625,8 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
                 {
                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                     lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
-                    sp = GetClassTemplate(sp, lst, false);
+                    if (sp->sb)
+                        sp = GetClassTemplate(sp, lst, false);
                 }
             }
         }
@@ -1601,16 +1637,19 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     }
     if (sp)
     {
-        if (uuid)
-            sp->sb->uuid = uuid;
-        if (access != sp->sb->access && sp->tp->syms && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+        if (sp->sb)
         {
-            errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
-        }
-        lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, anonymous ? table : nullptr);
-        if (constexpression)
-        {
-            error(ERR_CONSTEXPR_NO_STRUCT);
+            if (uuid)
+                sp->sb->uuid = uuid;
+            if (access != sp->sb->access && sp->tp->syms && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+            {
+                errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
+            }
+            lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, anonymous ? table : nullptr);
+            if (constexpression)
+            {
+                error(ERR_CONSTEXPR_NO_STRUCT);
+            }
         }
         *tp = sp->tp;
     }
@@ -1622,7 +1661,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
 {
     long long enumval = 0;
     TYPE* unfixedType;
-    bool fixed = Optimizer::cparams.prm_cplusplus ? true : false;
+    bool fixed = Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x ? true : false;
     unfixedType = spi->tp->btp;
     if (!unfixedType)
         unfixedType = &stdint;
@@ -1641,7 +1680,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
             {
                 SYMBOL* sp;
                 TYPE* tp;
-                if (Optimizer::cparams.prm_cplusplus)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x)
                 {
                     tp = CopyType(fixedType ? fixedType : unfixedType);
                     tp->scoped = scoped;  // scoped the constants type as well for error checking
@@ -1691,7 +1730,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
 
                     if (tp && isintconst(exp))  // type is redefined to nullptr here, is this intentional?
                     {
-                        if (Optimizer::cparams.prm_cplusplus)
+                        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x)
                         {
                             if (!fixedType)
                             {
@@ -1728,7 +1767,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                     }
                 }
                 sp->sb->value.i = enumval++;
-                if (Optimizer::cparams.prm_cplusplus && spi->tp->btp)
+                if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && spi->tp->btp)
                 {
                     if (fixedType)
                     {
@@ -1834,8 +1873,10 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
 
     strcpy(newName, tagname);
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
-    if (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_)
+    ParseAttributeSpecifiers(&lex, funcsp, true);
+    if (KW(lex) == Keyword::colon_)
     {
+        RequiresDialect::Feature(Dialect::c2x, "Underlying enum type");
         lex = getsym();
         lex = get_type_id(lex, &fixedType, funcsp, StorageClass::cast_, false, true, false);
         if (!fixedType || !isint(fixedType))
@@ -2131,6 +2172,7 @@ static LEXLIST* getPointerQualifiers(LEXLIST* lex, TYPE** tp, bool allowstatic)
                 tpn->type = BasicType::const_;
                 break;
             case Keyword::atomic_:
+                RequiresDialect::Keyword(Dialect::c11, "_Atomic");
                 lex = getsym();
                 if (MATCHKW(lex, Keyword::openpa_))
                 {
@@ -2412,7 +2454,7 @@ static bool isPointer(LEXLIST* lex)
 }
 LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
                       enum Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
-                      bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
+                      bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
                       bool constexpression)
 {
     enum BasicType type = BasicType::none_;
@@ -2432,6 +2474,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
     enum Linkage linkage = Linkage::none_;
     enum Linkage linkage2 = Linkage::none_;
     enum Linkage linkage3 = Linkage::none_;
+    int bitintbits = 0;
 
     *defd = false;
     while (KWTYPE(lex, TT_BASETYPE) || MATCHKW(lex, Keyword::decltype_))
@@ -2489,6 +2532,11 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         flagerror = true;
                         break;
                 }
+                break;
+            case Keyword::char8_t_:
+                if (type != BasicType::none_)
+                    flagerror = true;
+                type = BasicType::char8_t_;
                 break;
             case Keyword::char16_t_:
                 if (type != BasicType::none_)
@@ -2580,6 +2628,22 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                     case BasicType::inative_:
                         type = BasicType::unative_;
                         break;
+                    case BasicType::bitint_:
+                        RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
+                        type = BasicType::unsigned_bitint_;
+                        lex = getsym();
+                        needkw(&lex, Keyword::openpa_);
+                        {
+                            TYPE* tp = nullptr;
+                            EXPRESSION* exp = nullptr;
+                            lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                            if (!tp || !isint(tp) || !isintconst(exp))
+                                error(ERR_NEED_INTEGER_EXPRESSION);
+                            bitintbits = exp->v.i;
+                        }
+                        if (!MATCHKW(lex, Keyword::closepa_))
+                            needkw(&lex, Keyword::closepa_);
+                        break;
                     default:
                         flagerror = true;
                         break;
@@ -2601,6 +2665,36 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                         flagerror = true;
                         break;
                 }
+                break;
+            case Keyword::bitint_:
+                RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
+                switch (type)
+                { 
+                    case BasicType::unsigned_:
+                        int64 = true;
+                        type = BasicType::unsigned_bitint_;
+                        break;
+                    case BasicType::none_:
+                    case BasicType::signed_:
+                        int64 = true;
+                        type = BasicType::bitint_;
+                        break;
+                    default:
+                        flagerror = true;
+                        break;
+                }
+                lex = getsym();
+                needkw(&lex, Keyword::openpa_);
+                {
+                    TYPE*tp = nullptr;
+                    EXPRESSION*exp = nullptr;
+                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                    if (!tp || !isint(tp) || !isintconst(exp))
+                        error(ERR_NEED_INTEGER_EXPRESSION);
+                    bitintbits = exp->v.i;
+                }
+                if (!MATCHKW(lex, Keyword::closepa_))
+                    needkw(&lex, Keyword::closepa_);
                 break;
             case Keyword::wchar_t_:
                 if (type == BasicType::none_)
@@ -2737,7 +2831,7 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                 inTemplateType = false;
                 if (foundsigned || foundunsigned || type != BasicType::none_)
                     flagerror = true;
-                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, access, defd, constexpression);
+                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, *linkage2_in, access, defd, constexpression);
                 goto exit;
             case Keyword::enum_:
                 if (foundsigned || foundunsigned || type != BasicType::none_)
@@ -2757,6 +2851,8 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                     flagerror = true;
                 goto founddecltype;
             case Keyword::typeof_:
+            case Keyword::typeof_unqual_: {
+                auto kw = KW(lex);
                 type = BasicType::void_; /* won't really be used */
                 foundtypeof = true;
                 if (foundsomething)
@@ -2790,8 +2886,12 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
                     error(ERR_IDENTIFIER_EXPECTED);
                     errskim(&lex, skim_semi_declare);
                 }
+                if (kw == Keyword::typeof_unqual_)
+                    tn = basetype(tn);
+            }
                 break;
             case Keyword::atomic_:
+                RequiresDialect::Keyword(Dialect::c11, "_Atomic");
                 lex = getsym();
                 if (needkw(&lex, Keyword::openpa_))
                 {
@@ -2907,7 +3007,7 @@ founddecltype:
                             sp->templateParams = lst;
                             sp->templateParams->push_front(TEMPLATEPARAMPAIR());
                             sp->templateParams->front().second = Allocate<TEMPLATEPARAM>();
-                            sp->templateParams->front().second->type = Keyword::new_;
+                            sp->templateParams->front().second->type = TplType::new_;
                         }
 
                         tn = sp->tp;
@@ -2931,7 +3031,7 @@ founddecltype:
                             *templateArg = true;
                         if (!tpx->templateParam->second->packed)
                         {
-                            if (tpx->templateParam->second->type == Keyword::typename_)
+                            if (tpx->templateParam->second->type == TplType::typename_)
                             {
                                 tn = tpx->templateParam->second->byClass.val;
                                 if (*tp && tn)
@@ -2956,7 +3056,7 @@ founddecltype:
                                     errorsym(ERR_NOT_A_TEMPLATE, sp);
                                 }
                             }
-                            else if (tpx->templateParam->second->type == Keyword::template_)
+                            else if (tpx->templateParam->second->type == TplType::template_)
                             {
                                 if (MATCHKW(lex, Keyword::lt_))
                                 {
@@ -2998,7 +3098,7 @@ founddecltype:
                                         auto tnew = templateParamPairListFactory.CreateList();
                                         while (itl != itle && ito != itoe)
                                         {
-                                            if (ito->second->type == Keyword::new_)
+                                            if (ito->second->type == TplType::new_)
                                             {
                                                 tnew->push_back(TEMPLATEPARAMPAIR{ nullptr, ito->second });
                                             }
@@ -3144,6 +3244,8 @@ founddecltype:
                                     if (instantiatingMemberFuncClass &&
                                         instantiatingMemberFuncClass->sb->parentClass == sp->sb->parentClass)
                                         sp = instantiatingMemberFuncClass;
+                                    else if (deduceTemplate)
+                                        *deduceTemplate = MustSpecialize(sp->name);
                                     else
                                         SpecializationError(sp);
                                 }
@@ -3326,22 +3428,22 @@ exit:
         {
             case BasicType::bool_:
                 if (!Optimizer::cparams.prm_cplusplus)
-                    errorstr(ERR_TYPE_C99, "_Bool");
+                    RequiresDialect::Keyword(Dialect::c99, "_Bool");
                 break;
             case BasicType::long_long_:
             case BasicType::unsigned_long_long_:
                 if (!int64 && !Optimizer::cparams.prm_cplusplus)
-                    errorstr(ERR_TYPE_C99, "long long");
+                    RequiresDialect::Keyword(Dialect::c99, "long long");
                 break;
             case BasicType::float__complex_:
             case BasicType::double__complex_:
             case BasicType::long_double_complex_:
-                errorstr(ERR_TYPE_C99, "_Complex");
+                RequiresDialect::Keyword(Dialect::c99, "_Complex");
                 break;
             case BasicType::long_double_imaginary_:
             case BasicType::float__imaginary_:
             case BasicType::double__imaginary_:
-                errorstr(ERR_TYPE_C99, "_Imaginary");
+                RequiresDialect::Keyword(Dialect::c99, "_Imaginary");
                 break;
             default:
                 break;
@@ -3351,6 +3453,14 @@ exit:
     if (!tn)
     {
         tn = MakeType(type);
+        if (type == BasicType::bitint_ || type == BasicType::unsigned_bitint_)
+        {
+            tn->bitintbits = bitintbits;
+            tn->size = (bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
+            tn->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
+            tn->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
+            tn->size /= CHAR_BIT;
+        }
     }
     if (quals)
     {
@@ -3407,8 +3517,7 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
     lex = getPointerQualifiers(lex, quals, true);
     if (MATCHKW(lex, Keyword::star_))
     {
-        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
-            error(ERR_VLA_c99);
+        RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
         if (storage_class != StorageClass::parameter_)
             error(ERR_UNSIZED_VLA_PARAMETER);
         lex = getsym();
@@ -3431,12 +3540,17 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
             tpc = &stdint;
             error(ERR_EXPRESSION_SYNTAX);
         }
-        if (*quals && Optimizer::cparams.c_dialect < Dialect::c99)
+        if (*quals)
         {
-            error(ERR_ARRAY_QUALIFIERS_C99);
+            RequiresDialect::Feature(Dialect::c99, "Array Qualifiers");
+            for (auto t = *quals; t; t = t->btp)
+                if (t->type == BasicType::static_)
+                {
+                    RequiresDialect::Feature(Dialect::c11, "'static' array qualifier");
+                }
+            if (storage_class != StorageClass::parameter_)
+                error(ERR_ARRAY_QUAL_PARAMETER_ONLY);
         }
-        if (*quals && storage_class != StorageClass::parameter_)
-            error(ERR_ARRAY_QUAL_PARAMETER_ONLY);
     }
     else
     {
@@ -3463,7 +3577,11 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
         if (!unsized)
         {
             if (empty)
+            {
+                if (storage_class == StorageClass::member_)
+                    RequiresDialect::Feature(Dialect::c99, "Flexible Arrays");
                 tpp->size = 0;
+            }
             else
             {
                 if (!isint(tpc))
@@ -3484,8 +3602,8 @@ static LEXLIST* getArrayType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageCla
                 }
                 else
                 {
-                    if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus && !templateNestingCount && !msil)
-                        error(ERR_VLA_c99);
+                    if (!templateNestingCount && !msil)
+                        RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
                     tpp->esize = constant;
                     tpp->etype = tpc;
                     *vla = !msil && !templateNestingCount;
@@ -4071,6 +4189,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
     }
     else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
     {
+        RequiresDialect::Removed(Dialect::c2x, "K&R prototypes");
         SYMBOL* spo = nullptr;
         sp->sb->oldstyle = true;
         if (sp->sb->storage_class != StorageClass::member_ && sp->sb->storage_class != StorageClass::mutable_)
@@ -4241,7 +4360,7 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
         }
         skip(&lex, Keyword::closepa_);
     }
-    else if (Optimizer::cparams.prm_cplusplus || ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x || ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
                                                   Optimizer::cparams.msilAllowExtensions && !MATCHKW(lex, Keyword::closepa_) && *spin))
     {
         // () is a function
@@ -4602,6 +4721,7 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                     // error(ERR_BIT_STRUCT_MEMBER);
                     if ((*sp)->tp)
                     {
+                        // we aren't allowing _Bitint to participate as a bit field...
                         if (Optimizer::cparams.prm_ansi)
                         {
                             if ((*sp)->tp->type != BasicType::int_ && (*sp)->tp->type != BasicType::unsigned_ && (*sp)->tp->type != BasicType::bool_)
@@ -4644,7 +4764,7 @@ static LEXLIST* getAfterType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** s
                 else
                 {
                     TEMPLATEPARAM* templateParam = Allocate<TEMPLATEPARAM>();
-                    templateParam->type = Keyword::new_;
+                    templateParam->type = TplType::new_;
                     lex = GetTemplateArguments(lex, funcsp, *sp, &templateParam->bySpecialization.types);
                     lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                     if (*tp && isfunction(*tp))
@@ -5477,7 +5597,8 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
             {
                 foundType = true;
                 lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
-                                   notype, defd, consdest, templateArg, *storage_class == StorageClass::typedef_, true, false,
+                                   notype, defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true,
+                                   false,
                                    asFriend ? *asFriend : false, *constexpression);
             }
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
@@ -5491,7 +5612,8 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
         {
             foundType = true;
             lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
-                               defd, consdest, templateArg, *storage_class == StorageClass::typedef_, true, false, asFriend ? *asFriend : false,
+                               defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true, false,
+                               asFriend ? *asFriend : false,
                                *constexpression);
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
                 *storage_class = StorageClass::static_;
@@ -5579,6 +5701,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                  bool needsemi, int asExpression, bool inTemplate, AccessLevel access)
 {
     bool isExtern = false;
+    bool isInline = false;
     TYPE* btp;
     SYMBOL* sp;
     enum StorageClass storage_class_in = storage_class;
@@ -5600,6 +5723,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
     {
         if (MATCHKW(lex, Keyword::inline_))
         {
+            isInline = true;
             linkage = Linkage::inline_;
             lex = getsym();
             ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -5632,6 +5756,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
         }
         else if (!asExpression && MATCHKW(lex, Keyword::namespace_))
         {
+            
+            int count = 0;
             bool linked;
             struct _ccNamespaceData nsData;
             if (!IsCompiler())
@@ -5645,20 +5771,37 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             lex = getsym();
+            hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
             lex = insertNamespace(lex, linkage, storage_class_in, &linked);
             if (linked)
             {
-                if (needkw(&lex, Keyword::begin_))
+                if (MATCHKW(lex, Keyword::classsel_))
+                {
+                    RequiresDialect::Feature(Dialect::cpp17, "Nested Namespace Definitions");
+                }
+                ++ count;
+                while (linked && MATCHKW(lex, Keyword::classsel_))
+                {
+                    lex = getsym();
+                    lex = insertNamespace(lex, linkage, storage_class_in, &linked);
+                    if (linked)
+                        ++count;
+                }
+                if (count > 1 && (hasAttributes || linkage == Linkage::inline_))
+                {
+                    errorsym(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, nameSpaceList.front());
+                } 
+                if (linked && needkw(&lex, Keyword::begin_))
                 {
                     while (lex && !MATCHKW(lex, Keyword::end_))
                     {
                         lex = declare(lex, nullptr, nullptr, storage_class, defaultLinkage, emptyBlockdata, true, false, false, access);
                     }
+                    if (!IsCompiler() && lex)
+                        nsData.endline = lex->data->errline;
+                    needkw(&lex, Keyword::end_);
                 }
-                if (!IsCompiler() && lex)
-                    nsData.endline = lex->data->errline;
-                needkw(&lex, Keyword::end_);
-                if (linked)
+                for (; count; count--)
                 {
                     SYMBOL* sp = nameSpaceList.front();
                     sp->sb->value.i--;
@@ -5702,12 +5845,25 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);
+            bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::openbr_);
+            if (bindingcandidate)
+            {
+                lex = getsym();
+                bindingcandidate = ISID(lex);
+                lex = backupsym();
+            }
             if (blocked)
             {
                 if (tp != nullptr)
                     error(ERR_TOO_MANY_TYPE_SPECIFIERS);
 
                 needsemi = false;
+            }
+            else if (bindingcandidate && tp->type == BasicType::auto_ && 
+                (storage_class_in == StorageClass::auto_ || storage_class_in == StorageClass::localstatic_ || storage_class_in == StorageClass::static_ || storage_class_in == StorageClass::global_))
+            {
+                RequiresDialect::Feature(Dialect::cpp17, "Structured binding declarations");
+                lex = GetStructuredBinding(lex, funcsp, storage_class, linkage, block);
             }
             else
             {
@@ -5721,6 +5877,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                 }
                 do
                 {
+                    if (isInline)
+                        linkage = Linkage::inline_;
                     bool isTemplatedCast = false;
                     TYPE* tp1 = tp;
                     std::list<NAMESPACEVALUEDATA*>* oldGlobals = nullptr;
@@ -5812,7 +5970,6 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                     }
                     if (linkage == Linkage::inline_)
                     {
-                        linkage = Linkage::none_;
                         if (Optimizer::cparams.prm_cplusplus)
                         {
                             linkage4 = Linkage::virtual_;
@@ -6097,6 +6254,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 error(ERR_VOID_NOT_ALLOWED);
                         if (sp->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                         {
+                            RequiresDialect::Keyword(Dialect::c11, "_Thread_local");
                             if (isfunction(tp1))
                                 error(ERR_FUNC_NOT_THREAD_LOCAL);
                             if (sp->sb->storage_class != StorageClass::external_ && sp->sb->storage_class != StorageClass::global_ &&
@@ -6147,7 +6305,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 else
                                     spi = rvl.front();
                             else
-                                errorNotMember(strSym, nsv->front(), sp->name);
+                                errorNotMember(strSym, nsv->front(), sp->sb->decoratedName);
                         }
                         else
                         {
@@ -6349,17 +6507,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 if ((nsv || strSym) && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_ &&
                                     (!inTemplate || !sp->templateParams))
                                 {
-                                    char buf[256];
-                                    if (!strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]))
-                                        strcpy(buf, strSym->name);
-                                    else if (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
-                                    {
-                                        buf[0] = '~';
-                                        strcpy(buf + 1, strSym->name);
-                                    }
-                                    else
-                                        strcpy(buf, sp->name);
-                                    errorNotMember(strSym, nsv->front(), buf);
+                                    errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->sb->decoratedName);
                                 }
                                 spi = nullptr;
                             }
@@ -6370,7 +6518,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                 errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                             if (strSym && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
                             {
-                                errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->name);
+                                errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->sb->decoratedName);
                             }
                         }
                         else
@@ -6427,6 +6575,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                             {
                                 if (!strSym || !strSym->sb->templateLevel || spi->sb->templateLevel != sp->sb->templateLevel + 1)
                                     errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+                            }
+                            if (spi && spi->sb->parentClass && storage_class_in == StorageClass::member_)
+                            {
+                                errorsym(ERR_CLASS_MEMBER_ALREADY_DECLARED, spi);
                             }
                             if (isfunction(spi->tp))
                             {
@@ -6819,7 +6971,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                     sizeQualifiers(tp1);
                     if (sp->sb->attribs.inheritable.isInline)
                     {
-                        if (!isfunction(sp->tp))
+                        if (!isfunction(sp->tp) && 
+                            ((sp->sb->storage_class != StorageClass::global_ && sp->sb->storage_class != StorageClass::static_) || sp->sb->parentClass))
                             error(ERR_INLINE_NOT_ALLOWED);
                     }
                     if (inTemplate && templateNestingCount == 1)
@@ -6831,6 +6984,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                     {
                         if (ismemberdata(sp))
                             error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
+                        else if (Optimizer::cparams.c_dialect >= Dialect::c2x && isfunction(sp->tp))
+                            error(ERR_CONSTEXPR_MUST_BE_OBJECT);
                         else
                             CheckIsLiteralClass(sp->tp);
                     }
@@ -6848,7 +7003,10 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                         }
                         if (basetype(sp->tp)->type == BasicType::func_)
                         {
-                            if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate && MATCHKW(lex, Keyword::begin_))
+                            if (isautotype(basetype(sp->tp)->btp))
+                                RequiresDialect::Feature(Dialect::cpp14, "Return value deduction");
+                            if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate &&
+                                MATCHKW(lex, Keyword::begin_))
                                 errorsym(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == StorageClass::localstatic_)
                                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
@@ -7066,6 +7224,8 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);
                             }
+                            if (inTemplate)
+                                RequiresDialect::Feature(Dialect::cpp14, "Variable Templates");
                             if (sp->sb->storage_class == StorageClass::virtual_)
                             {
                                 errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);
@@ -7124,6 +7284,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                                  0); /* also reserves space */
                                 if (sp->sb->parentClass && sp->sb->storage_class == StorageClass::global_)
                                 {
+
                                     if (sp->templateParams && sp->templateParams->size() == 1)
                                     {
                                         SetLinkerNames(sp, Linkage::cdecl_);
@@ -7169,8 +7330,16 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                         STATEMENT* st;
                                         currentLineData(block, hold, 0);
                                         st = stmtNode(hold, block, StatementNode::expr_);
-                                        st->select =
-                                            convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);\
+                                        if (!isstructured(sp->tp) || !basetype(sp->tp)->sp->sb->islambda)
+                                        {
+                                            st->select =
+                                                convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                        }
+                                        else
+                                        {
+                                            // this is part of copy elision for lambda declarations
+                                            st->select = sp->sb->init->front()->exp;
+                                        }
                                         int offset = 0;
                                         if (sp->sb->runtimeSym)
                                         {
@@ -7213,6 +7382,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                     }
                                 }
                             }
+                            // get rid of line info from old declarations that didn't make it to the output file...
+                            if (storage_class_in != StorageClass::auto_ && lines)
+                                lines->clear();
                         }
                         if (sp->tp->size == 0 && basetype(sp->tp)->type != BasicType::templateparam_ &&
                             basetype(sp->tp)->type != BasicType::templateselector_ && !isarray(sp->tp))

@@ -281,12 +281,15 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
             tempInfo[tr]->enode->sp->regmode = 2;
         }
     }
-    if (head->ans && head->ans->retval)
-        rvColor(head->ans);
-    if (head->dc.left && head->dc.left->retval)
-        rvColor(head->dc.left);
-    if (head->dc.right && head->dc.right->retval)
-        rvColor(head->dc.right);
+    if (head->dc.opcode != i_passthrough)
+    {
+        if (head->ans && head->ans->retval)
+            rvColor(head->ans);
+        if (head->dc.left && head->dc.left->retval)
+            rvColor(head->dc.left);
+        if (head->dc.right && head->dc.right->retval)
+            rvColor(head->dc.right);
+    }
 }
 static bool hasbp(SimpleExpression* expr)
 {
@@ -501,7 +504,7 @@ void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpre
                                     {
                                         QUAD* insz = tempInfo[ins->dc.left->offset->sp->i]->instructionDefines;
                                         if ((insz && insz->dc.opcode != i_assn) ||
-                                            ins->block == tempInfo[n]->instructionUses->ins->block)
+                                            ins->block == tempInfo[n]->instructionUsesLast->block)
                                         {
                                             if (*ofs1 && (*ofs1)->sp->i == ins->ans->offset->sp->i)
                                                 *ofs1 = ins->dc.left->offset;
@@ -608,7 +611,7 @@ static bool twomem(IMODE* left, IMODE* right)
             return true;
     return false;
 }
-static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
+static void HandleAssn(QUAD* ins, BriggsSet* globalVars)
 {
     if ((ins->temps & (TEMP_LEFT | TEMP_RIGHT)) && ins->ans->size < ISZ_ULONGLONG && ins->ans->size > -ISZ_ULONGLONG)
     {
@@ -748,7 +751,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
     }
     */
 }
-int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass)
+int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass)
 {
     IMODE* ind = nullptr;
     if (pass == 1)
@@ -1000,7 +1003,7 @@ static int floatsize(IMODE* im)
 int x86_examine_icode(QUAD* head)
 {
     fltexp = nullptr;
-    BLOCK* b = nullptr;
+    Block* b = nullptr;
     bool changed = false;
     QUAD* hold = head;
     uses_substack = false;
@@ -1303,7 +1306,7 @@ int x86_examine_icode(QUAD* head)
                             head->temps &= ~TEMP_LEFT;
                         }
                     }
-                    else if (head->dc.left->size >= ISZ_FLOAT &&
+                    else if (head->dc.left->size >= ISZ_FLOAT && head->dc.left->size != ISZ_BITINT &&
                              (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))
                     {
                         QUAD* q = beLocalAllocate<QUAD>();
@@ -1354,7 +1357,8 @@ int x86_examine_icode(QUAD* head)
                             b->tail = head->fwd;
                         changed = true;
                     }
-                    else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
+                    else if (head->dc.left->size >= ISZ_FLOAT && head->dc.left->size != ISZ_BITINT
+                             &&(head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
                     {
                         QUAD* q = beLocalAllocate<QUAD>();
                         IMODE* ret;
@@ -1439,6 +1443,7 @@ int x86_examine_icode(QUAD* head)
                         changed = true;
                     }
                     else if (head->ans->size >= ISZ_FLOAT &&
+                             head->ans->size != ISZ_BITINT &&
                              (head->dc.left->size == ISZ_UINT || head->dc.left->size == ISZ_ULONG ||
                               head->dc.left->size == ISZ_ULONGLONG || head->dc.left->size == -ISZ_ULONGLONG))
                     {
@@ -1483,7 +1488,7 @@ int x86_examine_icode(QUAD* head)
                         {
                             if (head->dc.left->mode != i_immed &&
                                 (head->dc.left->offset->type != se_tempref || head->dc.left->mode == i_ind ||
-                                 (szl >= ISZ_FLOAT && sza < ISZ_FLOAT)))
+                                 (szl >= ISZ_FLOAT && szl != ISZ_BITINT && sza < ISZ_FLOAT)))
                             {
                                 IMODE* temp;
                                 QUAD* q;
@@ -2370,7 +2375,7 @@ void x86InternalConflict(QUAD* head)
                 // can't do it for long longs in registers on this architecture, due to a dearth of registers...
                 // not doing it for ints in general to ease register pressure
                 // need to do it for floats for this architecture...
-                if (head->ans->size >= ISZ_FLOAT)
+                if (head->ans->size >= ISZ_FLOAT && head->ans->size != ISZ_BITINT)
                 {
                     int t1 = head->ans->offset->sp->i;
                     int t2 = head->dc.right->offset->sp->i;

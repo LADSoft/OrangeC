@@ -26,5 +26,8 @@
 namespace Parser
 {
 FPF refloat(EXPRESSION* node);
-unsigned long long reint(EXPRESSION* node);
+unsigned char* make_bitint(int bits, unsigned char* array);
+unsigned char* make_bitint(int bits, long long val);
+unsigned char* rebitint(EXPRESSION* xref, EXPRESSION* cref);
+    unsigned long long reint(EXPRESSION* node);
 }  // namespace Parser

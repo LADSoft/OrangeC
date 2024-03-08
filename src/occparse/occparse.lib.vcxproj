@@ -23,6 +23,7 @@
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
     <ClCompile Include="constexpr.cpp" />
+    <ClCompile Include="expreval.cpp" />
     <ClCompile Include="ListFactory.cpp" />
     <ClCompile Include="constopt.cpp" />
     <ClCompile Include="cppbltin.cpp" />
@@ -54,7 +55,10 @@
     <ClCompile Include="stmt.cpp" />
     <ClCompile Include="SymbolManager.cpp" />
     <ClCompile Include="symtab.cpp" />
-    <ClCompile Include="template.cpp" />
+    <ClCompile Include="templatedecl.cpp" />
+    <ClCompile Include="templatededuce.cpp" />
+    <ClCompile Include="templateinst.cpp" />
+    <ClCompile Include="templateutil.cpp" />
     <ClCompile Include="types.cpp" />
     <ClCompile Include="unmangle.cpp" />
     <ClCompile Include="wseh.cpp" />
@@ -78,8 +82,10 @@
     <ClInclude Include="declcons.h" />
     <ClInclude Include="declcpp.h" />
     <ClInclude Include="dsw.h" />
+    <ClInclude Include="errorlist.h" />
     <ClInclude Include="expr.h" />
     <ClInclude Include="exprcpp.h" />
+    <ClInclude Include="expreval.h" />
     <ClInclude Include="floatconv.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="iexpr.h" />
@@ -103,7 +109,10 @@
     <ClInclude Include="stmt.h" />
     <ClInclude Include="SymbolManager.h" />
     <ClInclude Include="symtab.h" />
-    <ClInclude Include="template.h" />
+    <ClInclude Include="templatedecl.h" />
+    <ClInclude Include="templatededuce.h" />
+    <ClInclude Include="templateinst.h" />
+    <ClInclude Include="templateutil.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="unmangle.h" />
     <ClInclude Include="winmode.h" />

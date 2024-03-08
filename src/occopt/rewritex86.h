@@ -34,7 +34,7 @@ void x86FastcallColor(QUAD* head);
 void x86PreColor(QUAD* head);
 void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale);
 void ProcessInd(SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale);
-int x86PreRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass);
+int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass);
 int x86_examine_icode(QUAD* head);
 void x86InternalConflict(QUAD* head);
 }  // namespace Optimizer

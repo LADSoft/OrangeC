@@ -533,15 +533,18 @@ void DefFile::WriteExports()
         {
             auto id = "_" + exp->id;
             WriteExportLine(id.c_str(), exp.get());
-            int n = exp->id.find('@');
-            if (n != 0 && n != std::string::npos)
+            if (!cOnly)
             {
-                auto id = exp->id.substr(0, n);
-                WriteExportLine(id.c_str(), exp.get());
-                if (id[0] == '_')
+                int n = exp->id.find('@');
+                if (n != 0 && n != std::string::npos)
                 {
-                    id = id.substr(1, id.size()-1);
+                    auto id = exp->id.substr(0, n);
                     WriteExportLine(id.c_str(), exp.get());
+                    if (id[0] == '_')
+                    {
+                        id = id.substr(1, id.size()-1);
+                        WriteExportLine(id.c_str(), exp.get());
+                    }
                 }
             }
         }

@@ -31,7 +31,10 @@
 #include "declare.h"
 #include "OptUtils.h"
 #include "expr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "init.h"
 #include "mangle.h"
 #include "lex.h"
@@ -83,7 +86,7 @@ bool istype(SYMBOL* sym)
 {
     if (!sym->sb || sym->sb->storage_class == StorageClass::templateparam_)
     {
-        return sym->tp->templateParam->second->type == Keyword::typename_ || sym->tp->templateParam->second->type == Keyword::template_;
+        return sym->tp->templateParam->second->type == TplType::typename_ || sym->tp->templateParam->second->type == TplType::template_;
     }
     return (sym->tp->type != BasicType::templateselector_ && sym->sb->storage_class == StorageClass::type_) || sym->sb->storage_class == StorageClass::typedef_;
 }
@@ -114,7 +117,7 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
             if (!member)
             {
                 lines = old;
-                return tparam->second->type == Keyword::typename_ || tparam->second->type == Keyword::template_;
+                return tparam->second->type == TplType::typename_ || tparam->second->type == TplType::template_;
             }
         }
     }
@@ -132,9 +135,9 @@ bool startOfType(LEXLIST* lex, bool* structured, bool assumeType)
         {
             if (sym->tp->type == BasicType::templateparam_)
             {
-                if (sym->tp->templateParam->second->type == Keyword::typename_ && sym->tp->templateParam->second->byClass.val)
+                if (sym->tp->templateParam->second->type == TplType::typename_ && sym->tp->templateParam->second->byClass.val)
                     *structured = isstructured(sym->tp->templateParam->second->byClass.val);
-                else if (sym->tp->templateParam->second->type == Keyword::template_)
+                else if (sym->tp->templateParam->second->type == TplType::template_)
                     *structured = true;
             }
             else
@@ -236,10 +239,20 @@ bool isunsigned(TYPE* tp)
             case BasicType::unsigned_long_:
             case BasicType::unsigned_long_long_:
             case BasicType::wchar_t_:
+            case BasicType::unsigned_bitint_:
                 return true;
             default:
                 return false;
         }
+    }
+    return false;
+}
+bool isbitint(TYPE* tp) 
+{
+    tp = basetype(tp);
+    if (tp)
+    {
+        return tp->type == BasicType::bitint_ || tp->type == BasicType::unsigned_bitint_;
     }
     return false;
 }
@@ -252,6 +265,7 @@ bool isint(TYPE* tp)
         {
             case BasicType::bool_:
             case BasicType::int_:
+            case BasicType::char8_t_:
             case BasicType::char16_t_:
             case BasicType::char32_t_:
             case BasicType::unsigned_:
@@ -267,9 +281,11 @@ bool isint(TYPE* tp)
             case BasicType::wchar_t_:
             case BasicType::inative_:
             case BasicType::unative_:
+            case BasicType::bitint_:
+            case BasicType::unsigned_bitint_:
                 return true;
             case BasicType::templateparam_:
-                if (tp->templateParam->second->type == Keyword::int_)
+                if (tp->templateParam->second->type == TplType::int_)
                     return isint(tp->templateParam->second->byNonType.tp);
                 return false;
             default:
@@ -673,9 +689,11 @@ LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
     STRING* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
     while (lex && (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr ||
-                   lex->data->type == l_Ustr || lex->data->type == l_msilstr))
+                   lex->data->type == l_Ustr || lex->data->type == l_msilstr || lex->data->type == l_u8str ))
     {
-        if (lex->data->type == l_msilstr)
+        if (lex->data->type == l_u8str)
+            type = l_u8str;
+        else if (lex->data->type == l_msilstr)
             type = l_msilstr;
         else if (lex->data->type == l_Ustr)
             type = l_Ustr;
@@ -809,8 +827,18 @@ EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)
     SetLinkerNames(rv, Linkage::none_);
     return varNode(storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_ ? ExpressionNode::auto_ : ExpressionNode::global_, rv);
 }
-void deref(TYPE* tp, EXPRESSION** exp)
+EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
 {
+    TYPE* tp = MakeType(issigned ? BasicType::bitint_ : BasicType::unsigned_bitint_);
+    tp->size = bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+    tp->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
+    tp->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
+    tp->size /= CHAR_BIT;
+    tp->bitintbits = bits;
+    return anonymousVar(storageClass, tp);
+}
+void deref(TYPE* tp, EXPRESSION** exp)
+    {
     enum ExpressionNode en = ExpressionNode::l_i_;
     tp = basetype(tp);
     switch ((tp->type == BasicType::enum_ && tp->btp) ? tp->btp->type : tp->type)
@@ -832,6 +860,9 @@ void deref(TYPE* tp, EXPRESSION** exp)
                 en = ExpressionNode::l_uc_;
             else
                 en = ExpressionNode::l_c_;
+            break;
+        case BasicType::char8_t_:
+            en = ExpressionNode::l_uc_;
             break;
         case BasicType::signed_char_:
             en = ExpressionNode::l_c_;
@@ -871,6 +902,12 @@ void deref(TYPE* tp, EXPRESSION** exp)
             break;
         case BasicType::unsigned_long_long_:
             en = ExpressionNode::l_ull_;
+            break;
+        case BasicType::bitint_:
+            en = ExpressionNode::l_bitint_;
+            break;
+        case BasicType::unsigned_bitint_:
+            en = ExpressionNode::l_ubitint_;
             break;
         case BasicType::float_:
             en = ExpressionNode::l_f_;
@@ -933,6 +970,8 @@ void deref(TYPE* tp, EXPRESSION** exp)
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
+    if (isbitint(tp))
+        (*exp)->v.b.bits = tp->bitintbits;
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
@@ -956,6 +995,9 @@ int sizeFromType(TYPE* tp)
                 rv = ISZ_UCHAR;
             else
                 rv = -ISZ_UCHAR;
+            break;
+        case BasicType::char8_t_:
+            rv = ISZ_UCHAR;
             break;
         case BasicType::signed_char_:
             rv = -ISZ_UCHAR;
@@ -1001,6 +1043,12 @@ int sizeFromType(TYPE* tp)
             break;
         case BasicType::unsigned_long_long_:
             rv = ISZ_ULONGLONG;
+            break;
+        case BasicType::bitint_:
+            rv = -ISZ_BITINT;
+            break;
+        case BasicType::unsigned_bitint_:
+            rv = ISZ_BITINT;
             break;
         case BasicType::float_:
             rv = ISZ_FLOAT;
@@ -1084,6 +1132,7 @@ void cast(TYPE* tp, EXPRESSION** exp)
         case BasicType::signed_char_:
             en = ExpressionNode::x_c_;
             break;
+        case BasicType::char8_t_:
         case BasicType::unsigned_char_:
             en = ExpressionNode::x_uc_;
             break;
@@ -1125,6 +1174,12 @@ void cast(TYPE* tp, EXPRESSION** exp)
             break;
         case BasicType::unsigned_long_long_:
             en = ExpressionNode::x_ull_;
+            break;
+        case BasicType::bitint_:
+            en = ExpressionNode::x_bitint_;
+            break;
+        case BasicType::unsigned_bitint_:
+            en = ExpressionNode::x_ubitint_;
             break;
         case BasicType::float_:
             en = ExpressionNode::x_f_;
@@ -1174,6 +1229,7 @@ void cast(TYPE* tp, EXPRESSION** exp)
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
+    (*exp)->v.b.bits = tp->bitintbits;
 }
 bool castvalue(EXPRESSION* exp)
 {
@@ -1196,6 +1252,8 @@ bool castvalue(EXPRESSION* exp)
         case ExpressionNode::x_ul_:
         case ExpressionNode::x_ll_:
         case ExpressionNode::x_ull_:
+        case ExpressionNode::x_bitint_:
+        case ExpressionNode::x_ubitint_:
         case ExpressionNode::x_f_:
         case ExpressionNode::x_d_:
         case ExpressionNode::x_ld_:
@@ -1243,6 +1301,8 @@ bool lvalue(EXPRESSION* exp)
         case ExpressionNode::l_ul_:
         case ExpressionNode::l_ll_:
         case ExpressionNode::l_ull_:
+        case ExpressionNode::l_bitint_:
+        case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_f_:
         case ExpressionNode::l_d_:
         case ExpressionNode::l_ld_:
@@ -1401,7 +1461,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             local = true;
                             break;
                 */
-            case StorageClass::const_ant_:
+            case StorageClass::constant_:
                 return nullptr;
             default:
                 diag("convertInitToExpression: unknown sym type");
@@ -1446,10 +1506,13 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         exp->v.func->thisptr = exp1;
                     }
+                    GetAssignDestructors(&exp->v.func->destructors, exp);
                     exp = initItem->exp;
                 }
                 else
                 {
+                    if (exp->type == ExpressionNode::func_)
+                        GetAssignDestructors(&exp->v.func->destructors, exp);
                     exp = initItem->exp;
                 }
             }
@@ -1529,8 +1592,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     if (found)
                     {
                         /* some members are non-constant expressions */
-                        if (Optimizer::cparams.c_dialect < Dialect::c99 && !Optimizer::cparams.prm_cplusplus)
-                            error(ERR_C99_NON_CONSTANT_INITIALIZATION);
+                        if (!Optimizer::cparams.prm_cplusplus)
+                            RequiresDialect::Feature(Dialect::c99, "Field initialization with non-constant");
                         if (!sym)
                         {
                             expsym = anonymousVar(StorageClass::auto_, initItem->basetp);
@@ -1698,14 +1761,23 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 {
                     cast(initItem->basetp, &exp->right);
                     if (expsym)
+                    {
                         exp->right = exprNode(ExpressionNode::assign_, exps, exp->right);
+                        // unallocated var for destructor
+                        GetAssignDestructors(&exp->right->v.logicaldestructors.left, exp->right);
+                    }
                 }
                 else
                 {
-                    if (isarithmetic(initItem->basetp) || ispointer(initItem->basetp))
+                    if ((isarithmetic(initItem->basetp) || ispointer(initItem->basetp))
+                        && !isbitint(initItem->basetp))
                         cast(initItem->basetp, &exp);
                     if (exps)
+                    {
                         exp = exprNode(ExpressionNode::assign_, exps, exp);
+                        // unallocated var for destructor
+                        GetAssignDestructors(&exp->v.logicaldestructors.left, exp);
+                    }
                 }
             }
             if (sym && sym->sb->init && isatomic(initItem->basetp) && needsAtomicLockFromType(initItem->basetp))
@@ -1956,6 +2028,9 @@ static TYPE* inttype(BasicType t1)
         case BasicType::int_:
         case BasicType::inative_:
             return &stdint;
+        case BasicType::char8_t_:
+            return &stdchar8_t;
+            break;
         case BasicType::char16_t_:
             return &stdchar16t;
         case BasicType::char32_t_:
@@ -2148,15 +2223,26 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             t1 = BasicType::unsigned_;
         if (t2 == BasicType::wchar_t_)
             t2 = BasicType::unsigned_;
-        if (t1 < BasicType::int_)
+        if (t1 < BasicType::int_ || ((t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_) && tp1->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
             t1 = BasicType::int_;
-        if (t2 < BasicType::int_)
+        if (t2 < BasicType::int_ || ((t2 == BasicType::bitint_ || t2 == BasicType::unsigned_bitint_) &&
+                                     tp2->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
             t2 = BasicType::int_;
         t1 = btmax(t1, t2);
-        rv = inttype(t1);
-        if (exp1 && rv->type != tp1->type && exp1)
+        if (t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_)
+        {
+            rv = MakeType(t1);
+            int bits = tp1->bitintbits;
+            bits = bits > tp2->bitintbits ? bits : tp2->bitintbits;
+            rv->bitintbits = bits;
+        }
+        else
+        {
+            rv = inttype(t1);
+        }
+        if (exp1 && (rv->type != tp1->type || rv->bitintbits != tp1->bitintbits) && exp1)
             cast(rv, exp1);
-        if (exp2 && rv->type != tp2->type && exp2)
+        if (exp2 && (rv->type != tp2->type || rv->bitintbits != tp2->bitintbits) && exp2)
             cast(rv, exp2);
         if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
         {

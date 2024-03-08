@@ -27,7 +27,10 @@
 #include "ccerr.h"
 #include "config.h"
 #include "declare.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "initbackend.h"
 #include "occparse.h"
 #include "memory.h"
@@ -219,9 +222,16 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     tps = tps->btp;
                 while (tpn != tpn->rootType && tpn->type != BasicType::typedef_ && tpn->type != BasicType::const_ && tpn->type != BasicType::volatile_)
                     tpn = tpn->btp;
+                if (basetype(tpn)->nullptrType != basetype(tps)->nullptrType)
+                {
+                    matchOverloadLevel--;
+                    return false;
+                }
                 if (tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_ && (ispointer(tpn) || ispointer(tps)))
                 {
-                    while (ispointer(tpn) && ispointer(tps) && tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_)
+
+                    while (ispointer(tpn) && ispointer(tps) && tpn->type != BasicType::typedef_ &&
+                                                tps->type != BasicType::typedef_)
                     {
                         if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                         {
@@ -247,6 +257,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 }
                 tpn = basetype(tpn);
                 tps = basetype(tps);
+
                 if (tpn->type == BasicType::templateparam_)
                 {
                     if (tps->type != BasicType::templateparam_)
@@ -458,6 +469,10 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     {
                         return false;
                     }
+                    else if (basetype(told)->sp->sb->castoperator)
+                    {
+                        return false;
+                    }
                     return true;
                 }
                 if (tpn->type == BasicType::templateselector_ && tps->type == BasicType::templateselector_)
@@ -524,9 +539,9 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
                     ++tpr;
                     for  ( ; tpl != tple  && tpr != tpre; ++tpl, ++tpr)
                     {
-                        if (tpl->second->type == Keyword::int_ && tpl->second->byNonType.tp->type == BasicType::templateselector_)
+                        if (tpl->second->type == TplType::int_ && tpl->second->byNonType.tp->type == BasicType::templateselector_)
                             break;
-                        if (tpr->second->type == Keyword::int_ && tpr->second->byNonType.tp->type == BasicType::templateselector_)
+                        if (tpr->second->type == TplType::int_ && tpr->second->byNonType.tp->type == BasicType::templateselector_)
                             break;
                     }
                     if (tpl == tple && tpr == tpre)

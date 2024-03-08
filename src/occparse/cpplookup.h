@@ -77,6 +77,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals = false);
 SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp);
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args);
 void weedgathering(Optimizer::LIST** gather);
+SYMBOL* DeduceOverloadedClass(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, int flags);
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, int flags);
 SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** exp, int flags);

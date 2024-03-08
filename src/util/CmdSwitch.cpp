@@ -244,7 +244,8 @@ void CmdSwitchFile::Dispatch(char* data)
 }
 char* CmdSwitchFile::GetStr(char* data)
 {
-    char buf[10000], *p = buf;
+    int size = 30000 + 1;
+    char *buf = (char *)malloc(size), *p = buf;
     bool quote = false;
     while (isspace(*data))
         data++;
@@ -273,7 +274,7 @@ char* CmdSwitchFile::GetStr(char* data)
                 int len2 = strlen(env);
                 if (len > len2)
                 {
-                    Utils::StrCpy(p + len2, sizeof(buf) - (p + len2 - buf), p + len);
+                    Utils::StrCpy(p + len2, size - (p + len2 - buf), p + len);
                 }
                 else if (len < len2)
                 {
@@ -283,7 +284,7 @@ char* CmdSwitchFile::GetStr(char* data)
             }
             else
             {
-                Utils::StrCpy(p, sizeof(buf) - (p - buf), q + 1);
+                Utils::StrCpy(p, size - (p - buf), q + 1);
             }
         }
         else
@@ -293,6 +294,7 @@ char* CmdSwitchFile::GetStr(char* data)
     char* x = new char[len];
     Utils::StrCpy(x, len, buf);
     argv[argc++] = x;
+    free(buf);
     return data;
 }
 CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool toErr = true, bool longErr = false)

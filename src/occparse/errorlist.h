@@ -124,7 +124,7 @@ ERRLIST(ERR_ARRAY_INDEX_INTEGER_TYPE, 92, "Array size specifier must be of integ
 ERRLIST(ERR_ARRAY_NEED_CLOSEBRACKET, 93, "Array declaration or use needs closebracket", CE_ERROR)
 ERRLIST(ERR_INVALID_ARRAY_INDEX, 94, "Array initialization designator not within array bounds", CE_ERROR)
 ERRLIST(ERR_ARRAY_INVALID_INDEX, 95, "Array must have at least one element", CE_ERROR)
-ERRLIST(ERR_EMPTY_ARRAY_LAST, 96, "Nonsized array must be last element of structure", CE_ERROR)
+ERRLIST(ERR_EMPTY_ARRAY_LAST, 96, "Flexible array must be last element of structure", CE_ERROR)
 ERRLIST(ERR_ARRAY_EXPECTED, 97, "Array expected", CE_ERROR)
 ERRLIST(ERR_ARRAY_INDEX_OUT_OF_RANGE, 98, "Array designator out of range", CE_ERROR)
 ERRLIST(ERR_TYPE_MISMATCH_FUNC_DECLARATION, 99, "Type mismatch in redeclaration of function '%s'", CE_ERROR)
@@ -208,7 +208,7 @@ ERRLIST(ERR_DOWHILE_NEEDS_OPENPA, 173, "do-while statement needs open parenthesi
 ERRLIST(ERR_DOWHILE_NEEDS_CLOSEPA, 174, "do-while statement needs close parenthesis", CE_ERROR)
 ERRLIST(ERR_WHILE_NEEDS_OPENPA, 175, "while statement needs open parenthesis", CE_ERROR)
 ERRLIST(ERR_WHILE_NEEDS_CLOSEPA, 176, "while statement needs close parenthesis", CE_ERROR)
-ERRLIST(ERR_FOR_NEEDS_SEMI, 177, "for statement needs semicolon", CE_ERROR)
+ERRLIST(ERR_FOR_NEEDS_SEMI, 177, "Control statement needs semicolon", CE_ERROR)
 ERRLIST(ERR_FOR_NEEDS_OPENPA, 178, "for statement needs open parenthesis", CE_ERROR)
 ERRLIST(ERR_FOR_NEEDS_CLOSEPA, 179, "for statement needs close parenthesis", CE_ERROR)
 ERRLIST(ERR_IF_NEEDS_OPENPA, 180, "if statement needs open parenthesis", CE_ERROR)
@@ -388,8 +388,8 @@ ERRLIST(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, 346, "Identifier '%s' cannot 
 ERRLIST(ERR_LAMBDA_CANNOT_CAPTURE, 347, "Lambda function outside function scope cannot capture variables", CE_ERROR)
 ERRLIST(ERR_INVALID_LAMBDA_CAPTURE_MODE, 348, "Invalid lambda capture mode", CE_ERROR)
 ERRLIST(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES, 349, "Capture item listed multiple times", CE_ERROR)
-ERRLIST(ERR_EXPLICIT_CAPTURE_BLOCKED, 350, "Explicit capture blocked", CE_ERROR)
-ERRLIST(ERR_IMPLICIT_CAPTURE_BLOCKED, 351, "Implicit capture blocked", CE_ERROR)
+ERRLIST(ERR_EXPLICIT_CAPTURE_BLOCKED, 350, "Explicit capture of '%s' blocked", CE_ERROR)
+ERRLIST(ERR_IMPLICIT_CAPTURE_BLOCKED, 351, "Implicit capture of '%s' blocked", CE_ERROR)
 ERRLIST(ERR_CANNOT_DEFAULT_PARAMETERS_WITH_LAMBDA, 352, "Cannot default parameters of lambda function", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_THIS, 353, "Cannot capture this", CE_ERROR)
 ERRLIST(ERR_MUST_CAPTURE_AUTO_VARIABLE, 354, "Must capture variables with 'auto' storage class or 'this'", CE_ERROR)
@@ -584,6 +584,47 @@ ERRLIST(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT, 521, "Expected modifiable 
         CE_ERROR)
 ERRLIST(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE, 522, "Type for checked math must be an integer but not char, bool, or _BitInt",
         CE_ERROR)
+ERRLIST(ERR_VA_START_IN_VARIADIC_FUNCTION, 523, "va_start should only be used in variadic functions",
+        CE_WARNING)
+ERRLIST(ERR_CONSTEXPR_MUST_BE_OBJECT, 524, "constexpr keyword cannot be used with functions",
+        CE_ERROR)
+ERRLIST(ERR_RETURN_VALUE_NO_DISCARD, 525, "Return value may not be discarded",
+        CE_ERROR)
+ERRLIST(ERR_FALLTHROUGH, 526, "Switch case falls through",
+        CE_TRIVIALWARNING)
+ERRLIST(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, 527,
+        "Nested inline declaration for '%s' cannot be inline and cannot have attributes", CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_PARENTHESIS, 528, "Variadic folding must be enclosed in parenthesis",
+        CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION, 529,
+        "Variadic folding needs a simple expression", CE_ERROR)
+ERRLIST(ERR_FOLDING_USES_INVALID_OPERATOR, 530, "Variadic folding uses invalid operator", CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_OPERATOR, 531, "Variadic folding needs operator", CE_ERROR)
+ERRLIST(ERR_UNARY_LEFT_FOLDING_NEEDS_VARIADIC_TEMPLATE, 532,
+        "Variadic unary left folding needs a variadic template in the LHS expression",
+        CE_ERROR)
+ERRLIST(ERR_UNARY_RIGHT_FOLDING_NEEDS_VARIADIC_TEMPLATE, 533,
+        "Variadic unary right folding needs a variadic template in the RHS expression",
+        CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE, 534, "Variadic binary folding needs variadic template in one of the expressions", CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_TOO_MANY_VARIADIC_TEMPLATES, 535,
+        "Variadic binary folding cannot have variadic template in both expressions", CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_OPERATOR_MISMATCH, 536, "Variadic binary folding has mismatched operators", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, 537, "Structured binding must be to non-union structured or array type not '%s'", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, 538, "Structured binding can't be decomposed; both '%s' and '%s' have non-static members", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539,
+        "Structured binding element count must equal array size", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
+ERRLIST(ERR_CANNOT_DEDUCE_TEMPLATE, 542, "Cannot deduce template from '%s'", CE_ERROR)
+ERRLIST(ERR_CLASS_MEMBER_ALREADY_DECLARED, 543, "Member '%s' has already been declared or defined", CE_ERROR)
+ERRLIST(ERR_FEATURE_AVAILABLE_IN, 544, "The feature '%s' requires '%s'", CE_ERROR)
+ERRLIST(ERR_FEATURE_NOT_AVAILABLE_IN, 545, "The feature '%s' is not available starting in '%s'", CE_WARNING)
+ERRLIST(ERR_KEYWORD_AVAILABLE_IN, 546, "The keyword '%s' requires '%s'", CE_WARNING)
+ERRLIST(ERR_CANNOT_CAPTURE_BY_VALUE, 547, "Cannot explicitly capture '&%s' when default capture mode is by-reference (&)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_BY_REFERENCE, 548, "Cannot explicitly capture '%s' when default capture mode is by-value (=)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_THIS_BY_VALUE, 549, "Cannot explicitly capture 'this' default capture mode is by-value (=)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE, 550, "Cannot explicitly capture '*this' when default capture mode is by-reference (&)", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

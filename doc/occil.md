@@ -1,19 +1,19 @@
-# Simple-MSIL-Compiler
+# Simple MSIL Compiler
 
 This is a version of the Orange C compiler that does MSIL code generation for the .NET Framework.
 This is a WIP.  At present it mostly supports the C language.  
 
-This version supports common RTL variables such as `stdin`, `stdout`, `stderr`, `errno`, and the variables used for the macros in `ctype.h`.   It also supports command line arguments.
+This version supports common RTL variables such as `stdin`, `stdout`, `stderr`, `errno`, and the variables used for the macros in `ctype.h`.   Command line arguments are also supported.
  
 This version supports marshalling of function pointers.  A small helper dll called `occmsil.dll` is involved in creating thunks for this.  This helper dll is built when you build the compiler. 
 
 Calling unprototyped functions now results in an error.
 
-The results are undefined if you try to use some extension such as `alloca`.
+The results are undefined if you try to use some extensions such as `alloca`.
 
 There may be a variety of bugs.
 
-The sources for this version are build as part of the main Orange C branch and is build as part of the [Main Orange C CI](https://ci.appveyor.com/project/LADSoft/orangec) to build an installation setup file after each checkin.
+The sources for this version are build as part of the main Orange C branch. `occil` is built as part of the [Main Orange C CI](https://ci.appveyor.com/project/LADSoft/orangec) creating an installation setup file after each check-in.
 
 Run the compiler `occil` on a simple C program (`test.c` is included as an example).
 
@@ -22,34 +22,39 @@ Run the compiler `occil` on a simple C program (`test.c` is included as an examp
 ## Additions to the language to support .NET
 
 * `__unmanaged` is used to clarify that a pointer in a structure is a pointer to an unmanaged function.   Usually the compiler can figure out whether a function pointer is managed or unmanaged, but in this case the definition is ambiguous 	and it defaults to managed.
-* `__string` declare an MSIL string.  Constant strings will be loaded with the .NET `ldstr` instruction instead of being treated as C language strings.  Note that this means they are wide character strings.  You can natively concatenate strings, pass them to functions, and return them.  You could also use `mscorlib` functions to perform other functions.  The same syntax as used for 'C' language strings is used for these strings.   Usually the string usage can be auto detected from context, but in rare situations the compiler will consider such a string ambiguous and you have to cast it:   `(__string) "hi"`
+* `__string` declare an MSIL string.  Constant strings will be loaded with the .NET `ldstr` instruction instead of being treated as C language strings.  Note that this means they are wide character strings.  You can natively concatenate strings, pass them to functions, and return them.  You can also use `mscorlib` functions to perform other functions.  The same syntax as used for 'C' language strings is used for these strings.   Usually the string usage can be auto detected from context, but in rare situations the compiler will consider such a string ambiguous and you have to cast it:   `(__string) "hi"`
 * `__object` declare an MSIL object.  Has minimal use for the moment.   If you cast to `object` you will box the original value.
 * `__cpblk` invokes the cpblk MSIL instruction.   It is invoked with arguments similar to `memcpy`.
 *  `__initblk` invokes the `initblk` MSIL instruction.   It is invoked with arguments similar to `memset`.
-* '__property' declares a .net property.   Only simple variables at global scope can be declared as properties; they are currently never instance variables. (properties imported from other assemblies can be instance variables).  the /N command line switch must be used to create a containing class (.Net will not allow properties outside of classes).   
+* '__property' declares a .net property.   Only simple variables at global scope can be declared as properties; they are currently never instance variables. (properties imported from other assemblies can be instance variables).  the /N command line switch must be used to create a containing class (.Net does not allow properties outside of classes).   
 For example:
-	'__property int a; // creates a property, in this case a backing variable and appropriate getters and setters
-				are automatically created.
-	__property int b { get { return 5;} set { printf("%d\n", value); } }; // here 'value' is the value we are 
-				setting it to.
+  	```c
+	__property int a; // creates a property, in this case a backing variable and appropriate getters and setters are automatically created.
+	__property int b { get { return 5;} set { printf("%d\n", value); } }; // here 'value' is the value we are setting it to.
+  	```
 * '__entrypoint' classifies a function as an entrypoint.   If you add this to a function the normal C startup will be ignored and the function will be called as the main function.
 *  `native int` is a new type to support the 'native' int size of MSIL.
-*  C++ `&` operator: When used on a function parameter, makes the parameter a `ref` parameter.  No other current use is possible.   For example: `int myfunc(int &a);`
+*  C++ `&` operator: When used on a function parameter, makes the parameter a `ref` parameter.  No other use is currently possible.   For example: `int myfunc(int &a);`
 *  C++ namespace qualifiers may be used to reference a function in a loaded assembly.  Since `mscorlib` is always preloaded, the following is always possible:   `System::Console::WriteLine("hello, world!");`.   It is also possible to use the using directive:  `using namespace System;` and then write"  `Console::WriteLine("Hello, world!");`
-*  Basic types will automatically be converted to their 'boxed' type for various purposes.   For example:
-	`using namespace System;
+*  Basic types are automatically converted to their 'boxed' type for various purposes.   For example:
+	```c
+   	using namespace System;
 	int aa = 5;
-	Console::WriteLine(aa.ToString());`
+	Console::WriteLine(aa.ToString());
+  	```
 * Instance members may also be called: `aa.ToString();`.
-* Managed arrays: when the array indexes appear before the variable name, the array is allocated as either an MSIL array or a multidimensional array of objects.   Such arrays can only be used or passed to functions; you cannot do anything that would be equivalent to taking the address of the related managed objects. For example: `int [5]aa;`.
+* Managed arrays: if the array indexes appear before the variable name, the array is allocated as either an MSIL array or a multidimensional array of objects.   Such arrays can only be used or passed to functions; you cannot do anything that would be equivalent to taking the address of the related managed objects. For example: `int [5]aa;`.
 * C++ constructors: Will use `newobj` to call a managed version of the constructor and create an object
 * MSIL Strings: `@"<string>"` makes an msil string.   As in C#, it is taken literally.  If you need to use escape sequences but still want an MSIL string (because in some contexts the c-style string won't be auto-converted) use string concatenation: `@"""<C-style escaped string>"`
-* `#pragma netlib <library>` allows loading a .net assembly programmattically.   For example to get access to MessageBox do the following:
-	`#pragma netlib System.Windows.Forms`
-	`using namespace System::Windows::Forms`
+* `#pragma netlib <library>` allows loading a .net assembly programmatically.   For example to get access to MessageBox do the following:
+	```c
+  	#pragma netlib System.Windows.Form
+	using namespace System::Windows::Forms
 	...
 	MessageBox.Show("hello","message box");
+  	```
 * occil handles most SEH constructs now.   For example:
+  	```c
 	__try {
 		File.Open("some file that doesn't exist", FileMode::Open);
 	}
@@ -59,24 +64,25 @@ For example:
 	__finally {
 		printf("Finally!");
 	}
+  	```
 
 ## additions to code generation to support disassembly of output files
 
-OCC can try to generate code visible to a disassembler, e.g. DotPeek.   At this point ILSpy isn't supported do to some missing language features.
+OCC can attempt to generate code that is visible to a disassembler, such as DotPeek.   ILSpy isn't supported at this time due to some missing language features.
 
 There are four new command line switches to control this behavior
 
-/C+f generates 'fixed' statements that are required for CSC to regenerate code that takes the address of various managed constructs
-/C+s inline string constants with LDSTR when possible, for readability
-/C+a generates Delegate references instead of attempting to handle function pointers natively
-/C+I generates causes uninitialized scalars and pointers to be initialized to zero.
+`/C+f` generates 'fixed' statements that are required for CSC to regenerate code that takes the address of various managed constructs
+`/C+s` inline string constants with LDSTR when possible, for readability
+`/C+a` generates Delegate references instead of attempting to handle function pointers natively
+`/C+I` generates causes uninitialized scalars and pointers to be initialized to zero.
 
-All of these will probably be performance hits.   Additionally, the way /C+s is implemented, it might leak memory e.g. in loops.
+All of this is likely to be a performance hit.   In addition, the way `/C+s` is implemented, it may leak memory, e.g. in loops.
 
 The code generated by the compiler may require runtime dlls to be used as references in the recompile, e.g. for the CSC recompile
-use /reference:lsmsilcrtl.dll.   Also, when recompiling with csc you need /unsafe and /platform:x86
+use `/reference:lsmsilcrtl.dll`.   Also, when recompiling with `csc` you need `/unsafe` and `/platform:x86`.
 
-there are known issues where some C constructs cannot be translated to C#.   The main one is that if you nest case statements inside otheher controls statements, the gotos generated will not be compilable by CSC.   You need to rearrange the input code to not do that.   Possibly the code in question is some sort of state machine; one solution is to add new states prior to compiling the code with occil.
+There are known issues where some C constructs cannot be translated to C#.   The main one is that if you nest case statements inside otheher controls statements, the gotos generated will not be compilable by `csc`.   You need to rearrange the input code to not do that.   Possibly the code in question is some sort of state machine; one solution is to add new states prior to compiling the code with occil.
 
 ## Implementation Notes
 This compiler will generate either a .EXE or .DLL file, or alternately a .il file suitable for viewing or compiling with ilasm.   Additionally, the compiler is capable of generating object files in the familiar object-file-per-module paradigm that can be linked with a linker called `netlink`.   This linker is also part of the package.   The compiler uses an independent library `dotnetpelib` to create the output.
@@ -121,8 +127,7 @@ Beyond that this is a C11 compiler, but some things currently aren't implemented
 6) Array types are actually implemented as .NET classes.
 7) Variable length argument lists are done in the C# style rather than in the C style - except during calls to unmanaged functions.
 8) Variable length argument lists get marshalling performed when being passed to unmanaged code, but this only handles simple types.
-9) Thunks are generated for pointers-to-functions passed between managed and unmanaged code (e.g. for `qsort` and for `WNDPROC` style functions) but when the pointers are placed in a structure you need to give the compiler a hint.  Use `CALLBACK` in the f
-unction pointer definition and make the callback a `stdcall` function.
+9) Thunks are generated for pointers-to-functions passed between managed and unmanaged code (e.g. for `qsort` and for `WNDPROC` style functions) but when the pointers are placed in a structure you need to give the compiler a hint.  Use `CALLBACK` in the function pointer definition and make the callback a `stdcall` function.
 10) In the thunks for the transition from unmanaged to managed code used by function pointers passed to unmanaged code marshalling is performed, but this only handles simple types.
 11) Variable length arrays and `alloca` are implemented with a managed memory allocator instead of with the `localalloc` MSIL instruction.
 12) Structures passed by value to functions get copied to temporary variables before the call.

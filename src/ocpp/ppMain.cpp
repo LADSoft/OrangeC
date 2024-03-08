@@ -31,6 +31,8 @@
 #include <cstdlib>
 #include <algorithm>
 
+#define BITINTMAXWIDTH ((1 << 24)-1)
+
 #ifdef TARGET_OS_WINDOWS
 extern "C"
 {
@@ -149,11 +151,6 @@ static void TestCharInfo(std::ostream* outStream, PreProcessor& pp, std::string&
 int ppMain::Run(int argc, char* argv[])
 {
     char buffer[256];
-#ifdef TARGET_OS_WINDOWS
-    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
-#else
-    strcpy(buffer, argv[0]);
-#endif
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText,
                                                 [this]() {
         return !MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() &&
@@ -210,7 +207,8 @@ int ppMain::Run(int argc, char* argv[])
             std::string ver = "199404L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
-
+        sprintf(buffer,"%d", BITINTMAXWIDTH);
+        pp.Define("__bitint_max_width", buffer) ;
         // for libcxx 10
 #ifdef TARGET_OS_WINDOWS
         pp.Define("_WIN32", "1");

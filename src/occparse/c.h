@@ -21,6 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#include "ctypes.h"
 
 namespace Parser
 {
@@ -66,8 +67,11 @@ class SymbolTable
 {
 public:
     typedef typename std::list<T*>::iterator iterator;
-    iterator begin() { return inOrder_.begin(); }
+  typedef typename std::list<T*>::reverse_iterator reverse_iterator;
+  iterator begin() { return inOrder_.begin(); }
     iterator end() { return inOrder_.end(); }
+    reverse_iterator rbegin() { return inOrder_.rbegin(); }
+    reverse_iterator rend() { return inOrder_.rend(); }
     size_t size() const { return inOrder_.size(); }
     T* back() const { return inOrder_.back(); }
     T* front() const { return inOrder_.front(); }
@@ -139,7 +143,7 @@ private:
         case_, default_, enum_, volatile_, const_,
         trap_, interrupt_, fault_, absolute_, genword_,
         Complex_, restrict_, Imaginary_, I_, INF_, NAN_,
-        typeof_, Pragma_, atomic_, noreturn_, generic_, bitint_,
+        typeof_, typeof_unqual_, Pragma_, atomic_, noreturn_, generic_, bitint_,
         /* C++ */
         public_, private_, protected_, class_, friend_, namespace_,
         using_, this_, operator_, inline_, virtual_, try_, throw_,
@@ -150,7 +154,7 @@ private:
         char32_t_, mutable_, nullptr_, noexcept_, thread_local_, constexpr_,
         rangefor_,
         /* Extended */
-        has_c_attribute_, ckdadd_, ckdsub_, ckdmul_,
+        char8_t_, has_c_attribute_, ckdadd_, ckdsub_, ckdmul_,
         atomic_flag_test_set_, atomic_flag_clear_, atomic_kill_dependency_,
         /* Clang compatibility for atomics */
         c11_atomic_init_, c11_atomic_thread_fence_, c11_atomic_signal_fence_,
@@ -210,16 +214,16 @@ typedef struct
         c_u32_, c_l_, c_ul_, c_ll_, c_ull_, c_f_, c_d_, c_ld_,
         c_p_, c_sp_, c_fp_, c_fc_, c_dc_, c_ldc_,
         c_fi_, c_di_, c_ldi_, x_bool_, x_bit_,
-        c_string_,
+        c_string_, c_bitint_, c_ubitint_,
         x_i_, x_ui_, x_l_, x_ul_, x_inative_, x_unative_,
         x_ll_, x_ull_, x_f_, x_d_, x_ld_, x_fi_, x_di_, x_ldi_, x_fp_, x_sp_,
         x_fc_, x_dc_, x_ldc_, x_c_, x_uc_, x_wc_, x_u16_, x_u32_, x_s_, x_us_, x_label_,
-        x_string_, x_object_,
+        x_string_, x_object_, x_bitint_, x_ubitint_,
         l_bool_, l_c_, l_uc_, l_u16_, l_u32_, l_wc_, l_s_, l_us_, l_i_, l_ui_,
         l_inative_, l_unative_,
         l_l_, l_ul_, l_ll_, l_ull_, l_f_, l_d_, l_ld_, l_p_, l_ref_,
         l_fi_, l_di_, l_ldi_, l_fc_, l_dc_, l_ldc_, l_fp_, l_sp_, l_bit_,
-        l_string_, l_object_, msil_array_access_, msil_array_init_,
+        l_string_, l_object_, l_bitint_, l_ubitint_, msil_array_access_, msil_array_init_,
         nullptr_, memberptr_, mp_as_bool_, mp_compare_,
         trapcall_, func_, funcret_, intcall_,
         arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
@@ -231,7 +235,7 @@ typedef struct
         blockassign_, bits_,
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
-        const_ruct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
+        construct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
         type_, pointsto_, dot_, select_,
         // stuff that can only appear temporarily in constexpr expressions
         cshimref_, cshimthis_, paramsubstitute_
@@ -256,7 +260,7 @@ typedef struct
     {
         none_, static_, localstatic_, auto_, register_, global_, external_, templateparam_,
         parameter_, catchvar_, type_, typedef_, member_, mutable_, cast_, defunc_, label_, ulabel_,
-        overloads_, const_ant_, enumconstant_, absolute_,
+        overloads_, constant_, enumconstant_, absolute_, alias_,
         friendlist_, const_, tconst_, classmember_, constexpr_,
         memberreg_, namespace_, namespace_alias_, temp_, virtual_
     };
@@ -270,11 +274,11 @@ typedef struct
          * basic types, type comparisons (LOSTCONV) depends on the ordering,
          * and the debug info has a table indexed by type
          */
-        bit_, bool_, signed_char_, char_, unsigned_char_, short_, char16_t_, unsigned_short_,
+        bit_, bool_, signed_char_, char_, unsigned_char_, char8_t_, short_, char16_t_, unsigned_short_,
         wchar_t_, enum_, int_, inative_, char32_t_, unsigned_, unative_, long_, unsigned_long_, long_long_,
-        unsigned_long_long_, float_, double_, long_double_, float__imaginary_,
+        unsigned_long_long_, bitint_,  unsigned_bitint_, float_, double_, long_double_, float__imaginary_,
         double__imaginary_, long_double_imaginary_, float__complex_,
-        double__complex_, long_double_complex_, bitint_,
+        double__complex_, long_double_complex_,
         /* end of basic types */
         void_, object_, string_,
         /* end of debug needs */
@@ -357,6 +361,10 @@ typedef struct
 #define _F_INDECLTYPE 0x20000
 #define _F_INCONSTRUCTOR 0x40000
 #define _F_EXPLICIT 0x80000
+#define _F_NOCONSTGEN 0x100000
+#define _F_NOVARIADICFOLD 0x200000
+#define _F_EXPRESSIONINPAREN 0x400000
+
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 
@@ -415,6 +423,11 @@ typedef struct expr
                 std::list<struct expr*>* right;
             } logicaldestructors;
         };
+        struct
+        {
+            int bits;
+            unsigned char* value;
+        } b;
         TEMPLATEPARAMPAIR* templateParam;
         std::vector<struct _templateSelector>* templateSelector;
     } v;
@@ -475,6 +488,11 @@ struct u_val
             const char* a; /* string val */
             const LCHAR* w;
         } s;
+        struct
+        {
+            int bits;
+            unsigned char* value;
+        } b;
         struct _defstruct* defs; /* macro definition */
         FPF* f;                  /* float val */
         _COMPLEX_S* c;
@@ -506,6 +524,7 @@ typedef struct typ
     int stringconst : 1;
     char bits;      /* -1 for not a bit val, else bit field len */
     char startbit;  /* start of bit field */
+    int bitintbits;
     struct sym* sp; /* pointer to a symbol which describes the type */
     /* local symbol tables */
     SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
@@ -636,7 +655,8 @@ struct attributes
         unsigned used : 1;                              /* value has been fetched */
         unsigned nonstring : 1;                         /* value is not a zero terminated string */
         unsigned zstring : 1;                           // (argument) was tagged as a zero terminated string
-        unsigned isInline : 1;                          /* function is inlined */
+        unsigned isInline : 1;                          /* function or data is inlined */
+        unsigned isInlineData : 1;                      /* data is inlined */
         unsigned excludeFromExplicitInstantiation : 1;  // template member should be instantiated implicitly
     } inheritable;
     struct
@@ -647,6 +667,9 @@ struct attributes
         int constructorPriority;      // is a file-scope constructor, set the priority
         int destructorPriority;       // is a file-scope destructor, set the priority
         unsigned stackProtect : 1;    // explicit stackprotect
+        unsigned fallthrough : 1;     // fallthrough case
+        unsigned maybe_unused : 1;    // variable might be unused
+        unsigned nodiscard : 1;       // function return value should not be discarded
     } uninheritable;
 };
 /* symbols */
@@ -655,9 +678,10 @@ typedef struct sym
     const char* name;
     TYPE* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
-    unsigned packed : 1;       // packed template param instance
-    unsigned synthesized : 1;  // packed template param was synthesized during parsing
-    int parserSet : 1;         /* sent to parser already*/
+    unsigned short utilityIndex;
+    unsigned short packed : 1;       // packed template param instance
+    unsigned short synthesized : 1;  // packed template param was synthesized during parsing
+    unsigned short parserSet : 1;    /* sent to parser already*/
     struct _symbody
     {
         const char* decoratedName; /* symbol name with decorations, as used in output format */
@@ -821,9 +845,8 @@ typedef struct sym
                                                      // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
         std::list<struct init *>* init, *lastInit, *dest;
-        // order is important for this next, a comparison is done based on this ordering
         // clang-format off
-            enum e_xc xcMode;
+            enum e_xc xcMode, xcModeSpecified;
         // clang-format on
         struct xcept* xc;
         std::list<struct sym*>* friends;
@@ -847,6 +870,7 @@ typedef struct __lambda
     int index;
     int isMutable : 1;
     int captureThis : 1;
+    int thisByVal : 1;
     int templateFunctions : 1;
 } LAMBDA;
 
@@ -897,6 +921,14 @@ typedef struct _vbaseEntry
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;
+enum class TplType
+{
+    new_,
+    delete_,
+    int_,
+    typename_,
+    template_
+};
 
 typedef struct _templateParam
 {
@@ -905,7 +937,7 @@ typedef struct _templateParam
     // template = template parameter
     // new = specialization
     // first in the list is always the specialization specifier
-    Keyword type;
+    enum class TplType type;
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;
@@ -917,6 +949,7 @@ typedef struct _templateParam
     int replaced : 1;  // replaced during type alias substitution
     int deduced : 1;   // filled in during deduction
     int specializationParam : 1; // specialization paramneter
+    int flag : 1; // utility flag
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;
@@ -1117,6 +1150,8 @@ enum e_lexType
     l_ul,
     l_ll,
     l_ull,
+    l_bitint,
+    l_ubitint,
     l_f,
     l_d,
     l_ld,
@@ -1131,6 +1166,7 @@ enum e_lexType
     l_msilstr,
     l_achr,
     l_wchr,
+    l_u8chr,
     l_uchr,
     l_Uchr,
     l_qualifiedname,
@@ -1223,12 +1259,12 @@ constexpr inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ ||
 constexpr inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
-            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == Keyword::int_ && __isref((x)->templateParam->second->byNonType.tp));
+            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
 }
 constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
 constexpr inline bool ispointer(TYPE* x)
 {
-    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == Keyword::int_ &&
+    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
                                             __ispointer((x)->templateParam->second->byNonType.tp));
 }
 

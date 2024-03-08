@@ -28,7 +28,7 @@
 #include <limits.h>
 
 #define imin(x, y) ((x) < 0 ? 0 : ((x) < (y) ? (x) : (y)))
-#define INTERNAL_BUFFER_SIZE 8192
+#define INTERNAL_BUFFER_SIZE 70000
 int _RTL_FUNC vsnprintf(char* restrict buf, size_t n, const char* restrict format, va_list arglist)
 {
     char buffer[INTERNAL_BUFFER_SIZE];

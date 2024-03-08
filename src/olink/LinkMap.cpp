@@ -234,7 +234,8 @@ void LinkMap::Publics(std::fstream& stream)
                         if (region->GetRegion())
                         {
                             if (region->GetRegion()->GetName() == " vsc* " || region->GetRegion()->GetName() == " vsd* " ||
-                                region->GetRegion()->GetName() == " vsb* ")
+                                region->GetRegion()->GetName() == " vsb* " || region->GetRegion()->GetName() == " vss* " ||
+                                region->GetRegion()->GetName() == " vsr* ")
                             {
                                 int base = overlay->GetOverlay()->GetAttribs().GetAddress();
                                 for (auto it = region->GetRegion()->NowDataBegin(); it != region->GetRegion()->NowDataEnd(); ++it)

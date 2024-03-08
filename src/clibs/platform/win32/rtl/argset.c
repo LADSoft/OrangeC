@@ -37,7 +37,7 @@ char* _passed_name;
 
 static void argset(void)
 {
-    char buf[10000];
+    char *buf = calloc(sizeof(char), strlen(_oscmd) + 1);
     char *bufp[10000], *ocl;
     char* _cmdline = _oscmd;
     int inquote = 0;
@@ -68,8 +68,10 @@ static void argset(void)
     _argv = calloc((_argc + 1), sizeof(char*));
     memcpy(_argv, bufp, _argc * sizeof(char*));
     _passed_name = _argv[0];
-    GetModuleFileName(__hInstance, buf, 200);
-    _argv[0] = strdup(buf);
+    char modname[260];
+    GetModuleFileName(__hInstance, modname, 200);
+    _argv[0] = strdup(modname);
     __argv = _argv;
     __argc = _argc;
+    free(buf);
 }

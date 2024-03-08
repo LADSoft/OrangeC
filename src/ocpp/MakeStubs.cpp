@@ -57,19 +57,12 @@ void MakeStubs::Run(std::ostream* out)
             outTargets += t + " ";
         for (auto t : splitQuotedTargets)
         {
-            auto t1 = t;
-            int end = t1.find_first_of('$');
-            while (end != std::string::npos)
-            {
-                t1 = t1.substr(0, end) + "$" + t1.substr(end);
-                end = t1.find_first_of('$', end + 2);
-            }
-            outTargets += t1 + " ";
+            outTargets += Escape(t) + " " ;
         }
     }
     else
     {
-        outTargets = inputFile;
+        outTargets = Escape(inputFile);
         int end = outTargets.find_last_of('.');
         if (end != std::string::npos)
             outTargets = outTargets.substr(0, end);
@@ -78,21 +71,50 @@ void MakeStubs::Run(std::ostream* out)
     *out << outTargets << ": ";
     if (!userOnly)
         for (auto t : preProcessor.GetSysIncludes())
-            *out << t << separator;
+            *out << Escape(t) << separator;
     for (auto t : preProcessor.GetUserIncludes())
-        *out << t << separator;
+        *out << Escape(t) << separator;
     if (phonyTargets)
     {
         *out << std::endl;
         if (!userOnly)
             for (auto t : preProcessor.GetSysIncludes())
-                *out << t << ":\n";
+                *out << Escape(t) << ":\n";
         for (auto t : preProcessor.GetUserIncludes())
-            *out << t << ":\n";
+            *out << Escape(t) << ":\n";
     }
     *out << "\n";
     if (toClose)
     {
         delete out;
     }
+}
+
+std::string MakeStubs::Escape(const std::string& in)
+{
+    std::string rv;
+    int count = 0;
+    for (auto c : in)
+    {
+        if (c == '\\')
+        {
+            count++;
+        }
+        else if (c == '$')
+        {
+            count = 0;
+            rv += c;
+        }
+        else if (c == '#' || c == ' ')
+        {
+            ++count;
+            for (; count; count--)
+                rv += '\\';
+        }
+        else {
+            count = 0;
+        }
+        rv += c;
+    }
+    return rv;
 }

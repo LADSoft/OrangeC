@@ -335,6 +335,7 @@ std::string Maker::GetFileTime(const std::string& goal, const std::string& prefe
 {
     std::string rv;
     std::string internalGoal = goal;
+    Utils::ReplaceAll(internalGoal, SpaceThunk, " "); 
     if (internalGoal.size() > 1 && internalGoal[0] == '"')
     {
         internalGoal = internalGoal.substr(1, internalGoal.size() - 2);

@@ -134,7 +134,7 @@ static void scan_gotos(QUAD* head)
 
 /*-------------------------------------------------------------------------*/
 
-static void kill_brtonext(BLOCK* b, QUAD* head)
+static void kill_brtonext(Block* b, QUAD* head)
 /*
  * branches to the next statement get wiped
  */
@@ -176,7 +176,7 @@ static void kill_brtonext(BLOCK* b, QUAD* head)
     }
 }
 
-static void kill_dupgoto(BLOCK* b, QUAD* head)
+static void kill_dupgoto(Block* b, QUAD* head)
 {
     (void)b;
     head = head->fwd;
@@ -192,7 +192,7 @@ void weed_goto(void)
 {
     bool killing = false;
     QUAD* head = intermed_head;
-    BLOCK* b = head->block;
+    Block* b = head->block;
     while (head)
     {
         QUAD* next = head->fwd;
@@ -214,7 +214,7 @@ void weed_goto(void)
 }
 /*-------------------------------------------------------------------------*/
 
-void kill_labeledgoto(BLOCK* b, QUAD* head)
+void kill_labeledgoto(Block* b, QUAD* head)
 /*
  * if any goto goes to a label which is immediately followed by a goto,
  * replaces the original goto label with the new label annd possibly
@@ -286,7 +286,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
 
 /*-------------------------------------------------------------------------*/
 
-void kill_jumpover(BLOCK* b, QUAD* head)
+void kill_jumpover(Block* b, QUAD* head)
 /*
  * Conditional jumps over gotos get squashed here
  */
@@ -370,7 +370,7 @@ void kill_jumpover(BLOCK* b, QUAD* head)
         }
     }
 }
-static int peep_assn(BLOCK* b, QUAD* head)
+static int peep_assn(Block* b, QUAD* head)
 {
     (void)b;
     if (head->temps == (TEMP_LEFT | TEMP_ANS) && !(head->dc.right) && head->dc.left->size == head->ans->size &&
@@ -411,7 +411,7 @@ static int peep_assn(BLOCK* b, QUAD* head)
     return 0;
 }
 /*-------------------------------------------------------------------------*/
-static void merge_setxx(BLOCK* b, QUAD* head)
+static void merge_setxx(Block* b, QUAD* head)
 {
     if (head->dc.opcode == i_je || head->dc.opcode == i_jne)
     {
@@ -549,7 +549,7 @@ static void merge_setxx(BLOCK* b, QUAD* head)
     }
 }
 
-static bool peep(BLOCK* b, bool branches)
+static bool peep(Block* b, bool branches)
 /*
  * ICODE peep main routine
  */
@@ -620,7 +620,7 @@ static void scan_abnormal(void)
     {
         if (blockArray[i] && blockArray[i]->critical && blockArray[i]->succ)
         {
-            BLOCK* b = blockArray[i]->succ->block;
+            Block* b = blockArray[i]->succ->block;
             QUAD* head = b->head->fwd;
             while (head != b->tail->fwd && (head->ignoreMe || head->dc.opcode == i_label))
                 head = head->fwd;

@@ -28,7 +28,10 @@
 #include <cstring>
 #include "db.h"
 #include "ccerr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateinst.h"
+#include "templateutil.h"
+#include "templatededuce.h"
 #include "declare.h"
 #include "symtab.h"
 #include "memory.h"

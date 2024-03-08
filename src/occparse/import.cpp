@@ -28,7 +28,10 @@
 #include <cstring>
 #include "compiler.h"
 #include "ccerr.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "winmode.h"
 #include "DotNetPELib.h"
 #include "Utils.h"

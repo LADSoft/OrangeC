@@ -32,6 +32,13 @@
 
 namespace Optimizer
 {
+enum VirtualType
+{
+    vt_code,
+    vt_data,
+    vt_startup,
+    vt_rundown
+};
 enum FunctionFlags
 {
     FF_USES_SETJMP = 1,
@@ -92,11 +99,12 @@ struct FunctionData
     std::vector<IMODE*> imodeList;
     std::map<IMODE*, IMODE*> loadHash;
     std::set<unsigned> computedLabels;
-    TEMP_INFO** tempInfo;
+//    TempInfo** tempInfo;
     int fastcallAlias;
     int tempCount;
     int blockCount;
     int exitBlock;
+    int ellipsePos;
     QUAD* instructionList;
     int setjmp_used : 1;
     int hasAssembly : 1;
@@ -284,7 +292,7 @@ void startupseg(void);
 void rundownseg(void);
 void tlsstartupseg(void);
 void tlsrundownseg(void);
-void gen_virtual(Optimizer::SimpleSymbol* sym, int data);
+void gen_virtual(Optimizer::SimpleSymbol* sym, VirtualType data);
 void gen_endvirtual(Optimizer::SimpleSymbol* sym);
 void align(int size);
 void gen_funcref(Optimizer::SimpleSymbol* sym);

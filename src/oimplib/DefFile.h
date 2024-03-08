@@ -61,7 +61,7 @@ enum class kw
 class DefFile
 {
   public:
-    DefFile(const std::string& fname) :
+    DefFile(const std::string& fname, bool COnly) : cOnly(COnly),
         fileName(fname), tokenizer("", &keywords), lineno(0), imageBase(-1), stackSize(-1), heapSize(-1), token(nullptr)
     {
         Init();
@@ -138,6 +138,7 @@ class DefFile
     const Token* token;
     std::fstream stream;
     int lineno;
+    bool cOnly;
     std::map<std::string, unsigned> sectionMap;
     std::deque<std::unique_ptr<Export>> exports;
     std::deque<std::unique_ptr<Import>> imports;

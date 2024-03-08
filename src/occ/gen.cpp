@@ -256,7 +256,14 @@ AMODE* moveFP(AMODE* apa, int sza, AMODE* apl, int szl)
     {
         if (apl->mode == am_immed)
         {
-            make_floatconst(apl, szl);
+            if (szl < ISZ_FLOAT)
+            {
+                apl = make_muldivval(apl);
+            }
+            else
+            {
+                make_floatconst(apl, szl);
+            }
         }
         if (szl < ISZ_FLOAT)
         {
@@ -803,7 +810,17 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
     }
     else if (im->mode == Optimizer::i_immed)
     {
-        if (im->size >= ISZ_CFLOAT)
+        if (abs(im->size) == ISZ_BITINT)
+        {
+            *apl = make_offset(im->offset);
+            if ((*apl)->mode == am_indisp)
+                *op = op_lea;
+            else
+                (*apl)->mode = am_immed;
+            if (im->size < ISZ_FLOAT)
+                (*apl)->length = im->size;
+        }
+        else if (im->size >= ISZ_CFLOAT)
         {
             *apl = beLocalAllocate<AMODE>();
             *aph = beLocalAllocate<AMODE>();
@@ -2442,7 +2459,12 @@ void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     if (q->dc.left->mode == Optimizer::i_immed)
     {
-        if (q->dc.left->size >= ISZ_CFLOAT)
+        if (abs(q->dc.left->size) == ISZ_BITINT)
+        {
+            gen_codes(op_push, ISZ_UINT, apl, 0);
+            pushlevel += 4;
+        }
+        else if (q->dc.left->size >= ISZ_CFLOAT)
         {
             int sz = 8;
             if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)
@@ -2731,6 +2753,34 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
             gen_codes(op_pop, ISZ_UINT, makedreg(Optimizer::chosenAssembler->arch->regMap[i][0]), 0);
             pushlevel -= 4;
         }
+}
+static bool bltin_gosub(Optimizer::QUAD* q)
+{
+    Optimizer::SimpleExpression* en = GetSymRef(q->dc.left->offset);
+
+    Optimizer::SimpleSymbol* sp = en->sp;
+    if (q->dc.left->mode == Optimizer::i_immed && sp->name[0] == '_')
+    {
+        if (!strcmp(sp->name, "__va_start__"))
+        {
+            auto ap = Allocate<AMODE>();
+            ap->preg = usingEsp ? ESP : EBP;
+            ap->mode = am_indisp;
+            ap->offset = Allocate<Optimizer::SimpleExpression>();
+            ap->offset->type = Optimizer::se_i;
+            ap->offset->i = Optimizer::chosenAssembler->arch->retblocksize;
+            gen_code(op_lea, makedreg(EAX), ap);
+            return true;
+        }
+        else if (!strcmp(sp->name, "__va_arg__"))
+        {
+            gen_code(op_pop, makedreg(EAX), 0);
+            gen_code(op_pop, makedreg(ECX), 0);
+            gen_code(op_add, makedreg(EAX), makedreg(ECX));
+            return true;
+        }
+    }
+    return false;
 }
 void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or through a var */
 {

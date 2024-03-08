@@ -32,7 +32,10 @@
 #include "mangle.h"
 #include "initbackend.h"
 #include "occparse.h"
-#include "template.h"
+#include "templatedecl.h"
+#include "templateutil.h"
+#include "templateinst.h"
+#include "templatededuce.h"
 #include "lambda.h"
 #include "help.h"
 #include "stmt.h"
@@ -75,7 +78,7 @@ char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
 int parsingUsing;
 
-static bool MustSpecialize(const char* name)
+bool MustSpecialize(const char* name)
 {
     if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
         return false;
@@ -208,7 +211,7 @@ void dumpVTab(SYMBOL* sym)
         int count = 0;
 
         Optimizer::dseg();
-        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), true);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), Optimizer::vt_data);
         if (xtSym)
             Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
         else
@@ -222,7 +225,7 @@ void dumpVTab(SYMBOL* sym)
             Optimizer::cseg();
             for (i = 0; i < count; i++)
             {
-                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
+                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), Optimizer::vt_code);
                 Optimizer::gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func),
                                    Optimizer::SymbolManager::Get(thunks[i].name));
                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
@@ -1282,7 +1285,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 bcsym = nullptr;
             }
             else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel ||
-                               bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == Keyword::template_))
+                               bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == TplType::template_))
             {
                 if (bcsym->tp->type == BasicType::templateparam_)
                 {
@@ -1468,7 +1471,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->second->packed)
             {
-                if (bcsym->tp->templateParam->second->type != Keyword::typename_)
+                if (bcsym->tp->templateParam->second->type != TplType::typename_)
                     error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
                 else if (bcsym->tp->templateParam->second->byPack.pack)
                 {
@@ -1498,7 +1501,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->second->packed)
             {
-                if (bcsym->tp->templateParam->second->type != Keyword::typename_)
+                if (bcsym->tp->templateParam->second->type != TplType::typename_)
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 else
                 {
@@ -1659,6 +1662,8 @@ static bool hasPackedTemplate(TYPE* tp)
         case BasicType::unsigned_:
         case BasicType::int_:
             break;
+        case BasicType::char8_t_:
+            break;
         case BasicType::char16_t_:
             break;
         case BasicType::char32_t_:
@@ -1668,6 +1673,9 @@ static bool hasPackedTemplate(TYPE* tp)
             break;
         case BasicType::unsigned_long_:
         case BasicType::long_:
+            break;
+        case BasicType::bitint_:
+        case BasicType::unsigned_bitint_:
             break;
         case BasicType::wchar_t_:
             break;
@@ -1813,12 +1821,12 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
     {
         for (auto&& tpl : *tplx)
         {
-            if (tpl.second->packed && tpl.first && tpl.second->type == Keyword::typename_)
+            if (tpl.second->packed && tpl.first && tpl.second->type == TplType::typename_)
             {
                 arg[(*count)++] = /*sym*/ tpl.first;
                 NormalizePacked(tpl.first->tp);
             }
-            else if (tpl.second->type == Keyword::int_)
+            else if (tpl.second->type == TplType::int_)
             {
                 if (tpl.second->byNonType.dflt)
                 {
@@ -1836,7 +1844,7 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
                     }
                 }
             }
-            else if (tpl.second->type == Keyword::typename_)
+            else if (tpl.second->type == TplType::typename_)
             {
                 if (tpl.second->byClass.dflt)
                 {
@@ -1927,7 +1935,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
         arg[(*count)++] = packedExp->v.sp;
         NormalizePacked(packedExp->v.sp->tp);
     }
-    else if (packedExp->type == ExpressionNode::const_ruct_)
+    else if (packedExp->type == ExpressionNode::construct_)
     {
         GatherPackedTypes(count, arg, packedExp->v.construct.tp);
     }
@@ -1957,7 +1965,7 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
                         break;
                     }
             }
-            else if (tpl.second->type == Keyword::int_)
+            else if (tpl.second->type == TplType::int_)
             {
                 if (tpl.second->byNonType.dflt)
                 {
@@ -1968,7 +1976,7 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
                     tparam->byNonType.val = ReplicatePackedVars(count, arg, tpl.second->byNonType.dflt, index);
                 }
             }
-            else if (tpl.second->type == Keyword::typename_)
+            else if (tpl.second->type == TplType::typename_)
             {
                 if (tpl.second->byClass.dflt)
                 {
@@ -2087,7 +2095,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
                 }
             }
         }
-        else if (packedExp->type == ExpressionNode::const_ruct_)
+        else if (packedExp->type == ExpressionNode::construct_)
         {
             packedExp->v.construct.tp = ReplicatePackedTypes(count, arg, packedExp->v.construct.tp, index);
         }
@@ -2101,7 +2109,7 @@ void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, std
     for (int i = 0; i < n; i++)
     {
         dest->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
-        dest->front().second->type = Keyword::int_;
+        dest->front().second->type = TplType::int_;
         dest->front().second->byNonType.dflt = ReplicatePackedVars(count, arg, pattern, i);
     }
 }
@@ -2111,30 +2119,6 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
     if (packs)
     {
         return packs->size();
-        /*
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
-        for (auto it = packs->begin(); it != packs->end();)
-        {
-            if (it->second->packed)
-            {
-                if (it->second->byPack.pack && it->second->byPack.pack->size())
-                {
-                    tps.push(it);
-                    it = it->second->byPack.pack->begin();
-                }
-            }
-            if (!it->second->packed)
-            {
-                rv++;
-            }
-            ++it;
-            if (it == packs->end() && tps.size())
-            {
-                it = tps.top();
-                tps.pop();
-            }
-        }
-        */
     }
     return rv;
 }
@@ -2348,7 +2332,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                             for (auto i : *l.second->byPack.pack)
                                 stk.push(i.second);
                     }
-                    else if (l.second->type != Keyword::new_)
+                    else if (l.second->type != TplType::new_)
                         stk.push(l.second);
                 }
                 while (!stk.empty())
@@ -2877,8 +2861,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         {
                             tpl = basetype(tpl)->btp;
                             tpr = basetype(tpl);
-                            if (!isconst(tpl) || (tpr->type != BasicType::char_ && tpr->type != BasicType::wchar_t_ && tpr->type != BasicType::char16_t_ &&
-                                                    tpr->type != BasicType::char32_t_))
+                            if (!isconst(tpl) || (tpr->type != BasicType::char_ && tpr->type != BasicType::wchar_t_ && tpr->type != BasicType::char8_t_ && 
+                                                    tpr->type != BasicType::char16_t_ && tpr->type != BasicType::char32_t_))
                             {
                                 errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                             }
@@ -2889,8 +2873,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         // one arg
                         TYPE* tp = (*it)->tp;
                         if ((!ispointer(tp) || !isconst(basetype(tp)->btp) || basetype(basetype(tp)->btp)->type != BasicType::char_) &&
-                            tp->type != BasicType::unsigned_long_long_ && tp->type != BasicType::long_double_ && tp->type != BasicType::char_ &&
-                            tp->type != BasicType::wchar_t_ && tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
+                            tp->type != BasicType::unsigned_long_long_ && tp->type != BasicType::long_double_ && tp->type != BasicType::char_ && tp->type != BasicType::wchar_t_ && tp->type != BasicType::char8_t_ &&
+                            tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
                         {
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }
@@ -2940,6 +2924,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 }
 LEXLIST* handleStaticAssert(LEXLIST* lex)
 {
+    RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
     if (!needkw(&lex, Keyword::openpa_))
     {
         errskim(&lex, skim_closepa);
@@ -3527,9 +3512,6 @@ static const std::unordered_map<std::string, int, StringHash> gccStyleAttribName
     {"constructor", 30 },
     {"destructor", 31 },
     {"stack_protect", 32 },
-    {"fallthrough", 33 },
-    {"maybe_unused", 34},
-    {"nodiscard", 35},
 };
 #define DEFAULT_CONSTRUCTOR_PRIORITY 101
 #define DEFAULT_DESTRUCTOR_PRIORITY 101
@@ -3842,12 +3824,6 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 32: // stack-protect explicit  
                                 basisAttribs.uninheritable.stackProtect = true;
                                 break;
-                            case 33: // fallthrough
-                                break;
-                            case 34: // maybe_unused
-                                break;
-                            case 35: // nodiscard
-                                break;
                         }
                     }
                 }
@@ -3896,349 +3872,359 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
     bool rv = false;
-    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
+    while (MATCHKW(*lex, Keyword::alignas_) || MATCHKW(*lex, Keyword::attribute_) || MATCHKW(*lex, Keyword::openbr_))
     {
-        while (MATCHKW(*lex, Keyword::alignas_) || MATCHKW(*lex, Keyword::attribute_) ||
-               ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && MATCHKW(*lex, Keyword::openbr_)))
+        if (MATCHKW(*lex, Keyword::attribute_))
         {
-            if (MATCHKW(*lex, Keyword::attribute_))
+            ParseOut___attribute__(lex, funcsp);
+        }
+        else if (MATCHKW(*lex, Keyword::alignas_))
+        {
+            RequiresDialect::Keyword(Dialect::c2x, "alignas");
+            rv = true;
+            *lex = getsym();
+            if (needkw(lex, Keyword::openpa_))
             {
-                ParseOut___attribute__(lex, funcsp);
-            }
-            else if (MATCHKW(*lex, Keyword::alignas_))
-            {
-                rv = true;
-                *lex = getsym();
-                if (needkw(lex, Keyword::openpa_))
+                int align = 1;
+                if (startOfType(*lex, nullptr, false))
                 {
-                    int align = 1;
-                    if (startOfType(*lex, nullptr, false))
-                    {
-                        TYPE* tp = nullptr;
-                        *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast_, false, true, false);
+                    TYPE* tp = nullptr;
+                    *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast_, false, true, false);
 
-                        if (!tp)
+                    if (!tp)
+                    {
+                        error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    else if (tp->type == BasicType::templateparam_)
+                    {
+                        if (tp->templateParam->second->type == TplType::typename_)
                         {
-                            error(ERR_TYPE_NAME_EXPECTED);
-                        }
-                        else if (tp->type == BasicType::templateparam_)
-                        {
-                            if (tp->templateParam->second->type == Keyword::typename_)
+                            if (tp->templateParam->second->packed)
                             {
-                                if (tp->templateParam->second->packed)
+                                std::list<TEMPLATEPARAMPAIR>* packs = tp->templateParam->second->byPack.pack;
+                                if (!MATCHKW(*lex, Keyword::ellipse_))
                                 {
-                                    std::list<TEMPLATEPARAMPAIR>* packs = tp->templateParam->second->byPack.pack;
-                                    if (!MATCHKW(*lex, Keyword::ellipse_))
-                                    {
-                                        error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
-                                    }
-                                    else
-                                    {
-                                        *lex = getsym();
-                                    }
-                                    if (packs)
-                                    {
-                                        for (auto&& pack : *packs)
-                                        {
-                                            int v = getAlign(StorageClass::global_, pack.second->byClass.val);
-                                            if (v > align)
-                                                align = v;
-                                        }
-                                    }
+                                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                 }
                                 else
                                 {
-                                    // it will only get here while parsing the template...
-                                    // when generating the instance the class member will already be
-                                    // filled in so it will get to the below...
-                                    if (tp->templateParam->second->byClass.val)
-                                        align = getAlign(StorageClass::global_, tp->templateParam->second->byClass.val);
+                                    *lex = getsym();
                                 }
-                            }
-                        }
-                        else
-                        {
-                            align = getAlign(StorageClass::global_, tp);
-                        }
-                    }
-                    else
-                    {
-                        TYPE* tp = nullptr;
-                        EXPRESSION* exp = nullptr;
-
-                        *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                        if (!tp || !isint(tp))
-                            error(ERR_NEED_INTEGER_TYPE);
-                        else
-                        {
-                            if (!isintconst(exp))
-                            {
-                                align = 1;
-                                if (exp->type != ExpressionNode::templateparam_)
+                                if (packs)
                                 {
-                                    error(ERR_CONSTANT_VALUE_EXPECTED);
-                                }
-                                else if (exp->v.templateParam && exp->v.templateParam->second->byNonType.val)
-                                {
-                                    exp = exp->v.templateParam->second->byNonType.val;
-                                    if (!isintconst(exp))
-                                        error(ERR_CONSTANT_VALUE_EXPECTED);
-                                    align = exp->v.i;
+                                    for (auto&& pack : *packs)
+                                    {
+                                        int v = getAlign(StorageClass::global_, pack.second->byClass.val);
+                                        if (v > align)
+                                            align = v;
+                                    }
                                 }
                             }
                             else
                             {
-                                align = exp->v.i;
+                                // it will only get here while parsing the template...
+                                // when generating the instance the class member will already be
+                                // filled in so it will get to the below...
+                                if (tp->templateParam->second->byClass.val)
+                                    align = getAlign(StorageClass::global_, tp->templateParam->second->byClass.val);
                             }
                         }
-                    }
-                    needkw(lex, Keyword::closepa_);
-                    basisAttribs.inheritable.structAlign = align;
-                    if (basisAttribs.inheritable.structAlign > 0x10000 ||
-                        (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
-                        error(ERR_INVALID_ALIGNMENT);
-                }
-            }
-            else if (MATCHKW(*lex, Keyword::openbr_))
-            {
-                *lex = getsym();
-                if (MATCHKW(*lex, Keyword::openbr_))
-                {
-                    const std::string occNamespace = "occ";
-                    const std::string gccNamespace = "gnu";
-                    const std::string clangNamespace = "clang";
-                    rv = true;
-                    *lex = getsym();
-                    if (!MATCHKW(*lex, Keyword::closebr_))
-                    {
-                        while (*lex)
-                        {
-                            bool special = false;
-                            if (!ISID(*lex))
-                            {
-                                *lex = getsym();
-                                error(ERR_IDENTIFIER_EXPECTED);
-                            }
-                            else
-                            {
-                                using namespace std::literals;
-                                std::string stripped_ver = StripUnderscores((std::string)(*lex)->data->value.s.a);
-                                if (stripped_ver == occNamespace)
-                                {
-                                    *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::classsel_))
-                                    {
-                                        *lex = getsym();
-                                        if (!ISID(*lex))
-                                        {
-                                            *lex = getsym();
-                                            error(ERR_IDENTIFIER_EXPECTED);
-                                        }
-                                        else if (*lex)
-                                        {
-                                            std::string name = (*lex)->data->value.s.a;
-                                            name = StripUnderscores(name);
-                                            auto searchedName = occCPPStyleAttribNames.find(name);
-                                            if (searchedName != occCPPStyleAttribNames.end())
-                                            {
-                                                switch (searchedName->second)
-                                                {
-                                                    case 23:
-                                                        basisAttribs.inheritable.zstring = true;
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                          occNamespace.c_str());
-                                            }
-                                            *lex = getsym();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
-                                    }
-                                }
-                                else if (stripped_ver == clangNamespace)
-                                {
-                                    *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::classsel_))
-                                    {
-                                        *lex = getsym();
-                                        if (!ISID(*lex))
-                                        {
-                                            *lex = getsym();
-                                            error(ERR_IDENTIFIER_EXPECTED);
-                                        }
-                                        else if (*lex)
-                                        {
-                                            std::string name = (*lex)->data->value.s.a;
-                                            name = StripUnderscores(name);
-                                            auto searchedName = clangCPPStyleAttribNames.find(name);
-                                            if (searchedName != clangCPPStyleAttribNames.end())
-                                            {
-                                                switch (searchedName->second)
-                                                {
-                                                    case 28:
-                                                        basisAttribs.inheritable.linkage2 = Linkage::internal_;
-                                                        break;
-                                                    case 29:
-                                                        basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                          clangNamespace.c_str());
-                                            }
-                                            *lex = getsym();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
-                                    }
-                                }
-                                else if (stripped_ver == gccNamespace)
-                                {
-                                    *lex = getsym();
-                                    if (MATCHKW(*lex, Keyword::classsel_))
-                                    {
-                                        *lex = getsym();
-                                        if (!ISID(*lex))
-                                        {
-                                            *lex = getsym();
-                                            error(ERR_IDENTIFIER_EXPECTED);
-                                        }
-                                        else if (*lex)
-                                        {
-                                            // note: these are only the namespaced names listed, the ___attribute__ names are
-                                            // unlisted here as they don't exist in GCC and we want ours to follow theirs for actual
-                                            // consistency reasons.
-                                            std::string name = (*lex)->data->value.s.a;
-                                            name = StripUnderscores(name);
-                                            auto searchedName = gccCPPStyleAttribNames.find(name);
-                                            if (searchedName != gccCPPStyleAttribNames.end())
-                                            {
-                                                switch (searchedName->second)
-                                                {
-                                                    case 25:
-                                                        if (basisAttribs.inheritable.linkage2 != Linkage::none_)
-                                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                                        basisAttribs.inheritable.linkage2 = Linkage::export_;
-                                                        break;
-                                                    case 26:
-                                                        if (basisAttribs.inheritable.linkage2 != Linkage::none_)
-                                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                                        basisAttribs.inheritable.linkage2 = Linkage::import_;
-                                                        break;
-                                                    case 27:
-                                                        if (basisAttribs.inheritable.linkage != Linkage::none_)
-                                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                                        basisAttribs.inheritable.linkage = Linkage::stdcall_;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                          gccNamespace.c_str());
-                                            }
-                                            *lex = getsym();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
-                                    }
-                                }
-                                else
-                                {
-
-                                    if (stripped_ver == "noreturn"s)
-                                    {
-                                        *lex = getsym();
-                                        special = true;
-                                        if (basisAttribs.inheritable.linkage3 != Linkage::none_)
-                                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                                        basisAttribs.inheritable.linkage3 = Linkage::noreturn_;
-                                    }
-                                    else if (stripped_ver == "carries_dependency"s)
-                                    {
-                                        *lex = getsym();
-                                        special = true;
-                                    }
-                                    else
-                                    {
-                                        if (stripped_ver == "deprecated"s)
-                                            basisAttribs.uninheritable.deprecationText = (char*)-1;
-                                        *lex = getsym();
-                                        if (MATCHKW(*lex, Keyword::classsel_))
-                                        {
-                                            *lex = getsym();
-                                            if (!ISID(*lex))
-                                                error(ERR_IDENTIFIER_EXPECTED);
-                                            *lex = getsym();
-                                        }
-                                    }
-                                }
-                            }
-                            if (MATCHKW(*lex, Keyword::openpa_))
-                            {
-                                if (special)
-                                    error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
-                                *lex = getsym();
-                                if (basisAttribs.uninheritable.deprecationText)
-                                {
-                                    if ((*lex)->data->type == l_astr)
-                                    {
-                                        char buf[1024];
-                                        int i;
-                                        Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
-                                        for (i = 0; i < 1024 && i < xx->count; i++)
-                                            buf[i] = (char)xx->str[i];
-                                        buf[i] = 0;
-                                        basisAttribs.uninheritable.deprecationText = litlate(buf);
-                                        *lex = getsym();
-                                    }
-                                }
-
-                                else
-                                    while (*lex && !MATCHKW(*lex, Keyword::closepa_))
-                                    {
-                                        balancedAttributeParameter(lex);
-                                    }
-                                needkw(lex, Keyword::closepa_);
-                            }
-                            if (MATCHKW(*lex, Keyword::ellipse_))
-                                *lex = getsym();
-                            if (!MATCHKW(*lex, Keyword::comma_))
-                                break;
-                            *lex = getsym();
-                        }
-                        if (needkw(lex, Keyword::closebr_))
-                            needkw(lex, Keyword::closebr_);
                     }
                     else
                     {
-                        // empty
-                        *lex = getsym();
-                        needkw(lex, Keyword::closebr_);
+                        align = getAlign(StorageClass::global_, tp);
                     }
                 }
                 else
                 {
-                    *lex = backupsym();
-                    break;
+                    TYPE* tp = nullptr;
+                    EXPRESSION* exp = nullptr;
+
+                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                    if (!tp || !isint(tp))
+                        error(ERR_NEED_INTEGER_TYPE);
+                    else
+                    {
+                        if (!isintconst(exp))
+                        {
+                            align = 1;
+                            if (exp->type != ExpressionNode::templateparam_)
+                            {
+                                error(ERR_CONSTANT_VALUE_EXPECTED);
+                            }
+                            else if (exp->v.templateParam && exp->v.templateParam->second->byNonType.val)
+                            {
+                                exp = exp->v.templateParam->second->byNonType.val;
+                                if (!isintconst(exp))
+                                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                                align = exp->v.i;
+                            }
+                        }
+                        else
+                        {
+                            align = exp->v.i;
+                        }
+                    }
                 }
+                needkw(lex, Keyword::closepa_);
+                basisAttribs.inheritable.structAlign = align;
+                if (basisAttribs.inheritable.structAlign > 0x10000 ||
+                    (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                    error(ERR_INVALID_ALIGNMENT);
             }
         }
-    }
-    else
-    {
-        ParseOut___attribute__(lex, funcsp);
+        else if (MATCHKW(*lex, Keyword::openbr_))
+        {
+            *lex = getsym();
+            if (MATCHKW(*lex, Keyword::openbr_))
+            {
+                RequiresDialect::Feature(Dialect::c2x, "Attribute specifiers");
+                const std::string occNamespace = "occ";
+                const std::string gccNamespace = "gnu";
+                const std::string clangNamespace = "clang";
+                rv = true;
+                *lex = getsym();
+                if (!MATCHKW(*lex, Keyword::closebr_))
+                {
+                    while (*lex)
+                    {
+                        bool special = false;
+                        if (!ISID(*lex))
+                        {
+                            *lex = getsym();
+                            error(ERR_IDENTIFIER_EXPECTED);
+                        }
+                        else
+                        {
+                            using namespace std::literals;
+                            std::string stripped_ver = StripUnderscores((std::string)(*lex)->data->value.s.a);
+                            if (stripped_ver == occNamespace)
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, Keyword::classsel_))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        std::string name = (*lex)->data->value.s.a;
+                                        name = StripUnderscores(name);
+                                        auto searchedName = occCPPStyleAttribNames.find(name);
+                                        if (searchedName != occCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 23:
+                                                    basisAttribs.inheritable.zstring = true;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                        occNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                }
+                            }
+                            else if (stripped_ver == clangNamespace)
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, Keyword::classsel_))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        std::string name = (*lex)->data->value.s.a;
+                                        name = StripUnderscores(name);
+                                        auto searchedName = clangCPPStyleAttribNames.find(name);
+                                        if (searchedName != clangCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 28:
+                                                    basisAttribs.inheritable.linkage2 = Linkage::internal_;
+                                                    break;
+                                                case 29:
+                                                    basisAttribs.inheritable.excludeFromExplicitInstantiation = true;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                        clangNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
+                                }
+                            }
+                            else if (stripped_ver == gccNamespace)
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, Keyword::classsel_))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        // note: these are only the namespaced names listed, the ___attribute__ names are
+                                        // unlisted here as they don't exist in GCC and we want ours to follow theirs for actual
+                                        // consistency reasons.
+                                        std::string name = (*lex)->data->value.s.a;
+                                        name = StripUnderscores(name);
+                                        auto searchedName = gccCPPStyleAttribNames.find(name);
+                                        if (searchedName != gccCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 25:
+                                                    if (basisAttribs.inheritable.linkage2 != Linkage::none_)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = Linkage::export_;
+                                                    break;
+                                                case 26:
+                                                    if (basisAttribs.inheritable.linkage2 != Linkage::none_)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = Linkage::import_;
+                                                    break;
+                                                case 27:
+                                                    if (basisAttribs.inheritable.linkage != Linkage::none_)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage = Linkage::stdcall_;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                        gccNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
+                                }
+                            }
+                            else
+                            {
+
+                                if (stripped_ver == "noreturn"s)
+                                {
+                                    *lex = getsym();
+                                    special = true;
+                                    if (basisAttribs.inheritable.linkage3 != Linkage::none_)
+                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                    basisAttribs.inheritable.linkage3 = Linkage::noreturn_;
+                                }
+                                else if (stripped_ver == "carries_dependency"s)
+                                {
+                                    *lex = getsym();
+                                    special = true;
+                                }
+                                else if (stripped_ver == "fallthrough"s)
+                                {
+                                    *lex = getsym();
+                                    basisAttribs.uninheritable.fallthrough = true;
+                                }
+                                else if (stripped_ver == "maybe_unused"s)
+                                {
+                                    *lex = getsym();
+                                    basisAttribs.uninheritable.maybe_unused = true;
+
+                                }
+                                else if (stripped_ver == "nodiscard"s)
+                                {
+                                    *lex = getsym();
+                                    basisAttribs.uninheritable.nodiscard = true;
+                                }
+                                else
+                                {
+                                    if (stripped_ver == "deprecated"s)
+                                        basisAttribs.uninheritable.deprecationText = (char*)-1;
+                                    *lex = getsym();
+                                    if (MATCHKW(*lex, Keyword::classsel_))
+                                    {
+                                        *lex = getsym();
+                                        if (!ISID(*lex))
+                                            error(ERR_IDENTIFIER_EXPECTED);
+                                        *lex = getsym();
+                                    }
+                                }
+                            }
+                        }
+                        if (MATCHKW(*lex, Keyword::openpa_))
+                        {
+                            if (special)
+                                error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
+                            *lex = getsym();
+                            if (basisAttribs.uninheritable.deprecationText)
+                            {
+                                if ((*lex)->data->type == l_astr)
+                                {
+                                    char buf[1024];
+                                    int i;
+                                    Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)(*lex)->data->value.s.w;
+                                    for (i = 0; i < 1024 && i < xx->count; i++)
+                                        buf[i] = (char)xx->str[i];
+                                    buf[i] = 0;
+                                    basisAttribs.uninheritable.deprecationText = litlate(buf);
+                                    *lex = getsym();
+                                }
+                            }
+
+                            else
+                                while (*lex && !MATCHKW(*lex, Keyword::closepa_))
+                                {
+                                    balancedAttributeParameter(lex);
+                                }
+                            needkw(lex, Keyword::closepa_);
+                        }
+                        if (MATCHKW(*lex, Keyword::ellipse_))
+                            *lex = getsym();
+                        if (!MATCHKW(*lex, Keyword::comma_))
+                            break;
+                        *lex = getsym();
+                    }
+                    if (needkw(lex, Keyword::closebr_))
+                        needkw(lex, Keyword::closebr_);
+                }
+                else
+                {
+                    // empty
+                    *lex = getsym();
+                    needkw(lex, Keyword::closebr_);
+                }
+            }
+            else
+            {
+                *lex = backupsym();
+                break;
+            }
+        }
     }
     return rv;
 }
@@ -4479,6 +4465,8 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
     }
     needkw(&lex, Keyword::closepa_);
+    if (*tn && isautotype(*tn))
+        RequiresDialect::Feature(Dialect::cpp14, "decltype(auto)");
     return lex;
 }
 
@@ -4566,10 +4554,282 @@ void CheckIsLiteralClass(TYPE* tp)
             else if (basetype(tp)->sp->templateParams)
             {
                 for (auto&& tpl : *basetype(tp)->sp->templateParams)
-                    if (tpl.second->type == Keyword::typename_ && tpl.second->byClass.val)
+                    if (tpl.second->type == TplType::typename_ && tpl.second->byClass.val)
                         CheckIsLiteralClass(tpl.second->byClass.val);               
             }
         }
     }
 }
+static int CountMembers(SYMBOL* sym)
+{
+    int count = 0;
+    if (sym->tp->syms)
+    {
+        for (auto d : *sym->tp->syms)
+        {
+            if (ismember(d))
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
+                              std::list<BLOCKDATA*>& block)
+{
+    lex = getsym();
+    if (!ISID(lex))
+    {
+        errskim(&lex, skim_semi_declare);
+        error(ERR_IDENTIFIER_EXPECTED);
+    }
+    else
+    {
+        std::deque<std::string> identifiers;
+        do
+        {
+            identifiers.push_back(lex->data->value.s.a);
+            lex = getsym();
+            if (ISID(lex))
+                break;
+            if (MATCHKW(lex, Keyword::comma_))
+                lex = getsym();
+        } while (lex && ISID(lex));
+        needkw(&lex, Keyword::closebr_);
+        if (!needkw(&lex, Keyword::assign_))
+        {
+            errskim(&lex, skim_semi_declare);
+        }
+        else
+        {
+            EXPRESSION* exp = nullptr;
+            TYPE* tp = nullptr;
+            lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+            currentLineData(block, lex, -1);
+            if (tp == nullptr)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+                errskim(&lex, skim_semi_declare);
+            }
+            else if ((!isstructured(tp) && !isarray(tp)) || basetype(tp)->type == BasicType::union_)
+            {
+                errortype(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, tp, nullptr);
+            }
+            else if (isarray(tp))
+            {
+                auto btp = basetype(basetype(tp)->btp);
+                int count = basetype(tp)->size / btp->size;
+                if (count != identifiers.size())
+                {
+                    error(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH);
+                }
+                else
+                {
+                    auto copy = anonymousVar(storage_class, btp);
+                    if (isstructured(btp))
+                    {
+                        std::list<INITIALIZER*>* constructors = nullptr;
+
+                        for (int i = 0; i < identifiers.size(); i++)
+                        {
+                            auto src = i ? exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, i * btp->size)) : exp;
+                            auto dest = i ? exprNode(ExpressionNode::add_, copy, intNode(ExpressionNode::c_i_, i * btp->size)) : copy;
+                            TYPE* ctype = btp;
+                            auto expx = dest;
+                            callConstructorParam(&ctype, &expx, btp, src, true, false, true, false, true);
+                            if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                                storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                                storage_class != StorageClass::mutable_)
+                            {
+                                initInsert(&constructors, tp, expx, i * btp->size, true);
+                            }
+                            else
+                            {
+                                auto st = stmtNode(lex, block, StatementNode::expr_);
+                                st->select = expx;
+                            }
+         
+                        }
+                        std::list<INITIALIZER*>* destructors = nullptr;
+                        EXPRESSION* sz = nullptr;
+                        if (identifiers.size() > 1)
+                        {
+                            sz = intNode(ExpressionNode::c_i_, identifiers.size());
+                        }
+                        auto expy = copy;
+                        callDestructor(btp->sp, nullptr, &expy, sz, true, false, false, true);
+                        initInsert(&destructors, tp, expy, 0, true);
+                        if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                            storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                            storage_class != StorageClass::mutable_)
+                        {
+                            insertDynamicInitializer(copy->v.sp, constructors);
+                            insertDynamicDestructor(copy->v.sp, destructors);
+                        }
+                        else
+                        {
+                            copy->v.sp->sb->dest = destructors;
+                        }
+                    }
+                    else
+                    {
+                        auto epc = exprNode(ExpressionNode::blockassign_, copy, exp);
+                        epc->size = tp;
+                        epc->altdata = (void*)(tp);
+                        if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                            storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                            storage_class != StorageClass::mutable_)
+                        {
+                            std::list<INITIALIZER*>* constructors = initListFactory.CreateList();
+                            initInsert(&constructors, tp, epc, 0, false);
+                            insertDynamicInitializer(copy->v.sp, constructors);
+                        }
+                        else
+                        {
+                            auto st = stmtNode(lex, block, StatementNode::expr_);
+                            st->select = epc;
+                        }
+                    }
+                    int i = 0;
+                    for (auto id : identifiers)
+                    {
+                        auto sym = makeID(StorageClass::alias_, btp, nullptr, litlate(id.c_str()));
+                        InsertSymbol(sym, storage_class, linkage, false);
+                        initInsert(&sym->sb->init, btp, copy, (i++) * btp->size, true);
+                        if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
+                        {
+                            STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                            s->select = varNode(ExpressionNode::auto_, sym);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SYMBOL *one = nullptr, *two = nullptr;
+                int count = 0;
+                int offset = 0;
+                auto structsym = basetype(tp)->sp;
+                if (structsym->sb->baseClasses)
+                {
+                    for (auto b : *structsym->sb->baseClasses)
+                    {
+                        int count1 = CountMembers(b->cls);
+                        if (count1)
+                        {
+                            if (one)
+                            {
+                                two = b->cls;
+                                break;
+                            }
+                            else
+                            {
+                                one = b->cls;
+                                offset = b->offset;
+                                count = count1;
+                            }
+                        }
+                    }
+                }
+                int count1 = CountMembers(structsym);
+                if (count1)
+                {
+                    if (one)
+                    {
+                        two = structsym;
+                    }
+                    else
+                    {
+                        count = count1;
+                        offset = 0;
+                        one = structsym;
+                    }
+                }
+                if (!one)
+                {
+                    errorsym(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, structsym);
+                }
+                else if (two)
+                {
+                    errorsym2(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, two, one);
+                }
+                else if (count != identifiers.size())
+                {
+                    error(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH);
+                }
+                else
+                {
+                    if (one != structsym)
+                    {
+                         if (structsym->sb->vbaseEntries)
+                         {
+                             for (auto v : *structsym->sb->vbaseEntries)
+                                if (one == v->cls)
+                                {
+                                    offset = v->structOffset;
+                                    break;
+                                }
+                         }
+                    }
+                    auto copy = anonymousVar(storage_class, tp);
+                    std::list<INITIALIZER*>* constructors = nullptr;
+                    std::list<INITIALIZER*>* destructors = nullptr;
+
+                    auto src = exp;
+                    auto dest = copy;
+                    TYPE* ctype = tp;
+
+                    auto expx = dest;
+                    callConstructorParam(&ctype, &expx, tp, src, true, false, true, false, true);
+                    if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                        storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                        storage_class != StorageClass::mutable_)
+                    {
+                        initInsert(&constructors, tp, expx, 0, true);
+                    }
+                    else
+                    {
+                        auto st = stmtNode(lex, block, StatementNode::expr_);
+                        st->select = expx;
+                    }
+                    expx = dest;
+                    callDestructor(tp->sp, nullptr, &expx, nullptr, true, false, false, true);
+                    initInsert(&destructors, tp, expx, 0, true);
+                    if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
+                        storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
+                        storage_class != StorageClass::mutable_)
+                    {
+                        insertDynamicInitializer(copy->v.sp, constructors);
+                        insertDynamicDestructor(copy->v.sp, destructors);
+                    }
+                    else
+                    {
+                        copy->v.sp->sb->dest = destructors;
+                    }
+
+                    auto it = one->tp->syms->begin();
+                    for (auto id : identifiers)
+                    {
+                        while (!ismember(*it))
+                            ++it;
+                        auto sym = makeID(StorageClass::alias_, (*it)->tp, nullptr, litlate(id.c_str()));
+                        SetLinkerNames(sym, Linkage::cdecl_);
+                        InsertSymbol(sym, storage_class, linkage, false);
+                        initInsert(&sym->sb->init, (*it)->tp, copy, (*it)->sb->offset + offset, true);
+                        if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
+                        {
+                            STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                            s->select = varNode(ExpressionNode::auto_, sym);
+                        }
+                        ++it;
+                    }
+                }
+            }
+        }
+    }
+    return lex;
+}
+
 }  // namespace Parser

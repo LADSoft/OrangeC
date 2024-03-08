@@ -170,10 +170,40 @@ std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
     else
     {
         int m;
-        if (seps == " ")
-            m = value.find_first_of(" \t\n");
+        if (seps == " " || seps == std::string(" ") + CmdFiles::PATH_SEP )
+        {
+     
+            auto seps1 = seps;
+            if (seps == " ")
+                seps1 += "\t\n";
+            m = 0;
+            do
+            {
+                m = value.find_first_of(seps1, m);
+                if (m != std::string::npos && value[m-1] == '\\' && (value[m] == ' ' || value[m] == '\t' || value[m] == '\n'))
+                {
+                     int count = 0;
+                     while (m && value[m-1] == '\\')
+                         count++, m--;
+                     m += count/2;
+                     count -= count/2;
+                     value.replace(m, count, "");
+                     if (!(count % 2))
+                     {
+                         break;
+                     }
+                     value[m++] = SpaceThunk[0];
+                }
+                else
+                {
+                    break;
+                }
+            } while (m != std::string::npos);
+        }
         else
+        {
             m = value.find_first_of(seps);
+        }
         if (m != std::string::npos)
             n = m;
     }
@@ -302,10 +332,17 @@ Variable* Eval::LookupVariable(const std::string& name)
     }
     return v;
 }
+std::string Eval::AdjustForSpaces(const std::string& in)
+{
+    if (in.find_first_of(SpaceThunk) == std::string::npos)
+        return in;
+    auto temp = "\"" + in + "\"";
+    Utils::ReplaceAll(temp, SpaceThunk, " ");
+    return temp;
+}
 bool Eval::AutomaticVar(const std::string& name, std::string& rv)
 {
     bool found = false;
-    std::set<std::string> set;  // has to be at this scope to make openwatcom happy
     if (ruleList && name.size() <= 2)
     {
         std::string extra;
@@ -338,6 +375,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         }
         else if (name[0] == '^')  // all prereq or prereq of rules that have appeared
         {
+            std::set<std::string> set;
             for (auto& item : *ruleList)
             {
                 if (item == rule)
@@ -486,6 +524,18 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 found = false;
                 rv = "";
             }
+        }
+    }
+    if (found && rv.find_first_of(SpaceThunk))
+    {
+        auto extra = rv;
+        rv = "";
+        while (!extra.empty())
+        {
+            if (!rv.empty())
+                rv += " ";
+            auto temp = AdjustForSpaces(ExtractFirst(extra, " "));
+            rv += temp;
         }
     }
     return found;

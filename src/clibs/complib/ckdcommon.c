@@ -109,10 +109,6 @@ int __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)],
         // signed with a sign bit
         ch = 0xff;
     }
-printf("%x %d\n", ch, sz);
-    for (int i=0; i < CKD_BUF_SIZE; i++)
-        printf("%02x ", ((unsigned char *)buf)[i]);
-    printf("\n");
     for (int i=sz; i < CKD_BUF_SIZE; i++)
         if (((unsigned char*)buf)[i] != ch)
             return 1;

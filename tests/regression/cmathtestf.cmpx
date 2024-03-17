@@ -1,11 +1,11 @@
 Consistency test of complex math functions.
 Max and rms relative errors for 100000 random arguments.
 z =   csqrtf( csquaref(z) ):  max = 1.19E-07   rms = 1.50E-08
-x =    csinf(   casinf(x) ):  max = 7.94E-06   rms = 1.64E-07
-x =   catanf(    ctanf(x) ):  max = 4.68E-06   rms = 9.47E-08
-x =    ccosf(   cacosf(x) ):  max = 1.74E-05   rms = 2.51E-07
-x =   csinhf(  casinhf(x) ):  max = 4.84E-06   rms = 1.58E-07
+x =    csinf(   casinf(x) ):  max = 7.89E-06   rms = 1.64E-07
+x =   catanf(    ctanf(x) ):  max = 4.72E-06   rms = 9.49E-08
+x =    ccosf(   cacosf(x) ):  max = 1.18E-05   rms = 2.07E-07
+x =   csinhf(  casinhf(x) ):  max = 4.87E-06   rms = 1.57E-07
 x =   ctanhf(  catanhf(x) ):  max = 4.81E-06   rms = 9.14E-08
-x =   ccoshf(  cacoshf(x) ):  max = 1.49E-05   rms = 2.29E-07
+x =   ccoshf(  cacoshf(x) ):  max = 1.99E-05   rms = 2.07E-07
 x =    cexpf(    clogf(x) ):  max = 3.94E-07 A rms = 1.50E-07 A
 x = cpowf( cpowf(x,a),1/a ):  max = 2.23E-05   rms = 2.20E-07

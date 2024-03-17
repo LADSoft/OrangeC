@@ -2,10 +2,10 @@ Consistency test of complex math functions.
 Max and rms relative errors for 10000 random arguments.
 z =   csqrt( csquare(z) ):  max = 2.22E-16   rms = 3.84E-17
 z =    csin(   casin(z) ):  max = 8.88E-15   rms = 3.46E-16
-z =   catan(    ctan(z) ):  max = 3.95E-15   rms = 2.12E-16
-z =    ccos(   cacos(z) ):  max = 2.52E-14   rms = 4.56E-16
-z =   csinh(  casinh(z) ):  max = 2.56E-15   rms = 3.16E-16
+z =   catan(    ctan(z) ):  max = 3.95E-15   rms = 2.16E-16
+z =    ccos(   cacos(z) ):  max = 2.52E-14   rms = 4.53E-16
+z =   csinh(  casinh(z) ):  max = 2.56E-15   rms = 3.22E-16
 z =   ctanh(  catanh(z) ):  max = 2.72E-15   rms = 2.00E-16
-z =   ccosh(  cacosh(z) ):  max = 1.91E-14   rms = 4.23E-16
+z =   ccosh(  cacosh(z) ):  max = 1.91E-14   rms = 4.22E-16
 z =    cexp(    clog(z) ):  max = 8.15E-16 A rms = 3.06E-16 A
 z = cpow( cpow(z,a),1/a ):  max = 1.27E-14   rms = 4.55E-16

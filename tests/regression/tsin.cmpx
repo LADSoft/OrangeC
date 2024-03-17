@@ -1,6 +1,6 @@
 Info:  'TAILOR' not defined => NOT using any bug workarounds.
 sin(355) = -3.01443533594884505e-05 from math library.
-sin(355) = -3.01443533594884471e-05 is correct answer.
-About 0.02 bits are wrong out of 53.00 total bits.
-That is about 1.00 ULPs (Units Last Place) bits error.
+sin(355) = -3.01443533594884505e-05 is correct answer.
+About 0.00 bits are wrong out of 53.00 total bits.
+That is about 0.00 ULPs (Units Last Place) bits error.
 Test ( Pass ) {} 

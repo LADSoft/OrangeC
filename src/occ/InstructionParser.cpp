@@ -110,39 +110,30 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
 {
     std::string rv = ::opcodeTable[ins->opcode];
     rv += " ";
-    for (auto t : inputTokens)
+    for (auto&& t : inputTokens)
     {
-        std::shared_ptr<AsmExprNode> val = std::make_shared<AsmExprNode>(*(AsmExprNode*)t->val);
         switch (t->type)
         {
             case InputToken::LABEL:
-                rv += val->label;
-                break;
+            {
+                char buf[256];
+                sprintf(buf, "L_%d", (int)t->val->ival);
+                rv += buf;
+            }
+            break;
             case InputToken::NUMBER: {
-                if (val->GetType() == AsmExprNode::ADD)
-                {
-                    rv += val->GetLeft()->label + "+";
-                    char buf[256];
-                    sprintf(buf, "%d", (int)val->GetRight()->ival);
-                    rv += buf;
-                }
-                else if (val->GetType() == AsmExprNode::LABEL)
-                {
-                    rv += val->label;
-                }
-                else
                 {
                     char buf[256];
-                    sprintf(buf, "%d", (int)val->ival);
+                    sprintf(buf, "%d", (int)t->val->ival);
                     rv += buf;
                 }
                 break;
             }
             case InputToken::REGISTER:
-                rv += tokenNames[(e_tk)(val->ival + 1000)];
+                rv += tokenNames[(e_tk)(int)(t->val->ival + 1000)];
                 break;
             case InputToken::TOKEN:
-                rv += tokenNames[(e_tk)val->ival];
+                rv += tokenNames[(e_tk)(int)t->val->ival];
                 break;
             default:
                 rv += "unknown";

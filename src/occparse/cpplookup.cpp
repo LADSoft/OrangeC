@@ -4841,7 +4841,13 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                     if (sym->sb->castoperator || (tpthis && f->thistp == nullptr))
                     {
                         tpthis = &tpx;
-                        MakeType(tpx, BasicType::pointer_, f->arguments->front()->tp);
+                        auto tpconsider = f->arguments->front()->tp;
+                        if (sym->sb->constexpression)
+                        {
+                            // remove CONST...
+                            tpconsider = basetype(tpconsider);
+                        }
+                        MakeType(tpx, BasicType::pointer_, tpconsider);
                     }
                     else if (sym->sb->isDestructor)
                     {
@@ -5878,7 +5884,6 @@ static bool ValidForDeduction(SYMBOL* s)
     }
     return deduced;
 }
-int count3;
 SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
                               bool maybeConversion, int flags)
 {

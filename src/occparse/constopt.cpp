@@ -1271,8 +1271,10 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
         case ExpressionNode::global_:
         case ExpressionNode::auto_:
         case ExpressionNode::threadlocal_:
+        case ExpressionNode::cvarpointer_:
             return node;
         case ExpressionNode::add_: {
+        case ExpressionNode::structadd_:
             auto rv1 = relptr(node->left, offset, true);
             auto rv2 = relptr(node->right, offset, true);
             if (rv1)
@@ -1399,38 +1401,7 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_: {
             rv |= opt0(&((*node)->left));
-            ConstExprStructElemEval(node);
-            if (lvalue(*node) && !(*node)->left->init && inConstantExpression)
-            {
-                int offset = 0;
-
-                auto ref = relptr((*node)->left, offset);
-                if (ref)
-                {
-                    // this will only do one level, so if we have an array of pointers to arrays
-                    // it won't work.
-                    if (ref->v.sp->sb->constexpression && ref->v.sp->sb->init)
-                    {
-                        auto its = ref->v.sp->sb->init->begin();
-                        if (isarray(ref->v.sp->tp))
-                        {
-                            int n = offset / ref->v.sp->tp->btp->size;
-                            while (n-- && its != ref->v.sp->sb->init->end())
-                                ++its;
-                            if (its != ref->v.sp->sb->init->end())
-                            {
-                                **node = *(*its)->exp;
-                                rv = true;
-                            }
-                        }
-                        else
-                        {
-                            **node = *ref->v.sp->sb->init->front()->exp;
-                            rv = true;
-                        }
-                    }
-                }
-            }
+            rv |= ResolveConstExprLval(node);
         }
         break;
         case ExpressionNode::x_bool_:
@@ -1555,8 +1526,13 @@ int opt0(EXPRESSION** node)
             }
             return rv;
         case ExpressionNode::structadd_:
-        case ExpressionNode::add_:
         case ExpressionNode::arrayadd_:
+            while (ep->left->type == ExpressionNode::void_)
+                ep->left = ep->left->right;
+            while (ep->right->type == ExpressionNode::void_)
+                ep->right = ep->right->right;
+            // fallthrough
+        case ExpressionNode::add_:
         case ExpressionNode::sub_:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
@@ -1568,23 +1544,17 @@ int opt0(EXPRESSION** node)
                 // z = (a + 5) - a
                 // to z = 5;
                 // regardless of whether a can be evaluated
-                auto exp = ep->left;
-                while (castvalue(exp))
-                    exp = exp->left;
-                if (exp->type == ExpressionNode::add_)
+                int offset1 = 0;
+                int offset2 = 0;
+                auto rv1 = relptr(ep->left, offset1);
+                auto rv2 = relptr(ep->right, offset2);
+                if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                 {
-                    if (!expressionHasSideEffects(ep))
-                    {
-                        auto expr = ep->right;
-                        while (castvalue(expr))
-                            expr = expr->left;
-                        if (equalnode(exp->left, expr))
-                        {
-                            *node = exp->right;
-                            rv = true;
-                            break;
-                        }
-                    }
+                    (*node)->type = ExpressionNode::c_i_;
+                    (*node)->left = nullptr;
+                    (*node)->right = nullptr;
+                    (*node)->v.i = offset1 - offset2;
+                    break;
                 }
             }
             mode = getmode(ep->left, ep->right);
@@ -2176,9 +2146,11 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 default: {
+
                     int offset1 = 0, offset2 = 0;
                     auto rv1 = relptr(ep->left, offset1, true);
                     auto rv2 = relptr(ep->right, offset2, true);
+
                     if (rv1 && rv2)
                     {
                         if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
@@ -3241,8 +3213,12 @@ int fold_const(EXPRESSION* node)
         }
         break;
         case ExpressionNode::func_:
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression)
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression && argumentNesting <= 1)
             {
+                if (!rv && node->v.func->thisptr)
+                {
+                    fold_const(node->v.func->thisptr);
+                }
                 inConstantExpression++;
                 rv = EvaluateConstexprFunction(node);
                 inConstantExpression--;
@@ -3441,26 +3417,8 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
         case ExpressionNode::bits_:
-            if (node1->left->type == ExpressionNode::cshimref_)
-            {
-                *node1 = *node1->left->v.exp;
-            }
-            else if (node1->left->type == ExpressionNode::structadd_)
-            {
-                if (node1->left->left->type == ExpressionNode::cshimref_)
-                {
-                    node1->left->left = node1->left->left->v.exp;
-                    optimize_for_constants(&node1->left);
-                    *node1 = *node1->left;
-                }
-                else if (node1->left->right->type == ExpressionNode::cshimref_)
-                {
-                    node1->left->right = node1->left->right->v.exp;
-                    optimize_for_constants(&node1->left);
-                    *node1 = *node1->left;
-                }
-            }
-            else if (node1->left->type == ExpressionNode::global_)
+            rv |= typedconsts(node1->left);
+            if (node1->left->type == ExpressionNode::global_)
             {
                 if ((node1->left->v.sp->sb->storage_class == StorageClass::constant_ && isintconst(node1->left->v.sp->sb->init->front()->exp)))
                 {
@@ -3842,7 +3800,7 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 if (!isarithmeticconst(exp2->left) || !isarithmeticconst(exp2->right))
                     return false;
-            return true;
+            // fallthrough
         case ExpressionNode::mul_:
         case ExpressionNode::umul_:
         case ExpressionNode::arraymul_:
@@ -3851,7 +3809,7 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
         case ExpressionNode::xor_:
         case ExpressionNode::eq_:
         case ExpressionNode::ne_:
-            return true;
+            return exp2->left->left || exp2->left->right || exp2->right->left || exp2->right->right;
         default:
             return false;
     }
@@ -3962,7 +3920,6 @@ LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
     {
         optimize_for_constants(expr);
     }
-    ConstExprPatch(expr);
     return lex;
 }
 }  // namespace Parser

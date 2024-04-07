@@ -1482,6 +1482,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
             break;
         case ExpressionNode::const_:
         case ExpressionNode::msil_array_access_:
+        case ExpressionNode::cvarpointer_:
             break;
         case ExpressionNode::c_ll_:
         case ExpressionNode::c_ull_:

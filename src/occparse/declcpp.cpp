@@ -930,7 +930,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 sym2->sb->stackblock = !isref(arg->tp);
                 lex = initialize(lex, theCurrentFunc, sym2, StorageClass::auto_, false, false, 0); /* also reserves space */
                 arg->sb->init = sym2->sb->init;
-                if (arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                if (arg->sb->init->front()->exp && arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
                 {
                     EXPRESSION** expr = &arg->sb->init->front()->exp->left->v.func->thisptr;
                     if ((*expr)->type == ExpressionNode::add_ && isconstzero(&stdint, (*expr)->right))
@@ -2193,7 +2193,6 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
                         LEXLIST* lex = SetAlternateLex(start);
                         packIndex = i;
                         expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
-                        ConstExprPatch(&p->exp);
                         SetAlternateLex(nullptr);
                         if (p->tp->type != BasicType::void_)
                             if (p->tp)
@@ -2938,7 +2937,7 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
         inConstantExpression++;
         anonymousNotAlloc++;
-        lex = expression_no_comma(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
+        lex = expression_assign(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
         anonymousNotAlloc--;
         expr2 = Allocate<EXPRESSION>();
         expr2->type = ExpressionNode::x_bool_;
@@ -4276,8 +4275,6 @@ static bool constArgValid(TYPE* tp)
 {
     while (isarray(tp))
         tp = basetype(tp)->btp;
-    if (isvoid(tp))
-        return false;
     if (isfunction(tp))
         return false;
     if (tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_)

@@ -627,7 +627,6 @@ void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **result
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
-    ConstExprPromote(*resultexp, false);
     if (isstructuredmath(*resulttp))
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
@@ -1635,7 +1634,6 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     }
     ResolveTemplateVariable(resulttp, resultexp, righttp, nullptr);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, nullptr);
-    ConstExprPromote(*resultexp, false);
     if (isstructuredmath(*resulttp, righttp))
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&

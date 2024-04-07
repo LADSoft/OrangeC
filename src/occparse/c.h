@@ -76,6 +76,7 @@ public:
     T* back() const { return inOrder_.back(); }
     T* front() const { return inOrder_.front(); }
     inline void remove(iterator it);
+    inline void remove(T* sym);
     inline iterator insert(iterator it, struct sym* sym);
     inline T* Lookup(const std::string& name) const;
     void Next(SymbolTable<T>* next) { next_ = next; }
@@ -238,7 +239,7 @@ typedef struct
         construct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
         type_, pointsto_, dot_, select_,
         // stuff that can only appear temporarily in constexpr expressions
-        cshimref_, cshimthis_, paramsubstitute_
+        cvarpointer_, paramsubstitute_
     };
 // clang-format on
 
@@ -374,7 +375,8 @@ typedef std::pair<struct sym*, struct _templateParam*> TEMPLATEPARAMPAIR;
 
 struct ConstExprArgArray
 {
-    int size;
+    unsigned short size;
+    unsigned short multiplier;
     struct expr** data;
 };
 

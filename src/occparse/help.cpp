@@ -49,6 +49,8 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
+#include "constexpr.h"
+
 namespace Parser
 {
 
@@ -577,6 +579,38 @@ bool isunion(TYPE* tp)
         return tp->type == BasicType::union_;
     return false;
 }
+EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
+{
+    EXPRESSION* rv;
+    tp = basetype(tp)->btp;
+    if (tp->type == BasicType::pointer_) // to get around arrays not doing a deref...
+        tp = &stdpointer;
+    rv = anonymousVar(StorageClass::auto_, tp);
+    if (val)
+    {
+        if (IsConstantExpression(val, true, true))
+            rv->v.sp->sb->constexpression = true;
+        EXPRESSION* rv1 = copy_expression(rv);
+        deref(tp, &rv);
+        cast(tp, &val);
+        rv = exprNode(ExpressionNode::void_, exprNode(ExpressionNode::assign_, rv, val), rv1);
+    }
+    errortype(ERR_CREATE_TEMPORARY, tp, tp);
+    return rv;
+}
+EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
+{
+    EXPRESSION* rv = anonymousVar(StorageClass::auto_, tp);
+    if (val)
+    {
+        EXPRESSION* rv1 = copy_expression(rv);
+        deref(tp, &rv);
+        cast(tp, &val);
+        rv = exprNode(ExpressionNode::void_, exprNode(ExpressionNode::assign_, rv, val), rv1);
+    }
+    errortype(ERR_CREATE_TEMPORARY, tp, tp);
+    return rv;
+}
 void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
 {
     TYPE* patin = *pat;
@@ -824,6 +858,13 @@ bool iscomplexconst(EXPRESSION* exp)
             return true;
         default:
             return false;
+    }
+}
+void undoAnonymousVar(SYMBOL* sp)
+{
+    if (theCurrentFunc && localNameSpace->front()->syms && !inDefaultParam && !anonymousNotAlloc)
+    {
+        localNameSpace->front()->syms->remove(sp);
     }
 }
 EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)

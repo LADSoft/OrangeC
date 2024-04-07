@@ -52,6 +52,8 @@
 #include "libcxx.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "constexpr.h"
+
 namespace Parser
 {
 std::set<SYMBOL*> defaultRecursionMap;
@@ -3320,6 +3322,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             }
             e1 = varNode(ExpressionNode::func_, nullptr);
             e1->v.func = oparams;
+            params = oparams;
         }
         else
         {
@@ -3460,7 +3463,16 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 e1->v.func = params;
             }
         }
-
+        if (params->sp->sb->constexpression)
+        {
+            EXPRESSION* node = Allocate<EXPRESSION>();
+            node->type = ExpressionNode::func_;
+            node->v.func = params;
+            if (EvaluateConstexprFunction(node))
+            {
+                e1 = node;
+            }
+        }
         *exp = e1;
         if ((Optimizer::architecture == ARCHITECTURE_MSIL) && *exp)
         {

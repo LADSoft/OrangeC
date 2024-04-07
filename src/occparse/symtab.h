@@ -88,6 +88,12 @@ void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
     return inOrder_.remove(*it);
 }
 template<class T>
+inline void SymbolTable<T>::remove(T* sym)
+{
+    lookupTable_.erase(sym->name);
+    inOrder_.remove(sym);
+}
+template<class T>
 typename SymbolTable<T>::iterator SymbolTable<T>::insert(typename SymbolTable<T>::iterator it, SYMBOL* sym)
 {
     lookupTable_[sym->name] = sym;

@@ -275,7 +275,6 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         if (declaration)
             *declaration = false;
         lex = expression(lex, funcsp, nullptr, &tp, exp, kw != Keyword::for_ && kw != Keyword::rangefor_ ? _F_SELECTOR : 0);
-        ConstExprPatch(exp);
         if (tp)
         {
             if (tp->type == BasicType::memberptr_)
@@ -1579,7 +1578,6 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                     else
                     {
                         optimize_for_constants(&incrementer);
-                        ConstExprPatch(&incrementer);
                     }
                 }
                 if (!MATCHKW(lex, Keyword::closepa_))
@@ -2188,7 +2186,6 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             {
                 tp1 = MakeType(BasicType::rref_, tp1);
             }
-            ConstExprPatch(&exp1);
             lex = prevsym(current);
             while (tp1->type == BasicType::typedef_)
                 tp1 = tp1->btp;
@@ -3224,7 +3221,7 @@ static void reverseAssign(std::list<STATEMENT*>* current, EXPRESSION** exp)
         for (auto it = current->end(); it != current->begin();)
         {
             --it;
-            if ((*it)->type != StatementNode::line_)
+            if ((*it)->type != StatementNode::line_ && (*it)->type != StatementNode::varstart_)
             {
                 if (*exp)
                     *exp = exprNode(ExpressionNode::void_, (*it)->select, *exp);
@@ -3267,7 +3264,8 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     if (!*exp)
     {
         *exp = intNode(ExpressionNode::c_i_, 0);
-        errorint(ERR_NEEDY, '=');
+        if (!(asExpression & _F_NOCHECKAUTO))
+            errorint(ERR_NEEDY, '=');
     }
     return lex;
 
@@ -3538,7 +3536,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                        MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::decltype_) ||
                        MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_))
                 {
-                        std::list<STATEMENT*>* prev = before->statements;
+                    std::list<STATEMENT*>* prev = before->statements;
                     before->statements = nullptr;
                     declareAndInitialize = false;
                     if (start)
@@ -4274,7 +4272,6 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldNoExcept = noExcept;
     int oldEllipsePos = ellipsePos;
     ellipsePos = 0;
-    constexprfunctioninit(true);
     noExcept = true;
     expressions = 0;
     controlSequences = 0;
@@ -4378,7 +4375,6 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             localFree();
         handleInlines(funcsp);
     }
-    constexprfunctioninit(false);
     ellipsePos = oldEllipsePos;
     noExcept = oldNoExcept;
     controlSequences = oldControlSequences;

@@ -104,6 +104,8 @@ bool isvoid(TYPE* tp);
 bool isvoidptr(TYPE* tp);
 bool isarray(TYPE* tp);
 bool isunion(TYPE* tp);
+EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val);
+EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val);
 void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp);
 SYMBOL* getFunctionSP(TYPE** tp);
 LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems);

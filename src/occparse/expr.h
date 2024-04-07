@@ -29,6 +29,7 @@ extern int argumentNesting;
 extern int inAssignRHS;
 
 extern std::list<SYMBOL*> importThunks;
+extern int adjustingParams;
 
 void expr_init(void);
 void SetRuntimeData(LEXLIST* lex, EXPRESSION* exp, SYMBOL* sym);

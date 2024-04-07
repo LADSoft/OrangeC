@@ -5578,7 +5578,7 @@ static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym,
                 *constexpression = true;
             }
             lex = getsym();
-        }
+        }   
         else if (KWTYPE(lex, TT_STORAGE_CLASS))
         {
             lex = getStorageClass(lex, funcsp, storage_class, linkage, address, blocked, isExplicit, access);
@@ -7330,25 +7330,28 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                     }
                                     if (doit && (sp->sb->init || (isarray(sp->tp) && sp->tp->msil)))
                                     {
-                                        STATEMENT* st;
-                                        currentLineData(block, hold, 0);
-                                        st = stmtNode(hold, block, StatementNode::expr_);
-                                        if (!isstructured(sp->tp) || !basetype(sp->tp)->sp->sb->islambda)
+                                        if (!sp->sb->constexpression)
                                         {
-                                            st->select =
-                                                convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
-                                        }
-                                        else
-                                        {
-                                            // this is part of copy elision for lambda declarations
-                                            st->select = sp->sb->init->front()->exp;
-                                        }
-                                        int offset = 0;
-                                        if (sp->sb->runtimeSym)
-                                        {
-                                            auto exp = relptr(st->select->left->left, offset, true);
-                                            if (exp)
-                                                SetRuntimeData(lex, exp, sp);
+                                            STATEMENT* st;
+                                            currentLineData(block, hold, 0);
+                                            st = stmtNode(hold, block, StatementNode::expr_);
+                                            if (!isstructured(sp->tp) || !basetype(sp->tp)->sp->sb->islambda)
+                                            {
+                                                st->select =
+                                                    convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                            }
+                                            else
+                                            {
+                                                // this is part of copy elision for lambda declarations
+                                                st->select = sp->sb->init->front()->exp;
+                                            }
+                                            int offset = 0;
+                                            if (sp->sb->runtimeSym)
+                                            {
+                                                auto exp = relptr(st->select->left->left, offset, true);
+                                                if (exp)
+                                                    SetRuntimeData(lex, exp, sp);
+                                            }
                                         }
                                     }
                                     else if ((isarray(sp->tp) || isstructured(sp->tp)) &&

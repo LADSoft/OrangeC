@@ -1107,7 +1107,6 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                             while (exp->type == ExpressionNode::void_ && exp->right)
                                                 exp = exp->right;
                                         }
-                                        ConstExprPatch(&exp);
                                         SetAlternateLex(nullptr);
                                         if (tp)
                                         {
@@ -2156,6 +2155,8 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                                     return false;
                                 if (basetype(torig)->array != basetype(tsym)->array)
                                     return false;
+                                if (basetype(torig)->byRefArray != basetype(tsym)->byRefArray)
+                                    return false;
                                 if (basetype(torig)->array && !!basetype(torig)->esize != !!basetype(tsym)->esize)
                                     return false;
                                 if ((basetype(torig)->type == BasicType::enum_) != (basetype(tsym)->type == BasicType::enum_))
@@ -2190,6 +2191,8 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                         if (isref(torig) != isref(tsym))
                             return false;
                         if (btorig->array != btsym->array)
+                            return false;
+                        if (btorig->byRefArray != btsym->byRefArray)
                             return false;
                         if (btorig->array && !!btorig->esize != !!btsym->esize)
                             return false;
@@ -2574,7 +2577,7 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                     }
                 }
             }
-            else if (!ismember(sym) && !istype(sym))
+            else if (!ismember(sym) && !istype(sym) && sym->sb->storage_class != StorageClass::enumconstant_)
             {
                 if (cls->sb->templateLevel || sym->sb->templateLevel)
                     InsertInlineData(sym);

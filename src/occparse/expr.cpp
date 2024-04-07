@@ -110,6 +110,7 @@ void expr_init(void)
     inSearchingFunctions = 0;
     inNothrowHandler = 0;
     argFriend = nullptr;
+    argumentNesting = 0;
 }
 void SetRuntimeData(LEXLIST* lex, EXPRESSION* exp, SYMBOL* sym)
 {
@@ -488,29 +489,35 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             default:
                 break;
         }
-        if (sym->sb && sym->sb->templateLevel && !isfunction(sym->tp) && sym->sb->storage_class != StorageClass::type_ && !ismember(sym) &&
-            MATCHKW(lex, Keyword::lt_))
+        if (sym->sb && sym->sb->templateLevel && !isfunction(sym->tp) && sym->sb->storage_class != StorageClass::type_ && !ismember(sym))
         {
-            lex = getsym();
-            if (startOfType(lex, nullptr, false))
+            if (MATCHKW(lex, Keyword::lt_))
             {
-                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                SYMBOL* sp1 = sym;
-                lex = backupsym();
-                lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
-                sp1 = GetVariableTemplate(sp1, lst);
-
-                if (sp1)
+                lex = getsym();
+                if (startOfType(lex, nullptr, false))
                 {
-                    sym = sp1;
-                    *tp = sym->tp;
+                    std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                    SYMBOL* sp1 = sym;
+                    lex = backupsym();
+                    lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
+                    sp1 = GetVariableTemplate(sp1, lst);
+
+                    if (sp1)
+                    {
+                        sym = sp1;
+                        *tp = sym->tp;
+                    }
+                    else
+                        errorsym(ERR_NO_TEMPLATE_MATCHES, sym);
                 }
                 else
-                    errorsym(ERR_NO_TEMPLATE_MATCHES, sym);
+                {
+                    lex = backupsym();
+                }
             }
             else
             {
-                lex = backupsym();
+                errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
             }
         }
         if ((!sym->sb || sym->sb->storage_class == StorageClass::templateparam_) && sym->tp->type == BasicType::templateparam_ &&
@@ -717,7 +724,7 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                         lex = prevsym(placeholder);
                         *tp = nullptr;
                         lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
-                        if (!*exp)
+                         if (!*exp)
                             *exp = intNode(ExpressionNode::c_i_, 0);
                         return lex;
                     case StorageClass::overloads_:
@@ -1945,7 +1952,14 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                     {
                         exp1 = exprNode(ExpressionNode::umul_, expr2, intNode(ExpressionNode::c_i_, (*tp)->size));
                     }
+                    expr2 = *exp;
                     *exp = exprNode(ExpressionNode::add_, *exp, exp1);
+                
+                    if (!inConstantExpression && expr2->type == ExpressionNode::auto_ && expr2->v.sp->sb->constexpression && !expr2->v.sp->sb->indecltable)
+                    {
+                        expr2->v.sp->sb->indecltable = true;
+                        *exp = exprNode(ExpressionNode::void_, convertInitToExpression(expr2->v.sp->tp, expr2->v.sp, nullptr, funcsp, expr2->v.sp->sb->init, nullptr, false), *exp);
+                    }
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
                         *exp = MsilRebalanceArray(*exp);
@@ -2005,6 +2019,11 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
                         exp1 = exprNode(ExpressionNode::umul_, *exp, intNode(ExpressionNode::c_i_, (*tp)->size));
                     }
                     *exp = exprNode(ExpressionNode::add_, expr2, exp1);
+                    if (!inConstantExpression && expr2->type == ExpressionNode::auto_ && expr2->v.sp->sb->constexpression && !expr2->v.sp->sb->indecltable && expr2->v.sp->sb->init)
+                    {
+                        expr2->v.sp->sb->indecltable = true;
+                        *exp = exprNode(ExpressionNode::void_, convertInitToExpression(expr2->v.sp->tp, expr2->v.sp, nullptr, funcsp, expr2->v.sp->sb->init, nullptr, false), *exp);
+                    }
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
                         *exp = MsilRebalanceArray(*exp);
@@ -2371,6 +2390,12 @@ static LEXLIST* getInitInternal(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST
                     p->tp->lref = false;
                     p->tp->rref = true;
                 }
+                /*
+                else if (exp3->type == ExpressionNode::auto_)
+                {
+                    exp3->v.sp->sb->constexpression = false;
+                }
+                */
             }
             if (p->tp)
             {
@@ -3354,29 +3379,84 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     }
                     if (p->nested)
                     {
-                        FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
-                        params->ascall = true;
-                        if (p->initializer_list)
-                        {
-                            params->arguments = p->nested;
-                        }
-                        else
-                        {
-                            params->arguments = initListListFactory.CreateList();
-                            params->arguments->push_back(p);
-                        }
                         TYPE* ctype = basetype(sym->tp);
                         EXPRESSION* consexp = anonymousVar(StorageClass::auto_, ctype);  // StorageClass::parameter_ to push it...
                         SYMBOL* esp = consexp->v.sp;
                         p->exp = consexp;
                         esp->sb->stackblock = true;
-                        callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
-                        if (p->exp->type == ExpressionNode::thisref_)
+                        esp->sb->constexpression = true;
+                        if (basetype(sym->tp)->sp->sb->trivialCons)
                         {
-                            TYPE* tpx = basetype(p->exp->left->v.func->sp->tp);
-                            if (isfunction(tpx) && tpx->sp && tpx->sp->sb->castoperator)
+                            auto initListType = basetype(p->nested->front()->tp);
+                            EXPRESSION* ptr = anonymousVar(StorageClass::auto_, &stdpointer);
+                            ptr->v.sp->sb->constexpression = true;
+                            if (!theCurrentFunc)
                             {
-                                p->tp = tpx->btp;
+                                ptr->v.sp->sb->label = Optimizer::nextLabel++;
+                                insertInitSym(ptr->v.sp);
+                            }
+                            deref(&stdpointer, &ptr);
+                            EXPRESSION** last = &p->exp;
+                            *last = exprNode(ExpressionNode::assign_, ptr, consexp);
+                            auto it = ctype->syms->begin();
+                            int count = 0;
+                            for (auto init : *p->nested)
+                            {
+                                while (it != ctype->syms->end() && !ismemberdata(*it)) ++it;
+                                if (it == ctype->syms->end())
+                                    break;
+                                count++;
+                                auto exp2 = exprNode(ExpressionNode::structadd_, ptr, intNode(ExpressionNode::c_i_, (*it)->sb->offset));
+                                deref(initListType, &exp2);
+                                auto exp1 = exprNode(ExpressionNode::assign_, exp2, init->exp);
+                                *last = exprNode(ExpressionNode::void_, *last, exp1);
+                                last = &(*last)->right;
+                                ++it;
+                            }
+                            if (count < p->nested->size())
+                            {
+                                error(ERR_TOO_MANY_INITIALIZERS);
+                            }
+                            else if (it != ctype->syms->end())
+                            {
+                                while (it != ctype->syms->end())
+                                {
+                                    while (it != ctype->syms->end() && !ismemberdata(*it)) ++it;
+                                    if (it != ctype->syms->end())
+                                    {
+                                        auto exp2 = exprNode(ExpressionNode::structadd_, ptr, intNode(ExpressionNode::c_i_, (*it)->sb->offset));
+                                        deref(initListType, &exp2);
+                                        auto exp1 = exprNode(ExpressionNode::assign_, exp2, intNode(ExpressionNode::c_i_, 0));
+                                        *last = exprNode(ExpressionNode::void_, *last, exp1);
+                                        last = &(*last)->right;
+                                        ++it;
+                                    }
+                                }
+
+                            }
+                            *last = exprNode(ExpressionNode::void_, *last, ptr);
+                        }
+                        else
+                        {
+                            FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+                            params->ascall = true;
+                            if (p->initializer_list)
+                            {
+                                params->arguments = p->nested;
+                            }
+                            else
+                            {
+                                params->arguments = initListListFactory.CreateList();
+                                params->arguments->push_back(p);
+                            }
+                            callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
+                            if (p->exp->type == ExpressionNode::thisref_)
+                            {
+                                TYPE* tpx = basetype(p->exp->left->v.func->sp->tp);
+                                if (isfunction(tpx) && tpx->sp && tpx->sp->sb->castoperator)
+                                {
+                                    p->tp = tpx->btp;
+                                }
                             }
                         }
                     }
@@ -3394,6 +3474,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         consexp = anonymousVar(StorageClass::auto_, sym->tp);  // StorageClass::parameter_ to push it...
                         esp = consexp->v.sp;
                         esp->sb->stackblock = true;
+                        esp->sb->constexpression = true;
                         consexp = varNode(ExpressionNode::auto_, esp);
                         paramexp = p->exp;
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
@@ -3421,7 +3502,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             {
                                 p->exp = exp;
                             }
-                            p->exp = exprNode(ExpressionNode::void_, p->exp, consexp);
+                            if (p->exp->type != ExpressionNode::void_)
+                                p->exp = exprNode(ExpressionNode::void_, p->exp, consexp);
                         }
                     }
                     else if (basetype(sym->tp)->sp->sb->trivialCons)
@@ -3533,7 +3615,6 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             if (!comparetypes(sym->tp, tpx, true))
                                 p->exp = DerivedToBase(sym->tp, tpx, p->exp, 0);
                         }
-                        ConstExprPromote(p->exp, isconst(basetype(sym->tp)->btp));
                     }
                     else if (basetype(basetype(sym->tp)->btp)->type == BasicType::memberptr_)
                     {
@@ -7138,7 +7219,6 @@ static LEXLIST* expression_postfix(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                 break;
             case Keyword::autoinc_:
             case Keyword::autodec_:
-                ConstExprPromote(*exp, false);
                 kw = KW(lex);
                 lex = getsym();
                 if (isstructuredmath(*tp))
@@ -7415,8 +7495,6 @@ LEXLIST* expression_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                                     break;
                                 case Keyword::autoinc_:
                                 case Keyword::autodec_:
-                                    ConstExprPromote(*exp, false);
-
                                     kw = KW(lex);
                                     lex = getsym();
                                     if (isstructuredmath(*tp))

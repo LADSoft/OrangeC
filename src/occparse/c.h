@@ -238,7 +238,7 @@ typedef struct
         construct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
         type_, pointsto_, dot_, select_,
         // stuff that can only appear temporarily in constexpr expressions
-        cshimref_, cshimthis_, paramsubstitute_
+        cvarpointer_, paramsubstitute_
     };
 // clang-format on
 
@@ -374,7 +374,8 @@ typedef std::pair<struct sym*, struct _templateParam*> TEMPLATEPARAMPAIR;
 
 struct ConstExprArgArray
 {
-    int size;
+    unsigned short size;
+    unsigned short multiplier;
     struct expr** data;
 };
 

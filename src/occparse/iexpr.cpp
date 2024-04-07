@@ -2036,11 +2036,22 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
     int temp;
     int rv = 0;
     EXPRESSION* exp = getFunc(ep);
+    bool complexblock = false;
     if (!exp && ep->type == ExpressionNode::void_)
     {
         exp = ep->left;
         if (exp && exp->type != ExpressionNode::blockassign_ && exp->type != ExpressionNode::blockclear_)
-            exp = nullptr;
+        {
+            if (exp->type != ExpressionNode::assign_ || exp->right->type != ExpressionNode::auto_ || !exp->right->v.sp->sb->stackblock)
+            {
+                exp = nullptr;
+            }
+            else
+            {
+                complexblock = true;
+                exp = exp->right;
+            }
+        }
     }
     if (exp)
     {
@@ -2058,7 +2069,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
         {
             exp = ep;
         }
-        else
+        else if (!complexblock)
         {
             exp = exp->left;
         }
@@ -2290,7 +2301,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             EXPRESSION *val = a->exp->left, *val2 = val;
             if (val2->type == ExpressionNode::void_)
                 val2 = val2->right;
-            if (val2->type != ExpressionNode::func_ && val2->type != ExpressionNode::thisref_)
+            if (val2->type != ExpressionNode::func_ && val2->type != ExpressionNode::thisref_ && !isarithmeticconst(val2))
             {
                 deref(basetype(a->tp)->sp->sb->structuredAliasType, &val);
             }
@@ -4328,7 +4339,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
 
 Optimizer::IMODE* gen_void_(EXPRESSION* node, SYMBOL* funcsp)
 {
-    if (node->type != ExpressionNode::auto_ && node->type != ExpressionNode::cshimthis_)
+    if (node->type != ExpressionNode::auto_)
         gen_expr(funcsp, node, F_NOVALUE | F_RETURNSTRUCTNOADJUST, natural_size(node));
     return 0;
 }

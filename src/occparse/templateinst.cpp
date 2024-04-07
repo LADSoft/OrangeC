@@ -974,6 +974,7 @@ TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                         SYMBOL* clone = CopySymbol(sp);
                         TYPE* tp1;
                         func->syms->Add(clone);
+                        auto xx = clone->tp;
                         clone->tp = SynthesizeType(clone->tp, enclosing, alt);
                         if (clone->tp->type != BasicType::void_ && clone->tp->type != BasicType::any_)
                         {
@@ -1219,9 +1220,6 @@ SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
     if (isfunction(rsv->tp))
     {
         basetype(rsv->tp)->btp = PerformDeferredInitialization(basetype(rsv->tp)->btp, nullptr);
-    }
-    if (isfunction(rsv->tp))
-    {
         basetype(rsv->tp)->sp = rsv;
     }
     rsv->templateParams = params;
@@ -2027,13 +2025,16 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     EXPRESSION* exp1 = nullptr;
                     if (itDest->second->byNonType.txttype)
                     {
+                        int oldNesting = argumentNesting;
                         LEXLIST* start = lex;
                         lex = SetAlternateLex(itSrc->second->byNonType.txttype);
                         openStructs = nullptr;
                         structLevel = 0;
+                        argumentNesting = 0;
                         noTypeNameError++;
                         lex = get_type_id(lex, &tp1, nullptr, StorageClass::parameter_, true, false, false);
                         noTypeNameError--;
+                        argumentNesting = oldNesting;
                         openStructs = oldOpenStructs;
                         structLevel = oldStructLevel;
                         SetAlternateLex(nullptr);
@@ -4340,10 +4341,15 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
                 auto end = found1->sb->init->end();
                 RecalculateVariableTemplateInitializers(begin, end, &init, found1->tp, 0);
                 found1->sb->init = init;
+                if (isarithmetic(found1->tp) && isarithmeticconst(init->front()->exp))
+                {
+                    found1->sb->storage_class = StorageClass::constant_;
+                }
             }
             found1->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
             classTemplateMap2[found1->sb->decoratedName] = found1;
-            InsertInlineData(found1);
+            if (found1->sb->storage_class != StorageClass::constant_)
+                InsertInlineData(found1);
         }
         else
         {

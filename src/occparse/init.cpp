@@ -960,26 +960,23 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                 exp = exp->right;
             if (exp->type == ExpressionNode::func_ && !exp->v.func->ascall)
                 exp = exp->v.func->fcall;
-            if (!IsConstantExpression(exp, false, false))
+            int offset = 0;
+            auto exp2 = relptr(exp, offset);
+            if (Optimizer::cparams.prm_cplusplus && !IsConstantExpression(exp, false, false) && (!exp2 || exp2->type != ExpressionNode::global_))
             {
-                if (Optimizer::cparams.prm_cplusplus)
+                if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                 {
-                    if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
-                    {
-                        std::list<INITIALIZER*>* temp = initListFactory.CreateList();
-                        temp->push_back(init);
-                        insertTLSInitializer(sym, temp);
-                    }
-                    else if (sym->sb->storage_class != StorageClass::localstatic_ && !sym->sb->attribs.inheritable.isInline)
-                    {
-                        std::list<INITIALIZER*>* temp = initListFactory.CreateList();
-                        temp->push_back(init);
-                        insertDynamicInitializer(sym, temp);
-                    }
-                    return 0;
+                    std::list<INITIALIZER*>* temp = initListFactory.CreateList();
+                    temp->push_back(init);
+                    insertTLSInitializer(sym, temp);
                 }
-                else
-                    diag("dumpsym: unknown constant type");
+                else if (sym->sb->storage_class != StorageClass::localstatic_ && !sym->sb->attribs.inheritable.isInline)
+                {
+                    std::list<INITIALIZER*>* temp = initListFactory.CreateList();
+                    temp->push_back(init);
+                    insertDynamicInitializer(sym, temp);
+                }
+                return 0;
             }
             else if (Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
             {
@@ -1467,7 +1464,6 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
         RemoveSizeofOperators(*expr);
     optimize_for_constants(expr);
-    ConstExprPatch(expr);
     if (*tp)
     {
         if (*expr && (*expr)->type == ExpressionNode::func_ && (*expr)->v.func->sp->sb->parentClass && !(*expr)->v.func->ascall &&
@@ -2080,38 +2076,6 @@ enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
     }
     return en;
 }
-EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
-{
-    EXPRESSION* rv;
-    tp = basetype(tp)->btp;
-    if (tp->type == BasicType::pointer_) // to get around arrays not doing a deref...
-        tp = &stdpointer;
-    rv = anonymousVar(StorageClass::auto_, tp);
-    if (val)
-    {
-        if (IsConstantExpression(val, true, true))
-            rv->v.sp->sb->constexpression = true;
-        EXPRESSION* rv1 = copy_expression(rv);
-        deref(tp, &rv);
-        cast(tp, &val);
-        rv = exprNode(ExpressionNode::void_, exprNode(ExpressionNode::assign_, rv, val), rv1);
-    }
-    errortype(ERR_CREATE_TEMPORARY, tp, tp);
-    return rv;
-}
-EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
-{
-    EXPRESSION* rv = anonymousVar(StorageClass::auto_, tp);
-    if (val)
-    {
-        EXPRESSION* rv1 = copy_expression(rv);
-        deref(tp, &rv);
-        cast(tp, &val);
-        rv = exprNode(ExpressionNode::void_, exprNode(ExpressionNode::assign_, rv, val), rv1);
-    }
-    errortype(ERR_CREATE_TEMPORARY, tp, tp);
-    return rv;
-}
 static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, StorageClass sc)
 {
     if (exp->type == ExpressionNode::cond_)
@@ -2166,7 +2130,6 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
         DeduceAuto(&sym->tp, tp, exp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sym->tp);
-        ConstExprPromote(exp, isconst(basetype(itype)->btp));
         if (!isref(tp) &&
             ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
@@ -2796,7 +2759,6 @@ static LEXLIST* initialize___object(LEXLIST* lex, SYMBOL* funcsp, int offset, TY
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
     lex = expression_assign(lex, funcsp, nullptr, &tp, &expr, nullptr, 0);
-    ConstExprPatch(&expr);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2813,7 +2775,6 @@ static LEXLIST* initialize___string(LEXLIST* lex, SYMBOL* funcsp, int offset, TY
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
     lex = expression_assign(lex, funcsp, itype, &tp, &expr, nullptr, 0);
-    ConstExprPatch(&expr);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2833,7 +2794,6 @@ static LEXLIST* initialize_auto_struct(LEXLIST* lex, SYMBOL* funcsp, int offset,
     EXPRESSION* expr = nullptr;
     TYPE* tp = nullptr;
     lex = expression_assign(lex, funcsp, nullptr, &tp, &expr, nullptr, 0);
-    ConstExprPatch(&expr);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -3371,7 +3331,41 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             else
             {
                 it = *init;
-                initInsert(&it, itype, exp, offset, true);
+                if (exp->type == ExpressionNode::void_)
+                {
+                    // constexpr support...
+                    auto exp1 = exp;
+                    auto its = basetype(itype)->syms->begin();
+                    while (exp1->type == ExpressionNode::void_)
+                    {
+                        if (exp1->left->type == ExpressionNode::assign_ && exp1->left->left->left->type == ExpressionNode::structadd_)
+                        {
+                            while (its != basetype(itype)->syms->end() && !ismemberdata(*its)) ++its;
+                            if (its != itype->syms->end())
+                            {
+                                int ofs = exp1->left->left->left->right->v.i;
+                                auto exp2 = exp1->left->right;
+                                initInsert(&it, (*its)->tp, exp2, ofs, true);
+                            }
+
+                        }
+                        exp1 = exp1->right;
+                    }
+                }
+                else if (exp->type == ExpressionNode::cvarpointer_)
+                {
+                    for (auto its : *itype->syms)
+                    {
+                        if (ismemberdata(its))
+                        {
+                            initInsert(&it, its->tp, exp->v.constexprData.data[its->sb->offset], its->sb->offset, true);
+                        }
+                    }
+                }
+                else
+                {
+                    initInsert(&it, itype, exp, offset, true);
+                }
                 *init = it;
             }
             exp = baseexp;
@@ -3399,7 +3393,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
         EXPRESSION* exp = base ? getThisNode(base) : nullptr;
         TYPE* tp = nullptr;
         lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
-        ConstExprPatch(&exp);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -3466,7 +3459,6 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
         EXPRESSION* exp = nullptr;
         TYPE* tp = nullptr;
         lex = expression(lex, funcsp, nullptr, &tp, &exp, 0);
-        ConstExprPatch(&exp);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -4069,6 +4061,26 @@ LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         case BasicType::rref_:
             return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags, sym);
         case BasicType::pointer_:
+            // promote char * to char [] for initialization from string (when constexpr)
+            if (!tp->array && sym && sym->sb->constexpression && basetype(tp)->btp->type != BasicType::pointer_)
+            {
+                bool found = false;
+                if (MATCHKW(lex, Keyword::begin_))
+                {
+                    lex = getsym();
+                    found = lex->data->type == l_astr;
+                    lex = backupsym();
+                }
+                else
+                {
+                    found = lex->data->type == l_astr;
+                }
+                if (found)
+                {
+                    tp->array = true;
+                    tp->size = 0;
+                }
+            }
             if (tp->array)
             {
                 if (tp->vla)

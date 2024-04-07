@@ -499,6 +499,10 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
         int oldPackIndex = packIndex;
         int oldArgumentNesting = argumentNesting;
         int oldExpandingParams = expandingParams;
+        int oldconst = inConstantExpression;
+        int oldanon = anonymousNotAlloc;
+        anonymousNotAlloc = 0;
+        inConstantExpression = 0;
         packIndex = -1;
         argumentNesting = 0;
         expandingParams = 0;
@@ -515,6 +519,8 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
         instantiationList = std::move(hold2);
         structSyms.clear();
         structSyms = std::move(hold);
+        anonymousNotAlloc = oldanon;
+        inConstantExpression = oldconst;
         expandingParams = oldExpandingParams;
         argumentNesting = oldArgumentNesting;
         packIndex = oldPackIndex;

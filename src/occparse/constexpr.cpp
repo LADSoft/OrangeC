@@ -1168,7 +1168,31 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<STATEMENT*>* s
                     {
                         if (node1->type == ExpressionNode::void_ && node1->left->type == ExpressionNode::cvarpointer_)
                             node1 = node1->left;
-                        node1->noexprerr = true;
+                        if (node1->type == ExpressionNode::cvarpointer_)
+                        {
+                            if (isstructured(basetype(node->v.func->sp->tp)->btp) && basetype(basetype(node->v.func->sp->tp)->btp)->sp->sb->structuredAliasType)
+                            {
+                                node1 = node1->v.constexprData.data[0];
+                                node1 = EvaluateExpression(node1, ths, nullptr, true);
+                                optimize_for_constants(&node1);
+                                if (!IsConstantExpression(node1, false, false))
+                                    node1 = nullptr;
+                            }
+                            else if (node->v.func->sp->sb->isConstructor)
+                            {
+                                for (int i = 0; i < node1->v.constexprData.size; i++)
+                                {
+                                    auto node2 = node1->v.constexprData.data[i];
+                                    if (node2 && !IsConstantExpression(node2, false, false))
+                                    {
+                                        node1 = nullptr;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (node1)
+                            node1->noexprerr = true;
                         return node1;
                     }
                     return nullptr;
@@ -1223,6 +1247,14 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
         {
             return false;
         }
+    }
+    if (exp && (exp->type == ExpressionNode::func_ || exp->type == ExpressionNode::thisref_))
+    {
+        auto** exp = &node->v.func->thisptr;
+        if ((*exp)->type == ExpressionNode::thisref_)
+            exp = &(*exp)->left;
+        if (!EvaluateConstexprFunction(*exp))
+            return false;
     }
     if (node->v.func->returnEXP)
     {
@@ -1452,7 +1484,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                                 newNode = InstantiateStruct(basetype(node->v.func->thistp)->btp, node->v.func->thisptr, newNode);
                                 rv = !!newNode;
                             }
-                            else if (node->v.func->returnEXP)
+                            else if (node->v.func->returnEXP && !basetype(node->v.func->returnSP->tp)->sp->sb->structuredAliasType)
                             {
                                 newNode = InstantiateStruct(node->v.func->returnSP->tp, node->v.func->returnEXP, newNode);
                                 rv = !!newNode;

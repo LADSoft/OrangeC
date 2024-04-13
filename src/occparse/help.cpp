@@ -1591,50 +1591,38 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             {
                 if (isstructured(initItem->basetp))
                 {
-                    if (0 && basetype(initItem->basetp)->sp->sb->structuredAliasType)
+                    EXPRESSION* exp2 = initItem->exp;
+                    while (exp2->type == ExpressionNode::not__lvalue_)
+                        exp2 = exp2->left;
+                    if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP)
+                    {
+                        exp2->v.func->returnSP->sb->allocate = false;
+                        exp2->v.func->returnEXP = copy_expression(expsym);
+                        exp = exp2;
+                        noClear = true;
+                    }
+                    else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
+                    {
+                        exp2->left->v.func->returnSP->sb->allocate = false;
+                        exp2->left->v.func->returnEXP = copy_expression(expsym);
+                        exp = exp2;
+                        noClear = true;
+                    }
+                    else if ((Optimizer::cparams.prm_cplusplus) && !basetype(initItem->basetp)->sp->sb->trivialCons)
+                    {
+                        TYPE* ctype = initItem->basetp;
+                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
+                        exp = expsym;
+                    }
+                    else
                     {
                         exp = copy_expression(expsym);
                         if (initItem->offset)
                             exp = exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, initItem->offset));
-                        deref(basetype(initItem->basetp)->sp->sb->structuredAliasType, &exp);
-                        exp = exprNode(ExpressionNode::assign_, exp, initItem->exp);
-                        noClear = true;
-                    }
-                    else
-                    {
-                        EXPRESSION* exp2 = initItem->exp;
-                        while (exp2->type == ExpressionNode::not__lvalue_)
-                            exp2 = exp2->left;
-                        if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP)
-                        {
-                            exp2->v.func->returnSP->sb->allocate = false;
-                            exp2->v.func->returnEXP = copy_expression(expsym);
-                            exp = exp2;
-                            noClear = true;
-                        }
-                        else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
-                        {
-                            exp2->left->v.func->returnSP->sb->allocate = false;
-                            exp2->left->v.func->returnEXP = copy_expression(expsym);
-                            exp = exp2;
-                            noClear = true;
-                        }
-                        else if ((Optimizer::cparams.prm_cplusplus) && !basetype(initItem->basetp)->sp->sb->trivialCons)
-                        {
-                            TYPE* ctype = initItem->basetp;
-                            callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
-                            exp = expsym;
-                        }
-                        else
-                        {
-                            exp = copy_expression(expsym);
-                            if (initItem->offset)
-                                exp = exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, initItem->offset));
-                            exp = exprNode(ExpressionNode::blockassign_, exp, exp2);
-                            exp->size = initItem->basetp;
-                            exp->altdata = (void*)(initItem->basetp);
-                            noClear = comparetypes(initItem->basetp, tp, true);
-                        }
+                        exp = exprNode(ExpressionNode::blockassign_, exp, exp2);
+                        exp->size = initItem->basetp;
+                        exp->altdata = (void*)(initItem->basetp);
+                        noClear = comparetypes(initItem->basetp, tp, true);
                     }
                 }
                 else

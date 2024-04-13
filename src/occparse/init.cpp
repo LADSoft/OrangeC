@@ -3341,7 +3341,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                         if (exp1->left->type == ExpressionNode::assign_ && exp1->left->left->left->type == ExpressionNode::structadd_)
                         {
                             while (its != basetype(itype)->syms->end() && !ismemberdata(*its)) ++its;
-                            if (its != itype->syms->end())
+                            if (its != basetype(itype)->syms->end())
                             {
                                 int ofs = exp1->left->left->left->right->v.i;
                                 auto exp2 = exp1->left->right;

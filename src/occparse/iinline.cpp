@@ -447,7 +447,7 @@ static void inlineCopySyms(SymbolTable<SYMBOL>* src)
         for (auto sym : * src)
         {
             if (!sym->sb->thisPtr && !sym->sb->anonymous && sym->sb->storage_class != StorageClass::parameter_ &&
-                sym->sb->storage_class != StorageClass::localstatic_)
+                sym->sb->storage_class != StorageClass::localstatic_ && sym->sb->storage_class != StorageClass::constant_)
             {
                 Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
                 if (argTable.find(simpleSym) == argTable.end())

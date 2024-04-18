@@ -1228,7 +1228,7 @@ void FPF::Truncate(int bits, int maxexp, int minexp)
                     mask2 >>= 1;
                     mask |= 0x8000;
                 }
-                if (mantissa[bits / 16] & mask2)
+                if (mantissa[bits / 16] & (mask2 >> 1))
                     rounding = true;
                 mantissa[bits / 16] &= mask;
                 v = mask2;

@@ -1,12 +1,12 @@
 Consistency test of math functions.
 Max and rms relative errors for 10000 random arguments.
-x =   cbrt(   cube(x) ):  max = 1.56E-16   rms = 6.75E-18
+x =   cbrt(   cube(x) ):  max = 1.57E-16   rms = 7.24E-18
 x =   atan(    tan(x) ):  max = 2.18E-16   rms = 3.32E-17
 x =    sin(   asin(x) ):  max = 3.14E-16   rms = 4.74E-17
 x =   sqrt( square(x) ):  max = 1.57E-16   rms = 2.79E-17
 x =    log(    exp(x) ):  max = 1.67E-16 A rms = 4.72E-18 A
 x =   tanh(  atanh(x) ):  max = 2.22E-16   rms = 1.88E-17
-x =  asinh(   sinh(x) ):  max = 1.79E-16   rms = 7.13E-18
-x =  acosh(   cosh(x) ):  max = 1.44E-15 A rms = 1.65E-17 A
+x =  asinh(   sinh(x) ):  max = 1.79E-16   rms = 7.24E-18
+x =  acosh(   cosh(x) ):  max = 1.43E-15 A rms = 1.66E-17 A
 x = pow( pow(x,a),1/a ):  max = 3.88E-14   rms = 5.19E-16
 x =    cos(   acos(x) ):  max = 3.33E-16 A rms = 9.56E-17 A

@@ -46,7 +46,7 @@ static bool IsSymbolChar(const char* data)
     return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
            UTF8::IsAlnum(data);
 }
-static bool IsSymbolChar(const char* data, bool start) { return start ? IsSymbolStartChar(data) : IsSymbolChar(data); }
+static bool IsSymbolCharOver(const char* data, bool start) { return start ? IsSymbolStartChar(data) : IsSymbolChar(data); }
 DefFile::~DefFile() {}
 void DefFile::Init()
 {
@@ -73,7 +73,7 @@ void DefFile::Init()
         keywords["WRITE"] = kw::write;
         keywords["EXECUTE"] = kw::execute;
         keywords["SHARED"] = kw::shared;
-        Tokenizer::IsSymbolChar = IsSymbolChar;
+        TokenizerSettings::Instance()->SetSymbolCheckFunction(IsSymbolCharOver);
     }
 }
 

@@ -464,20 +464,20 @@ class ppPragma
     }
 
   protected:
-    void HandleSTDC(Tokenizer& tk);
-    void HandlePack(Tokenizer& tk);
-    void HandleError(Tokenizer& tk);
-    void HandleWarning(Tokenizer& tk);
-    void HandleSR(Tokenizer& tk, bool startup);
-    void HandleStartup(Tokenizer& tk) { HandleSR(tk, true); }
-    void HandleRundown(Tokenizer& tk) { HandleSR(tk, false); }
-    void HandleLibrary(Tokenizer& tk);
-    void HandleAlias(Tokenizer& tk);
-    void HandleFar(Tokenizer& tk);
-    void HandleOnce(Tokenizer& tk);
-    void HandleIgnoreGlobalInit(Tokenizer& tk);
-    void HandlePushPopMacro(Tokenizer& tk, bool push);
-    void HandleComment(Tokenizer& tk);
+    void HandleSTDC(Tokenizer<kw>& tk);
+    void HandlePack(Tokenizer<kw>& tk);
+    void HandleError(Tokenizer<kw>& tk);
+    void HandleWarning(Tokenizer<kw>& tk);
+    void HandleSR(Tokenizer<kw>& tk, bool startup);
+    void HandleStartup(Tokenizer<kw>& tk) { HandleSR(tk, true); }
+    void HandleRundown(Tokenizer<kw>& tk) { HandleSR(tk, false); }
+    void HandleLibrary(Tokenizer<kw>& tk);
+    void HandleAlias(Tokenizer<kw>& tk);
+    void HandleFar(Tokenizer<kw>& tk);
+    void HandleOnce(Tokenizer<kw>& tk);
+    void HandleIgnoreGlobalInit(Tokenizer<kw>& tk);
+    void HandlePushPopMacro(Tokenizer<kw>& tk, bool push);
+    void HandleComment(Tokenizer<kw>& tk);
 
   private:
     ppDefine* define;

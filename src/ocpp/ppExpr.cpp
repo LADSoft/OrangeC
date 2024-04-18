@@ -28,6 +28,7 @@
 #include "ppInclude.h"
 #include "ppkw.h"
 #include <iostream>
+#include <memory>
 
 KeywordHash ppExpr::hash = {
     {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
@@ -58,7 +59,7 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
     if (fromConditional && expressionHandler)
         return expressionHandler(line);
     floatWarned = false;
-    tokenizer = std::make_unique<Tokenizer>(line, &hash);
+    tokenizer = std::make_unique<Tokenizer<kw>>(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;

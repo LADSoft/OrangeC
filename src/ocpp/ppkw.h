@@ -105,5 +105,5 @@ enum class kw
     IMACRO,
     WARNING,
     EMBED,
-    UNKNOWN = 10000
+    UNKNOWN = -1
 };

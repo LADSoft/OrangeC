@@ -25,12 +25,11 @@
 #ifndef ppExpr_h
 #define ppExpr_h
 
-#include <string>
-
+#include "forwarddecls.h"
+#include <memory>
+#include "ppkw.h"
 #include "Token.h"
 #include "ppCommon.h"
-class ppDefine;
-class ppInclude;
 
 typedef long long PPINT;
 typedef unsigned long long PPUINT;
@@ -73,7 +72,7 @@ class ppExpr
     bool unsignedchar;
     Dialect dialect;
     ppDefine* define;
-    std::unique_ptr<Tokenizer> tokenizer;
+    std::unique_ptr<Tokenizer<kw>> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static ppInclude* include;

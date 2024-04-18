@@ -1,38 +1,44 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef Token_h
 #define Token_h
-
+/**
+ * Quick summary of what's going on with the templates here, in general we should only *EVER* specialize Tokenizer as that is
+ */
 #include <string>
 #include <unordered_map>
 #include <memory>
 #include "Floating.h"
+#include <UTF8.h>
+#include "TokenSettings.h"
+#include "Errors.h"
+#include "forwarddecls.h"
+#include "ppDefine.h"
+constexpr unsigned long long llminus1 = (unsigned long long)-1LL;
 
-enum class kw;
-
-typedef std::unordered_map<std::string, kw> KeywordHash;
+typedef unsigned long long L_UINT;
 
 class Token
 {
@@ -149,10 +155,11 @@ class NumericToken : public Token
     static bool ansi;
     static bool c99;
 };
+template <typename T>
 class KeywordToken : public Token
 {
   public:
-    KeywordToken(std::string& line, KeywordHash* table) : keyValue(-1), keywordTable(table) { Parse(line); }
+    KeywordToken(std::string& line, KeywordTable<T>* table) : keyValue(-1), keywordTable(table) { Parse(line); }
     virtual bool IsKeyword() const { return keyValue != -1; }
     virtual kw GetKeyword() const { return (kw)keyValue; }
     virtual bool IsError() const { return keyValue == -1; }
@@ -163,12 +170,13 @@ class KeywordToken : public Token
 
   private:
     int keyValue;
-    KeywordHash* keywordTable;
+    KeywordTable<T>* keywordTable;
 };
+template <typename T>
 class IdentifierToken : public Token
 {
   public:
-    IdentifierToken(std::string& line, KeywordHash* Table, bool CaseInsensitive) :
+    IdentifierToken(std::string& line, KeywordTable<T>* Table, bool CaseInsensitive) :
         keyValue(-1), keywordTable(Table), caseInsensitive(CaseInsensitive), parseKeyword(true)
     {
         Parse(line);
@@ -185,7 +193,7 @@ class IdentifierToken : public Token
   private:
     int keyValue;
     bool parseKeyword;
-    KeywordHash* keywordTable;
+    KeywordTable<T>* keywordTable;
     std::string id;
     bool caseInsensitive;
 };
@@ -207,10 +215,13 @@ class ErrorToken : public Token
   private:
     int ch;
 };
+
+// default out to our normal schema for now...
+template <typename T = kw>
 class Tokenizer
 {
   public:
-    Tokenizer(const std::string& Line, KeywordHash* Table) :
+    Tokenizer(const std::string& Line, KeywordTable<T>* Table) :
         line(Line), keywordTable(Table), currentToken(nullptr), caseInsensitive(false)
     {
     }
@@ -224,17 +235,132 @@ class Tokenizer
     static void SetC99(bool flag) { NumericToken::SetC99(flag); }
     void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
 
-    // I so want to use std::function here but this call has to be fast...
-    static bool (*IsSymbolChar)(const char*, bool);
-
-  protected:
-    static bool IsSymbolCharDefault(const char* data, bool startOnly);
-
   private:
-    KeywordHash* keywordTable;
+    KeywordTable<T>* keywordTable;
     std::string line;
     std::unique_ptr<Token> currentToken;
     bool caseInsensitive;
 };
+template <typename T>
+bool KeywordToken<T>::Start(const std::string& line)
+{
+    return ispunct(line[0]) != 0;
+}
+template <typename T>
+void KeywordToken<T>::Parse(std::string& line)
+{
+    char buf[256], *p = buf;
+    int i;
+    for (i = 0; i < line.size(); i++)
+        if (ispunct(line[i]))
+            *p++ = line[i];
+        else
+            break;
+    *p = 0;
+    if (keywordTable)
+    {
+        bool found = false;
+        for (int j = i; j > 0; j--)
+        {
+            buf[j] = 0;
+            auto it = keywordTable->find(std::string(buf));
+            if (it != keywordTable->end())
+            {
+                SetChars(line.substr(0, j));
+                line.erase(0, j);
+                keyValue = (int)it->second;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            SetChars(line.substr(0, 1));
+            line.erase(0, 1);
+            keyValue = (int)-1;
+        }
+    }
+}
+template <typename T>
+bool IdentifierToken<T>::Start(const std::string& line)
+{
+    return TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str(), true);
+}
+template <typename T>
+void IdentifierToken<T>::Parse(std::string& line)
+{
+    char buf[256], *p = buf;
+    int i, n;
+    for (i = 0; (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() &&
+                TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + i, false);)
+    {
+        n = UTF8::CharSpan(line.c_str() + i);
+        for (int j = 0; j < n && i < line.size(); j++)
+            *p++ = line[i++];
+    }
+    *p = 0;
+    SetChars(line.substr(0, i));
+    line.erase(0, i);
+    id = buf;
+    if (keywordTable)
+    {
+        KeywordTable<T>::const_iterator it;
+        if (caseInsensitive)
+        {
+            p = buf;
+            while (*p)
+                *p = toupper(*p), p++;
+            std::string id1 = buf;
+            it = keywordTable->find(id1);
+        }
+        else
+        {
+            it = keywordTable->find(id);
+        }
+        if (it != keywordTable->end())
+            keyValue = (int)it->second;
+    }
+}
+
+template <typename T>
+const Token* Tokenizer<T>::Next()
+{
+    size_t n = line.find_first_not_of("\t \v");
+    line.erase(0, n);
+    if (line.empty())
+        currentToken = std::make_unique<EndToken>();
+    else if (NumericToken::Start(line))
+        currentToken = std::make_unique<NumericToken>(line);
+    else if (CharacterToken::Start(line))
+        currentToken = std::make_unique<CharacterToken>(line);
+    else if (StringToken::Start(line))
+        currentToken = std::make_unique<StringToken>(line);
+    else if (IdentifierToken<T>::Start(line))
+        currentToken = std::make_unique<IdentifierToken<T>>(line, keywordTable, caseInsensitive);
+    else if (keywordTable && KeywordToken<T>::Start(line))
+        currentToken = std::make_unique<KeywordToken<T>>(line, keywordTable);
+    else
+        currentToken = std::make_unique<ErrorToken>(line);
+    return currentToken.get();
+}
+template <typename T>
+void Tokenizer<T>::Reset(const std::string& Line)
+{
+    line = "";
+    int last = 0;
+    for (int p = 0; p < Line.size(); p++)
+    {
+        if (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+        {
+            if (p != last)
+                line += Line.substr(last, p - last);
+            while (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+                p++;
+            last = p;
+        }
+    }
+    line += Line.substr(last);
+    currentToken = nullptr;
+}
 
 #endif

@@ -6,6 +6,13 @@
 #include "ppInclude.h"
 #include <limits.h>
 using embeder_size = uint64_t;
+// This is used exclusively for __has_embed, which returns one of three values
+enum EmbedReturnValue {
+EMBED_NOT_FOUND,
+EMBED_FOUND,
+EMBED_EMPTY
+};
+
 struct embeder_info
 {
     std::string filename;
@@ -13,15 +20,16 @@ struct embeder_info
     std::vector<embeder_size> prefix = {};
     std::vector<embeder_size> postfix = {};
     bool is_system;
-    int bytes = 0;
+    int bytes = 1;
+    EmbedReturnValue ret_value;
 };
 class embeder
 {
   public:
     embeder(ppInclude& includer) : includer(includer) {}
-    std::tuple<std::vector<embeder_size>, bool> EmbedFile(std::string& input, embeder_info info);
+    std::tuple<std::vector<embeder_size>, EmbedReturnValue> EmbedFile(std::string& input, embeder_info info);
     // Deal with the possibility of having more than 1 byte (AKA optoinal extensions) now so that it is easier to deal with later
-    bool has_embed(const std::string& file, bool is_system, int bytes = 1);
+    EmbedReturnValue has_embed(embeder_info info);
     void set_embed_function(std::function<void(std::vector<embeder_size>)> embed_func) { embed_elements = embed_func; }
     bool Check(kw token, std::string& args);
     bool GetLine(std::string& line, int& lineno);

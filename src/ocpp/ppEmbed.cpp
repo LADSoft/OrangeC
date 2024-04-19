@@ -1,26 +1,29 @@
+#include "forwarddecls.h"
 #include "ppEmbed.h"
 #include "Utils.h"
+#include "Token.h"
+#include "ppkw.h"
 #include <string>
 #include <stdio.h>
-#include "ppkw.h"
 #include <iostream>
-#include <variant>
 #include <initializer_list>
 std::function<void(std::vector<embeder_size>)> embeder::embed_elements;
 
 enum embed_parser_kw
 {
     // (
-    lparen = '(',
+    lparen,
     // )
-    rparen = ')',
+    rparen,
     // ""
-    doublequote = '"',
+    doublequote,
     // '
-    singlequote = '\'',
+    singlequote,
 };
-KeywordHash hasher = {};
-
+KeywordTable<embed_parser_kw> hasher = {{"(", embed_parser_kw::lparen},
+                                        {")", embed_parser_kw::rparen},
+                                        {"\"", embed_parser_kw::doublequote},
+                                        {"'", embed_parser_kw::singlequote}};
 enum handler_tokens
 {
     prefix,
@@ -28,6 +31,7 @@ enum handler_tokens
     limit,
     unknown
 };
+
 std::tuple<std::vector<embeder_size>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info info)
 {
     std::vector<embeder_size> next_thing = {};
@@ -131,6 +135,8 @@ bool embeder::GetLine(std::string& line, int& lineno)
 embeder_info embeder::GetEmbedFromLine(const std::string& line)
 {
     embeder_info info;
+    Tokenizer<embed_parser_kw> tokenizer(line, &hasher);
+    // Our token state machine!
     // Default unless we support an extension, don't know what that extension will look like yet though...
     info.bytes = 1;
     info.is_system = false;
@@ -138,5 +144,9 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
     info.postfix = {};
     info.prefix = {};
     info.filename = this->includer.ParseName(line, info.is_system);
+
+    for (const Token* tk = tokenizer.Next(); tk; tk = tokenizer.Next())
+    {
+    }
     return info;
 }

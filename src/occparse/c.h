@@ -236,8 +236,8 @@ typedef struct
         blockassign_, bits_,
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
-        construct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
-        type_, pointsto_, dot_, select_,
+        construct_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
+        type_, pointsto_, dot_, select_, constexprconstructor_,
         // stuff that can only appear temporarily in constexpr expressions
         cvarpointer_, paramsubstitute_
     };
@@ -736,6 +736,7 @@ typedef struct sym
         unsigned allocaUsed : 1;
         unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
         unsigned constexpression : 1;  /* declared with constexpression */
+        unsigned ignoreconstructor : 1; /* don't generate code for constexpression constructor */
         unsigned addressTaken : 1;     /* address taken */
         unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
         unsigned usingTypedef : 1;     /* typedef defined as a 'using' statement */

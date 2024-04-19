@@ -755,7 +755,6 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::savestack_:
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::lvalue_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::x_string_:
         case ExpressionNode::x_object_:
             temp->left = inlineexpr(node->left, nullptr);
@@ -819,6 +818,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             temp->left = inlineexpr(node->left, nullptr);
             break;
         case ExpressionNode::atomic_:
@@ -1181,7 +1181,6 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
             rv = sideEffects(node->left);
             break;
         case ExpressionNode::uminus_:
@@ -1290,6 +1289,7 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::thisref_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= sideEffects(node->left);
             break;
         case ExpressionNode::atomic_:

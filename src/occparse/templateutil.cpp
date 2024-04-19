@@ -1789,6 +1789,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
             return nullptr;
         case ExpressionNode::thisref_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             return LookupTypeFromExpression(exp->left, enclosing, alt);
         default:
             diag("LookupTypeFromExpression: unknown expression type");

@@ -329,27 +329,17 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, Keyword
             params->functp = cst->tp;
             params->sp = cst;
             params->ascall = true;
-            if ((*exp)->type == ExpressionNode::literalclass_)
+            *exp = DerivedToBase(cst->sb->parentClass->tp, *tp, *exp, 0);
+            params->thisptr = *exp;
             {
-                *exp = substitute_params_for_function(params, (*exp)->v.syms);
-                optimize_for_constants(exp);
-                if (!cst->sb->constexpression || !IsConstantExpression(*exp, true, false))
-                    error(ERR_CONSTANT_FUNCTION_EXPECTED);
+                e1 = varNode(ExpressionNode::func_, nullptr);
+                e1->v.func = params;
+                if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
+                    hasFuncCall = true;
             }
-            else
-            {
-                *exp = DerivedToBase(cst->sb->parentClass->tp, *tp, *exp, 0);
-                params->thisptr = *exp;
-                {
-                    e1 = varNode(ExpressionNode::func_, nullptr);
-                    e1->v.func = params;
-                    if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
-                        hasFuncCall = true;
-                }
-                *exp = e1;
-                if (other)
-                    cast(other, exp);
-            }
+            *exp = e1;
+            if (other)
+                cast(other, exp);
             *tp = basetype(cst->tp)->btp;
             return true;
         }
@@ -2287,7 +2277,6 @@ static bool noexceptExpression(EXPRESSION* node)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
             rv = noexceptExpression(node->left);
             break;
         case ExpressionNode::uminus_:
@@ -2399,6 +2388,7 @@ static bool noexceptExpression(EXPRESSION* node)
         case ExpressionNode::thisref_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv = noexceptExpression(node->left);
             break;
         case ExpressionNode::atomic_:

@@ -7353,6 +7353,14 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                                                     SetRuntimeData(lex, exp, sp);
                                             }
                                         }
+                                        else if (isstructured(sp->tp))
+                                        {
+                                            STATEMENT* st;
+                                            currentLineData(block, hold, 0);
+                                            st = stmtNode(hold, block, StatementNode::expr_);
+                                            st->select = varNode(ExpressionNode::constexprconstructor_, sp);
+                                            st->select->left = convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                        }
                                     }
                                     else if ((isarray(sp->tp) || isstructured(sp->tp)) &&
                                              Optimizer::architecture == ARCHITECTURE_MSIL)

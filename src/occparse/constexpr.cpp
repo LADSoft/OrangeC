@@ -1503,6 +1503,15 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                         }
                         if (rv)
                         {
+                            if (node->v.func->sp->sb->isConstructor)
+                            {
+                                int offset;
+                                auto node2 = relptr(node->v.func->thisptr, offset);
+                                if (node2)
+                                {
+                                    node2->v.sp->sb->ignoreconstructor = true;
+                                }
+                            }
                             *node = *newNode;
                         }
                     }

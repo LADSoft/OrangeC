@@ -582,7 +582,6 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::l_wc_:
             XCExpression(node->left, lst);
             break;
@@ -695,6 +694,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::lvalue_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             XCExpression(node->left, lst);
             break;
         case ExpressionNode::thisref_:

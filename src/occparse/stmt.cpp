@@ -2898,8 +2898,8 @@ static bool checkNoEffect(EXPRESSION* exp)
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::thisref_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::funcret_:
+        case ExpressionNode::constexprconstructor_:
             return checkNoEffect(exp->left);
         case ExpressionNode::cond_:
             return checkNoEffect(exp->right->left) & checkNoEffect(exp->right->right);

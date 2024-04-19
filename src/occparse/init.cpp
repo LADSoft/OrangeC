@@ -3266,6 +3266,10 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                         funcparams->arguments->push_back(arg);
                         arg->tp = tp1;
                         arg->exp = exp1;
+                        int offset = 0;
+                        auto exp2 = relptr(exp1, offset);
+                        if (exp2 && !inConstantExpression)
+                            exp2->v.sp->sb->ignoreconstructor = false;
                         if (exp1->type == ExpressionNode::thisref_ && comparetypes(itype, tp1, 0) && !exp1->left->v.func->returnEXP)
                             tryelide = true;
                     }

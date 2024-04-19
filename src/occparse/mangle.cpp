@@ -403,6 +403,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 break;
             case ExpressionNode::thisref_:
             case ExpressionNode::funcret_:
+            case ExpressionNode::constexprconstructor_:
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;

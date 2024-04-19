@@ -3366,7 +3366,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
 
                 if (params->arguments && params->arguments->size())
                 {
-                    if (params->arguments->front()->nested && params->arguments->front()->nested->front()->nested &&
+                    if (params->arguments->front()->nested && params->arguments->front()->nested->size() && params->arguments->front()->nested->front()->nested &&
                         !params->arguments->front()->initializer_list)
                         temp.push_back(params->arguments->front());
                     else

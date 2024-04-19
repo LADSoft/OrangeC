@@ -239,9 +239,9 @@ static bool hasFloats(EXPRESSION* node)
         case ExpressionNode::argnopush_:
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::thisref_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             return hasFloats(node->left);
         default:
             return 0;
@@ -1324,7 +1324,8 @@ bool expressionHasSideEffects(EXPRESSION *exp)
             case ExpressionNode::assign_:
             case ExpressionNode::auto_inc_:
             case ExpressionNode::auto_dec_:
-               return true;
+            case ExpressionNode::constexprconstructor_:
+                return true;
         }
         if (p->right)
             stk.push(p->right);
@@ -1439,7 +1440,6 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::x_object_:
         case ExpressionNode::shiftby_:
         case ExpressionNode::bits_:
-        case ExpressionNode::literalclass_:
             rv |= opt0(&((*node)->left));
             return rv;
         case ExpressionNode::compl_:
@@ -2449,6 +2449,7 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= opt0(&(ep->left));
             break;
         case ExpressionNode::dot_:
@@ -3121,7 +3122,6 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::loadstack_:
         case ExpressionNode::savestack_:
         case ExpressionNode::bits_:
-        case ExpressionNode::literalclass_:
             rv |= fold_const(node->left);
             break;
         case ExpressionNode::cond_:
@@ -3180,6 +3180,7 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= fold_const(node->left);
             break;
         case ExpressionNode::funcret_:
@@ -3213,6 +3214,19 @@ int fold_const(EXPRESSION* node)
         }
         break;
         case ExpressionNode::func_:
+        {
+            auto thisptr = node->v.func->thisptr;
+            if (thisptr)
+            {
+                int offset;
+                thisptr = relptr(thisptr, offset);
+                if (thisptr)
+                {
+                    if (node->v.func->sp->sb->isDestructor && node->v.func->sp->sb->defaulted)
+                        thisptr = nullptr;
+                }
+            }
+            bool found = false;
             if (node->v.func->sp && node->v.func->sp->sb->constexpression && argumentNesting <= 1)
             {
                 if (!rv && node->v.func->thisptr)
@@ -3223,8 +3237,13 @@ int fold_const(EXPRESSION* node)
                 rv = EvaluateConstexprFunction(node);
                 inConstantExpression--;
             }
+            if (thisptr && !inConstantExpression)
+            {
+                thisptr->v.sp->sb->ignoreconstructor = found;
+            }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);
+        }
             break;
         case ExpressionNode::mp_as_bool_:
             if (node->left->type == ExpressionNode::memberptr_)
@@ -3372,11 +3391,11 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::blockclear_:
         case ExpressionNode::mp_as_bool_:
         case ExpressionNode::thisref_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::funcret_:
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= typedconsts(node1->left);
             break;
         case ExpressionNode::func_:

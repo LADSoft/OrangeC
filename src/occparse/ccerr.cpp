@@ -1606,7 +1606,6 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::alloca_:
         case ExpressionNode::loadstack_:
         case ExpressionNode::savestack_:
-        case ExpressionNode::literalclass_:
             assignmentUsages(node->left, false);
             break;
         case ExpressionNode::assign_:
@@ -1675,6 +1674,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::lvalue_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             assignmentUsages(node->left, false);
             break;
         case ExpressionNode::atomic_:
@@ -1794,7 +1794,6 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
             rv |= checkDefaultExpression(node->left);
             break;
         case ExpressionNode::uminus_:
@@ -1903,6 +1902,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::thisref_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= checkDefaultExpression(node->left);
             break;
         case ExpressionNode::atomic_:

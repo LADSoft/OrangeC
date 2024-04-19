@@ -636,9 +636,10 @@ bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, TYPE* P, TYPE* A, EXPRESSION* ex
                     q = basetype(q)->btp;
                 }
             }
-            if (TemplateConstExpr(A, exp) && !isconst(P))
+/*            if (TemplateConstExpr(A, exp) && !isconst(P))
                 *tp = MakeType(BasicType::const_, A);
             else
+            */
                 *tp = A;
             Pt->second->deduced = true;
         }

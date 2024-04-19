@@ -3502,6 +3502,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::cpblk_:
                 case ExpressionNode::initblk_:
                 case ExpressionNode::initobj_:
+                case ExpressionNode::constexprconstructor_:
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
                     Optimizer::intermed_tail->dc.v.label = 1;
@@ -4187,9 +4188,19 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             rv = ap1;
         }
         break;
-        case ExpressionNode::literalclass_:
             gen_void_(node->left, funcsp);
             ap1 = Optimizer::make_immed(size, 0);
+            rv = ap1;
+            break;
+        case ExpressionNode::constexprconstructor_:
+            if (!node->v.sp->sb->ignoreconstructor)
+            {
+                ap1 = gen_expr(funcsp, node->left, flags, size);
+            }
+            else
+            {
+                ap1 = Optimizer::make_immed(size, 0);
+            }
             rv = ap1;
             break;
         case ExpressionNode::thisref_:
@@ -4320,6 +4331,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::initblk_:
                 case ExpressionNode::initobj_:
                 case ExpressionNode::select_:
+                case ExpressionNode::constexprconstructor_:
                     break;
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
@@ -4580,6 +4592,7 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::argnopush_:
         case ExpressionNode::thisref_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             return natural_size(node->left);
             /*		case ExpressionNode::array_:
                         return ISZ_ADDR ;
@@ -4599,8 +4612,6 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::not_:
         case ExpressionNode::mp_compare_:
         case ExpressionNode::mp_as_bool_:
-            return -ISZ_UINT;
-        case ExpressionNode::literalclass_:
             return -ISZ_UINT;
         case ExpressionNode::void_:
             while (node->type == ExpressionNode::void_ && node->right)

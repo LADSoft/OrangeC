@@ -6,14 +6,9 @@ bool NumericToken::ansi;
 bool NumericToken::c99;
 bool StringToken::Start(const std::string& line)
 {
-    if (line[0] == '"')
-        return true;
     bool isOasm = TokenizerSettings::Instance()->GetDialect() == Dialect::oasm;
-    if (isOasm)
-    {
-        if (line[0] == '\'')
-            return true;
-    }
+    if (line[0] == '"' || (isOasm && line[0] == '\''))
+        return true;
     if (line[0] == 'L')
     {
         size_t n = line.find_first_not_of(' ', 1);
@@ -37,8 +32,9 @@ void StringToken::Parse(std::string& line)
         while (isspace(*start))
             start++;
     }
+    int quote = *start;
     start++;  // past the quote
-    while (*start && *start != '\"')
+    while (*start && *start != quote)
     {
         int n;
         const char* cur = start;
@@ -67,7 +63,7 @@ void StringToken::Parse(std::string& line)
         *q = 0;
         raw += Raw;
     }
-    if (*start != '"')
+    if (*start != quote)
         Errors::Error("Unterminated string constant");
     else
         start++;
@@ -76,6 +72,9 @@ void StringToken::Parse(std::string& line)
 }
 bool CharacterToken::Start(const std::string& line)
 {
+    bool isOasm = TokenizerSettings::Instance()->GetDialect() == Dialect::oasm;
+    if (isOasm)
+        return false;
     if (line[0] == '\'')
         return true;
     if (line[0] == 'L')
@@ -108,6 +107,12 @@ void CharacterToken::Parse(std::string& line)
 }
 int CharacterToken::QuotedChar(int bytes, const char** source)
 {
+    // No clue why we need to special case AsmToken here...
+    bool isOasm = TokenizerSettings::Instance()->GetDialect() == Dialect::oasm;
+    if (isOasm)
+    {
+        return *(*source)++;
+    }
     int i = *(*source)++, j;
     if (**source == '\n')
         return INT_MIN;

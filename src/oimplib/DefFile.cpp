@@ -21,9 +21,8 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
-#include "ppExpr.h"
 #include "DefFile.h"
+#include "ppExpr.h"
 #include "PEHeader.h"
 #include "MZHeader.h"
 #include <stdexcept>
@@ -31,7 +30,6 @@
 #include <fstream>
 #include <cstdlib>
 #include "UTF8.h"
-
 bool DefFile::initted;
 KeywordHash DefFile::keywords;
 

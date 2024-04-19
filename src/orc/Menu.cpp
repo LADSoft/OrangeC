@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#include "rckw.h"
 #include "Menu.h"
 #include "RCFile.h"
 #include "ResFile.h"

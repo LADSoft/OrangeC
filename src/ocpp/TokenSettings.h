@@ -35,6 +35,7 @@ class TokenizerSettings
             instance = std::shared_ptr<TokenizerSettings>(new TokenizerSettings());
         return instance;
     }
+
     bool GetExtensionsDisabled() { return disableExtensions; }
     Dialect GetDialect() { return dialect; }
     void SetDialect(Dialect dialect) { this->dialect = dialect; }

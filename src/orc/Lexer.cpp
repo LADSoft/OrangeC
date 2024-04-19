@@ -137,7 +137,7 @@ KeywordHash Lexer::hash = {
 
 void Lexer::InitTokenizer()
 {
-    tokenizer = new Tokenizer("", &hash);
+    tokenizer = new Tokenizer<kw>("", &hash);
     tokenizer->SetCaseInsensitive(true);
 }
 std::string Lexer::GetRestOfLine()

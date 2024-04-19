@@ -25,11 +25,10 @@
 #ifndef ppExpr_h
 #define ppExpr_h
 
-#include "forwarddecls.h"
 #include <memory>
-#include "ppkw.h"
-#include "Token.h"
 #include "ppCommon.h"
+#include "forwarddecls.h"
+
 
 typedef long long PPINT;
 typedef unsigned long long PPUINT;
@@ -44,7 +43,7 @@ class ppExpr
 
     void SetParams(ppDefine* Define) { define = Define; }
     PPINT Eval(std::string& line, bool fromConditional = false);
-    std::string GetString() { return tokenizer->GetString(); }
+    std::string GetString();
     void SetDefine(ppDefine* Define) { define = Define; }
     static KeywordHash* GetHash() { return &hash; }
 

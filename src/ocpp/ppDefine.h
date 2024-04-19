@@ -22,23 +22,22 @@
  *
  */
 
-#ifndef ppDefine_h
-#define ppDefine_h
+#pragma once
 
+#include "SymbolTable.h"
 #include <string>
 #include <vector>
 #include <set>
 #include <ctime>
 #include <memory>
 #include <stack>
-#include "Utils.h"
-#include "SymbolTable.h"
 #include "forwarddecls.h"
+#include "Utils.h"
 #include "ppExpr.h"
 #include "ppCtx.h"
 #include "ppMacro.h"
 #include "ppCommon.h"
-
+#include "ppMacroStates.h"
 typedef std::vector<std::string> DefinitionArgList;
 
 class ppInclude;
@@ -131,16 +130,6 @@ class ppDefine
     SymbolTable& GetDefines() { return symtab; }
 
     void PushPopMacro(std::string name, bool push);
-    enum
-    {
-        MACRO_REPLACE_SIZE = 65536,
-        REPLACED_TOKENIZING = 1,
-        /* left or right-hand size of a ## when an arg has been replaced by an empty string */
-        TOKENIZING_PLACEHOLDER = 2,
-        STRINGIZING_PLACEHOLDER = 3,
-        REPLACED_ALREADY = 4,
-        MACRO_PLACEHOLDER = 5
-    };
     std::string defid(const std::string& macro, int& i, int& j);
     void DoDefine(std::string& line, bool caseInsensitive);
     void DoAssign(std::string& line, bool caseInsensitive);
@@ -180,4 +169,3 @@ class ppDefine
     int counter_val;
     time_t source_date_epoch;
 };
-#endif

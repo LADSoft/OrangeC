@@ -33,7 +33,7 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <cstdlib>
-#include "Token.h"
+#include "AsmToken.h"
 #include "TokenSettings.h"
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -81,6 +81,7 @@ const char* AsmMain::usageText = "[options] file";
 int main(int argc, char* argv[])
 {
     TokenizerSettings::Instance()->SetSymbolCheckFunction(IsSymbolCharRoutine);
+    TokenizerSettings::Instance()->SetDialect(Dialect::oasm);
     AsmMain rc;
     try
     {

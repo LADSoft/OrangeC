@@ -22,11 +22,10 @@
  *
  */
 
-#ifndef Token_h
-#define Token_h
-/**
- * Quick summary of what's going on with the templates here, in general we should only *EVER* specialize Tokenizer as that is
- */
+#pragma once
+
+#include "forwarddecls.h"
+#include "ppMacroStates.h"
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -34,8 +33,6 @@
 #include <UTF8.h>
 #include "TokenSettings.h"
 #include "Errors.h"
-#include "forwarddecls.h"
-#include "ppDefine.h"
 constexpr unsigned long long llminus1 = (unsigned long long)-1LL;
 
 typedef unsigned long long L_UINT;
@@ -217,7 +214,7 @@ class ErrorToken : public Token
 };
 
 // default out to our normal schema for now...
-template <typename T = kw>
+template <typename T>
 class Tokenizer
 {
   public:
@@ -350,11 +347,11 @@ void Tokenizer<T>::Reset(const std::string& Line)
     int last = 0;
     for (int p = 0; p < Line.size(); p++)
     {
-        if (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+        if (Line[p] == MacroStates::MACRO_PLACEHOLDER)
         {
             if (p != last)
                 line += Line.substr(last, p - last);
-            while (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+            while (Line[p] == MacroStates::MACRO_PLACEHOLDER)
                 p++;
             last = p;
         }
@@ -362,5 +359,3 @@ void Tokenizer<T>::Reset(const std::string& Line)
     line += Line.substr(last);
     currentToken = nullptr;
 }
-
-#endif

@@ -58,7 +58,7 @@ class Lexer
     PreProcessor& pp;
     bool atEol;
     bool atEof;
-    Tokenizer* tokenizer;
+    Tokenizer<kw>* tokenizer;
     const Token* token;
     static KeywordHash hash;
 };

@@ -22,12 +22,12 @@
  * 
  */
 
+#include "AsmLexer.h"
 #include "AsmExpr.h"
 #include "ppDefine.h"
 #include "ppExpr.h"
 #include "Errors.h"
 #include "Section.h"
-#include "AsmLexer.h"
 #include <exception>
 #include <fstream>
 #include <climits>

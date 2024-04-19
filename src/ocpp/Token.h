@@ -301,7 +301,7 @@ void IdentifierToken<T>::Parse(std::string& line)
     id = buf;
     if (keywordTable)
     {
-        KeywordTable<T>::const_iterator it;
+        typename KeywordTable<T>::const_iterator it;
         if (caseInsensitive)
         {
             p = buf;

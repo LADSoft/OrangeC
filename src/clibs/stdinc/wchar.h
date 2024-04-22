@@ -92,10 +92,10 @@ extern "C"
     int _RTL_FUNC wcscmp(const wchar_t* __s1, const wchar_t* __s2);
     int _RTL_FUNC wcsncmp(const wchar_t* __s1, const wchar_t* __s2, size_t __n);
 
-    int _RTL_FUNC wcsicmp(wchar_t* __s1, wchar_t* __s2);
-    int _RTL_FUNC wcsnicmp(wchar_t* __s1, wchar_t* __s2, size_t __n);
-    int _RTL_FUNC _wcsicmp(wchar_t* __s1, wchar_t* __s2);
-    int _RTL_FUNC _wcsnicmp(wchar_t* __s1, wchar_t* __s2, size_t __n);
+    int _RTL_FUNC wcsicmp(const wchar_t* __s1, const wchar_t* __s2);
+    int _RTL_FUNC wcsnicmp(const wchar_t* __s1, const wchar_t* __s2, size_t __n);
+    int _RTL_FUNC _wcsicmp(const wchar_t* __s1, const wchar_t* __s2);
+    int _RTL_FUNC _wcsnicmp(const wchar_t* __s1, const wchar_t* __s2, size_t __n);
 
     /* these two do blind copy/compare irregardless of locale*/
     int _RTL_FUNC wcscoll(const wchar_t* __s1, const wchar_t* __s2);

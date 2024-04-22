@@ -1782,6 +1782,7 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
                 }
             }
             *exp = varNode(ExpressionNode::pc_, sp);
+            tp1 = MakeType(BasicType::pointer_, sp->tp);            
         }
         auto it = tp->syms->begin();
         for (++it; it != tp->syms->end(); ++it)
@@ -8032,6 +8033,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         else
         {
             lex = expression_comma(lex, funcsp, nullptr, &tph, &eph, nullptr, flags | _F_NOVARIADICFOLD);
+            tph = LookupSingleAggregate(tph, &eph);
         }
         bool oldCallExit = isCallNoreturnFunction;
         isCallNoreturnFunction = false;
@@ -8044,6 +8046,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
             lex = getsym();
             lex = expression_assign(lex, funcsp, nullptr, &tpc, &epc, nullptr, flags | _F_NOVARIADICFOLD);
             isCallNoreturnFunction &= oldCallExit;
+            tpc = LookupSingleAggregate(tpc, &epc);
             if (!tpc)
             {
                 *tp = nullptr;

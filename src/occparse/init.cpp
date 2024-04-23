@@ -4329,7 +4329,12 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                             tp2 = &basetype(*tp2)->btp;
                         //                        *tp2 = tp1;
                         if (isstructured(*tp2))
-                            *tp2 = basetype(*tp2)->sp->tp;
+                        {
+                            auto tp3 = tp2;
+                            while (*tp3 != basetype(*tp3))
+                                tp3 = &(*tp3)->btp;
+                            *tp3 = (*tp3)->sp->tp;
+                        }
 
                         if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && isstructured(*tp2) &&
                             !isref(sym->tp) && !(*tp2)->syms)

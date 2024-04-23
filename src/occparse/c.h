@@ -937,7 +937,7 @@ typedef struct _templateParam
     // template = template parameter
     // new = specialization
     // first in the list is always the specialization specifier
-    enum class TplType type;
+    enum TplType type;
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;

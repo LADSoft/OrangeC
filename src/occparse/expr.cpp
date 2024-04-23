@@ -1768,6 +1768,8 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
         {
             if ((*exp)->type == ExpressionNode::func_ && (*exp)->v.func->templateParams)
             {
+                if (!(*exp)->v.func->sp || !allTemplateArgsSpecified((*exp)->v.func->sp, (*exp)->v.func->templateParams))
+                    return tp1;
                 sp = detemplate(sp, (*exp)->v.func, nullptr);
                 if (!sp)
                 {
@@ -3971,6 +3973,37 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
     }
     return rv;
 }
+void ResolveArgumentFunctions(FUNCTIONCALL* args, bool toErr)
+{
+    if (args->arguments)
+    {
+        for (auto argl : *args->arguments)
+        {
+            if (argl->tp && argl->tp->type == BasicType::aggregate_)
+            {
+                auto it = argl->tp->syms->begin();
+                SYMBOL* func = *it;
+                if (!func->sb->templateLevel && ++it == argl->tp->syms->end())
+                {
+                    argl->tp = func->tp;
+                    argl->exp = varNode(ExpressionNode::pc_, func);
+                }
+                else if (argl->exp->type == ExpressionNode::func_ && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
+                {
+                    TYPE* ctype = argl->tp;
+                    EXPRESSION* exp = nullptr;
+                    auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr,
+                        false, 0);
+                    if (sp)
+                    {
+                        argl->tp = ctype;
+                        argl->exp = exp;
+                    }
+                }
+            }
+        }
+    }
+}
 LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     TYPE* tp_cpp = *tp;
@@ -4254,12 +4287,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
         else
         {
-            /*
-            operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
-            if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, funcparams->sp, funcsp, funcparams->thisptr,
-                                        false))
-                errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
-             */
+            ResolveArgumentFunctions(funcparams, true);
         }
         if (sym)
         {

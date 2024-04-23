@@ -2420,6 +2420,15 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
 }
 static int str_candidate(LEXLIST* lex, TYPE* tp)
 {
+    LEXLIST *old = lex;
+    if (MATCHKW(lex, Keyword::openpa_))
+    {
+        while (lex && MATCHKW(lex, Keyword::openpa_))
+            lex = getsym();
+        prevsym(old);
+    }
+    if (!lex)
+        return false;
     TYPE* bt;
     bt = basetype(tp);
     if (bt->type == BasicType::string_)
@@ -2689,7 +2698,18 @@ static LEXLIST* read_strings(LEXLIST* lex, std::list<INITIALIZER*>** next, AGGRE
     /* this assumes the sizeof(short) & sizeof(wchar_t) < 16 */
     if (max == 0)
         max = INT_MAX / 16;
+    int opencount = 0;
+    while (lex && MATCHKW(lex, Keyword::openpa_))
+    {
+         lex = getsym();
+         opencount++;
+    }
     lex = concatStringsInternal(lex, &string, 0);
+    while (opencount--)
+    {
+         if (!needkw(&lex, Keyword::closepa_))
+             break;
+    }
     switch (string->strtype)
     {
         case l_u8str:

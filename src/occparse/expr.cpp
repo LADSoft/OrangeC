@@ -782,6 +782,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                        * of course the usage restraints of the
                                        * register keyword are enforced elsewhere
                                        */
+                        if (sym->sb->anonymousGlobalUnion)
+                            sym = localAnonymousUnions[sym->sb->label];
                         *exp = varNode(ExpressionNode::auto_, sym);
                         sym->sb->anyTry |= tryLevel != 0;
                         SetRuntimeData(lex, *exp, sym);              
@@ -892,6 +894,10 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             funcsp->sb->nonConstVariableUsed = true;
                             *exp = varNode(ExpressionNode::threadlocal_, sym);
                         }
+                        else if (sym->sb->anonymousGlobalUnion)
+                        {
+                            *exp = intNode(ExpressionNode::labcon_, sym->sb->label);
+                        }
                         else
                         {
                             *exp = varNode(ExpressionNode::global_, sym);
@@ -924,6 +930,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             errorsym(ERR_CANNOT_ACCESS, sym);
                         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                             *exp = varNode(ExpressionNode::threadlocal_, sym);
+                        else if (sym->sb->anonymousGlobalUnion)
+                            *exp = intNode(ExpressionNode::labcon_, sym->sb->label);
                         else
                             *exp = varNode(ExpressionNode::global_, sym);
                         if (sym->sb->attribs.inheritable.linkage2 == Linkage::import_)
@@ -1768,8 +1776,6 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
         {
             if ((*exp)->type == ExpressionNode::func_ && (*exp)->v.func->templateParams)
             {
-                if (!(*exp)->v.func->sp || !allTemplateArgsSpecified((*exp)->v.func->sp, (*exp)->v.func->templateParams))
-                    return tp1;
                 sp = detemplate(sp, (*exp)->v.func, nullptr);
                 if (!sp)
                 {

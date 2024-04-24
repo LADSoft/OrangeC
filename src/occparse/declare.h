@@ -24,6 +24,7 @@
  */
 
 #include <functional>
+#include <map>
 
 #define CT_NONE 0
 #define CT_CONS 1
@@ -42,6 +43,7 @@ extern Optimizer::LIST* openStructs;
 extern int parsingTrailingReturnOrUsing;
 extern int inTypedef;
 extern int resolvingStructDeclarations;
+extern std::map<int, SYMBOL*> localAnonymousUnions;
 
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);

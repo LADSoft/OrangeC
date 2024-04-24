@@ -771,6 +771,7 @@ typedef struct sym
         unsigned isDestructor : 1;     // is  adestructor
         unsigned isAssign : 1;         // is an assignment operator
         unsigned literalClass : 1;     // is a literal class
+        unsigned anonymousGlobalUnion:1; // global or function-scope union symbol
         unsigned xtEntry : 1;          // is an exception table label
         unsigned isExplicit : 1;       // explicit constructor or conversion function
         unsigned specialized : 1;      // is a template specialization

@@ -1849,7 +1849,7 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
             LookupSingleAggregate(tp2, &expr2);
             if ((isstructuredmath(*tp, tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                 ( insertOperatorFunc(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags) ||
-                  castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false)))
+                  (Optimizer::architecture != ARCHITECTURE_MSIL && castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false))))
             {
             }
             else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == BasicType::aggregate_ || ismsil(*tp) || ismsil(tp2))

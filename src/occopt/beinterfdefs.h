@@ -51,6 +51,7 @@ extern int architecture;
 #define STACK_PROTECT_WITH_CANARY (STACK_PROTECT_BASIC | STACK_PROTECT_ALL | STACK_PROTECT_STRONG | STACK_PROTECT_EXPLICIT)
 
 #define STACK_PROTECT_MINIMUM_CONSIDERED 4
+#pragma pack(push, 1);
 
 /* Common compiler parameters */
 typedef struct
@@ -114,6 +115,7 @@ typedef struct
     bool prm_displaytiming;      /* display timing info */
     bool prm_makelib;            /* make library */
     int  prm_stackprotect;       /* stack protection mode */
+    int  prm_netcore_version;    /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -586,6 +588,7 @@ typedef struct
         int labelNum;
     } u;
 } BE_IMODEDATA;
+#pragma pack(pop)
 
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2

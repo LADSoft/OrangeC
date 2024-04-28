@@ -339,7 +339,7 @@ void PEWriter::CalculateObjects(PELib& peLib)
     peHeader_->signature = PESIG;
     peHeader_->cpu_type = PE_INTEL386;
     peHeader_->magic = PE_MAGICNUM;
-    peHeader_->nt_hdr_size = 0xe0;  // optional header sie
+    peHeader_->nt_hdr_size = PE_NT_HEADER_SIZE;  // optional header sie
     peHeader_->flags = PE_FILE_EXECUTABLE + (DLL_ ? PE_FILE_LIBRARY : 0);
     peHeader_->linker_major_version = 6;
     peHeader_->object_align = objectAlign_;

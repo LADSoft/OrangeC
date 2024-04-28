@@ -27,6 +27,7 @@
 #include <vector>
 
 extern PELib* peLib;
+extern NetCore* netCoreInstance;
 
 namespace occmsil
 {
@@ -44,8 +45,6 @@ extern MethodSignature* ptrUnbox;
 extern MethodSignature* concatStr;
 extern MethodSignature* concatObj;
 extern MethodSignature* toStr;
-extern MethodSignature* toInt;
-extern MethodSignature* toVoidStar;
 extern MethodSignature* delegateInvoker;
 extern MethodSignature* delegateAllocator;
 extern MethodSignature* delegateFreer;
@@ -74,6 +73,8 @@ extern std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
 extern std::map<std::string, MethodSignature*> arrayMethods;
 
 extern std::vector<Local*> localList;
+
+bool LoadAssembly(const char *name);
 
 MethodSignature* FindMethodSignature(const char* name);
 Type* FindType(const char* name, bool toErr);

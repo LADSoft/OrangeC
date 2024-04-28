@@ -40,7 +40,8 @@ public:
         hasEntryPoint(false),
         peLib(nullptr),
         mainSym(nullptr),
-        currentMethod(nullptr)
+        currentMethod(nullptr),
+        netCore(nullptr)
     { }
 
     int Run(int argc, char **argv);
@@ -51,6 +52,7 @@ protected:
     bool LoadImage(CmdFiles &files);
     bool Validate();
     bool CreateExecutable(CmdFiles &files);
+    bool LoadAssembly(const char* assemblyName);
 
     DotNetPELib::MethodSignature *LookupSignature(const char * name);
     DotNetPELib::Field *LookupField(const char *name);
@@ -69,6 +71,7 @@ protected:
     virtual bool EnterMethod(const DotNetPELib::Method *) override;
 private:
 
+    DotNetPELib::NetCore* netCore;
     DotNetPELib::PELib *peLib;
     std::vector<DotNetPELib::Local *> localList;
     DotNetPELib::MethodSignature *mainSym;
@@ -98,6 +101,7 @@ private:
     static CmdSwitchBool CManaged;
     static CmdSwitchBool NoDefaultlibs;
     static CmdSwitchBool WeedPInvokes;
+    static CmdSwitchInt NetCoreSwitch;
 
     static const char *usageText;
     static const char* helpText;

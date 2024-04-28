@@ -1,3 +1,7 @@
+ifneq "$(NETCORE)" ""
+NETCOREDLL := --netcore 0
+endif
+
 ifeq "$(COMPILER)" "gcc-linux"
 NULLDEV := /dev/null
 else
@@ -6,9 +10,10 @@ endif
 
 all: lsmsilcrtl.dll test
 lsmsilcrtl.dll:
-	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
+	-copy $(ORANGEC)\bin\lsmsilcrtl*.dll *.* > $(NULLDEV)
+
 %.ilo: %.c
-	occil /c /9 /E- /Di386 /Lkernel32 $^
+	occil $(NETCOREDLL) /c /9 /E- /Di386 /Lkernel32 $^
 
 list = AN386.ilo \
 ANALYZE.ilo \
@@ -65,10 +70,11 @@ test: cc386.exe
 	fc /b hi.asm hi.cmpx
 
 cc386.exe: $(list)
-	netlink /occ386.exe @&&|
+	netlink $(NETCOREDLL) /occ386.exe @&&|
 $(list)
 |
 
 clean:
 	del *.ilo
 	del *.exe
+	del *.dll

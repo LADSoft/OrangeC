@@ -1695,7 +1695,14 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                             EXPRESSION* offset;
                             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                             {
-                                offset = varNode(ExpressionNode::structelem_, sp2);  // prepare for the MSIL ldflda instruction
+                                if (isconstzero(*tp, *exp))
+                                {
+                                   offset = intNode(ExpressionNode::c_i_, sp2->sb->offset);
+                                }
+                                else
+                                {
+                                    offset = varNode(ExpressionNode::structelem_, sp2);  // prepare for the MSIL ldflda instruction
+				}
                             }
                             else
                                 offset = intNode(ExpressionNode::c_i_, sp2->sb->offset);

@@ -67,8 +67,8 @@ class SymbolTable
 {
 public:
     typedef typename std::list<T*>::iterator iterator;
-  typedef typename std::list<T*>::reverse_iterator reverse_iterator;
-  iterator begin() { return inOrder_.begin(); }
+    typedef typename std::list<T*>::reverse_iterator reverse_iterator;
+    iterator begin() { return inOrder_.begin(); }
     iterator end() { return inOrder_.end(); }
     reverse_iterator rbegin() { return inOrder_.rbegin(); }
     reverse_iterator rend() { return inOrder_.rend(); }

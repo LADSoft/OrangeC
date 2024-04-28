@@ -143,6 +143,7 @@ void operator delete(void* p)
 #endif
 using namespace DotNetPELib;
 PELib* peLib;
+NetCore* netCoreInstance;
 
 void regInit() {}
 int usingEsp;

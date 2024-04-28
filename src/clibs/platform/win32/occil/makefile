@@ -24,7 +24,7 @@
 H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 
-all:    lsmsilcrtl.dll occmsil.dll
+all:    release_lsmsilcrtl occmsil.dll
 $(eval $(FORMATTER))
 
 occmsil.dll:
@@ -32,7 +32,7 @@ occmsil.dll:
 	occ /Wd $(STDINCLUDE) /L$(SYSOBJECT) occmsil.c
 	move occmsil.dll $(SYSOBJECT)
 
-lsmsilcrtl.dll:
+release_lsmsilcrtl:
 	copy lsmsilcrtl.dll $(SYSOBJECT)
 	copy lsmsilcrtl6.dll $(SYSOBJECT)
 	copy lsmsilcrtl7.dll $(SYSOBJECT)

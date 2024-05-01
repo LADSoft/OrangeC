@@ -26,10 +26,13 @@ include ../pathext2.mak
 NAME=netlib
 DISTNAME=netlink
 MAIN_FILE=NetLinkMain.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)exefmt
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)exefmt ..$(PATHEXT2)
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 H_DEPENDENCIES=$(wildcard *.h)
-LIB_DEPENDENCIES=util
+LIB_DEPENDENCIES=util libhostfxr
+DEFINES:=TARGET_OS_WINDOWS FALLBACK_HOST_OS=\"win10\" FEATURE_APPHOST TARGET_WINDOWS
+#fixme this next won't run in an x64 image....
+DEFINES:= $(DEFINES) TARGET_X86 CURRENT_ARCH_NAME=\"x86\"
 include ../redirect.mak
 NO_COMPARE=yes
 

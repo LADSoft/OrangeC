@@ -2790,6 +2790,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                     Optimizer::IMODE* ap3 = Optimizer::make_immed(ISZ_OBJECT, 0);  // LDNULL
                     ap3->size = ISZ_ADDR;
                     Optimizer::gen_icode(Optimizer::i_parm, nullptr, ap3, nullptr);
+                    Optimizer::intermed_tail->ptrbox = true;
                 }
             }
         }
@@ -4394,7 +4395,7 @@ int natural_size(EXPRESSION* node)
                 return ISZ_ADDR;
             else if (node->v.func->ascall)
             {
-                if (isarray(basetype(node->v.func->sp->tp)->btp))
+                if (node->v.func->sp && isarray(basetype(node->v.func->sp->tp)->btp))
                     return ISZ_OBJECT;
                 return sizeFromType(basetype(node->v.func->functp)->btp);
             }
@@ -4788,7 +4789,7 @@ Optimizer::IMODE* defcond(EXPRESSION* node, SYMBOL* funcsp)
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
     ap2 = Optimizer::make_immed(ap1->size, 0);
     ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-    Optimizer::gen_icode(Optimizer::i_sete, ap3, ap2, ap1);
+    Optimizer::gen_icode(Optimizer::i_sete, ap3, ap1, ap2);
     return ap3;
 }
 

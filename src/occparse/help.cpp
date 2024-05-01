@@ -624,10 +624,10 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             if ((*pat)->type == BasicType::rref_ && !isconst((*pat)->btp) && !isvolatile((*pat)->btp))
             {
                 // forwarding?  unadorned rref!
-                if (!nt->rref && basetype(nt)->type != BasicType::rref_ && !isarithmeticconst(exp))
+                if (!nt->rref && basetype(nt)->type != BasicType::rref_ && (!isarithmeticconst(exp) || exp->type == ExpressionNode::const_))
                 {
                     // lref
-                    TYPE* t = basetype(nt);
+                    TYPE* t = nt;
                     *pat = MakeType(BasicType::lref_, isref(t) ? t->btp : t);
                     return;
                 }

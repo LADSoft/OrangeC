@@ -329,7 +329,7 @@ bool Instruction::ILSrcDump(PELib& peLib) const
                     if (sehCatchType_)
                         sehCatchType_->ILSrcDump(peLib);
                     else
-                        peLib.Out() << " [mscorlib]System.Object";
+                        peLib.Out() << " [" + peLib.GetRuntimeName() + "]System.Object";
                     peLib.Out() << " {" << std::endl;
                     break;
                 case seh_filter:

@@ -798,6 +798,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                                        */
                         if (((*exp) = GetConstexprNode(sym)))
                             break;
+                        if (sym->sb->anonymousGlobalUnion)
+                            sym = localAnonymousUnions[sym->sb->label];
                         *exp = varNode(ExpressionNode::auto_, sym);
                         sym->sb->anyTry |= tryLevel != 0;
                         SetRuntimeData(lex, *exp, sym);              
@@ -910,6 +912,10 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             funcsp->sb->nonConstVariableUsed = true;
                             *exp = varNode(ExpressionNode::threadlocal_, sym);
                         }
+                        else if (sym->sb->anonymousGlobalUnion)
+                        {
+                            *exp = intNode(ExpressionNode::labcon_, sym->sb->label);
+                        }
                         else
                         {
                             *exp = varNode(ExpressionNode::global_, sym);
@@ -944,6 +950,8 @@ static LEXLIST* variableName(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                             errorsym(ERR_CANNOT_ACCESS, sym);
                         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                             *exp = varNode(ExpressionNode::threadlocal_, sym);
+                        else if (sym->sb->anonymousGlobalUnion)
+                            *exp = intNode(ExpressionNode::labcon_, sym->sb->label);
                         else
                             *exp = varNode(ExpressionNode::global_, sym);
                         if (sym->sb->attribs.inheritable.linkage2 == Linkage::import_)
@@ -1639,7 +1647,14 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                             EXPRESSION* offset;
                             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                             {
-                                offset = varNode(ExpressionNode::structelem_, sp2);  // prepare for the MSIL ldflda instruction
+                                if (isconstzero(*tp, *exp))
+                                {
+                                   offset = intNode(ExpressionNode::c_i_, sp2->sb->offset);
+                                }
+                                else
+                                {
+                                    offset = varNode(ExpressionNode::structelem_, sp2);  // prepare for the MSIL ldflda instruction
+				}
                             }
                             else
                                 offset = intNode(ExpressionNode::c_i_, sp2->sb->offset);
@@ -1734,6 +1749,7 @@ TYPE* LookupSingleAggregate(TYPE* tp, EXPRESSION** exp, bool memberptr)
                 }
             }
             *exp = varNode(ExpressionNode::pc_, sp);
+            tp1 = MakeType(BasicType::pointer_, sp->tp);            
         }
         auto it = tp->syms->begin();
         for (++it; it != tp->syms->end(); ++it)
@@ -1791,7 +1807,8 @@ static LEXLIST* expression_bracket(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
         {
             LookupSingleAggregate(tp2, &expr2);
             if ((isstructuredmath(*tp, tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
-                insertOperatorFunc(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags))
+                ( insertOperatorFunc(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags) ||
+                  (Optimizer::architecture != ARCHITECTURE_MSIL && castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false))))
             {
             }
             else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == BasicType::aggregate_ || ismsil(*tp) || ismsil(tp2))
@@ -4012,6 +4029,37 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
     }
     return rv;
 }
+void ResolveArgumentFunctions(FUNCTIONCALL* args, bool toErr)
+{
+    if (args->arguments)
+    {
+        for (auto argl : *args->arguments)
+        {
+            if (argl->tp && argl->tp->type == BasicType::aggregate_)
+            {
+                auto it = argl->tp->syms->begin();
+                SYMBOL* func = *it;
+                if (!func->sb->templateLevel && ++it == argl->tp->syms->end())
+                {
+                    argl->tp = func->tp;
+                    argl->exp = varNode(ExpressionNode::pc_, func);
+                }
+                else if (argl->exp->type == ExpressionNode::func_ && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
+                {
+                    TYPE* ctype = argl->tp;
+                    EXPRESSION* exp = nullptr;
+                    auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr,
+                        false, 0);
+                    if (sp)
+                    {
+                        argl->tp = ctype;
+                        argl->exp = exp;
+                    }
+                }
+            }
+        }
+    }
+}
 LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     TYPE* tp_cpp = *tp;
@@ -4295,12 +4343,7 @@ LEXLIST* expression_arguments(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSIO
         }
         else
         {
-            /*
-            operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
-            if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, funcparams->sp, funcsp, funcparams->thisptr,
-                                        false))
-                errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
-             */
+            ResolveArgumentFunctions(funcparams, true);
         }
         if (sym)
         {
@@ -8071,6 +8114,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
         else
         {
             lex = expression_comma(lex, funcsp, nullptr, &tph, &eph, nullptr, flags | _F_NOVARIADICFOLD);
+            tph = LookupSingleAggregate(tph, &eph);
         }
         bool oldCallExit = isCallNoreturnFunction;
         isCallNoreturnFunction = false;
@@ -8083,6 +8127,7 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
             lex = getsym();
             lex = expression_assign(lex, funcsp, nullptr, &tpc, &epc, nullptr, flags | _F_NOVARIADICFOLD);
             isCallNoreturnFunction &= oldCallExit;
+            tpc = LookupSingleAggregate(tpc, &epc);
             if (!tpc)
             {
                 *tp = nullptr;

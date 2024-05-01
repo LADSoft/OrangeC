@@ -38,7 +38,7 @@
 #include <map>
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "3.04"
+#define DOTNETPELIB_VERSION "4.00"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -114,6 +114,7 @@ namespace DotNetPELib
     typedef unsigned DWord; /* four bytes */
 
     // forward references
+    class NetCore;
     class PELib;
     class Allocator;
     class Method;
@@ -265,7 +266,8 @@ namespace DotNetPELib
             Managed = 0x20000,
             Runtime = 0x40000,
             Virtual = 0x100000, // sealed
-            NewSlot = 0x200000 // value
+            NewSlot = 0x200000, // value
+            BeforeFieldInit = 0x400000
         };
         enum
         {
@@ -576,7 +578,7 @@ namespace DotNetPELib
         bool PEHeaderDump(PELib &);
         virtual void ObjOut(PELib &, int pass) const override;
         static AssemblyDef *ObjIn(PELib &, bool definition = true);
-
+        int GetMajor() const { return major_; }
     protected:
         Namespace *InsertNameSpaces(PELib &lib, std::unordered_map<std::string, Namespace *, StringHash> &nameSpaces, const std::string& name);
         Namespace *InsertNameSpaces(PELib &lib, Namespace *nameSpace, std::string nameSpaceName);
@@ -1554,6 +1556,7 @@ namespace DotNetPELib
             s_method
         };
         enum CorFlags {
+            cfnone = 0,
             ///** Set this for compatibility with .net assembly imports,
             // unset it for standalone assemblies if you want to modify your
             // sdata
@@ -1564,7 +1567,7 @@ namespace DotNetPELib
         };
         enum OutputMode { ilasm, peexe, pedll, object };
         ///** Constructor, creates a working assembly
-        PELib(const std::string& AssemblyName, int CoreFlags);
+        PELib(const std::string& AssemblyName, int CoreFlags, NetCore* netCore = nullptr);
         ///** Get the working assembly
         // This is the one with your code and data, that gets written to the output
         AssemblyDef *WorkingAssembly() const { return assemblyRefs_.front(); }
@@ -1584,6 +1587,8 @@ namespace DotNetPELib
         std::string FindUnmanagedName(const std::string& name);
         ///** Find an assembly
         AssemblyDef *FindAssembly(const std::string& assemblyName) const;
+        ///** Remove an assembly
+        void RemoveAssembly(AssemblyDef* assembly);
         ///** Find a Class
         Class *LookupClass(PEReader &reader, const std::string& assembly, int major, int minor, int build, int revision,
                            size_t keyIndex, const std::string& nameSpace, const std::string& name);
@@ -1618,7 +1623,7 @@ namespace DotNetPELib
                 
         ///** internal declarations
         // loads the MSCorLib assembly
-        AssemblyDef *MSCorLibAssembly();
+        AssemblyDef *LoadRuntimeAssembly();
 
         std::string FormatName(const std::string& name);
         std::string UnformatName();
@@ -1643,6 +1648,14 @@ namespace DotNetPELib
         void SetCodeContainer(CodeContainer *container) { codeContainer_ = container; }
         CodeContainer *GetCodeContainer() const { return codeContainer_; }
         Class* FindOrCreateGeneric(std::string name, std::deque<Type*>& generics);
+        std::string GetRuntimeName()
+        {
+            if (netCore_)
+                return "System.Runtime";
+            else
+                return "mscorlib";
+        }
+        NetCore* NetCoreInstance() const { return netCore_; }
     protected:
         void SplitPath(std::vector<std::string> & split, std::string path);
         bool ILSrcDumpHeader();
@@ -1657,6 +1670,7 @@ namespace DotNetPELib
         std::string fileName_;
     	  std::unordered_map<std::string, std::string, StringHash> unmanagedRoutines_;
         int corFlags_;
+        NetCore* netCore_;
         PEWriter *peWriter_;
         std::vector<Namespace *> usingList_;
         std::deque<DataContainer *> containerStack_;
@@ -1665,6 +1679,56 @@ namespace DotNetPELib
         int objInputSize_;
         int objInputPos_;
         int objInputCache_;
+    };
+    ///** The NetCore class holds functionality used to create a .Net Core program or dll
+    /// 
+    class NetCore
+    {
+    public:
+        static const int DummyChooseLatest = 10000;
+        NetCore(PELib::CorFlags flags= PELib::cfnone, bool isgui = false, int vers = DummyChooseLatest) : version_(vers), corFlags_(flags), gui_(isgui) { }
+
+        // in case you want to destroy it and call init() again...
+        void destroy()
+        {
+            delete peLib;
+            peLib = nullptr;
+        }
+        // destructor...
+        ~NetCore() { destroy(); }
+
+        // get the underlying PELib instance and give it an assembly name...
+        // should only call this once
+        PELib* init(std::string assemblyName);
+        // the default uses the version passed into the constructor,
+        // otherwise select a specific version
+        bool SupportsRuntime(int sversion = DummyChooseLatest);
+
+        // load an assembly, detouring through the .netcore directories...
+        bool LoadAssembly(std::string assembly, int major = 0, int minor = 0, int build = 0, int revision = 0);
+        bool LoadAssembly(AssemblyDef* assembly, std::string assemblyName, int major, int minor, int build, int revision, bool created);
+        // dump an output file, taking .netcore into account
+        // if you chose peexe for the mode it will make an exe but rename it to .dll
+        // then pull the applicable apphost file from the framework install and add the necessary runtimeconfig.json file
+        bool DumpOutputFile(const std::string& file, PELib::OutputMode mode);
+
+        // pull the applicable apphost executable out of the framework install, and stuff it
+        // with the name of our application dll
+        bool CreateExecutable(std::string fileName, std::string dllName);
+        // write the runtimeconfig.json file for our application
+        bool WriteRuntimeConfig(std::string fileName);
+    protected:
+        // utility to lookup a versioned framework directory
+        std::string LookupDir(std::string path, int version);
+    private:
+        PELib* peLib = nullptr;
+        PELib::CorFlags corFlags_;
+        bool gui_;
+        int version_;
+        static Byte x86Image[];
+        static Byte x64Image[];
+        static char RunTimeConfig[];
+
     };
 
 } // namespace

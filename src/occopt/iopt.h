@@ -66,9 +66,6 @@
 
 #define ISZ_BITINT 50
 
-#define ISZ_TOVOIDSTAR 100
-#define ISZ_TOINT 101
-
 #define BITINTBITS (8 * sizeof(BITINT))
 
 namespace Optimizer

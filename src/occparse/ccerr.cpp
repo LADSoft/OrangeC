@@ -1359,7 +1359,7 @@ void checkUnused(SymbolTable<SYMBOL>* syms)
                     sp->sb->storage_class == StorageClass::parameter_)
                     errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
             }
-            else if (!sp->sb->attribs.uninheritable.maybe_unused)
+            else if (!sp->sb->attribs.uninheritable.maybe_unused && !sp->sb->anonymousGlobalUnion)
             {
                 if (sp->sb->storage_class == StorageClass::parameter_)
                     errorsym(ERR_UNUSED_PARAMETER, sp);

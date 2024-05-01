@@ -5990,34 +5990,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
 
             Optimizer::LIST* lst2;
             int n = 0;
-            if (args->arguments)
-            {
-                for (auto argl : *args->arguments)
-                {
-                    if (argl->tp && argl->tp->type == BasicType::aggregate_)
-                    {
-                        auto it = argl->tp->syms->begin();
-                        SYMBOL* func = *it;
-                        if (!func->sb->templateLevel && ++it == argl->tp->syms->end())
-                        {
-                            argl->tp = func->tp;
-                            argl->exp = varNode(ExpressionNode::pc_, func);
-                        }
-                        else if (argl->exp->type == ExpressionNode::func_ && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
-                        {
-                            TYPE* ctype = argl->tp;
-                            EXPRESSION* exp = nullptr;
-                            auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr,
-                                false, 0);
-                            if (sp)
-                            {
-                                argl->tp = ctype;
-                                argl->exp = exp;
-                            }
-                        }
-                    }
-                }
-            }
+            ResolveArgumentFunctions(args, toErr);
             for (auto sym1 : gather)
             {
                 for (auto sym : *sym1->tp->syms)

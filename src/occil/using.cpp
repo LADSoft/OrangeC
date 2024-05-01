@@ -51,7 +51,7 @@ bool _using_(const char* file)
     p = (char*)strrchr(name, '.');
     if (p && Utils::iequal(p, ".dll"))
         *p = 0;
-    if (!peLib->LoadAssembly(name))
+    if (!LoadAssembly(name))
         return true;
     if (peLib->LoadUnmanaged(file))
     {
@@ -112,4 +112,17 @@ bool msil_managed(Optimizer::SimpleSymbol* sp)
         return true;
     return !_dll_name(sp->name).size();
 }
+int ValidateNetCoreVersion(int requestedVersion)
+{
+	NetCore core(PELib::bits32);
+        if (requestedVersion == 0)
+            requestedVersion = NetCore::DummyChooseLatest;        
+	if (core.SupportsRuntime(requestedVersion))
+        {
+             return requestedVersion;
+        }
+        // error
+        return INT_MAX;
+}
+
 }  // namespace occmsil

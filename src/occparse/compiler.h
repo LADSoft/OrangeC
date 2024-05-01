@@ -40,10 +40,8 @@
 
 
 #if _MSC_VER == 1900 /* MSVC 2015 */
-#define ENUMCLASSREF enum class
 #define CONSTEXPR
 #else
-#define ENUMCLASSREF enum
 #define CONSTEXPR constexpr
 #endif
 

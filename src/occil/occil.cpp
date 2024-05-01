@@ -66,6 +66,7 @@ unsigned termCount;
 
 using namespace DotNetPELib;
 PELib* peLib;
+NetCore* netCoreInstance;
 
 namespace occmsil
 {
@@ -345,8 +346,12 @@ bool LoadFile(SharedMemory* parserMem, std::string fileName)
             else
                 outputfile(outFile, Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
             InsertExternalFile(outFile, false);
+            fileName = outFile;
         }
-        fileName = Optimizer::inputFiles.front();
+        else
+        {
+            fileName = Optimizer::inputFiles.front();
+        }
     }
     msil_main_preprocess((char*)fileName.c_str());
     ResolveMSILExterns();

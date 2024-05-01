@@ -24,6 +24,7 @@
  */
 
 #include <functional>
+#include <map>
 
 #define CT_NONE 0
 #define CT_CONS 1
@@ -42,6 +43,7 @@ extern Optimizer::LIST* openStructs;
 extern int parsingTrailingReturnOrUsing;
 extern int inTypedef;
 extern int resolvingStructDeclarations;
+extern std::map<int, SYMBOL*> localAnonymousUnions;
 
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);
@@ -60,7 +62,7 @@ void dropStructureDeclaration(void);
 SYMBOL* getStructureDeclaration(void);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
 LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-                   ENUMCLASSREF StorageClass storage_class);
+                   StorageClass storage_class);
 LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
 void calculateStructOffsets(SYMBOL* sp);

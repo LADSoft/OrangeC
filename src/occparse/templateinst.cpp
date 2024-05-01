@@ -3774,7 +3774,7 @@ void DuplicateTemplateParamList(std::list<TEMPLATEPARAMPAIR>** pptr)
                 {
                     DuplicateTemplateParamList(&(*pptr)->back().second->byPack.pack);
                 }
-                else
+                else if (param.second->byClass.val)
                 {
                     (*pptr)->back().second->byClass.dflt = SynthesizeType(param.second->byClass.val, nullptr, false);
                 }

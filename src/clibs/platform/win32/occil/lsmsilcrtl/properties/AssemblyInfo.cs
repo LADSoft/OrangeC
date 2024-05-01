@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("LADSoft")]
 [assembly: AssemblyProduct("lsmsilcrtl")]
-[assembly: AssemblyCopyright("Copyright © LADSoft 2016")]
+[assembly: AssemblyCopyright("Copyright © LADSoft 2016-2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

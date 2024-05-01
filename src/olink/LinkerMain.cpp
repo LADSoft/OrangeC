@@ -158,7 +158,7 @@ void LinkerMain::AddFile(LinkManager& linker, const std::string& name)
         if (n != std::string::npos)
         {
             ObjString match = name.substr(n);
-            std::transform(match.begin(), match.end(), match.begin(), [](unsigned char c) { return std::tolower(c); });
+            std::transform(match.begin(), match.end(), match.begin(), [](unsigned char c) { return tolower(c); });
 
             foundLibrary = match == ".l" || match == ".a" || match == ".lib" || match == ".dll";
         }

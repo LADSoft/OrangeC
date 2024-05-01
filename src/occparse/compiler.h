@@ -37,6 +37,16 @@
 #include <ctime>
 #include <cstring>
 #include <cfloat>
+
+
+#if _MSC_VER == 1900 /* MSVC 2015 */
+#define ENUMCLASSREF enum class
+#define CONSTEXPR
+#else
+#define ENUMCLASSREF enum
+#define CONSTEXPR constexpr
+#endif
+
 #include "Floating.h"
 #include "osutil.h"
 #include "ioptimizer.h"
@@ -45,3 +55,4 @@
 
 #define M_LN2 0.693147180559945309417
 #define M_LN10 2.30258509299404568402
+

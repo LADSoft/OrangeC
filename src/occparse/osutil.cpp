@@ -178,7 +178,7 @@ CmdSwitchBool RuntimeHeapCheck(SwitchParser, 0, 0, {"fruntime-heap-check"});
 
 static std::string firstFile;
 
-enum Linkage getDefaultLinkage()
+Linkage getDefaultLinkage()
 {
     switch (Optimizer::architecture)
     {

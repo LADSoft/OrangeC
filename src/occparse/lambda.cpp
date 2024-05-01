@@ -885,7 +885,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 {
                     if (hasStar)
                         RequiresDialect::Feature(Dialect::cpp17, "capture of *this");
-                    enum e_cm localMode = self->captureMode;
+                    e_cm localMode = self->captureMode;
                     lex = getsym();
                     if (!hasStar && (localMode == cmValue || !self->lthis))
                     {
@@ -911,7 +911,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 {
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
-                enum e_cm localMode = cmNone;
+                e_cm localMode = cmNone;
                 if (MATCHKW(lex, Keyword::and_))
                 {
                     localMode = cmRef;

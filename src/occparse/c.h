@@ -381,7 +381,7 @@ struct ConstExprArgArray
 typedef struct expr
 {
     struct expr *left, *right;
-    enum ExpressionNode type;
+    ExpressionNode type;
     int pragmas;
     struct typ* size; /* For block moves */
     void* altdata;
@@ -500,7 +500,7 @@ struct u_val
 };
 typedef struct typ
 {
-    enum BasicType type;        /* the type */
+    BasicType type;        /* the type */
     long size;             /* total size of type */
     struct typ* btp;       /* pointer to next type (pointers & arrays */
     struct typ* rootType;  /* pointer to base type of sequence */
@@ -542,7 +542,7 @@ typedef struct stmt
 {
     std::list<struct stmt*>* lower;
     std::list<struct stmt*>* blockTail;
-    enum StatementNode type;
+    StatementNode type;
     EXPRESSION* select;
     EXPRESSION* destexp;
     Optimizer::LINEDATA* lineData;
@@ -645,10 +645,10 @@ struct attributes
         int structAlign;                                /* alignment of structures/ unions */
         int warnAlign;                                  /* if nz, warn if not aligned */
         unsigned vectorSize;                            /* total size of a vectored attribute */
-        enum Linkage linkage;                              /* stdcall */
-        enum Linkage linkage2;                             /* export, import, msil */
-        enum Linkage linkage3;                             /* used here for noreturn */
-        enum Linkage linkage4;                             /* lvirtual */
+        Linkage linkage;                                /* stdcall */
+        Linkage linkage2;                               /* export, import, msil */
+        Linkage linkage3;                               /* used here for noreturn */
+        Linkage linkage4;                               /* lvirtual */
         struct sym* cleanup;                            /* cleanup function */
         bool packed;                                    /* True if to reset alignment to 1 */
         bool alignedAttribute;                          /* True if alignment came from gcc aligned attribute */
@@ -698,9 +698,9 @@ typedef struct sym
         std::list<NAMESPACEVALUEDATA*>* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
         Optimizer::LINEDATA* linedata;
-        enum StorageClass storage_class; /* storage class */
-        enum AccessLevel access;        /* c++ access rights for members */
-        int operatorId;          /* operator id, CI + kw for an operator function */
+        StorageClass storage_class;                /* storage class */
+        AccessLevel access;                        /* c++ access rights for members */
+        int operatorId;                /* operator id, CI + kw for an operator function */
         enum e_cm lambdaMode;
         INLINEFUNC inlineFunc;
         int overlayIndex;              /* differentiating index when function differs only in return type from similar functions */
@@ -899,7 +899,7 @@ typedef struct _memberInitializers
 typedef struct _baseClass
 {
     SYMBOL* cls;
-    enum AccessLevel accessLevel;
+    AccessLevel accessLevel;
     unsigned offset;
     int isvirtual : 1;
     int top : 1;
@@ -937,7 +937,7 @@ typedef struct _templateParam
     // template = template parameter
     // new = specialization
     // first in the list is always the specialization specifier
-    enum class TplType type;
+    TplType type;
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;
@@ -1248,33 +1248,33 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-constexpr inline TYPE* basetype(TYPE* a)
+CONSTEXPR inline TYPE* basetype(TYPE* a)
 {
     if (a)
         a = a->rootType;
     return a;
 }
 
-constexpr inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
-constexpr inline bool isref(TYPE* x)
+CONSTEXPR inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
+CONSTEXPR inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
             (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
 }
-constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
-constexpr inline bool ispointer(TYPE* x)
+CONSTEXPR inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
+CONSTEXPR inline bool ispointer(TYPE* x)
 {
     return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
                                             __ispointer((x)->templateParam->second->byNonType.tp));
 }
 
-constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
-constexpr inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
+CONSTEXPR inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
+CONSTEXPR inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
 
-constexpr inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
-constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
+CONSTEXPR inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
+CONSTEXPR inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
 
-constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
+CONSTEXPR inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
 
 }  // namespace Parser
 

@@ -1685,7 +1685,7 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
 }
 static LEXLIST* initialize_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** rtype, EXPRESSION** exp)
 {
-    enum e_lexType tp;
+    e_lexType tp;
     (void)funcsp;
     lex = concatStrings(lex, exp, &tp, 0);
     switch (tp)
@@ -1951,9 +1951,9 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, S
     }
     return lex;
 }
-enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
+ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
 {
-    enum ExpressionNode en = ExpressionNode::void_;
+    ExpressionNode en = ExpressionNode::void_;
     tp = basetype(basetype(tp)->btp);
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {

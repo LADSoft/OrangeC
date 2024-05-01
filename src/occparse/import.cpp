@@ -162,7 +162,7 @@ TYPE* Importer::TranslateType(Type* in)
     TYPE *rv = NULL, **last = &rv;
     if (in)
     {
-        enum BasicType tp;
+        BasicType tp;
         if (in->ArrayLevel())
         {
             if (in->ArrayLevel() > 1)  // this is because with the current version of dotnetpelib we don't know the index ranges

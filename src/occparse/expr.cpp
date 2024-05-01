@@ -1282,7 +1282,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
     if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::complx_))
     {
         // direct destructor or psuedo-destructor
-        enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+        Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
         bool defd = false;
         bool notype = false;
         TYPE* tp1 = nullptr;
@@ -1327,7 +1327,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         if (Optimizer::cparams.prm_cplusplus && ISKW(lex) && (lex->data->kw->tokenTypes & TT_BASETYPE))
         {
             // possible psuedo destructor with selector
-            enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+            Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
             bool defd = false;
             bool notype = false;
             TYPE* tp1 = nullptr;
@@ -1640,7 +1640,7 @@ static LEXLIST* expression_member(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                         }
                     }
                     {
-                        enum AccessLevel access = AccessLevel::public_;
+                        AccessLevel access = AccessLevel::public_;
                         SYMBOL* ssp = getStructureDeclaration();
                         while (ssp)
                         {
@@ -4861,7 +4861,7 @@ static LEXLIST* expression_string(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
     *exp = stringlit(data);
     if (data->suffix)
     {
-        enum BasicType tpb;
+        BasicType tpb;
         SYMBOL* sym;
         char name[512];
         switch (data->strtype)
@@ -5115,7 +5115,7 @@ static LEXLIST* expression_generic(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPR
 static bool getSuffixedChar(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
 {
     char name[512];
-    enum BasicType tpb = (*tp)->type;
+    BasicType tpb = (*tp)->type;
     SYMBOL* sym;
     Optimizer::my_sprintf(name, "%s@%s", overloadNameTab[CI_LIT], lex->data->suffix);
     sym = LookupSym(name);
@@ -5157,7 +5157,7 @@ static bool getSuffixedChar(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
 static bool getSuffixedNumber(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
 {
     char name[512];
-    enum BasicType tpb;
+    BasicType tpb;
     SYMBOL* sym;
     if (lex->data->type == l_ull)
         tpb = BasicType::unsigned_long_long_;
@@ -7600,7 +7600,7 @@ static LEXLIST* expression_times(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
     while (MATCHKW(lex, Keyword::star_) || MATCHKW(lex, Keyword::divide_) || MATCHKW(lex, Keyword::mod_))
     {
         auto lexin = lex;
-        enum ExpressionNode type;
+        ExpressionNode type;
         TYPE* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
         lex = getsym();
@@ -7678,7 +7678,7 @@ static LEXLIST* expression_shift(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
     {
         TYPE* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
-        enum ExpressionNode type;
+        ExpressionNode type;
         auto lexin = lex;
         lex = getsym();
         if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))

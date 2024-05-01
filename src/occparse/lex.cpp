@@ -636,7 +636,7 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
 
 int getChar(const unsigned char** source, e_lexType* tp)
 {
-    enum e_lexType v = l_achr;
+    e_lexType v = l_achr;
     const unsigned char* p = *source;
     if (*p == 'L')
     {
@@ -762,7 +762,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
     int len = sizeof(data) / sizeof(data[0]);
     int count = 0;
     int errored = 0;
-    enum e_lexType v = l_astr;
+    e_lexType v = l_astr;
     if (*p == 'L')
     {
         v = l_wstr;
@@ -1275,7 +1275,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
     int floatradix = 0;
     int frac = 0;
     bool hasdot = false;
-    enum e_lexType lastst;
+    e_lexType lastst;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return (e_lexType)INT_MIN;
     if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
@@ -1738,7 +1738,7 @@ LEXLIST* getsym(void)
     static const char* origLine = "";
     LEXLIST* lex;
     KEYWORD* kw;
-    enum e_lexType tp;
+    e_lexType tp;
     bool contin;
     FPF rval;
     long long ival;
@@ -1895,7 +1895,7 @@ LEXLIST* getsym(void)
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
             unsigned char* bitintValue;
-            enum e_lexType tp;
+            e_lexType tp;
             lex->data->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival, &bitintValue)) != (unsigned)INT_MIN)
             {

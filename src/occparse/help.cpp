@@ -685,7 +685,7 @@ LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
     char* suffix = nullptr;
     int count = 3;
     int pos = 0;
-    enum e_lexType type = l_astr;
+    e_lexType type = l_astr;
     STRING* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
     while (lex && (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr ||
@@ -839,7 +839,7 @@ EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
 }
 void deref(TYPE* tp, EXPRESSION** exp)
     {
-    enum ExpressionNode en = ExpressionNode::l_i_;
+    ExpressionNode en = ExpressionNode::l_i_;
     tp = basetype(tp);
     switch ((tp->type == BasicType::enum_ && tp->btp) ? tp->btp->type : tp->type)
     {
@@ -1105,7 +1105,7 @@ int sizeFromType(TYPE* tp)
 }
 void cast(TYPE* tp, EXPRESSION** exp)
 {
-    enum ExpressionNode en = ExpressionNode::x_i_;
+    ExpressionNode en = ExpressionNode::x_i_;
     tp = basetype(tp);
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {
@@ -2204,7 +2204,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     if (isctp1 && isctp2)
     {
         TYPE* rv;
-        enum BasicType t1, t2;
+        BasicType t1, t2;
         t1 = tp1->type;
         t2 = tp2->type;
         if (tp1->size == tp2->size)

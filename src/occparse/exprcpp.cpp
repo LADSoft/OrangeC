@@ -610,7 +610,7 @@ EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, SymbolTable
 }
 LEXLIST* expression_func_type_cast(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
-    enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+    Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
     int consdest = false;
     bool notype = false;
@@ -1022,7 +1022,7 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             cast(basetype(*newType)->btp, exp);
         return true;
     }
-    // enum to int
+    // to int
     if (isint(*newType) && basetype(oldType)->type == BasicType::enum_)
     {
         if (basetype(*newType)->type != basetype(oldType)->btp->type)
@@ -1203,7 +1203,7 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
         cast(*newType, exp);
         return true;
     }
-    // enum to pointer
+    // to pointer
     if (ispointer(*newType) && basetype(oldType)->type == BasicType::enum_)
     {
         cast(*newType, exp);

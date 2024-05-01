@@ -1209,7 +1209,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
 LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
 {
     auto baseClasses = baseClassListFactory.CreateList();
-    enum AccessLevel currentAccess;
+    AccessLevel currentAccess;
     bool isvirtual = false;
     bool done = false;
     SYMBOL* bcsym;
@@ -2780,7 +2780,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case Keyword::not_:
                 case Keyword::complx_:
-                    // needs one arg of class or enum type
+                    // needs one arg of class or type
                     sym = *it;
                     if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() != 1)
                     {
@@ -2808,7 +2808,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case Keyword::or_:
                 case Keyword::uparrow_:
                 case Keyword::comma_:
-                    // needs two args, one of class or enum type
+                    // needs two args, one of class or type
                     if (basetype(sp->tp)->syms->size() != 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
@@ -2821,7 +2821,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case Keyword::autoinc_:
                 case Keyword::autodec_:
-                    // needs one or two args, first of class or enum type
+                    // needs one or two args, first of class or type
                     // if second is present int type
                     sym = (*it);
                     if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 2)
@@ -3295,7 +3295,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                         }
                     }
                     parsingTrailingReturnOrUsing--;
-                    enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+                    Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
                     bool defd = false;
                     SYMBOL* sp = nullptr;
                     bool notype = false;

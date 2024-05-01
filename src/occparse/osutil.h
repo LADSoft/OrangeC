@@ -68,7 +68,7 @@ struct DefValue
 };
 enum class Linkage : int;
 
-enum Linkage getDefaultLinkage();
+ENUMCLASSREF Linkage getDefaultLinkage();
 
 extern Optimizer::LIST* clist;
 extern int showVersion;

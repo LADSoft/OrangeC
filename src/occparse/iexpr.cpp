@@ -2838,7 +2838,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     else
     {
-        enum Optimizer::i_ops type = Optimizer::i_gosub;
+        Optimizer::i_ops type = Optimizer::i_gosub;
         if (node->type == ExpressionNode::intcall_)
             type = Optimizer::i_int;
         if (!Optimizer::delegateforfuncptr)

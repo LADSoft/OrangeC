@@ -67,7 +67,7 @@ void dumpInitGroup(SYMBOL* sym, TYPE* tp);
 void dumpInitializers(void);
 void insertInitSym(SYMBOL* sym);
 INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign);
-enum ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp);
+ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp);
 EXPRESSION* getThisNode(SYMBOL* sym);
 LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
                   SYMBOL* sym, bool arrayMember, int flags);

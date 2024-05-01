@@ -54,7 +54,7 @@ static std::set<SYMBOL*> defaultRecursionMap;
 
 std::map<int, std::map<int, __xcentry*>> rttiStatements;
 
-// in enum BasicType order
+// in BasicType order
 static const char* typeNames[] = {"bit",
                                   "bool",
                                   "signed char",

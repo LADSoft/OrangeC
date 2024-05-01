@@ -116,7 +116,7 @@ const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     return buf;
 }
 static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order, bool base,
-                              enum AccessLevel access)
+                              AccessLevel access)
 {
     if (basetype(sym->tp)->syms)
     {

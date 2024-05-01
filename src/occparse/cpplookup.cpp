@@ -1505,9 +1505,9 @@ static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
 // works by searching the tree for the base or member symbol, and stopping any
 // time the access wouldn't work.  If the symbol is found it is accessible.
 static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess,
-                                 enum AccessLevel maxAccess, int level)
+                                 AccessLevel maxAccess, int level)
 {
-    enum AccessLevel memberAccess = member->sb->access > maxAccess ? maxAccess : member->sb->access;
+    AccessLevel memberAccess = member->sb->access > maxAccess ? maxAccess : member->sb->access;
     BASECLASS* lst;
     SYMBOL* ssp;
     if (!Optimizer::cparams.prm_cplusplus)
@@ -1579,7 +1579,7 @@ bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRES
     if (sym->sb->parentClass)
     {
         SYMBOL* parent = sym->sb->parentClass;
-        enum AccessLevel minAccess = AccessLevel::public_;
+        AccessLevel minAccess = AccessLevel::public_;
         if (exp && exp->type == ExpressionNode::auto_)
         {
             parent = basetype(exp->v.sp->tp)->sp;
@@ -1780,7 +1780,7 @@ static void GatherConversions(SYMBOL* sym, SYMBOL** spList, int n, FUNCTIONCALL*
         int j;
         if (spList[i])
         {
-            enum e_cvsrn arr[500][10];
+            e_cvsrn arr[500][10];
             int counts[500];
             SYMBOL* funcs[200];
             bool t;
@@ -1908,7 +1908,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
 {
     (void)spLeft;
     (void)spRight;
-    enum e_ct xl = conv, xr = conv;
+    e_ct xl = conv, xr = conv;
     int lderivedfrombase = 0, rderivedfrombase = 0;
     int rankl, rankr;
     int i;
@@ -2138,7 +2138,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
             {
                 if (isref(tl) && isref(tr))
                 {
-                    enum BasicType refa = BasicType::rref_;
+                    BasicType refa = BasicType::rref_;
                     if (ta)
                     {
                         if (ta->lref || basetype(ta)->lref)
@@ -2151,8 +2151,8 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                             refa = BasicType::lref_;
                     }
                     // const rref is better than const lref
-                    enum BasicType refl = basetype(tl)->type;
-                    enum BasicType refr = basetype(tr)->type;
+                    BasicType refl = basetype(tl)->type;
+                    BasicType refr = basetype(tr)->type;
                     if (refl == BasicType::rref_ && refr == BasicType::lref_ && isconst(basetype(tr)->btp))
                     {
                         if (refa != BasicType::lref_ || isconst(basetype(ta)->btp))
@@ -2764,7 +2764,7 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
 static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, FUNCTIONCALL* funcparams, int argCount,
                            int funcCount, SYMBOL*** funcList)
 {
-    static enum e_cvsrn identity = CV_IDENTITY;
+    static e_cvsrn identity = CV_IDENTITY;
     char arr[500];
     int i, j;
     for (i = 0; i < funcCount; i++)
@@ -2801,8 +2801,8 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, FU
                     memset(arr, 0, sizeof(arr));
                     for (k = 0; k < argCount ; k++)
                     {
-                        enum e_cvsrn* seql = &icsList[i][l];
-                        enum e_cvsrn* seqr = &icsList[j][r];
+                        e_cvsrn* seql = &icsList[i][l];
+                        e_cvsrn* seqr = &icsList[j][r];
                         int lenl = lenList[i][k];
                         int lenr = lenList[j][k];
                         if (!lenl)
@@ -3134,7 +3134,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
             int funcs = 0;
             int i;
             SYMBOL **spList;
-            enum e_cvsrn** icsList;
+            e_cvsrn** icsList;
             int** lenList;
             int m = 0;
             SYMBOL *found1, *found2;
@@ -3207,7 +3207,7 @@ SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int
                     {
                         int j;
                         int n3 = 0, n2 = 0, m1;
-                        enum e_cvsrn seq3[50];
+                        e_cvsrn seq3[50];
                         if (candidate->sb->castoperator)
                         {
                             TYPE* tpc = basetype(candidate->tp)->btp;
@@ -3768,7 +3768,7 @@ bool sameTemplate(TYPE* P, TYPE* A, bool quals)
                     if (quals)
                     {
                         int n = 0;
-                        enum e_cvsrn xx[5];
+                        e_cvsrn xx[5];
                         getQualConversion(pl, pa, nullptr, &n, xx);
                         if (n != 1 || xx[0] != CV_IDENTITY)
                         {
@@ -4713,7 +4713,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
     int n = 0;
     int i;
     std::list<INITLIST*> a;
-    enum e_cvsrn seq[500];
+    e_cvsrn seq[500];
     TYPE* initializerListType = nullptr;
     int m = 0, m1;
     if (sym->tp->type == BasicType::any_)
@@ -5267,7 +5267,7 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
 {
     SYMBOL *found1 = nullptr, *found2 = nullptr;
     std::vector<SYMBOL *> spList;
-    std::vector<enum e_cvsrn*> icsList;
+    std::vector<e_cvsrn*> icsList;
     std::vector<int*> lenList;
     std::vector<SYMBOL**> funcList;
     std::list<SYMBOL*> gather;
@@ -5589,7 +5589,7 @@ static bool ValidForDeduction(SYMBOL* s)
                 c->templateParams = tpl;
             }
             std::vector<SYMBOL*> spList2 = spList;
-            std::vector<enum e_cvsrn*> icsList;
+            std::vector<e_cvsrn*> icsList;
             std::vector<int*> lenList;
             std::vector<SYMBOL**> funcList;
             int n = spList.size();
@@ -5921,7 +5921,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             {
                 int i;
                 std::vector<SYMBOL*> spList;
-                std::vector<enum e_cvsrn*> icsList;
+                std::vector<e_cvsrn*> icsList;
                 std::vector<int*> lenList;
                 std::vector<SYMBOL**> funcList;
                 int argCount = 0;

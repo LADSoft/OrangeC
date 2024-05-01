@@ -180,7 +180,7 @@ CmdSwitchInt NetCoreSwitch(SwitchParser, 0, 5, 0, 1000, {"netcore"});
 
 static std::string firstFile;
 
-enum Linkage getDefaultLinkage()
+Linkage getDefaultLinkage()
 {
     switch (Optimizer::architecture)
     {

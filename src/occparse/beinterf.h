@@ -26,8 +26,8 @@
 namespace Parser
 {
 int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum BasicType type);
-int getBaseAlign(enum BasicType type);
+int getSize(BasicType type);
+int getBaseAlign(BasicType type);
 int getMaxAlign();
 long getautoval(long val);
 int funcvaluesize(int val);

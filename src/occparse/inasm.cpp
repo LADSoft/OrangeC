@@ -58,7 +58,7 @@ static Optimizer::ASMNAME* insdata;
 static LEXLIST* lex;
 
 static SYMBOL* lastsym;
-static enum e_opcode op;
+static e_opcode op;
 
 static const char* assembler_errors[] = {"Lable expected",
                                          "Illegal address mode",
@@ -971,7 +971,7 @@ AMODE* getimmed(void)
 
 /*-------------------------------------------------------------------------*/
 
-enum e_opcode inasm_op(void)
+e_opcode inasm_op(void)
 {
     int op;
     if (!lex || lex->data->type != l_asminst)

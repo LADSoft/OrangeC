@@ -56,7 +56,7 @@ void LinkDll::LoadDll()
     if (name.length() < 5)
         return;
     std::string data = name;
-    std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c) { return tolower(c); });
     if (data.substr(data.size() - 4) == ".dll")
     {
         auto fil = fopen(name.c_str(), "rb");

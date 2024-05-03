@@ -24,7 +24,7 @@
  */
 
 #include "ctypes.h"
-#ifdef BORLAND
+#if defined(BORLAND) || defined(__clang__) || defined(__GNUC__)
 // hack for buggy embarcadero compiler
 #    define beLocalAlloc(x) Alloc(x)
 #    define beGlobalAlloc(x) globalAlloc(x)

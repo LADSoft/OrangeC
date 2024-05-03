@@ -32,6 +32,7 @@ VTune Profiler Results/
 *.odx
 *.ods
 *.icd
+*.user
 q
 q.*
 q1.*

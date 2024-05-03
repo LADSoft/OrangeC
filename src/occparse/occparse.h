@@ -23,7 +23,9 @@
  * 
  */
 
+#ifndef ORANGE_NO_INASM
 #include "InstructionParser.h"
+#endif
 #include "PreProcessor.h"
 
 namespace Parser
@@ -41,7 +43,9 @@ extern PreProcessor* preProcessor;
 
 extern char realOutFile[260];
 
+#ifndef ORANGE_NO_INASM
 extern InstructionParser* instructionParser;
+#endif
 extern int usingEsp;
 
 extern Optimizer::COMPILER_PARAMS cparams_default;

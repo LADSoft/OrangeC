@@ -43,7 +43,9 @@
 #include "config.h"
 #include "occparse.h"
 #include "ildata.h"
+#ifndef ORANGE_NO_MSIL
 #include "using.h"
+#endif
 #include "configx86.h"
 #include "OptUtils.h"
 #include "configmsil.h"
@@ -235,8 +237,10 @@ static int parseCodegen(bool v, const char* string)
     {
         case ARCHITECTURE_X86:
             return Optimizer::parse_codegen(v, string);
+#ifndef ORANGE_NO_MSIL
         case ARCHITECTURE_MSIL:
             return Optimizer::parse_msil_codegen(v, string);
+#endif
         default:
             break;
     }
@@ -642,6 +646,7 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL: {
                 auto v = Utils::split(prm_libpath.GetValue());
                 for (auto&& s : v)
@@ -654,6 +659,7 @@ static void ParamTransfer(const char* name)
                 }
                 break;
             }
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::prm_libPath = prm_libpath.GetValue();
                 break;
@@ -663,9 +669,11 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL:
                 Optimizer::msilWinmodeSetup(prm_Winmode.GetValue().c_str());
                 break;
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup(prm_Winmode.GetValue().c_str());
                 break;
@@ -675,9 +683,11 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL:
                 Optimizer::msilWinmodeSetup("d");
                 break;
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup("d");
                 break;

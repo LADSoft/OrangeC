@@ -2023,6 +2023,7 @@ void msil_main_postprocess(bool errors)
                 Utils::AddExt(ilName, ".dll");
             else
                 Utils::AddExt(ilName, ".exe");
+
             if (netCoreInstance)
             {
                 netCoreInstance->DumpOutputFile(ilName,
@@ -2036,7 +2037,7 @@ void msil_main_postprocess(bool errors)
                                       Optimizer::cparams.prm_asmfile
                                           ? PELib::ilasm
                                          : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
-                                      Optimizer::cparams.prm_targettype != CONSOLE);
+                                      Optimizer::cparams.prm_targettype == GUI);
             }
         }
     }

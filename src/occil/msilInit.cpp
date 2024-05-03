@@ -270,7 +270,7 @@ int msil_main_preprocess(char* fileName)
     {
         if (Optimizer::cparams.prm_netcore_version)
         {
-           netCoreInstance = new NetCore(corFlags, Optimizer::cparams.prm_targettype != CONSOLE, Optimizer::cparams.prm_netcore_version);
+           netCoreInstance = new NetCore(corFlags, Optimizer::cparams.prm_targettype == GUI, Optimizer::cparams.prm_netcore_version);
            peLib = netCoreInstance->init(q);
            if (!peLib) 
                Utils::Fatal("internal error: netcore installation not found");

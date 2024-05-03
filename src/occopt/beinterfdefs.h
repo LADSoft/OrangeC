@@ -51,7 +51,6 @@ extern int architecture;
 #define STACK_PROTECT_WITH_CANARY (STACK_PROTECT_BASIC | STACK_PROTECT_ALL | STACK_PROTECT_STRONG | STACK_PROTECT_EXPLICIT)
 
 #define STACK_PROTECT_MINIMUM_CONSIDERED 4
-#pragma pack(push, 1)
 
 /* Common compiler parameters */
 typedef struct
@@ -588,7 +587,6 @@ typedef struct
         int labelNum;
     } u;
 } BE_IMODEDATA;
-#pragma pack(pop)
 
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2

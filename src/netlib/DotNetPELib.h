@@ -382,7 +382,7 @@ namespace DotNetPELib
         virtual bool PEDump(PELib &) { return false; }
         virtual void Render(PELib&) { }
         virtual void ObjOut(PELib &, int pass) const;
-        void ObjIn(PELib &);
+        void ObjIn(PELib &, const std::vector<Local *>& locals);
         Byte *Compile(PELib &, size_t &sz);
         int CompileSEH(std::vector<Instruction *>tags, int offset, std::vector<SEHData> &sehData);
         void CompileSEH(PELib &, std::vector<SEHData> &sehData);
@@ -764,6 +764,7 @@ namespace DotNetPELib
         bool IsPInvoke() const { return invokeMode_ == PInvoke; }
         ///** Add a local variable
         void AddLocal(Local *local);
+        const std::vector<Local *> const Locals() { return varList_; }
 
         void Instance(bool instance);
         bool Instance() const { return !!(Flags().Value & Qualifiers::Instance); }
@@ -957,7 +958,7 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const;
         size_t Render(PELib &peLib, int opcode, int operandType, Byte *);
         virtual void ObjOut(PELib &, int pass) const;
-        static Operand * ObjIn(PELib &);
+        static Operand * ObjIn(PELib &, const std::map<const std::string, Local*>& locals);
         std::string EscapedString() const;
     protected:
         OpType type_;
@@ -1089,7 +1090,7 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const;
         size_t Render(PELib & peLib, Byte *, std::unordered_map<std::string, Instruction *, StringHash> &labels);
         virtual void ObjOut(PELib &, int pass) const;
-        static Instruction *ObjIn(PELib &);
+        static Instruction *ObjIn(PELib &, const std::map<const std::string, Local*>& locals);
         enum ioperand {
             o_none, o_single, o_rel1, o_rel4, o_index1, o_index2, o_index4,
             o_immed1, o_immed4, o_immed8, o_float4, o_float8, o_switch
@@ -1136,7 +1137,7 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *);
         virtual void ObjOut(PELib &, int pass) const;
-        static Value *ObjIn(PELib &, bool definition = true);
+        static Value *ObjIn(PELib &, const std::map<const std::string, Local*>& locals, bool definition = true);
     protected:
         std::string name_;
         Type *type_;
@@ -1157,7 +1158,7 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const override;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *) override;
         virtual void ObjOut(PELib &, int pass) const override;
-        static Local *ObjIn(PELib &, bool definition = true);
+        static Local *ObjIn(PELib &, const std::map<const std::string, Local*>& locals, bool definition = true);
     private:
         int index_;
         int uses_;

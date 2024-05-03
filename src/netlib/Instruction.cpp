@@ -440,7 +440,7 @@ void Instruction::ObjOut(PELib& peLib, int pass) const
     }
     peLib.Out() << std::endl << "$ie";
 }
-Instruction* Instruction::ObjIn(PELib& peLib)
+Instruction* Instruction::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals)
 {
     Instruction* rv = nullptr;
     iop op = (iop)peLib.ObjInt();
@@ -498,7 +498,7 @@ Instruction* Instruction::ObjIn(PELib& peLib)
             }
             break;
             default: {
-                Operand* operand = Operand::ObjIn(peLib);
+                Operand* operand = Operand::ObjIn(peLib, locals);
                 rv = peLib.AllocateInstruction(op, operand);
             }
             break;

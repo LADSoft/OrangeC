@@ -50,22 +50,26 @@ void CodeContainer::ObjOut(PELib& peLib, int pass) const
         peLib.Out() << std::endl << "$Ie";
     }
 }
-void CodeContainer::ObjIn(PELib& peLib)
+void CodeContainer::ObjIn(PELib& peLib, const std::vector<Local *>& locals)
 {
+    std::map<const std::string, Local *> localMap;
+    for (auto a : locals)
+         localMap[a->Name()] = a;
+
     if (instructions_.size())
     {
         // duplicate public..   ignore the second instance
         // peLib.ObjError(oe_syntax);
         while (peLib.ObjBegin() == 'i')
         {
-            Instruction::ObjIn(peLib);
+            Instruction::ObjIn(peLib, localMap);
         }
     }
     else
     {
         while (peLib.ObjBegin() == 'i')
         {
-            AddInstruction(Instruction::ObjIn(peLib));
+            AddInstruction(Instruction::ObjIn(peLib, localMap));
         }
     }
     if (peLib.ObjEnd(false) != 'I')

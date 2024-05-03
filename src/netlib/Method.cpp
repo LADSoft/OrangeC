@@ -189,12 +189,13 @@ Method* Method::ObjIn(PELib& peLib, bool definition, Method** rfound)
         }
     }
     int n = found->size();
+    std::map<const std::string, Local*> dummyMap;
     while (peLib.ObjBegin() == 'v')
     {
         Type* type = Type::ObjIn(peLib);
         if (peLib.ObjBegin() != 'l')
             peLib.ObjError(oe_syntax);
-        Local* v = Local::ObjIn(peLib);
+        Local* v = Local::ObjIn(peLib, dummyMap);
         v->SetType(type);
         if (!n)
             found->AddLocal(v);
@@ -204,7 +205,7 @@ Method* Method::ObjIn(PELib& peLib, bool definition, Method** rfound)
     peLib.SetCodeContainer(rv);
     if (peLib.ObjBegin(false) == 'I')
     {
-        ((CodeContainer*)found)->ObjIn(peLib);
+        ((CodeContainer*)found)->ObjIn(peLib, found->Locals());
         if (peLib.ObjEnd() != 'm')
             peLib.ObjError(oe_syntax);
     }

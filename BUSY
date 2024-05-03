@@ -7,13 +7,17 @@
 
 let config : Config {
     if (target_toolchain == `gcc) {
-        # NOTE: this build has been successfully run on Linux x86 with GCC 12
+        # NOTE: this build has been successfully run on Linux x86 with GCC 12 and Linux x64 with GCC 10
         .lib_names += [ "m" "stdc++" ]
-        .ldflags += ["-shared-libgcc" "-static"]
-        .cflags_cc += ["-std=c++14" "-static"]
+        if build_mode == `debug {
+            .ldflags += "-shared-libgcc"
+        } else {
+            .ldflags += "-static"
+        }
+        .cflags_cc += "-std=c++14"
     	.defines += "HAVE_UNISTD_H"
     }else if (target_toolchain == `clang) {
-        # NOTE: this is an experimental compile with Clang 4.0.1 and the libc++ headers;
+    	# NOTE: this is an experimental compile with Clang 4.0.1 and the libc++ headers;
     	# it compiles when the original C headers from the system are available
     	# linking is yet another adventure to be solved
         .lib_names += [ "m" "stdc++" ]
@@ -25,7 +29,7 @@ let config : Config {
             //usr/lib/gcc/i686-linux-gnu/4.8/include-fixed
             ]
     }else if target_toolchain == `msvc {
-        # NOTE: this build has been successfully run on Windows 11 with MSVC 2015 x86
+    	# NOTE: this build has been successfully run on Windows 11 with MSVC 2015 x86
     	.defines += "TARGET_OS_WINDOWS"
     }else {
         error("target toolchain not supported")

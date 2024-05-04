@@ -35,7 +35,7 @@ ifeq "$(COMPILER)" "MINGW64"
 LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil libhostfxr
 endif
 ifeq "$(COMPILER)" "gcc-linux"
-LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil libhostfxr
+LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil
 endif
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)

@@ -27,7 +27,10 @@ NAME=occparse
 MAIN_FILE=occparse.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)occ ..$(PATHEXT2)occil ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=occ ocpplib oasm occopt util objlib occil netlib libhostfxr 
+LIB_DEPENDENCIES=occ ocpplib oasm occopt util objlib occil netlib
+ifneq "$(COMPILER)" "gcc-linux"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr
+endif
 ifeq "$(COMPILER)" "MINGW64"
 LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil libhostfxr
 endif

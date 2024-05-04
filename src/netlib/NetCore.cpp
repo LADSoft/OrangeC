@@ -23,7 +23,7 @@
  *
  */
 
-#include <Windows.h>
+#include <windows.h>
 #include <fstream>
 #include <map>
 #include <string>

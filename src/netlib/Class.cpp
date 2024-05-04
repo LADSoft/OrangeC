@@ -90,6 +90,10 @@ int Class::TransferFlags() const
     {
         peflags |= TypeDefTableEntry::Sealed;
     }
+    if (flags_.Flags() & Qualifiers::BeforeFieldInit)
+    {
+        peflags |= TypeDefTableEntry::BeforeFieldInit;
+    }
     if (flags_.Flags() & Qualifiers::Ansi)
     {
         peflags |= TypeDefTableEntry::AnsiClass;

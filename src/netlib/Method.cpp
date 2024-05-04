@@ -85,7 +85,7 @@ bool Method::ILSrcDump(PELib& peLib) const
         {
             // allow C# to use ...
             peLib.Out() << "\t.param\t[" << prototype_->ParamCount() << "]" << std::endl;
-            peLib.Out() << "\t.custom instance void [mscorlib]System.ParamArrayAttribute::.ctor() = ( 01 00 00 00 )" << std::endl;
+            peLib.Out() << "\t.custom instance void [" + peLib.GetRuntimeName() + "]System.ParamArrayAttribute::.ctor() = (01 00 00 00)" << std::endl;
         }
         if (varList_.size())
         {
@@ -189,12 +189,13 @@ Method* Method::ObjIn(PELib& peLib, bool definition, Method** rfound)
         }
     }
     int n = found->size();
+    std::map<const std::string, Local*> dummyMap;
     while (peLib.ObjBegin() == 'v')
     {
         Type* type = Type::ObjIn(peLib);
         if (peLib.ObjBegin() != 'l')
             peLib.ObjError(oe_syntax);
-        Local* v = Local::ObjIn(peLib);
+        Local* v = Local::ObjIn(peLib, dummyMap);
         v->SetType(type);
         if (!n)
             found->AddLocal(v);
@@ -204,7 +205,7 @@ Method* Method::ObjIn(PELib& peLib, bool definition, Method** rfound)
     peLib.SetCodeContainer(rv);
     if (peLib.ObjBegin(false) == 'I')
     {
-        ((CodeContainer*)found)->ObjIn(peLib);
+        ((CodeContainer*)found)->ObjIn(peLib, found->Locals());
         if (peLib.ObjEnd() != 'm')
             peLib.ObjError(oe_syntax);
     }
@@ -361,7 +362,7 @@ bool Method::PEDump(PELib& peLib)
             if (!attributeType && !attributeData)
             {
                 size_t ctor_index = 0;
-                AssemblyDef* assembly = peLib.MSCorLibAssembly();
+                AssemblyDef* assembly = peLib.LoadRuntimeAssembly();
                 void* result = nullptr;
                 peLib.Find("System.ParamArrayAttribute::.ctor", &result, nullptr, assembly);
                 if (result)
@@ -569,6 +570,11 @@ void Method::OptimizeLocals(PELib& peLib)
         }
     }
     std::sort(varList_.begin(), varList_.end(), [](const Local* left, const Local* right) { return left->Uses() > right->Uses(); });
+    int i;
+    for (i=varList_.size(); i > 0; i--)
+        if (varList_[i-1]->Uses())
+            break;
+    varList_.resize(i);
     int index = 0;
     for (auto a : varList_)
     {

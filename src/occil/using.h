@@ -31,4 +31,5 @@ std::string _dll_name(const char* name);
 void _add_global_using(const char* str);
 void _apply_global_using(void);
 bool msil_managed(Optimizer::SimpleSymbol* sp);
+int ValidateNetCoreVersion(int requestedVersion);
 }  // namespace occmsil

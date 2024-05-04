@@ -150,6 +150,7 @@ void operator delete(void* p)
 #ifndef ORANGE_NO_MSIL
 using namespace DotNetPELib;
 PELib* peLib;
+NetCore* netCoreInstance;
 #endif
 
 void regInit() {}

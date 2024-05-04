@@ -1843,6 +1843,8 @@ LEXLIST* expression_new(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                 name = overloadNameTab[CI_NEWA];
                 lex = getsym();
                 lex = expression(lex, funcsp, nullptr, &tp1, &exp, flags);
+                if (isstructured(tp1))
+                    castToArithmeticInternal(false, &tp1, &exp, (Keyword)-1, &stdint, false);
                 ConstExprPatch(&exp);
                 if (!isint(tp1))
                 {

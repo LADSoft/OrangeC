@@ -137,15 +137,19 @@ std::string PEReader::SearchOnPath(const std::string& fileName)
     }
     // else look on the path
     std::string path = libPath_;
+    if (path.empty())
+        path = getenv("PATH");
+    else
+        path = path + ";" + getenv("PATH");
     std::string rv;
     std::vector<std::string> split;
     size_t npos = path.find(";");
     while (npos != std::string::npos)
     {
         split.push_back(path.substr(0, npos));
-        if (npos > path.size() - 1)
+        if (npos < path.size() - 1)
         {
-            path = path.substr(npos);
+            path = path.substr(npos+1);
         }
         else
         {
@@ -229,15 +233,9 @@ std::string PEReader::SearchForManagedFile(const std::string& assemblyName, int 
     }
     return rv;
 }
-int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
-
+int PEReader::ManagedLoad(std::string assemblyName, std::string path)
 {
-    std::string t = SearchOnPath(assemblyName + ".dll");
-    if (t.size())
-        assemblyName = t;
-    else
-        assemblyName = SearchForManagedFile(assemblyName, major, minor, build, revision);
-    inputFile_ = new std::fstream(assemblyName.c_str(), std::ios::in | std::ios::binary);
+    inputFile_ = new std::fstream(path.c_str(), std::ios::in | std::ios::binary);
     if (!inputFile_->fail())
     {
         size_t peLoc = PELocation();
@@ -253,6 +251,17 @@ int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int bu
     {
         return ERR_FILE_NOT_FOUND;
     }
+
+}
+int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
+
+{
+    std::string path = SearchOnPath(assemblyName + ".dll");
+    if (!path.size())
+    {
+        path = SearchForManagedFile(assemblyName, major, minor, build, revision);
+    }
+    return ManagedLoad(assemblyName, path);
 }
 
 void PEReader::get(void* buffer, size_t offset, size_t len)
@@ -282,7 +291,7 @@ size_t PEReader::PELocation()
         if (*(short*)pe == PESIG)
         {
             PEHeader* peHeader = (PEHeader*)pe;
-            if (peHeader->magic == PE_MAGICNUM && peHeader->nt_hdr_size == 0xe0)
+            if (peHeader->magic == PE_MAGICNUM && peHeader->nt_hdr_size == PE_NT_HEADER_SIZE)
             {
                 // good enough, it sorta looks like a valid PE file
                 // load the objects table
@@ -292,16 +301,37 @@ size_t PEReader::PELocation()
                 // return the pe header offset
                 return *(DWord*)(mz + 0x3c);
             }
+            else if (peHeader->magic == PEPLUS_MAGICNUM && peHeader->nt_hdr_size == PEPLUS_NT_HEADER_SIZE)
+            {
+                // good enough, it sorta looks like a valid PE file
+                // load the objects table
+                num_objects_ = peHeader->num_objects;
+                objects_ = new PEObject[num_objects_];
+                get(objects_, *(DWord*)(mz + 0x3c) + sizeof(PEHeader) + PEPLUS_NT_HEADER_SIZE - PE_NT_HEADER_SIZE, num_objects_ * sizeof(PEObject));
+                // return the pe header offset
+                return *(DWord*)(mz + 0x3c);
+            }
         }
     }
     return 0;
 }
 size_t PEReader::Cor20Location(size_t headerOffs)
 {
-    PEHeader pe;
-    get(&pe, headerOffs, sizeof(PEHeader));
+    union
+    {
+        unsigned char data[sizeof(PEHeader) + PEPLUS_NT_HEADER_SIZE - PE_NT_HEADER_SIZE];
+        PEHeader pe;
+    };
+    get(&pe, headerOffs, sizeof(PEHeader) + PEPLUS_NT_HEADER_SIZE - PE_NT_HEADER_SIZE);
+    // this is where it is in pe file
     size_t offs = pe.com_rva;
     size_t size = pe.com_size;
+    if (pe.magic == PEPLUS_MAGICNUM)
+    {
+        // in peplus file the .net stuff moved...
+        offs = *(unsigned *)((unsigned char*)&pe + sizeof(PEHeader));
+        size = *(unsigned *)((unsigned char*)&pe + sizeof(PEHeader) + 4);
+    }
     DotNetCOR20Header cor20;
     get(&cor20, RVAToFileLocation(offs), sizeof(cor20));
     if (size == cor20.cb)
@@ -333,10 +363,11 @@ void PEReader::GetStream(size_t Cor20, const char* streamName, DWord pos[2])
     get(streamHeaders, RVAToFileLocation(offs1), sizeof(streamHeaders));
     Byte* p = streamHeaders + 12;
     p += *(DWord*)p + 4;
-    if (*(Word*)p == 0 && *(Word*)(p + 2) == 5)
+    if (*(Word*)p == 0)
     {
+        int n = *(Word*)(p + 2);
         p += 4;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < n; i++)
         {
             char* q = (char*)p + sizeof(DWord) * 2;
             if (!strcmp(q, streamName))

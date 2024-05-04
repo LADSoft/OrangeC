@@ -24,7 +24,7 @@
 H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 
-all:    lsmsilcrtl.dll occmsil.dll
+all:    release_lsmsilcrtl occmsil.dll
 $(eval $(FORMATTER))
 
 occmsil.dll:
@@ -32,8 +32,19 @@ occmsil.dll:
 	occ /Wd $(STDINCLUDE) /L$(SYSOBJECT) occmsil.c
 	move occmsil.dll $(SYSOBJECT)
 
-lsmsilcrtl.dll:
+release_lsmsilcrtl:
+	copy lsmsilcrtl.dll $(SYSOBJECT)
+	copy lsmsilcrtl6.dll $(SYSOBJECT)
+	copy lsmsilcrtl7.dll $(SYSOBJECT)
+	copy lsmsilcrtl8.dll $(SYSOBJECT)
+
+build_lsmsilcrtl:
 	csc /unsafe /langversion:7.3 /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
-	move lsmsilcrtl.dll $(SYSOBJECT)
+	dotnet build lsmsilcrtl\lsmsilcrtl6.csproj --configuration Release
+	copy lsmsilcrtl\bin\x86\Release\net6.0\*.dll
+	dotnet build lsmsilcrtl\lsmsilcrtl7.csproj --configuration Release
+	copy lsmsilcrtl\bin\x86\Release\net7.0\*.dll
+	dotnet build lsmsilcrtl\lsmsilcrtl8.csproj --configuration Release
+	copy lsmsilcrtl\bin\x86\Release\net8.0\*.dll
 
 DISTRIBUTE:

@@ -475,6 +475,7 @@ namespace DotNetPELib {
         PEReader() : inputFile_(nullptr), corRVA_(0), num_objects_(0), objects_(0), blobPos_(0), stringPos_(0), GUIDPos_(0), stringData_(nullptr), blobData_(nullptr) { }
         virtual ~PEReader();
 
+        int ManagedLoad(std::string assemblyName, std::string path);
         int ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision);
         int ReadFromString(Byte *buf, size_t len, size_t offset);
         int ReadFromBlob(Byte *buf, size_t len, size_t offset);

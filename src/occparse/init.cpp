@@ -14,7 +14,7 @@
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  * 
-
+ *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
@@ -1387,9 +1387,10 @@ static void dumpStaticInitializers(void)
                 }
                 sym->sb->offset = *sizep;
                 *sizep += basetype(tp)->size;
-                Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
-//                if (sym->sb->storage_class == StorageClass::constant_)
-//                    Optimizer::put_label(sym->sb->label);
+                if (sym->sb->anonymousGlobalUnion)
+                    Optimizer::put_label(sym->sb->label);
+                else
+                    Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
                 dumpInitGroup(sym, tp);
             }
             symListTail = symListTail->next;
@@ -1450,7 +1451,7 @@ INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, TYPE* tp, EXPRESSION* exp
         *pos = initListFactory.CreateList();
     return initInsert(pos, (**pos).end(), tp, exp, offset, noassign);
 }
-static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed,
+static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, TYPE* itype, bool commaallowed,
                                 std::function<EXPRESSION*(EXPRESSION*, TYPE*)> modify)
 {
     LEXLIST* start = lex;
@@ -1493,7 +1494,7 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 if (!temp || !temp->size())
                 {
                     *expr = intNode(ExpressionNode::c_i_, 0);
-                    *tp = &stdint;
+                    *tp = itype;
                 }
                 else
                 {
@@ -1513,9 +1514,10 @@ static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
     }
     return lex;
 }
-static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+static LEXLIST* init_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, TYPE* itype, bool commaallowed)
+
 {
-    return init_expression(lex, funcsp, atp, tp, expr, commaallowed, [](EXPRESSION* exp, TYPE* tp) { return exp; });
+    return init_expression(lex, funcsp, atp, tp, expr, itype, commaallowed, [](EXPRESSION* exp, TYPE* tp) { return exp; });
 }
 static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, TYPE* itype, std::list<INITIALIZER*>** init)
 {
@@ -1533,7 +1535,7 @@ static LEXLIST* initialize_bool_type(LEXLIST* lex, SYMBOL* funcsp, int offset, S
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, itype, false);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1586,7 +1588,7 @@ static LEXLIST* initialize_arithmetic_type(LEXLIST* lex, SYMBOL* funcsp, int off
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, itype, false);
         if (!tp || !exp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1731,7 +1733,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
         if (!lex || (lex->data->type != l_astr && lex->data->type != l_wstr && lex->data->type != l_ustr &&
                      lex->data->type != l_Ustr && lex->data->type != l_msilstr && lex->data->type != l_u8str))
         {
-            lex = init_expression(lex, funcsp, itype, &tp, &exp, false);
+            lex = init_expression(lex, funcsp, itype, &tp, &exp, itype, false);
             if (!tp)
             {
                 error(ERR_EXPRESSION_SYNTAX);
@@ -1875,7 +1877,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, S
     }
     else
     {
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, itype, false);
         ResolveTemplateVariable(&tp, &exp, itype, nullptr);
         if (!isconstzero(tp, exp) && exp->type != ExpressionNode::nullptr_)
         {
@@ -2420,6 +2422,15 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
 }
 static int str_candidate(LEXLIST* lex, TYPE* tp)
 {
+    LEXLIST *old = lex;
+    if (MATCHKW(lex, Keyword::openpa_))
+    {
+        while (lex && MATCHKW(lex, Keyword::openpa_))
+            lex = getsym();
+        prevsym(old);
+    }
+    if (!lex)
+        return false;
     TYPE* bt;
     bt = basetype(tp);
     if (bt->type == BasicType::string_)
@@ -2450,7 +2461,7 @@ static bool designator(LEXLIST** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** des
                 EXPRESSION* enode = nullptr;
                 int index;
                 *lex = getsym();
-                *lex = init_expression(*lex, funcsp, nullptr, &tp, &enode, false);
+                *lex = init_expression(*lex, funcsp, nullptr, &tp, &enode, (*desc)->tp, false);
                 needkw(lex, Keyword::closebr_);
                 if (!tp)
                     error(ERR_EXPRESSION_SYNTAX);
@@ -2689,7 +2700,18 @@ static LEXLIST* read_strings(LEXLIST* lex, std::list<INITIALIZER*>** next, AGGRE
     /* this assumes the sizeof(short) & sizeof(wchar_t) < 16 */
     if (max == 0)
         max = INT_MAX / 16;
+    int opencount = 0;
+    while (lex && MATCHKW(lex, Keyword::openpa_))
+    {
+         lex = getsym();
+         opencount++;
+    }
     lex = concatStringsInternal(lex, &string, 0);
+    while (opencount--)
+    {
+         if (!needkw(&lex, Keyword::closepa_))
+             break;
+    }
     switch (string->strtype)
     {
         case l_u8str:
@@ -3143,7 +3165,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                     TYPE* tp1 = nullptr;
                     EXPRESSION* exp1;
                     lex =
-                        init_expression(lex, funcsp, nullptr, &tp1, &exp1, false, [&exp, &constructed](EXPRESSION* exp1, TYPE* tp) {
+                        init_expression(lex, funcsp, nullptr, &tp1, &exp1, itype, false, [&exp, &constructed](EXPRESSION* exp1, TYPE* tp) {
                             EXPRESSION* oldthis;
                             for (oldthis = exp1; oldthis->right && oldthis->type == ExpressionNode::void_; oldthis = oldthis->right)
                                 ;
@@ -3270,7 +3292,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                         // shortcut for conversion from single expression
                         EXPRESSION* exp1 = nullptr;
                         TYPE* tp1 = nullptr;
-                        lex = init_expression(lex, funcsp, itype, &tp1, &exp1, false,
+                        lex = init_expression(lex, funcsp, itype, &tp1, &exp1, itype, false,
                                               [&exp, itype, &constructed](EXPRESSION* exp1, TYPE* tp1) {
                                                   if (exp1->type == ExpressionNode::thisref_ && exp1->left->type == ExpressionNode::func_)
                                                   {
@@ -3327,7 +3349,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                 // shortcut for conversion from single expression
                 EXPRESSION* exp1 = nullptr;
                 TYPE* tp1 = nullptr;
-                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
+                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, itype, false);
                 funcparams->arguments = initListListFactory.CreateList();
                 auto arg = Allocate<INITLIST>();
                 funcparams->arguments->push_back(arg);
@@ -3826,7 +3848,7 @@ static LEXLIST* initialize_auto(LEXLIST * lex, SYMBOL * funcsp, int offset, Stor
     {
         TYPE* tp = nullptr;
         EXPRESSION* exp;
-        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, false);
+        lex = init_expression(lex, funcsp, nullptr, &tp, &exp, itype, false);
         if (isstructured(tp) && basetype(tp)->sp->sb->islambda)
         {
             // this is part of copy elision for lambda declarations
@@ -4309,7 +4331,12 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                             tp2 = &basetype(*tp2)->btp;
                         //                        *tp2 = tp1;
                         if (isstructured(*tp2))
-                            *tp2 = basetype(*tp2)->sp->tp;
+                        {
+                            auto tp3 = tp2;
+                            while (*tp3 != basetype(*tp3))
+                                tp3 = &(*tp3)->btp;
+                            *tp3 = (*tp3)->sp->tp;
+                        }
 
                         if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && isstructured(*tp2) &&
                             !isref(sym->tp) && !(*tp2)->syms)

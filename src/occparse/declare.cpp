@@ -76,6 +76,7 @@ Optimizer::LIST* openStructs;
 int parsingTrailingReturnOrUsing;
 int inTypedef;
 int resolvingStructDeclarations;
+std::map<int, SYMBOL*> localAnonymousUnions;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -812,25 +813,19 @@ static bool validateAnonymousUnion(SYMBOL* parent, TYPE* unionType)
 static void resolveAnonymousGlobalUnion(SYMBOL* sp)
 {
     validateAnonymousUnion(nullptr, sp->tp);
-    sp->sb->label = Optimizer::nextLabel++;
-    sp->sb->storage_class = StorageClass::localstatic_;
-    insertInitSym(sp);
+    InsertSymbol(sp, sp->sb->storage_class, Linkage::c_, true);
+    if (sp->sb->storage_class != StorageClass::auto_)
+    {
+        insertInitSym(sp);
+    }
     for (auto sym : *sp->tp->syms)
     {
         if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
         {
-            SYMBOL* spi;
-            if ((spi = gsearch(sym->name)) != nullptr)
-            {
-                currentErrorLine = 0;
-                preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->sb->declfile, spi->sb->declline);
-            }
-            else
-            {
-                sym->sb->storage_class = StorageClass::localstatic_;
-                sym->sb->label = sp->sb->label;
-                InsertSymbol(sym, StorageClass::static_, Linkage::c_, false);
-            }
+            sym->sb->storage_class = sp->sb->storage_class;
+            sym->sb->label = sp->sb->label;
+            sym->sb->anonymousGlobalUnion = true;
+            InsertSymbol(sym, sp->sb->storage_class, Linkage::c_, false);
         }
     }
 }
@@ -6030,23 +6025,32 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                             }
                         }
                         tp1 = basetype(tp1);
-                        if (Optimizer::cparams.prm_cplusplus && storage_class_in == StorageClass::global_ && tp1->type == BasicType::union_ &&
-                            tp1->sp->sb->anonymous)
+                        if (Optimizer::cparams.prm_cplusplus && tp1->type == BasicType::union_ &&
+                            tp1->sp->sb->anonymous && (storage_class_in == StorageClass::global_ || storage_class_in == StorageClass::auto_))
                         {
                             StorageClass sc = storage_class_in;
-                            if (sc != StorageClass::member_ && sc != StorageClass::mutable_)
+                            if (sc == StorageClass::auto_)
+                                sc = storage_class;
+                            else if (sc != StorageClass::member_ && sc != StorageClass::mutable_)
                                 sc = StorageClass::static_;
 
-                            sp = makeID(sc, tp1, nullptr, AnonymousName());
+                            int label = Optimizer::nextLabel++;
+                            char buf[50];
+                            sprintf(buf, "__anonymousUnion%d", label);
+                            sp = makeID(sc, tp1, nullptr, litlate(buf));
+                            sp->sb->label = label;
+                            sp->sb->anonymousGlobalUnion = true;
                             sp->sb->anonymous = true;
                             sp->sb->access = access;
                             SetLinkerNames(sp, Linkage::c_);
                             sp->sb->parent = funcsp; /* function vars have a parent */
                             InsertSymbol(sp, sp->sb->storage_class, linkage, false);
-                            if (storage_class != StorageClass::static_)
+                            if (sc != StorageClass::auto_ && sc != StorageClass::static_ && sc != StorageClass::localstatic_)
                             {
                                 error(ERR_GLOBAL_ANONYMOUS_UNION_NOT_STATIC);
                             }
+                            if (sc == StorageClass::auto_)
+                                localAnonymousUnions[label] = sp;
                             resolveAnonymousGlobalUnion(sp);
                         }
                         else if ((storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_) && isstructured(tp1) &&

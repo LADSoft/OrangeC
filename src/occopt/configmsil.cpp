@@ -55,6 +55,7 @@ static char help_text[] =
     "/O-       - disable optimizations     /P        - replace PInvokes\n"
     "+Q        - quiet mode                /T        - translate trigraphs\n"
     "/Vx.x.x.x - set assembly version      /!        - No logo\n"
+    "--netcore:x - use .net core version x.   x = 0 for latest version installed\n"
     "--version - show version info\n"
     "/?, --help  - This text\n"
     "\nCodegen parameters: (/C[+][-][params])\n"

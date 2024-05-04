@@ -971,7 +971,6 @@ bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EX
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
     if (isstructuredmath(*resulttp, righttp))
     {
-
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
         {
@@ -986,7 +985,7 @@ bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EX
             }
             if (Optimizer::cparams.prm_cplusplus && righttp && isstructured(righttp))
             {
-                if (!castToArithmeticInternal(false, &righttp, &rightexp, (Keyword)-1, isstructured(*resulttp) ? &stdint : *resulttp, false))
+                if (!castToArithmeticInternal(false, &righttp, &rightexp, (Keyword)-1, isstructured(*resulttp) || ispointer(*resulttp) ? &stdint : *resulttp, false))
                     castToPointer(&righttp, &rightexp, kw, &stdpointer);
             }
             LookupSingleAggregate(*resulttp, resultexp);
@@ -1648,14 +1647,6 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
             {
                 GetAssignDestructors(&(*resultexp)->v.func->destructors, *resultexp);
             }
-            /*
-            if (asndest)
-            {
-                SYMBOL *sym = anonymousVar(StorageClass::auto_, righttp)->v.sp;
-                callDestructor(basetype(righttp)->sp, nullptr, &asndest, nullptr, true, false, false, true);
-                initInsert(&sym->sb->dest, righttp, asndest, 0, true);
-            }
-            */
             return true;
         }
     }
@@ -1680,7 +1671,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     auto exp2 = &rightexp;
     while (castvalue(*exp2))
         exp2 = &(*exp2)->left;
-    if ((*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
+    if ((isfunction(*resulttp) || isfuncptr(*resulttp)) && (*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
     {
         TYPE *tp2 = nullptr;
         SYMBOL *funcsp;
@@ -1723,7 +1714,6 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     EXPRESSION *temp = GetSymRef(*resultexp);
     auto symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
     LookupSingleAggregate(righttp, &rightexp);
-
     if (isstructured(righttp))
     {
         SYMBOL *conv = lookupNonspecificCast(basetype(righttp)->sp, *resulttp);

@@ -178,6 +178,8 @@ CmdSwitchBool RuntimeObjectOverflow(SwitchParser, 0, 0, {"fruntime-object-overfl
 CmdSwitchBool RuntimeUninitializedVariable(SwitchParser, 0, 0, {"fruntime-uninitialized-variable"});
 CmdSwitchBool RuntimeHeapCheck(SwitchParser, 0, 0, {"fruntime-heap-check"});
 
+CmdSwitchInt NetCoreSwitch(SwitchParser, 0, 5, 0, 1000, {"netcore"});
+
 static std::string firstFile;
 
 Linkage getDefaultLinkage()
@@ -763,6 +765,14 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
     if (RuntimeHeapCheck.GetValue())
         Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
+#ifndef ORANGE_NO_MSIL
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && NetCoreSwitch.GetExists())
+    {
+        Optimizer::cparams.prm_netcore_version = occmsil::ValidateNetCoreVersion(NetCoreSwitch.GetValue());
+        if (Optimizer::cparams.prm_netcore_version == INT_MAX)
+            Utils::Fatal("Selected .net core version not installed"); 
+    }
+#endif
 }
 
 /*-------------------------------------------------------------------------*/

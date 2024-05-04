@@ -27,7 +27,7 @@ NAME=occil
 MAIN_FILE=occil.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=netlib ocpplib occopt util
+LIB_DEPENDENCIES=netlib libhostfxr ocpplib occopt util
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 

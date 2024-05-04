@@ -112,7 +112,7 @@ void parse_pragma(const char* kw, const char* tag)
             {
                 temp = temp.substr(0, npos + 1);
             }
-            peLib->LoadAssembly(temp);
+            LoadAssembly(temp.c_str());
             Import();
         }
     }
@@ -698,7 +698,8 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             Type* type;
             if (it == typeList.end())
             {
-                cls = peLib->AllocateClass(name1, Qualifiers::Public | Qualifiers::ClassClass, -1, tp->size == 0 ? 1 : tp->size);
+		// the minimum size is to address a crash in .netcore 8.
+                cls = peLib->AllocateClass(name1, Qualifiers::Public | Qualifiers::ClassClass,  -1, tp->size == 0 ? 1 : tp->size < 8 ? 8 : tp->size);
                 mainContainer->Add(cls);
                 // declare any structure we are referencing..
                 while (tp->type == Optimizer::st_pointer)
@@ -1081,15 +1082,15 @@ void LoadLocals(std::vector<Optimizer::SimpleSymbol*>& vars)
     }
     if (found)
     {
-        for (auto sym : vars)
+        for (auto&& sym : vars)
         {
             sym->temp = false;
         }
-        for (auto sym : Optimizer::temporarySymbols)
+        for (auto&& sym : Optimizer::temporarySymbols)
         {
             sym->temp = false;
         }
-        for (auto sym : vars)
+        for (auto&& sym : vars)
         {
             if ((sym->storage_class == Optimizer::scc_auto || sym->storage_class == Optimizer::scc_register) && !sym->temp)
             {
@@ -1101,7 +1102,7 @@ void LoadLocals(std::vector<Optimizer::SimpleSymbol*>& vars)
                 sym->offset = count++;
             }
         }
-        for (auto sym : Optimizer::temporarySymbols)
+        for (auto&& sym : Optimizer::temporarySymbols)
         {
             if (!sym->anonymous && !sym->temp)
             {
@@ -2022,11 +2023,22 @@ void msil_main_postprocess(bool errors)
                 Utils::AddExt(ilName, ".dll");
             else
                 Utils::AddExt(ilName, ".exe");
-            peLib->DumpOutputFile(ilName,
-                                  Optimizer::cparams.prm_asmfile
-                                      ? PELib::ilasm
-                                      : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
-                                  Optimizer::cparams.prm_targettype != CONSOLE);
+
+            if (netCoreInstance)
+            {
+                netCoreInstance->DumpOutputFile(ilName,
+                                                Optimizer::cparams.prm_asmfile
+                                                     ? PELib::ilasm
+                                                     : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe));
+            }
+            else
+            {
+                peLib->DumpOutputFile(ilName,
+                                      Optimizer::cparams.prm_asmfile
+                                          ? PELib::ilasm
+                                         : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
+                                      Optimizer::cparams.prm_targettype == GUI);
+            }
         }
     }
 }

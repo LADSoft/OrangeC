@@ -256,10 +256,10 @@ int PEReader::ManagedLoad(std::string assemblyName, std::string path)
 int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
 
 {
-    std::string path = SearchOnPath(assemblyName + ".dll");
+    std::string path = SearchForManagedFile(assemblyName, major, minor, build, revision);
     if (!path.size())
     {
-        path = SearchForManagedFile(assemblyName, major, minor, build, revision);
+        path = SearchOnPath(assemblyName + ".dll");
     }
     return ManagedLoad(assemblyName, path);
 }

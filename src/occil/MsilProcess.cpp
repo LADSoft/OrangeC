@@ -2024,6 +2024,7 @@ void msil_main_postprocess(bool errors)
             else
                 Utils::AddExt(ilName, ".exe");
 
+#ifdef TARGET_OS_WINDOWS
             if (netCoreInstance)
             {
                 netCoreInstance->DumpOutputFile(ilName,
@@ -2032,6 +2033,7 @@ void msil_main_postprocess(bool errors)
                                                      : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe));
             }
             else
+#endif
             {
                 peLib->DumpOutputFile(ilName,
                                       Optimizer::cparams.prm_asmfile

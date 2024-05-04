@@ -29,12 +29,13 @@ MAIN_FILE=NetLinkMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)exefmt ..$(PATHEXT2)
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 H_DEPENDENCIES=$(wildcard *.h)
-LIB_DEPENDENCIES=util libhostfxr
+LIB_DEPENDENCIES=util
 
 ifneq "$(COMPILER)" "gcc-linux"
 DEFINES:=TARGET_OS_WINDOWS FALLBACK_HOST_OS=\"win10\" FEATURE_APPHOST TARGET_WINDOWS
 #fixme this next won't run in an x64 image....
 DEFINES:= $(DEFINES) TARGET_X86 CURRENT_ARCH_NAME=\"x86\"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr
 endif
 
 include ../redirect.mak

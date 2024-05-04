@@ -41,8 +41,12 @@
 namespace Optimizer
 {
 FunctionData* myfd;
-static std::list<std::string> textRegion;
+static std::vector<std::string> textRegion;
+static std::vector<std::pair<int,int>> textIndexRegion;
+
 static std::unordered_map<std::string, int> cachedText;
+static std::unordered_map<std::string, int> cachedText2;
+
 static size_t textOffset;
 static std::map<IMODE*, int> cachedImodes;
 static std::set<SimpleSymbol*> cachedAutos;
@@ -54,18 +58,43 @@ static int outputPos;
 static int outputSize;
 static unsigned char* streamPointer;
 
-static size_t TextName(const std::string& name)
+
+// returns an index into the text region
+static size_t CacheText(const std::string& name)
 {
-    if (name[0] == 0)
-        return 0;
-    auto it = cachedText.find(name);
-    if (it != cachedText.end())
+    auto it = cachedText2.find(name);
+    if (it != cachedText2.end())
         return it->second;
     auto rv = textOffset;
     textOffset += name.size();
     textRegion.push_back(name);
-    cachedText[name] = rv;
+    cachedText2[name] = rv;
     return rv;
+}
+// returns an index into the index region
+static size_t TextName(const std::string& name)
+{
+    if (name[0] == 0)
+    {
+        return 0;
+    }
+    auto it = cachedText.find(name);
+    if (it != cachedText.end())
+        return it->second;
+    int index1 = 0, index2 = 0;
+    size_t pos = name.find_last_of("@");
+    if (pos != std::string::npos && pos > 0)
+    {
+        index1 = CacheText(name.substr(0, pos+1));
+        index2 = CacheText(name.substr(pos+1));
+    }
+    else
+    {
+        index1 = CacheText(name);
+    }
+    textIndexRegion.push_back(std::pair<int, int>(index1, index2));
+    cachedText[name] = textIndexRegion.size();
+    return textIndexRegion.size();
 }
 static void resize(int size)
 {
@@ -977,6 +1006,12 @@ void WriteText()
         for (auto c : t)
             StreamByte(c);
     }
+    StreamIndex(textIndexRegion.size());
+    for (auto &&t : textIndexRegion)
+    {
+        StreamIndex(t.first);
+        StreamIndex(t.second);
+    }
     StreamBlockType(SBT_TEXT, true);
 }
 // in the following, the low bit being set signifies the data in the stream
@@ -1028,8 +1063,10 @@ void OutputIntermediate(SharedMemory* mem)
 {
     sharedRegion = mem;
     textRegion.clear();
+    textIndexRegion.clear();
     textOffset = 1;
     cachedText.clear();
+    cachedText2.clear();
     NumberGlobals();
     NumberTypes();
     StreamHeader();

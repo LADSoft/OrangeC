@@ -78,7 +78,7 @@ void Optimizer::SymbolManager::clear()
     globalSymbols.clear();
 }
 
-Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym, bool definingFunction)
 {
     if (sym && sym->sb)
     {
@@ -87,6 +87,24 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
         if (!rv)
         {
             rv = Make(sym);
+        }
+        if (definingFunction && Optimizer::architecture != ARCHITECTURE_MSIL)
+        {
+            // the backend requires type info for all function params in a generated function
+            // but, we don't want to generate all the param types for each call site
+            // and each prototype.   So we just get in here for functions that are
+            // actually being defined.
+            if (basetype(sym->tp)->syms && rv && !rv->syms)
+            {
+                Optimizer::LIST** p = &rv->syms;
+                for (auto sp : *basetype(sym->tp)->syms)
+                {
+                    *p = Allocate<Optimizer::LIST>();
+                    (*p)->data = Get(sp);
+                    EnterType((Optimizer::SimpleSymbol*)(*p)->data);
+                    p = &(*p)->next;
+                }
+            }
         }
         return rv;
     }
@@ -324,7 +342,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->type != BasicType::aggregate_ && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
+        if (tp->type != BasicType::aggregate_ && (!isfunction(tp) || Optimizer::architecture == ARCHITECTURE_MSIL) && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
         {
             Optimizer::LIST** p = &rv->sp->syms;
             for (auto sp : *tp->syms)

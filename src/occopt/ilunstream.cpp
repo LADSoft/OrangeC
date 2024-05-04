@@ -45,20 +45,17 @@
 
 namespace Optimizer
 {
-static std::list<std::string> textRegion;
-static std::unordered_map<std::string, int> cachedText;
 static size_t textOffset;
 static FunctionData *current, *lastFunction;
-static std::map<int, std::string> texts;
+static std::vector<std::string> texts;
 static std::vector<Optimizer::SimpleSymbol*> temps;
 
 static unsigned char* streamPointer;
 static SharedMemory* shared;
 static unsigned top;
 
-static int
-    inputPos;  // it is not intended we ever reset this, as multiple files could be streamed one after the other and we are going to
-// read them in order
+static int inputPos;  // it is not intended we ever reset this, as multiple files could be streamed 
+                      // one after the other and we are going to read them in order
 inline void dothrow()
 {
     std::runtime_error e("");
@@ -925,8 +922,9 @@ static void UnstreamData()
     }
     UnstreamBlockType(SBT_DATA, true);
 }
-void ReadText(std::map<int, std::string>& texts)
+void ReadText(std::vector<std::string>& texts)
 {
+    std::map<int, std::string> itext;
     UnstreamBlockType(SBT_TEXT, false);
     textOffset = UnstreamIndex();
     for (int i = 1; i < textOffset;)
@@ -937,8 +935,20 @@ void ReadText(std::map<int, std::string>& texts)
 
         for (auto&& c : val)
             c = UnstreamByte();
-        texts[i] = val;
+        itext[i] = val;
         i += len;
+    }
+    int count = UnstreamIndex();
+    for (int i=0; i < count; i++)
+    {
+        int index1 = UnstreamIndex();
+        int index2 = UnstreamIndex();
+        std::string val;
+        if (index1)
+            val = itext[index1];
+        if (index2)
+            val += itext[index2];
+        texts.push_back(val);
     }
     UnstreamBlockType(SBT_TEXT, true);
 }
@@ -968,9 +978,9 @@ static Optimizer::SimpleSymbol* SymbolName(Optimizer::SimpleSymbol* selection, s
     }
     return nullptr;
 }
-static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, std::map<int, std::string>& texts,
+static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, const std::vector<std::string>& texts,
                           std::vector<Optimizer::SimpleSymbol*>& table);
-static void ResolveType(Optimizer::SimpleType* tp, std::map<int, std::string>& texts, std::vector<Optimizer::SimpleSymbol*>& table)
+static void ResolveType(Optimizer::SimpleType* tp, const std::vector<std::string>& texts, std::vector<Optimizer::SimpleSymbol*>& table)
 {
     bool ispointer = false;
     while (tp)
@@ -992,7 +1002,7 @@ static void ResolveType(Optimizer::SimpleType* tp, std::map<int, std::string>& t
         tp = tp->btp;
     }
 }
-static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, std::string>& texts)
+static void ResolveExpression(Optimizer::SimpleExpression* exp, const std::vector<std::string>& texts)
 {
     if (exp)
     {
@@ -1054,7 +1064,7 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
         }
     }
 }
-static void ResolveAssemblyInstruction(OCODE* c, std::map<int, std::string>& texts)
+static void ResolveAssemblyInstruction(OCODE* c, const std::vector<std::string>& texts)
 {
     if (c->oper1)
         ResolveExpression(c->oper1->offset, texts);
@@ -1063,7 +1073,7 @@ static void ResolveAssemblyInstruction(OCODE* c, std::map<int, std::string>& tex
     if (c->oper3)
         ResolveExpression(c->oper3->offset, texts);
 }
-static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& texts)
+static void ResolveInstruction(Optimizer::QUAD* q, const std::vector<std::string>& texts)
 {
     switch (q->dc.opcode)
     {
@@ -1120,7 +1130,7 @@ static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& t
             ResolveExpression(a->exp, texts);
     }
 }
-static void ResolveSymbol(std::vector<Optimizer::SimpleSymbol*> symbols, std::map<int, std::string>& texts,
+static void ResolveSymbol(std::vector<Optimizer::SimpleSymbol*> symbols, const std::vector<std::string>& texts,
                           std::vector<Optimizer::SimpleSymbol*>& table)
 {
     for (auto&& v : symbols)
@@ -1128,7 +1138,7 @@ static void ResolveSymbol(std::vector<Optimizer::SimpleSymbol*> symbols, std::ma
         ResolveSymbol(v, texts, table);
     }
 }
-static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, std::map<int, std::string>& texts,
+static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, const std::vector<std::string>& texts,
                           std::vector<Optimizer::SimpleSymbol*>& table)
 {
     if (sym != nullptr)
@@ -1160,7 +1170,7 @@ static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, std::map<int, std::stri
             sym->msil = texts[(int)(intptr_t)sym->msil].c_str();
     }
 }
-static void ResolveFunction(FunctionData* fd, std::map<int, std::string>& texts)
+static void ResolveFunction(FunctionData* fd, const std::vector<std::string>& texts)
 {
     current = fd;
 
@@ -1183,7 +1193,7 @@ static void ResolveFunction(FunctionData* fd, std::map<int, std::string>& texts)
     lastFunction = current;
     current = nullptr;
 }
-static void ResolveNames(std::map<int, std::string>& texts)
+static void ResolveNames(const std::vector<std::string>& texts)
 {
     for (auto&& v : globalCache)
         ResolveSymbol(v, texts, globalCache);
@@ -1241,7 +1251,7 @@ bool InputIntermediate(SharedMemory* inputMem)
     shared = inputMem;
     currentBlock = nullptr;
     texts.clear();
-    texts[0] = "";
+    texts.push_back("");
     textOffset = 1;
     try
     {

@@ -328,7 +328,7 @@ struct SimpleExpression
 
 struct SymbolManager
 {
-    static SimpleSymbol* Get(struct Parser::sym* sym);
+    static SimpleSymbol* Get(struct Parser::sym* sym, bool definingFunction = false);
     static SimpleSymbol* Test(struct Parser::sym* sym);
     static SimpleExpression* Get(struct Parser::expr* e);
     static e_scc_type Get(Parser::StorageClass storage_class);

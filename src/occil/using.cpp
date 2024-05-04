@@ -117,12 +117,16 @@ int ValidateNetCoreVersion(int requestedVersion)
 	NetCore core(PELib::bits32);
         if (requestedVersion == 0)
             requestedVersion = NetCore::DummyChooseLatest;        
+#ifdef TARGET_OS_WINDOWS
 	if (core.SupportsRuntime(requestedVersion))
         {
              return requestedVersion;
         }
         // error
         return INT_MAX;
+#else
+        return requestedVersion;
+#endif
 }
 
 }  // namespace occmsil

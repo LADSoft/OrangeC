@@ -4293,6 +4293,10 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         templateNestingCount--;
     checkUndefinedStructures(funcsp);
     parseNoexcept(funcsp);
+    Optimizer::SymbolManager::Get(funcsp);
+    if (funcsp->tp->syms)
+        for (auto s : *funcsp->tp->syms)
+            Optimizer::SymbolManager::Get(s);
     if (!inNoExceptHandler)
     {
         FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);

@@ -324,7 +324,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->type != BasicType::aggregate_ && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
+        if (tp->type != BasicType::aggregate_ && !isfunction(tp) && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
         {
             Optimizer::LIST** p = &rv->sp->syms;
             for (auto sp : *tp->syms)

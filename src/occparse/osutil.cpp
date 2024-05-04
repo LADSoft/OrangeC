@@ -1189,7 +1189,9 @@ int ccinit(int argc, char* argv[])
         auto splt = Utils::split(architecture, ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
-            {"msil", ARCHITECTURE_MSIL},
+    #ifndef ORANGE_NO_MSIL
+           {"msil", ARCHITECTURE_MSIL},
+    #endif
         };
         if (architectures.find(splt[0]) != architectures.end())
         {

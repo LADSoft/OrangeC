@@ -324,9 +324,9 @@ $(CDIRS): %.dirs :
 	-$(MKDIR) $*$(PATHEXT2)obj$(PATHEXT2)$(OBJ_IND_PATH) 2> $(NULLDEV)
 
 $(LIBS): %.library :
-	$(MAKE) library compile -f $(_TREEROOT) -DCOMPILER=$(COMPILER) -C$*
+	$(MAKE) library compile -f $(_TREEROOT) -C$*
 $(EXES): %.exefile : library
-	$(MAKE) exefile link -f $(_TREEROOT) -DCOMPILER=$(COMPILER) -C$*
+	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
 distribute_self:  cleanDISTRIBUTE
 	$(MAKE) DISTRIBUTE

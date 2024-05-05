@@ -242,7 +242,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
                 break;
-            case ExpressionNode::cond_:
+            case ExpressionNode::hook_:
                 *buf++ = 'C';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right->left);
@@ -459,7 +459,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = getName(buf, exp->v.templateParam->first);
                 buf += strlen(buf);
                 break;
-            case ExpressionNode::void_:
+            case ExpressionNode::comma_:
                 *buf++ = 'v';
                 // ignoring args to void...
                 *buf = 0;

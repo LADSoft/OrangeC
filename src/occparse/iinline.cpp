@@ -316,10 +316,10 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                                 deref(basetype(sym->tp)->sp->sb->structuredAliasType, &val);
                             }
                         }
-                        else if (val->type == ExpressionNode::void_)
+                        else if (val->type == ExpressionNode::comma_)
                         {
                             auto val1 = &val;
-                            while ((*val1)->type == ExpressionNode::void_ && (*val1)->right)
+                            while ((*val1)->type == ExpressionNode::comma_ && (*val1)->right)
                                 val1 = &(*val1)->right;
                             if ((*val1)->isStructAddress)
                                 deref(basetype(sym->tp)->sp->sb->structuredAliasType, val1);
@@ -572,7 +572,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         auto ex = f->thisptr;
         if (lvalue(ex))
             ex = ex->left;
-        if (ex->type == ExpressionNode::void_)
+        if (ex->type == ExpressionNode::comma_)
         {
             return nullptr;
         }
@@ -603,7 +603,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         for (auto fargs : *f->arguments)
         {
             auto exp = fargs->exp;
-            if (exp->type == ExpressionNode::void_)
+            if (exp->type == ExpressionNode::comma_)
                 exp = exp->left;
             if (hasaincdec(fargs->exp) || (exp->type == ExpressionNode::thisref_ && exp->left->v.func->sp->sb->isConstructor) )
             {

@@ -796,7 +796,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
         if (en)
         {
-            *cur = exprNode(ExpressionNode::void_, en, NULL);
+            *cur = exprNode(ExpressionNode::comma_, en, NULL);
             cur = &(*cur)->right;
         }
     } 

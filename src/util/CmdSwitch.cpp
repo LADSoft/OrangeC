@@ -364,7 +364,11 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
-        else if ((argv[0][0] == '-' || argv[0][0] == '/' || (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
+        else if ((argv[0][0] == '-' ||
+          #ifdef _WIN32
+                  argv[0][0] == '/' ||
+          #endif
+                  (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
                  (argv[0][1] != '-' || argv[0][2]))
         {
             const char* swtch = &argv[0][0];

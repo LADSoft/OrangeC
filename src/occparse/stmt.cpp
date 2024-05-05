@@ -50,7 +50,9 @@
 #include "declcpp.h"
 #include "constopt.h"
 #include "OptUtils.h"
+#ifndef ORANGE_NO_MSIL
 #include "using.h"
+#endif
 #include "declare.h"
 #include "memory.h"
 #include "exprcpp.h"
@@ -127,8 +129,10 @@ void statement_ini(bool global)
 }
 bool msilManaged(SYMBOL* s)
 {
+#ifndef ORANGE_NO_MSIL
     if (IsCompiler())
-        return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
+       return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
+#endif
     return false;
 }
 
@@ -3095,6 +3099,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
     (void)funcsp;
     (void)parent;  //
     Optimizer::functionHasAssembly = true;
+#ifndef ORANGE_NO_INASM
     if (hasInlineAsm())
     {
         before->hassemi = false;
@@ -3143,6 +3148,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
         }
     }
     else
+#endif
     {
         /* if we get here the backend doesn't have an assembler, for now we
          * are just going to make an error and scan past tokens

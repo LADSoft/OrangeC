@@ -31,12 +31,16 @@
 #include <ctime>
 #include "../version.h"
 #include "winmode.h"
+#ifndef ORANGE_NO_INASM
 #include "InstructionParser.h"
+#endif
 #include "SharedMemory.h"
 #include "MakeStubs.h"
 
+#ifndef ORANGE_NO_INASM
 #include "x64Operand.h"
 #include "x64Parser.h"
+#endif
 #include "ccerr.h"
 #include "config.h"
 #include "declare.h"
@@ -69,7 +73,9 @@
 #include "OptUtils.h"
 #include "istmt.h"
 #include "irc.h"
+#ifndef ORANGE_NO_MSIL
 #include "DotNetPELib.h"
+#endif
 #include "constexpr.h"
 #include "symtab.h"
 #include "ListFactory.h"
@@ -141,9 +147,11 @@ void operator delete(void* p)
 }
 
 #endif
+#ifndef ORANGE_NO_MSIL
 using namespace DotNetPELib;
 PELib* peLib;
 NetCore* netCoreInstance;
+#endif
 
 void regInit() {}
 int usingEsp;
@@ -156,6 +164,7 @@ bool IsSymbolCharRoutine(const char* data, bool startOnly)
     diag("IsSymbolCharRoutine called");
     abort();
 }
+#ifndef ORANGE_NO_MSIL
 void InstructionParser::Split(const std::string& line, std::vector<std::string>& splt)
 {
     {
@@ -163,6 +172,7 @@ void InstructionParser::Split(const std::string& line, std::vector<std::string>&
         abort();
     }
 }
+#endif
 
 namespace occmsil
 {
@@ -230,7 +240,9 @@ PreProcessor* preProcessor;
 
 char realOutFile[260];
 
+#ifndef ORANGE_NO_INASM
 InstructionParser* instructionParser;
+#endif
 static int stoponerr = 0;
 
 Optimizer::COMPILER_PARAMS cparams_default = {
@@ -363,7 +375,9 @@ void compile(bool global)
     genstmtini();
     ParseBuiltins();
     //    intrinsicInit();
+#ifndef ORANGE_NO_INASM
     inlineAsmInit();
+#endif
     // outcodeInit();
     //    debuggerInit();
     //    browsdataInit();
@@ -372,11 +386,13 @@ void compile(bool global)
     if (IsCompiler())
     {
         static bool first = true;
+#ifndef ORANGE_NO_MSIL
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
             if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
             {
                 occmsil::msil_compile_start((char*)clist->data);
             }
+#endif
         first = false;
     }
     if (Optimizer::cparams.prm_assemble)
@@ -491,7 +507,9 @@ int main(int argc, char* argv[])
     }
     else
     {
+#ifndef ORANGE_NO_INASM
         Parser::instructionParser = new x64Parser();
+#endif
         if (bePostFile.size())
         {
             parserMem = new SharedMemory(0, bePostFile.c_str());
@@ -520,11 +538,13 @@ int main(int argc, char* argv[])
         identityValue = Utils::CRC32((const unsigned char*)clist->data, strlen((char*)clist->data));
         if (IsCompiler())
         {
+#ifndef ORANGE_NO_MSIL
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
                 if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
                     occmsil::msil_main_preprocess((char*)clist->data);
             }
+#endif
         }
         first = false;
         Errors::Reset();
@@ -769,21 +789,25 @@ int main(int argc, char* argv[])
         stoponerr |= TotalErrors();
         if (IsCompiler())
         {
+#ifndef ORANGE_NO_MSIL
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
                     occmsil::msil_end_generation(nullptr);
+#endif
         }
         clist = clist->next;
     }
 
     if (IsCompiler())
     {
+#ifndef ORANGE_NO_MSIL
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
             if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
             {
                 occmsil::msil_end_generation(nullptr);
                 Optimizer::OutputIntermediate(parserMem);
             }
+#endif
     }
     if (compileToFile)
     {

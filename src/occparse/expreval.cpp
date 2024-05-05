@@ -58,7 +58,9 @@
 #include "optmodules.h"
 #include "config.h"
 #include "constexpr.h"
+#ifndef ORANGE_NO_INASM
 #include "AsmLexer.h"
+#endif
 #include "symtab.h"
 #include "ListFactory.h"
 #include "inline.h"

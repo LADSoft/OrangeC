@@ -43,7 +43,9 @@
 #include "config.h"
 #include "occparse.h"
 #include "ildata.h"
+#ifndef ORANGE_NO_MSIL
 #include "using.h"
+#endif
 #include "configx86.h"
 #include "OptUtils.h"
 #include "configmsil.h"
@@ -237,8 +239,10 @@ static int parseCodegen(bool v, const char* string)
     {
         case ARCHITECTURE_X86:
             return Optimizer::parse_codegen(v, string);
+#ifndef ORANGE_NO_MSIL
         case ARCHITECTURE_MSIL:
             return Optimizer::parse_msil_codegen(v, string);
+#endif
         default:
             break;
     }
@@ -644,6 +648,7 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL: {
                 auto v = Utils::split(prm_libpath.GetValue());
                 for (auto&& s : v)
@@ -656,6 +661,7 @@ static void ParamTransfer(const char* name)
                 }
                 break;
             }
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::prm_libPath = prm_libpath.GetValue();
                 break;
@@ -665,9 +671,11 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL:
                 Optimizer::msilWinmodeSetup(prm_Winmode.GetValue().c_str());
                 break;
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup(prm_Winmode.GetValue().c_str());
                 break;
@@ -677,9 +685,11 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL:
                 Optimizer::msilWinmodeSetup("d");
                 break;
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup("d");
                 break;
@@ -755,12 +765,14 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
     if (RuntimeHeapCheck.GetValue())
         Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
+#ifndef ORANGE_NO_MSIL
     if (Optimizer::architecture == ARCHITECTURE_MSIL && NetCoreSwitch.GetExists())
     {
         Optimizer::cparams.prm_netcore_version = occmsil::ValidateNetCoreVersion(NetCoreSwitch.GetValue());
         if (Optimizer::cparams.prm_netcore_version == INT_MAX)
             Utils::Fatal("Selected .net core version not installed"); 
     }
+#endif
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1187,7 +1199,9 @@ int ccinit(int argc, char* argv[])
         auto splt = Utils::split(architecture, ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
-            {"msil", ARCHITECTURE_MSIL},
+    #ifndef ORANGE_NO_MSIL
+           {"msil", ARCHITECTURE_MSIL},
+    #endif
         };
         if (architectures.find(splt[0]) != architectures.end())
         {

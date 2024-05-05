@@ -1,0 +1,252 @@
+# author: Rochus Keller (me@rochus-keller.ch)
+# License: GPL
+# See https://github.com/rochus-keller/BUSY/blob/main/README.md on how to use this file
+
+# Purpose: build a cross-platform version of the OrangeC frontend without MSIL and inline assembly support
+#          orangefront outputs an intermediate language file for further processing by other tools
+
+let config : Config {
+    if (target_toolchain == `gcc) {
+        # NOTE: this build has been successfully run on Linux x86 with GCC 12 and Linux x64 with GCC 10
+        .lib_names += [ "m" "stdc++" ]
+        if build_mode == `debug {
+            .ldflags += "-shared-libgcc"
+        } else {
+            .ldflags += "-static"
+        }
+        .cflags_cc += "-std=c++14"
+    	.defines += "HAVE_UNISTD_H"
+    }else if (target_toolchain == `clang) {
+    	# NOTE: this is an experimental compile with Clang 4.0.1 and the libc++ headers;
+    	# it compiles when the original C headers from the system are available
+    	# linking is yet another adventure to be solved
+        .lib_names += [ "m" "stdc++" ]
+        .cflags_cc += "-std=c++14";
+    	.defines += "HAVE_UNISTD_H"
+        .include_dirs += [
+            //home/me/Programme/clang-4/includes
+            //usr/lib/gcc/i686-linux-gnu/4.8/include
+            //usr/lib/gcc/i686-linux-gnu/4.8/include-fixed
+            ]
+    }else if target_toolchain == `msvc {
+    	# NOTE: this build has been successfully run on Windows 11 with MSVC 2015 x86
+    	.defines += "TARGET_OS_WINDOWS"
+    }else {
+        error("target toolchain not supported")
+    }
+}
+
+let orangefront ! : Executable {
+    .configs += config;
+    .include_dirs += [ . ./src/occopt ./src/util ./src/ocpp ]
+    .defines += [ "ORANGE_NO_MSIL" "ORANGE_NO_INASM" ]
+    .sources += [
+        ./src/occparse/beinterf.cpp
+        ./src/occparse/browse.cpp
+        ./src/occparse/ccerr.cpp
+        ./src/occparse/constexpr.cpp
+        ./src/occparse/constopt.cpp
+        ./src/occparse/cppbltin.cpp
+        ./src/occparse/cpplookup.cpp
+        ./src/occparse/crc32.cpp
+        ./src/occparse/debug.cpp
+        ./src/occparse/declare.cpp
+        ./src/occparse/declcons.cpp
+        ./src/occparse/declcpp.cpp
+        ./src/occparse/expr.cpp
+        ./src/occparse/exprcpp.cpp
+        ./src/occparse/expreval.cpp
+        ./src/occparse/floatconv.cpp
+        ./src/occparse/help.cpp
+        ./src/occparse/iexpr.cpp
+        ./src/occparse/iinline.cpp
+        ./src/occparse/init.cpp
+        ./src/occparse/initbackend.cpp
+        ./src/occparse/inline.cpp
+        ./src/occparse/istmt.cpp
+        ./src/occparse/lambda.cpp
+        ./src/occparse/lex.cpp
+        ./src/occparse/libcxx.cpp
+        ./src/occparse/ListFactory.cpp
+        ./src/occparse/mangle.cpp
+        ./src/occparse/occparse.cpp
+        ./src/occparse/occprstub.cpp
+        ./src/occparse/osutil.cpp
+        ./src/occparse/property.cpp
+        ./src/occparse/rtti.cpp
+        ./src/occparse/stmt.cpp
+        ./src/occparse/SymbolManager.cpp
+        ./src/occparse/symtab.cpp
+        ./src/occparse/templatedecl.cpp
+        ./src/occparse/templatededuce.cpp
+        ./src/occparse/templateinst.cpp
+        ./src/occparse/templateutil.cpp
+        ./src/occparse/types.cpp
+        ./src/occparse/unmangle.cpp
+        ./src/occparse/wseh.cpp
+        ./src/util/CmdFiles.cpp
+        ./src/util/CmdSwitch.cpp
+        ./src/util/crc.cpp
+        ./src/util/NamedPipe.cpp
+        ./src/util/Random.cpp
+        ./src/util/SharedMemory.cpp
+        ./src/util/ToolChain.cpp
+        ./src/util/UTF8.cpp
+        ./src/util/UTF8Table.cpp
+        ./src/util/UTF8Upper.cpp
+        ./src/util/Utils.cpp
+        ./src/util/xml.cpp
+        ./src/util/winsystem.c
+        ./src/ocpp/Errors.cpp
+        ./src/ocpp/Floating.cpp
+        ./src/ocpp/InputFile.cpp
+        ./src/ocpp/MakeStubs.cpp
+        ./src/ocpp/PipeArbitrator.cpp
+        ./src/ocpp/ppCond.cpp
+        ./src/ocpp/ppCtx.cpp
+        ./src/ocpp/ppDefine.cpp
+        ./src/ocpp/ppError.cpp
+        ./src/ocpp/ppExpr.cpp
+        ./src/ocpp/ppFile.cpp
+        ./src/ocpp/ppInclude.cpp
+        ./src/ocpp/ppMacro.cpp
+        ./src/ocpp/ppPragma.cpp
+        ./src/ocpp/PreProcessor.cpp
+        ./src/ocpp/SymbolTable.cpp
+        ./src/ocpp/Token.cpp
+        ./src/occopt/config.cpp
+        ./src/occopt/ildata.cpp
+        ./src/occopt/OptUtils.cpp
+        ./src/occopt/memory.cpp
+        ./src/occopt/ifloatconv.cpp
+        ./src/occopt/iblock.cpp
+        ./src/occopt/configx86.cpp
+        ./src/occopt/output.cpp
+        ./src/occopt/symfuncs.cpp
+        ./src/occopt/optmodules.cpp
+        ./src/occopt/ilstream.cpp
+        ./src/occopt/iout.cpp
+    ]
+    .sources += [
+        # Headers
+        ./src/occparse/beinterf.h
+        ./src/occparse/browse.h
+        ./src/occparse/c.h
+        ./src/occparse/ccerr.h
+        ./src/occparse/compiler.h
+        ./src/occparse/constexpr.h
+        ./src/occparse/constopt.h
+        ./src/occparse/cppbltin.h
+        ./src/occparse/cpplookup.h
+        ./src/occparse/crc32.h
+        ./src/occparse/debug.h
+        ./src/occparse/declare.h
+        ./src/occparse/declcons.h
+        ./src/occparse/declcpp.h
+        ./src/occparse/dsw.h
+        ./src/occparse/errorlist.h
+        ./src/occparse/expr.h
+        ./src/occparse/exprcpp.h
+        ./src/occparse/expreval.h
+        ./src/occparse/floatconv.h
+        ./src/occparse/help.h
+        ./src/occparse/iexpr.h
+        ./src/occparse/iinline.h
+        ./src/occparse/import.h
+        ./src/occparse/inasm.h
+        ./src/occparse/init.h
+        ./src/occparse/initbackend.h
+        ./src/occparse/inline.h
+        ./src/occparse/istmt.h
+        ./src/occparse/lambda.h
+        ./src/occparse/lex.h
+        ./src/occparse/libcxx.h
+        ./src/occparse/ListFactory.h
+        ./src/occparse/mangle.h
+        ./src/occparse/occparse.h
+        ./src/occparse/osutil.h
+        ./src/occparse/peheader.h
+        ./src/occparse/Property.h
+        ./src/occparse/rtti.h
+        ./src/occparse/stmt.h
+        ./src/occparse/SymbolManager.h
+        ./src/occparse/symtab.h
+        ./src/occparse/templatedecl.h
+        ./src/occparse/templatededuce.h
+        ./src/occparse/templateinst.h
+        ./src/occparse/templateutil.h
+        ./src/occparse/types.h
+        ./src/occparse/unmangle.h
+        ./src/occparse/winmode.h
+        ./src/occparse/wseh.h
+        ./src/occopt/beinterfdefs.h
+        ./src/occopt/browsedefs.h
+        ./src/occopt/config.h
+        ./src/occopt/configmsil.h
+        ./src/occopt/configx86.h
+        ./src/occopt/ctypes.h
+        ./src/occopt/ialias.h
+        ./src/occopt/iblock.h
+        ./src/occopt/iconfl.h
+        ./src/occopt/iconst.h
+        ./src/occopt/ifloatconv.h
+        ./src/occopt/iflow.h
+        ./src/occopt/iinvar.h
+        ./src/occopt/ilazy.h
+        ./src/occopt/ildata.h
+        ./src/occopt/ilive.h
+        ./src/occopt/ilocal.h
+        ./src/occopt/iloop.h
+        ./src/occopt/ilstream.h
+        ./src/occopt/ilunstream.h
+        ./src/occopt/iopt.h
+        ./src/occopt/ioptimizer.h
+        ./src/occopt/ioptutil.h
+        ./src/occopt/iout.h
+        ./src/occopt/ipeep.h
+        ./src/occopt/ipinning.h
+        ./src/occopt/irc.h
+        ./src/occopt/ireshape.h
+        ./src/occopt/irewrite.h
+        ./src/occopt/issa.h
+        ./src/occopt/istren.h
+        ./src/occopt/localprotect.h
+        ./src/occopt/memory.h
+        ./src/occopt/optmain.h
+        ./src/occopt/optmodules.h
+        ./src/occopt/OptUtils.h
+        ./src/occopt/output.h
+        ./src/occopt/rewritemsil.h
+        ./src/occopt/rewritex86.h
+        ./src/occopt/symfuncs.h
+        ./src/util/CmdFiles.h
+        ./src/util/CmdSwitch.h
+        ./src/util/FNV_hash.h
+        ./src/util/LSDateTime.h
+        ./src/util/SharedMemory.h
+        ./src/util/ToolChain.h
+        ./src/util/UTF8.h
+        ./src/util/Utils.h
+        ./src/util/xml.h
+        ./src/ocpp/Errors.h
+        ./src/ocpp/Floating.h
+        ./src/ocpp/InputFile.h
+        ./src/ocpp/MakeStubs.h
+        ./src/ocpp/PipeArbitrator.h
+        ./src/ocpp/ppCommon.h
+        ./src/ocpp/ppCond.h
+        ./src/ocpp/ppCtx.h
+        ./src/ocpp/ppDefine.h
+        ./src/ocpp/ppError.h
+        ./src/ocpp/ppExpr.h
+        ./src/ocpp/ppFile.h
+        ./src/ocpp/ppInclude.h
+        ./src/ocpp/ppkw.h
+        ./src/ocpp/ppMacro.h
+        ./src/ocpp/ppMain.h
+        ./src/ocpp/ppPragma.h
+        ./src/ocpp/PreProcessor.h
+        ./src/ocpp/SymbolTable.h
+        ./src/ocpp/Token.h
+    ]
+}

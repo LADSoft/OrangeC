@@ -24,8 +24,10 @@
 
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
+#ifndef ORANGE_NO_INASM
 #include "InstructionParser.h"
 #include "x64Instructions.h"
+#endif
 #define live(mask, reg) (mask & (1 << reg))
 
 #define REG_MAX 64
@@ -226,7 +228,9 @@ typedef struct _attribdata
     {
         Optimizer::LINEDATA* ld;
         struct Optimizer::SimpleSymbol* sp;
+#ifndef ORANGE_NO_INASM
         std::shared_ptr<Section>* section;
+#endif
     } v;
     bool start;
 } ATTRIBDATA;
@@ -319,7 +323,9 @@ struct amode
 struct ocode
 {
     struct ocode *fwd, *back;
+#ifndef ORANGE_NO_INASM
     enum e_opcode opcode;
+#endif
     struct amode *oper1, *oper2, *oper3;
     void* ins;
     int size;

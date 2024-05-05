@@ -42,7 +42,7 @@ class SharedMemory
     void SetName();
     std::string name_;
 
-    unsigned max_;
+    const unsigned max_;
     const unsigned windowSize_;
     unsigned current_;
     void* fileHandle_;

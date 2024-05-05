@@ -365,7 +365,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             (*argc)--;
         }
         else if ((argv[0][0] == '-' ||
-          #ifdef _WIN32
+          #ifdef TARGET_OS_WINDOWS
                   argv[0][0] == '/' ||
           #endif
                   (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&

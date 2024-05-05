@@ -793,6 +793,7 @@ void gen_asm(STATEMENT* stmt)
  * generate an ASM statement
  */
 {
+#ifndef ORANGE_NO_INASM
     Optimizer::QUAD* newQuad;
     newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_passthrough;
@@ -802,6 +803,7 @@ void gen_asm(STATEMENT* stmt)
     adjustcodelab(newQuad->dc.left, codeLabelOffset);
     Optimizer::flush_dag();
     add_intermed(newQuad);
+#endif
 }
 void gen_asmdata(STATEMENT* stmt)
 {

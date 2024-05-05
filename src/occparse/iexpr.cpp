@@ -63,7 +63,9 @@
 #include "beinterf.h"
 #include "iexpr.h"
 #include "ioptimizer.h"
+#ifndef ORANGE_NO_MSIL
 #include "using.h"
+#endif
 #include "templatedecl.h"
 #include "templateutil.h"
 #include "templateinst.h"

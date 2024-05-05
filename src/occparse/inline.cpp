@@ -937,8 +937,10 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
                 block->blockTail = inlinestmt(block->blockTail);
                 break;
             case StatementNode::passthrough_:
+#ifndef ORANGE_NO_INASM
                 if (block->lower)
                     inlineAsmStmt(block->lower);
+#endif
                 break;
             case StatementNode::nop_:
                 break;

@@ -140,6 +140,7 @@ void inlineAsmInit(void)
     int i = 0;
     if (IsCompiler())
     {
+#ifndef ORANGE_NO_INASM
         for (auto v : opcodeTable)
         {
             if (v[0] != 0)
@@ -154,6 +155,7 @@ void inlineAsmInit(void)
             }
             i++;
         }
+#endif
     }
     if (Optimizer::cparams.prm_assemble)
     {
@@ -1077,7 +1079,13 @@ static void AssembleInstruction(OCODE* ins)
             std::shared_ptr<Instruction> newIns;
             std::list<Numeric*> operands;
             Optimizer::assembling = true;
-            asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
+
+            asmError err =
+#ifndef ORANGE_NO_INASM
+                    instructionParser->GetInstruction(&ins1, newIns, operands);
+#else
+                    AERR_SYNTAX;
+#endif
             Optimizer::assembling = false;
             switch (err)
             {

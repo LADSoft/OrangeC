@@ -394,6 +394,7 @@ static void StreamAssemblyOperand(AMODE* im)
 }
 static void StreamAssemblyInstruction(OCODE* oc)
 {
+#ifndef ORANGE_NO_INASM
     StreamIndex(oc->opcode);
     StreamIndex(oc->diag);
     StreamIndex(oc->noopt);
@@ -402,6 +403,7 @@ static void StreamAssemblyInstruction(OCODE* oc)
     StreamAssemblyOperand(oc->oper1);
     StreamAssemblyOperand(oc->oper2);
     StreamAssemblyOperand(oc->oper3);
+#endif
 }
 static void StreamOperand(IMODE* im)
 {

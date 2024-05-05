@@ -2547,7 +2547,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
         loader = exprNode(ExpressionNode::savestack_, var, nullptr);
         unloader = exprNode(ExpressionNode::loadstack_, var, nullptr);
         ep1 = exprNode(ExpressionNode::assign_, ep1, exprNode(ExpressionNode::alloca_, ep2, nullptr));
-        ep1 = exprNode(ExpressionNode::void_, loader, ep1);
+        ep1 = exprNode(ExpressionNode::comma_, loader, ep1);
     }
 
     initInsert(&sp->sb->dest, sp->tp, unloader, 0, false);
@@ -2580,7 +2580,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, TYPE* bt
     store = exprNode(ExpressionNode::add_, vlanode, intNode(ExpressionNode::c_i_, *index));
     deref(&stdint, &store);
     store = exprNode(ExpressionNode::assign_, store, mul1);
-    **rptr = exprNode(ExpressionNode::void_, store, nullptr);
+    **rptr = exprNode(ExpressionNode::comma_, store, nullptr);
     *rptr = &(**rptr)->right;
     *index += sou;
     return mul;
@@ -2615,7 +2615,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
     {
         SYMBOL* dest = sp;
         SYMBOL* src = sp->tp->sp;
-        *rptr = exprNode(ExpressionNode::void_, nullptr, nullptr);
+        *rptr = exprNode(ExpressionNode::comma_, nullptr, nullptr);
         rptr = &(*rptr)->right;
         result->left = exprNode(ExpressionNode::blockassign_, varNode(ExpressionNode::auto_, dest), varNode(ExpressionNode::auto_, src));
         dest->tp->size = src->tp->size;
@@ -2637,7 +2637,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
         ep = exprNode(ExpressionNode::add_, vlanode, intNode(ExpressionNode::c_i_, soa));
         deref(&stdint, &ep);
         ep = exprNode(ExpressionNode::assign_, ep, intNode(ExpressionNode::c_i_, count));
-        *rptr = exprNode(ExpressionNode::void_, ep, nullptr);
+        *rptr = exprNode(ExpressionNode::comma_, ep, nullptr);
         rptr = &(*rptr)->right;
 
         basetype(sp->tp)->size = size; /* size field is actually size of VLA header block */
@@ -2654,7 +2654,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
             deref(&stdpointer, &ep1);
             deref(&stdint, &ep2);
             ep1 = llallocateVLA(sp, ep1, ep2);  // exprNode(ExpressionNode::assign_, ep1, exprNode(ExpressionNode::alloca_, ep2, nullptr));
-            *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : exprNode(ExpressionNode::void_, ep1, nullptr);
+            *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : exprNode(ExpressionNode::comma_, ep1, nullptr);
             sp->sb->assigned = true;
         }
         st->select = result;

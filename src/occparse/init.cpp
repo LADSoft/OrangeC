@@ -588,7 +588,7 @@ static void dumpDynamicInitializers(void)
                                                                         : dynamicInitializers->sp->tp,
                                               dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
 
-                while (*next && (*next)->type == ExpressionNode::void_)
+                while (*next && (*next)->type == ExpressionNode::comma_)
                 {
                     counter++;
                     if (++i == 10)
@@ -956,7 +956,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             EXPRESSION* exp = init->exp;
             while (castvalue(exp))
                 exp = exp->left;
-            while (exp->type == ExpressionNode::void_ && exp->right)
+            while (exp->type == ExpressionNode::comma_ && exp->right)
                 exp = exp->right;
             if (exp->type == ExpressionNode::func_ && !exp->v.func->ascall)
                 exp = exp->v.func->fcall;
@@ -1752,7 +1752,7 @@ static LEXLIST* initialize_pointer_type(LEXLIST* lex, SYMBOL* funcsp, int offset
         if (sc != StorageClass::auto_ && sc != StorageClass::register_)
         {
             EXPRESSION* exp2 = exp;
-            while (exp2->type == ExpressionNode::void_ && exp2->right)
+            while (exp2->type == ExpressionNode::comma_ && exp2->right)
                 exp2 = exp2->right;
             if (!isarithmeticconst(exp2) && !isconstaddress(exp2) && !msilConstant(exp2) && !Optimizer::cparams.prm_cplusplus)
                 error(ERR_NEED_CONSTANT_OR_ADDRESS);
@@ -1953,7 +1953,7 @@ static LEXLIST* initialize_memberptr(LEXLIST* lex, SYMBOL* funcsp, int offset, S
 }
 ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
 {
-    ExpressionNode en = ExpressionNode::void_;
+    ExpressionNode en = ExpressionNode::comma_;
     tp = basetype(basetype(tp)->btp);
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {
@@ -2060,7 +2060,7 @@ ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
             break;
         case BasicType::pointer_:
             if (tp->array || tp->vla)
-                return ExpressionNode::void_;
+                return ExpressionNode::comma_;
             en = ExpressionNode::l_p_;
             break;
         case BasicType::class_:
@@ -2079,7 +2079,7 @@ ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp)
 }
 static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, StorageClass sc)
 {
-    if (exp->type == ExpressionNode::cond_)
+    if (exp->type == ExpressionNode::hook_)
     {
         exp->right->left = ConvertInitToRef(exp->right->left, tp, boundTP, sc);
         exp->right->right = ConvertInitToRef(exp->right->right, tp, boundTP, sc);
@@ -2203,7 +2203,7 @@ static LEXLIST* initialize_reference_type(LEXLIST* lex, SYMBOL* funcsp, int offs
                     exp = exprNode(ExpressionNode::blockassign_, exp1, exp);
                     exp->size = MakeType(BasicType::memberptr_);
                     exp->altdata = (void*)(&stdpointer);
-                    exp = exprNode(ExpressionNode::void_, exp, exp1);
+                    exp = exprNode(ExpressionNode::comma_, exp, exp1);
                 }
             }
         }
@@ -3129,7 +3129,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                     lex =
                         init_expression(lex, funcsp, nullptr, &tp1, &exp1, itype, false, [&exp, &constructed](EXPRESSION* exp1, TYPE* tp) {
                             EXPRESSION* oldthis;
-                            for (oldthis = exp1; oldthis->right && oldthis->type == ExpressionNode::void_; oldthis = oldthis->right)
+                            for (oldthis = exp1; oldthis->right && oldthis->type == ExpressionNode::comma_; oldthis = oldthis->right)
                                 ;
                             if (oldthis->type == ExpressionNode::thisref_)
                             {
@@ -3169,7 +3169,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                                     oldthis = ths;
                                 }
                             }
-                            if (exp1->type == ExpressionNode::void_)
+                            if (exp1->type == ExpressionNode::comma_)
                             {
                                 // from constexpr
                                 constructed = true;
@@ -3356,12 +3356,12 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
             else
             {
                 it = *init;
-                if (exp->type == ExpressionNode::void_)
+                if (exp->type == ExpressionNode::comma_)
                 {
                     // constexpr support...
                     auto exp1 = exp;
                     auto its = basetype(itype)->syms->begin();
-                    while (exp1->type == ExpressionNode::void_)
+                    while (exp1->type == ExpressionNode::comma_)
                     {
                         if (exp1->left->type == ExpressionNode::assign_ && exp1->left->left->left->type == ExpressionNode::structadd_)
                         {
@@ -3444,7 +3444,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
                                 {
                                     auto xx = it2->exp;
                                     if (exp->type != ExpressionNode::auto_ || !exp->v.sp->sb->anonymous)
-                                        while (xx->type == ExpressionNode::void_ && xx->left->type == ExpressionNode::assign_)
+                                        while (xx->type == ExpressionNode::comma_ && xx->left->type == ExpressionNode::assign_)
                                             xx = xx->right;
                                     initInsert(&it, it2->basetp, xx, it2->offset + offset, it2->noassign);
                                 }
@@ -3853,9 +3853,9 @@ static void ReplaceLambdaInit(TYPE** tp, EXPRESSION** exp, SYMBOL* newName)
 {  
     // get the temporary address
     auto name = *exp;
-    if (name->type == ExpressionNode::void_)
+    if (name->type == ExpressionNode::comma_)
     {
-        while (name->type == ExpressionNode::void_)
+        while (name->type == ExpressionNode::comma_)
             name = name->right;
         name->v.sp->sb->allocate = false;
         ReplaceVarRef(exp, name->v.sp, newName);

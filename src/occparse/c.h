@@ -209,7 +209,7 @@ typedef struct
 // clang-format off
     enum class ExpressionNode
     {
-        void_, not__lvalue_, lvalue_, argnopush_, void_nz_, shiftby_,
+        ___ignoreme, not__lvalue_, lvalue_, argnopush_, check_nz_, shiftby_,
         global_, auto_, labcon_, absolute_, pc_, const_, threadlocal_,
         c_bit_, c_bool_, c_c_, c_uc_, c_wc_, c_s_, c_u16_, c_us_, c_i_, c_ui_,
         c_u32_, c_l_, c_ul_, c_ll_, c_ull_, c_f_, c_d_, c_ld_,
@@ -229,7 +229,7 @@ typedef struct
         trapcall_, func_, funcret_, intcall_,
         arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
         add_, sub_, mul_, mod_, div_, lsh_, rsh_, ursh_,
-        cond_, assign_, eq_, ne_,
+        hook_, comma_, assign_, eq_, ne_,
         uminus_, not_, compl_, lt_, le_, gt_, ge_,
         and_, or_, land_, lor_, xor_, umul_, auto_inc_, auto_dec_,
         udiv_, umod_, ugt_, uge_, ule_, ult_, blockclear_, stackblock_,

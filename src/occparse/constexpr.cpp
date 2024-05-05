@@ -187,10 +187,10 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
                     stk.push(exp->left);
                 }
                 break;
-            case ExpressionNode::void_:
-            case ExpressionNode::void_nz_:
+            case ExpressionNode::comma_:
+            case ExpressionNode::check_nz_:
                 stk.push(exp->left);
-                if (exp->right->type == ExpressionNode::void_ || !fromFunc)
+                if (exp->right->type == ExpressionNode::comma_ || !fromFunc)
                 {
                     stk.push(exp->right);
                 }
@@ -317,7 +317,7 @@ static EXPRESSION* LookupStruct(EXPRESSION* exp)
 {
     if (!exp)
         return nullptr;
-    while (exp->type == ExpressionNode::void_)
+    while (exp->type == ExpressionNode::comma_)
         exp = exp->right;
     while (lvalue(exp))
         exp = exp->left;
@@ -365,7 +365,7 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
 }
 static EXPRESSION* InstantiateStruct(TYPE* tp, EXPRESSION* thisptr, EXPRESSION* ths)
 {
-    if (ths->type == ExpressionNode::void_)
+    if (ths->type == ExpressionNode::comma_)
     {
         if (thisptr)
         {
@@ -373,7 +373,7 @@ static EXPRESSION* InstantiateStruct(TYPE* tp, EXPRESSION* thisptr, EXPRESSION* 
             while (exp && *exp)
             {
                 EXPRESSION** exp1 = nullptr;
-                if ((*exp)->type == ExpressionNode::void_)
+                if ((*exp)->type == ExpressionNode::comma_)
                 {
                     if ((*exp)->left->type == ExpressionNode::assign_)
                     {
@@ -443,17 +443,17 @@ static EXPRESSION* InstantiateStruct(TYPE* tp, EXPRESSION* thisptr, EXPRESSION* 
                 inConstantExpression++;
                 optimize_for_constants(&next->right);
                 inConstantExpression--;
-                *last = exprNode(ExpressionNode::void_, *last, next);
+                *last = exprNode(ExpressionNode::comma_, *last, next);
                 last = &(*last)->right;
             }
         }
         if (thisptr->type == ExpressionNode::substack_)
         {
-            *last = exprNode(ExpressionNode::void_, *last, varptr);
+            *last = exprNode(ExpressionNode::comma_, *last, varptr);
         }
         else
         {
-            *last = exprNode(ExpressionNode::void_, *last, thisptr);
+            *last = exprNode(ExpressionNode::comma_, *last, thisptr);
         }
         return rv;
     }
@@ -462,10 +462,10 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
 {
     bool rv = false;
     SYMBOL* finalsym = nullptr;
-    if (exp->type == ExpressionNode::stackblock_ && exp->left->type == ExpressionNode::void_)
+    if (exp->type == ExpressionNode::stackblock_ && exp->left->type == ExpressionNode::comma_)
     {
         auto exp2 = exp->left;
-        while (exp2->type == ExpressionNode::void_ && exp2->right)
+        while (exp2->type == ExpressionNode::comma_ && exp2->right)
             exp2 = exp2->right;
         if (exp2->type == ExpressionNode::auto_)
             finalsym = exp2->v.sp;
@@ -532,9 +532,9 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
             }
         }
     }
-    if (!rv && exp->type == ExpressionNode::void_)
+    if (!rv && exp->type == ExpressionNode::comma_)
     {
-        while (exp->type == ExpressionNode::void_)
+        while (exp->type == ExpressionNode::comma_)
             exp = exp->right;
         if (exp->type == ExpressionNode::auto_)
         {
@@ -603,7 +603,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
 {
     if (isstructured(arg->tp) || (isref(arg->tp) && isstructured(basetype(arg->tp)->btp)))
     {
-        if (exp->type == ExpressionNode::void_ && exp->left->type == ExpressionNode::thisref_)
+        if (exp->type == ExpressionNode::comma_ && exp->left->type == ExpressionNode::thisref_)
         {
             exp = exp->left;
         }
@@ -627,7 +627,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
             argmap[arg] = exp;
         }
     }
-    else if (exp->type == ExpressionNode::void_)
+    else if (exp->type == ExpressionNode::comma_)
     {
         if (isstructured(arg->tp) || (isref(arg->tp) && isstructured(basetype(arg->tp)->btp)))
         {
@@ -642,7 +642,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
                 argmap[arg] = MakeVarPtr(arg->tp->size, 1, arg, nullptr);
                 target = argmap[arg]->v.constexprData.data;
             }
-            while (exp->type == ExpressionNode::void_)
+            while (exp->type == ExpressionNode::comma_)
             {
                 if (exp->left->type == ExpressionNode::assign_)
                 {
@@ -679,7 +679,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
         }
         else
         {
-            if (exp->type == ExpressionNode::void_ && exp->right->type != ExpressionNode::void_)
+            if (exp->type == ExpressionNode::comma_ && exp->right->type != ExpressionNode::comma_)
             {
                 if (exp->left->type == ExpressionNode::assign_)
                 {
@@ -727,9 +727,9 @@ static bool pushThis(EXPRESSION* thisptr, EXPRESSION* ths)
             }
         }
     }
-    else if (thisptr->type == ExpressionNode::void_)
+    else if (thisptr->type == ExpressionNode::comma_)
     {
-        while (thisptr && thisptr->type == ExpressionNode::void_ && thisptr->left->type == ExpressionNode::assign_)
+        while (thisptr && thisptr->type == ExpressionNode::comma_ && thisptr->left->type == ExpressionNode::assign_)
         {
             auto exp1 = thisptr->left->left;
             if (lvalue(exp1))
@@ -898,7 +898,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
                     *lst = *args;
                     func->arguments->push_back(lst);
                     auto exp2 = args->exp;
-                    while (exp2->type == ExpressionNode::void_) exp2 = exp2->right;
+                    while (exp2->type == ExpressionNode::comma_) exp2 = exp2->right;
                     if (exp2->type == ExpressionNode::stackblock_)
                     {
                         lst->exp = exp2->left;
@@ -909,7 +909,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
                     optimize_for_constants(&lst->exp);
                     if (lst->exp->type == ExpressionNode::thisref_ || lst->exp->type == ExpressionNode::func_)
                         failed = true;
-                    while (lst->exp->type == ExpressionNode::void_ && lst->exp->right)
+                    while (lst->exp->type == ExpressionNode::comma_ && lst->exp->right)
                         lst->exp = lst->exp->right;
                 }
             if (retblk && func->returnEXP && func->returnEXP->type == ExpressionNode::l_p_ && func->returnEXP->left->type == ExpressionNode::auto_ &&
@@ -955,7 +955,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
                 rv = temp1;
             }
         }
-        else if (exp->type == ExpressionNode::cond_)
+        else if (exp->type == ExpressionNode::hook_)
         {
             auto select = EvaluateExpression(exp->left, ths, retblk);
             optimize_for_constants(&select);
@@ -1009,8 +1009,8 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, EXPRESSION* ths, EXPRESS
             case ExpressionNode::auto_inc_:
                 stk.push(node1);
                 break;
-            case ExpressionNode::void_:
-                if (node1->right->type == ExpressionNode::void_)
+            case ExpressionNode::comma_:
+                if (node1->right->type == ExpressionNode::comma_)
                 {
                     working.push_back(node1->right);
                 }
@@ -1167,7 +1167,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<STATEMENT*>* s
                     if (IsConstantExpression(node1, false, false) && node1->type != ExpressionNode::func_ && node1->type != ExpressionNode::funcret_ &&
                         node1->type != ExpressionNode::thisref_)
                     {
-                        if (node1->type == ExpressionNode::void_ && node1->left->type == ExpressionNode::cvarpointer_)
+                        if (node1->type == ExpressionNode::comma_ && node1->left->type == ExpressionNode::cvarpointer_)
                             node1 = node1->left;
                         if (node1->type == ExpressionNode::cvarpointer_)
                         {
@@ -1451,7 +1451,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                             if (ths->type != ExpressionNode::cvarpointer_)
                             {
                                 auto ths1 = node->v.func->thisptr;
-                                while (ths1->type == ExpressionNode::void_) ths1 = ths1->right;
+                                while (ths1->type == ExpressionNode::comma_) ths1 = ths1->right;
                                 ths = LookupStruct(ths1);
                                 if (ths == (EXPRESSION*)-1)
                                     return false;

@@ -676,7 +676,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::uge_:
         case ExpressionNode::ult_:
         case ExpressionNode::ule_:
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
         case ExpressionNode::intcall_:
         case ExpressionNode::stackblock_:
         case ExpressionNode::blockassign_:
@@ -684,8 +684,8 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
             break;
-        case ExpressionNode::void_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::comma_:
+        case ExpressionNode::check_nz_:
             /*		case ExpressionNode::array_: */
             XCExpression(node->right, lst);
         case ExpressionNode::mp_as_bool_:

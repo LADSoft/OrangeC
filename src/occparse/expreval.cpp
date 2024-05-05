@@ -711,7 +711,7 @@ void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **result
             (*resultexp)->preincdec = true;
         }
         if (exp3)
-            *resultexp = exprNode(ExpressionNode::void_, exp3, *resultexp);
+            *resultexp = exprNode(ExpressionNode::comma_, exp3, *resultexp);
     }
 }
 bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp,
@@ -787,7 +787,7 @@ bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXP
                     ec1 = exprNode(ExpressionNode::sub_, ec, intNode(ExpressionNode::c_i_, 1));
                     deref(&stdint, &ec1);
                     ec =
-                        exprNode(ExpressionNode::cond_, ec, exprNode(ExpressionNode::void_, ec1, intNode(ExpressionNode::c_i_, 0)));
+                        exprNode(ExpressionNode::hook_, ec, exprNode(ExpressionNode::comma_, ec1, intNode(ExpressionNode::c_i_, 0)));
                     *resultexp = exprNode(ExpressionNode::add_, *resultexp, ec);
                 }
                 else
@@ -816,7 +816,7 @@ bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXP
                     ec1 = exprNode(ExpressionNode::add_, ec, intNode(ExpressionNode::c_i_, -1));
                     ec1 = exprNode(ExpressionNode::add_, *resultexp, ec1);
                     deref(&stdint, &ec1);
-                    *resultexp = exprNode(ExpressionNode::cond_, ec, exprNode(ExpressionNode::void_, ec1, *resultexp));
+                    *resultexp = exprNode(ExpressionNode::hook_, ec, exprNode(ExpressionNode::comma_, ec1, *resultexp));
                 }
                 deref(&stdint, &rightexp);
                 *resultexp = exprNode(ExpressionNode::add_, *resultexp, rightexp);
@@ -2104,7 +2104,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     else if (basetype(*resulttp)->type == BasicType::memberptr_)
     {
         if ((*resultexp)->type == ExpressionNode::not__lvalue_ || ((*resultexp)->type == ExpressionNode::func_ && !(*resultexp)->v.func->ascall) ||
-            (*resultexp)->type == ExpressionNode::void_ || (*resultexp)->type == ExpressionNode::memberptr_)
+            (*resultexp)->type == ExpressionNode::comma_ || (*resultexp)->type == ExpressionNode::memberptr_)
         {
             if (basetype(*resulttp)->type != BasicType::templateparam_)
                 error(ERR_LVALUE);
@@ -2140,7 +2140,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
         EXPRESSION *exp2 = rightexp;
         if (((*resultexp)->type == ExpressionNode::not__lvalue_ ||
              ((*resultexp)->type == ExpressionNode::func_ && (!(*resultexp)->v.func->ascall || (*resultexp)->v.func->returnSP)) ||
-             ((*resultexp)->type == ExpressionNode::void_) && !(flags & _F_SIZEOF)))
+             ((*resultexp)->type == ExpressionNode::comma_) && !(flags & _F_SIZEOF)))
             error(ERR_LVALUE);
         if (lvalue(exp2))
             exp2 = exp2->left;
@@ -2308,7 +2308,7 @@ bool eval_binary_comma(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp,
     else
     {
         *resulttp = righttp;
-        *resultexp = exprNode(ExpressionNode::void_, *resultexp, rightexp);
+        *resultexp = exprNode(ExpressionNode::comma_, *resultexp, rightexp);
         resultexp = &(*resultexp)->right;
     }
     return false;

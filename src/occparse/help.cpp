@@ -137,7 +137,7 @@ EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
         EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
-        rv = exprNode(ExpressionNode::void_, exprNode(ExpressionNode::assign_, rv, val), rv1);
+        rv = exprNode(ExpressionNode::comma_, exprNode(ExpressionNode::assign_, rv, val), rv1);
     }
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
@@ -150,7 +150,7 @@ EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
         EXPRESSION* rv1 = copy_expression(rv);
         deref(tp, &rv);
         cast(tp, &val);
-        rv = exprNode(ExpressionNode::void_, exprNode(ExpressionNode::assign_, rv, val), rv1);
+        rv = exprNode(ExpressionNode::comma_, exprNode(ExpressionNode::assign_, rv, val), rv1);
     }
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
@@ -1199,7 +1199,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         {
                             exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
                             exp->size = initItem->basetp;
-                            exp = exprNode(ExpressionNode::void_, exp, nullptr);
+                            exp = exprNode(ExpressionNode::comma_, exp, nullptr);
                             expp = &exp->right;
                         }
                         else
@@ -1227,7 +1227,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 right = exprNode(ExpressionNode::assign_, asn, right);
                             }
                             if (*expp)
-                                *expp = exprNode(ExpressionNode::void_, *expp, right);
+                                *expp = exprNode(ExpressionNode::comma_, *expp, right);
                             else
                                 *expp = right;
                             expp = &(*expp)->right;
@@ -1353,7 +1353,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     deref(initItem->basetp, &exps);
                 optimize_for_constants(&exps);
                 exp = initItem->exp;
-                if (exp->type == ExpressionNode::void_)
+                if (exp->type == ExpressionNode::comma_)
                 {
                     cast(initItem->basetp, &exp->right);
                     if (expsym)
@@ -1381,14 +1381,14 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 EXPRESSION* p1 = exprNode(ExpressionNode::add_, expsym->left, intNode(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
                 deref(&stdint, &p1);
                 p1 = exprNode(ExpressionNode::assign_, p1, intNode(ExpressionNode::c_i_, 0));
-                exp = exprNode(ExpressionNode::void_, exp, p1);
+                exp = exprNode(ExpressionNode::comma_, exp, p1);
             }
         }
         if (exp)
         {
             if (*pos)
             {
-                *pos = exprNode(ExpressionNode::void_, *pos, exp);
+                *pos = exprNode(ExpressionNode::comma_, *pos, exp);
                 pos = &(*pos)->right;
             }
             else
@@ -1411,7 +1411,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             fexp = fexp->left->v.func->thisptr;
         exp = exprNode(ExpressionNode::blockclear_, fexp, nullptr);
         exp->size = tp;
-        rv = exprNode(ExpressionNode::void_, exp, rv);
+        rv = exprNode(ExpressionNode::comma_, exp, rv);
     }
     if (sym && sym->sb->storage_class == StorageClass::localstatic_ && !(Optimizer::architecture == ARCHITECTURE_MSIL) && guardFuncs.find(sym->sb->decoratedName) == guardFuncs.end())
     {
@@ -1437,11 +1437,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             arg->tp = &stdpointer;
             arg->exp = guard->left;
             guardexp->v.func->arguments->push_back(arg);
-            rv = exprNode(ExpressionNode::void_nz_,
-                          exprNode(ExpressionNode::void_,
+            rv = exprNode(ExpressionNode::check_nz_,
+                          exprNode(ExpressionNode::comma_,
                                    exprNode(ExpressionNode::land_, exprNode(ExpressionNode::ne_, guard, intNode(ExpressionNode::c_i_, -1)),
                                             exprNode(ExpressionNode::ne_, guardexp, intNode(ExpressionNode::c_i_, 0))),
-                                   exprNode(ExpressionNode::void_, rv, exprNode(ExpressionNode::assign_, guard, intNode(ExpressionNode::c_i_, -1)))),
+                                   exprNode(ExpressionNode::comma_, rv, exprNode(ExpressionNode::assign_, guard, intNode(ExpressionNode::c_i_, -1)))),
                           intNode(ExpressionNode::c_i_, 0));
         }
     }
@@ -1449,7 +1449,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
     {
         if (*pos)
         {
-            *pos = exprNode(ExpressionNode::void_, *pos, expsym);
+            *pos = exprNode(ExpressionNode::comma_, *pos, expsym);
             pos = &(*pos)->right;
         }
         else
@@ -1932,7 +1932,7 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp)
             exp2 = exprNode(ExpressionNode::assign_, result, exp2);
             exp2 = exprNode(exp->type, exp2, nullptr);
             result = exprNode(exp->type, result, nullptr);
-            result = exprNode(ExpressionNode::void_, exp2, result);
+            result = exprNode(ExpressionNode::comma_, exp2, result);
         }
     }
     return result;

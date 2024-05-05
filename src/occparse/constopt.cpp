@@ -230,12 +230,12 @@ static bool hasFloats(EXPRESSION* node)
         case ExpressionNode::rsh_:
         case ExpressionNode::land_:
         case ExpressionNode::lor_:
-        case ExpressionNode::void_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::comma_:
+        case ExpressionNode::check_nz_:
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
             return (hasFloats(node->left) || hasFloats(node->right));
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             return hasFloats(node->right);
         case ExpressionNode::argnopush_:
         case ExpressionNode::not__lvalue_:
@@ -1259,7 +1259,7 @@ void dooper(EXPRESSION** node, int mode)
 
 void addaside(EXPRESSION* node)
 {
-    *asidetail = exprNode(ExpressionNode::void_, node, 0);
+    *asidetail = exprNode(ExpressionNode::comma_, node, 0);
     asidetail = &(*asidetail)->right;
 }
 
@@ -1528,9 +1528,9 @@ int opt0(EXPRESSION** node)
             return rv;
         case ExpressionNode::structadd_:
         case ExpressionNode::arrayadd_:
-            while (ep->left->type == ExpressionNode::void_)
+            while (ep->left->type == ExpressionNode::comma_)
                 ep->left = ep->left->right;
-            while (ep->right->type == ExpressionNode::void_)
+            while (ep->right->type == ExpressionNode::comma_)
                 ep->right = ep->right->right;
             // fallthrough
         case ExpressionNode::add_:
@@ -2402,7 +2402,7 @@ int opt0(EXPRESSION** node)
             }
             break;
 
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             rv |= opt0(&(ep->right));
             rv |= opt0(&(ep->left));
             if (isoptconst(ep->left) && (parsingPreprocessorConstant || isoptconst(ep->right->left) && isoptconst(ep->right->right)))
@@ -2425,9 +2425,9 @@ int opt0(EXPRESSION** node)
                 }
             }
             break;
-        case ExpressionNode::void_:
+        case ExpressionNode::comma_:
         case ExpressionNode::intcall_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::check_nz_:
         case ExpressionNode::assign_:
         case ExpressionNode::blockassign_:
         case ExpressionNode::stackblock_:
@@ -3125,7 +3125,7 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::bits_:
             rv |= fold_const(node->left);
             break;
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right->left);
             rv |= fold_const(node->right->right);
@@ -3140,8 +3140,8 @@ int fold_const(EXPRESSION* node)
             break;
         case ExpressionNode::ursh_:
         case ExpressionNode::assign_:
-        case ExpressionNode::void_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::comma_:
+        case ExpressionNode::check_nz_:
         case ExpressionNode::arraymul_:
         case ExpressionNode::arraydiv_:
         case ExpressionNode::div_:
@@ -3325,7 +3325,7 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::lvalue_:
             rv |= typedconsts(node1->left);
             break;
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             rv |= typedconsts(node1->left);
             rv |= typedconsts(node1->right->left);
             rv |= typedconsts(node1->right->right);
@@ -3357,8 +3357,8 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::land_:
         case ExpressionNode::lor_:
         case ExpressionNode::and_:
-        case ExpressionNode::void_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::comma_:
+        case ExpressionNode::check_nz_:
         case ExpressionNode::assign_:
         case ExpressionNode::blockassign_:
         case ExpressionNode::stackblock_:
@@ -3836,7 +3836,7 @@ bool toConsider(EXPRESSION* exp1, EXPRESSION* exp2)
 }
 void rebalance(EXPRESSION** exp)
 {
-    if ((*exp)->type == ExpressionNode::void_)
+    if ((*exp)->type == ExpressionNode::comma_)
     {
         rebalance(&(*exp)->left);
         if ((*exp)->right)

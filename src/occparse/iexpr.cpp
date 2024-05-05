@@ -2020,7 +2020,7 @@ static EXPRESSION* aliasToTemp(SYMBOL* funcsp, EXPRESSION* in)
                 {
                     auto expx = tempVar(srp);
                     expx = exprNode(ExpressionNode::assign_, expx, in);
-                    in = exprNode(ExpressionNode::void_, expx, expx->left);
+                    in = exprNode(ExpressionNode::comma_, expx, expx->left);
                 }
             }
         }
@@ -2040,7 +2040,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
     int rv = 0;
     EXPRESSION* exp = getFunc(ep);
     bool complexblock = false;
-    if (!exp && ep->type == ExpressionNode::void_)
+    if (!exp && ep->type == ExpressionNode::comma_)
     {
         exp = ep->left;
         if (exp && exp->type != ExpressionNode::blockassign_ && exp->type != ExpressionNode::blockclear_)
@@ -2106,8 +2106,8 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
         EXPRESSION* exp1 = ep;
         switch (ep->type)
         {
-            case ExpressionNode::void_:
-                while (ep->type == ExpressionNode::void_)
+            case ExpressionNode::comma_:
+                while (ep->type == ExpressionNode::comma_)
                 {
                     gen_expr(funcsp, ep->left, flags | F_RETURNSTRUCTNOADJUST, ISZ_UINT);
                     ep = ep->right;
@@ -2181,7 +2181,7 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
             ap = ep->v.imode;
             break;
         default:
-            if (ep->type == ExpressionNode::void_ && ep->left->type == ExpressionNode::blockclear_)
+            if (ep->type == ExpressionNode::comma_ && ep->left->type == ExpressionNode::blockclear_)
             {
                 int offset;
                 auto exp = relptr(ep->left->left, offset);
@@ -2302,7 +2302,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
         if (a->tp->type != BasicType::memberptr_ && basetype(a->tp)->sp->sb->structuredAliasType)
         {
             EXPRESSION *val = a->exp->left, *val2 = val;
-            if (val2->type == ExpressionNode::void_)
+            if (val2->type == ExpressionNode::comma_)
                 val2 = val2->right;
             if (val2->type != ExpressionNode::func_ && val2->type != ExpressionNode::thisref_ && !isarithmeticconst(val2))
             {
@@ -3502,7 +3502,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::intcall_:
                 case ExpressionNode::blockassign_:
                 case ExpressionNode::blockclear_:
-                case ExpressionNode::void_:
+                case ExpressionNode::comma_:
                 case ExpressionNode::cpblk_:
                 case ExpressionNode::initblk_:
                 case ExpressionNode::initobj_:
@@ -4177,13 +4177,13 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             ap1 = gen_atomic(funcsp, node, flags, size);
             rv = ap1;
             break;
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             ap1 = gen_hook(funcsp, node, flags, size);
             rv = ap1;
             break;
-        case ExpressionNode::void_: {
+        case ExpressionNode::comma_: {
             EXPRESSION* search = node;
-            while (search && search->type == ExpressionNode::void_)
+            while (search && search->type == ExpressionNode::comma_)
             {
                 gen_void_(search->left, funcsp);
                 search = search->right;
@@ -4278,7 +4278,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             /*		case ExpressionNode::array_:
                         rv = gen_binary( funcsp, node,flags,ISZ_ADDR,Optimizer::i_array);
             */
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::check_nz_:
             lab0 = Optimizer::nextLabel++;
             falsejmp(node->left->left, funcsp, lab0);
             gen_void_(node->left->right, funcsp);
@@ -4330,7 +4330,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::intcall_:
                 case ExpressionNode::blockassign_:
                 case ExpressionNode::blockclear_:
-                case ExpressionNode::void_:
+                case ExpressionNode::comma_:
                 case ExpressionNode::cpblk_:
                 case ExpressionNode::initblk_:
                 case ExpressionNode::initobj_:
@@ -4617,18 +4617,18 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::mp_compare_:
         case ExpressionNode::mp_as_bool_:
             return -ISZ_UINT;
-        case ExpressionNode::void_:
-            while (node->type == ExpressionNode::void_ && node->right)
+        case ExpressionNode::comma_:
+            while (node->type == ExpressionNode::comma_ && node->right)
                 node = node->right;
-            if (node->type == ExpressionNode::void_)
+            if (node->type == ExpressionNode::comma_)
                 return 0;
             else
                 return natural_size(node);
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             return natural_size(node->right);
         case ExpressionNode::atomic_:
             return -ISZ_UINT;
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::check_nz_:
             return natural_size(node->right);
         case ExpressionNode::const_:
             return sizeFromType(node->v.sp->tp);

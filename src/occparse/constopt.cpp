@@ -58,6 +58,7 @@
 #include "ccerr.h"
 #include "rtti.h"
 #include "symtab.h"
+#include "types.h"
 
 namespace Parser
 {

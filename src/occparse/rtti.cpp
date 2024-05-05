@@ -45,6 +45,7 @@
 #include "cpplookup.h"
 #include "inline.h"
 #include "symtab.h"
+#include "types.h"
 
 namespace Parser
 {

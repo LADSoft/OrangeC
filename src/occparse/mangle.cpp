@@ -31,6 +31,8 @@
 #include "help.h"
 #include "memory.h"
 #include "mangle.h"
+#include "declare.h"
+#include "types.h"
 #include <algorithm>
 namespace Parser
 {

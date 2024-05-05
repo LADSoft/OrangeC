@@ -50,6 +50,7 @@
 #include "templateinst.h"
 #include "templatededuce.h"
 #include "symtab.h"
+#include "types.h"
 
 namespace Parser
 {

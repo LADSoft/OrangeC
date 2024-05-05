@@ -35,6 +35,7 @@
 #include "lex.h"
 #include "ccerr.h"
 #include "config.h"
+#include "declare.h"
 #include "stmt.h"
 #include "occparse.h"
 #include "templatedecl.h"
@@ -48,10 +49,9 @@
 #include "browse.h"
 #include "help.h"
 #include "expr.h"
-#include "declare.h"
 #include "symtab.h"
 #include "ListFactory.h"
-
+#include "types.h"
 namespace Parser
 {
 #ifndef LONGLONG_MAX

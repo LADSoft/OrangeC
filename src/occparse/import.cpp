@@ -50,6 +50,8 @@
 #include "beinterf.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "types.h"
+
 extern DotNetPELib::PELib* peLib;
 
 using namespace DotNetPELib;

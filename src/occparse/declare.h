@@ -50,12 +50,10 @@ void InsertGlobal(SYMBOL* sp);
 void WeedExterns(void);
 const char* AnonymousName(void);
 const char* AnonymousTypeName(void);
+const char* NewUnnamedID(void);
 SYMBOL* SymAlloc(void);
 SYMBOL* makeID(StorageClass storage_class, TYPE* tp, SYMBOL* spi, const char* name);
 SYMBOL* makeUniqueID(StorageClass storage_class, TYPE* tp, SYMBOL* spi, const char* name);
-TYPE* MakeType(TYPE& tp, BasicType type, TYPE* base = nullptr);
-TYPE* MakeType(BasicType type, TYPE* base = nullptr);
-TYPE* CopyType(TYPE* tp, bool deep = false, std::function<void(TYPE*&, TYPE*&)> callback = nullptr);
 void addStructureDeclaration(STRUCTSYM* decl);
 void addTemplateDeclaration(STRUCTSYM* decl);
 void dropStructureDeclaration(void);
@@ -63,27 +61,28 @@ SYMBOL* getStructureDeclaration(void);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
 LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
                    StorageClass storage_class);
-LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
 void calculateStructOffsets(SYMBOL* sp);
 void resolveAnonymousUnions(SYMBOL* sp);
 LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable);
+LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
+    Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression);
+LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass storage_class, AccessLevel access, bool opaque,
+    bool* defd);
 void sizeQualifiers(TYPE* tp);
 LEXLIST* parse_declspec(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
 LEXLIST* getQualifiers(LEXLIST* lex, TYPE** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
-LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
-                       bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
-                       bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
-LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
-                      Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
-                      bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
-                      bool constexpression);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 bool intcmp(TYPE* t1, TYPE* t2);
-LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, StorageClass storage_class,
-                           bool funcptr);
+void checkIncompleteArray(TYPE* tp, const char* errorfile, int errorline);
 LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces);
+
+LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
+    StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
+    bool* isExplicit, bool* constexpression, TYPE** tp, Linkage* linkage, Linkage* linkage2,
+    Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
+    bool* asFriend);
 
 LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<BLOCKDATA*>& block,
                  bool needsemi, int asExpression, bool inTemplate, AccessLevel access);

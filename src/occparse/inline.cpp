@@ -54,6 +54,7 @@
 #include "iexpr.h"
 #include "iblock.h"
 #include "iinline.h"
+#include "types.h"
 
 namespace Parser
 {

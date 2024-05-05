@@ -45,6 +45,7 @@
 #include "beinterf.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "types.h"
 
 namespace Parser
 {

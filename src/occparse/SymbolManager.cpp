@@ -44,6 +44,7 @@
 #include "OptUtils.h"
 #include "beinterf.h"
 #include "initbackend.h"
+#include "types.h"
 
 namespace Parser {
 const char* beDecorateSymName(SYMBOL* sym)

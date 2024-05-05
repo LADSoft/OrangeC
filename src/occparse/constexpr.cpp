@@ -54,6 +54,7 @@
 #include "ListFactory.h"
 #include "inline.h"
 #include "mangle.h"
+#include "types.h"
 
 namespace Parser
 {

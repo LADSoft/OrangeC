@@ -45,6 +45,7 @@
 #include "templatededuce.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "types.h"
 namespace Parser
 {
 void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3)

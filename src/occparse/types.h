@@ -25,6 +25,43 @@
 
 namespace Parser
 {
+bool isautotype(TYPE* tp);
+bool isunsigned(TYPE* tp);
+bool isbitint(TYPE* tp);
+bool isint(TYPE* tp);
+bool isfloat(TYPE* tp);
+bool iscomplex(TYPE* tp);
+bool isimaginary(TYPE* tp);
+bool isarithmetic(TYPE* tp);
+bool ismsil(TYPE* tp);
+bool isconstraw(const TYPE* tp);
+bool isconst(const TYPE* tp);
+bool isvolatile(const TYPE* tp);
+bool islrqual(TYPE* tp);
+bool isrrqual(TYPE* tp);
+bool isrestrict(TYPE* tp);
+bool isatomic(TYPE* tp);
+bool isvoid(TYPE* tp);
+bool isvoidptr(TYPE* tp);
+bool isarray(TYPE* tp);
+bool isunion(TYPE* tp);
+TYPE* MakeType(TYPE& tp, BasicType type, TYPE* base = nullptr);
+TYPE* MakeType(BasicType type, TYPE* base = nullptr);
+TYPE* CopyType(TYPE* tp, bool deep = false, std::function<void(TYPE*&, TYPE*&)> callback = nullptr);
+LEXLIST* getPointerQualifiers(LEXLIST* lex, TYPE** tp, bool allowstatic);
+LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, StorageClass storage_class,
+                           bool funcptr);
+LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+    bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
+    bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
+LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+    Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
+    bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
+    bool constexpression);
+LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
+bool istype(SYMBOL* sym);
+bool startOfType(LEXLIST* lex, bool* structured, bool assumeType);
+void UpdateRootTypes(TYPE* tp);
 bool comparetypes(TYPE* typ1, TYPE* typ2, int exact);
 bool compareXC(TYPE* typ1, TYPE* typ2);
 bool matchingCharTypes(TYPE* typ1, TYPE* typ2);

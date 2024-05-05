@@ -35,6 +35,7 @@
 #include "config.h"
 #include "help.h"
 #include "beinterf.h"
+#include "types.h"
 
 namespace Parser
 {

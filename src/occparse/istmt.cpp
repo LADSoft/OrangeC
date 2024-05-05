@@ -61,6 +61,7 @@
 #include "optmodules.h"
 #include "symtab.h"
 #include "constopt.h"
+#include "types.h"
 Optimizer::SimpleSymbol* currentFunction;
 
 namespace Parser

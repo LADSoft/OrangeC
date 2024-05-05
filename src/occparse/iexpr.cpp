@@ -72,6 +72,7 @@
 #include "templatededuce.h"
 #include "constopt.h"
 #include "FNV_hash.h"
+#include "types.h"
 
 namespace Parser
 {

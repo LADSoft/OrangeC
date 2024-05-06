@@ -23,30 +23,30 @@
 
 namespace Parser
 {
-bool isstructuredmath(TYPE* tp1, TYPE* tp2 = nullptr);
-bool smallint(TYPE* tp);
-bool largenum(TYPE* tp);
-bool isTemplatedPointer(TYPE* tp);
-EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags = 0);
-void eval_unary_left_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST *start, TYPE* lefttp,
+bool isstructuredmath(Type* tp1, Type* tp2 = nullptr);
+bool smallint(Type* tp);
+bool largenum(Type* tp);
+bool isTemplatedPointer(Type* tp);
+EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags = 0);
+void eval_unary_left_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LEXLIST *start, Type* lefttp,
                      EXPRESSION* leftexp, bool ismutable, int flags);
-void eval_unary_right_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST *start, TYPE* lefttp,
+void eval_unary_right_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LEXLIST *start, Type* lefttp,
                      EXPRESSION* leftexp, bool ismutable, int flags);
-void eval_binary_fold(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, LEXLIST *leftstart, TYPE* lefttp,
-                    EXPRESSION* leftexp, LEXLIST *rightstart, TYPE* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
-void eval_unary_plus(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, TYPE* lefttp,
+void eval_binary_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LEXLIST *leftstart, Type* lefttp,
+                    EXPRESSION* leftexp, LEXLIST *rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
+void eval_unary_plus(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                      EXPRESSION* leftexp, bool ismutable, int flags);
-void eval_unary_minus(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
-void eval_unary_not(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
-void eval_unary_complement(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
-void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
-bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags); 
-bool eval_binary_times(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_shift(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_inequality(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_equality(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_logical(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
-bool eval_binary_comma(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+void eval_unary_minus(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
+void eval_unary_not(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
+void eval_unary_complement(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
+void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags);
+bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags); 
+bool eval_binary_times(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_shift(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_inequality(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_equality(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_logical(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
+bool eval_binary_comma(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags);
 }  // namespace Parser

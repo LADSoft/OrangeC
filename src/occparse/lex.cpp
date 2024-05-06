@@ -437,7 +437,7 @@ bool KWTYPE(LEXLIST* lex, unsigned types)
                 // and in earlier versions of C it is a storage_class
                 lex = getsym();
                 bool s;
-                rv = startOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
+                rv = TypeGenerator::StartOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
                 lex = backupsym();
                 if (rv == TT_BASETYPE)
                     RequiresDialect::Feature(Dialect::c2x, "auto as a type");
@@ -2141,7 +2141,7 @@ long long ParseExpression(std::string& line)
     LEXCONTEXT* oldContext = context;
     LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
     context = newContext;
-    TYPE* tp = nullptr;
+    Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
     SetAlternateParse(true, line);
     LEXLIST* lex = getsym();

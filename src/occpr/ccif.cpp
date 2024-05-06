@@ -97,7 +97,7 @@ const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     }
     else if (sp->sb->decoratedName)
     {
-        if (sp != parent && !isfunction(sp->tp))
+        if (sp != parent && !sp->tp->IsFunction())
         {
             char buf1[2048];
             const char* p = strchr(sp->sb->decoratedName + 1, '@');
@@ -118,9 +118,9 @@ const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
 static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order, bool base,
                               AccessLevel access)
 {
-    if (basetype(sym->tp)->syms)
+    if (sym->tp->BaseType()->syms)
     {
-        if (!isfunction(sym->tp))
+        if (!sym->tp->IsFunction())
         {
             if (sym->sb->baseClasses)
             { 
@@ -131,7 +131,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 }
             }
         }
-        for (auto st : *basetype(sym->tp)->syms)
+        for (auto st : *sym->tp->BaseType()->syms)
         {
             if (st->sb->storage_class == StorageClass::overloads_)
             {
@@ -143,7 +143,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 memset(type_name, 0, sizeof(type_name));
                 int indirectCount = 0;
                 int rel_id = 0;
-                TYPE* tp = st->tp;
+                Type* tp = st->tp;
                 sqlite3_int64 id;
                 int flags = (int)imin(st->sb->access, access) & 15;
                 if (st->sb->storage_class == StorageClass::static_ || st->sb->storage_class == StorageClass::external_)
@@ -152,10 +152,10 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                     flags |= 32;
                 if (st->sb->storage_class == StorageClass::virtual_)
                     flags |= 64;
-                if (isfunction(st->tp))
+                if (st->tp->IsFunction())
                 {
                     flags |= 128;
-                    if (basetype(st->tp)->syms->size() && ((SYMBOL*)basetype(st->tp)->syms->front())->sb->thisPtr)
+                    if (st->tp->BaseType()->syms->size() && ((SYMBOL*)st->tp->BaseType()->syms->front())->sb->thisPtr)
                         flags |= 2048;
                 }
                 if (base)
@@ -164,20 +164,20 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                     flags |= 512;
                 if (st->sb->isDestructor)
                     flags |= 1024;
-                if (isfunction(tp))
-                    tp = basetype(tp)->btp;
-                while (isref(tp))
-                    tp = basetype(tp)->btp;
-                while (ispointer(tp))
-                    tp = basetype(tp)->btp, indirectCount++;
-                if (isstructured(tp) && isstructured(basetype(tp)->sp->tp))
+                if (tp->IsFunction())
+                    tp = tp->BaseType()->btp;
+                while (tp->IsRef())
+                    tp = tp->BaseType()->btp;
+                while (tp->IsPtr())
+                    tp = tp->BaseType()->btp, indirectCount++;
+                if (tp->IsStructured() && tp->BaseType()->sp->tp->IsStructured())
                 {
-                    rel_id = basetype(tp)->sp->tp->sp->sb->ccStructId;
+                    rel_id = tp->BaseType()->sp->tp->sp->sb->ccStructId;
                 }
                 type_name[0] = 0;
-                if (isstructured(tp))
+                if (tp->IsStructured())
                 {
-                    switch (basetype(tp)->type)
+                    switch (tp->BaseType()->type)
                     {
                         case BasicType::struct_:
                             strcat(type_name, "struct ");
@@ -192,11 +192,11 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                             break;
                     }
                 }
-                else if (basetype(tp)->type == BasicType::enum_)
+                else if (tp->BaseType()->type == BasicType::enum_)
                 {
                     strcat(type_name, "enum ");
                 }
-                typenum(type_name + strlen(type_name), st->tp);
+                st->tp->BasicTypeToString(type_name + strlen(type_name));
 
                 ccWriteStructField(struct_id, GetSymName(st, parent), litlate(type_name), indirectCount, rel_id, file_id, main_id,
                                    flags, &order, &id);
@@ -211,12 +211,12 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && isstructured(sym->tp) &&
+        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && sym->tp->IsStructured() &&
             (!sym->tp->btp || sym->tp->btp->type != BasicType::typedef_))  // DAL fix
         {
             sqlite3_int64 struct_id;
             if (ccWriteStructName(sym->sb->decoratedName, &struct_id))
-                basetype(sym->tp)->sp->sb->ccStructId = struct_id;
+                sym->tp->BaseType()->sp->sb->ccStructId = struct_id;
         }
         item = item->next;
     }
@@ -224,10 +224,10 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && isstructured(sym->tp) &&
+        if (sym->sb->storage_class != StorageClass::label_ && sym->tp && istype(sym) && sym->tp->IsStructured() &&
             sym->sb->storage_class != StorageClass::typedef_ && sym->tp->syms)
         {
-            sqlite3_int64 struct_id = basetype(sym->tp)->sp->sb->ccStructId, file_id;
+            sqlite3_int64 struct_id = sym->tp->BaseType()->sp->sb->ccStructId, file_id;
             if (ccWriteFileName(sym->sb->origdeclfile, &file_id))
             {
                 int order = 1;
@@ -243,7 +243,7 @@ static void DumpSymbolType(SYMBOL* sym)
     const char* name = GetSymName(sym, sym);
     if (strstr(name, "++"))
         name = " ";
-    if (sym->tp && isfunction(sym->tp))
+    if (sym->tp && sym->tp->IsFunction())
         type = ST_FUNCTION;
     else
         switch (sym->sb->storage_class)
@@ -284,9 +284,9 @@ static void DumpSymbolType(SYMBOL* sym)
                 break;
         }
     /*
-    if (isconst(sym->tp))
+    if (sym->tp->IsConst())
         type |= ST_CONST;
-    if (isvolatile(sym->tp))
+    if (sym->tp->IsVolatile())
         type |= ST_VOLATILE;
         */
     ccWriteSymbolType(name, main_id, sym->sb->origdeclfile ? sym->sb->origdeclfile : (char*)"$$$", sym->sb->origdeclline,
@@ -315,20 +315,20 @@ static void DumpSymbol(SYMBOL* sym)
         char type_name[100000];
         int indirectCount = 0;
         const char* name = GetSymName(sym, sym);
-        TYPE* tp = sym->tp;
+        Type* tp = sym->tp;
         sqlite3_int64 id, struct_id = 0;
         if (strstr(name, "++"))
             name = " ";
-        if (isfunction(tp))
-            tp = basetype(tp)->btp;  // get rv
+        if (tp->IsFunction())
+            tp = tp->BaseType()->btp;  // get rv
         type_name[0] = 0;
         if (sym->sb->storage_class == StorageClass::typedef_)
         {
             strcpy(type_name, "typedef ");
         }
-        if (isstructured(tp))
+        if (tp->IsStructured())
         {
-            switch (basetype(tp)->type)
+            switch (tp->BaseType()->type)
             {
                 case BasicType::struct_:
                     strcat(type_name, "struct ");
@@ -343,19 +343,19 @@ static void DumpSymbol(SYMBOL* sym)
                     break;
             }
         }
-        else if (basetype(tp)->type == BasicType::enum_)
+        else if (tp->BaseType()->type == BasicType::enum_)
         {
             strcat(type_name, "enum ");
         }
-        typenum(type_name + strlen(type_name), tp->type == BasicType::typedef_ ? tp->btp : tp);
+        (tp->type == BasicType::typedef_ ? tp->btp : tp)->BasicTypeToString(type_name + strlen(type_name));
         type_name[40] = 0;
-        while (isref(tp))
-            tp = basetype(tp)->btp;
-        while (ispointer(tp))
-            tp = basetype(tp)->btp, indirectCount++;
-        if (isstructured(tp))
+        while (tp->IsRef())
+            tp = tp->BaseType()->btp;
+        while (tp->IsPtr())
+            tp = tp->BaseType()->btp, indirectCount++;
+        if (tp->IsStructured())
         {
-            struct_id = basetype(tp)->sp->sb->ccStructId;
+            struct_id = tp->BaseType()->sp->sb->ccStructId;
         }
         declsym = sym;
         if (sym->sb->parentClass)
@@ -368,9 +368,9 @@ static void DumpSymbol(SYMBOL* sym)
         // use sym->sb->declline here to get real function addresses
         else if (ccWriteLineNumbers(name, litlate(type_name), sym->sb->declfile ? sym->sb->declfile : (char*)"$$$", indirectCount,
                                     struct_id, main_id, sym->sb->declline, sym->sb->ccEndLine, sym->sb->endLine,
-                                    isfunction(sym->tp), &id))
+                                    sym->tp->IsFunction(), &id))
         {
-            if (isfunction(sym->tp) && sym->tp->syms)
+            if (sym->tp->IsFunction() && sym->tp->syms)
             {
                 int order = 1;
                 auto it = sym->tp->syms->begin();
@@ -382,7 +382,7 @@ static void DumpSymbol(SYMBOL* sym)
                     if (strstr(argName, "++"))
                         argName = " ";
                     type_name[0] = 0;
-                    typenum(type_name, st->tp);
+                    st->tp->BasicTypeToString(type_name);
                     type_name[40] = 0;
                     if (argName[0] == 'U' && strstr(argName, "++"))
                         argName = "{unnamed} ";  // the ide depends on the first char being '{'

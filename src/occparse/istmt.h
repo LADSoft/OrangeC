@@ -42,7 +42,7 @@ void gen_genword(STATEMENT* stmt, SYMBOL* funcsp);
 Optimizer::IMODE* set_symbol(const char* name, int isproc);
 Optimizer::IMODE* call_library(const char* lib_name, int size);
 void SubProfilerData(void);
-EXPRESSION* tempVar(TYPE* tp, bool global = false);
+EXPRESSION* tempVar(Type* tp, bool global = false);
 EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im);
 int gcs_compare(void const* left, void const* right);
 void genxswitch(STATEMENT* stmt, SYMBOL* funcsp);

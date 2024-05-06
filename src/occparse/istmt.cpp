@@ -153,7 +153,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym = SymAlloc();
         sym->sb->storage_class = StorageClass::external_;
         sym->name = sym->sb->decoratedName = litlate(name);
-        sym->tp = MakeType(isproc ? BasicType::func_ : BasicType::int_);
+        sym->tp = Type::MakeType(isproc ? BasicType::func_ : BasicType::int_);
         sym->sb->safefunc = true;
         globalNameSpace->front()->syms->Add(sym);
         auto osym = Optimizer::SymbolManager::Get(sym);
@@ -234,7 +234,7 @@ void SubProfilerData(void)
 }
 
 
-EXPRESSION* tempVar(TYPE* tp, bool global) 
+EXPRESSION* tempVar(Type* tp, bool global) 
 {
     if (global)
         anonymousNotAlloc++;
@@ -496,10 +496,10 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
     if (stmt != 0 && stmt->select != 0 && (!(flags & F_NORETURNVALUE)  || expressionHasSideEffects(stmt->select) || HasIncDec()))
     {
         // the return type should NOT be an array at this point unless it is a managed one...
-        if (basetype(funcsp->tp)->btp &&
-            (isstructured(basetype(funcsp->tp)->btp) || isbitint(basetype(funcsp->tp)->btp) ||
-                                          (isarray(basetype(funcsp->tp)->btp) && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
-                                          basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_))
+        if (funcsp->tp->BaseType()->btp &&
+            (funcsp->tp->BaseType()->btp->IsStructured() || funcsp->tp->BaseType()->btp->IsBitInt() ||
+                                          (funcsp->tp->BaseType()->btp->IsArray() && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
+                                          funcsp->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_))
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
@@ -515,13 +515,13 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             }
             else
             {
-                if (isstructured(basetype(funcsp->tp)->btp) && basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType)
+                if (funcsp->tp->BaseType()->btp->IsStructured() && funcsp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
                 {
                     EXPRESSION* exp = stmt->select;
                     size = natural_size(exp);
 
                     if (!(flags & F_RETURNSTRUCTBYVALUE) && inlineSymStructPtr.size() &&
-                        basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr_)
+                        funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
                     {
                         if (lvalue(exp))
                         {
@@ -533,8 +533,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                                 exp1 = exp1->left;
                             if (exp1->type == ExpressionNode::func_)
                             {
-                                auto tpx = basetype(basetype(exp1->v.sp->tp)->btp);
-                                if (!isstructured(tpx) || !tpx->sp->sb->structuredAliasType)
+                                auto tpx = exp1->v.sp->tp->BaseType()->btp->BaseType();
+                                if (!tpx->IsStructured() || !tpx->sp->sb->structuredAliasType)
                                 {
                                     exp = stmt->select; 
                                 }
@@ -572,8 +572,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     sym->sb->retblk = true;
                     sym->sb->allocate = false;
                     // instead of 'front()' the next line did table[0] without the ->p
-                    if ((funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_) && basetype(funcsp->tp)->syms->size() &&
-                        ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != BasicType::void_)
+                    if ((funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_) && funcsp->tp->BaseType()->syms->size() &&
+                        ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->tp->type != BasicType::void_)
                     {
                         sym->sb->offset = funcsp->sb->paramsize;
                     }
@@ -588,20 +588,20 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
         }
         else
         {
-            auto tpr = (TYPE*)nullptr;
-            if ((flags & F_RETURNREFBYVALUE) && funcsp->sb->retcount == 1 && isref(basetype(funcsp->tp)->btp))
+            auto tpr = (Type*)nullptr;
+            if ((flags & F_RETURNREFBYVALUE) && funcsp->sb->retcount == 1 && funcsp->tp->BaseType()->btp->IsRef())
             {
-                 tpr = basetype(basetype(funcsp->tp)->btp)->btp;
-                 if (isstructured(tpr))
+                 tpr = funcsp->tp->BaseType()->btp->BaseType()->btp;
+                 if (tpr->IsStructured())
                  {
-                    tpr = basetype(tpr)->sp->sb->structuredAliasType;
+                    tpr = tpr->BaseType()->sp->sb->structuredAliasType;
                  }
                  else
                  {
                     tpr = nullptr;
                  }
             }
-            if (tpr && isint(tpr) && tpr->size <= Optimizer::chosenAssembler->arch->word_size)
+            if (tpr && tpr->IsInt() && tpr->size <= Optimizer::chosenAssembler->arch->word_size)
             {
                 size = sizeFromType(tpr);
                 EXPRESSION* exp = stmt->select;
@@ -656,7 +656,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
     {
         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
-    if (ap && (inlineSymThisPtr.size() || !isvoid(basetype(funcsp->tp)->btp) || funcsp->sb->isConstructor))
+    if (ap && (inlineSymThisPtr.size() || !funcsp->tp->BaseType()->btp->IsVoid() || funcsp->sb->isConstructor))
     {
         bool needsOCP = funcsp->sb->retcount <= 1;
         if (returnImode)
@@ -729,7 +729,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             if (Optimizer::cparams.prm_xcept && Optimizer::SymbolManager::Get(funcsp)->xc && funcsp->sb->xc && funcsp->sb->xc->xclab)
                 gen_except(false, funcsp->sb->xc);
             SubProfilerData();
-            if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
+            if (returnSym && !funcsp->tp->BaseType()->btp->IsVoid())
             {
                 ap1 = Optimizer::tempreg(returnSym->size, 0);
                 ap1->retval = true;
@@ -1014,10 +1014,10 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::Block* b)
     Optimizer::intermed_tail = old->back;
     Optimizer::intermed_tail->fwd = nullptr;
     Optimizer::currentBlock = b;
-    for (auto sym : *basetype(funcsp->tp)->syms)
+    for (auto sym : *funcsp->tp->BaseType()->syms)
     {
         Optimizer::SimpleSymbol* simpleSym = Optimizer::SymbolManager::Get(sym);
-        if (sym->tp->type == BasicType::void_ || sym->tp->type == BasicType::ellipse_ || isstructured(sym->tp))
+        if (sym->tp->type == BasicType::void_ || sym->tp->type == BasicType::ellipse_ || sym->tp->IsStructured())
         {
             continue;
         }
@@ -1068,9 +1068,9 @@ void CopyVariables(SYMBOL* funcsp)
 }
 static void SetReturnSym(SYMBOL* funcsp)
 {
-    if (Optimizer::architecture == ARCHITECTURE_MSIL && !isvoid(basetype(funcsp->tp)->btp))
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && !funcsp->tp->BaseType()->btp->IsVoid())
     {
-        auto exp = anonymousVar(StorageClass::auto_, basetype(funcsp->tp)->btp);
+        auto exp = anonymousVar(StorageClass::auto_, funcsp->tp->BaseType()->btp);
         auto sym = exp->v.sp;
         sym->sb->anonymous = false;
         Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
@@ -1108,9 +1108,9 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
 
     Optimizer::SymbolManager::Get(funcsp, true)->generated = true;
     // if returning struct by val set up an expression for the return value
-    if (isstructured(basetype(funcsp->tp)->btp))
+    if (funcsp->tp->BaseType()->btp->IsStructured())
     {
-        auto spr = basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType;
+        auto spr = funcsp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType;
         if (spr)
         {
             flags |= F_RETURNSTRUCTBYVALUE;
@@ -1186,18 +1186,18 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
     if (Optimizer::cparams.prm_debug)
     {
-        if (basetype(funcsp->tp)->syms->size() && ((SYMBOL*)basetype(funcsp->tp)->syms->front())->sb->thisPtr)
+        if (funcsp->tp->BaseType()->syms->size() && ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->sb->thisPtr)
         {
-            EXPRESSION* exp = varNode(ExpressionNode::auto_, ((SYMBOL*)basetype(funcsp->tp)->syms->front()));
+            EXPRESSION* exp = varNode(ExpressionNode::auto_, ((SYMBOL*)funcsp->tp->BaseType()->syms->front()));
             exp->v.sp->tp->used = true;
             gen_varstart(exp);
         }
     }
     else
     {
-        if (basetype(funcsp->tp)->syms->size() && ((SYMBOL*)basetype(funcsp->tp)->syms->front())->sb->thisPtr)
+        if (funcsp->tp->BaseType()->syms->size() && ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->sb->thisPtr)
         {
-            baseThisPtr = Optimizer::SymbolManager::Get((SYMBOL*)basetype(funcsp->tp)->syms->front());
+            baseThisPtr = Optimizer::SymbolManager::Get((SYMBOL*)funcsp->tp->BaseType()->syms->front());
         }
     }
     Optimizer::gen_label(startlab);
@@ -1252,7 +1252,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         maxTemps = Optimizer::tempCount;
 
     // this is explicitly to clean up the this pointer
-    for (auto sym : *basetype(funcsp->tp)->syms)
+    for (auto sym : *funcsp->tp->BaseType()->syms)
     {
         if (sym->sb->storage_class == StorageClass::parameter_)
         {

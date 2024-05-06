@@ -61,31 +61,31 @@ static std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** 
 void UnrollTemplatePacks(std::list<TEMPLATEPARAMPAIR>* tplx);
 static std::list<TEMPLATEPARAMPAIR>* nextExpand(std::list<TEMPLATEPARAMPAIR>* inx, int n);
 std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAIR>** lst, std::list<TEMPLATEPARAMPAIR>* orig,
-                                                      TYPE* tp);
+                                                      Type* tp);
 
 bool constructedInt(LEXLIST* lex, SYMBOL* funcsp);
 LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst);
-static bool sameTemplateSpecialization(TYPE* P, TYPE* A);
+static bool sameTemplateSpecialization(Type* P, Type* A);
 bool exactMatchOnTemplateSpecialization(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym);
 SYMBOL* FindSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templateParams);
 SYMBOL* LookupSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templateParams);
-static bool matchTemplatedType(TYPE* old, TYPE* sym, bool strict);
+static bool matchTemplatedType(Type* old, Type* sym, bool strict);
 SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp);
 LEXLIST* TemplateArgGetDefault(LEXLIST** lex, bool isExpression);
-static SYMBOL* templateParamId(TYPE* tp, const char* name, int tag);
+static SYMBOL* templateParamId(Type* tp, const char* name, int tag);
 static LEXLIST* TemplateHeader(LEXLIST* lex, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args);
 static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst,
                             bool templateParam);
 static bool matchArg(TEMPLATEPARAMPAIR& param, TEMPLATEPARAMPAIR& arg);
 bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATEPARAMPAIR>* args);
-static bool comparePointerTypes(TYPE* tpo, TYPE* tps);
+static bool comparePointerTypes(Type* tpo, Type* tps);
 static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* porig, std::list<TEMPLATEPARAMPAIR>* psym, bool dflt,
                                                bool bySpecialization);
 bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym, bool bySpecialization);
 void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl);
 static bool ValidSpecialization(std::list<TEMPLATEPARAMPAIR>* special, std::list<TEMPLATEPARAMPAIR>* args, bool templateMatch);
 SYMBOL* MatchSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);
-void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, std::list<NAMESPACEVALUEDATA*>* nsv, SYMBOL* strSym,
+void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVALUEDATA*>* nsv, SYMBOL* strSym,
                                    std::list<TEMPLATEPARAMPAIR>* templateParams, bool isExtern);
 static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation);
 static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstantiation);
@@ -93,7 +93,7 @@ static bool IsFullySpecialized(TEMPLATEPARAMPAIR* tpx);
 bool TemplateFullySpecialized(SYMBOL* sp);
 void propagateTemplateDefinition(SYMBOL* sym);
 static void MarkDllLinkage(SYMBOL* sp, Linkage linkage);
-static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, std::list<NAMESPACEVALUEDATA*>* nsv, bool isExtern);
+static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMESPACEVALUEDATA*>* nsv, bool isExtern);
 bool inCurrentTemplate(const char* name);
 bool definedInTemplate(const char* name);
 LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, AccessLevel access, StorageClass storage_class, bool isExtern);

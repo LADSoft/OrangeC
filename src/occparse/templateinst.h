@@ -24,26 +24,26 @@
 
 namespace Parser
 {
-TYPE* SolidifyType(TYPE* tp);
+Type* SolidifyType(Type* tp);
 std::list<TEMPLATEPARAMPAIR>* SolidifyTemplateParams(std::list<TEMPLATEPARAMPAIR>* in);
 std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations);
-void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual);
+void SynthesizeQuals(Type*** last, Type** qual, Type*** lastQual);
 static EXPRESSION* copy_expression_data(EXPRESSION* exp);
 EXPRESSION* copy_expression(EXPRESSION* head);
 static std::list<TEMPLATEPARAMPAIR>* paramsToDefault(std::list<TEMPLATEPARAMPAIR>* templateParams);
 static std::list<TEMPLATEPARAMPAIR>** addStructParam(std::list<TEMPLATEPARAMPAIR>** pt, TEMPLATEPARAMPAIR& search,
                                                      std::list<TEMPLATEPARAMPAIR>* enclosing);
-static TYPE* SynthesizeStructure(TYPE* tp_in, std::list<TEMPLATEPARAMPAIR>* enclosing);
-TYPE* SynthesizeType(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
-static bool hasPack(TYPE* tp);
+static Type* SynthesizeStructure(Type* tp_in, std::list<TEMPLATEPARAMPAIR>* enclosing);
+Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
+static bool hasPack(Type* tp);
 static SYMBOL* SynthesizeParentClass(SYMBOL* sym);
 SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 static int eval(EXPRESSION* exp);
 static bool ValidExp(EXPRESSION** exp_in);
-static bool ValidArg(TYPE* tp);
+static bool ValidArg(Type* tp);
 static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, std::list<INITLIST*>* args);
 static void FillNontypeExpressionDefaults(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* enclosing);
-static void FillNontypeTypeDefaults(TYPE* tp, std::list<TEMPLATEPARAMPAIR>* enclosing);
+static void FillNontypeTypeDefaults(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static bool SetTemplateParamValue(TEMPLATEPARAMPAIR* p, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static void FillNontypeTemplateParamDefaults(std::list<TEMPLATEPARAMPAIR>* fills, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static bool checkNonTypeTypes(std::list<TEMPLATEPARAMPAIR>* params, std::list<TEMPLATEPARAMPAIR>* enclosing);
@@ -58,14 +58,14 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern, StorageClass storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
 SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning);
-static bool CheckConstCorrectness(TYPE* P, TYPE* A, bool byClass);
+static bool CheckConstCorrectness(Type* P, Type* A, bool byClass);
 static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARAMPAIR>* params);
 static bool TemplateConstMatchingInternal(std::list<TEMPLATEPARAMPAIR>* P);
 static void TemplateConstMatching(SYMBOL** spList, int n, std::list<TEMPLATEPARAMPAIR>* params);
 void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list<TEMPLATEPARAMPAIR>* val,
                                    std::list<TEMPLATEPARAMPAIR>* params);
 static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* unspecialized, std::list<TEMPLATEPARAMPAIR>* args);
-static bool checkArgType(TYPE* tp, bool checkDeduced, bool checkDeclaring);
+static bool checkArgType(Type* tp, bool checkDeduced, bool checkDeclaring);
 static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool checkDeclaring);
 bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool checkDeduced = false, bool checkDeclaring = false);
 void TemplateArgsAdd(TEMPLATEPARAMPAIR* current, TEMPLATEPARAMPAIR* dflt, std::list<TEMPLATEPARAMPAIR>* basetpl);
@@ -84,12 +84,12 @@ bool ReplaceIntAliasParams(EXPRESSION** exp, SYMBOL* sym, std::list<TEMPLATEPARA
                            std::list<TEMPLATEPARAMPAIR>* origUsing);
 void SearchAlias(const char* name, TEMPLATEPARAMPAIR* x, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                  std::list<TEMPLATEPARAMPAIR>* origUsing);
-static TYPE* ReplaceTemplateParam(TYPE* in);
+static Type* ReplaceTemplateParam(Type* in);
 void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TEMPLATESELECTOR>* old, bool expression, SYMBOL* sym,
                              std::list<TEMPLATEPARAMPAIR>* origTemplate, std::list<TEMPLATEPARAMPAIR>* origUsing);
 static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* orig,
                                  std::list<TEMPLATEPARAMPAIR>* origTemplate, std::list<TEMPLATEPARAMPAIR>* origUsing);
-static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, std::list<TEMPLATEPARAMPAIR>* orig,
+static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list<TEMPLATEPARAMPAIR>* orig,
                             std::list<TEMPLATEPARAMPAIR>* origTemplate, std::list<TEMPLATEPARAMPAIR>* origUsing);
 static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                           std::list<TEMPLATEPARAMPAIR>* origUsing);

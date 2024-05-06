@@ -86,8 +86,8 @@ bool ismember(SYMBOL* sym)
             return false;
     }
 }
-bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
-bool isDerivedFromTemplate(TYPE* tp)
+bool ismemberdata(SYMBOL* sym) { return !sym->tp->IsFunction() && ismember(sym); }
+bool isDerivedFromTemplate(Type* tp)
 {
     while (tp)
     {
@@ -123,10 +123,10 @@ bool isconstexpr(const EXPRESSION* expa)
     }
     return false;
 }
-EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
+EXPRESSION* createTemporary(Type* tp, EXPRESSION* val)
 {
     EXPRESSION* rv;
-    tp = basetype(tp)->btp;
+    tp = tp->BaseType()->btp;
     if (tp->type == BasicType::pointer_) // to get around arrays not doing a deref...
         tp = &stdpointer;
     rv = anonymousVar(StorageClass::auto_, tp);
@@ -142,7 +142,7 @@ EXPRESSION* createTemporary(TYPE* tp, EXPRESSION* val)
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
-EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
+EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val)
 {
     EXPRESSION* rv = anonymousVar(StorageClass::auto_, tp);
     if (val)
@@ -155,55 +155,55 @@ EXPRESSION* msilCreateTemporary(TYPE* tp, EXPRESSION* val)
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
-void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
+void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp)
 {
-    TYPE* patin = *pat;
-    TYPE* in = nt;
-    if (isautotype(*pat))
+    Type* patin = *pat;
+    Type* in = nt;
+    if ((*pat)->IsAutoType())
     {
         bool pointerOrRef = false;
         bool err = false;
-        if (isref(*pat))
+        if ((*pat)->IsRef())
         {
-            if ((*pat)->type == BasicType::rref_ && !isconst((*pat)->btp) && !isvolatile((*pat)->btp))
+            if ((*pat)->type == BasicType::rref_ && !(*pat)->btp->IsConst() && !(*pat)->btp->IsVolatile())
             {
                 // forwarding?  unadorned rref!
-                if (!nt->rref && basetype(nt)->type != BasicType::rref_ && (!isarithmeticconst(exp) || exp->type == ExpressionNode::const_))
+                if (!nt->rref && nt->BaseType()->type != BasicType::rref_ && (!isarithmeticconst(exp) || exp->type == ExpressionNode::const_))
                 {
                     // lref
-                    TYPE* t = nt;
-                    *pat = MakeType(BasicType::lref_, isref(t) ? t->btp : t);
+                    Type* t = nt;
+                    *pat = Type::MakeType(BasicType::lref_, t->IsRef() ? t->btp : t);
                     return;
                 }
                 else
                 {
                     // rref, get rid of qualifiers and return an rref
-                    TYPE* tp1;
+                    Type* tp1;
                     if (nt->type == BasicType::rref_)
-                        tp1 = basetype(nt->btp);
+                        tp1 = nt->btp->BaseType();
                     else
-                        tp1 = basetype(nt);
+                        tp1 = nt->BaseType();
                     // rref
-                    *pat = MakeType(BasicType::lref_, isref(tp1) ? tp1->btp : tp1);
+                    *pat = Type::MakeType(BasicType::lref_, tp1->IsRef() ? tp1->btp : tp1);
                     return;
                 }
             }
-            if (isref(nt))
+            if (nt->IsRef())
             {
-                nt = basetype(nt)->btp;
+                nt = nt->BaseType()->btp;
             }
             pointerOrRef = true;
-            pat = &basetype(*pat)->btp;
+            pat = &(*pat)->BaseType()->btp;
         }
-        while (ispointer(*pat) && ispointer(nt))
+        while ((*pat)->IsPtr() && nt->IsPtr())
         {
             pointerOrRef = true;
-            pat = &basetype(*pat)->btp;
-            nt = basetype(nt)->btp;
+            pat = &(*pat)->BaseType()->btp;
+            nt = nt->BaseType()->btp;
         }
-        if (ispointer(*pat))
+        if ((*pat)->IsPtr())
         {
-            if (isfunction(nt))
+            if (nt->IsFunction())
             {
                 while ((*pat)->type != BasicType::auto_)
                     pat = &(*pat)->btp;
@@ -222,9 +222,9 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
                 return;
             }
         }
-        if (ispointer(*pat))
+        if ((*pat)->IsPtr())
             err = true;
-        nt = basetype(nt);
+        nt = nt->BaseType();
         if (err)
         {
             errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, patin, in);
@@ -234,22 +234,22 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = MakeType(BasicType::lref_, nt);
+                    *pat = Type::MakeType(BasicType::lref_, nt);
                 }
                 else
                 {
                     *pat = nt;
                 }
-            else if (isref(nt))
+            else if (nt->IsRef())
             {
-                *pat = basetype(nt)->btp;
+                *pat = nt->BaseType()->btp;
             }
             else
             {
                 *pat = nt;
             }
         }
-        else if (ispointer(in))
+        else if (in->IsPtr())
         {
             *pat = nt;
         }
@@ -261,18 +261,18 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
         }
     }
 }
-SYMBOL* getFunctionSP(TYPE** tp)
+SYMBOL* getFunctionSP(Type** tp)
 {
-    TYPE* btp = basetype(*tp);
-    bool pointer = ispointer(btp);
+    Type* btp = (*tp)->BaseType();
+    bool pointer = btp->IsPtr();
     if (pointer)
     {
-        btp = basetype(btp)->btp;
+        btp = btp->BaseType()->btp;
     }
-    if (isfunction(btp))
+    if (btp->IsFunction())
     {
         *tp = btp;
-        return basetype(btp)->sp;
+        return btp->BaseType()->sp;
     }
     else if (btp->type == BasicType::aggregate_)
     {
@@ -411,13 +411,13 @@ void undoAnonymousVar(SYMBOL* sp)
         localNameSpace->front()->syms->remove(sp);
     }
 }
-EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)
+EXPRESSION* anonymousVar(StorageClass storage_class, Type* tp)
 {
     static int anonct = 1;
     char buf[256];
     SYMBOL* rv = SymAlloc();
-    if (tp->size == 0 && isstructured(tp))
-        tp = basetype(tp)->sp->tp;
+    if (tp->size == 0 && tp->IsStructured())
+        tp = tp->BaseType()->sp->tp;
     rv->sb->storage_class = storage_class;
     rv->tp = tp;
     rv->sb->anonymous = true;
@@ -428,8 +428,8 @@ EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)
         rv->sb->value.i = theCurrentFunc->sb->value.i;
     Optimizer::my_sprintf(buf, "$anontemp%d", anonct++);
     rv->name = litlate(buf);
-    if (!isatomic(tp))
-        tp->size = basetype(tp)->size;
+    if (!tp->IsAtomic())
+        tp->size = tp->BaseType()->size;
     if (theCurrentFunc && localNameSpace->front()->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, Linkage::none_, false);
     SetLinkerNames(rv, Linkage::none_);
@@ -437,7 +437,7 @@ EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp)
 }
 EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
 {
-    TYPE* tp = MakeType(issigned ? BasicType::bitint_ : BasicType::unsigned_bitint_);
+    Type* tp = Type::MakeType(issigned ? BasicType::bitint_ : BasicType::unsigned_bitint_);
     tp->size = bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
     tp->size /= Optimizer::chosenAssembler->arch->bitintunderlying;
     tp->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
@@ -445,10 +445,10 @@ EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
     tp->bitintbits = bits;
     return anonymousVar(storageClass, tp);
 }
-void deref(TYPE* tp, EXPRESSION** exp)
+void deref(Type* tp, EXPRESSION** exp)
     {
     ExpressionNode en = ExpressionNode::l_i_;
-    tp = basetype(tp);
+    tp = tp->BaseType();
     switch ((tp->type == BasicType::enum_ && tp->btp) ? tp->btp->type : tp->type)
     {
         case BasicType::lref_: /* only used during initialization */
@@ -578,15 +578,15 @@ void deref(TYPE* tp, EXPRESSION** exp)
             break;
     }
     *exp = exprNode(en, *exp, nullptr);
-    if (isbitint(tp))
+    if (tp->IsBitInt())
         (*exp)->v.b.bits = tp->bitintbits;
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
-int sizeFromType(TYPE* tp)
+int sizeFromType(Type* tp)
 {
     int rv = -ISZ_UINT;
-    tp = basetype(tp);
+    tp = tp->BaseType();
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {
         case BasicType::void_:
@@ -686,7 +686,7 @@ int sizeFromType(TYPE* tp)
             rv = ISZ_ILDOUBLE;
             break;
         case BasicType::pointer_:
-            if (isarray(tp) && basetype(tp)->msil)
+            if (tp->IsArray() && tp->BaseType()->msil)
             {
                 rv = ISZ_OBJECT;
                 break;
@@ -711,10 +711,10 @@ int sizeFromType(TYPE* tp)
     }
     return rv;
 }
-void cast(TYPE* tp, EXPRESSION** exp)
+void cast(Type* tp, EXPRESSION** exp)
 {
     ExpressionNode en = ExpressionNode::x_i_;
-    tp = basetype(tp);
+    tp = tp->BaseType();
     switch (tp->type == BasicType::enum_ ? tp->btp->type : tp->type)
     {
         case BasicType::lref_:
@@ -936,22 +936,22 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
     if (fieldsp->sb->parentClass->sb->parentClass)
     {
         bool done = false;
-        TYPE* tp = expsym->v.sp->tp;
+        Type* tp = expsym->v.sp->tp;
         while (!done)
         {
-            while (ispointer(tp))
+            while (tp->IsPtr())
             {
                 tp = tp->btp;
             }
             offset %= tp->size;  // in case of array
-            if (isstructured(tp))
+            if (tp->IsStructured())
             {
-                for (auto sp : * basetype(tp)->syms)
+                for (auto sp : * tp->BaseType()->syms)
                     if (offset >= sp->sb->offset && offset < sp->sb->offset + sp->tp->size)
                     {
                         if (ismemberdata(sp))
                         {
-                            if (isstructured(sp->tp))
+                            if (sp->tp->IsStructured())
                             {
                                 offset -= sp->sb->offset;
                                 exps = exprNode(ExpressionNode::structadd_, exps, varNode(ExpressionNode::structelem_, sp));
@@ -973,7 +973,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
     }
     return exps;
 }
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<INITIALIZER*>* init,
+EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<INITIALIZER*>* init,
                                     EXPRESSION* thisptr, bool isdest)
 {
     bool local = false;
@@ -984,7 +984,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
     if (sym)
         sym->sb->destructed = false;
 
-    if (isstructured(tp) || isarray(tp))
+    if (tp->IsStructured() || tp->IsArray())
     {
         initInsert(&init, nullptr, nullptr, tp->size, false);
     }
@@ -997,7 +997,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (funcsp)
             {
                 SYMBOL* sym =
-                    basetype(funcsp->tp)->syms->size() > 0 ? (SYMBOL*)basetype(funcsp->tp)->syms->front() : nullptr;
+                    funcsp->tp->BaseType()->syms->size() > 0 ? (SYMBOL*)funcsp->tp->BaseType()->syms->front() : nullptr;
                 if (sym && sym->sb->thisPtr)
                     expsym = varNode(ExpressionNode::auto_, sym);  // this ptr
                 else
@@ -1053,7 +1053,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (thisptr)
                     expsym = thisptr;
                 else if (funcsp)
-                    expsym = varNode(ExpressionNode::auto_, (SYMBOL*)basetype(funcsp->tp)->syms->front());  // this ptr
+                    expsym = varNode(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
                 else
                 {
                     expsym = intNode(ExpressionNode::c_i_, 0);
@@ -1079,7 +1079,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         }
     }
     base = copy_expression(expsym);
-    if (sym && isarray(sym->tp) && sym->tp->msil && !init->front()->noassign)
+    if (sym && sym->tp->IsArray() && sym->tp->msil && !init->front()->noassign)
     {
         exp = intNode(ExpressionNode::msil_array_init_, 0);
         exp->v.tp = sym->tp;
@@ -1087,7 +1087,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         *pos = exprNode(ExpressionNode::assign_, expsym, exp);
         noClear = true;
     }
-    if (sym && isstructured(sym->tp) && basetype(sym->tp)->sp->sb->structuredAliasType)
+    if (sym && sym->tp->IsStructured() && sym->tp->BaseType()->sp->sb->structuredAliasType)
     {
         noClear = true;
     }
@@ -1106,7 +1106,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
                         ? exprNode(ExpressionNode::add_, copy_expression(expsym), intNode(ExpressionNode::c_i_, initItem->offset))
                         : copy_expression(expsym);
-                    if (isarray(tp))
+                    if (tp->IsArray())
                     {
                         exp->v.func->arguments->front()->exp = exp1;
                     }
@@ -1128,12 +1128,12 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             {
                 // usually empty braces, coudl be an error though
                 exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
-                exp->size = MakeType(BasicType::struct_);
+                exp->size = Type::MakeType(BasicType::struct_);
                 exp->size->size = initItem->offset;                
             }
-            else if (isstructured(initItem->basetp) || isarray(initItem->basetp))
+            else if (initItem->basetp->IsStructured() || initItem->basetp->IsArray())
             {
-                if (isstructured(initItem->basetp))
+                if (initItem->basetp->IsStructured())
                 {
                     EXPRESSION* exp2 = initItem->exp;
                     while (exp2->type == ExpressionNode::not__lvalue_)
@@ -1152,9 +1152,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         exp = exp2;
                         noClear = true;
                     }
-                    else if ((Optimizer::cparams.prm_cplusplus) && !basetype(initItem->basetp)->sp->sb->trivialCons)
+                    else if ((Optimizer::cparams.prm_cplusplus) && !initItem->basetp->BaseType()->sp->sb->trivialCons)
                     {
-                        TYPE* ctype = initItem->basetp;
+                        Type* ctype = initItem->basetp;
                         callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
                         exp = expsym;
                     }
@@ -1166,15 +1166,15 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         exp = exprNode(ExpressionNode::blockassign_, exp, exp2);
                         exp->size = initItem->basetp;
                         exp->altdata = (void*)(initItem->basetp);
-                        noClear = comparetypes(initItem->basetp, tp, true);
+                        noClear = initItem->basetp->ExactSameType(tp);
                     }
                 }
                 else
                 {
-                    TYPE* btp = initItem->basetp;
-                    while (isarray(btp))
-                        btp = basetype(btp)->btp;
-                    btp = basetype(btp);
+                    Type* btp = initItem->basetp;
+                    while (btp->IsArray())
+                        btp = btp->BaseType()->btp;
+                    btp = btp->BaseType();
                     bool found = false;
                     for (auto elm : *init)
                     {
@@ -1195,7 +1195,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             expsym = anonymousVar(StorageClass::auto_, initItem->basetp);
                             sym = expsym->v.sp;
                         }
-                        if (!isstructured(btp) || btp->sp->sb->trivialCons)
+                        if (!btp->IsStructured() || btp->sp->sb->trivialCons)
                         {
                             exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
                             exp->size = initItem->basetp;
@@ -1208,7 +1208,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                         {
                             EXPRESSION* right = initItem->exp;
-                            if (!isstructured(btp))
+                            if (!btp->IsStructured())
                             {
                                 EXPRESSION* asn;
                                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -1249,10 +1249,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         spc->sb->label = Optimizer::nextLabel++;
                         if (expsym)
                         {
-                            if (Optimizer::cparams.prm_cplusplus && isstructured(initItem->basetp) &&
+                            if (Optimizer::cparams.prm_cplusplus && initItem->basetp->IsStructured() &&
                                 !initItem->basetp->sp->sb->trivialCons)
                             {
-                                TYPE* ctype = initItem->basetp;
+                                Type* ctype = initItem->basetp;
                                 callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false, true);
                                 exp = expsym;
                             }
@@ -1266,7 +1266,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     }
                 }
             }
-            else if (basetype(initItem->basetp)->type == BasicType::memberptr_)
+            else if (initItem->basetp->BaseType()->type == BasicType::memberptr_)
             {
                 EXPRESSION* exp2 = initItem->exp;
                 ;
@@ -1294,13 +1294,13 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             {
                 EXPRESSION* exps = copy_expression(expsym);
                 exps->init = true;
-                if (isarray(tp) && tp->msil)
+                if (tp->IsArray() && tp->msil)
                 {
-                    TYPE* btp = tp;
+                    Type* btp = tp;
                     exps = exprNode(ExpressionNode::msil_array_access_, nullptr, nullptr);
                     int count = 0, i;
                     int q = initItem->offset;
-                    while (isarray(btp) && btp->msil)
+                    while (btp->IsArray() && btp->msil)
                     {
                         count++;
                         btp = btp->btp;
@@ -1365,8 +1365,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else
                 {
-                    if ((isarithmetic(initItem->basetp) || ispointer(initItem->basetp))
-                        && !isbitint(initItem->basetp))
+                    if ((initItem->basetp->IsArithmetic() || initItem->basetp->IsPtr())
+                        && !initItem->basetp->IsBitInt())
                         cast(initItem->basetp, &exp);
                     if (exps)
                     {
@@ -1376,7 +1376,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     }
                 }
             }
-            if (sym && sym->sb->init && isatomic(initItem->basetp) && needsAtomicLockFromType(initItem->basetp))
+            if (sym && sym->sb->init && initItem->basetp->IsAtomic() && needsAtomicLockFromType(initItem->basetp))
             {
                 EXPRESSION* p1 = exprNode(ExpressionNode::add_, expsym->left, intNode(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
                 deref(&stdint, &p1);
@@ -1400,9 +1400,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
     // plop in a clear block if necessary
     // this needs some work, if the structure was entirely created we shouldn't do this...
     if ((sym || expsymin) && !noClear && !isdest &&
-        ((isarray(tp) && (!isstructured(basetype(tp)->btp) || !basetype(basetype(tp)->btp)->sp->sb->hasUserCons)) ||
-         (isstructured(tp) && ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
-                               !basetype(tp)->sp->sb->hasUserCons))))
+        ((tp->IsArray() && (!tp->BaseType()->btp->IsStructured() || !tp->BaseType()->btp->BaseType()->sp->sb->hasUserCons)) ||
+         (tp->IsStructured() && ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
+                               !tp->BaseType()->sp->sb->hasUserCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
@@ -1445,7 +1445,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                           intNode(ExpressionNode::c_i_, 0));
         }
     }
-    if (isstructured(tp))
+    if (tp->IsStructured())
     {
         if (*pos)
         {
@@ -1462,11 +1462,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
 
     return rv;
 }
-bool assignDiscardsConst(TYPE* dest, TYPE* source)
+bool assignDiscardsConst(Type* dest, Type* source)
 {
-    source = basetype(source);
-    dest = basetype(dest);
-    if (!ispointer(source) || !ispointer(dest))
+    source = source->BaseType();
+    dest = dest->BaseType();
+    if (!source->IsPtr() || !dest->IsPtr())
         return false;
     while (true)
     {
@@ -1525,21 +1525,21 @@ bool assignDiscardsConst(TYPE* dest, TYPE* source)
         source = source->btp;
     }
 }
-bool isconstzero(TYPE* tp, EXPRESSION* exp)
+bool isconstzero(Type* tp, EXPRESSION* exp)
 {
     (void)tp;
     return (isintconst(exp) && exp->v.i == 0);
 }
-bool fittedConst(TYPE* tp, EXPRESSION* exp)
+bool fittedConst(Type* tp, EXPRESSION* exp)
 {
     int n;
-    if (!isint(tp) || !isintconst(exp))
+    if (!tp->IsInt() || !isintconst(exp))
         return false;
-    n = getSize(basetype(tp)->type);
+    n = getSize(tp->BaseType()->type);
     switch (n)
     {
         case 8:
-            if (isunsigned(tp))
+            if (tp->IsUnsigned())
             {
                 if (exp->v.i < 0 || exp->v.i > 255)
                     return false;
@@ -1551,7 +1551,7 @@ bool fittedConst(TYPE* tp, EXPRESSION* exp)
             }
             break;
         case 16:
-            if (isunsigned(tp))
+            if (tp->IsUnsigned())
             {
                 if (exp->v.i < 0 || exp->v.i > 65535)
                     return false;
@@ -1605,7 +1605,7 @@ SYMBOL*(CopySymbol)(SYMBOL* sym_in, bool full)
     }
     return rv;
 }
-static TYPE* inttype(BasicType t1)
+static Type* inttype(BasicType t1)
 {
     switch (t1)
     {
@@ -1646,7 +1646,7 @@ static TYPE* inttype(BasicType t1)
     }
 }
 inline BasicType btmax(BasicType left, BasicType right) { return left > right ? left : right; }
-TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp)
+Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, Type* atp)
 /*
  * compare two types and determine if they are compatible for purposes
  * of the current operation.  Return an appropriate type.  Also checks for
@@ -1658,27 +1658,27 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         return tp1;
     if (tp2->type == BasicType::any_)
         return tp2;
-    if (isvoid(tp1) || isvoid(tp2) || ismsil(tp1) || ismsil(tp2))
+    if (tp1->IsVoid() || tp2->IsVoid() || tp1->IsMsil() || tp2->IsMsil())
     {
         if (exp1 && exp2)
             error(ERR_NOT_AN_ALLOWED_TYPE);
         return tp1;
     }
-    if (isref(tp1))
-        tp1 = basetype(tp1)->btp;
-    if (isref(tp2))
-        tp2 = basetype(tp2)->btp;
-    tp1 = basetype(tp1);
-    tp2 = basetype(tp2);
-    isctp1 = isarithmetic(tp1) || tp1->type == BasicType::enum_;
-    isctp2 = isarithmetic(tp2) || tp2->type == BasicType::enum_;
+    if (tp1->IsRef())
+        tp1 = tp1->BaseType()->btp;
+    if (tp2->IsRef())
+        tp2 = tp2->BaseType()->btp;
+    tp1 = tp1->BaseType();
+    tp2 = tp2->BaseType();
+    isctp1 = tp1->IsArithmetic() || tp1->type == BasicType::enum_;
+    isctp2 = tp2->IsArithmetic() || tp2->type == BasicType::enum_;
 
     /*    if (isctp1 && isctp2 && tp1->type == tp2->type)
             return tp1 ;
     */
     if (tp1->type >= BasicType::float_ || tp2->type >= BasicType::float_)
     {
-        TYPE* tp = nullptr;
+        Type* tp = nullptr;
         int isim1 = tp1->type >= BasicType::float__imaginary_ && tp1->type <= BasicType::long_double_imaginary_;
         int isim2 = tp2->type >= BasicType::float__imaginary_ && tp2->type <= BasicType::long_double_imaginary_;
         int iscx1 = tp1->type >= BasicType::float__complex_ && tp1->type <= BasicType::long_double_complex_;
@@ -1800,14 +1800,14 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     }
     if (isctp1 && isctp2)
     {
-        TYPE* rv;
+        Type* rv;
         BasicType t1, t2;
         t1 = tp1->type;
         t2 = tp2->type;
         if (tp1->size == tp2->size)
-            if (isunsigned(tp1) != isunsigned(tp2))
+            if (tp1->IsUnsigned() != tp2->IsUnsigned())
             {
-                if (isunsigned(tp1))
+                if (tp1->IsUnsigned())
                     t2 = t1;
                 else
                     t1 = t2;
@@ -1828,7 +1828,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         t1 = btmax(t1, t2);
         if (t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_)
         {
-            rv = MakeType(t1);
+            rv = Type::MakeType(t1);
             int bits = tp1->bitintbits;
             bits = bits > tp2->bitintbits ? bits : tp2->bitintbits;
             rv->bitintbits = bits;
@@ -1854,35 +1854,35 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     { /* have a pointer or other exceptional case*/
         if (tp1->type == BasicType::void_ && tp2->type == BasicType::void_)
             return tp1;
-        if (tp1->type <= BasicType::unsigned_long_long_ && ispointer(tp2))
+        if (tp1->type <= BasicType::unsigned_long_long_ && tp2->IsPtr())
         {
-            if (!ispointer(tp1))
+            if (!tp1->IsPtr())
                 cast(tp2, exp1);
             return tp2;
         }
-        if (tp2->type <= BasicType::unsigned_long_long_ && ispointer(tp1))
+        if (tp2->type <= BasicType::unsigned_long_long_ && tp1->IsPtr())
         {
-            if (!ispointer(tp2))
+            if (!tp2->IsPtr())
                 cast(tp1, exp2);
             return tp1;
         }
-        if (isstructured(tp1))
+        if (tp1->IsStructured())
         {
             return tp2;
         }
-        if (isstructured(tp2))
+        if (tp2->IsStructured())
         {
             return tp1;
         }
 
-        if (isfunction(tp1))
-            if (isfunction(tp2) || ispointer(tp2))
+        if (tp1->IsFunction())
+            if (tp2->IsFunction() || tp2->IsPtr())
                 return tp1;
-        if (isfunction(tp2))
-            if (isfunction(tp1) || ispointer(tp1))
+        if (tp2->IsFunction())
+            if (tp1->IsFunction() || tp1->IsPtr())
                 return tp2;
-        if (ispointer(tp1))
-            if (ispointer(tp2))
+        if (tp1->IsPtr())
+            if (tp2->IsPtr())
             {
                 return tp1;
             }
@@ -1902,10 +1902,10 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
         newExp->right = RemoveAutoIncDec(newExp->right);
     return newExp;
 }
-EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp)
+EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
 {
     EXPRESSION* result = nullptr;
-    if (!basetype(tp)->hasbits && !castvalue(exp) && lvalue(exp))
+    if (!tp->BaseType()->hasbits && !castvalue(exp) && lvalue(exp))
     {
         bool doit = false;
         std::stack<EXPRESSION*> stk;

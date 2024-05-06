@@ -94,7 +94,7 @@ class Importer : public Callback
     }
 #endif
   protected:
-    TYPE* TranslateType(Type*);
+    Type* TranslateType(DotNetPELib::Type*);
     bool useGlobal() const { return Optimizer::cparams.managed_library && inlsmsilcrtl_ && structures_.size() == 1; }
     void InsertBaseClassTree(SYMBOL* sp, const Class* cls);
     void InsertBaseClass(SYMBOL* sp, Class* cls);
@@ -119,13 +119,13 @@ class Importer : public Callback
 };
 
 #ifdef VSIDE
-void AddType(Optimizer::SimpleSymbol* sym, Type* type) {}
+void AddType(Optimizer::SimpleSymbol* sym, DotNetPELib::Type* type) {}
 #endif
 }  // namespace Parser
 #ifndef VSIDE
 namespace occmsil
 {
-void AddType(Optimizer::SimpleSymbol* sym, Type* type);
+void AddType(Optimizer::SimpleSymbol* sym, DotNetPELib::Type* type);
 }
 using namespace occmsil;
 #endif
@@ -159,9 +159,9 @@ BasicType Importer::translatedTypes[] = {
 
 };
 
-TYPE* Importer::TranslateType(Type* in)
+Type* Importer::TranslateType(DotNetPELib::Type* in)
 {
-    TYPE *rv = NULL, **last = &rv;
+    Type *rv = NULL, **last = &rv;
     if (in)
     {
         BasicType tp;
@@ -169,20 +169,20 @@ TYPE* Importer::TranslateType(Type* in)
         {
             if (in->ArrayLevel() > 1)  // this is because with the current version of dotnetpelib we don't know the index ranges
                 return NULL;
-            *last = MakeType(BasicType::pointer_);
+            *last = Type::MakeType(BasicType::pointer_);
             (*last)->array = true;
             (*last)->msil = true;  // arrays are always MSIL when imported from an assembly
 
             last = &(*last)->btp;
         }
-        if (in->GetBasicType() == Type::cls)
+        if (in->GetBasicType() == DotNetPELib::Type::cls)
         {
             SYMBOL* sp = cachedClasses_[in->GetClass()->Name()];
             if (!sp)
                 return nullptr;
             if (in->ArrayLevel())
             {
-                (*last) = CopyType(sp->tp);
+                (*last) = sp->tp->CopyType();
                 (*last)->msil = true;
             }
             else
@@ -193,9 +193,9 @@ TYPE* Importer::TranslateType(Type* in)
         else
         {
             tp = translatedTypes[in->GetBasicType()];
-            if (tp == BasicType::void_ && in->GetBasicType() != Type::Void)
+            if (tp == BasicType::void_ && in->GetBasicType() != DotNetPELib::Type::Void)
                 return nullptr;
-            (*last) = MakeType(tp);
+            (*last) = Type::MakeType(tp);
             (*last)->size = 1;
             if (in->ArrayLevel() || tp == BasicType::string_ || tp == BasicType::object_)
             {
@@ -204,14 +204,14 @@ TYPE* Importer::TranslateType(Type* in)
         }
         for (int i = 0; i < in->PointerLevel(); i++)
         {
-            rv = MakeType(BasicType::pointer_, rv);
+            rv = Type::MakeType(BasicType::pointer_, rv);
         }
         if (in->ByRef())
         {
-            rv = MakeType(BasicType::lref_, rv);
+            rv = Type::MakeType(BasicType::lref_, rv);
         }
     }
-    UpdateRootTypes(rv);
+    rv->UpdateRootTypes();
     return rv;
 }
 
@@ -239,7 +239,7 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
     )->Lookup((char*)nameSpace->Name().c_str());
     if (!sp)
     {
-        TYPE* tp = MakeType(BasicType::void_);
+        Type* tp = Type::MakeType(BasicType::void_);
         sp = makeID(StorageClass::namespace_, tp, NULL, litlate((char*)nameSpace->Name().c_str()));
         sp->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
         auto nsv = Allocate<NAMESPACEVALUEDATA>();
@@ -311,11 +311,11 @@ bool Importer::EnterClass(const Class* cls)
             sp->sb->storage_class = StorageClass::type_;
             if (typeid(*cls) == typeid(Enum))
             {
-                sp->tp = MakeType(BasicType::enum_, &stdint);
+                sp->tp = Type::MakeType(BasicType::enum_, &stdint);
             }
             else
             {
-                sp->tp = MakeType(BasicType::struct_);
+                sp->tp = Type::MakeType(BasicType::struct_);
                 sp->tp->size = 1;  // needs to be NZ but we don't really care what is is in the MSIL compiler
                 sp->sb->trivialCons = true;
             }
@@ -340,7 +340,7 @@ bool Importer::EnterClass(const Class* cls)
         }
         else
         {
-            if (!isstructured(sp->tp) && sp->tp->type != BasicType::enum_)
+            if (!sp->tp->IsStructured() && sp->tp->type != BasicType::enum_)
             {
                 Utils::Fatal("internal error: misuse of class");
             }
@@ -384,7 +384,7 @@ void Importer::InsertBaseClassTree(SYMBOL* sp, const Class* cls)
     while (!done)
     {
         done = true;
-        if (isstructured(sp->tp))
+        if (sp->tp->IsStructured())
         {
             if (cls->Extends())
             {
@@ -457,8 +457,8 @@ bool Importer::EnterMethod(const Method* method)
             structures_.back()->sb->trivialCons = false;
             structures_.back()->sb->hasUserCons = true;
         }
-        TYPE* tp = MakeType(BasicType::func_, TranslateType(method->Signature()->ReturnType()));
-        std::vector<TYPE*> args;
+        Type* tp = Type::MakeType(BasicType::func_, TranslateType(method->Signature()->ReturnType()));
+        std::vector<Type*> args;
         std::vector<std::string> names;
         if (tp->btp)
         {
@@ -467,13 +467,13 @@ bool Importer::EnterMethod(const Method* method)
             {
                 if (!count)  // vararg
                 {
-                    if ((*it)->GetType()->GetBasicType() != Type::object || (*it)->GetType()->ArrayLevel() != 1)
+                    if ((*it)->GetType()->GetBasicType() != DotNetPELib::Type::object || (*it)->GetType()->ArrayLevel() != 1)
                         tp = NULL;
                     break;
                 }
                 else
                 {
-                    TYPE* tp1 = TranslateType((*it)->GetType());
+                    Type* tp1 = TranslateType((*it)->GetType());
                     if (tp1)
                     {
                         char name[256];
@@ -514,7 +514,7 @@ bool Importer::EnterMethod(const Method* method)
             sp->sb->isConstructor = ctor;
             if (!args.size())
             {
-                args.push_back(MakeType(BasicType::void_));
+                args.push_back(Type::MakeType(BasicType::void_));
                 names.push_back("$$void");
             }
             if (sp->sb->storage_class == StorageClass::member_ || sp->sb->storage_class == StorageClass::virtual_)
@@ -523,7 +523,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->name = litlate("$$this");
                 sp1->sb->storage_class = StorageClass::parameter_;
                 sp1->sb->thisPtr = true;
-                sp1->tp = MakeType(BasicType::pointer_, structures_.back()->tp);
+                sp1->tp = Type::MakeType(BasicType::pointer_, structures_.back()->tp);
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = AccessLevel::public_;
                 sp1->sb->parent = sp;
@@ -547,7 +547,7 @@ bool Importer::EnterMethod(const Method* method)
                 SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate((char*)"$$vararg");
                 sp1->sb->storage_class = StorageClass::parameter_;
-                sp1->tp = MakeType(BasicType::ellipse_);
+                sp1->tp = Type::MakeType(BasicType::ellipse_);
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
                 sp1->sb->access = AccessLevel::public_;
                 sp1->sb->parent = sp;
@@ -559,7 +559,7 @@ bool Importer::EnterMethod(const Method* method)
             SYMBOL* funcs = structures_.back()->tp->syms->Lookup((char*)method->Signature()->Name().c_str());
             if (!funcs)
             {
-                TYPE* tp = MakeType(BasicType::aggregate_);
+                Type* tp = Type::MakeType(BasicType::aggregate_);
                 funcs = makeID(StorageClass::overloads_, tp, 0, litlate((char*)method->Signature()->Name().c_str()));
                 funcs->sb->parentClass = structures_.back();
                 tp->sp = funcs;
@@ -591,7 +591,7 @@ bool Importer::EnterField(const Field* field)
     diag("Field", field->Name());
     if (pass_ == 2 && structures_.size())
     {
-        TYPE* tp = TranslateType(field->FieldType());
+        Type* tp = TranslateType(field->FieldType());
         if (tp)
         {
             SYMBOL* sp = SymAlloc();
@@ -628,7 +628,7 @@ bool Importer::EnterProperty(const Property* property)
     diag("Property", property->Name());
     if (pass_ == 2 && structures_.size())
     {
-        TYPE* tp = TranslateType(property->GetType());
+        Type* tp = TranslateType(property->GetType());
         if (tp)
         {
             SYMBOL* sp = SymAlloc();

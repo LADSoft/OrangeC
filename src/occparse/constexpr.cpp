@@ -62,7 +62,7 @@ static int functionNestingCount;
 
 std::stack<std::unordered_map<SYMBOL*, EXPRESSION*>*> nestedMaps;
 
-static EXPRESSION* InstantiateStruct(TYPE* tp, EXPRESSION* thisptr, EXPRESSION* ths);
+static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* ths);
 static EXPRESSION* LookupStruct(EXPRESSION* exp);
 
 static int anonvp;
@@ -363,7 +363,7 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
     }
     return exp;
 }
-static EXPRESSION* InstantiateStruct(TYPE* tp, EXPRESSION* thisptr, EXPRESSION* ths)
+static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* ths)
 {
     if (ths->type == ExpressionNode::comma_)
     {
@@ -485,7 +485,7 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
         {
             int offset = 0;
             auto rel = relptr(node, offset);
-            if (rel && isarray(rel->v.sp->tp) && rel->v.sp->sb->init)
+            if (rel && rel->v.sp->tp->IsArray() && rel->v.sp->sb->init)
             {
                 // this is an array that is passed as other than an initializer list
                 int n = rel->v.sp->sb->init->size()-1;
@@ -496,20 +496,20 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
                         auto expx = argmap[rel->v.sp];
                         if (offset)
                             expx = exprNode(ExpressionNode::add_, expx, intNode(ExpressionNode::c_i_, offset));
-                        if (isref(arg->tp))
+                        if (arg->tp->IsRef())
                             argmap[arg] = MakeVarPtr(1, 1, rel->v.sp, MakeVarPtr(1, 1, rel->v.sp, expx));
                         else
                             argmap[arg] = MakeVarPtr(1, 1, rel->v.sp, expx);
                     }
                     else
                     {
-                        int sz = basetype(rel->v.sp->tp)->btp->size;
+                        int sz = rel->v.sp->tp->BaseType()->btp->size;
                         auto expx = MakeVarPtr(n, sz, rel->v.sp, nullptr);
                         argmap[rel->v.sp] = expx;
                         auto target = expx->v.constexprData.data;
                         if (offset)
                             expx = exprNode(ExpressionNode::add_, expx, intNode(ExpressionNode::c_i_, offset));
-                        if (isref(arg->tp))
+                        if (arg->tp->IsRef())
                             argmap[arg] = MakeVarPtr(1, 1, rel->v.sp, MakeVarPtr(1, 1, rel->v.sp, expx));
                         else
                             argmap[arg] = MakeVarPtr(1, 1, rel->v.sp, expx);
@@ -549,12 +549,12 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
 }
 static void pushArrayOrStruct(SYMBOL* arg, std::list<INITLIST*>& il, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap)
 {
-    if (isstructured(arg->tp) && !basetype(arg->tp)->sp->sb->initializer_list)
+    if (arg->tp->IsStructured() && !arg->tp->BaseType()->sp->sb->initializer_list)
     {
         argmap[arg] = MakeVarPtr(arg->tp->size, 1, arg, nullptr);
         auto target = argmap[arg]->v.constexprData.data;
-        auto sit = basetype(arg->tp)->syms->begin();
-        auto site = basetype(arg->tp)->syms->end();
+        auto sit = arg->tp->BaseType()->syms->begin();
+        auto site = arg->tp->BaseType()->syms->end();
         int count = 0;
         for (auto&& it : il)
         {
@@ -601,7 +601,7 @@ static void pushArrayOrStruct(SYMBOL* arg, std::list<INITLIST*>& il, std::unorde
 }
 static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap)
 {
-    if (isstructured(arg->tp) || (isref(arg->tp) && isstructured(basetype(arg->tp)->btp)))
+    if (arg->tp->IsStructured() || (arg->tp->IsRef() && arg->tp->BaseType()->btp->IsStructured()))
     {
         if (exp->type == ExpressionNode::comma_ && exp->left->type == ExpressionNode::thisref_)
         {
@@ -618,7 +618,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
     }
     if (exp->type == ExpressionNode::cvarpointer_)
     {
-        if (isref(arg->tp))
+        if (arg->tp->IsRef())
         {
             argmap[arg] = MakeVarPtr(1, 1, arg, exp);
         }
@@ -629,12 +629,12 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
     }
     else if (exp->type == ExpressionNode::comma_)
     {
-        if (isstructured(arg->tp) || (isref(arg->tp) && isstructured(basetype(arg->tp)->btp)))
+        if (arg->tp->IsStructured() || (arg->tp->IsRef() && arg->tp->BaseType()->btp->IsStructured()))
         {
             EXPRESSION** target;
-            if (isref(arg->tp))
+            if (arg->tp->IsRef())
             {
-                argmap[arg] = MakeVarPtr(1, 1, arg, MakeVarPtr(basetype(basetype(arg->tp)->btp)->size, 1, arg, nullptr));
+                argmap[arg] = MakeVarPtr(1, 1, arg, MakeVarPtr(arg->tp->BaseType()->btp->BaseType()->size, 1, arg, nullptr));
                 target = argmap[arg]->v.constexprData.data[0]->v.constexprData.data;
             }
             else
@@ -693,7 +693,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
     else if ((exp->type == ExpressionNode::auto_ || exp->type == ExpressionNode::global_) && exp->v.sp->sb->init)
     {
         EXPRESSION** target;
-        if (isref(arg->tp))
+        if (arg->tp->IsRef())
         {
             argmap[arg] = MakeVarPtr(1, 1, exp->v.sp, MakeVarPtr(exp->v.sp->tp->size, 1, exp->v.sp, nullptr));
             target = argmap[arg]->v.constexprData.data[0]->v.constexprData.data;
@@ -1171,7 +1171,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<STATEMENT*>* s
                             node1 = node1->left;
                         if (node1->type == ExpressionNode::cvarpointer_)
                         {
-                            if (isstructured(basetype(node->v.func->sp->tp)->btp) && basetype(basetype(node->v.func->sp->tp)->btp)->sp->sb->structuredAliasType)
+                            if (node->v.func->sp->tp->BaseType()->btp->IsStructured() && node->v.func->sp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
                             {
                                 node1 = node1->v.constexprData.data[0];
                                 node1 = EvaluateExpression(node1, ths, nullptr, true);
@@ -1311,7 +1311,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
     if (!found)
     {
         SYMBOL* found1 = node->v.func->sp;
-        if (isfunction(found1->tp))
+        if (found1->tp->IsFunction())
         {
             if (!found1->sb->inlineFunc.stmt && found1->sb->deferredCompile)
             {
@@ -1322,7 +1322,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                     {
                         if (found1->sb->castoperator)
                         {
-                            found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
+                            found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
                         }
                         else
                         {
@@ -1372,8 +1372,8 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                         }
                         if (node->v.func->arguments)
                         {
-                            auto it = basetype(found1->tp)->syms->begin();
-                            auto ite = basetype(found1->tp)->syms->end();
+                            auto it = found1->tp->BaseType()->syms->begin();
+                            auto ite = found1->tp->BaseType()->syms->end();
                             if ((*it)->sb->thisPtr)
                                 ++it;
                             auto arglist = node->v.func->arguments->begin();
@@ -1388,7 +1388,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                                 if (rel && rel->type == ExpressionNode::cvarpointer_)
                                 {
                                     // being passed from a higher constexpr function
-                                    if (isstructured((*it)->tp))
+                                    if ((*it)->tp->IsStructured())
                                         tempmap[*it] = exp;
                                     else
                                         tempmap[*it] = MakeVarPtr(1, 1, *it, exp);
@@ -1401,9 +1401,9 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                                         // an initializer list for an array or structure
                                         pushArrayOrStruct(*it, *(*arglist)->nested, tempmap);
                                     }
-                                    else if (isref((*it)->tp))
+                                    else if ((*it)->tp->IsRef())
                                     {
-                                        if (ispointer(basetype((*it)->tp)->btp))
+                                        if ((*it)->tp->BaseType()->btp->IsPtr())
                                         {
                                             // could be either a void node with an assign or initialized data...
                                             pushArrayOrStruct(*it, exp, tempmap);
@@ -1414,12 +1414,12 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                                             pushStruct(*it, exp, tempmap);
                                         }
                                     }
-                                    else if (isstructured((*it)->tp))
+                                    else if ((*it)->tp->IsStructured())
                                     {
                                         // this could be a void... sequence for reference or struct, or an auto with initializers 
                                         pushStruct(*it, exp, tempmap);
                                     }
-                                    else if (ispointer((*it)->tp))
+                                    else if ((*it)->tp->IsPtr())
                                     {
                                         // could be either a void node with an assign or initialized data...
                                         pushArrayOrStruct(*it, exp, tempmap);
@@ -1458,9 +1458,9 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                                 if (!ths)
                                 {
                                     if (ths1->type == ExpressionNode::auto_ || ths1->type == ExpressionNode::global_)
-                                        ths = MakeVarPtr(basetype(node->v.func->thistp)->btp->size, 1, ths1->v.sp, nullptr);
+                                        ths = MakeVarPtr(node->v.func->thistp->BaseType()->btp->size, 1, ths1->v.sp, nullptr);
                                     else
-                                        ths = MakeVarPtr(basetype(node->v.func->thistp)->btp->size, 1, nullptr, nullptr);
+                                        ths = MakeVarPtr(node->v.func->thistp->BaseType()->btp->size, 1, nullptr, nullptr);
                                     if (!pushThis(node->v.func->thisptr, ths))
                                         ths = nullptr;
                                 }
@@ -1482,10 +1482,10 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                             optimize_for_constants(&newNode);
                             if (node->v.func->sp->sb->isConstructor)
                             {
-                                newNode = InstantiateStruct(basetype(node->v.func->thistp)->btp, node->v.func->thisptr, newNode);
+                                newNode = InstantiateStruct(node->v.func->thistp->BaseType()->btp, node->v.func->thisptr, newNode);
                                 rv = !!newNode;
                             }
-                            else if (node->v.func->returnEXP && !basetype(node->v.func->returnSP->tp)->sp->sb->structuredAliasType)
+                            else if (node->v.func->returnEXP && !node->v.func->returnSP->tp->BaseType()->sp->sb->structuredAliasType)
                             {
                                 newNode = InstantiateStruct(node->v.func->returnSP->tp, node->v.func->returnEXP, newNode);
                                 rv = !!newNode;

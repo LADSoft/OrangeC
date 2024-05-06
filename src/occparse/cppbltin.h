@@ -25,7 +25,7 @@
 
 namespace Parser
 {
-extern TYPE stdXC;
+extern Type stdXC;
 
 void ParseBuiltins(void);
 }  // namespace Parser

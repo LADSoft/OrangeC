@@ -169,36 +169,36 @@ static char* addParent(char* buf, SYMBOL* sym)
     Optimizer::my_sprintf(buf, "%s", sym->name);
     return buf + strlen(buf);
 }
-static char* RTTIGetDisplayName(char* buf, TYPE* tp)
+static char* RTTIGetDisplayName(char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
         if (tp->templateParam && tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
-    if (isconst(tp))
+    if (tp->IsConst())
     {
         Optimizer::my_sprintf(buf, "%s ", "const");
         buf += strlen(buf);
     }
-    if (isvolatile(tp))
+    if (tp->IsVolatile())
     {
         Optimizer::my_sprintf(buf, "%s ", "volatile");
         buf += strlen(buf);
     }
-    tp = basetype(tp);
-    if (isstructured(tp) || tp->type == BasicType::enum_)
+    tp = tp->BaseType();
+    if (tp->IsStructured() || tp->type == BasicType::enum_)
     {
         buf = addParent(buf, tp->sp);
     }
-    else if (ispointer(tp))
+    else if (tp->IsPtr())
     {
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '*';
         *buf++ = ' ';
         *buf = 0;
     }
-    else if (isref(tp))
+    else if (tp->IsRef())
     {
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '&';
@@ -214,20 +214,20 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
         strcpy(buf, "any");
         buf += strlen(buf);
     }
-    else if (isfunction(tp))
+    else if (tp->IsFunction())
     {
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
         *buf++ = ')';
         *buf++ = '(';
-        for (auto sym : *basetype(tp)->syms)
+        for (auto sym : *tp->BaseType()->syms)
         {
             buf = RTTIGetDisplayName(buf, sym->tp);
             *buf++ = ',';
             *buf++ = ' ';
         }
-        if (basetype(tp)->syms->size())
+        if (tp->BaseType()->syms->size())
             buf -= 2;
         *buf++ = ')';
         *buf = 0;
@@ -239,7 +239,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
     }
     return buf;
 }
-static char* RTTIGetName(char* buf, TYPE* tp)
+static char* RTTIGetName(char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
@@ -252,23 +252,23 @@ static char* RTTIGetName(char* buf, TYPE* tp)
     buf = mangleType(buf, tp, true);
     return buf;
 }
-static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
+static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
 {
     char name[4096], *p;
     SYMBOL* sym = nullptr;
-    if (ispointer(tp))
+    if (tp->IsPtr())
     {
-        sym = RTTIDumpType(basetype(tp)->btp);
-        flags = isarray(tp) ? XD_ARRAY : XD_POINTER;
+        sym = RTTIDumpType(tp->BaseType()->btp);
+        flags = tp->IsArray() ? XD_ARRAY : XD_POINTER;
     }
-    else if (isref(tp))
+    else if (tp->IsRef())
     {
-        sym = RTTIDumpType(basetype(tp)->btp);
+        sym = RTTIDumpType(tp->BaseType()->btp);
         flags = XD_REF;
     }
-    else if (isstructured(tp) && !basetype(tp)->sp->sb->trivialCons)
+    else if (tp->IsStructured() && !tp->BaseType()->sp->sb->trivialCons)
     {
-        sym = search(basetype(tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
+        sym = search(tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
         // at this point if the class was never instantiated the destructor
         // may not have been created...
         if (sym)
@@ -277,14 +277,14 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             {
                 // if it is deleted we just won't call it...
                 // still need the xt table entry though...
-                if (basetype(sym->tp)->syms->size() && basetype(sym->tp)->syms->front()->sb->deleted)
+                if (sym->tp->BaseType()->syms->size() && sym->tp->BaseType()->syms->front()->sb->deleted)
                 {
                     sym = nullptr;
                 }
                 else
                 {
                     EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
-                    callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
+                    callDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, true, true);
                     if (exp && exp->left)
                     {
                         sym = exp->left->v.func->sp;
@@ -294,7 +294,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             }
             else
             {
-                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
+                sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)
@@ -324,9 +324,9 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
         Optimizer::genbyte(*p);
     Optimizer::genbyte(0);
 }
-static void DumpEnclosedStructs(TYPE* tp, bool genXT)
+static void DumpEnclosedStructs(Type* tp, bool genXT)
 {
-    SYMBOL* sym = basetype(tp)->sp;
+    SYMBOL* sym = tp->BaseType()->sp;
     tp = PerformDeferredInitialization(tp, nullptr);
     if (sym->sb->vbaseEntries)
     {
@@ -385,17 +385,17 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         {
             if (member->sb->storage_class == StorageClass::member_ || member->sb->storage_class == StorageClass::mutable_)
             {
-                TYPE* tp = member->tp;
+                Type* tp = member->tp;
                 int flags = XD_CL_ENCLOSED;
-                if (isref(tp))
+                if (tp->IsRef())
                 {
-                    tp = basetype(tp)->btp;
+                    tp = tp->BaseType()->btp;
                     flags |= XD_CL_BYREF;
                 }
-                if (isconst(tp))
+                if (tp->IsConst())
                     flags |= XD_CL_CONST;
-                tp = basetype(tp);
-                if (isstructured(tp))
+                tp = tp->BaseType();
+                if (tp->IsStructured())
                 {
                     tp = PerformDeferredInitialization(tp, nullptr);
                     if (genXT)
@@ -407,7 +407,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         }
     }
 }
-static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpStruct(SYMBOL* xtSym, Type* tp)
 {
     Optimizer::SymbolManager::Get(xtSym)->generated = true;
     DumpEnclosedStructs(tp, true);
@@ -416,28 +416,28 @@ static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
     Optimizer::genint(0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpArray(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpArray(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(BasicType::int_));
     Optimizer::genint(tp->size / (tp->btp->size));
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpPointer(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpPointer(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_POINTER);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpRef(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpRef(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_REF);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpArithmetic(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, 0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
+SYMBOL* RTTIDumpType(Type*tp, bool symOnly)
 {
     SYMBOL* xtSym = nullptr;
     if (IsCompiler())
@@ -453,8 +453,8 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
                 {
                     xtSym = makeID(StorageClass::global_, tp, nullptr, litlate(name));
                     xtSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                    if (isstructured(tp))
-                        xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
+                    if (tp->IsStructured())
+                        xtSym->sb->attribs.inheritable.linkage2 = tp->BaseType()->sp->sb->attribs.inheritable.linkage2;
                     xtSym->sb->decoratedName = xtSym->name;
                     xtSym->sb->xtEntry = true;
                     rttiSyms->Add(xtSym);
@@ -462,14 +462,14 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
                 if (!symOnly)
                 {
                     Optimizer::SymbolManager::Get(xtSym)->generated = true;
-                    switch (basetype(tp)->type)
+                    switch (tp->BaseType()->type)
                     {
                         case BasicType::lref_:
                         case BasicType::rref_:
                             RTTIDumpRef(xtSym, tp);
                             break;
                         case BasicType::pointer_:
-                            if (isarray(tp))
+                            if (tp->IsArray())
                                 RTTIDumpArray(xtSym, tp);
                             else
                                 RTTIDumpPointer(xtSym, tp);
@@ -486,13 +486,13 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
             }
             else if (!symOnly)
             {
-                while (ispointer(tp) || isref(tp))
-                    tp = basetype(tp)->btp;
-                if (isstructured(tp) && !basetype(tp)->sp->sb->dontinstantiate)
+                while (tp->IsPtr() || tp->IsRef())
+                    tp = tp->BaseType()->btp;
+                if (tp->IsStructured() && !tp->BaseType()->sp->sb->dontinstantiate)
                 {
                     SYMBOL* xtSym2;
                     // xtSym *should* be there.
-                    RTTIGetName(name, basetype(tp));
+                    RTTIGetName(name, tp->BaseType());
                     xtSym2 = search(rttiSyms, name);
                     if (xtSym2 && xtSym2->sb->dontinstantiate)
                     {
@@ -797,7 +797,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
             Optimizer::LIST* p = funcsp->sb->xc->xcDynamic;
             while (p)
             {
-                TYPE* tp = (TYPE*)p->data;
+                Type* tp = (Type*)p->data;
                 if (tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
                 {
                     if (tp->templateParam->second->type == TplType::typename_)
@@ -814,7 +814,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
                 }
                 else
                 {
-                    list[count++] = RTTIDumpType((TYPE*)p->data);
+                    list[count++] = RTTIDumpType((Type*)p->data);
                 }
                 p = p->next;
             }
@@ -933,13 +933,13 @@ void XTDumpTab(SYMBOL* funcsp)
             if (p->byStmt)
             {
                 if (p->stmt->tp)
-                    p->xtSym = RTTIDumpType(basetype(p->stmt->tp));
+                    p->xtSym = RTTIDumpType(p->stmt->tp->BaseType());
             }
             else
             {
                 // ExpressionNode::thisref_
-                if (basetype(p->exp->v.t.tp)->sp->sb->hasDest)
-                    p->xtSym = RTTIDumpType(basetype(p->exp->v.t.tp));
+                if (p->exp->v.t.tp->BaseType()->sp->sb->hasDest)
+                    p->xtSym = RTTIDumpType(p->exp->v.t.tp->BaseType());
             }
         }
         throwSym = DumpXCSpecifiers(funcsp);

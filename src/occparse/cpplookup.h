@@ -53,33 +53,33 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
                      bool namespaceOnly);
 LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
                       bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType);
-LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castType);
+LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType);
 LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
                        bool tagsOnly, bool membersOnly, char* idname, int flags);
 SYMBOL* LookupSym(char* name);
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress);
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress);
 bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp);
-SYMBOL* lookupGenericConversion(SYMBOL* sym, TYPE* tp);
-SYMBOL* lookupSpecificCast(SYMBOL* sym, TYPE* tp);
-SYMBOL* lookupNonspecificCast(SYMBOL* sym, TYPE* tp);
-SYMBOL* lookupIntCast(SYMBOL* sym, TYPE* tp, bool implicit);
-SYMBOL* lookupArithmeticCast(SYMBOL* sym, TYPE* tp, bool implicit);
-SYMBOL* lookupPointerCast(SYMBOL* sym, TYPE* tp);
-SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
+SYMBOL* lookupGenericConversion(SYMBOL* sym, Type* tp);
+SYMBOL* lookupSpecificCast(SYMBOL* sym, Type* tp);
+SYMBOL* lookupNonspecificCast(SYMBOL* sym, Type* tp);
+SYMBOL* lookupIntCast(SYMBOL* sym, Type* tp, bool implicit);
+SYMBOL* lookupArithmeticCast(SYMBOL* sym, Type* tp, bool implicit);
+SYMBOL* lookupPointerCast(SYMBOL* sym, Type* tp);
+SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
     SYMBOL** userFunc, bool honorExplicit);
-void GetRefs(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref);
-void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
+void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref);
+void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser, bool ref = false);
-bool sameTemplateSelector(TYPE* tnew, TYPE* told);
-bool sameTemplatePointedTo(TYPE* tnew, TYPE* told, bool quals = false);
-bool sameTemplate(TYPE* P, TYPE* A, bool quals = false);
-SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp);
+bool sameTemplateSelector(Type* tnew, Type* told);
+bool sameTemplatePointedTo(Type* tnew, Type* told, bool quals = false);
+bool sameTemplate(Type* P, Type* A, bool quals = false);
+SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, Type* atp);
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args);
 void weedgathering(Optimizer::LIST** gather);
-SYMBOL* DeduceOverloadedClass(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, int flags);
-SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, TYPE* atp, int toErr,
+SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, int flags);
+SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, Type* atp, int toErr,
                               bool maybeConversion, int flags);
-SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** exp, int flags);
+SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** exp, int flags);
 
 }  // namespace Parser

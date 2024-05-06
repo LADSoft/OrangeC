@@ -38,10 +38,12 @@
 #include "templatededuce.h"
 #include "symtab.h"
 #include "stmt.h"
+#include "types.h"
+
 namespace Parser
 {
 
-TYPE stdXC = {BasicType::struct_, XCTAB_SIZE, 0, &stdXC};
+Type stdXC = {BasicType::struct_, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {
     static std::string cppbuiltin =

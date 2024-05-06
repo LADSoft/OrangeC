@@ -39,5 +39,5 @@ int typedconsts(EXPRESSION* node1);
 bool msilConstant(EXPRESSION* exp);
 void RemoveSizeofOperators(EXPRESSION* constant);
 void optimize_for_constants(EXPRESSION** expr);
-LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed);
+LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed);
 }  // namespace Parser

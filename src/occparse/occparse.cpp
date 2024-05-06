@@ -79,7 +79,7 @@
 #include "constexpr.h"
 #include "symtab.h"
 #include "ListFactory.h"
-
+#include "types.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -331,12 +331,12 @@ static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
         }
         else if (sym->sb->storage_class == StorageClass::typedef_)
         {
-            TYPE* tp = sym->tp;
-            while (ispointer(tp) || isref(tp))
+            Type* tp = sym->tp;
+            while (tp->IsPtr() || tp->IsRef())
             {
-                tp = basetype(tp)->btp;
+                tp = tp->BaseType()->btp;
             }
-            if (!isstructured(tp) || !basetype(tp)->sp->sb->templateLevel || basetype(tp)->sp->sb->instantiated)
+            if (!tp->IsStructured() || !tp->BaseType()->sp->sb->templateLevel || tp->BaseType()->sp->sb->instantiated)
                 Optimizer::typedefs.push_back(Optimizer::SymbolManager::Get(sym));
         }
     }

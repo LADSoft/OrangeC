@@ -158,30 +158,30 @@ static int GetHashValue(const char* string)
     return i;
 }
 
-bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
+bool matchOverload(Type* tnew, Type* told, bool argsOnly)
 {
-    auto hnew = basetype(tnew)->syms->begin();
-    auto hnewe = basetype(tnew)->syms->end();
-    auto hold = basetype(told)->syms->begin();
-    auto holde = basetype(told)->syms->end();
+    auto hnew = tnew->BaseType()->syms->begin();
+    auto hnewe = tnew->BaseType()->syms->end();
+    auto hold = told->BaseType()->syms->begin();
+    auto holde = told->BaseType()->syms->end();
     unsigned tableOld[100], tableNew[100];
     int tCount = 0;
     if (!Optimizer::cparams.prm_cplusplus)
         argsOnly = true;
-    if (isconst(tnew) != isconst(told))
+    if (tnew->IsConst() != told->IsConst())
         return false;
-    if (isvolatile(tnew) != isvolatile(told))
+    if (tnew->IsVolatile() != told->IsVolatile())
         return false;
-    if (islrqual(tnew) != islrqual(told))
+    if (tnew->IsLRefQual() != told->IsLRefQual())
         return false;
-    if (isrrqual(tnew) != isrrqual(told))
+    if (tnew->IsRRefQual() != told->IsRRefQual())
         return false;
     matchOverloadLevel++;
     while (hnew != hnewe && hold != holde)
     {
         SYMBOL* snew = *hnew;
         SYMBOL* sold = *hold;
-        TYPE *tnew, *told;
+        Type *tnew, *told;
         if (sold->sb->thisPtr)
         {
             ++hold;
@@ -196,52 +196,52 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 break;
             snew = *hnew;
         }
-        tnew = basetype(snew->tp);
-        told = basetype(sold->tp);
+        tnew = snew->tp->BaseType();
+        told = sold->tp->BaseType();
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
-            if ((told->type != tnew->type || (!comparetypes(told, tnew, true) && !sameTemplatePointedTo(told, tnew, true))) &&
+            if ((told->type != tnew->type || (!told->ExactSameType(tnew) && !sameTemplatePointedTo(told, tnew, true))) &&
                 !sameTemplateSelector(told, tnew))
                 break;
             else
             {
                 bool matchconst = false;
-                TYPE* tps = sold->tp;
-                TYPE* tpn = snew->tp;
-                if (isref(tps))
+                Type* tps = sold->tp;
+                Type* tpn = snew->tp;
+                if (tps->IsRef())
                 {
                     matchconst = true;
-                    tps = basetype(tps)->btp;
+                    tps = tps->BaseType()->btp;
                 }
-                if (isref(tpn))
+                if (tpn->IsRef())
                 {
                     matchconst = true;
-                    tpn = basetype(tpn)->btp;
+                    tpn = tpn->BaseType()->btp;
                 }
                 while (tps != tps->rootType && tps->type != BasicType::typedef_ && tps->type != BasicType::const_ && tps->type != BasicType::volatile_)
                     tps = tps->btp;
                 while (tpn != tpn->rootType && tpn->type != BasicType::typedef_ && tpn->type != BasicType::const_ && tpn->type != BasicType::volatile_)
                     tpn = tpn->btp;
-                if (basetype(tpn)->nullptrType != basetype(tps)->nullptrType)
+                if (tpn->BaseType()->nullptrType != tps->BaseType()->nullptrType)
                 {
                     matchOverloadLevel--;
                     return false;
                 }
-                if (tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_ && (ispointer(tpn) || ispointer(tps)))
+                if (tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_ && (tpn->IsPtr() || tps->IsPtr()))
                 {
 
-                    while (ispointer(tpn) && ispointer(tps) && tpn->type != BasicType::typedef_ &&
+                    while (tpn->IsPtr() && tps->IsPtr() && tpn->type != BasicType::typedef_ &&
                                                 tps->type != BasicType::typedef_)
                     {
-                        if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                        if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
                         {
                             matchOverloadLevel--;
                             return false;
                         }
-                        tpn = basetype(tpn)->btp;
-                        tps = basetype(tps)->btp;
+                        tpn = tpn->BaseType()->btp;
+                        tps = tps->BaseType()->btp;
                     }
-                    if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                    if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
                     {
                         matchOverloadLevel--;
                         return false;
@@ -249,14 +249,14 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 }
                 else if (matchconst)
                 {
-                    if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                    if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
                     {
                         matchOverloadLevel--;
                         return false;
                     }                
                 }
-                tpn = basetype(tpn);
-                tps = basetype(tps);
+                tpn = tpn->BaseType();
+                tps = tps->BaseType();
 
                 if (tpn->type == BasicType::templateparam_)
                 {
@@ -279,8 +279,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
         if (tCount)
         {
             int i, j;
-            SYMBOL* fnew = basetype(tnew)->sp->sb->parentClass;
-            SYMBOL* fold = basetype(told)->sp->sb->parentClass;
+            SYMBOL* fnew = tnew->BaseType()->sp->sb->parentClass;
+            SYMBOL* fold = told->BaseType()->sp->sb->parentClass;
             std::list<TEMPLATEPARAMPAIR>::iterator itNew, iteNew = itNew, itOld, iteOld = itOld;
             int iCount = 0;
             unsigned oldIndex[100], newIndex[100];
@@ -354,37 +354,37 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     }
             }
         }
-        if (basetype(tnew)->sp && basetype(told)->sp)
+        if (tnew->BaseType()->sp && told->BaseType()->sp)
         {
-            if (basetype(tnew)->sp->sb->templateLevel || basetype(told)->sp->sb->templateLevel)
+            if (tnew->BaseType()->sp->sb->templateLevel || told->BaseType()->sp->sb->templateLevel)
             {
-                TYPE* tps = basetype(told)->btp;
-                TYPE* tpn = basetype(tnew)->btp;
-                if ((!templatecomparetypes(tpn, tps, true) ||
+                Type* tps = told->BaseType()->btp;
+                Type* tpn = tnew->BaseType()->btp;
+                if ((!templateCompareTypes(tpn, tps, true) ||
                      ((tps->type == BasicType::templateselector_ || tpn->type == BasicType::templateselector_) && tpn->type != tps->type)) &&
                     !sameTemplate(tpn, tps))
                 {
-                    if (isref(tps))
-                        tps = basetype(tps)->btp;
-                    if (isref(tpn))
-                        tpn = basetype(tpn)->btp;
-                    while (ispointer(tpn) && ispointer(tps))
+                    if (tps->IsRef())
+                        tps = tps->BaseType()->btp;
+                    if (tpn->IsRef())
+                        tpn = tpn->BaseType()->btp;
+                    while (tpn->IsPtr() && tps->IsPtr())
                     {
-                        if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                        if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
                             return false;
-                        tpn = basetype(tpn)->btp;
-                        tps = basetype(tps)->btp;
+                        tpn = tpn->BaseType()->btp;
+                        tps = tps->BaseType()->btp;
                     }
-                    if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
-                        if (basetype(tpn)->type != BasicType::templateselector_)
+                    if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
+                        if (tpn->BaseType()->type != BasicType::templateselector_)
                             return false;
-                    tpn = basetype(tpn);
-                    tps = basetype(tps);
-                    if (comparetypes(tpn, tps, true) || (tpn->type == BasicType::templateparam_ && tps->type == BasicType::templateparam_))
+                    tpn = tpn->BaseType();
+                    tps = tps->BaseType();
+                    if (tpn->ExactSameType(tps) || (tpn->type == BasicType::templateparam_ && tps->type == BasicType::templateparam_))
                     {
                         return true;
                     }
-                    else if (isarithmetic(tpn) && isarithmetic(tps))
+                    else if (tpn->IsArithmetic() && tps->IsArithmetic())
                     {
                         return false;
                     }
@@ -420,8 +420,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                     if ((*tpn->sp->sb->templateSelector)[2].name[0])
                                         return false;
                                 }
-                                else if (basetype(told)->btp->type == BasicType::typedef_ &&
-                                         strcmp(basetype(told)->btp->sp->name, (*tpn->sp->sb->templateSelector)[2].name) ==
+                                else if (told->BaseType()->btp->type == BasicType::typedef_ &&
+                                         strcmp(told->BaseType()->btp->sp->name, (*tpn->sp->sb->templateSelector)[2].name) ==
                                              0)
                                 {
                                 }
@@ -433,13 +433,13 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         }
                         else
                         {
-                            auto tpl = basetype(tpn)->sp->sb->templateSelector;
+                            auto tpl = tpn->BaseType()->sp->sb->templateSelector;
                             SYMBOL* sym = (*tpl)[1].sp;
                             if ((*tpl)[1].isDeclType)
                             {
-                                TYPE* tp1 = TemplateLookupTypeFromDeclType((*tpl)[1].tp);
-                                if (tp1 && isstructured(tp1))
-                                    sym = basetype(tp1)->sp;
+                                Type* tp1 = TemplateLookupTypeFromDeclType((*tpl)[1].tp);
+                                if (tp1 && tp1->IsStructured())
+                                    sym = tp1->BaseType()->sp;
                                 else
                                     sym = nullptr;
                             }
@@ -448,19 +448,19 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                             for (++find, ++find; sym && find != finde; ++find)
                             {
                                 SYMBOL* fsp;
-                                if (!isstructured(sym->tp))
+                                if (!sym->tp->IsStructured())
                                     break;
 
-                                fsp = search(basetype(sym->tp)->syms, find->name);
+                                fsp = search(sym->tp->BaseType()->syms, find->name);
                                 if (!fsp)
                                 {
-                                    fsp = classdata(find->name, basetype(sym->tp)->sp, nullptr, false, false);
+                                    fsp = classdata(find->name, sym->tp->BaseType()->sp, nullptr, false, false);
                                     if (fsp == (SYMBOL*)-1)
                                         fsp = nullptr;
                                 }
                                 sym = fsp;
                             }
-                            if (find != finde || !sym || (!comparetypes(sym->tp, tps, true) && !sameTemplate(sym->tp, tps)))
+                            if (find != finde || !sym || (!sym->tp->ExactSameType(tps) && !sameTemplate(sym->tp, tps)))
                                 return false;
                         }
                         return true;
@@ -469,7 +469,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     {
                         return false;
                     }
-                    else if (basetype(told)->sp->sb->castoperator)
+                    else if (told->BaseType()->sp->sb->castoperator)
                     {
                         return false;
                     }
@@ -499,11 +499,11 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     return true;
                 }
             }
-            else if (basetype(tnew)->sp->sb->castoperator)
+            else if (tnew->BaseType()->sp->sb->castoperator)
             {
-                TYPE* tps = basetype(told)->btp;
-                TYPE* tpn = basetype(tnew)->btp;
-                if (!templatecomparetypes(tpn, tps, true) && !sameTemplate(tpn, tps))
+                Type* tps = told->BaseType()->btp;
+                Type* tpn = tnew->BaseType()->btp;
+                if (!templateCompareTypes(tpn, tps, true) && !sameTemplate(tpn, tps))
                     return false;
             }
             return true;

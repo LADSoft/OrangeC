@@ -214,14 +214,14 @@ static void inasm_needkw(LEXLIST** lex, Keyword Kw)
 static AMODE* inasm_const(void)
 {
     AMODE* rv = nullptr;
-    TYPE* tp = nullptr;
+    Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
     lex = optimized_expression(lex, theCurrentFunc, nullptr, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
     }
-    else if (!isint(tp) || !isintconst(exp))
+    else if (!tp->IsInt() || !isintconst(exp))
     {
         error(ERR_CONSTANT_VALUE_EXPECTED);
     }
@@ -259,7 +259,7 @@ static EXPRESSION* inasm_ident(void)
             sym->sb->realdeclline = lex->data->linedata->lineno;
             sym->sb->declfilenum = lex->data->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
-            sym->tp = MakeType(BasicType::unsigned_);
+            sym->tp = Type::MakeType(BasicType::unsigned_);
             sym->sb->offset = codeLabel++;
             labelSyms->Add(sym);
             node = intNode(ExpressionNode::labcon_, sym->sb->offset);
@@ -286,7 +286,7 @@ static EXPRESSION* inasm_ident(void)
                     Optimizer::SimpleSymbol* sym1 = Optimizer::SymbolManager::Get(sym);
                     node = varNode(ExpressionNode::global_, sym);
                     InsertGlobal(sym);
-                    if (isfunction(sym->tp))
+                    if (sym->tp->IsFunction())
                         InsertInline(sym);
                     Optimizer::EnterExternal(sym1);
                     break;
@@ -338,7 +338,7 @@ static EXPRESSION* inasm_label(void)
         sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
         sym->sb->realdeclline = lex->data->linedata->lineno;
         sym->sb->declfilenum = lex->data->linedata->fileindex;
-        sym->tp = MakeType(BasicType::unsigned_);
+        sym->tp = Type::MakeType(BasicType::unsigned_);
         sym->sb->offset = codeLabel++;
         SetLinkerNames(sym, Linkage::none_);
         labelSyms->Add(sym);
@@ -493,7 +493,7 @@ int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2)
 
 static int inasm_structsize(void)
 {
-    if (basetype(lastsym->tp)->type == BasicType::struct_)
+    if (lastsym->tp->BaseType()->type == BasicType::struct_)
     {
         if (lastsym->tp->size == 6)
             return ISZ_FARPTR;
@@ -507,7 +507,7 @@ static int inasm_structsize(void)
     }
     else
     {
-        switch (basetype(lastsym->tp)->type)
+        switch (lastsym->tp->BaseType()->type)
         {
             case BasicType::char_:
             case BasicType::unsigned_char_:
@@ -1007,7 +1007,7 @@ static int getData(STATEMENT* snp)
     EXPRESSION** newExpr = &snp->select;
     do
     {
-        TYPE* tp;
+        Type* tp;
         EXPRESSION* expr;
         lex = getsym();
         lex = optimized_expression(lex, nullptr, nullptr, &tp, &expr, false);

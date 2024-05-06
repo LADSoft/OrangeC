@@ -25,7 +25,7 @@
 
 namespace Optimizer
 {
-bool comparetypes(SimpleType* typ1, SimpleType* typ2, int exact);
+bool CompareTypes(SimpleType* typ1, SimpleType* typ2, int exact);
 bool equalnode(SimpleExpression* left, SimpleExpression* right);
 SimpleExpression* GetSymRef(SimpleExpression* n);
 }  // namespace Optimizer

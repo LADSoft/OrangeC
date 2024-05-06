@@ -33,14 +33,15 @@
 #include "Utils.h"
 #include "config.h"
 #include "occparse.h"
+#include "types.h"
 
 namespace Parser
 {
 
-int needsAtomicLockFromType(TYPE* tp)
+int needsAtomicLockFromType(Type* tp)
 {
     Optimizer::ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
-    switch (basetype(tp)->type)
+    switch (tp->BaseType()->type)
     {
         case BasicType::char8_t_:
             return 0;
@@ -107,15 +108,15 @@ int needsAtomicLockFromType(TYPE* tp)
         case BasicType::struct_:
         case BasicType::union_:
         default:
-            if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= basetype(tp)->size &&
-                 (basetype(tp)->size & (basetype(tp)->size - 1)) == 0))
+            if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= tp->BaseType()->size &&
+                 (tp->BaseType()->size & (tp->BaseType()->size - 1)) == 0))
                 return 0;
             return 1;
     }
 }
-static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
+static int basesize(Optimizer::ARCH_SIZING* p, Type* tp)
 {
-    tp = basetype(tp);
+    tp = tp->BaseType();
     switch (tp->type)
     {
         case BasicType::char8_t_:
@@ -197,7 +198,7 @@ static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
 }
 int getSize(BasicType type)
 {
-    TYPE tp;
+    Type tp;
     memset(&tp, 0, sizeof(tp));
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
     tp.rootType = &tp;
@@ -205,7 +206,7 @@ int getSize(BasicType type)
 }
 int getBaseAlign(BasicType type)
 {
-    TYPE tp;
+    Type tp;
     if (type == BasicType::auto_)
         type = BasicType::struct_;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
@@ -230,17 +231,17 @@ int funcvaluesize(int val)
         return (Optimizer::chosenAssembler->arch->param_offs(val));
     return 0;
 }
-int alignment(StorageClass sc, TYPE* tp)
+int alignment(StorageClass sc, Type* tp)
 {
     (void)sc;
     return basesize(Optimizer::chosenAssembler->arch->type_align, tp);
 }
-int getAlign(StorageClass sc, TYPE* tp)
+int getAlign(StorageClass sc, Type* tp)
 {
     if (tp->alignment)
         return tp->alignment;
     while (tp->array)
-        tp = basetype(tp)->btp;
+        tp = tp->BaseType()->btp;
     int align = basesize(Optimizer::chosenAssembler->arch->type_align, tp);
     if (sc != StorageClass::auto_)
     {
@@ -250,8 +251,8 @@ int getAlign(StorageClass sc, TYPE* tp)
     }
     if (Optimizer::chosenAssembler->arch->align)
         align = Optimizer::chosenAssembler->arch->align(align);
-    if (isstructured(tp) && basetype(tp)->sp->sb->attribs.inheritable.structAlign > align)
-        align = basetype(tp)->sp->sb->attribs.inheritable.structAlign;
+    if (tp->IsStructured() && tp->BaseType()->sp->sb->attribs.inheritable.structAlign > align)
+        align = tp->BaseType()->sp->sb->attribs.inheritable.structAlign;
     return align;
 }
 const char* getUsageText(void) { return Optimizer::chosenAssembler->usage_text; }

@@ -119,11 +119,11 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                             if (func->sb->deferredCompile && (!func->sb->templateLevel || func->sb->instantiated))
                             {
                                 FUNCTIONCALL fcall = {};
-                                TYPE* tp = nullptr;
+                                Type* tp = nullptr;
                                 EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
                                 SYMBOL* sp = func->sb->overloadName;
                                 fcall.arguments = initListListFactory.CreateList();
-                                for (auto sym : *basetype(func->tp)->syms)
+                                for (auto sym : *func->tp->BaseType()->syms)
                                 {
                                     if (sym->sb->thisPtr)
                                     {
@@ -207,7 +207,7 @@ void dumpVTab(SYMBOL* sym)
     if (IsCompiler())
     {
         THUNK thunks[1000];
-        SYMBOL* xtSym = RTTIDumpType(basetype(sym->tp));
+        SYMBOL* xtSym = RTTIDumpType(sym->tp->BaseType());
         int count = 0;
 
         Optimizer::dseg();
@@ -278,7 +278,7 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
                     SYMBOL* sym = lst->cls;
                     if (sym->tp->type == BasicType::typedef_)
                     {
-                        sym = basetype(sym->tp)->sp;
+                        sym = sym->tp->BaseType()->sp;
                     }
                     if (sym == base)
                     {
@@ -316,28 +316,28 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
     rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp, false);
     if (rv && !oldFunc->sb->isDestructor)
     {
-        TYPE *tp1 = basetype(oldFunc->tp)->btp, *tp2 = basetype(newFunc->tp)->btp;
-        if (!comparetypes(tp1, tp2, true) && !sameTemplate(tp1, tp2) &&
-            (!isstructured(tp1) || !isstructured(tp2) ||
-             (basetype(tp1)->sp->sb->templateLevel &&
-              basetype(tp2)->sp->sb->parentTemplate != basetype(tp1)->sp->sb->parentTemplate)))
+        Type *tp1 = oldFunc->tp->BaseType()->btp, *tp2 = newFunc->tp->BaseType()->btp;
+        if (!tp1->ExactSameType(tp2) && !sameTemplate(tp1, tp2) &&
+            (!tp1->IsStructured() || !tp2->IsStructured() ||
+             (tp1->BaseType()->sp->sb->templateLevel &&
+              tp2->BaseType()->sp->sb->parentTemplate != tp1->BaseType()->sp->sb->parentTemplate)))
         {
             if (!templateNestingCount)
             {
-                if (basetype(tp1)->type == basetype(tp2)->type)
+                if (tp1->BaseType()->type == tp2->BaseType()->type)
                 {
-                    if (ispointer(tp1) || isref(tp1))
+                    if (tp1->IsPtr() || tp1->IsRef())
                     {
-                        if (isconst(tp1) == isconst(tp2) && isvolatile(tp1) == isvolatile(tp2))
+                        if (tp1->IsConst() == tp2->IsConst() && tp1->IsVolatile() == tp2->IsVolatile())
                         {
-                            tp1 = basetype(tp1)->btp;
-                            tp2 = basetype(tp2)->btp;
-                            if (isstructured(tp1) && isstructured(tp2))
+                            tp1 = tp1->BaseType()->btp;
+                            tp2 = tp2->BaseType()->btp;
+                            if (tp1->IsStructured() && tp2->IsStructured())
                             {
-                                if ((!isconst(tp1) || isconst(tp2)) && (!isvolatile(tp1) || isvolatile(tp2)))
+                                if ((!tp1->IsConst() || tp2->IsConst()) && (!tp1->IsVolatile() || tp2->IsVolatile()))
                                 {
-                                    tp1 = basetype(tp1);
-                                    tp2 = basetype(tp2);
+                                    tp1 = tp1->BaseType();
+                                    tp2 = tp2->BaseType();
                                     if (tp1->sp != tp2->sp && tp2->sp != sym && classRefCount(tp1->sp, tp2->sp) != 1)
                                     {
                                         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, oldFunc->sb->parentClass, newFunc->sb->parentClass);
@@ -493,7 +493,7 @@ static void checkXT(SYMBOL* sym1, SYMBOL* sym2, bool func)
             Optimizer::LIST* l2 = sym2->sb->xc->xcDynamic;
             while (l2)
             {
-                if (comparetypes((TYPE*)l2->data, (TYPE*)l1->data, true) && intcmp((TYPE*)l2->data, (TYPE*)l1->data))
+                if (((Type*)l2->data)->ExactSameType((Type*)l1->data) && intcmp((Type*)l2->data, (Type*)l1->data))
                     break;
                 l2 = l2->next;
             }
@@ -527,11 +527,11 @@ static void checkXT(SYMBOL* sym1, SYMBOL* sym2, bool func)
 }
 static void checkExceptionSpecification(SYMBOL* sp)
 {
-    for (auto sym : *basetype(sp->tp)->syms)
+    for (auto sym : *sp->tp->BaseType()->syms)
     {
         if (sym->sb->storage_class == StorageClass::overloads_)
         {
-            for (auto sym1 : *basetype(sym->tp)->syms)
+            for (auto sym1 : *sym->tp->BaseType()->syms)
             {
                 if (sym1->sb->storage_class == StorageClass::virtual_)
                 {
@@ -541,10 +541,10 @@ static void checkExceptionSpecification(SYMBOL* sp)
                         for (auto bc : *sp->sb->baseClasses)
                         {
 
-                            SYMBOL* sym2 = search(basetype(bc->cls->tp)->syms, sym->name);
+                            SYMBOL* sym2 = search(bc->cls->tp->BaseType()->syms, sym->name);
                             if (sym2)
                             {
-                                for (auto sym3 : *basetype(sym2->tp)->syms)
+                                for (auto sym3 : *sym2->tp->BaseType()->syms)
                                 {
                                     const char* f2 = (char*)strrchr(sym3->sb->decoratedName, '@');
                                     if (f2 && !strcmp(f1, f2))
@@ -869,11 +869,11 @@ void deferredCompileOne(SYMBOL* cur)
         lines = linesOld;
     }
 }
-static void RecalcArraySize(TYPE* tp)
+static void RecalcArraySize(Type* tp)
 {
-    if (isarray(basetype(tp)->btp))
-        RecalcArraySize(basetype(tp)->btp);
-    tp->size = basetype(basetype(tp)->btp)->size * basetype(tp)->esize->v.i;
+    if (tp->BaseType()->btp->IsArray())
+        RecalcArraySize(tp->BaseType()->btp);
+    tp->size = tp->BaseType()->btp->BaseType()->size * tp->BaseType()->esize->v.i;
 }
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 {
@@ -893,7 +893,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             }
             LEXLIST* lex;
             STRUCTSYM l, n, q;
-            TYPE* tp2;
+            Type* tp2;
             int count = 0;
             int tns = PushTemplateNamespace(str ? str : func);
             if (str)
@@ -919,15 +919,15 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 
             arg->tp = PerformDeferredInitialization(arg->tp, nullptr);
             tp2 = arg->tp;
-            if (isref(tp2))
-                tp2 = basetype(tp2)->btp;
-            if (isstructured(tp2))
+            if (tp2->IsRef())
+                tp2 = tp2->BaseType()->btp;
+            if (tp2->IsStructured())
             {
                 SYMBOL* sym2;
                 anonymousNotAlloc++;
                 sym2 = anonymousVar(StorageClass::auto_, tp2)->v.sp;
                 anonymousNotAlloc--;
-                sym2->sb->stackblock = !isref(arg->tp);
+                sym2->sb->stackblock = !arg->tp->IsRef();
                 lex = initialize(lex, theCurrentFunc, sym2, StorageClass::auto_, false, false, 0); /* also reserves space */
                 arg->sb->init = sym2->sb->init;
                 if (arg->sb->init->front()->exp && arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
@@ -983,19 +983,19 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                 {
                     if (!sp1->sb->templateLevel)
                     {
-                        for (auto sp2 : *basetype(sp1->tp)->syms)
+                        for (auto sp2 : *sp1->tp->BaseType()->syms)
                         {
                             if (!sp2->sb->thisPtr)
                             {
                                 sp2->tp = PerformDeferredInitialization(sp2->tp, nullptr);
                                 if (sp2->sb->deferredCompile && !sp2->sb->init)
                                 {
-                                    TYPE* tp2;
+                                    Type* tp2;
                                     lex = SetAlternateLex(sp2->sb->deferredCompile);
                                     tp2 = sp2->tp;
-                                    if (isref(tp2))
-                                        tp2 = basetype(tp2)->btp;
-                                    if (!isstructured(tp2))
+                                    if (tp2->IsRef())
+                                        tp2 = tp2->BaseType()->btp;
+                                    if (!tp2->IsStructured())
                                     {
                                         lex = initialize(lex, theCurrentFunc, sp2, StorageClass::member_, false, false, 0);
                                         sp2->sb->deferredCompile = nullptr;
@@ -1036,7 +1036,7 @@ void deferredInitializeStructMembers(SYMBOL* cur)
     dontRegisterTemplate++;
     for (auto sp : *cur->tp->syms)
     {
-        if (isarray(sp->tp) && sp->tp->esize)
+        if (sp->tp->IsArray() && sp->tp->esize)
         {
             RecalcArraySize(sp->tp);
         }
@@ -1070,20 +1070,20 @@ bool declaringTemplate(SYMBOL* sym)
     }
     return false;
 }
-TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
+Type* PerformDeferredInitialization(Type* tp, SYMBOL* funcsp)
 {
     (void)funcsp;
     if (!tp)
         return &stdany;
-    TYPE** tpx = &tp;
-    if (isref(*tpx))
-        tpx = &basetype(*tpx)->btp;
-    TYPE** tpx1 = tpx;
-    while ((*tpx)->btp && !isfunction(*tpx))
+    Type** tpx = &tp;
+    if ((*tpx)->IsRef())
+        tpx = &(*tpx)->BaseType()->btp;
+    Type** tpx1 = tpx;
+    while ((*tpx)->btp && !(*tpx)->IsFunction())
         tpx = &(*tpx)->btp;
-    if (Optimizer::cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
+    if (Optimizer::cparams.prm_cplusplus && !inTemplateType && (*tpx)->IsStructured())
     {
-        SYMBOL* sym = basetype(*tpx)->sp;
+        SYMBOL* sym = (*tpx)->BaseType()->sp;
         if (sym->templateParams)
             for (auto&& tpl : *sym->templateParams)
                 if (tpl.second->usedAsUnpacked)
@@ -1118,7 +1118,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
         {
             *tpx = sym->tp;
         }
-        UpdateRootTypes(tp);
+        tp->UpdateRootTypes();
     }
     return tp;
 }
@@ -1143,8 +1143,8 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
             {
                 if (localClassWarnings)
                 {
-                    if (isfunction(cur1->tp))
-                        if (!basetype(cur1->tp)->sp->sb->inlineFunc.stmt)
+                    if (cur1->tp->IsFunction())
+                        if (!cur1->tp->BaseType()->sp->sb->inlineFunc.stmt)
                             errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                 }
                 if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
@@ -1185,7 +1185,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
                 errorsym(ERR_BASE_CLASS_INCLUDED_MORE_THAN_ONCE, bcsym);
                 break;
             }
-    if (basetype(bcsym->tp)->type == BasicType::union_)
+    if (bcsym->tp->BaseType()->type == BasicType::union_)
         error(ERR_UNION_CANNOT_BE_BASE_CLASS);
     if (bcsym->sb->isfinal)
         errorsym(ERR_FINAL_BASE_CLASS, bcsym);
@@ -1216,7 +1216,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     STRUCTSYM l;
     currentAccess = defaultAccess;
     lex = getsym();  // past ':'
-    if (basetype(declsym->tp)->type == BasicType::union_)
+    if (declsym->tp->BaseType()->type == BasicType::union_)
         error(ERR_UNION_CANNOT_HAVE_BASE_CLASSES);
     l.str = (SYMBOL*)declsym;
     addStructureDeclaration(&l);
@@ -1225,13 +1225,13 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         ParseAttributeSpecifiers(&lex, funcsp, true);
         if (MATCHKW(lex, Keyword::decltype_))
         {
-            TYPE* tp = nullptr;
-            lex = get_type_id(lex, &tp, funcsp, StorageClass::type_, true, true, false);
+            Type* tp = nullptr;
+            tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::type_, true, true, false);
             if (!tp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
             }
-            else if (!isstructured(tp))
+            else if (!tp->IsStructured())
             {
                 error(ERR_STRUCTURED_TYPE_EXPECTED);
             }
@@ -1258,8 +1258,8 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 if (!bcsym->sb->templateLevel)
                 {
                     // in case typedef is being used as a base class specifier
-                    TYPE* tp = basetype(bcsym->tp);
-                    if (isstructured(tp))
+                    Type* tp = bcsym->tp->BaseType();
+                    if (tp->IsStructured())
                     {
                         bcsym = tp->sp;
                     }
@@ -1322,7 +1322,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                         if (sp1)
                         {
                             bcsym = sp1;
-                            if (isstructured(bcsym->tp))
+                            if (bcsym->tp->IsStructured())
                                 bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
@@ -1477,7 +1477,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 {
                     for (auto tpp : *bcsym->tp->templateParam->second->byPack.pack)
                     {
-                        if (!isstructured(tpp.second->byClass.val))
+                        if (!tpp.second->byClass.val->IsStructured())
                         {
                             errorcurrent(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
                         }
@@ -1505,10 +1505,10 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 else
                 {
-                    TYPE* tp = bcsym->tp->templateParam->second->byClass.val;
+                    Type* tp = bcsym->tp->templateParam->second->byClass.val;
                     if (tp)
                     {
-                        tp = basetype(tp);
+                        tp = tp->BaseType();
                         if (tp->type == BasicType::templateselector_)
                         {
                             SYMBOL* sym = (*tp->sp->sb->templateSelector)[1].sp;
@@ -1525,7 +1525,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                             }
                         }
                     }
-                    if (!tp || !isstructured(tp))
+                    if (!tp || !tp->IsStructured())
                     {
                         if (tp)
                             error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
@@ -1543,7 +1543,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 if (!done)
                     lex = getsym();
             }
-            else if (bcsym && (istype(bcsym) && isstructured(bcsym->tp)))
+            else if (bcsym && (istype(bcsym) && bcsym->tp->IsStructured()))
             {
                 auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
                 if (bc)
@@ -1618,7 +1618,7 @@ LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     }
     return lex;
 }
-static bool hasPackedTemplate(TYPE* tp)
+static bool hasPackedTemplate(Type* tp)
 {
 
     switch (tp->type)
@@ -1814,7 +1814,7 @@ void checkUnpackedExpression(EXPRESSION* exp)
         error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
 }
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
-void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp);
+void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp);
 void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>* tplx)
 {
     if (tplx)
@@ -1863,7 +1863,7 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
         }
     }
 }
-void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp)
+void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp)
 {
     if (tp)
     {
@@ -1871,9 +1871,9 @@ void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp)
         {
             GatherTemplateParams(count, arg, tp->sp->templateParams);
         }
-        else if (basetype(tp)->type == BasicType::templateselector_)
+        else if (tp->BaseType()->type == BasicType::templateselector_)
         {
-            for (auto&& tsl : *basetype(tp)->sp->sb->templateSelector)
+            for (auto&& tsl : *tp->BaseType()->sp->sb->templateSelector)
             {
                 if (tsl.templateParams)
                 {
@@ -1881,11 +1881,11 @@ void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp)
                 }
             }
         }
-        else if (isstructured(tp))
+        else if (tp->IsStructured())
         {
-            if (basetype(tp)->sp->sb->templateLevel)
+            if (tp->BaseType()->sp->sb->templateLevel)
             {
-                GatherTemplateParams(count, arg, basetype(tp)->sp->templateParams);
+                GatherTemplateParams(count, arg, tp->BaseType()->sp->templateParams);
             }
         }
     }
@@ -1941,7 +1941,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
     }
 }
 EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, int index);
-    TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index);
+    Type* ReplicatePackedTypes(int count, SYMBOL** arg, Type* tp, int index);
 std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>* tplx, int index)
 {
     if (tplx)
@@ -1992,13 +1992,13 @@ std::list<TEMPLATEPARAMPAIR>* ReplicateTemplateParams(int count, SYMBOL** arg, s
     }
     return nullptr;
 }
-TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index)
+Type* ReplicatePackedTypes(int count, SYMBOL** arg, Type* tp, int index)
 {
     if (tp)
     {
         if (tp->type == BasicType::templateselector_)
         {
-            tp = CopyType(tp);
+            tp = tp->CopyType();
             auto old = tp->sp->sb->templateSelector;
             auto tsl = tp->sp->sb->templateSelector = templateSelectorListFactory.CreateVector();
             for (auto&& x : *old)
@@ -2010,11 +2010,11 @@ TYPE* ReplicatePackedTypes(int count, SYMBOL** arg, TYPE* tp, int index)
                 }
             }
         }
-        else if (isstructured(tp))
+        else if (tp->IsStructured())
         {
-            if (basetype(tp)->sp->sb->templateLevel)
+            if (tp->BaseType()->sp->sb->templateLevel)
             {
-                tp = CopyType(tp, true, [count, arg, index](TYPE*& old, TYPE*& newx) {
+                tp = tp->CopyType(true, [count, arg, index](Type*& old, Type*& newx) {
                     if (old->rootType == old)
                         newx->sp->templateParams = ReplicateTemplateParams(count, arg, newx->sp->templateParams, index);
                 });
@@ -2155,8 +2155,8 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
             {
                 if (!*lptr)
                     *lptr = initListListFactory.CreateList();
-                auto it = basetype(arg[0]->sb->parent->tp)->syms->begin();
-                auto itend = basetype(arg[0]->sb->parent->tp)->syms->end();
+                auto it = arg[0]->sb->parent->tp->BaseType()->syms->begin();
+                auto itend = arg[0]->sb->parent->tp->BaseType()->syms->end();
                 for (; it != itend && (*it) != arg[0]; ++it);
                 if (it != itend)
                 {
@@ -2166,12 +2166,12 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
                         INITLIST* p = Allocate<INITLIST>();
                         p->tp = sym->tp;
                         p->exp = varNode(ExpressionNode::auto_, sym);
-                        if (isref(p->tp))
+                        if (p->tp->IsRef())
                         {
                             p->exp = exprNode(ExpressionNode::l_ref_, p->exp, nullptr);
-                            p->tp = basetype(p->tp)->btp;
+                            p->tp = p->tp->BaseType()->btp;
                         }
-                        if (!isstructured(p->tp))
+                        if (!p->tp->IsStructured())
                             deref(p->tp, &p->exp);
                         (*lptr)->push_back(p);
                         ++it;
@@ -2232,7 +2232,7 @@ static int GetBaseClassList(const char* name, SYMBOL* cls, std::list<BASECLASS*>
                 SYMBOL* parent = bc->cls;
                 int i;
                 if (parent->tp->type == BasicType::typedef_)
-                    parent = basetype(parent->tp)->sp;
+                    parent = parent->tp->BaseType()->sp;
                 for (i = n - 1; i >= 0 && parent;
                      i--, parent = parent->sb->parentClass ? parent->sb->parentClass : parent->sb->parentNameSpace)
                     if (strcmp(parent->name, clslst[i]))
@@ -2270,7 +2270,7 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, std::list<VBASEENTRY
             SYMBOL* parent = vbase->cls;
             int i;
             if (parent->tp->type == BasicType::typedef_)
-                parent = basetype(parent->tp)->sp;
+                parent = parent->tp->BaseType()->sp;
             for (i = n - 1; i >= 0 && parent;
                 i--, parent = parent->sb->parentClass ? parent->sb->parentClass : parent->sb->parentNameSpace)
                 if (strcmp(parent->name, clslst[i]))
@@ -2318,7 +2318,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
             int n = -1;
             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
             LEXLIST* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
-            std::deque<TYPE*> defaults;
+            std::deque<Type*> defaults;
             PushPopDefaults(defaults, funcsp->templateParams, true, true);
             std::stack <TEMPLATEPARAM*> stk; 
             if (funcsp->templateParams)
@@ -2453,7 +2453,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
         {
             for (auto&& pack : *templatePack)
             {
-                if (!isstructured(pack.second->byClass.val))
+                if (!pack.second->byClass.val->IsStructured())
                 {
                     error(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
                     return;
@@ -2478,7 +2478,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
         {
             LEXLIST* lex = SetAlternateLex(start);
             MEMBERINITIALIZERS* mi = Allocate<MEMBERINITIALIZERS>();
-            TYPE* tp = ittpp->second->byClass.val;
+            Type* tp = ittpp->second->byClass.val;
             int offset = 0;
             int vcount = 0, ccount = 0;
             *mi = *orig;
@@ -2561,19 +2561,19 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
 }
 static bool classOrEnumParam(SYMBOL* param)
 {
-    TYPE* tp = param->tp;
-    if (isref(tp))
-        tp = basetype(tp)->btp;
-    tp = basetype(tp);
-    return isstructured(tp) || tp->type == BasicType::enum_ || tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_ ||
+    Type* tp = param->tp;
+    if (tp->IsRef())
+        tp = tp->BaseType()->btp;
+    tp = tp->BaseType();
+    return tp->IsStructured() || tp->type == BasicType::enum_ || tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_ ||
            tp->type == BasicType::templatedecltype_;
 }
 void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 {
-    TYPE* tp = sp->tp;
-    if (isref(tp))
-        tp = basetype(tp)->btp;
-    if (!isfunction(tp))
+    Type* tp = sp->tp;
+    if (tp->IsRef())
+        tp = tp->BaseType()->btp;
+    if (!tp->IsFunction())
     {
         char buf[256];
         if (sp->sb->castoperator)
@@ -2588,8 +2588,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
     }
     else
     {
-        auto it = basetype(sp->tp)->syms->begin();
-        auto itend = basetype(sp->tp)->syms->end();
+        auto it = sp->tp->BaseType()->syms->begin();
+        auto itend = sp->tp->BaseType()->syms->end();
         if (it == itend)
             return;
         if (!asFriend && getStructureDeclaration())  // nonstatic member
@@ -2600,7 +2600,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 SYMBOL* sym = *it;
                 if (sym->tp->type != BasicType::void_)
                 {
-                    errortype(ERR_OPERATOR_NEEDS_NO_PARAMETERS, basetype(sym->tp)->btp, nullptr);
+                    errortype(ERR_OPERATOR_NEEDS_NO_PARAMETERS, sym->tp->BaseType()->btp, nullptr);
                 }
             }
             else
@@ -2612,11 +2612,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case Keyword::star_:
                     case Keyword::and_:
                         // needs zero or one argument
-                        if (basetype(sp->tp)->syms->size() > 1)
+                        if (sp->tp->BaseType()->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
-                        if (basetype(sp->tp)->syms->size() == 0)
+                        if (sp->tp->BaseType()->syms->size() == 0)
                         {
                             switch ((Keyword)(sp->sb->operatorId - CI_NEW))
                             {
@@ -2664,14 +2664,14 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case Keyword::pointstar_:
                         // needs one argument
                         sym = *it;
-                        if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 1)
+                        if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case Keyword::autoinc_:
                     case Keyword::autodec_:
-                        if (basetype(sp->tp)->syms->size() > 1)
+                        if (sp->tp->BaseType()->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
@@ -2699,7 +2699,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case Keyword::asxor_:
                         // needs one argument
                         sym = *it;
-                        if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 1)
+                        if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
@@ -2708,7 +2708,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     case Keyword::openbr_:
                         // needs one argument:
                         sym = *it;
-                        if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 1)
+                        if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 1)
                         {
                             errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
@@ -2735,7 +2735,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
             {
                 if (sp->sb->operatorId == CI_CAST)
                 {
-                    errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, nullptr);
+                    errortype(ERR_OPERATOR_NONSTATIC, sp->tp->BaseType()->btp, nullptr);
                 }
                 else if ((Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::new_ &&
                          (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::delete_ &&
@@ -2768,11 +2768,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     // needs one or two arguments, one being class type
                     sym = (*it);
                     ++it;
-                    if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 2)
+                    if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(sym) && (basetype(sp->tp)->syms->size() == 1 || !classOrEnumParam((*it))))
+                    else if (!classOrEnumParam(sym) && (sp->tp->BaseType()->syms->size() == 1 || !classOrEnumParam((*it))))
                     {
                         if (!templateNestingCount)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
@@ -2782,7 +2782,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case Keyword::complx_:
                     // needs one arg of class or type
                     sym = *it;
-                    if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() != 1)
+                    if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() != 1)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
@@ -2809,7 +2809,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case Keyword::uparrow_:
                 case Keyword::comma_:
                     // needs two args, one of class or type
-                    if (basetype(sp->tp)->syms->size() != 2)
+                    if (sp->tp->BaseType()->syms->size() != 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                     }
@@ -2824,7 +2824,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     // needs one or two args, first of class or type
                     // if second is present int type
                     sym = (*it);
-                    if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 2)
+                    if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
@@ -2833,7 +2833,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         if (!templateNestingCount)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    if (basetype(sp->tp)->syms->size() == 2)
+                    if (sp->tp->BaseType()->syms->size() == 2)
                     {
                         sym = *++it;
                         if (sym->tp->type != BasicType::int_)
@@ -2843,24 +2843,24 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     }
                     break;
                 case Keyword::quot_:
-                    if (basetype(sp->tp)->syms->size() > 2)
+                    if (sp->tp->BaseType()->syms->size() > 2)
                     {
                         errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
-                    else if (basetype(sp->tp)->syms->size() == 2)
+                    else if (sp->tp->BaseType()->syms->size() == 2)
                     {
                         // two args
-                        TYPE* tpl = (*it)->tp;
-                        TYPE* tpr = (*++it)->tp;
-                        if (!isunsigned(tpr) || !ispointer(tpl))
+                        Type* tpl = (*it)->tp;
+                        Type* tpr = (*++it)->tp;
+                        if (!tpr->IsUnsigned() || !tpl->IsPtr())
                         {
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }
                         else
                         {
-                            tpl = basetype(tpl)->btp;
-                            tpr = basetype(tpl);
-                            if (!isconst(tpl) || (tpr->type != BasicType::char_ && tpr->type != BasicType::wchar_t_ && tpr->type != BasicType::char8_t_ && 
+                            tpl = tpl->BaseType()->btp;
+                            tpr = tpl->BaseType();
+                            if (!tpl->IsConst() || (tpr->type != BasicType::char_ && tpr->type != BasicType::wchar_t_ && tpr->type != BasicType::char8_t_ && 
                                                     tpr->type != BasicType::char16_t_ && tpr->type != BasicType::char32_t_))
                             {
                                 errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
@@ -2870,8 +2870,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     else
                     {
                         // one arg
-                        TYPE* tp = (*it)->tp;
-                        if ((!ispointer(tp) || !isconst(basetype(tp)->btp) || basetype(basetype(tp)->btp)->type != BasicType::char_) &&
+                        Type* tp = (*it)->tp;
+                        if ((!tp->IsPtr() || !tp->BaseType()->btp->IsConst() || tp->BaseType()->btp->BaseType()->type != BasicType::char_) &&
                             tp->type != BasicType::unsigned_long_long_ && tp->type != BasicType::long_double_ && tp->type != BasicType::char_ && tp->type != BasicType::wchar_t_ && tp->type != BasicType::char8_t_ &&
                             tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
                         {
@@ -2881,11 +2881,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case Keyword::new_:
                 case Keyword::newa_:
-                    if (basetype(sp->tp)->syms->size() > 0)
+                    if (sp->tp->BaseType()->syms->size() > 0)
                     {
                         // any number of args, but first must be a size
-                        TYPE* tp = (*it)->tp;
-                        if (!isint(tp))
+                        Type* tp = (*it)->tp;
+                        if (!tp->IsInt())
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     else
@@ -2895,11 +2895,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case Keyword::delete_:
                 case Keyword::dela_:
-                    if (basetype(sp->tp)->syms->size() > 0)
+                    if (sp->tp->BaseType()->syms->size() > 0)
                     {
                         // one or more args, first must be a pointer
-                        TYPE* tp = (*it)->tp;
-                        if (!ispointer(tp))
+                        Type* tp = (*it)->tp;
+                        if (!tp->IsPtr())
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     else
@@ -2910,7 +2910,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 default:
                     if (sp->sb->operatorId == CI_CAST)
                     {
-                        errortype(ERR_OPERATOR_MUST_BE_NONSTATIC, basetype(sp->tp)->btp, nullptr);
+                        errortype(ERR_OPERATOR_MUST_BE_NONSTATIC, sp->tp->BaseType()->btp, nullptr);
                     }
                     else
                     {
@@ -2933,7 +2933,7 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
     {
         bool v = true;
         char buf[5000];
-        TYPE* tp;
+        Type* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
         inConstantExpression++;
         anonymousNotAlloc++;
@@ -3014,7 +3014,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
                     {
                         SYMBOL* src = sym;
                         SYMBOL* sym = nullptr;
-                        TYPE* tp;
+                        Type* tp;
                         SYMLIST** p;
                         if (storage_class == StorageClass::auto_)
                             sym = localNameSpace->front()->syms->Lookup(buf);
@@ -3033,7 +3033,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
                                 return lex;
                             }
                         }
-                        tp = MakeType(BasicType::void_);
+                        tp = Type::MakeType(BasicType::void_);
                         sym = makeID(StorageClass::namespace_alias_, tp, nullptr, litlate(buf));
                         if (nameSpaceList.size())
                         {
@@ -3100,7 +3100,7 @@ LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_cla
     SYMBOL *sp = globalNameSpace->front()->syms->Lookup(buf);
     if (!sp)
     {
-        sym = makeID(StorageClass::namespace_, MakeType(BasicType::void_), nullptr, litlate(buf));
+        sym = makeID(StorageClass::namespace_, Type::MakeType(BasicType::void_), nullptr, litlate(buf));
         sym->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
         *sym->sb->nameSpaceValues = *globalNameSpace;
         sym->sb->nameSpaceValues->push_front(Allocate<NAMESPACEVALUEDATA>());
@@ -3259,7 +3259,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, Keyword::assign_))
             {
-                TYPE* tp = nullptr;
+                Type* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();
                 std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
@@ -3301,7 +3301,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     bool notype = false;
                     bool oldTemplateType = inTemplateType;
 
-                    lex = getBeforeType(lex, nullptr, &tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
+                    tp = TypeGenerator::BeforeName(lex, nullptr, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
                                         &linkage3, nullptr, false, false, true, false); /* fixme at file scope init */
                 }
                 else
@@ -3309,7 +3309,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     if (pulledtypename)
                         lex = backupsym();
                     parsingUsing++;
-                    lex = get_type_id(lex, &tp, nullptr, StorageClass::cast_, false, true, true);
+                    tp = TypeGenerator::TypeId(lex, nullptr, StorageClass::cast_, false, true, true);
                     parsingUsing--;
                 }
                 if (!tp)
@@ -3319,14 +3319,14 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
                 sp = makeID(StorageClass::typedef_, tp, nullptr, litlate(idsym->data->value.s.a));
                 sp->sb->attribs = basisAttribs;
-                sp->tp = MakeType(BasicType::typedef_, tp);
+                sp->tp = Type::MakeType(BasicType::typedef_, tp);
                 sp->tp->sp = sp;
                 sp->sb->access = access;
                 if (inTemplate)
                 {
                     sp->sb->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
-                    if (isstructured(tp) || basetype(tp)->type == BasicType::templateselector_)
+                    if (tp->IsStructured() || tp->BaseType()->type == BasicType::templateselector_)
                         sp->sb->typeAlias = lst;
                 }
                 else if (!templateNestingCount)
@@ -3428,14 +3428,14 @@ static void balancedAttributeParameter(LEXLIST** lex)
         needkw(lex, endp);
     }
 }
-TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
+Type* AttributeFinish(SYMBOL* sym, Type* tp)
 {
     sym->sb->attribs = basisAttribs;
-    basetype(tp)->alignment = sym->sb->attribs.inheritable.structAlign;
+    tp->BaseType()->alignment = sym->sb->attribs.inheritable.structAlign;
     // should come first to overwrite all other attributes
     if (sym->sb->attribs.uninheritable.copyFrom)
     {
-        if (isfunction(sym->tp) == isfunction(sym->sb->attribs.uninheritable.copyFrom->tp) &&
+        if (sym->tp->IsFunction() == sym->sb->attribs.uninheritable.copyFrom->tp->IsFunction() &&
             istype(sym) == istype(sym->sb->attribs.uninheritable.copyFrom))
         {
             sym->sb->attribs.inheritable = sym->sb->attribs.uninheritable.copyFrom->sb->attribs.inheritable;
@@ -3447,13 +3447,13 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
     }
     if (sym->sb->attribs.inheritable.vectorSize)
     {
-        if (isarithmetic(tp))
+        if (tp->IsArithmetic())
         {
             int n = sym->sb->attribs.inheritable.vectorSize % tp->size;
             int m = sym->sb->attribs.inheritable.vectorSize / tp->size;
             if (n || m > 0x10000 || (m & (m - 1)) != 0)
                 error(ERR_INVALID_VECTOR_SIZE);
-            tp = MakeType(BasicType::pointer_, tp);
+            tp = Type::MakeType(BasicType::pointer_, tp);
             tp->size = sym->sb->attribs.inheritable.vectorSize;
             tp->array = true;
         }
@@ -3569,11 +3569,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
-                                    TYPE* tp = nullptr;
+                                    Type* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
                                     *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                    if (!tp || !isint(tp))
+                                    if (!tp || !tp->IsInt())
                                         error(ERR_NEED_INTEGER_TYPE);
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
@@ -3596,11 +3596,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 3:  // warn_if_not_aligned
                                 if (needkw(lex, Keyword::openpa_))
                                 {
-                                    TYPE* tp = nullptr;
+                                    Type* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
                                     *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                    if (!tp || !isint(tp))
+                                    if (!tp || !tp->IsInt())
                                         error(ERR_NEED_INTEGER_TYPE);
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
@@ -3634,18 +3634,18 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                         if (sym)
                                         {
                                             if (sym->tp->type == BasicType::aggregate_)
-                                                if (basetype(sym->tp)->syms->size() == 1)
-                                                    sym = basetype(sym->tp)->syms->front();
-                                            if (isfunction(sym->tp) && isvoid(basetype(sym->tp)->btp))
+                                                if (sym->tp->BaseType()->syms->size() == 1)
+                                                    sym = sym->tp->BaseType()->syms->front();
+                                            if (sym->tp->IsFunction() && sym->tp->BaseType()->btp->IsVoid())
                                             {
-                                                if (basetype(sym->tp)->syms->size() == 0)
+                                                if (sym->tp->BaseType()->syms->size() == 0)
                                                 {
                                                     basisAttribs.inheritable.cleanup = sym;
                                                 }
-                                                else if (basetype(sym->tp)->syms->size() == 1)
+                                                else if (sym->tp->BaseType()->syms->size() == 1)
                                                 {
-                                                    auto sp = basetype(sym->tp)->syms->front();
-                                                    if (isvoid(sp->tp) || isvoidptr(sp->tp))
+                                                    auto sp = sym->tp->BaseType()->syms->front();
+                                                    if (sp->tp->IsVoid() || sp->tp->IsVoidPtr())
                                                         basisAttribs.inheritable.cleanup = sym;
                                                     else
                                                         error(ERR_INVALID_ATTRIBUTE_CLEANUP);
@@ -3730,11 +3730,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                             case 16:  // vector_size
                                 if (needkw(lex, Keyword::openpa_))
                                 {
-                                    TYPE* tp = nullptr;
+                                    Type* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
                                     *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                    if (!tp || !isint(tp))
+                                    if (!tp || !tp->IsInt())
                                         error(ERR_NEED_INTEGER_TYPE);
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
@@ -3785,11 +3785,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
-                                    TYPE* tp = nullptr;
+                                    Type* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
                                     *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                    if (!tp || !isint(tp))
+                                    if (!tp || !tp->IsInt())
                                         error(ERR_NEED_INTEGER_TYPE);
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
@@ -3806,11 +3806,11 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
-                                    TYPE* tp = nullptr;
+                                    Type* tp = nullptr;
                                     EXPRESSION* exp = nullptr;
 
                                     *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                    if (!tp || !isint(tp))
+                                    if (!tp || !tp->IsInt())
                                         error(ERR_NEED_INTEGER_TYPE);
                                     else if (!isintconst(exp))
                                         error(ERR_CONSTANT_VALUE_EXPECTED);
@@ -3888,10 +3888,10 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
             if (needkw(lex, Keyword::openpa_))
             {
                 int align = 1;
-                if (startOfType(*lex, nullptr, false))
+                if (TypeGenerator::StartOfType(*lex, nullptr, false))
                 {
-                    TYPE* tp = nullptr;
-                    *lex = get_type_id(*lex, &tp, funcsp, StorageClass::cast_, false, true, false);
+                    Type* tp = nullptr;
+                    tp = TypeGenerator::TypeId(*lex, funcsp, StorageClass::cast_, false, true, false);
 
                     if (!tp)
                     {
@@ -3939,11 +3939,11 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                 }
                 else
                 {
-                    TYPE* tp = nullptr;
+                    Type* tp = nullptr;
                     EXPRESSION* exp = nullptr;
 
                     *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                    if (!tp || !isint(tp))
+                    if (!tp || !tp->IsInt())
                         error(ERR_NEED_INTEGER_TYPE);
                     else
                     {
@@ -4271,20 +4271,20 @@ bool isConstexprConstructor(SYMBOL* sym)
     }
     return true;
 }
-static bool constArgValid(TYPE* tp)
+static bool constArgValid(Type* tp)
 {
-    while (isarray(tp))
-        tp = basetype(tp)->btp;
-    if (isfunction(tp))
+    while (tp->IsArray())
+        tp = tp->BaseType()->btp;
+    if (tp->IsFunction())
         return false;
     if (tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_)
         return true;
-    if (isstructured(tp))
+    if (tp->IsStructured())
     {
-        SYMBOL *sym = basetype(tp)->sp, *sym1;
+        SYMBOL *sym = tp->BaseType()->sp, *sym1;
         SYMBOL *cpy, *mv;
         BASECLASS* bc;
-        tp = basetype(tp);
+        tp = tp->BaseType();
         if (sym->sb->trivialCons)
             return true;
         tp = PerformDeferredInitialization(tp, nullptr);
@@ -4312,7 +4312,7 @@ static bool constArgValid(TYPE* tp)
         {
             for (auto sp : *tp->syms)
             {
-                if (sp->sb->storage_class == StorageClass::member_ && !isfunction(sp->tp))
+                if (sp->sb->storage_class == StorageClass::member_ && !sp->tp->IsFunction())
                     if (!constArgValid(sp->tp))
                         return false;
             }
@@ -4329,16 +4329,16 @@ bool MatchesConstFunction(SYMBOL* sym)
 {
     if (sym->sb->storage_class == StorageClass::virtual_)
         return false;
-    if (!constArgValid(basetype(sym->tp)->btp))
+    if (!constArgValid(sym->tp->BaseType()->btp))
         return false;
-    for (auto sym1 : *basetype(sym->tp)->syms)
+    for (auto sym1 : *sym->tp->BaseType()->syms)
     {
         if (sym1->tp->type != BasicType::void_ && !constArgValid(sym1->tp))
             return false;
     }
     return true;
 }
-LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
+LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, Type** tn)
 {
     bool hasAmpersand = false;
     bool hasAuto = false;
@@ -4369,7 +4369,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if (extended)
             needkw(&lex, Keyword::closepa_);
-        (*tn) = MakeType(BasicType::auto_);
+        (*tn) = Type::MakeType(BasicType::auto_);
         (*tn)->size = 0;
         (*tn)->decltypeauto = true;
         (*tn)->decltypeautoextended = extended;
@@ -4398,12 +4398,12 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             {
                 if (ismember(exp->v.func->sp))
                 {
-                    (*tn) = MakeType(BasicType::memberptr_, exp->v.func->sp->tp);
+                    (*tn) = Type::MakeType(BasicType::memberptr_, exp->v.func->sp->tp);
                     (*tn)->sp = exp->v.func->sp->sb->parentClass;
                 }
                 else
                 {
-                    (*tn) = MakeType(BasicType::pointer_, exp->v.func->sp->tp);
+                    (*tn) = Type::MakeType(BasicType::pointer_, exp->v.func->sp->tp);
                     (*tn)->size = getSize(BasicType::pointer_);
                 }
                 exp->v.func->functp = (*tn)->btp;
@@ -4413,11 +4413,11 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
                 (*tn) = exp->v.func->functp = exp->v.func->sp->tp;
             }
         }
-        if ((*tn) && isfunction(*tn) && exp->type == ExpressionNode::func_)
+        if ((*tn) && (*tn)->IsFunction() && exp->type == ExpressionNode::func_)
         {
             if (exp->v.func->ascall)
             {
-                *tn = basetype(*tn)->btp;
+                *tn = (*tn)->BaseType()->btp;
             }
         }
         if ((*tn))
@@ -4425,7 +4425,7 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
             optimize_for_constants(&exp);
             if (templateNestingCount && !instantiatingTemplate)
             {
-                (*tn) = MakeType(BasicType::templatedecltype_);
+                (*tn) = Type::MakeType(BasicType::templatedecltype_);
                 (*tn)->templateDeclType = exp;
             }
         }
@@ -4438,63 +4438,63 @@ LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if ((*tn)->lref)
         {
-            (*tn) = MakeType(BasicType::lref_, *tn);
+            (*tn) = Type::MakeType(BasicType::lref_, *tn);
         }
         else if ((*tn)->rref)
         {
-            (*tn) = MakeType(BasicType::rref_, *tn);
+            (*tn) = Type::MakeType(BasicType::rref_, *tn);
         }
         if (extended && lvalue(exp) && exp->left->type == ExpressionNode::auto_)
         {
             if (!lambdas.size() && xvalue(exp))
             {
-                if (isref((*tn)))
-                    (*tn) = basetype((*tn))->btp;
-                (*tn) = MakeType(BasicType::rref_, *tn);
+                if ((*tn)->IsRef())
+                    (*tn) = (*tn)->BaseType()->btp;
+                (*tn) = Type::MakeType(BasicType::rref_, *tn);
             }
             else if (lvalue(exp))
             {
-                if (isref((*tn)))
-                    (*tn) = basetype((*tn))->btp;
-                (*tn) = MakeType(BasicType::lref_, *tn);
+                if ((*tn)->IsRef())
+                    (*tn) = (*tn)->BaseType()->btp;
+                (*tn) = Type::MakeType(BasicType::lref_, *tn);
                 if (lambdas.size() && !lambdas.front()->isMutable)
                 {
-                    (*tn)->btp = MakeType(BasicType::const_, (*tn)->btp);
+                    (*tn)->btp = Type::MakeType(BasicType::const_, (*tn)->btp);
                 }
             }
         }
     }
     needkw(&lex, Keyword::closepa_);
-    if (*tn && isautotype(*tn))
+    if (*tn && (*tn)->IsAutoType())
         RequiresDialect::Feature(Dialect::cpp14, "decltype(auto)");
     return lex;
 }
 
-void CollapseReferences(TYPE* tp_in)
+void CollapseReferences(Type* tp_in)
 {
-    TYPE* tp1 = tp_in;
+    Type* tp1 = tp_in;
     int count = 0;
     bool lref = false;
-    while (tp1 && isref(tp1))
+    while (tp1 && tp1->IsRef())
     {
-        if (basetype(tp1)->type == BasicType::lref_)
+        if (tp1->BaseType()->type == BasicType::lref_)
             lref = true;
         count++;
-        tp1 = basetype(tp1)->btp;
+        tp1 = tp1->BaseType()->btp;
     }
     if (count > 1)
     {
         tp1 = tp_in;
-        basetype(tp1)->type = lref ? BasicType::lref_ : BasicType::rref_;
-        tp1 = basetype(tp1);
-        while (basetype(tp1->btp) && isref(tp1->btp))
+        tp1->BaseType()->type = lref ? BasicType::lref_ : BasicType::rref_;
+        tp1 = tp1->BaseType();
+        while (tp1->btp->BaseType()&& tp1->btp->IsRef())
         {
             // yes we intend to get rid of top-level CV qualifiers, reference collapsing demands it.
             tp1->btp = tp1->btp->btp;
         }
-        UpdateRootTypes(tp_in);
+        tp_in->UpdateRootTypes();
     }
-    else if (count == 1 && isvoid(basetype(tp_in)->btp))
+    else if (count == 1 && tp_in->BaseType()->btp->IsVoid())
     {
         // get rid of rrefs to void...
         *tp_in = stdvoid;
@@ -4539,21 +4539,21 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
     }
     return exp;
 }
-void CheckIsLiteralClass(TYPE* tp)
+void CheckIsLiteralClass(Type* tp)
 {
     if (!templateNestingCount || instantiatingTemplate)
     {
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp))
+        if (tp->IsRef())
+            tp = tp->BaseType()->btp;
+        if (tp->IsStructured())
         {
-            if (basetype(tp)->sp->tp->size && !basetype(tp)->sp->sb->literalClass)
+            if (tp->BaseType()->sp->tp->size && !tp->BaseType()->sp->sb->literalClass)
             {
-                errorsym(ERR_CONSTEXPR_CLASS_NOT_LITERAL, basetype(tp)->sp);
+                errorsym(ERR_CONSTEXPR_CLASS_NOT_LITERAL, tp->BaseType()->sp);
             }
-            else if (basetype(tp)->sp->templateParams)
+            else if (tp->BaseType()->sp->templateParams)
             {
-                for (auto&& tpl : *basetype(tp)->sp->templateParams)
+                for (auto&& tpl : *tp->BaseType()->sp->templateParams)
                     if (tpl.second->type == TplType::typename_ && tpl.second->byClass.val)
                         CheckIsLiteralClass(tpl.second->byClass.val);               
             }
@@ -4605,7 +4605,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
         else
         {
             EXPRESSION* exp = nullptr;
-            TYPE* tp = nullptr;
+            Type* tp = nullptr;
             lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
             currentLineData(block, lex, -1);
             if (tp == nullptr)
@@ -4613,14 +4613,14 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                 error(ERR_EXPRESSION_SYNTAX);
                 errskim(&lex, skim_semi_declare);
             }
-            else if ((!isstructured(tp) && !isarray(tp)) || basetype(tp)->type == BasicType::union_)
+            else if ((!tp->IsStructured() && !tp->IsArray()) || tp->BaseType()->type == BasicType::union_)
             {
                 errortype(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, tp, nullptr);
             }
-            else if (isarray(tp))
+            else if (tp->IsArray())
             {
-                auto btp = basetype(basetype(tp)->btp);
-                int count = basetype(tp)->size / btp->size;
+                auto btp = tp->BaseType()->btp->BaseType();
+                int count = tp->BaseType()->size / btp->size;
                 if (count != identifiers.size())
                 {
                     error(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH);
@@ -4628,7 +4628,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                 else
                 {
                     auto copy = anonymousVar(storage_class, btp);
-                    if (isstructured(btp))
+                    if (btp->IsStructured())
                     {
                         std::list<INITIALIZER*>* constructors = nullptr;
 
@@ -4636,7 +4636,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                         {
                             auto src = i ? exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, i * btp->size)) : exp;
                             auto dest = i ? exprNode(ExpressionNode::add_, copy, intNode(ExpressionNode::c_i_, i * btp->size)) : copy;
-                            TYPE* ctype = btp;
+                            Type* ctype = btp;
                             auto expx = dest;
                             callConstructorParam(&ctype, &expx, btp, src, true, false, true, false, true);
                             if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
@@ -4711,7 +4711,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                 SYMBOL *one = nullptr, *two = nullptr;
                 int count = 0;
                 int offset = 0;
-                auto structsym = basetype(tp)->sp;
+                auto structsym = tp->BaseType()->sp;
                 if (structsym->sb->baseClasses)
                 {
                     for (auto b : *structsym->sb->baseClasses)
@@ -4779,7 +4779,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
 
                     auto src = exp;
                     auto dest = copy;
-                    TYPE* ctype = tp;
+                    Type* ctype = tp;
 
                     auto expx = dest;
                     callConstructorParam(&ctype, &expx, tp, src, true, false, true, false, true);

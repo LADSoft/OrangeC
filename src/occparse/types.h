@@ -25,48 +25,121 @@
 
 namespace Parser
 {
-bool isautotype(TYPE* tp);
-bool isunsigned(TYPE* tp);
-bool isbitint(TYPE* tp);
-bool isint(TYPE* tp);
-bool isfloat(TYPE* tp);
-bool iscomplex(TYPE* tp);
-bool isimaginary(TYPE* tp);
-bool isarithmetic(TYPE* tp);
-bool ismsil(TYPE* tp);
-bool isconstraw(const TYPE* tp);
-bool isconst(const TYPE* tp);
-bool isvolatile(const TYPE* tp);
-bool islrqual(TYPE* tp);
-bool isrrqual(TYPE* tp);
-bool isrestrict(TYPE* tp);
-bool isatomic(TYPE* tp);
-bool isvoid(TYPE* tp);
-bool isvoidptr(TYPE* tp);
-bool isarray(TYPE* tp);
-bool isunion(TYPE* tp);
-TYPE* MakeType(TYPE& tp, BasicType type, TYPE* base = nullptr);
-TYPE* MakeType(BasicType type, TYPE* base = nullptr);
-TYPE* CopyType(TYPE* tp, bool deep = false, std::function<void(TYPE*&, TYPE*&)> callback = nullptr);
-LEXLIST* getPointerQualifiers(LEXLIST* lex, TYPE** tp, bool allowstatic);
-LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, StorageClass storage_class,
-                           bool funcptr);
-LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
-    bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
-    bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
-LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
-    Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
-    bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
-    bool constexpression);
-LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
+
+struct Type
+{
+    BasicType type;        /* the type */
+    long size;             /* total size of type */
+    Type* btp;       /* pointer to next type (pointers & arrays */
+    Type* rootType;  /* pointer to base type of sequence */
+    int used : 1;          /* type has actually been used in a declaration or cast or expression */
+    int array : 1;         /* not a dereferenceable pointer */
+    int msil : 1;          /* allocate as an MSIL array */
+    int byRefArray : 1;    /* array base address is a reference type */
+    int vla : 1;           /* varriable length array */
+    int unsized : 1;       /* type doesn't need a size */
+    int hasbits : 1;       /* type is a bit type */
+    int anonymousbits : 1; /* type is a bit type without a name */
+    int scoped : 1;        /* c++ scoped enumeration */
+    int fixed : 1;         /* c++ fixed enumeration */
+    int nullptrType : 1;   /* c++: std::nullptr */
+    int templateTop : 1;
+    int enumConst : 1; /* is an enumeration constant */
+    int lref : 1;
+    int rref : 1;
+    int decltypeauto : 1;
+    int decltypeautoextended : 1;
+    int stringconst : 1;
+    char bits;      /* -1 for not a bit val, else bit field len */
+    char startbit;  /* start of bit field */
+    int bitintbits;
+    struct sym* sp; /* pointer to a symbol which describes the type */
+    /* local symbol tables */
+    SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
+    SymbolTable<struct sym>* tags; /* Symbol table for nested types*/
+    TEMPLATEPARAMPAIR* templateParam;
+    int alignment;                /* alignment pref for this structure/class/union   */
+    EXPRESSION* esize;            /* enode version of size */
+    Type* etype;            /* type of size field  when size isn't constant */
+    int vlaindex;                 /* index into the vararray */
+    EXPRESSION* templateDeclType; /* for BasicType::templatedecltype_, used in templates */
+    Type* typedefType;      /* The typedef which describes this type */
+
+    CONSTEXPR inline Type* BaseType()
+    {
+        void* aa = this;
+        if (aa)
+        return this->rootType;
+        return nullptr;
+    }
+    void UpdateRootTypes();
+    bool IsAutoType();
+    bool IsUnsigned();
+    bool IsBitInt();
+    bool IsInt();
+    bool IsFloat();
+    bool IsComplex();
+    bool IsImaginary();
+    bool IsArithmetic();
+    bool IsMsil();
+    bool IsConst();
+    bool IsVolatile();
+    bool IsLRefQual();
+    bool IsRRefQual();
+    bool IsRestrict();
+    bool IsAtomic();
+    bool IsVoid();
+    bool IsVoidPtr();
+    bool IsArray();
+    bool IsUnion();
+    bool IsRef();
+    bool IsPtr();
+    bool IsFunction();
+
+    bool IsFunctionPtr();
+    bool IsStructured();
+    void ToString(char* buf);
+    bool SameExceptionType(Type* typ);
+    bool SameCharType(Type* tp);
+    bool SameType(Type* other) { return CompareTypes(this, other, 0); }
+    bool ExactSameType(Type* other) { return CompareTypes(this, other, 1); }
+    bool ExactSameTypeNoQualifiers(Type* other) { return CompareTypes(this, other, 2); }
+    inline void BasicTypeToString(char* buf) { BasicTypeToString(buf, this); }
+    Type* CopyType(bool deep = false, std::function<void(Type*&, Type*&)> callback = nullptr);
+    static Type* MakeType(Type& tp, BasicType type, Type* base = nullptr);
+    static Type* MakeType(BasicType type, Type* base = nullptr);
+    static bool CompareTypes(Type* typ1, Type* typ2, int exact);
+protected:
+    static void ToString(char* buf, Type* typ);
+    static char* PutPointer(char* p, Type* tp);
+    static void PointerToString(char* buf, Type* tp);
+    static Type* QualifierToString(char* buf, Type* tp);
+    static Type* BasicTypeToString(char* buf, Type* tp);
+    static void RenderExpr(char* buf, EXPRESSION* exp);
+
+};
+struct TypeGenerator
+{
+    static Type* PointerQualifiers(LEXLIST*& lex, Type* tp, bool allowstatic);
+    static Type* FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
+        bool funcptr);
+    static Type* BeforeName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+        bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
+        bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
+    static Type* UnadornedType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+        Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
+        bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
+        bool constexpression);
+    static Type* TypeId(LEXLIST*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
+    static bool StartOfType(LEXLIST*& lex, bool* structured, bool assumeType);
+private:
+    static void ExceptionSpecifiers(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class);
+    static Type* FunctionQualifiersAndTrailingReturn(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class);
+    static void ResolveVLAs(Type* tp);
+    static Type* ArrayType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
+        bool msil);
+    static Type* AfterName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
+        int consdest, bool funcptr);
+};
 bool istype(SYMBOL* sym);
-bool startOfType(LEXLIST* lex, bool* structured, bool assumeType);
-void UpdateRootTypes(TYPE* tp);
-bool comparetypes(TYPE* typ1, TYPE* typ2, int exact);
-bool compareXC(TYPE* typ1, TYPE* typ2);
-bool matchingCharTypes(TYPE* typ1, TYPE* typ2);
-void typenumptr(char* buf, TYPE* tp);
-void RenderExpr(char* buf, EXPRESSION* exp);
-TYPE* typenum(char* buf, TYPE* tp);
-void typeToString(char* buf, TYPE* typ);
 }  // namespace Parser

@@ -46,7 +46,7 @@ extern std::list<Optimizer::LINEDATA*>* lines;
 extern std::list<BLOCKDATA*> emptyBlockdata;
 
 extern std::stack<std::list<BLOCKDATA*>*> expressionStatements;
-extern std::deque<std::pair<EXPRESSION*, TYPE*>> expressionReturns;
+extern std::deque<std::pair<EXPRESSION*, Type*>> expressionReturns;
 
 void statement_ini(bool global);
 bool msilManaged(SYMBOL* s);

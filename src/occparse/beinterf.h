@@ -25,14 +25,14 @@
 
 namespace Parser
 {
-int needsAtomicLockFromType(TYPE* tp);
+int needsAtomicLockFromType(Type* tp);
 int getSize(BasicType type);
 int getBaseAlign(BasicType type);
 int getMaxAlign();
 long getautoval(long val);
 int funcvaluesize(int val);
-int alignment(StorageClass sc, TYPE* tp);
-int getAlign(StorageClass sc, TYPE* tp);
+int alignment(StorageClass sc, Type* tp);
+int getAlign(StorageClass sc, Type* tp);
 const char* getUsageText(void);
 const char* getHelpText(void);
 KEYWORD* GetProcKeywords(void);

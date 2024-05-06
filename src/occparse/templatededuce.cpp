@@ -78,15 +78,15 @@ void ClearArgValues(std::list<TEMPLATEPARAMPAIR>* params, bool specialized)
                 {
                     if (param.second->type == TplType::typename_)
                     {
-                        TYPE* tp = param.second->byClass.dflt;
-                        while (ispointer(tp))
-                            tp = basetype(tp)->btp;
-                        tp = basetype(tp);
+                        Type* tp = param.second->byClass.dflt;
+                        while (tp->IsPtr())
+                            tp = tp->BaseType()->btp;
+                        tp = tp->BaseType();
                         if (tp->type == BasicType::templateparam_)
                         {
                             tp->templateParam->second->byClass.val = nullptr;
                         }
-                        else if (isstructured(tp) && (tp->sp)->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
+                        else if (tp->IsStructured() && (tp->sp)->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
                         {
                             ClearArgValues(tp->sp->templateParams, specialized);
                         }
@@ -143,35 +143,35 @@ static void PushPopValues(std::list<TEMPLATEPARAMPAIR>* params, bool push)
                         lst->data = param.second->byClass.val;
                         if (param.second->type == TplType::typename_)
                         {
-                            TYPE* tp = param.second->byClass.val;
+                            Type* tp = param.second->byClass.val;
                             if (tp)
                             {
-                                while (ispointer(tp) || isref(tp))
-                                    tp = basetype(tp)->btp;
-                                if (isstructured(tp))
+                                while (tp->IsPtr() || tp->IsRef())
+                                    tp = tp->BaseType()->btp;
+                                if (tp->IsStructured())
                                 {
-                                    PushPopValues(basetype(tp)->sp->templateParams, push);
+                                    PushPopValues(tp->BaseType()->sp->templateParams, push);
                                 }
-                                else if (basetype(tp)->type == BasicType::templateselector_)
+                                else if (tp->BaseType()->type == BasicType::templateselector_)
                                 {
-                                    PushPopValues((*basetype(tp)->sp->sb->templateSelector)[1].templateParams, push);
+                                    PushPopValues((*tp->BaseType()->sp->sb->templateSelector)[1].templateParams, push);
                                 }
                             }
                         }
                     }
                     else
                     {
-                        param.second->byClass.val = (TYPE*)lst;
+                        param.second->byClass.val = (Type*)lst;
                     }
                 }
             }
         }
     }
 }
-static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
+static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
 {
-    TYPE* pP = basetype(P);
-    TYPE* pA = basetype(A);
+    Type* pP = P->BaseType();
+    Type* pA = A->BaseType();
     if (pP->sp && pA->sp && pP->sp->sb && pA->sp->sb && pP->sp->sb->parentTemplate == pA->sp->sb->parentTemplate)
     {
         if (!pA->sp->templateParams || !pP->sp->templateParams)
@@ -277,10 +277,10 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
             switch (itTP->second->type)
             {
                 case TplType::typename_: {
-                    TYPE** tp = change ? &to->second->byClass.val : &to->second->byClass.temp;
+                    Type** tp = change ? &to->second->byClass.val : &to->second->byClass.temp;
                     if (*tp)
                     {
-                        if (!templatecomparetypes(*tp, itTA->second->byClass.val, true))
+                        if (!templateCompareTypes(*tp, itTA->second->byClass.val, true))
                             return false;
                     }
                     else
@@ -371,10 +371,10 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                         switch (itTP->second->type)
                         {
                             case TplType::typename_: {
-                                TYPE** tp = change ? &itTP->second->byClass.val : &itTP->second->byClass.temp;
+                                Type** tp = change ? &itTP->second->byClass.val : &itTP->second->byClass.temp;
                                 if (*tp)
                                 {
-                                    if (!templatecomparetypes(*tp, itTA->second->byClass.val, true))
+                                    if (!templateCompareTypes(*tp, itTA->second->byClass.val, true))
                                     {
                                         return false;
                                     }
@@ -468,7 +468,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
     }
     return false;
 }
-static bool DeduceFromBaseTemplates(TYPE* P, SYMBOL* A, bool change, bool byClass)
+static bool DeduceFromBaseTemplates(Type* P, SYMBOL* A, bool change, bool byClass)
 {
     if (A->sb && A->sb->baseClasses)
     {
@@ -482,10 +482,10 @@ static bool DeduceFromBaseTemplates(TYPE* P, SYMBOL* A, bool change, bool byClas
     }
     return false;
 }
-static bool DeduceFromMemberPointer(TYPE* P, TYPE* A, bool change, bool byClass)
+static bool DeduceFromMemberPointer(Type* P, Type* A, bool change, bool byClass)
 {
-    TYPE* Pb = basetype(P);
-    TYPE* Ab = basetype(A);
+    Type* Pb = P->BaseType();
+    Type* Ab = A->BaseType();
     if (Ab->type == BasicType::memberptr_)
     {
         if (Pb->type != BasicType::memberptr_ || !Deduce(Pb->sp->tp, Ab->sp->tp, nullptr, change, byClass, false, false))
@@ -496,54 +496,54 @@ static bool DeduceFromMemberPointer(TYPE* P, TYPE* A, bool change, bool byClass)
     }
     else  // should only get here for functions
     {
-        if (ispointer(Ab))
-            Ab = basetype(Ab)->btp;
-        if (!isfunction(Ab))
+        if (Ab->IsPtr())
+            Ab = Ab->BaseType()->btp;
+        if (!Ab->IsFunction())
             return false;
-        if (basetype(Ab)->sp->sb->parentClass == nullptr || !ismember(basetype(Ab)->sp) || Pb->type != BasicType::memberptr_ ||
-            !Deduce(Pb->sp->tp, basetype(Ab)->sp->sb->parentClass->tp, nullptr, change, byClass, false, false))
+        if (Ab->BaseType()->sp->sb->parentClass == nullptr || !ismember(Ab->BaseType()->sp) || Pb->type != BasicType::memberptr_ ||
+            !Deduce(Pb->sp->tp, Ab->BaseType()->sp->sb->parentClass->tp, nullptr, change, byClass, false, false))
             return false;
         if (!Deduce(Pb->btp, Ab, nullptr, change, byClass, false, false))
             return false;
         return true;
     }
 }
-static TYPE* FixConsts(TYPE* P, TYPE* A)
+static Type* FixConsts(Type* P, Type* A)
 {
     int pn = 0, an = 0;
-    TYPE* Pb = P;
-    TYPE *q = P, **last = &q;
+    Type* Pb = P;
+    Type *q = P, **last = &q;
     int i;
-    while (ispointer(q))
+    while (q->IsPtr())
     {
-        q = basetype(q)->btp;
+        q = q->BaseType()->btp;
         pn++;
     }
     q = A;
-    while (ispointer(q))
+    while (q->IsPtr())
     {
-        q = basetype(q)->btp;
+        q = q->BaseType()->btp;
         an++;
     }
     *last = nullptr;
     if (pn > an)
     {
         for (i = 0; i < pn - an; i++)
-            P = basetype(P)->btp;
+            P = P->BaseType()->btp;
     }
     while (P && A)
     {
         bool constant = false;
         bool vol = false;
-        if (isconst(P) && !isconst(A))
+        if (P->IsConst() && !A->IsConst())
             constant = true;
-        if (isvolatile(P) && !isvolatile(A))
+        if (P->IsVolatile() && !A->IsVolatile())
             vol = true;
-        while (isconst(P) || isvolatile(P))
+        while (P->IsConst() || P->IsVolatile())
         {
-            if ((constant && isconst(P)) || (vol && isvolatile(P)))
+            if ((constant && P->IsConst()) || (vol && P->IsVolatile()))
             {
-                *last = CopyType(P);
+                *last = P->CopyType();
                 last = &(*last)->btp;
                 *last = nullptr;
             }
@@ -551,37 +551,37 @@ static TYPE* FixConsts(TYPE* P, TYPE* A)
         }
         bool foundconst = false;
         bool foundvol = false;
-        while (A != basetype(A))
+        while (A != A->BaseType())
         {
-            if (A->type == BasicType::const_ && !isconst(Pb))
+            if (A->type == BasicType::const_ && !Pb->IsConst())
             {
                 foundconst = true;
-                *last = CopyType(A);
+                *last = A->CopyType();
                 last = &(*last)->btp;
                 *last = nullptr;
             }
-            else if (A->type == BasicType::volatile_ && !isvolatile(Pb))
+            else if (A->type == BasicType::volatile_ && !Pb->IsVolatile())
             {
-                *last = CopyType(A);
+                *last = A->CopyType();
                 last = &(*last)->btp;
                 *last = nullptr;
             }
             A = A->btp;
         }
-        A = basetype(A);
-        *last = CopyType(A);
+        A = A->BaseType();
+        *last = A->CopyType();
         last = &(*last)->btp;
         *last = nullptr;
         A = A->btp;
         P = P->btp;
     }
     (*last) = A;
-    UpdateRootTypes(q);
+    q->UpdateRootTypes();
     return q;
 }
-static bool TemplateConstExpr(TYPE* tp, EXPRESSION* exp)
+static bool TemplateConstExpr(Type* tp, EXPRESSION* exp)
 {
-    if (!isstructured(tp))
+    if (!tp->IsStructured())
         return false;
     if (exp)
     {
@@ -597,23 +597,23 @@ static bool TemplateConstExpr(TYPE* tp, EXPRESSION* exp)
     return false;
 }
 
-bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, TYPE* P, TYPE* A, EXPRESSION* exp, bool change)
+bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, Type* P, Type* A, EXPRESSION* exp, bool change)
 {
     if (Pt->second->type == TplType::typename_)
     {
-        TYPE** tp = change ? &Pt->second->byClass.val : &Pt->second->byClass.temp;
+        Type** tp = change ? &Pt->second->byClass.val : &Pt->second->byClass.temp;
         if (*tp)
         {
-            if (/*!Pt->p->sb->initialized &&*/ !templatecomparetypes(*tp, A, true))
+            if (/*!Pt->p->sb->initialized &&*/ !templateCompareTypes(*tp, A, true))
                 return false;
-            if (isconst(P))
+            if (P->IsConst())
             {
-                if (isconst(*tp) || !isconst(A))
+                if ((*tp)->IsConst() || !A->IsConst())
                     return false;
             }
-            if (isvolatile(P))
+            if (P->IsVolatile())
             {
-                if (!isvolatile(A))
+                if (!A->IsVolatile())
                     return false;
             }
         }
@@ -621,23 +621,23 @@ bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, TYPE* P, TYPE* A, EXPRESSION* ex
         {
             if (P)
             {
-                TYPE* q = A;
+                Type* q = A;
                 // functions are never const...   this supports the methodology for 'std::is_function'
-                if (isfunction(A) && (isconst(P) || isvolatile(P)))
+                if (A->IsFunction() && (P->IsConst() || P->IsVolatile()))
                     return false;
                 while (q)
                 {
-                    if (isconst(q))
+                    if (q->IsConst())
                     {
                         *tp = FixConsts(P, A);
                         Pt->second->deduced = true;
                         return true;
                     }
-                    q = basetype(q)->btp;
+                    q = q->BaseType()->btp;
                 }
             }
-/*            if (TemplateConstExpr(A, exp) && !isconst(P))
-                *tp = MakeType(BasicType::const_, A);
+/*            if (TemplateConstExpr(A, exp) && !P->IsConst())
+                *tp = Type::MakeType(BasicType::const_, A);
             else
             */
                 *tp = A;
@@ -645,9 +645,9 @@ bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, TYPE* P, TYPE* A, EXPRESSION* ex
         }
         return true;
     }
-    else if (Pt->second->type == TplType::template_ && isstructured(A) && basetype(A)->sp->sb->templateLevel)
+    else if (Pt->second->type == TplType::template_ && A->IsStructured() && A->BaseType()->sp->sb->templateLevel)
     {
-        SYMBOL* sp = basetype(A)->sp;
+        SYMBOL* sp = A->BaseType()->sp;
         std::list<TEMPLATEPARAMPAIR>::iterator itPrimary;
         std::list<TEMPLATEPARAMPAIR>::iterator itePrimary = itPrimary;
         if (Pt->second->byTemplate.args)
@@ -698,80 +698,80 @@ bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, TYPE* P, TYPE* A, EXPRESSION* ex
         {
             SYMBOL** sp = change ? &Pt->second->byTemplate.val : &Pt->second->byTemplate.temp;
             Pt->second->deduced = true;
-            *sp = basetype(A)->sp;
+            *sp = A->BaseType()->sp;
             sp = change ? &Pt->second->byTemplate.orig->second->byTemplate.val
                         : &Pt->second->byTemplate.orig->second->byTemplate.temp;
             Pt->second->byTemplate.orig->second->deduced = true;
-            *sp = basetype(A)->sp;
+            *sp = A->BaseType()->sp;
             return true;
         }
     }
     return false;
 }
-bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass, bool allowSelectors, bool baseClasses)
+bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool allowSelectors, bool baseClasses)
 {
-    TYPE *Pin = P, *Ain = A;
+    Type *Pin = P, *Ain = A;
     if (!P || !A)
         return false;
     while (1)
     {
-        TYPE* Ab = basetype(A);
-        TYPE* Pb = basetype(P);
-        if (isref(Ab))
-            Ab = basetype(Ab->btp);
-        if (isstructured(Pb) && Pb->sp->sb->templateLevel && Pb->sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
-            isstructured(Ab))
+        Type* Ab = A->BaseType();
+        Type* Pb = P->BaseType();
+        if (Ab->IsRef())
+            Ab = Ab->btp->BaseType();
+        if (Pb->IsStructured() && Pb->sp->sb->templateLevel && Pb->sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
+            Ab->IsStructured())
         {
             if (DeduceFromTemplates(P, Ab, change, byClass))
                 return true;
             else
-                return DeduceFromBaseTemplates(P, basetype(Ab)->sp, change, byClass);
+                return DeduceFromBaseTemplates(P, Ab->BaseType()->sp, change, byClass);
         }
         if (Pb->type == BasicType::memberptr_)
         {
             return DeduceFromMemberPointer(P, Ab, change, byClass);
         }
-        Ab = basetype(A);
-        Pb = basetype(P);
+        Ab = A->BaseType();
+        Pb = P->BaseType();
         if (Pb->type == BasicType::enum_)
         {
             if (Ab->type == BasicType::enum_ && Ab->sp == Pb->sp)
                 return true;
-            if (isint(Ab))  // && Ab->enumConst)
+            if (Ab->IsInt())  // && Ab->enumConst)
                 return true;
             return false;
         }
-        if (isfunction(Ab) && isfuncptr(Pb))
+        if (Ab->IsFunction() && Pb->IsFunctionPtr())
         {
-            Pb = basetype(Pb)->btp;
-            Pin = basetype(Pin);  // assume any qualifiers went with an enclosing ref
+            Pb = Pb->BaseType()->btp;
+            Pin = Pin->BaseType();  // assume any qualifiers went with an enclosing ref
             // can't have a const qualified non-member function anyway I think...
         }
-        if (isref(Ab) && !isref(Pb))
-            Ab = basetype(Ab->btp);
-        if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != BasicType::templateparam_ &&
+        if (Ab->IsRef() && !Pb->IsRef())
+            Ab = Ab->btp->BaseType();
+        if (Ab->type != Pb->type && (!Ab->IsFunction() || !Pb->IsFunction()) && Pb->type != BasicType::templateparam_ &&
             (!allowSelectors || Pb->type != BasicType::templateselector_))
             // this next allows long and int to be considered the same, on architectures where there is no size difference
-            if (!isint(Ab) || !isint(Pb) || basetype(Ab)->type == BasicType::bool_ || basetype(Pb)->type == BasicType::bool_ ||
-                isunsigned(Ab) != isunsigned(Pb) || getSize(basetype(Ab)->type) != getSize(basetype(Pb)->type))
+            if (!Ab->IsInt() || !Pb->IsInt() || Ab->BaseType()->type == BasicType::bool_ || Pb->BaseType()->type == BasicType::bool_ ||
+                Ab->IsUnsigned() != Pb->IsUnsigned() || getSize(Ab->BaseType()->type) != getSize(Pb->BaseType()->type))
                 return false;
         switch (Pb->type)
         {
             case BasicType::pointer_:
-                if (isarray(Pb))
+                if (Pb->IsArray())
                 {
-                    if (!!basetype(Pb)->esize != !!basetype(Ab)->esize)
+                    if (!!Pb->BaseType()->esize != !!Ab->BaseType()->esize)
                         return false;
-                    if (basetype(Pb)->esize && basetype(Pb)->esize->type == ExpressionNode::templateparam_)
+                    if (Pb->BaseType()->esize && Pb->BaseType()->esize->type == ExpressionNode::templateparam_)
                     {
-                        SYMBOL* sym = basetype(Pb)->esize->v.sp;
+                        SYMBOL* sym = Pb->BaseType()->esize->v.sp;
                         if (sym->tp->type == BasicType::templateparam_)
                         {
-                            sym->tp->templateParam->second->byNonType.val = basetype(Ab)->esize;
+                            sym->tp->templateParam->second->byNonType.val = Ab->BaseType()->esize;
                         }
                     }
                 }
-                if (isarray(Pb) != isarray(Ab))
+                if (Pb->IsArray() != Ab->IsArray())
                     return false;
                 if (Pb->nullptrType != Ab->nullptrType)
                     return false;
@@ -797,9 +797,9 @@ bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass, bool a
                 auto itpend = Pb->syms->end();
                 auto ita = Ab->syms->begin();
                 auto itaend = Ab->syms->end();
-                if (islrqual(Pin) != islrqual(A) || isrrqual(Pin) != isrrqual(Ain))
+                if (Pin->IsLRefQual() != A->IsLRefQual() || Pin->IsRRefQual() != Ain->IsRRefQual())
                     return false;
-                if (isconst(Pin) != isconst(Ain) || isvolatile(Pin) != isvolatile(Ain))
+                if (Pin->IsConst() != Ain->IsConst() || Pin->IsVolatile() != Ain->IsVolatile())
                     return false;
                 if (itp != itpend && (*itp)->sb->thisPtr)
                     ++itp;
@@ -847,14 +847,14 @@ bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass, bool a
             case BasicType::struct_:
             case BasicType::union_:
             case BasicType::class_:
-                if (templatecomparetypes(Pb, Ab, true))
+                if (templateCompareTypes(Pb, Ab, true))
                     return true;
                 if (baseClasses && classRefCount(Pb->sp, Ab->sp) == 1)
                 {
                     return true;
                 }
                 {
-                    SYMBOL* cons = search(basetype(Pb)->syms, overloadNameTab[CI_CONSTRUCTOR]);
+                    SYMBOL* cons = search(Pb->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     if (cons)
                     {
                         for (auto sp : *cons->tp->syms)
@@ -863,7 +863,7 @@ bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass, bool a
                             {
                                 auto it = sp->tp->syms->begin();
                                 ++it;
-                                if (comparetypes((*it)->tp, Ab, true) || sameTemplate((*it)->tp, Ab))
+                                if ((*it)->tp->ExactSameType(Ab) || sameTemplate((*it)->tp, Ab))
                                     return true;
                             }
                         }
@@ -876,7 +876,7 @@ bool Deduce(TYPE* P, TYPE* A, EXPRESSION* exp, bool change, bool byClass, bool a
         }
     }
 }
-static TYPE* GetForwardType(TYPE* P, TYPE* A, EXPRESSION* exp)
+static Type* GetForwardType(Type* P, Type* A, EXPRESSION* exp)
 {
     bool lref = false;
     bool rref = false;
@@ -884,73 +884,73 @@ static TYPE* GetForwardType(TYPE* P, TYPE* A, EXPRESSION* exp)
     if (rref)
     {
         // rvalue to rref, remove reference...
-        if (isref(A))
-            A = basetype(A)->btp;
+        if (A->IsRef())
+            A = A->BaseType()->btp;
     }
     else if (lref)
     {
         // lvalue to rref, result is lvalue&...
-        if (basetype(A)->type != BasicType::lref_)
+        if (A->BaseType()->type != BasicType::lref_)
         {
-            A = MakeType(BasicType::lref_, A);
+            A = Type::MakeType(BasicType::lref_, A);
         }
     }
     return A;
 }
-static TYPE* RemoveCVQuals(TYPE* A) { return basetype(A); }
-static TYPE* rewriteNonRef(TYPE* A)
+static Type* RemoveCVQuals(Type* A) { return A->BaseType(); }
+static Type* rewriteNonRef(Type* A)
 {
-    if (isarray(A))
+    if (A->IsArray())
     {
-        while (isarray(A))
-            A = basetype(A)->btp;
-        A = MakeType(BasicType::pointer_, A);
+        while (A->IsArray())
+            A = A->BaseType()->btp;
+        A = Type::MakeType(BasicType::pointer_, A);
     }
-    else if (isfunction(A))
+    else if (A->IsFunction())
     {
-        A = MakeType(BasicType::pointer_, basetype(A));
+        A = Type::MakeType(BasicType::pointer_, A->BaseType());
     }
     return A;
 }
-static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool allowSelectors, bool baseClasses)
+static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool allowSelectors, bool baseClasses)
 {
-    TYPE *P = orig, *A = sym;
-    if (!isref(P))
+    Type *P = orig, *A = sym;
+    if (!P->IsRef())
     {
         A = rewriteNonRef(A);
         A = RemoveCVQuals(A);
     }
     P = RemoveCVQuals(P);
-    if (isref(P))
+    if (P->IsRef())
     {
-        BasicType type = basetype(P)->type;
-        P = basetype(P)->btp;
+        BasicType type = P->BaseType()->type;
+        P = P->BaseType()->btp;
         if (type == BasicType::rref_)
         {
-            if (exp && !isconst(P) && !isvolatile(P))
+            if (exp && !P->IsConst() && !P->IsVolatile())
             {
                 // unadorned rref in arg, forwarding...
                 A = GetForwardType(P, A, exp);
             }
-            else if (isref(A))
-                A = basetype(A)->btp;
+            else if (A->IsRef())
+                A = A->BaseType()->btp;
         }
         else
         {
-            if (isref(A))
-                A = basetype(A)->btp;
+            if (A->IsRef())
+                A = A->BaseType()->btp;
         }
     }
-    if (ispointer(P) && (isint(A) || (ispointer(A) && A->nullptrType)) && exp && isconstzero(A, exp))
+    if (P->IsPtr() && (A->IsInt() || (A->IsPtr() && A->nullptrType)) && exp && isconstzero(A, exp))
     {
         // might get in here with a non-template argument that needs to be matched
         // usually the two types would just match and it would be fine
         // but in the case where we have pointer and a 'zero' constant
         // we need to act specially
-        while (ispointer(P))
-            P = basetype(P)->btp;
-        if (isvoid(P) || isarithmetic(P) || isfunction(P) ||
-            (isstructured(P) && (!basetype(P)->sp->sb->templateLevel || basetype(P)->sp->sb->instantiated)))
+        while (P->IsPtr())
+            P = P->BaseType()->btp;
+        if (P->IsVoid() || P->IsArithmetic() || P->IsFunction() ||
+            (P->IsStructured() && (!P->BaseType()->sp->sb->templateLevel || P->BaseType()->sp->sb->instantiated)))
             return true;
         return false;
     }
@@ -958,31 +958,31 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     {
         return true;
     }
-    if (isstructured(P) && !isstructured(A))
+    if (P->IsStructured() && !A->IsStructured())
     {
         // this is basical a poor man's way to do GetOverloadedFunction on a constructor,
         // with an arithmetic or pointer arg
-        SYMBOL* cons = search(basetype(P)->syms, overloadNameTab[CI_CONSTRUCTOR]);
+        SYMBOL* cons = search(P->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (cons)
         {
-            for (auto sp1 : *basetype(cons->tp)->syms)
+            for (auto sp1 : *cons->tp->BaseType()->syms)
             {
-                if (basetype(sp1->tp)->syms->front()->sb->thisPtr)
+                if (sp1->tp->BaseType()->syms->front()->sb->thisPtr)
                 {
-                    if (basetype(sp1->tp)->syms->size() == 2)
+                    if (sp1->tp->BaseType()->syms->size() == 2)
                     {
-                        if (comparetypes(basetype(sp1->tp)->syms->back()->tp, A, true))
+                        if (sp1->tp->BaseType()->syms->back()->tp->ExactSameType(A))
                             return true;
                     }
-                    else if (basetype(sp1->tp)->syms->size() > 2)
+                    else if (sp1->tp->BaseType()->syms->size() > 2)
                     {
-                        auto it = basetype(sp1->tp)->syms->begin();
+                        auto it = sp1->tp->BaseType()->syms->begin();
                         ++it;
                         ++it;
                         if ((*it)->sb->defaulted)
                         {
                             --it;
-                            if (comparetypes((*it)->tp, A, true))
+                            if ((*it)->tp->ExactSameType(A))
                                 return true;
                         }
                     }
@@ -990,20 +990,20 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
             }
         }
     }
-    if (isfuncptr(P) || (isref(P) && isfunction(basetype(P)->btp)))
+    if (P->IsFunctionPtr() || (P->IsRef() && P->BaseType()->btp->IsFunction()))
     {
         if (exp->type == ExpressionNode::func_)
         {
             if (exp->v.func->sp->sb->storage_class == StorageClass::overloads_)
             {
                 SYMBOL* candidate = nullptr;
-                for (auto sym : *basetype(exp->v.func->sp->tp)->syms)
+                for (auto sym : *exp->v.func->sp->tp->BaseType()->syms)
                 {
                     if (sym->sb->templateLevel)
                         return false;
                 }
                 // no templates, we can try each function one at a time
-                for (auto sym : *basetype(exp->v.func->sp->tp)->syms)
+                for (auto sym : *exp->v.func->sp->tp->BaseType()->syms)
                 {
                     clearoutDeduction(P);
                     if (Deduce(P->btp, sym->tp, nullptr, false, false, allowSelectors, baseClasses))
@@ -1021,13 +1021,13 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     }
     return false;
 }
-void NormalizePacked(TYPE* tpo)
+void NormalizePacked(Type* tpo)
 {
-    TYPE* tp = tpo;
-    while (isref(tp) || ispointer(tp))
-        tp = basetype(tp)->btp;
-    if (basetype(tp)->templateParam)
-        tpo->templateParam = basetype(tp)->templateParam;
+    Type* tp = tpo;
+    while (tp->IsRef() || tp->IsPtr())
+        tp = tp->BaseType()->btp;
+    if (tp->BaseType()->templateParam)
+        tpo->templateParam = tp->BaseType()->templateParam;
 }
 static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, SymbolTable<SYMBOL>::iterator funcArgsEnd,
                                   SymbolTable<SYMBOL>::iterator templateArgs, SymbolTable<SYMBOL>::iterator templateArgsEnd,
@@ -1064,12 +1064,12 @@ static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, Symbol
         }
         else if (((*its)->nested || (!(*its)->tp && !(*its)->exp)) && funcArgs != funcArgsEnd)
         {
-            if ((*its)->nested && isstructured(sp->tp) && basetype(sp->tp)->sp->sb->templateLevel &&
-                basetype(sp->tp)->sp->sb->initializer_list)
+            if ((*its)->nested && sp->tp->IsStructured() && sp->tp->BaseType()->sp->sb->templateLevel &&
+                sp->tp->BaseType()->sp->sb->initializer_list)
             {
-                if (basetype(sp->tp)->sp->templateParams->size() > 1)
+                if (sp->tp->BaseType()->sp->templateParams->size() > 1)
                 {
-                    auto ittpx = basetype(sp->tp)->sp->templateParams->begin();
+                    auto ittpx = sp->tp->BaseType()->sp->templateParams->begin();
                     ++ittpx;
                     if (!TemplateDeduceFromArg(ittpx->first->tp, (*its)->nested->front()->tp, (*its)->nested->front()->exp,
                                                allowSelectors, baseClasses))
@@ -1096,58 +1096,58 @@ static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, Symbol
 void ScrubTemplateValues(SYMBOL* func)
 {
     ClearArgValues(func->templateParams, func->sb->specialized);
-    for (auto sym : *basetype(func->tp)->syms)
+    for (auto sym : *func->tp->BaseType()->syms)
     {
-        TYPE* tp = sym->tp;
-        while (isref(tp) || ispointer(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated &&
-            !basetype(tp)->sp->sb->declaring)
+        Type* tp = sym->tp;
+        while (tp->IsRef() || tp->IsPtr())
+            tp = tp->BaseType()->btp;
+        if (tp->IsStructured() && tp->BaseType()->sp->templateParams && !tp->BaseType()->sp->sb->instantiated &&
+            !tp->BaseType()->sp->sb->declaring)
         {
-            ClearArgValues(basetype(tp)->sp->templateParams, basetype(tp)->sp->sb->specialized);
-            if (basetype(tp)->sp->sb->specialized)
+            ClearArgValues(tp->BaseType()->sp->templateParams, tp->BaseType()->sp->sb->specialized);
+            if (tp->BaseType()->sp->sb->specialized)
             {
-                ClearArgValues(basetype(tp)->sp->templateParams->front().second->bySpecialization.types,
-                               basetype(tp)->sp->sb->specialized);
+                ClearArgValues(tp->BaseType()->sp->templateParams->front().second->bySpecialization.types,
+                               tp->BaseType()->sp->sb->specialized);
             }
         }
     }
-    TYPE* retval = basetype(basetype(func->tp)->btp);
-    if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
+    Type* retval = func->tp->BaseType()->btp->BaseType();
+    if (retval->IsStructured() && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
         ClearArgValues(retval->sp->templateParams, retval->sp->sb->specialized);
 }
 void PushPopTemplateArgs(SYMBOL* func, bool push)
 {
     PushPopValues(func->templateParams, push);
-    for (auto sym : *basetype(func->tp)->syms)
+    for (auto sym : *func->tp->BaseType()->syms)
     {
-        TYPE* tp = sym->tp;
-        while (isref(tp) || ispointer(tp))
-            tp = basetype(tp)->btp;
-        if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->declaring)
-            PushPopValues(basetype(tp)->sp->templateParams, push);
+        Type* tp = sym->tp;
+        while (tp->IsRef() || tp->IsPtr())
+            tp = tp->BaseType()->btp;
+        if (tp->IsStructured() && tp->BaseType()->sp->templateParams && !tp->BaseType()->sp->sb->declaring)
+            PushPopValues(tp->BaseType()->sp->templateParams, push);
     }
-    TYPE* retval = basetype(basetype(func->tp)->btp);
-    if (isstructured(retval) && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
+    Type* retval = func->tp->BaseType()->btp->BaseType();
+    if (retval->IsStructured() && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
         PushPopValues(retval->sp->templateParams, push);
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
     std::list<TEMPLATEPARAMPAIR>* nparams = sym->templateParams;
-    TYPE* thistp = args->thistp;
+    Type* thistp = args->thistp;
     std::list<INITLIST*>::iterator ita, itae;
 
     if (args->arguments)
     {
         if (args->arguments->size() == 1 && args->arguments->front()->nested)
         {
-            auto itx = basetype(sym->tp)->syms->begin();
+            auto itx = sym->tp->BaseType()->syms->begin();
             if ((*itx)->sb->thisPtr)
                 ++itx;
             bool il = false;
-            if (isstructured((*itx)->tp))
+            if ((*itx)->tp->IsStructured())
             {
-                SYMBOL* sym1 = basetype((*itx)->tp)->sp;
+                SYMBOL* sym1 = (*itx)->tp->BaseType()->sp;
                 il = sym1->sb->initializer_list && sym1->sb->templateLevel;
             }
             if (!il)
@@ -1176,7 +1176,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
     }
     if (args && thistp && sym->sb->parentClass && !nparams)
     {
-        TYPE* tp = basetype(basetype(thistp)->btp);
+        Type* tp = thistp->BaseType()->btp->BaseType();
         std::list<TEMPLATEPARAMPAIR>* src = tp->sp->templateParams;
         std::list<TEMPLATEPARAMPAIR>* dest = sym->sb->parentClass->templateParams;
         if (src && dest)
@@ -1205,8 +1205,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
     if (nparams)
     {
         std::list<TEMPLATEPARAMPAIR>* params = nparams;
-        auto templateArgs = basetype(sym->tp)->syms->begin();
-        auto templateArgsEnd = basetype(sym->tp)->syms->end();
+        auto templateArgs = sym->tp->BaseType()->syms->begin();
+        auto templateArgsEnd = sym->tp->BaseType()->syms->end();
         auto symArgs = ita;
         std::list<TEMPLATEPARAMPAIR>* initial = args->templateParams;
         ScrubTemplateValues(sym);
@@ -1287,10 +1287,10 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 }
                 else if (itInitial->second->type == TplType::typename_ && itParams->second->type == TplType::template_)
                 {
-                    TYPE* tp1 = itInitial->second->byClass.dflt;
+                    Type* tp1 = itInitial->second->byClass.dflt;
                     while (tp1 && tp1->type != BasicType::typedef_ && tp1->btp)
                         tp1 = tp1->btp;
-                    if (tp1->type != BasicType::typedef_ && !isstructured(tp1))
+                    if (tp1->type != BasicType::typedef_ && !tp1->IsStructured())
                         return nullptr;
                     itParams->second->byTemplate.val = tp1->sp;
                     ++itParams;
@@ -1329,7 +1329,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 switch (itInitial->second->type)
                 {
                     case TplType::typename_:
-                        if (!templatecomparetypes(itInitial->second->byClass.dflt, itParams->second->byClass.dflt, true))
+                        if (!templateCompareTypes(itInitial->second->byClass.dflt, itParams->second->byClass.dflt, true))
                             return nullptr;
                         break;
                     case TplType::template_:
@@ -1338,8 +1338,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                             return nullptr;
                         break;
                     case TplType::int_:
-                        if (!templatecomparetypes(itInitial->second->byNonType.tp, itParams->second->byNonType.tp, true) &&
-                            (!ispointer(itParams->second->byNonType.tp) ||
+                        if (!templateCompareTypes(itInitial->second->byNonType.tp, itParams->second->byNonType.tp, true) &&
+                            (!itParams->second->byNonType.tp->IsPtr() ||
                              !isconstzero(itInitial->second->byNonType.tp, itParams->second->byNonType.dflt)))
                             return nullptr;
                         break;
@@ -1360,10 +1360,10 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
             auto* sp1 = (*temp);
             if (sp1->packed)
             {
-                TYPE* tpx = sp1->tp;
-                while (isref(tpx))
-                    tpx = basetype(tpx)->btp;
-                auto base = basetype(tpx)->templateParam;
+                Type* tpx = sp1->tp;
+                while (tpx->IsRef())
+                    tpx = tpx->BaseType()->btp;
+                auto base = tpx->BaseType()->templateParam;
                 if (!base || base->second->type != TplType::typename_)
                     temp = templateArgsEnd;
                 break;
@@ -1377,7 +1377,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
             itParams = nparams->begin();
             iteParams = nparams->end();
             ++itParams;
-            for (; templateArgs != basetype(sym->tp)->syms->end() && symArgs != itae;)
+            for (; templateArgs != sym->tp->BaseType()->syms->end() && symArgs != itae;)
             {
                 SYMBOL* sp = *templateArgs;
                 if (sp->packed)
@@ -1386,9 +1386,9 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 {
                     if (TemplateDeduceFromArg(sp->tp, (*symArgs)->tp, (*symArgs)->exp, false, false))
                     {
-                        if (isstructured(sp->tp) && basetype(sp->tp)->sp->templateParams)
+                        if (sp->tp->IsStructured() && sp->tp->BaseType()->sp->templateParams)
                         {
-                            std::list<TEMPLATEPARAMPAIR>* params2 = basetype(sp->tp)->sp->templateParams;
+                            std::list<TEMPLATEPARAMPAIR>* params2 = sp->tp->BaseType()->sp->templateParams;
                             std::list<TEMPLATEPARAMPAIR>* special = params2->front().second->bySpecialization.types
                                                                         ? params2->front().second->bySpecialization.types
                                                                         : params2;
@@ -1405,23 +1405,23 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
             if (templateArgs != templateArgsEnd)
             {
                 SYMBOL* sp = *templateArgs;
-                TYPE* tp = sp->tp;
+                Type* tp = sp->tp;
                 TEMPLATEPARAMPAIR* base;
                 bool forward = false;
-                if (isref(tp))
+                if (tp->IsRef())
                 {
-                    if (basetype(tp)->type == BasicType::rref_)
+                    if (tp->BaseType()->type == BasicType::rref_)
                     {
-                        tp = basetype(tp)->btp;
-                        if (!isconst(tp) && !isvolatile(tp))
+                        tp = tp->BaseType()->btp;
+                        if (!tp->IsConst() && !tp->IsVolatile())
                             forward = true;
                     }
                     else
                     {
-                        tp = basetype(tp)->btp;
+                        tp = tp->BaseType()->btp;
                     }
                 }
-                base = basetype(tp)->templateParam;
+                base = tp->BaseType()->templateParam;
                 if (base && base->second->type == TplType::typename_ && symArgs != itae)
                 {
                     auto last = base->second->byPack.pack = templateParamPairListFactory.CreateList();
@@ -1432,14 +1432,14 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         last->back().second->type = TplType::typename_;
                         last->back().second->byClass.val = rewriteNonRef((*symArgs)->tp);
                         if (TemplateConstExpr(last->back().second->byClass.val, (*symArgs)->exp))
-                            last->back().second->byClass.val = MakeType(BasicType::const_, last->back().second->byClass.val);
+                            last->back().second->byClass.val = Type::MakeType(BasicType::const_, last->back().second->byClass.val);
                         if (forward && !templateNestingCount)
                         {
                             last->back().second->byClass.val =
                                 GetForwardType(nullptr, last->back().second->byClass.val, (*symArgs)->exp);
-                            if (isref(last->back().second->byClass.val))
+                            if (last->back().second->byClass.val->IsRef())
                             {
-                                basetype(basetype(last->back().second->byClass.val)->btp)->rref = false;
+                                last->back().second->byClass.val->BaseType()->btp->BaseType()->rref = false;
                             }
                         }
                     }
@@ -1448,18 +1448,18 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         else
         {
-            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->begin(), basetype(sym->tp)->syms->end(), templateArgs,
-                                            templateArgsEnd, symArgs, itae, basetype(sym->tp)->type == BasicType::templateselector_,
+            bool rv = TemplateDeduceArgList(sym->tp->BaseType()->syms->begin(), sym->tp->BaseType()->syms->end(), templateArgs,
+                                            templateArgsEnd, symArgs, itae, sym->tp->BaseType()->type == BasicType::templateselector_,
                                             true);
-            for (auto sp : *basetype(sym->tp)->syms)
+            for (auto sp : *sym->tp->BaseType()->syms)
             {
-                TYPE* tp = sp->tp;
-                while (isref(tp) || ispointer(tp))
-                    tp = basetype(tp)->btp;
+                Type* tp = sp->tp;
+                while (tp->IsRef() || tp->IsPtr())
+                    tp = tp->BaseType()->btp;
 
-                if (isstructured(tp) && basetype(tp)->sp->templateParams)
+                if (tp->IsStructured() && tp->BaseType()->sp->templateParams)
                 {
-                    std::list<TEMPLATEPARAMPAIR>* params = basetype(tp)->sp->templateParams;
+                    std::list<TEMPLATEPARAMPAIR>* params = tp->BaseType()->sp->templateParams;
                     std::list<TEMPLATEPARAMPAIR>* special =
                         params->front().second->bySpecialization.types ? params->front().second->bySpecialization.types : params;
                     if (special)
@@ -1470,7 +1470,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         if (tpx)
                         {
                             if (special->front().second->type == TplType::typename_ && special->front().second->byClass.dflt &&
-                                isfunction(special->front().second->byClass.dflt))
+                                special->front().second->byClass.dflt->IsFunction())
                             {
                                 TransferClassTemplates(special, special, tpx);
                             }
@@ -1508,7 +1508,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
     rv->sb->maintemplate = sym;
     return rv;
 }
-static bool TemplateDeduceFromType(TYPE* P, TYPE* A)
+static bool TemplateDeduceFromType(Type* P, Type* A)
 {
     if (P->type == BasicType::templatedecltype_)
         P = LookupTypeFromExpression(P->templateDeclType, nullptr, false);
@@ -1527,50 +1527,50 @@ SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym)
     }
     return nullptr;
 }
-static bool TemplateDeduceFromConversionType(TYPE* orig, TYPE* tp)
+static bool TemplateDeduceFromConversionType(Type* orig, Type* tp)
 {
-    TYPE *P = orig, *A = tp;
-    if (isref(P))
-        P = basetype(P)->btp;
-    if (!isref(A))
+    Type *P = orig, *A = tp;
+    if (P->IsRef())
+        P = P->BaseType()->btp;
+    if (!A->IsRef())
     {
         P = rewriteNonRef(P);
     }
     A = RemoveCVQuals(A);
     if (TemplateDeduceFromType(P, A))
         return true;
-    if (ispointer(P))
+    if (P->IsPtr())
     {
         bool doit = false;
-        while (ispointer(P) && ispointer(A))
+        while (P->IsPtr() && A->IsPtr())
         {
-            if ((isconst(P) && !isconst(A)) || (isvolatile(P) && !isvolatile(A)))
+            if ((P->IsConst() && !A->IsConst()) || (P->IsVolatile() && !A->IsVolatile()))
                 return false;
-            P = basetype(P)->btp;
-            A = basetype(A)->btp;
+            P = P->BaseType()->btp;
+            A = A->BaseType()->btp;
         }
-        P = basetype(P);
-        A = basetype(A);
+        P = P->BaseType();
+        A = A->BaseType();
         if (doit && TemplateDeduceFromType(P, A))
             return true;
     }
     return false;
 }
-SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
+SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, Type* tp)
 {
     std::list<TEMPLATEPARAMPAIR>* nparams = sym->templateParams;
     ClearArgValues(nparams, sym->sb->specialized);
     if (sym->sb->castoperator)
     {
-        TemplateDeduceFromConversionType(basetype(sym->tp)->btp, tp);
+        TemplateDeduceFromConversionType(sym->tp->BaseType()->btp, tp);
         return SynthesizeResult(sym, nparams);
     }
     else
     {
-        auto templateArgs = basetype(tp)->syms->begin();
-        auto templateArgsEnd = basetype(tp)->syms->end();
-        auto symArgs = basetype(sym->tp)->syms->begin();
-        auto symArgsEnd = basetype(sym->tp)->syms->end();
+        auto templateArgs = tp->BaseType()->syms->begin();
+        auto templateArgsEnd = tp->BaseType()->syms->end();
+        auto symArgs = sym->tp->BaseType()->syms->begin();
+        auto symArgsEnd = sym->tp->BaseType()->syms->end();
         std::list<TEMPLATEPARAMPAIR>* params;
         while (templateArgs != templateArgsEnd && symArgs != symArgsEnd)
         {
@@ -1584,10 +1584,10 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
         if (templateArgs != templateArgsEnd && symArgs != symArgsEnd)
         {
             SYMBOL* sp = *symArgs;
-            TYPE* tp = sp->tp;
+            Type* tp = sp->tp;
             TEMPLATEPARAMPAIR* base;
-            if (isref(tp))
-                tp = basetype(tp)->btp;
+            if (tp->IsRef())
+                tp = tp->BaseType()->btp;
             base = tp->templateParam;
             if (base->second->type == TplType::typename_)
             {
@@ -1600,7 +1600,7 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
                 }
             }
         }
-        TemplateDeduceFromType(basetype(sym->tp)->btp, basetype(tp)->btp);
+        TemplateDeduceFromType(sym->tp->BaseType()->btp, tp->BaseType()->btp);
         if (nparams)
         {
             SYMBOL* rv;
@@ -1613,20 +1613,20 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
     }
     return nullptr;
 }
-int TemplatePartialDeduceFromType(TYPE* orig, TYPE* sym, bool byClass)
+int TemplatePartialDeduceFromType(Type* orig, Type* sym, bool byClass)
 {
-    TYPE *P = orig, *A = sym;
+    Type *P = orig, *A = sym;
     int which = -1;
-    if (isref(P))
-        P = basetype(P)->btp;
-    if (isref(A))
-        A = basetype(A)->btp;
-    if (isref(orig) && isref(sym))
+    if (P->IsRef())
+        P = P->BaseType()->btp;
+    if (A->IsRef())
+        A = A->BaseType()->btp;
+    if (orig->IsRef() && sym->IsRef())
     {
         bool p = false, a = false;
-        if ((isconst(P) && !isconst(A)) || (isvolatile(P) && !isvolatile(A)))
+        if ((P->IsConst() && !A->IsConst()) || (P->IsVolatile() && !A->IsVolatile()))
             p = true;
-        if ((isconst(A) && !isconst(P)) || (isvolatile(A) && !isvolatile(P)))
+        if ((A->IsConst() && !P->IsConst()) || (A->IsVolatile() && !P->IsVolatile()))
             a = true;
         if (a && !p)
             which = 1;
@@ -1635,26 +1635,26 @@ int TemplatePartialDeduceFromType(TYPE* orig, TYPE* sym, bool byClass)
     P = RemoveCVQuals(P);
     if (!Deduce(P, A, nullptr, true, byClass, false, false))
         return 0;
-    if (comparetypes(P, A, false))
+    if (P->SameType(A))
         return 0;
     return which;
 }
-int TemplatePartialDeduce(TYPE* origl, TYPE* origr, TYPE* syml, TYPE* symr, bool byClass)
+int TemplatePartialDeduce(Type* origl, Type* origr, Type* syml, Type* symr, bool byClass)
 {
     int n = TemplatePartialDeduceFromType(origl, symr, byClass);
     int m = TemplatePartialDeduceFromType(origr, syml, byClass);
     if (n && m)
     {
-        if (basetype(origl)->type == BasicType::lref_)
+        if (origl->BaseType()->type == BasicType::lref_)
         {
-            if (basetype(origr)->type != BasicType::lref_)
+            if (origr->BaseType()->type != BasicType::lref_)
                 return -1;
             else
                 return -1;  // originally checked n & m but since that's already checked just do this, pointing this out since
                             // it's GAURENTEED to return -1
             return 1;
         }
-        else if (basetype(origr)->type == BasicType::lref_)
+        else if (origr->BaseType()->type == BasicType::lref_)
         {
             return 1;
         }
@@ -1668,12 +1668,12 @@ int TemplatePartialDeduce(TYPE* origl, TYPE* origr, TYPE* syml, TYPE* symr, bool
         return -1;
     if (m)
         return 1;
-    if (isref(origl))
-        origl = basetype(origl)->btp;
-    if (isref(origr))
-        origr = basetype(origr)->btp;
-    auto left = basetype(origl)->templateParam;
-    auto right = basetype(origr)->templateParam;
+    if (origl->IsRef())
+        origl = origl->BaseType()->btp;
+    if (origr->IsRef())
+        origr = origr->BaseType()->btp;
+    auto left = origl->BaseType()->templateParam;
+    auto right = origr->BaseType()->templateParam;
     if (left && right)
     {
         if (left->second->packed && !right->second->packed)
@@ -1683,36 +1683,36 @@ int TemplatePartialDeduce(TYPE* origl, TYPE* origr, TYPE* syml, TYPE* symr, bool
     }
     return 0;
 }
-int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, TYPE* tpx, TYPE* tpr, FUNCTIONCALL* fcall)
+int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Type* tpr, FUNCTIONCALL* fcall)
 {
     int which = 0;
     int arr[200], n;
     ClearArgValues(syml->templateParams, syml->sb->specialized);
     ClearArgValues(symr->templateParams, symr->sb->specialized);
-    if (isstructured(syml->tp))
+    if (syml->tp->IsStructured())
     {
         which = TemplatePartialDeduce(syml->tp, symr->tp, tpx, tpr, true);
     }
     else if (syml->sb->castoperator)
     {
         which =
-            TemplatePartialDeduce(basetype(syml->tp)->btp, basetype(symr->tp)->btp, basetype(tpx)->btp, basetype(tpr)->btp, false);
+            TemplatePartialDeduce(syml->tp->BaseType()->btp, symr->tp->BaseType()->btp, tpx->BaseType()->btp, tpr->BaseType()->btp, false);
     }
-    else if (!isfunction(syml->tp))
+    else if (!syml->tp->IsFunction())
     {
         which = TemplatePartialDeduce(syml->tp, symr->tp, tpx, tpr, true);
     }
     else
     {
         int i;
-        auto tArgsl = basetype(tpx)->syms->begin();
-        auto tArgsle = basetype(tpx)->syms->end();
-        auto sArgsl = basetype(syml->tp)->syms->begin();
-        auto sArgsle = basetype(syml->tp)->syms->end();
-        auto tArgsr = basetype(tpr)->syms->begin();
-        auto tArgsre = basetype(tpr)->syms->end();
-        auto sArgsr = basetype(symr->tp)->syms->begin();
-        auto sArgsre = basetype(symr->tp)->syms->end();
+        auto tArgsl = tpx->BaseType()->syms->begin();
+        auto tArgsle = tpx->BaseType()->syms->end();
+        auto sArgsl = syml->tp->BaseType()->syms->begin();
+        auto sArgsle = syml->tp->BaseType()->syms->end();
+        auto tArgsr = tpr->BaseType()->syms->begin();
+        auto tArgsre = tpr->BaseType()->syms->end();
+        auto sArgsr = symr->tp->BaseType()->syms->begin();
+        auto sArgsre = symr->tp->BaseType()->syms->end();
         bool usingargs = fcall && fcall->ascall;
         auto ita = fcall && fcall->arguments ? fcall->arguments->begin() : std::list<INITLIST*>::iterator();
         auto itae = fcall && fcall->arguments ? fcall->arguments->end() : std::list<INITLIST*>::iterator();
@@ -1784,7 +1784,7 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, TYPE* tpx, TYP
     }
     return which;
 }
-static SYMBOL* SynthesizeTemplate(TYPE* tp, SYMBOL* rvt, sym::_symbody* rvs, TYPE* tpt)
+static SYMBOL* SynthesizeTemplate(Type* tp, SYMBOL* rvt, sym::_symbody* rvs, Type* tpt)
 {
     SYMBOL* rv;
     std::list<TEMPLATEPARAMPAIR>* r = templateParamPairListFactory.CreateList();
@@ -1812,7 +1812,7 @@ static SYMBOL* SynthesizeTemplate(TYPE* tp, SYMBOL* rvt, sym::_symbody* rvs, TYP
     rv->sb->symRef = nullptr;
     rv->tp = tpt;
     *rv->tp = *tp;
-    UpdateRootTypes(rv->tp);
+    rv->tp->UpdateRootTypes();
     rv->tp->sp = rv;
     rv->templateParams = templateParamPairListFactory.CreateList();
     rv->templateParams->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
@@ -1820,7 +1820,7 @@ static SYMBOL* SynthesizeTemplate(TYPE* tp, SYMBOL* rvt, sym::_symbody* rvs, TYP
     rv->templateParams->back().second->bySpecialization.types = r;
     return rv;
 }
-void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams, TYPE* atype, bool asClass, bool save)
+void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams, Type* atype, bool asClass, bool save)
 {
     (void)atype;
     int i, j, c = 0;
@@ -1842,10 +1842,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
             if (table[i] && table[i]->sb->templateLevel)
                 len++;
         Optimizer::LIST *types = nullptr, *exprs = nullptr, *classes = nullptr;
-        TYPE** typetab = (TYPE**)alloca(sizeof(TYPE*) * count);
+        Type** typetab = (Type**)alloca(sizeof(Type*) * count);
         SYMBOL* allocedSyms = (SYMBOL*)alloca(sizeof(SYMBOL) * len);
         sym::_symbody* allocedBodies = (sym::_symbody*)alloca(sizeof(sym::_symbody) * len);
-        TYPE* allocedTypes = (TYPE*)alloca(sizeof(TYPE) * len);
+        Type* allocedTypes = (Type*)alloca(sizeof(Type) * len);
         int j = 0;
         if (save)
             saveParams(table, count);
@@ -1873,13 +1873,13 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             case TplType::typename_:
                                 if (typechk)
                                 {
-                                    param.second->byClass.temp = (TYPE*)typechk->data;
+                                    param.second->byClass.temp = (Type*)typechk->data;
                                     typechk = typechk->next;
                                 }
                                 else
                                 {
                                     Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
-                                    TYPE* tp = CopyType(param.first->tp);
+                                    Type* tp = param.first->tp->CopyType();
                                     param.second->byClass.temp = tp;
                                     lst->data = tp;
                                     lst->next = types;
@@ -1896,7 +1896,7 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                         }
                     }
                 }
-                if (isstructured(sym->tp))
+                if (sym->tp->IsStructured())
                     typetab[i] = SynthesizeTemplate(sym->tp, &allocedSyms[j], &allocedBodies[j], &allocedTypes[j])->tp;
                 else
                     typetab[i] = SynthesizeType(sym->tp, nullptr, true);
@@ -1915,12 +1915,12 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                     {
                         int which = TemplatePartialDeduceArgsFromType(asClass ? table[i] : table[i]->sb->parentTemplate,
                                                                       asClass ? table[j] : table[j]->sb->parentTemplate,
-                                                                      asClass || !basetype(typetab[i])->sp->sb->parentTemplate
+                                                                      asClass || !typetab[i]->BaseType()->sp->sb->parentTemplate
                                                                           ? typetab[i]
-                                                                          : basetype(typetab[i])->sp->sb->parentTemplate->tp,
-                                                                      asClass || !basetype(typetab[j])->sp->sb->parentTemplate
+                                                                          : typetab[i]->BaseType()->sp->sb->parentTemplate->tp,
+                                                                      asClass || !typetab[j]->BaseType()->sp->sb->parentTemplate
                                                                           ? typetab[j]
-                                                                          : basetype(typetab[j])->sp->sb->parentTemplate->tp,
+                                                                          : typetab[j]->BaseType()->sp->sb->parentTemplate->tp,
                                                                       funcparams);
                         if (which < 0)
                         {

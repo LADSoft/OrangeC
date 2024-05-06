@@ -48,7 +48,7 @@ namespace Parser
     void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
     void TagSyms(SymbolTable<SYMBOL>* syms);
     void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
-    bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
+    bool matchOverload(Type* tnew, Type* told, bool argsOnly);
     SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table);
     SYMBOL* gsearch(const char* name);
     SYMBOL* tsearch(const char* name);

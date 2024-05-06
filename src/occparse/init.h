@@ -60,19 +60,19 @@ void dumpStartups(void);
 void insert_file_constructor(SYMBOL* sym);
 void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init);
 void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init);
-int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label);
+int dumpMemberPtr(SYMBOL* sym, Type* membertp, bool make_label);
 int dumpInit(SYMBOL* sym, INITIALIZER* init);
-bool IsConstWithArr(TYPE* tp);
-void dumpInitGroup(SYMBOL* sym, TYPE* tp);
+bool IsConstWithArr(Type* tp);
+void dumpInitGroup(SYMBOL* sym, Type* tp);
 void dumpInitializers(void);
 void insertInitSym(SYMBOL* sym);
-INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign);
-ExpressionNode referenceTypeError(TYPE* tp, EXPRESSION* exp);
+INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, Type* tp, EXPRESSION* exp, int offset, bool noassign);
+ExpressionNode referenceTypeError(Type* tp, EXPRESSION* exp);
 EXPRESSION* getThisNode(SYMBOL* sym);
-LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, TYPE* itype,
+LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, Type* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
-void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& ilbegin, std::list<INITIALIZER*>::iterator& ilend, std::list<INITIALIZER*>** out, TYPE* tp, int offset);
+void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& ilbegin, std::list<INITIALIZER*>::iterator& ilend, std::list<INITIALIZER*>** out, Type* tp, int offset);
 void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName);
 void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, EXPRESSION* newName);
 LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,

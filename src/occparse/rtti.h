@@ -135,7 +135,7 @@ extern std::map<int, std::map<int, __xcentry*>> rttiStatements;
 void rtti_init(void);
 bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
 Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp);
-SYMBOL* RTTIDumpType(TYPE* tp, bool symonly = false);
+SYMBOL* RTTIDumpType(Type* tp, bool symonly = false);
 void XTDumpTab(SYMBOL* funcsp);
 #endif
 

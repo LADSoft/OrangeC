@@ -50,6 +50,8 @@ namespace Parser
 
 bool IsCompiler();
 
+class Type;
+
 class StringHash
 {
 public:
@@ -385,7 +387,7 @@ typedef struct expr
     struct expr *left, *right;
     ExpressionNode type;
     int pragmas;
-    struct typ* size; /* For block moves */
+    Type* size; /* For block moves */
     void* altdata;
     Optimizer::RUNTIMEDATA* runtimeData;
     struct
@@ -407,16 +409,16 @@ typedef struct expr
             struct Optimizer::_imode_* imode;
             struct _msilarray* msilArray;
             SymbolTable<struct sym>* syms;
-            struct typ* tp;
+            Type* tp;
             struct expr* exp;
             struct
             {
                 struct expr* thisptr;
-                struct typ* tp;
+                Type* tp;
             } t;
             struct
             {
-                struct typ* tp;
+                Type* tp;
                 struct lexlist* deferred;
             } construct;
             struct
@@ -460,7 +462,7 @@ typedef struct _msilarray
 {
     int count;
     int max;
-    struct typ* tp;
+    Type* tp;
     EXPRESSION* base;
     EXPRESSION* indices[1];  // expands
 } MSIL_ARRAY;
@@ -500,45 +502,6 @@ struct u_val
         _COMPLEX_S* c;
     };
 };
-typedef struct typ
-{
-    BasicType type;        /* the type */
-    long size;             /* total size of type */
-    struct typ* btp;       /* pointer to next type (pointers & arrays */
-    struct typ* rootType;  /* pointer to base type of sequence */
-    int used : 1;          /* type has actually been used in a declaration or cast or expression */
-    int array : 1;         /* not a dereferenceable pointer */
-    int msil : 1;          /* allocate as an MSIL array */
-    int byRefArray : 1;    /* array base address is a reference type */
-    int vla : 1;           /* varriable length array */
-    int unsized : 1;       /* type doesn't need a size */
-    int hasbits : 1;       /* type is a bit type */
-    int anonymousbits : 1; /* type is a bit type without a name */
-    int scoped : 1;        /* c++ scoped enumeration */
-    int fixed : 1;         /* c++ fixed enumeration */
-    int nullptrType : 1;   /* c++: std::nullptr */
-    int templateTop : 1;
-    int enumConst : 1; /* is an enumeration constant */
-    int lref : 1;
-    int rref : 1;
-    int decltypeauto : 1;
-    int decltypeautoextended : 1;
-    int stringconst : 1;
-    char bits;      /* -1 for not a bit val, else bit field len */
-    char startbit;  /* start of bit field */
-    int bitintbits;
-    struct sym* sp; /* pointer to a symbol which describes the type */
-    /* local symbol tables */
-    SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
-    SymbolTable<struct sym>* tags; /* Symbol table for nested types*/
-    TEMPLATEPARAMPAIR* templateParam;
-    int alignment;                /* alignment pref for this structure/class/union   */
-    EXPRESSION* esize;            /* enode version of size */
-    struct typ* etype;            /* type of size field  when size isn't constant */
-    int vlaindex;                 /* index into the vararray */
-    EXPRESSION* templateDeclType; /* for BasicType::templatedecltype_, used in templates */
-    struct typ* typedefType;      /* The typedef which describes this type */
-} TYPE;
 
 typedef struct stmt
 {
@@ -550,7 +513,7 @@ typedef struct stmt
     Optimizer::LINEDATA* lineData;
     union
     {
-        TYPE* tp;
+        Type* tp;
         std::list<CASEDATA*>* cases;
         struct blockdata* parent;
     };
@@ -592,7 +555,7 @@ typedef struct blockdata
 typedef struct init
 {
     int offset;
-    TYPE* basetp;
+    Type* basetp;
     struct sym* fieldsp;
     EXPRESSION* fieldoffs;
     EXPRESSION* exp;
@@ -678,7 +641,7 @@ struct attributes
 typedef struct sym
 {
     const char* name;
-    TYPE* tp;
+    Type* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
     unsigned short utilityIndex;
     unsigned short packed : 1;       // packed template param instance
@@ -855,7 +818,7 @@ typedef struct sym
         // clang-format on
         struct xcept* xc;
         std::list<struct sym*>* friends;
-        TYPE* structuredAliasType;
+        Type* structuredAliasType;
         attributes attribs;
     } * sb;
 } SYMBOL;
@@ -867,11 +830,11 @@ typedef struct __lambda
     SYMBOL* cls;
     SYMBOL* func;
     SYMBOL* lthis;
-    TYPE* functp;
+    Type* functp;
     SYMBOL* enclosingFunc;
     SymbolTable<SYMBOL>* oldSyms;
     SymbolTable<SYMBOL>* oldTags;
-    TYPE* rv;
+    Type* rv;
     int index;
     int isMutable : 1;
     int captureThis : 1;
@@ -973,11 +936,11 @@ typedef struct _templateParam
         } byTemplate;
         struct
         {
-            TYPE* dflt;
-            TYPE* val;
+            Type* dflt;
+            Type* val;
             struct lexlist* txtdflt;
             std::list<SYMBOL*>* txtargs;
-            TYPE* temp;
+            Type* temp;
         } byClass;
         struct
         {
@@ -987,7 +950,7 @@ typedef struct _templateParam
             std::list<SYMBOL*>* txtargs;
             EXPRESSION* temp;
             struct lexlist* txttype;
-            TYPE* tp;
+            Type* tp;
         } byNonType;
         struct
         {
@@ -1011,7 +974,7 @@ typedef struct _templateSelector
     {
         SYMBOL* sp;
         const char* name;
-        TYPE* tp;
+        Type* tp;
     };
     std::list<TEMPLATEPARAMPAIR>* templateParams;
     std::list<struct initlist*>* arguments;
@@ -1027,7 +990,7 @@ typedef struct _structSym
 } STRUCTSYM;
 typedef struct initlist
 {
-    TYPE* tp;
+    Type* tp;
     EXPRESSION* exp;
     std::list<struct expr*>* destructors;
     std::list<struct initlist*>* nested;
@@ -1041,14 +1004,14 @@ typedef struct initlist
 typedef struct functioncall
 {
     SYMBOL* sp;
-    TYPE* functp;
+    Type* functp;
     EXPRESSION* fcall;
     std::list<INITLIST*>* arguments;
     std::list<struct expr*>* destructors;
     SYMBOL* returnSP;
     EXPRESSION* returnEXP;
     EXPRESSION* thisptr;
-    TYPE* thistp;
+    Type* thistp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
     NAMESPACEVALUEDATA* nameSpace;
     SYMBOL* rttiType;
@@ -1250,36 +1213,8 @@ typedef struct _atomicData
     EXPRESSION* address;
     EXPRESSION* value;
     EXPRESSION* third;
-    TYPE* tp;
+    Type* tp;
 } ATOMICDATA;
-
-CONSTEXPR inline TYPE* basetype(TYPE* a)
-{
-    if (a)
-        a = a->rootType;
-    return a;
-}
-
-CONSTEXPR inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
-CONSTEXPR inline bool isref(TYPE* x)
-{
-    return (__isref(basetype(x)) ||
-            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
-}
-CONSTEXPR inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
-CONSTEXPR inline bool ispointer(TYPE* x)
-{
-    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
-                                            __ispointer((x)->templateParam->second->byNonType.tp));
-}
-
-CONSTEXPR inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
-CONSTEXPR inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
-
-CONSTEXPR inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
-CONSTEXPR inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
-
-CONSTEXPR inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
 
 }  // namespace Parser
 

@@ -119,7 +119,7 @@ void dumpInlines(void)
                             }
                             else
                             {
-                                if (isfunction(sym->tp) && !sym->sb->inlineFunc.stmt && Optimizer::cparams.prm_cplusplus)
+                                if (sym->tp->IsFunction() && !sym->sb->inlineFunc.stmt && Optimizer::cparams.prm_cplusplus)
                                 {
                                     propagateTemplateDefinition(sym);
                                 }
@@ -256,7 +256,7 @@ void dumpInlines(void)
                             Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
                             if (sym->sb->init)
                             {
-                                if (isstructured(sym->tp) || isarray(sym->tp))
+                                if (sym->tp->IsStructured() || sym->tp->IsArray())
                                 {
                                     dumpInitGroup(sym, sym->tp);
                                 }
@@ -269,7 +269,7 @@ void dumpInlines(void)
                             }
                             else
                             {
-                                Optimizer::genstorage(basetype(sym->tp)->size);
+                                Optimizer::genstorage(sym->tp->BaseType()->size);
                             }
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                             if (sym->sb->dest)
@@ -292,7 +292,7 @@ void dumpInlines(void)
                                 Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
                                 if (sym->sb->init)
                                 {
-                                    if (isstructured(sym->tp) || isarray(sym->tp))
+                                    if (sym->tp->IsStructured() || sym->tp->IsArray())
                                     {
                                         dumpInitGroup(sym, sym->tp);
                                     }
@@ -304,7 +304,7 @@ void dumpInlines(void)
                                     }
                                 }
                                 else
-                                    Optimizer::genstorage(basetype(sym->tp)->size);
+                                    Optimizer::genstorage(sym->tp->BaseType()->size);
                                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                                 if (sym->sb->dest)
                                     destructors.push(sym);
@@ -478,7 +478,7 @@ static int PushInline(SYMBOL* sym, bool traceback)
             s.str = sym->sb->friendContext;
             addStructureDeclaration(&s);
             n++;
-            SYMBOL* spt = basetype(s.str->tp)->sp;
+            SYMBOL* spt = s.str->tp->BaseType()->sp;
             t.tmpl = spt->templateParams;
             if (t.tmpl)
             {
@@ -545,7 +545,7 @@ void InsertInline(SYMBOL* sym)
     {
         enteredInlines.insert(sym);
         contextMap[sym] = theCurrentFunc;
-        if (isfunction(sym->tp))
+        if (sym->tp->IsFunction())
         {
             inlines.push_back(sym);
         }
@@ -960,10 +960,10 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
     }
     return nullptr;
 }
-static void inlineResetReturn(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
+static void inlineResetReturn(STATEMENT* block, Type* rettp, EXPRESSION* retnode)
 {
     EXPRESSION* exp;
-    if (isstructured(rettp))
+    if (rettp->IsStructured())
     {
         diag("structure in inlineResetReturn");
         exp = intNode(ExpressionNode::c_i_, 0);
@@ -977,10 +977,10 @@ static void inlineResetReturn(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode
     block->type = StatementNode::expr_;
     block->select = exp;
 }
-static EXPRESSION* newReturn(TYPE* tp)
+static EXPRESSION* newReturn(Type* tp)
 {
     EXPRESSION* exp;
-    if (!isstructured(tp) && !isvoid(tp))
+    if (!tp->IsStructured() && !tp->IsVoid())
     {
         exp = anonymousVar(StorageClass::auto_, tp);
         deref(tp, &exp);
@@ -989,7 +989,7 @@ static EXPRESSION* newReturn(TYPE* tp)
         exp = intNode(ExpressionNode::c_i_, 0);
     return exp;
 }
-static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION* retnode)
+static void reduceReturns(std::list<STATEMENT*>* blocks, Type* rettp, EXPRESSION* retnode)
 {
     if (blocks)
     {
@@ -1042,7 +1042,7 @@ static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION
         }
     }
 }
-static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
+static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, Type* rettp)
 {
     EXPRESSION* rv = nullptr;
     if (blocks)
@@ -1062,9 +1062,9 @@ static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
                 break;
             case StatementNode::return_:
                 rv = block->select;
-                if (!isstructured(rettp))
+                if (!rettp->IsStructured())
                 {
-                    if (isref(rettp))
+                    if (rettp->IsRef())
                         deref(&stdpointer, &rv);
                     else
                         cast(rettp, &rv);
@@ -1348,8 +1348,8 @@ static std::list<STATEMENT*>* SetupArguments1(FUNCTIONCALL* params)
         al = params->arguments->begin();
         ale = params->arguments->end();
     }
-    auto it = basetype(params->sp->tp)->syms->begin();
-    auto ite = basetype(params->sp->tp)->syms->end();
+    auto it = params->sp->tp->BaseType()->syms->begin();
+    auto ite = params->sp->tp->BaseType()->syms->end();
     if (ismember(params->sp))
     {
         setExp(*it, params->thisptr, &st);
@@ -1397,7 +1397,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     {
         return nullptr;
     }
-    if (!isfunction(params->functp))
+    if (!params->functp->IsFunction())
     {
         return nullptr;
     }
@@ -1450,11 +1450,11 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         /* optimization for simple inline functions that only have
          * one return statement, don't save to an intermediate variable
          */
-        scanReturn(stmt, basetype(params->sp->tp)->btp);
+        scanReturn(stmt, params->sp->tp->BaseType()->btp);
     }
     else if (params->sp->sb->retcount)
     {
-        newExpression->left = newReturn(basetype(params->sp->tp)->btp);
+        newExpression->left = newReturn(params->sp->tp->BaseType()->btp);
         reduceReturns(stmt, params->sp->tp->btp, newExpression->left);
     }
     optimize_for_constants(&newExpression->left);
@@ -1470,10 +1470,10 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     if (newExpression->type == ExpressionNode::stmt_)
     {
         newExpression->left = intNode(ExpressionNode::c_i_, 0);
-        if (isstructured(basetype(params->sp->tp)->btp))
+        if (params->sp->tp->BaseType()->btp->IsStructured())
             cast(&stdpointer, &newExpression->left);
         else
-            cast(basetype(basetype(params->sp->tp)->btp), &newExpression->left);
+            cast(params->sp->tp->BaseType()->btp->BaseType(), &newExpression->left);
     }
     return newExpression;
 }
@@ -1524,7 +1524,7 @@ static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
 bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     STATEMENT* st;
-    if (!isfunction(params->functp))
+    if (!params->functp->IsFunction())
         return false;
     if (!params->sp->sb->inlineFunc.stmt)
         return false;

@@ -2459,30 +2459,30 @@ int opt0(EXPRESSION** node)
             {
                 EXPRESSION* newExpr = ep->left;
                 EXPRESSION* next = ep->right;
-                TYPE* tp = LookupTypeFromExpression(ep->left, nullptr, false);
+                Type* tp = LookupTypeFromExpression(ep->left, nullptr, false);
                 while (ep->type == ExpressionNode::dot_ || ep->type == ExpressionNode::pointsto_)
                 {
                     rv |= opt0(&(ep->right));
                     rv |= opt0(&(ep->left));
                     if (ep->type == ExpressionNode::pointsto_)
                     {
-                        if (!ispointer(tp))
+                        if (!tp->IsPtr())
                             break;
-                        tp = basetype(tp->btp);
+                        tp = tp->btp->BaseType();
                         deref(&stdpointer, &newExpr);
                     }
-                    if (!isstructured(tp))
+                    if (!tp->IsStructured())
                         break;
                     if (next->type == ExpressionNode::dot_ || next->type == ExpressionNode::pointsto_)
                     {
                         next = next->left;
                     }
                     STRUCTSYM s;
-                    s.str = basetype(tp)->sp;
+                    s.str = tp->BaseType()->sp;
                     addStructureDeclaration(&s);
                     if (next->type == ExpressionNode::func_)
                     {
-                        TYPE* ctype = tp;
+                        Type* ctype = tp;
                         SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                         if (!sym)
                         {
@@ -2492,7 +2492,7 @@ int opt0(EXPRESSION** node)
                         FUNCTIONCALL* func = Allocate<FUNCTIONCALL>();
                         *func = *next->v.func;
                         func->sp = sym;
-                        func->thistp = MakeType(BasicType::pointer_, tp);
+                        func->thistp = Type::MakeType(BasicType::pointer_, tp);
                         func->thisptr = newExpr;
                         sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                         if (!sym)
@@ -2506,7 +2506,7 @@ int opt0(EXPRESSION** node)
                         temp->v.t.thisptr = newExpr;
                         temp->v.t.tp = tp;
                         newExpr = temp;
-                        tp = basetype(sym->tp)->btp;
+                        tp = sym->tp->BaseType()->btp;
                     }
                     else
                     {
@@ -2517,12 +2517,12 @@ int opt0(EXPRESSION** node)
                             break;
                         }
                         EXPRESSION* temp = intNode(ExpressionNode::c_i_, 0);
-                        if (sym->sb->parentClass != basetype(tp)->sp)
+                        if (sym->sb->parentClass != tp->BaseType()->sp)
                         {
-                            temp = baseClassOffset(basetype(tp)->sp, sym->sb->parentClass, temp);
+                            temp = baseClassOffset(tp->BaseType()->sp, sym->sb->parentClass, temp);
                         }
                         newExpr = exprNode(ExpressionNode::structadd_, newExpr, temp);
-                        if (!isstructured(sym->tp))
+                        if (!sym->tp->IsStructured())
                             deref(sym->tp, &newExpr);
                         tp = sym->tp;
                     }
@@ -2575,9 +2575,9 @@ int opt0(EXPRESSION** node)
                 SYMBOL* sym = ts;
                 if ((*tsl)[1].isDeclType)
                 {
-                    TYPE* tp = TemplateLookupTypeFromDeclType((*tsl)[1].tp);
-                    if (tp && isstructured(tp))
-                        sym = basetype(tp)->sp;
+                    Type* tp = TemplateLookupTypeFromDeclType((*tsl)[1].tp);
+                    if (tp && tp->IsStructured())
+                        sym = tp->BaseType()->sp;
                     else
                         sym = nullptr;
                 }
@@ -2605,15 +2605,15 @@ int opt0(EXPRESSION** node)
                     }
                     if (sym && sym->tp->type == BasicType::templateselector_)
                     {
-                        TYPE* tp = sym->tp;
+                        Type* tp = sym->tp;
                         tp = SynthesizeType(tp, nullptr, false);
-                        if (tp && isstructured(tp))
-                            sym = basetype(tp)->sp;
+                        if (tp && tp->IsStructured())
+                            sym = tp->BaseType()->sp;
                     }
                 }
                 if (sym)
                 {
-                    sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
+                    sym = PerformDeferredInitialization(sym->tp, nullptr)->BaseType()->sp;
                     if (sym)
                     {
                         auto find = (*tsl).begin();
@@ -2622,7 +2622,7 @@ int opt0(EXPRESSION** node)
                         while (find != (*tsl).end() && sym)
                         {
                             SYMBOL* spo = sym;
-                            if (!isstructured(spo->tp))
+                            if (!spo->tp->IsStructured())
                                 break;
 
                             sym = search(spo->tp->syms, (*find).name);
@@ -2639,7 +2639,7 @@ int opt0(EXPRESSION** node)
                                     {
                                         i->tp = SynthesizeType(i->tp, nullptr, false);
                                     }
-                                TYPE* ctype = sym->tp;
+                                Type* ctype = sym->tp;
                                 EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
                                 FUNCTIONCALL funcparams = { };
                                 funcparams.arguments = (*find).arguments;
@@ -3197,7 +3197,7 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
             LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
-            if (isarithmetic(node->v.construct.tp))
+            if (node->v.construct.tp->IsArithmetic())
             {
 
                 std::list<INITIALIZER*> *init = nullptr, *dest = nullptr;
@@ -3899,7 +3899,7 @@ void RemoveSizeofOperators(EXPRESSION* constant)
         RemoveSizeofOperators(constant->right);
     if (constant->type == ExpressionNode::sizeof_)
     {
-        TYPE* tp = constant->left->v.tp;
+        Type* tp = constant->left->v.tp;
         constant->type = ExpressionNode::c_ui_;
         constant->left = nullptr;
         constant->v.i = tp->size;
@@ -3930,7 +3930,7 @@ void optimize_for_constants(EXPRESSION** expr)
         rebalance(expr);
     }
 }
-LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
+LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
 {
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);

@@ -662,7 +662,7 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
     Optimizer::my_sprintf(buf, "'%s' is not a member of '", unopped);
     if (strSym)
     {
-        typeToString(buf + strlen(buf), strSym->tp);
+        strSym->tp->ToString(buf + strlen(buf));
     }
     else if (nsv)
     {
@@ -721,31 +721,31 @@ void errorstrsym(int err, const char* name, SYMBOL* sym2)
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
 }
-void errorstringtype(int err, char* str, TYPE* tp1)
+void errorstringtype(int err, char* str, Type* tp1)
 {
     char tpb1[4096];
     memset(tpb1, 0, sizeof(tpb1));
-    typeToString(tpb1, tp1);
+    tp1->ToString(tpb1);
     printerr(err, nullptr, 0, str, tpb1);
 }
 
-void errortype(int err, TYPE* tp1, TYPE* tp2)
+void errortype(int err, Type* tp1, Type* tp2)
 {
     char tpb1[4096], tpb2[4096];
     memset(tpb1, 0, sizeof(tpb1));
     memset(tpb2, 0, sizeof(tpb2));
-    typeToString(tpb1, tp1);
+    tp1->ToString(tpb1);
     if (tp2)
-        typeToString(tpb2, tp2);
+        tp2->ToString(tpb2);
     printerr(err, nullptr, 0, tpb1, tpb2);
 }
-void errorConversionOrCast(bool convert, TYPE* tp1, TYPE* tp2)
+void errorConversionOrCast(bool convert, Type* tp1, Type* tp2)
 {
-    if (isstructured(tp1))
+    if (tp1->IsStructured())
     {
         errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, tp1, tp2);
     }
-    else if (isstructured(tp2))
+    else if (tp2->IsStructured())
     {
         errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, tp1, tp2);
     }
@@ -1411,7 +1411,7 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                     if (sp->sb->storage_class == StorageClass::global_ || sp->sb->storage_class == StorageClass::static_ ||
                         sp->sb->storage_class == StorageClass::localstatic_)
                         /* void will be caught earlier */
-                        if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) &&
+                        if (!sp->tp->IsFunction() && !sp->tp->IsArray() && sp->tp->size == 0 && !sp->tp->IsVoid() &&
                             sp->tp->type != BasicType::any_ && !sp->sb->templateLevel)
                             errorsym(ERR_UNSIZED, sp);
                 }

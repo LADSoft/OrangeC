@@ -87,7 +87,7 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     auto next = parent.begin();
     ++next;
     STATEMENT* st;
-    TYPE* tp = nullptr;
+    Type* tp = nullptr;
     BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     SYMBOL* sym = nullptr;
     lex = getsym();

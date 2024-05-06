@@ -1610,7 +1610,7 @@ EXPRESSION* destructLocal(EXPRESSION* exp)
         SYMBOL* sp = destructList.top();
         destructList.pop();
         if (sp->sb->dest && sp->sb->dest->front()->exp)
-            rv = exprNode(ExpressionNode::void_, rv, sp->sb->dest->front()->exp);
+            rv = exprNode(ExpressionNode::comma_, rv, sp->sb->dest->front()->exp);
     }
     return rv;
 }
@@ -1661,7 +1661,7 @@ void DestructParams(std::list<INITLIST*>* il)
                                 }
                             }
                         }
-                        else if (tst->type == ExpressionNode::void_)
+                        else if (tst->type == ExpressionNode::comma_)
                         {
                             if (tst->right)
                                 stk.push(tst->right);
@@ -1690,7 +1690,7 @@ void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestru
                         optimize_for_constants(&iexp);
                         if (*exp)
                         {
-                            *exp = exprNode(ExpressionNode::void_, iexp, *exp);
+                            *exp = exprNode(ExpressionNode::comma_, iexp, *exp);
                         }
                         else
                         {
@@ -1708,7 +1708,7 @@ void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestru
                     optimize_for_constants(&iexp);
                     if (*exp)
                     {
-                        *exp = exprNode(ExpressionNode::void_, iexp, *exp);
+                        *exp = exprNode(ExpressionNode::comma_, iexp, *exp);
                     }
                     else
                     {
@@ -1775,7 +1775,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
                 auto ths = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, member->sb->offset));
                 auto clr = exprNode(ExpressionNode::blockclear_, ths, 0);
                 clr->size = member->tp;
-                exp = exprNode(ExpressionNode::void_, clr, exp);
+                exp = exprNode(ExpressionNode::comma_, clr, exp);
             }
         }
         else
@@ -1879,7 +1879,7 @@ static void genConstructorCall(std::list<BLOCKDATA*>& b, SYMBOL* cls, std::list<
                 {
                     EXPRESSION* clr = exprNode(ExpressionNode::blockclear_, exp, nullptr);
                     clr->size = mix->sp->tp;
-                    exp = exprNode(ExpressionNode::void_, clr, exp);
+                    exp = exprNode(ExpressionNode::comma_, clr, exp);
                 }
                 // previously, callConstructor can return false here, meaning that funcparams->sp is null
                 // This used to create a nullptr dereference in PromoteConstructorArgs
@@ -1916,7 +1916,7 @@ static void virtualBaseThunks(std::list<BLOCKDATA*>& b, SYMBOL* sp, EXPRESSION* 
             }
             else
             {
-                *pos = exprNode(ExpressionNode::void_, *pos, asn);
+                *pos = exprNode(ExpressionNode::comma_, *pos, asn);
                 pos = &(*pos)->right;
             }
         }
@@ -1947,7 +1947,7 @@ static void HandleEntries(EXPRESSION** pos, std::list<VTABENTRY*>* entries, EXPR
             }
             else
             {
-                *pos = exprNode(ExpressionNode::void_, *pos, asn);
+                *pos = exprNode(ExpressionNode::comma_, *pos, asn);
                 pos = &(*pos)->right;
             }
         }

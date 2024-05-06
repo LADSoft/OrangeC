@@ -1857,7 +1857,7 @@ static bool ismath(EXPRESSION* exp)
         case ExpressionNode::uge_:
         case ExpressionNode::ult_:
         case ExpressionNode::ule_:
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
         case ExpressionNode::select_:
             return true;
         default:
@@ -3953,7 +3953,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, e_cvsrn
         seq[(*n)++] = CV_NONE;
         return;
     }
-    while (expa && expa->type == ExpressionNode::void_)
+    while (expa && expa->type == ExpressionNode::comma_)
         expa = expa->right;
     if (tpp->type != tpa->type && (tpp->type == BasicType::void_ || tpa->type == BasicType::void_))
     {

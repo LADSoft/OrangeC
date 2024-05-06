@@ -764,7 +764,7 @@ namespace DotNetPELib
         bool IsPInvoke() const { return invokeMode_ == PInvoke; }
         ///** Add a local variable
         void AddLocal(Local *local);
-        const std::vector<Local *> const Locals() { return varList_; }
+        const std::vector<Local *>& Locals() { return varList_; }
 
         void Instance(bool instance);
         bool Instance() const { return !!(Flags().Value & Qualifiers::Instance); }

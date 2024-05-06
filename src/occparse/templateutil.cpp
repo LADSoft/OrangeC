@@ -1261,8 +1261,8 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 return tp;
             return nullptr;
         }
-        case ExpressionNode::void_:
-            while (exp->type == ExpressionNode::void_ && exp->right)
+        case ExpressionNode::comma_:
+            while (exp->type == ExpressionNode::comma_ && exp->right)
             {
                 if (!LookupTypeFromExpression(exp->left, enclosing, alt))
                     return nullptr;
@@ -1276,7 +1276,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::argnopush_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::check_nz_:
         case ExpressionNode::shiftby_:
             return LookupTypeFromExpression(exp->left, enclosing, alt);
         case ExpressionNode::global_:
@@ -1700,7 +1700,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
             return nullptr;
         }
         // the following several work because the frontend should have cast both expressions already
-        case ExpressionNode::cond_: {
+        case ExpressionNode::hook_: {
             TYPE* tl = LookupTypeFromExpression(exp->right->left, enclosing, alt);
             TYPE* tr = LookupTypeFromExpression(exp->right->right, enclosing, alt);
             if (isarithmetic(tl))

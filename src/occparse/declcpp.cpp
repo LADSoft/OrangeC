@@ -4510,11 +4510,11 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
         {
             atexitfunc = atexitfunc->tp->syms->front();
             EXPRESSION** last = &exp;
-            while (*last && (*last)->type == ExpressionNode::void_)
+            while (*last && (*last)->type == ExpressionNode::comma_)
                 last = &(*last)->right;
             if (*last)
             {
-                *last = exprNode(ExpressionNode::void_, *last, nullptr);
+                *last = exprNode(ExpressionNode::comma_, *last, nullptr);
                 last = &(*last)->right;
             }
             auto newFunc = makeID(StorageClass::global_, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));

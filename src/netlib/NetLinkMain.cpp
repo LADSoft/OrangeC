@@ -51,7 +51,9 @@ const char* NetLinkMain::helpText =
     "/n         no default libs           /oxxx      specify assembly name\n"
     "/vx.x.x.x  set assembly version      /M         managed mode\n"
     "/P         replace pinvokes\n"
+#ifdef TARGET_OS_WINDOWS
     "--netcore:x compile for .net core version x.   x= 0 means use latest\n"
+#endif
     "@xxx       Read commands from file\n"
     "/?, --help This text\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -680,6 +682,7 @@ bool NetLinkMain::AddRTLThunks()
 }
 bool NetLinkMain::CreateExecutable(CmdFiles& files)
 {
+#ifdef TARGET_OS_WINDOWS
     if (netCore)
     {
         return netCore->DumpOutputFile(GetOutputFile(files).c_str(),
@@ -688,6 +691,7 @@ bool NetLinkMain::CreateExecutable(CmdFiles& files)
             : PELib::peexe);
     }
     else
+#endif
     {
         return peLib->DumpOutputFile(GetOutputFile(files).c_str(),
             AssemblyFile.GetValue() ? PELib::ilasm
@@ -698,9 +702,11 @@ bool NetLinkMain::CreateExecutable(CmdFiles& files)
 }
 bool NetLinkMain::LoadAssembly(const char* assemblyName)
 {
+#ifdef TARGET_OS_WINDOWS
     if (netCore)
         return netCore->LoadAssembly(assemblyName);
     else
+#endif
         return peLib->LoadAssembly(assemblyName);
 }
 int NetLinkMain::Run(int argc, char** argv)
@@ -728,6 +734,8 @@ int NetLinkMain::Run(int argc, char** argv)
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
+
+#ifdef TARGET_OS_WINDOWS
     if (NetCoreSwitch.GetExists())
     {
         netCore = new NetCore(PELib::bits32, GUIApp.GetValue(), NetCoreSwitch.GetValue() ? NetCoreSwitch.GetValue() : NetCore::DummyChooseLatest);
@@ -740,6 +748,7 @@ int NetLinkMain::Run(int argc, char** argv)
         }
     }
     else
+#endif
     {
         peLib = new PELib(GetAssemblyName(files), PELib::bits32);  // ilonly set by dotnetpelib
     }
@@ -758,6 +767,7 @@ int NetLinkMain::Run(int argc, char** argv)
                    &assemblyVersion[3]) != 4)
         {
             std::cout << "Invalid assembly version string" << std::endl;
+
             if (netCore)
                 delete netCore;
             else

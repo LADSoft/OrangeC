@@ -1,3 +1,4 @@
+#ifdef TARGET_OS_WINDOWS
 /* Software License Agreement
  *
  *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
@@ -22,7 +23,7 @@
  *
  */
 
-#include <Windows.h>
+#include <windows.h>
 #include <fstream>
 #include <map>
 #include <string>
@@ -33,11 +34,9 @@
 #include "MZHeader.h"
 #include "PEHeader.h"
 
-#ifdef TARGET_OS_WINDOWS
 #include "libhostfxr\pal.h"
 #include "libhostfxr\hostfxr.h"
 #include "libhostfxr\fxr_resolver.h"
-#endif
 
 #define EMBED_HASH_HI_PART_UTF8 "c3ab8ff13720e8ad9047dd39466b3c89" // SHA-256 of "foobar" in UTF-8
 #define EMBED_HASH_LO_PART_UTF8 "74e592c2fa383d4a3960714caef0c4f2"
@@ -82,7 +81,6 @@ namespace DotNetPELib
         return rv;
     }
 
-#ifdef TARGET_OS_WINDOWS
     static void hostfxr_get_dotnet_environment_info_result_callback(
         const struct hostfxr_dotnet_environment_info* info,
         void* result_context)
@@ -143,7 +141,6 @@ namespace DotNetPELib
         initted = true;
         return true;
     }
-#endif
 
     PELib* NetCore::init(std::string assemblyName)
     {
@@ -196,7 +193,6 @@ namespace DotNetPELib
     }
     bool NetCore::CreateExecutable(std::string fileName, std::string dllName)
     {
-#if TARGET_OS_WINDOWS
 
 	// this looks up the apphost.exe executable
 	// unfortunately there doesn't seem to be a way to do it with hostfxr.dll...
@@ -280,13 +276,9 @@ namespace DotNetPELib
         }
         delete[] data;
         return rv;
-#else
-        return false;
-#endif
     }
     std::string NetCore::LookupDir(std::string path, int version)
     {
-#ifdef TARGET_OS_WINDOWS
         std::vector<pal::string_t> dirs;
         std::wstring wpath = char_to_wstring(path.c_str());
         pal::readdir_onlydirectories(wpath, &dirs);
@@ -312,7 +304,6 @@ namespace DotNetPELib
             return path + DIR_SEP + char_t_to_string(last.c_str());
 
         }
-#endif
         return "";
     }
 
@@ -350,6 +341,7 @@ namespace DotNetPELib
             }
             return n;
         }
+        return false;
     }
     bool NetCore::LoadAssembly(std::string assemblyName, int major, int minor, int build, int revision)
     {
@@ -413,3 +405,4 @@ namespace DotNetPELib
         return false;
     }
 }
+#endif

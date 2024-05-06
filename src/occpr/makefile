@@ -28,9 +28,13 @@ MAIN_FILE=occparse.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occparse ..$(PATHEXT2)occopt ..$(PATHEXT2)occil ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 
-LIB_DEPENDENCIES=occparse occil occ ocpplib oasm occopt util objlib netlib libhostfxr sqlite3
+LIB_DEPENDENCIES=occparse occil occ ocpplib oasm occopt util objlib netlib sqlite3
 DEFINES=x64 PARSER_ONLY
 H_FILES=$(wildcard *.h)
+
+ifneq "$(COMPILER)" "gcc-linux"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr
+endif
 
 vpath %.cpp ..$(PATHEXT2)occparse
 

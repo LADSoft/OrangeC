@@ -1104,7 +1104,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                         if (exp)
                                         {
                                             optimize_for_constants(&exp);
-                                            while (exp->type == ExpressionNode::void_ && exp->right)
+                                            while (exp->type == ExpressionNode::comma_ && exp->right)
                                                 exp = exp->right;
                                         }
                                         ConstExprPatch(&exp);
@@ -1140,7 +1140,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             if (exp)
                             {
                                 optimize_for_constants(&exp);
-                                while (exp->type == ExpressionNode::void_ && exp->right)
+                                while (exp->type == ExpressionNode::comma_ && exp->right)
                                     exp = exp->right;
                             }
                             if (tp && (int)tp->type == (int)ExpressionNode::templateparam_)

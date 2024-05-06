@@ -47,6 +47,7 @@ t
 #include <string>
 using namespace DotNetPELib;
 extern PELib* peLib;
+
 extern NetCore* netCoreInstance;
 
 namespace occmsil
@@ -99,11 +100,13 @@ std::vector<Local*> localList;
 bool LoadAssembly(const char *assemblyName)
 {
     bool rv;
+#ifdef TARGET_OS_WINDOWS
     if (netCoreInstance)
     {
         rv = netCoreInstance->LoadAssembly(assemblyName);
     }
     else
+#endif
     {
         rv = peLib->LoadAssembly(assemblyName);
     }
@@ -268,6 +271,7 @@ int msil_main_preprocess(char* fileName)
     bool newFile;
     if (!peLib)
     {
+#ifdef TARGET_OS_WINDOWS
         if (Optimizer::cparams.prm_netcore_version)
         {
            netCoreInstance = new NetCore(corFlags, Optimizer::cparams.prm_targettype == GUI, Optimizer::cparams.prm_netcore_version);
@@ -276,6 +280,7 @@ int msil_main_preprocess(char* fileName)
                Utils::Fatal("internal error: netcore installation not found");
         }
         else
+#endif
         {
             peLib = new PELib(q, corFlags);
         }
@@ -284,18 +289,22 @@ int msil_main_preprocess(char* fileName)
             Utils::Fatal("could not load runtime.dll");
         }
 
+#ifdef TARGET_OS_WINDOWS
         if (netCoreInstance && LoadAssembly("System.Console"))
         {
             Utils::Fatal("could not load System.Console");
         }
+#endif
         std::ostringstream name ;
         name << "lsmsilcrtl";
+#ifdef TARGET_OS_WINDOWS
         if (netCoreInstance)
         {
             auto runtimeAssembly = peLib->FindAssembly(peLib->GetRuntimeName());
             if (runtimeAssembly)
                 name << runtimeAssembly->GetMajor();
         }
+#endif
         if (!Optimizer::cparams.no_default_libs && LoadAssembly(name.str().c_str()))
         {
             Utils::Fatal(std::string("could not load ") + name.str());
@@ -369,11 +378,13 @@ void msil_end_generation(char* fileName)
         }
         if (fileName)
         {
+#ifdef TARGET_OS_WINDOWS
             if (netCoreInstance)
             {
                 netCoreInstance->DumpOutputFile(fileName, PELib::object);
             }
             else
+#endif
             {
                 peLib->DumpOutputFile(fileName, PELib::object, false);
             }

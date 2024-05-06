@@ -61,7 +61,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags);
 Optimizer::IMODE* gen_atomic_barrier(SYMBOL* funcsp, ATOMICDATA* ad, Optimizer::IMODE* addr, Optimizer::IMODE* barrier);
 Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size);
 Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size);
-Optimizer::IMODE* gen_void_(EXPRESSION* node, SYMBOL* funcsp);
+Optimizer::IMODE* gen_comma_(EXPRESSION* node, SYMBOL* funcsp);
 int natural_size(EXPRESSION* node);
 void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int label);
 Optimizer::IMODE* gen_set(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype);

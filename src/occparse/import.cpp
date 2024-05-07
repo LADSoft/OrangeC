@@ -44,6 +44,7 @@
 #include "initbackend.h"
 #include "occparse.h"
 #include "memory.h"
+#include "lex.h"
 #include "help.h"
 #include "declare.h"
 #include "mangle.h"

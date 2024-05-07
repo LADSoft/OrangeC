@@ -41,9 +41,9 @@
 
 namespace Parser
 {
-static void ReorderSEHRecords(std::list<STATEMENT*>* xtry, std::list<BLOCKDATA*>& parent)
+static void ReorderSEHRecords(std::list<Statement*>* xtry, std::list<FunctionBlock*>& parent)
 {
-    STATEMENT *xfinally = nullptr, *xfault = nullptr;
+    Statement *xfinally = nullptr, *xfault = nullptr;
     for (auto it = xtry->begin(); it != xtry->end(); ++it)
     {
         if ((*it)->type == StatementNode::seh_finally_)
@@ -61,7 +61,7 @@ static void ReorderSEHRecords(std::list<STATEMENT*>* xtry, std::list<BLOCKDATA*>
     {
         if (xtry->front() != xtry->back())
         {
-            STATEMENT* st = stmtNode(nullptr, emptyBlockdata, StatementNode::seh_try_);
+            Statement* st = Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::seh_try_);
             st->lower = xtry;
             xtry->clear();
             xtry->push_back(st);
@@ -72,7 +72,7 @@ static void ReorderSEHRecords(std::list<STATEMENT*>* xtry, std::list<BLOCKDATA*>
     {
         if (xtry->front() != xtry->back())
         {
-            STATEMENT* st = stmtNode(nullptr, emptyBlockdata, StatementNode::seh_try_);
+            Statement* st = Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::seh_try_);
             st->lower = xtry;
             xtry->clear();
             xtry->push_back(st);
@@ -81,14 +81,14 @@ static void ReorderSEHRecords(std::list<STATEMENT*>* xtry, std::list<BLOCKDATA*>
     }
     parent.front()->statements->insert(parent.front()->statements->end(), xtry->begin(), xtry->end());
 }
-static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
     ++next;
-    STATEMENT* st;
+    Statement* st;
     Type* tp = nullptr;
-    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
+    FunctionBlock* catchstmt = Allocate<FunctionBlock>();
     SYMBOL* sym = nullptr;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -112,7 +112,8 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     }
     if (MATCHKW(lex, Keyword::begin_))
     {
-        lex = compound(lex, funcsp, parent, false);
+        StatementGenerator sg(lex, funcsp);
+        sg.Compound(parent, false);
         before->nosemi = true;
         before->needlabel &= catchstmt->needlabel;
         if (next != parent.end())
@@ -124,7 +125,7 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     }
     inLoopOrConditional--;
     FreeLocalContext(parent, funcsp, codeLabel++);
-    st = stmtNode(lex, parent, StatementNode::seh_catch_);
+    st = Statement::MakeStatement(lex, parent, StatementNode::seh_catch_);
     st->blockTail = catchstmt->blockTail;
     st->lower = catchstmt->statements;
     st->tp = tp;
@@ -132,13 +133,13 @@ static LEXLIST* SEH_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     parent.pop_front();
     return lex;
 }
-static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+static LexList* SEH_finally(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
     ++next;
-    STATEMENT* st;
-    BLOCKDATA* finallystmt = Allocate<BLOCKDATA>();
+    Statement* st;
+    FunctionBlock* finallystmt = Allocate<FunctionBlock>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     finallystmt->breaklabel = -1;
@@ -150,7 +151,8 @@ static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>&
     inLoopOrConditional++;
     if (MATCHKW(lex, Keyword::begin_))
     {
-        lex = compound(lex, funcsp, parent, false);
+        StatementGenerator sg(lex, funcsp);
+        sg.Compound(parent, false);
         before->nosemi = true;
         before->needlabel &= finallystmt->needlabel;
         if (next != parent.end())
@@ -162,19 +164,19 @@ static LEXLIST* SEH_finally(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>&
     }
     FreeLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional--;
-    st = stmtNode(lex, parent, StatementNode::seh_finally_);
+    st = Statement::MakeStatement(lex, parent, StatementNode::seh_finally_);
     st->blockTail = finallystmt->blockTail;
     st->lower = finallystmt->statements;
     parent.pop_front();
     return lex;
 }
-static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+static LexList* SEH_fault(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
     ++next;
-    STATEMENT* st;
-    BLOCKDATA* faultstmt = Allocate<BLOCKDATA>();
+    Statement* st;
+    FunctionBlock* faultstmt = Allocate<FunctionBlock>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     faultstmt->breaklabel = -1;
@@ -186,7 +188,8 @@ static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
     inLoopOrConditional++;
     if (MATCHKW(lex, Keyword::begin_))
     {
-        lex = compound(lex, funcsp, parent, false);
+        StatementGenerator sg(lex, funcsp);
+        sg.Compound(parent, false);
         before->nosemi = true;
         before->needlabel &= faultstmt->needlabel;
         if (next != parent.end())
@@ -197,20 +200,20 @@ static LEXLIST* SEH_fault(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& p
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
     FreeLocalContext(parent, funcsp, codeLabel++);
-    st = stmtNode(lex, parent, StatementNode::seh_fault_);
+    st = Statement::MakeStatement(lex, parent, StatementNode::seh_fault_);
     st->blockTail = faultstmt->blockTail;
     st->lower = faultstmt->statements;
     inLoopOrConditional--;
     parent.pop_front();
     return lex;
 }
-static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+static LexList* SEH_try(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
     ++next;
-    STATEMENT *st;
-    BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
+    Statement *st;
+    FunctionBlock* trystmt = Allocate<FunctionBlock>();
     trystmt->breaklabel = -1;
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = Keyword::seh_try_;
@@ -228,10 +231,11 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& par
         parent.front()->statements = nullptr;
         bool foundFinally = false, foundFault = false;
         AllocateLocalContext(parent, funcsp, codeLabel++);
-        lex = compound(lex, funcsp, parent, false);
+        StatementGenerator sg(lex, funcsp);
+        sg.Compound(parent, false);
         FreeLocalContext(parent, funcsp, codeLabel++);
         before->needlabel = trystmt->needlabel;
-        st = stmtNode(lex, parent, StatementNode::seh_try_);
+        st = Statement::MakeStatement(lex, parent, StatementNode::seh_try_);
         st->blockTail = trystmt->blockTail;
         st->lower = trystmt->statements;
         before->nosemi = true;
@@ -257,7 +261,7 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& par
                 else
                     foundFault = true;
             }
-            lex = statement_SEH(lex, funcsp, parent);
+            lex = ParseSEH(lex, funcsp, parent);
         }
         ReorderSEHRecords(parent.front()->statements, parent);
         parent.front()->statements->insert(parent.front()->statements->begin(), prev->begin(), prev->end());
@@ -267,7 +271,7 @@ static LEXLIST* SEH_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& par
     return lex;
 }
 
-LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+LexList* ParseSEH(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     switch (KW(lex))
     {

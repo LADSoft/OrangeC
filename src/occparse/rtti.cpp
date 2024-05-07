@@ -33,6 +33,7 @@
 #include "OptUtils.h"
 #include "declare.h"
 #include "memory.h"
+#include "lex.h"
 #include "help.h"
 #include "beinterf.h"
 #include "ildata.h"
@@ -46,6 +47,8 @@
 #include "inline.h"
 #include "symtab.h"
 #include "types.h"
+#include "stmt.h"
+#include "cppbltin.h"
 
 namespace Parser
 {
@@ -95,59 +98,38 @@ void rtti_init(void)
 {
     rttiSyms = symbols.CreateSymbolTable(); 
 }
-bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
-/*
- *      equalnode will return 1 if the expressions pointed to by
- *      node1 and node2 are equivalent.
- */
+void makeXCTab(SYMBOL* funcsp)
 {
-    if (node1 == 0 || node2 == 0)
-        return 0;
-    if (node1->type != node2->type)
-        return 0;
-    if (natural_size(node1) != natural_size(node2))
-        return 0;
-    switch (node1->type)
+    SYMBOL* sym;
+    if (!funcsp->sb->xc)
     {
-        case ExpressionNode::const_:
-        case ExpressionNode::pc_:
-        case ExpressionNode::global_:
-        case ExpressionNode::auto_:
-        case ExpressionNode::absolute_:
-        case ExpressionNode::threadlocal_:
-        case ExpressionNode::structelem_:
-            return node1->v.sp == node2->v.sp;
-        case ExpressionNode::labcon_:
-            return node1->v.i == node2->v.i;
-        default:
-            return (!node1->left || equalnode(node1->left, node2->left)) &&
-                   (!node1->right || equalnode(node1->right, node2->right));
-        case ExpressionNode::c_i_:
-        case ExpressionNode::c_l_:
-        case ExpressionNode::c_ul_:
-        case ExpressionNode::c_ui_:
-        case ExpressionNode::c_c_:
-        case ExpressionNode::c_u16_:
-        case ExpressionNode::c_u32_:
-        case ExpressionNode::c_bool_:
-        case ExpressionNode::c_uc_:
-        case ExpressionNode::c_ll_:
-        case ExpressionNode::c_ull_:
-        case ExpressionNode::c_wc_:
-        case ExpressionNode::nullptr_:
-            return node1->v.i == node2->v.i;
-        case ExpressionNode::c_d_:
-        case ExpressionNode::c_f_:
-        case ExpressionNode::c_ld_:
-        case ExpressionNode::c_di_:
-        case ExpressionNode::c_fi_:
-        case ExpressionNode::c_ldi_:
-            return (*node1->v.f == *node2->v.f);
-        case ExpressionNode::c_dc_:
-        case ExpressionNode::c_fc_:
-        case ExpressionNode::c_ldc_:
-            return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
+        funcsp->sb->xc = Allocate<xcept>();
+        Optimizer::SymbolManager::Get(funcsp)->xc = true;
     }
+    if (!funcsp->sb->xc->xctab)
+    {
+        sym = makeID(StorageClass::auto_, &stdXC, nullptr, "$$xctab");
+        sym->sb->decoratedName = sym->name;
+        sym->sb->allocate = true;
+        sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
+        localNameSpace->front()->syms->Add(sym);
+        funcsp->sb->xc->xctab = sym;
+    }
+}
+void insertXCInfo(SYMBOL* funcsp)
+{
+    char name[2048];
+    SYMBOL* sym;
+    makeXCTab(funcsp);
+    Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
+    sym = makeID(StorageClass::global_, &stdpointer, nullptr, litlate(name));
+    sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+    sym->sb->decoratedName = sym->name;
+    sym->sb->allocate = true;
+    sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
+    funcsp->sb->xc->xcInitLab = codeLabel++;
+    funcsp->sb->xc->xcDestLab = codeLabel++;
+    funcsp->sb->xc->xclab = sym;
 }
 
 static char* addNameSpace(char* buf, SYMBOL* sym)
@@ -505,10 +487,10 @@ SYMBOL* RTTIDumpType(Type*tp, bool symOnly)
     }
     return xtSym;
 }
-static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst);
+static void XCStmt(std::list<Statement*>* block, std::list<XCENTRY*>& lst);
 static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
 {
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     if (node == 0)
         return;
     switch (node->type)
@@ -723,7 +705,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
             break;
     }
 }
-static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst)
+static void XCStmt(std::list<Statement*>* block, std::list<XCENTRY*>& lst)
 {
     if (block)
     {

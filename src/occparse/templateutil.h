@@ -36,7 +36,7 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
 static void checkTemplateDefaults(std::list<TEMPLATEPARAMPAIR>* args);
 bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, std::list<TEMPLATEPARAMPAIR>* special, SYMBOL* sp);
 static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym);
-std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LEXLIST* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
+std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
                                                SYMBOL* sp, bool definition);
 static bool structHasTemplateArg(std::list<TEMPLATEPARAMPAIR>* tplx);
 bool typeHasTemplateArg(Type* t);
@@ -44,7 +44,7 @@ void TemplateValidateSpecialization(std::list<TEMPLATEPARAMPAIR>* arg);
 void GetPackedTypes(TEMPLATEPARAMPAIR** packs, int* count, std::list<TEMPLATEPARAMPAIR>* args);
 void saveParams(SYMBOL** table, int count);
 void restoreParams(SYMBOL** table, int count);
-static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp);
+static std::list<Argument*>* ExpandArguments(EXPRESSION* exp);
 static void PushPopDefaults(std::deque<Type*>& defaults, EXPRESSION* exp, bool dflt, bool push);
 void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
 std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp);

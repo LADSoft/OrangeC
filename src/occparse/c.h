@@ -50,7 +50,16 @@ namespace Parser
 
 bool IsCompiler();
 
-class Type;
+struct Type;
+struct Statement;
+struct FunctionBlock;
+struct LexList;
+struct Lexeme;
+struct LexContext;
+struct KeywordData;
+struct CallSite;
+struct Argument;
+struct StringData;
 
 class StringHash
 {
@@ -403,9 +412,9 @@ typedef struct expr
                 struct ConstExprArgArray constexprData;
             };
             const char* name; /* name during base class processing */
-            struct functioncall* func;
+            CallSite* func;
             struct _atomicData* ad;
-            std::list<struct stmt*>* stmt;
+            std::list<Statement*>* stmt;
             struct Optimizer::_imode_* imode;
             struct _msilarray* msilArray;
             SymbolTable<struct sym>* syms;
@@ -419,7 +428,7 @@ typedef struct expr
             struct
             {
                 Type* tp;
-                struct lexlist* deferred;
+                LexList* deferred;
             } construct;
             struct
             {
@@ -435,7 +444,7 @@ typedef struct expr
         TEMPLATEPARAMPAIR* templateParam;
         std::vector<struct _templateSelector>* templateSelector;
     } v;
-    struct _string* string;
+    StringData* string;
     int xcInit, xcDest;
     int lockOffset;
     char bits;
@@ -503,56 +512,8 @@ struct u_val
     };
 };
 
-typedef struct stmt
-{
-    std::list<struct stmt*>* lower;
-    std::list<struct stmt*>* blockTail;
-    StatementNode type;
-    EXPRESSION* select;
-    EXPRESSION* destexp;
-    Optimizer::LINEDATA* lineData;
-    union
-    {
-        Type* tp;
-        std::list<CASEDATA*>* cases;
-        struct blockdata* parent;
-    };
-    struct sym* sp;
-    int charpos;
-    int line;
-    const char* file;
-    int label;
-    int endlabel;
-    int breaklabel;  // also the label at the end of the try block
-    int altlabel;
-    int tryStart;
-    int tryEnd;
-    int hasvla : 1;
-    int hasdeclare : 1;
-    int purelabel : 1;
-    int explicitGoto : 1;
-    int indirectGoto : 1;
-} STATEMENT;
 
-typedef struct blockdata
-{
-    struct blockdata* orig;
-    struct blockdata* caseDestruct;
-    Keyword type;
-    std::list<CASEDATA*>* cases;
-    std::list<STATEMENT*>* statements;
-    std::list<STATEMENT*>* blockTail;
-    SymbolTable<struct sym>* table;
-    int breaklabel;
-    int continuelabel;
-    int defaultlabel;
-    int needlabel : 1;
-    int hasbreak : 1;
-    int hassemi : 1;
-    int nosemi : 1; /* ok to skip semi */
-} BLOCKDATA;
-
-typedef struct init
+struct Initializer
 {
     int offset;
     Type* basetp;
@@ -561,11 +522,11 @@ typedef struct init
     EXPRESSION* exp;
     int tag; /* sequence number */
     int noassign : 1;
-} INITIALIZER;
+};
 
 typedef struct ifunc
 {
-    std::list<STATEMENT*>* stmt;
+    std::list<Statement*>* stmt;
     SymbolTable<struct sym>* syms;
     SymbolTable<struct sym>* tags;
 } INLINEFUNC;
@@ -794,15 +755,15 @@ typedef struct sym
         struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
         struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
         std::list<struct _memberInitializers*>* memberInitializers; /* initializers for constructor */
-        std::list<STATEMENT*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
-        std::list<BLOCKDATA*>* gotoBlockTable;
+        std::list<Statement*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        std::list<FunctionBlock*>* gotoBlockTable;
         /* these fields depend on storage_class */
         struct u_val value;
         std::list<struct _baseClass*>* baseClasses;
         std::list<struct _vbaseEntry*>* vbaseEntries;
         std::list<struct _vtabEntry*>* vtabEntries;
-        struct lexlist* deferredCompile;
-        struct lexlist* deferredNoexcept;
+        LexList* deferredCompile;
+        LexList* deferredNoexcept;
         std::list<struct sym*>* templateNameSpace;
         short templateLevel;
         std::list<TEMPLATEPARAMPAIR>* typeAlias;
@@ -812,7 +773,7 @@ typedef struct sym
         std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
                                                      // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
-        std::list<struct init *>* init, *lastInit, *dest;
+        std::list<Initializer *>* init, *lastInit, *dest;
         // clang-format off
             enum e_xc xcMode, xcModeSpecified;
         // clang-format on
@@ -855,14 +816,14 @@ typedef struct _memberInitializers
     const char* name;
     SYMBOL* sp;
     SYMBOL* basesym;
-    std::list<INITIALIZER*>* init;
+    std::list<Initializer*>* init;
     int line;
     const char* file;
-    struct lexlist* initData;
+    LexList* initData;
     int packed : 1;
     int delegating : 1;
     int valueInit : 1;
-} MEMBERINITIALIZERS;
+} MEMBERInitializerS;
 
 typedef struct _baseClass
 {
@@ -928,7 +889,7 @@ typedef struct _templateParam
         {
             SYMBOL* dflt;
             SYMBOL* val;
-            struct lexlist* txtdflt;
+            LexList* txtdflt;
             std::list<SYMBOL*>* txtargs;
             SYMBOL* temp;
             std::list<TEMPLATEPARAMPAIR>* args;
@@ -938,7 +899,7 @@ typedef struct _templateParam
         {
             Type* dflt;
             Type* val;
-            struct lexlist* txtdflt;
+            LexList* txtdflt;
             std::list<SYMBOL*>* txtargs;
             Type* temp;
         } byClass;
@@ -946,10 +907,10 @@ typedef struct _templateParam
         {
             EXPRESSION* dflt;
             EXPRESSION* val;
-            struct lexlist* txtdflt;
+            LexList* txtdflt;
             std::list<SYMBOL*>* txtargs;
             EXPRESSION* temp;
-            struct lexlist* txttype;
+            LexList* txttype;
             Type* tp;
         } byNonType;
         struct
@@ -977,7 +938,7 @@ typedef struct _templateSelector
         Type* tp;
     };
     std::list<TEMPLATEPARAMPAIR>* templateParams;
-    std::list<struct initlist*>* arguments;
+    std::list<Argument*>* arguments;
     int isTemplate : 1;
     int isDeclType : 1;
     int asCall : 1;
@@ -988,25 +949,25 @@ typedef struct _structSym
     SYMBOL* str;
     std::list<TEMPLATEPARAMPAIR>* tmpl;
 } STRUCTSYM;
-typedef struct initlist
+struct Argument
 {
     Type* tp;
     EXPRESSION* exp;
     std::list<struct expr*>* destructors;
-    std::list<struct initlist*>* nested;
+    std::list<Argument*>* nested;
     int byRef : 1;
     int packed : 1;
     int vararg : 1;
     int valist : 1;
     int initializer_list : 1;
-} INITLIST;
+};
 
-typedef struct functioncall
+struct CallSite
 {
     SYMBOL* sp;
     Type* functp;
     EXPRESSION* fcall;
-    std::list<INITLIST*>* arguments;
+    std::list<Argument*>* arguments;
     std::list<struct expr*>* destructors;
     SYMBOL* returnSP;
     EXPRESSION* returnEXP;
@@ -1024,178 +985,18 @@ typedef struct functioncall
     int asaddress : 1;
     int vararg : 1;
     int resolvedCall : 1;
-} FUNCTIONCALL;
+};
 
 #define MAX_STRLEN 16384
 #define MAX_STLP1 (MAX_STRLEN + 1)
 
-/* error list */
-struct errl
-{
-    int errornumber;
-    void* data;
-};
-
-/* used for error skimming */
-#define BALANCE struct balance
-#define BAL_PAREN 0
-#define BAL_BRACKET 1
-#define BAL_BEGIN 2
-#define BAL_LT 3
-#define ERRORS struct errl
-
-struct balance
-{
-    struct balance* back;
-    short type;
-    short count;
-};
-
-// clang-format off
-    enum _matchFlags : int
-    {
-        KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
-        KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
-        KW_386 = 128, KW_68K = 256, KW_C2X = 512, KW_ALL = 0x40000000
-    };
-// clang-format on
-// clang-format off
-
-    enum _tokenTypes
-    {
-        TT_BASE = 1,
-        TT_BOOL = 2,
-        TT_INT = 4,
-        TT_FLOAT = 8,
-        TT_COMPLEX = 16,
-        TT_TYPEQUAL = 32,
-        TT_POINTERQUAL = 64,
-        TT_UNARY = 128,
-        TT_BINARY = 0x100,
-        TT_OPERATOR = 0x200,
-        TT_ASSIGN = 0x400,
-        TT_RELATION = 0x800,
-        TT_EQUALITY = 0x1000,
-        TT_INEQUALITY = 0x2000,
-        TT_POINTER = 0x4000,
-        TT_STORAGE_CLASS = 0x8000,
-        TT_CONTROL = 0x10000,
-        TT_BLOCK = 0x20000,
-        TT_PRIMARY = 0x40000,
-        TT_SELECTOR = 0x80000,
-        TT_VAR = 0x100000,
-        TT_BASETYPE = 0x200000,
-        TT_INCREMENT = 0x400000,
-        TT_SWITCH = 0x800000,
-        TT_ENUM = 0x1000000,
-        TT_STRUCT = 0x2000000,
-        TT_TYPENAME = 0x4000000,
-        TT_TYPEDEF = 0x8000000,
-        TT_VOID = 0x10000000,
-        TT_CLASS = 0x20000000,
-        TT_LINKAGE = 0x40000000,
-        TT_DECLARE = 0x80000000UL,
-        TT_UNKNOWN = 0
-    };
-// clang-format on
-
-typedef struct kwblk
-{
-    const char* name;
-    int len;
-    Keyword key;
-    unsigned matchFlags;
-    unsigned tokenTypes;
-} KEYWORD;
-
-
-enum e_lexType
-{
-    l_none,
-    l_i,
-    l_ui,
-    l_l,
-    l_ul,
-    l_ll,
-    l_ull,
-    l_bitint,
-    l_ubitint,
-    l_f,
-    l_d,
-    l_ld,
-    l_I,
-    l_id,
-    l_kw,
-    l_astr,
-    l_wstr,
-    l_ustr,
-    l_Ustr,
-    l_u8str,
-    l_msilstr,
-    l_achr,
-    l_wchr,
-    l_u8chr,
-    l_uchr,
-    l_Uchr,
-    l_qualifiedname,
-    l_asminst,
-    l_asmreg
-};
-
-typedef struct _string
-{
-    enum e_lexType strtype;
-    int size;
-    int label;
-    int refCount;
-    char* suffix;
-    Optimizer::SLCHAR** pointers;
-} STRING;
-
-typedef struct lexeme
-{
-    // clang-format off
-        enum e_lexType type;
-    // clang-format on
-    struct u_val value;
-    char* litaslit;
-    char* suffix;
-    Optimizer::LINEDATA* linedata;
-    int errline;
-    const char* errfile;
-    int charindex;
-    int charindexend;
-    int filenum;
-    KEYWORD* kw;
-    SYMBOL* typequal;
-    int registered : 1;
-} LEXEME;
-
-typedef struct lexlist
-{
-    struct lexlist *next, *prev;
-    struct lexeme* data;
-} LEXLIST;
-typedef struct lexContext
-{
-    struct lexContext* next;
-    LEXLIST* cur;
-    LEXLIST* last;
-} LEXCONTEXT;
-
-#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
-#define ISID(lex) (lex && (lex)->data->type == l_id)
-#define ISKW(lex) (lex && (lex)->data->type == l_kw)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-bool KWTYPE(LEXLIST* lex, unsigned types);
-#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
 
 struct templateListData
 {
     std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
     std::list<TEMPLATEPARAMPAIR>**ptail, **plast, **phold;
-    LEXLIST *head, *tail;
-    LEXLIST *bodyHead, *bodyTail;
+    LexList *head, *tail;
+    LexList *bodyHead, *bodyTail;
     SYMBOL* sp;
 };
 

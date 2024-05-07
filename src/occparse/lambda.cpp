@@ -33,8 +33,8 @@
 #include "stmt.h"
 #include "occparse.h"
 #include "expr.h"
-#include "help.h"
 #include "lex.h"
+#include "help.h"
 #include "declcpp.h"
 #include "OptUtils.h"
 #include "declare.h"
@@ -391,13 +391,13 @@ static void convertCallToTemplate(SYMBOL* func)
 }
 static SYMBOL* createPtrToCaller(SYMBOL* self)
 {
-    INITLIST** argptr;
-    FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
+    Argument** argptr;
+    CallSite* params = Allocate<CallSite>();
     Type* args = cloneFuncType(lambdas.front()->func);
     SYMBOL* func = makeID(StorageClass::static_, args, NULL, "___ptrcall");
-    BLOCKDATA bd1 = {}, bd2 = {};
-    std::list<BLOCKDATA*> block1{ &bd1 }, block2{ &bd2 };
-    STATEMENT* st;
+    FunctionBlock bd1 = {}, bd2 = {};
+    std::list<FunctionBlock*> block1{ &bd1 }, block2{ &bd2 };
+    Statement* st;
     args->BaseType()->sp = func;
     args->BaseType()->btp = lambdas.front()->func->tp->BaseType()->btp;
     func->sb->parentClass = lambdas.front()->cls;
@@ -408,7 +408,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 
     insertFunc(lambdas.front()->cls, func);
     func->tp->syms->remove(func->tp->syms->begin()); // elide this pointer
-    st = stmtNode(NULL, block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
+    st = Statement::MakeStatement(NULL, block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
     st->select = varNode(ExpressionNode::func_, NULL);
     st->select->v.func = params;
     st->select = exprNode(ExpressionNode::thisref_, st->select, NULL);
@@ -421,7 +421,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
             break;
         sym = CopySymbol(sym);
         sym->sb->offset -= getSize(BasicType::pointer_);
-        auto arg = Allocate<INITLIST>();
+        auto arg = Allocate<Argument>();
         if (sym->tp->IsStructured() && !sym->tp->IsRef())
         {
             SYMBOL* sym2 = anonymousVar(StorageClass::auto_, sym->tp)->v.sp;
@@ -442,17 +442,17 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     params->thisptr = varNode(ExpressionNode::global_, self);
     deref(&stdpointer, &params->thisptr);
     params->thistp = self->tp;
-    st = stmtNode(NULL, block1, StatementNode::block_);
+    st = Statement::MakeStatement(NULL, block1, StatementNode::block_);
     st->lower = block2.front()->statements;
     st->blockTail = block2.front()->blockTail;
     func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, StatementNode::block_));
+    func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(NULL, emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = args->BaseType()->syms;
     if (lambdas.front()->templateFunctions)
     {
-        LEXLIST* lex1;
+        LexList* lex1;
         int l = 0;
         if (lambdas.front()->functp->IsAutoType())
             func->tp->BaseType()->btp = &stdauto;  // convert return type back to auto
@@ -486,9 +486,9 @@ static void createConverter(SYMBOL* self)
     SYMBOL* caller = createPtrToCaller(self);
     Type* args = cloneFuncType(lambdas.front()->func);
     SYMBOL* func = makeID(StorageClass::member_, Type::MakeType(BasicType::func_, Type::MakeType(BasicType::pointer_, args)), NULL, overloadNameTab[CI_CAST]);
-    BLOCKDATA bd1 = {}, bd2 = {};
-    std::list<BLOCKDATA*> block1{ &bd1 }, block2{ &bd2 };
-    STATEMENT* st;
+    FunctionBlock bd1 = {}, bd2 = {};
+    std::list<FunctionBlock*> block1{ &bd1 }, block2{ &bd2 };
+    Statement* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(StorageClass::parameter_, &stdvoid, NULL, AnonymousName());
     func->tp->syms = symbols.CreateSymbolTable();
@@ -503,26 +503,26 @@ static void createConverter(SYMBOL* self)
     func->sb->parentClass = lambdas.front()->cls;
     insertFunc(lambdas.front()->cls, func);
     // Keyword::assign_ ___self = this
-    st = stmtNode(NULL, block2, StatementNode::expr_);
+    st = Statement::MakeStatement(NULL, block2, StatementNode::expr_);
     st->select = varNode(ExpressionNode::auto_, (SYMBOL*)func->tp->BaseType()->syms->front());
     deref(&stdpointer, &st->select);
     st->select = exprNode(ExpressionNode::assign_, varNode(ExpressionNode::global_, self), st->select);
     deref(&stdpointer, &st->select->left);
     // return pointer to ptrtocaller
-    st = stmtNode(NULL, block2, StatementNode::return_);
+    st = Statement::MakeStatement(NULL, block2, StatementNode::return_);
     st->select = varNode(ExpressionNode::pc_, caller);
-    st = stmtNode(NULL, block1, StatementNode::block_);
+    st = Statement::MakeStatement(NULL, block1, StatementNode::block_);
     st->lower = block2.front()->statements;
     st->blockTail = block2.front()->blockTail;
     func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    func->sb->inlineFunc.stmt->push_back(stmtNode(NULL, emptyBlockdata, StatementNode::block_));
+    func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(NULL, emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = symbols.CreateSymbolTable();
     if (lambdas.front()->templateFunctions)
     {
-        LEXLIST* lex1;
-        FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
+        LexList* lex1;
+        CallSite* f = Allocate<CallSite>();
         if (!f->arguments)
             f->arguments = initListListFactory.CreateList();
         func->templateParams = caller->templateParams;
@@ -540,7 +540,7 @@ static void createConverter(SYMBOL* self)
             }
             else
             {
-                auto arg = Allocate<INITLIST>();
+                auto arg = Allocate<Argument>();
                 arg->tp = sym->tp;
                 arg->exp = intNode(ExpressionNode::c_i_, 0);
                 f->arguments->push_back(arg);
@@ -640,7 +640,7 @@ static EXPRESSION* createLambda(bool noinline)
         insertInitSym(cls);
     }
     {
-        std::list<INITIALIZER*>* init = NULL;
+        std::list<Initializer*>* init = NULL;
         if (!init)
             init = initListFactory.CreateList();
         EXPRESSION* exp = clsThs;
@@ -804,7 +804,7 @@ static EXPRESSION* createLambda(bool noinline)
     *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
+LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
 {
     auto declline = lines;
     LAMBDA* self;
@@ -942,7 +942,7 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                     {
                         localMode = self->captureMode;
                     }
-                    LEXLIST* idlex = lex;
+                    LexList* idlex = lex;
                     SYMBOL* sp;
                     LAMBDA* current;
                     lex = getsym();
@@ -1130,10 +1130,11 @@ LEXLIST* expression_lambda(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
         lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
         if (!lambdas.front()->templateFunctions)
         {
-            LEXLIST* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
+            LexList* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
             SetLinkerNames(self->func, Linkage::cdecl_);
-            body(lex1, self->func);
-            bodygen(self->func);
+            StatementGenerator sg(lex1, self->func);
+            sg.Body();
+            sg.BodyGen();
             lex1 = self->func->sb->deferredCompile;
             while (lex1)
             {

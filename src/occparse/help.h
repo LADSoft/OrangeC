@@ -27,7 +27,6 @@
 #include <unordered_map>
 namespace Parser
 {
-
 template <class T>
 class NestedStack;
 template <class T>
@@ -78,6 +77,8 @@ extern int anonymousNotAlloc;
 bool ismemberdata(SYMBOL* sym);
 bool ismember(SYMBOL* sym);
 void helpinit(void);
+bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
+EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add = true);
 void deprecateMessage(SYMBOL* sym);
 bool isDerivedFromTemplate(Type* tp);
 bool isconstexpr(const EXPRESSION* expa);
@@ -85,8 +86,8 @@ EXPRESSION* createTemporary(Type* tp, EXPRESSION* val);
 EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val);
 void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp);
 SYMBOL* getFunctionSP(Type** tp);
-LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems);
-LEXLIST* concatStrings(LEXLIST* lex, EXPRESSION** expr, e_lexType* tp, int* elems);
+LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems);
+LexList* concatStrings(LexList* lex, EXPRESSION** expr, LexType* tp, int* elems);
 bool isintconst(EXPRESSION* exp);
 bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);
@@ -100,7 +101,7 @@ void cast(Type* tp, EXPRESSION** exp);
 bool castvalue(EXPRESSION* exp);
 bool xvalue(EXPRESSION* exp);
 bool lvalue(EXPRESSION* exp);
-EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<INITIALIZER*>* init,
+EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest);
 bool assignDiscardsConst(Type* dest, Type* source);
 bool isconstzero(Type* tp, EXPRESSION* exp);

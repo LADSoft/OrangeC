@@ -37,10 +37,10 @@
 #include "stmt.h"
 #include "mangle.h"
 #include "cpplookup.h"
+#include "lex.h"
 #include "help.h"
 #include "declcons.h"
 #include "types.h"
-#include "lex.h"
 #include "symtab.h"
 #include "ListFactory.h"
 namespace CompletionCompiler
@@ -77,16 +77,16 @@ void syminit(void)
     usingDirectives.clear();
     matchOverloadLevel = 0;
 }
-void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label)
+void AllocateLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label)
 {
     SymbolTable<SYMBOL>* tn = symbols.CreateSymbolTable();
-    STATEMENT* st;
+    Statement* st;
     Optimizer::LIST* l;
-    st = stmtNode(nullptr, block, StatementNode::dbgblock_);
+    st = Statement::MakeStatement(nullptr, block, StatementNode::dbgblock_);
     st->label = 1;
     if (block.size() && Optimizer::cparams.prm_debug)
     {
-        st = stmtNode(nullptr, block, StatementNode::label_);
+        st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
         st->label = label;
     }
     tn->Next(localNameSpace->front()->syms);
@@ -110,21 +110,21 @@ void TagSyms(SymbolTable<SYMBOL>* syms)
         sym->sb->ccEndLine = preProcessor->GetRealLineNo() + 1;
     }
 }
-void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label)
+void FreeLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label)
 {
     SymbolTable<SYMBOL>* locals = localNameSpace->front()->syms;
     SymbolTable<SYMBOL>* tags = localNameSpace->front()->tags;
-    STATEMENT* st;
+    Statement* st;
     if (block.size() && Optimizer::cparams.prm_debug)
     {
-        st = stmtNode(nullptr, block, StatementNode::label_);
+        st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
         st->label = label;
     }
     checkUnused(localNameSpace->front()->syms);
     if (sym)
         sym->sb->value.i--;
 
-    st = stmtNode(nullptr, block, StatementNode::expr_);
+    st = Statement::MakeStatement(nullptr, block, StatementNode::expr_);
     destructBlock(&st->select, localNameSpace->front()->syms, true);
     localNameSpace->front()->syms = localNameSpace->front()->syms->Next();
     localNameSpace->front()->tags = localNameSpace->front()->tags->Next();
@@ -145,7 +145,7 @@ void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label)
         sym->sb->inlineFunc.syms = locals;
         sym->sb->inlineFunc.tags = tags;
     }
-    st = stmtNode(nullptr, block, StatementNode::dbgblock_);
+    st = Statement::MakeStatement(nullptr, block, StatementNode::dbgblock_);
     st->label = 0;
 }
 

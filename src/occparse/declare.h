@@ -59,31 +59,31 @@ void addTemplateDeclaration(STRUCTSYM* decl);
 void dropStructureDeclaration(void);
 SYMBOL* getStructureDeclaration(void);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
-LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
+LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
                    StorageClass storage_class);
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
 void calculateStructOffsets(SYMBOL* sp);
 void resolveAnonymousUnions(SYMBOL* sp);
-LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
+LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable);
-LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
+LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
     Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression);
-LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque,
+LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque,
     bool* defd);
 void sizeQualifiers(Type* tp);
-LEXLIST* parse_declspec(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
-LEXLIST* getQualifiers(LEXLIST* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
+LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
+LexList* getQualifiers(LexList* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 bool intcmp(Type* t1, Type* t2);
 void checkIncompleteArray(Type* tp, const char* errorfile, int errorline);
-LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces);
+LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces);
 
-LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
+LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
     StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
     bool* isExplicit, bool* constexpression, Type** tp, Linkage* linkage, Linkage* linkage2,
     Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
     bool* asFriend);
 
-LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<BLOCKDATA*>& block,
+LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<FunctionBlock*>& block,
                  bool needsemi, int asExpression, bool inTemplate, AccessLevel access);
 }  // namespace Parser

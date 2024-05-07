@@ -120,25 +120,25 @@ protected:
 };
 struct TypeGenerator
 {
-    static Type* PointerQualifiers(LEXLIST*& lex, Type* tp, bool allowstatic);
-    static Type* FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
+    static Type* PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic);
+    static Type* FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
         bool funcptr);
-    static Type* BeforeName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+    static Type* BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
         bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
         bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
-    static Type* UnadornedType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+    static Type* UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
         Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
         bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
         bool constexpression);
-    static Type* TypeId(LEXLIST*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
-    static bool StartOfType(LEXLIST*& lex, bool* structured, bool assumeType);
+    static Type* TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
+    static bool StartOfType(LexList*& lex, bool* structured, bool assumeType);
 private:
-    static void ExceptionSpecifiers(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class);
-    static Type* FunctionQualifiersAndTrailingReturn(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class);
+    static void ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class);
+    static Type* FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class);
     static void ResolveVLAs(Type* tp);
-    static Type* ArrayType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
+    static Type* ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
         bool msil);
-    static Type* AfterName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
+    static Type* AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
         int consdest, bool funcptr);
 };
 bool istype(SYMBOL* sym);

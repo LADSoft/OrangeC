@@ -39,10 +39,10 @@
 #include "templatededuce.h"
 #include "declcpp.h"
 #include "expr.h"
+#include "lex.h"
 #include "help.h"
 #include "unmangle.h"
 #include "types.h"
-#include "lex.h"
 #include "OptUtils.h"
 #include "memory.h"
 #include "beinterf.h"
@@ -61,12 +61,12 @@ int inGetUserConversion;
 int inSearchingFunctions;
 int inNothrowHandler;
 SYMBOL* argFriend;
-static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, FUNCTIONCALL* args, Type* atp, int flags);
+static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, CallSite* args, Type* atp, int flags);
 
 static const int rank[] = {0, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 4, 4, 4, 5, 5, 6, 7, 8, 8, 9};
-static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, Type* atp, SYMBOL* parent, e_cvsrn arr[], int* sizes, int count,
+static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* parent, e_cvsrn arr[], int* sizes, int count,
                                SYMBOL** userFunc, bool usesInitList);
-static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, Type* atp);
+static void WeedTemplates(SYMBOL** table, int count, CallSite* args, Type* atp);
 
 SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly)
 {
@@ -236,7 +236,7 @@ static void GetUsingName(char* buf)
         }
     }
 }
-LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
+LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
                     bool isType, int flags)
 {
     (void)tagsOnly;
@@ -246,7 +246,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
     SYMBOL* strSym = nullptr;
     bool qualified = false;
     std::vector<TEMPLATESELECTOR>* templateSelector = nullptr;
-    LEXLIST *placeholder = lex, *finalPos;
+    LexList *placeholder = lex, *finalPos;
     bool hasTemplate = false;
     TEMPLATEPARAMPAIR* templateParamAsTemplate = nullptr;
     Type* dependentType = nullptr;
@@ -331,7 +331,7 @@ LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             }
             if ((!inTemplateType || parsingUsing) && MATCHKW(lex, Keyword::openpa_))
             {
-                FUNCTIONCALL funcparams = { };
+                CallSite funcparams = { };
                 lex = getArgs(lex, theCurrentFunc, &funcparams, Keyword::closepa_, true, 0);
                 templateSelector->back().arguments = funcparams.arguments;
                 templateSelector->back().asCall = true;
@@ -1124,13 +1124,13 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
     }
     return rv;
 }
-LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
+LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
                       bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
     bool throughClass = false;
-    LEXLIST* placeholder = lex;
+    LexList* placeholder = lex;
     bool hasTemplate = false;
     bool namespaceOnly = false;
     *sym = nullptr;
@@ -1269,7 +1269,7 @@ LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         lex = prevsym(placeholder);
     return lex;
 }
-LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType)
+LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType)
 {
     buf[0] = 0;
     if (ISID(lex))
@@ -1340,9 +1340,9 @@ LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, Type** cast
             }
             strcpy(buf, overloadNameTab[*ov = CI_CAST]);
         }
-        else if (lex->data->type == l_astr || lex->data->type == l_u8str)
+        else if (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_u8str_)
         {
-            LEXLIST* placeholder = lex;
+            LexList* placeholder = lex;
             Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)lex->data->value.s.w;
             if (xx->count)
                 error(ERR_OPERATOR_LITERAL_EMPTY_STRING);
@@ -1378,14 +1378,14 @@ LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, Type** cast
     }
     return lex;
 }
-LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
+LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
                        bool tagsOnly, bool membersOnly, char* idname, int flags)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
     bool throughClass = false;
     Type* castType = nullptr;
-    LEXLIST* placeholder = lex;
+    LexList* placeholder = lex;
     char buf[512];
     int ov = 0;
     bool hasTemplate = false;
@@ -1801,7 +1801,7 @@ static void weedToFunctions(std::list<SYMBOL*>& lst)
         lst.remove(sym);
     }
 }
-static void GatherConversions(SYMBOL* sym, SYMBOL** spList, int n, FUNCTIONCALL* args, Type* atp, e_cvsrn** icsList,
+static void GatherConversions(SYMBOL* sym, SYMBOL** spList, int n, CallSite* args, Type* atp, e_cvsrn** icsList,
                               int** lenList, int argCount, SYMBOL*** funcList, bool usesInitList)
 {
     int i;
@@ -2791,7 +2791,7 @@ static int ChooseLessConstTemplate(SYMBOL* left, SYMBOL* right)
     }
     return 0;
 }
-static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, FUNCTIONCALL* funcparams, int argCount,
+static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, CallSite* funcparams, int argCount,
                            int funcCount, SYMBOL*** funcList)
 {
     static e_cvsrn identity = CV_IDENTITY;
@@ -2810,10 +2810,10 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, FU
                     int l = 0, r = 0;
                     int k = 0;
                     int lk = 0, rk = 0;
-                    std::list<INITLIST*>* args = funcparams ? funcparams->arguments : nullptr;
-                    std::list<INITLIST*>::iterator argit;
-                    std::list<INITLIST*>::iterator argite;
-                    std::list<INITLIST*> dummy;
+                    std::list<Argument*>* args = funcparams ? funcparams->arguments : nullptr;
+                    std::list<Argument*>::iterator argit;
+                    std::list<Argument*>::iterator argite;
+                    std::list<Argument*> dummy;
                     if (args)
                     {
                         argit = args->begin();
@@ -3168,15 +3168,15 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
             int** lenList;
             int m = 0;
             SYMBOL *found1, *found2;
-            FUNCTIONCALL funcparams;
-            std::list<INITLIST*> args;
+            CallSite funcparams;
+            std::list<Argument*> args;
             Type thistp;
             EXPRESSION exp;
             memset(&funcparams, 0, sizeof(funcparams));
             memset(&thistp, 0, sizeof(thistp));
             memset(&exp, 0, sizeof(exp));
             funcparams.arguments = &args;
-            INITLIST arg0 = {};
+            Argument arg0 = {};
             args.push_back(&arg0);
             arg0.tp = tpa;
             arg0.exp = &exp;
@@ -4616,7 +4616,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         }
     }
 }
-static void getInitListConversion(Type* tp, std::list<INITLIST*>* list, Type* tpp, int* n, e_cvsrn* seq, SYMBOL* candidate,
+static void getInitListConversion(Type* tp, std::list<Argument*>* list, Type* tpp, int* n, e_cvsrn* seq, SYMBOL* candidate,
                                   SYMBOL** userFunc)
 {
     if (tp->IsStructured() || (tp->IsRef() && tp->BaseType()->btp->IsStructured()))
@@ -4682,7 +4682,7 @@ static void getInitListConversion(Type* tp, std::list<INITLIST*>* list, Type* tp
                 EXPRESSION exp = {}, *expp = &exp;
                 Type* ctype = cons->tp;
                 Type thistp = {};
-                FUNCTIONCALL funcparams = {};
+                CallSite funcparams = {};
                 funcparams.arguments = list;
                 exp.type = ExpressionNode::c_i_;
                 Type::MakeType(thistp, BasicType::pointer_, tp->BaseType());
@@ -4737,14 +4737,14 @@ static void getInitListConversion(Type* tp, std::list<INITLIST*>* list, Type* tp
         }
     }
 }
-static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, Type* atp, SYMBOL* parent, e_cvsrn arr[], int* sizes, int count,
+static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* parent, e_cvsrn arr[], int* sizes, int count,
                                SYMBOL** userFunc, bool usesInitList)
 {
     (void)usesInitList;
     int pos = 0;
     int n = 0;
     int i;
-    std::list<INITLIST*> a;
+    std::list<Argument*> a;
     e_cvsrn seq[500];
     Type* initializerListType = nullptr;
     int m = 0, m1;
@@ -4987,7 +4987,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, Type* atp, SYMBOL* 
                     {
                         if (initializerListType->IsStructured())
                         {
-                            std::list<INITLIST*> nested;
+                            std::list<Argument*> nested;
                             if (!(*ita)->initializer_list)
                             {
                                 nested.push_back((*ita)->nested->front());
@@ -5001,7 +5001,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, Type* atp, SYMBOL* 
                         }
                         else
                         {
-                            std::list<INITLIST*> nested;
+                            std::list<Argument*> nested;
                             if (!(*ita)->initializer_list)
                             {
                                 nested.push_back((*ita)->nested->front());
@@ -5174,7 +5174,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, Type* atp, SYMBOL* 
                ((*ita)->tp && (*ita)->tp->type == BasicType::templateparam_ && (*ita)->tp->templateParam->second->packed && !(*ita)->tp->templateParam->second->byPack.pack);
     }
 }
-SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, Type* atp)
+SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp)
 {
     inDeduceArgs++;
     if (sym->sb->templateLevel)
@@ -5256,7 +5256,7 @@ static int CompareArgs(SYMBOL* left, SYMBOL* right)
         return 1;
     return 0;
 }
-static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, Type* atp)
+static void WeedTemplates(SYMBOL** table, int count, CallSite* args, Type* atp)
 {
     int i = count;
     if (atp || !args->astemplate)
@@ -5347,7 +5347,7 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, Type* a
         }
     }
 }
-SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
+SYMBOL* GetOverloadedTemplate(SYMBOL* sp, CallSite* args)
 {
     SYMBOL *found1 = nullptr, *found2 = nullptr;
     std::vector<SYMBOL *> spList;
@@ -5419,7 +5419,7 @@ void weedgathering(std::list<SYMBOL*>& gather)
         }
     }
 }
-static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, FUNCTIONCALL* args, Type* atp, int flags)
+static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, CallSite* args, Type* atp, int flags)
 {
     std::set<SYMBOL*> filters;
     inSearchingFunctions++;
@@ -5547,7 +5547,7 @@ static bool ValidForDeduction(SYMBOL* s)
     }
     return true;
 }
-    SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, int flags)
+    SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, int flags)
 {
     std::vector<SYMBOL*> spList;
     SYMBOL* deduced = nullptr;
@@ -5884,7 +5884,7 @@ static bool ValidForDeduction(SYMBOL* s)
     }
     return deduced;
 }
-SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, Type* atp, int toErr,
+SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, Type* atp, int toErr,
                               bool maybeConversion, int flags)
 {
     STRUCTSYM s;
@@ -6277,7 +6277,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF) || ((flags & _F_INDECLTYPE) && found1->tp->BaseType()->btp->IsAutoType()) ||
-                    ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LEXLIST*)-1))
+                    ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LexList*)-1))
                 {
                     if (theCurrentFunc && !found1->sb->constexpression)
                     {
@@ -6345,7 +6345,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                                 s.tmpl = found1->templateParams;
                                 addTemplateDeclaration(&s);
                             }
-                            parseNoexcept(found1);
+                            StatementGenerator::ParseNoExceptClause(found1);
                             if (found1->templateParams)
                             {
                                 dropStructureDeclaration();
@@ -6397,8 +6397,8 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
 }
 SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** exp, int flags)
 {
-    FUNCTIONCALL fpargs;
-    std::list<INITLIST*> args;
+    CallSite fpargs;
+    std::list<Argument*> args;
     fpargs.arguments = &args;
     EXPRESSION* exp2 = *exp;
     bool found = false;
@@ -6445,7 +6445,7 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
     {
         while (itp != itpe)
         {
-            auto il = Allocate<INITLIST>();
+            auto il = Allocate<Argument>();
             il->tp = ((*itp))->tp;
             il->exp = intNode(ExpressionNode::c_i_, 0);
             if (il->tp->IsRef())

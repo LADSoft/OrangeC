@@ -35,6 +35,7 @@
 #include "mangle.h"
 #include "iexpr.h"
 #include "declare.h"
+#include "lex.h"
 #include "help.h"
 #include "OptUtils.h"
 #include "iblock.h"
@@ -232,7 +233,7 @@ static void ArgDeref(Type* desttp, Type* srctp, EXPRESSION **dest)
         deref(desttp, dest);
     }
 }
-static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list<INITLIST*>* args)
+static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list<Argument*>* args)
 {
     if (table->size())
     {
@@ -244,7 +245,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
             ++it;
         }
         
-        std::list<INITLIST*>::iterator ita, itae;
+        std::list<Argument*>::iterator ita, itae;
         if (args)
         {
             ita = args->begin();
@@ -461,7 +462,7 @@ static void inlineCopySyms(SymbolTable<SYMBOL>* src)
         src = src->Next();
     }
 }
-static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inlineNesting * 2 + 1); }
+static bool inlineTooComplex(CallSite* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inlineNesting * 2 + 1); }
 static bool hasaincdec(EXPRESSION* exp)
 {
     if (exp)
@@ -483,7 +484,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
 {
     int i;
     Optimizer::IMODE* ap3;
-    FUNCTIONCALL* f = node->v.func;
+    CallSite* f = node->v.func;
     Optimizer::IMODE* oldReturnImode = returnImode;
     int oldretlab = retlab, oldstartlab = startlab;
     int oldretcount = retcount;

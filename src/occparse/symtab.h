@@ -45,9 +45,9 @@ namespace Parser
     extern SymbolTableFactory<SYMBOL> symbols;
 
     void syminit(void);
-    void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
+    void AllocateLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label);
     void TagSyms(SymbolTable<SYMBOL>* syms);
-    void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
+    void FreeLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label);
     bool matchOverload(Type* tnew, Type* told, bool argsOnly);
     SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table);
     SYMBOL* gsearch(const char* name);

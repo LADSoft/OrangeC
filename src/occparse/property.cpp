@@ -35,8 +35,8 @@
 #include "memory.h"
 #include "ccerr.h"
 #include "Property.h"
-#include "help.h"
 #include "lex.h"
+#include "help.h"
 #include "istmt.h"
 #include "init.h"
 #include "templatedecl.h"
@@ -127,19 +127,19 @@ static SYMBOL* CreateBackingVariable(SYMBOL* sym)
 static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
 {
     SYMBOL* p = CreateSetterPrototype(sym);
-    STATEMENT* st;
-    BLOCKDATA bd = { };
-    std::list<BLOCKDATA*> b = { &bd };
+    Statement* st;
+    FunctionBlock bd = { };
+    std::list<FunctionBlock*> b = { &bd };
     EXPRESSION* left = varNode(ExpressionNode::global_, backing);
     EXPRESSION* right = varNode(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     deref(sym->tp, &left);
     deref(sym->tp, &right);
-    st = stmtNode(nullptr, b, StatementNode::expr_);
+    st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
     st->select = exprNode(ExpressionNode::assign_, left, right);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
+    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
@@ -147,21 +147,21 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
 static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
 {
     SYMBOL* p = CreateGetterPrototype(sym);
-    STATEMENT* st;
-    BLOCKDATA bd = {};
-    std::list<BLOCKDATA*> b { &bd };
+    Statement* st;
+    FunctionBlock bd = {};
+    std::list<FunctionBlock*> b { &bd };
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
-    st = stmtNode(nullptr, b, StatementNode::return_);
+    st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
     st->select = varNode(ExpressionNode::global_, backing);
     deref(sym->tp, &st->select);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
+    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
-LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
+LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
 {
     if (sym->tp->IsStructured())
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
@@ -215,8 +215,9 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
                 }
                 else
                 {
-                    lex = body(lex, prototype);
-                    bodygen(prototype);
+                    StatementGenerator sg(lex, prototype);
+                    sg.Body();
+                    sg.BodyGen();
                     insertfunc(prototype, globalNameSpace->front()->syms);
                 }
             }

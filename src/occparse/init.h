@@ -43,38 +43,38 @@ typedef struct _dyninit_
 {
     struct _dyninit_* next;
     SYMBOL* sp;
-    std::list<INITIALIZER*>* init;
-} DYNAMIC_INITIALIZER;
+    std::list<Initializer*>* init;
+} DYNAMIC_Initializer;
 
 extern bool initializingGlobalVar;
 extern int ignore_global_init;
 
 void init_init(void);
-EXPRESSION* stringlit(STRING* s);
+EXPRESSION* stringlit(StringData* s);
 EXPRESSION* ConvertToMSILString(EXPRESSION* val);
-int genstring(STRING* str);
+int genstring(StringData* str);
 void CreateInlineConstructor(SYMBOL* sym);
 void CreateInlineDestructor(SYMBOL* sym);
 void dumpLits(void);
 void dumpStartups(void);
 void insert_file_constructor(SYMBOL* sym);
-void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init);
-void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init);
+void insertDynamicInitializer(SYMBOL* sym, std::list<Initializer*>* init);
+void insertDynamicDestructor(SYMBOL* sym, std::list<Initializer*>* init);
 int dumpMemberPtr(SYMBOL* sym, Type* membertp, bool make_label);
-int dumpInit(SYMBOL* sym, INITIALIZER* init);
+int dumpInit(SYMBOL* sym, Initializer* init);
 bool IsConstWithArr(Type* tp);
 void dumpInitGroup(SYMBOL* sym, Type* tp);
 void dumpInitializers(void);
 void insertInitSym(SYMBOL* sym);
-INITIALIZER* initInsert(std::list<INITIALIZER*>** pos, Type* tp, EXPRESSION* exp, int offset, bool noassign);
+Initializer* initInsert(std::list<Initializer*>** pos, Type* tp, EXPRESSION* exp, int offset, bool noassign);
 ExpressionNode referenceTypeError(Type* tp, EXPRESSION* exp);
 EXPRESSION* getThisNode(SYMBOL* sym);
-LEXLIST* initType(LEXLIST* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<INITIALIZER*>** init, std::list<INITIALIZER*>** dest, Type* itype,
+LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init, std::list<Initializer*>** dest, Type* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
 bool InitVariableMatches(SYMBOL* left, SYMBOL* right);
-void RecalculateVariableTemplateInitializers(std::list<INITIALIZER*>::iterator& ilbegin, std::list<INITIALIZER*>::iterator& ilend, std::list<INITIALIZER*>** out, Type* tp, int offset);
+void RecalculateVariableTemplateInitializers(std::list<Initializer*>::iterator& ilbegin, std::list<Initializer*>::iterator& ilend, std::list<Initializer*>** out, Type* tp, int offset);
 void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName);
 void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, EXPRESSION* newName);
-LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
+LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
                     int flags);
 }  // namespace Parser

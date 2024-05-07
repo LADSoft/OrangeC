@@ -41,13 +41,13 @@ SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 static int eval(EXPRESSION* exp);
 static bool ValidExp(EXPRESSION** exp_in);
 static bool ValidArg(Type* tp);
-static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, std::list<INITLIST*>* args);
+static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, std::list<Argument*>* args);
 static void FillNontypeExpressionDefaults(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static void FillNontypeTypeDefaults(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static bool SetTemplateParamValue(TEMPLATEPARAMPAIR* p, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static void FillNontypeTemplateParamDefaults(std::list<TEMPLATEPARAMPAIR>* fills, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static bool checkNonTypeTypes(std::list<TEMPLATEPARAMPAIR>* params, std::list<TEMPLATEPARAMPAIR>* enclosing);
-SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func, std::list<INITLIST*>* args,
+SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func, std::list<Argument*>* args,
                                      std::list<TEMPLATEPARAMPAIR>* nparams);
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>* dest,
                               std::list<TEMPLATEPARAMPAIR>* src, std::list<TEMPLATEPARAMPAIR>* enclosing);

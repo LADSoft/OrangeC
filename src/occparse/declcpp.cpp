@@ -37,10 +37,10 @@
 #include "templateinst.h"
 #include "templatededuce.h"
 #include "lambda.h"
+#include "lex.h"
 #include "help.h"
 #include "stmt.h"
 #include "expr.h"
-#include "lex.h"
 #include "cpplookup.h"
 #include "rtti.h"
 #include "constopt.h"
@@ -118,7 +118,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                         {
                             if (func->sb->deferredCompile && (!func->sb->templateLevel || func->sb->instantiated))
                             {
-                                FUNCTIONCALL fcall = {};
+                                CallSite fcall = {};
                                 Type* tp = nullptr;
                                 EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
                                 SYMBOL* sp = func->sb->overloadName;
@@ -132,7 +132,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                     }
                                     else if (sym->tp->type != BasicType::void_)
                                     {
-                                        auto arg = Allocate<INITLIST>();
+                                        auto arg = Allocate<Argument>();
                                         arg->tp = sym->tp;
                                         arg->exp = exp;
                                         fcall.arguments->push_back(arg);
@@ -804,7 +804,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
 }
 void deferredCompileOne(SYMBOL* cur)
 {
-    LEXLIST* lex;
+    LexList* lex;
     STRUCTSYM l, n, x, q;
     int count = 0;
     std::list<LAMBDA*> oldLambdas;
@@ -857,7 +857,8 @@ void deferredCompileOne(SYMBOL* cur)
         oldLambdas = lambdas;
         lambdas.clear();
         cur->sb->deferredCompile = nullptr;
-        lex = body(lex, cur);
+        StatementGenerator sg(lex, cur);
+        sg.Body();
         SetAlternateLex(nullptr);
         dontRegisterTemplate--;
         lambdas = oldLambdas;
@@ -891,7 +892,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 instantiatingTemplate = 0;
                 templateNestingCount++;
             }
-            LEXLIST* lex;
+            LexList* lex;
             STRUCTSYM l, n, q;
             Type* tp2;
             int count = 0;
@@ -958,7 +959,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 }
 void deferredInitializeStructFunctions(SYMBOL* cur)
 {
-    LEXLIST* lex;
+    LexList* lex;
     STRUCTSYM l, n;
     int count = 0;
     int tns = PushTemplateNamespace(cur);
@@ -1019,7 +1020,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
 void deferredInitializeStructMembers(SYMBOL* cur)
 {
     Optimizer::LIST* staticAssert;
-    LEXLIST* lex;
+    LexList* lex;
     STRUCTSYM l, n;
     int count = 0;
     int tns = PushTemplateNamespace(cur);
@@ -1206,7 +1207,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
     }
     return bc;
 }
-LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
+LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
 {
     auto baseClasses = baseClassListFactory.CreateList();
     AccessLevel currentAccess;
@@ -1915,7 +1916,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
     else if (packedExp->type == ExpressionNode::func_)
     {
         GatherTemplateParams(count, arg, packedExp->v.func->templateParams);
-        INITLIST* lst;
+        Argument* lst;
         if (packedExp->v.func->arguments)
             for (auto lst : *packedExp->v.func->arguments)
                 GatherPackedVars(count, arg, lst->exp);
@@ -2071,10 +2072,10 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
             packedExp->v.func->templateParams = ReplicateTemplateParams(count, arg, packedExp->v.func->templateParams, index);
             if (packedExp->v.func->arguments)
             {
-                std::list<INITLIST*> temp;
+                std::list<Argument*> temp;
                 for (auto old : *packedExp->v.func->arguments)
                 {
-                    auto lst = Allocate<INITLIST>();
+                    auto lst = Allocate<Argument>();
                     *lst = *old;
                     lst->exp = ReplicatePackedVars(count, arg, lst->exp, index);
                     temp.push_back(lst);
@@ -2122,7 +2123,7 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
     }
     return rv;
 }
-void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* start, EXPRESSION* packedExp)
+void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* start, EXPRESSION* packedExp)
 {
     if (packedExp->type == ExpressionNode::templateparam_)
     {
@@ -2134,7 +2135,7 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
                     *lptr = initListListFactory.CreateList();
                 for (auto&& t : *packedExp->v.sp->tp->templateParam->second->byPack.pack)
                 {
-                    auto il = Allocate<INITLIST>();
+                    auto il = Allocate<Argument>();
                     il->exp = t.second->byNonType.val;
                     il->tp = t.second->byNonType.tp;
                     (*lptr)->push_back(il);
@@ -2163,7 +2164,7 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
                     while (it != itend)
                     {
                         SYMBOL* sym = *it;
-                        INITLIST* p = Allocate<INITLIST>();
+                        Argument* p = Allocate<Argument>();
                         p->tp = sym->tp;
                         p->exp = varNode(ExpressionNode::auto_, sym);
                         if (p->tp->IsRef())
@@ -2189,8 +2190,8 @@ void expandPackedInitList(std::list<INITLIST*>** lptr, SYMBOL* funcsp, LEXLIST* 
 
                     for (i = 0; i < n; i++)
                     {
-                        INITLIST* p = Allocate<INITLIST>();
-                        LEXLIST* lex = SetAlternateLex(start);
+                        Argument* p = Allocate<Argument>();
+                        LexList* lex = SetAlternateLex(start);
                         packIndex = i;
                         expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
                         SetAlternateLex(nullptr);
@@ -2284,12 +2285,12 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, std::list<VBASEENTRY
     }
     return vcount;
 }
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
-                             std::list<MEMBERINITIALIZERS*>::iterator& initend,
-                             std::list<MEMBERINITIALIZERS*>* mi, std::list<BASECLASS*>* bc,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERInitializerS*>::iterator& init,
+                             std::list<MEMBERInitializerS*>::iterator& initend,
+                             std::list<MEMBERInitializerS*>* mi, std::list<BASECLASS*>* bc,
                                             std::list<VBASEENTRY*>* vbase)
 {
-    MEMBERINITIALIZERS* linit = *init;
+    MEMBERInitializerS* linit = *init;
     int basecount = 0, vbasecount = 0;
     std::list<BASECLASS*> baseEntries;
     std::list<VBASEENTRY*> vbaseEntries;
@@ -2308,7 +2309,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
     }
     else
     {
-        LEXLIST* lex = SetAlternateLex(linit->initData);
+        LexList* lex = SetAlternateLex(linit->initData);
         init = mi->erase(init);
         if (MATCHKW(lex, Keyword::lt_))
         {
@@ -2317,7 +2318,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
             // and also count the number of packs to see if it matches the number of templates..
             int n = -1;
             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-            LEXLIST* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
+            LexList* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
             std::deque<Type*> defaults;
             PushPopDefaults(defaults, funcsp->templateParams, true, true);
             std::stack <TEMPLATEPARAM*> stk; 
@@ -2380,7 +2381,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                         ++itb;
                     else
                         ++itv;
-                    MEMBERINITIALIZERS* added = Allocate<MEMBERINITIALIZERS>();
+                    MEMBERInitializerS* added = Allocate<MEMBERInitializerS>();
                     bool done = false;
                     lex = SetAlternateLex(arglex);
                     packIndex = i;
@@ -2406,7 +2407,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     if (!done)
                     {
                         SYMBOL* sym = makeID(StorageClass::member_, added->sp->tp, nullptr, added->sp->name);
-                        FUNCTIONCALL shim;
+                        CallSite shim;
                         added->sp = sym;
                         shim.arguments = nullptr;
                         getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
@@ -2415,7 +2416,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                             added->init = initListFactory.CreateList();
                             for (auto a : *shim.arguments)
                             {
-                                auto xinit = Allocate<INITIALIZER>();
+                                auto xinit = Allocate<Initializer>();
                                 xinit->basetp = a->tp;
                                 xinit->exp = a->exp;
                                 added->init->push_back(xinit);
@@ -2436,11 +2437,11 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
         }
     }
 }
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack, std::list<MEMBERINITIALIZERS*>** p,
-                                    LEXLIST* start, std::list<INITLIST*>* list)
+void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack, std::list<MEMBERInitializerS*>** p,
+                                    LexList* start, std::list<Argument*>* list)
 {
     int n = CountPacks(templatePack);
-    MEMBERINITIALIZERS* orig = (*p)->front();
+    MEMBERInitializerS* orig = (*p)->front();
     (*p)->pop_front();
     auto itp = (*p)->begin();
     if (n)
@@ -2476,8 +2477,8 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
         auto ittppe = templatePack->end();
         for (i = 0; i < n; i++)
         {
-            LEXLIST* lex = SetAlternateLex(start);
-            MEMBERINITIALIZERS* mi = Allocate<MEMBERINITIALIZERS>();
+            LexList* lex = SetAlternateLex(start);
+            MEMBERInitializerS* mi = Allocate<MEMBERInitializerS>();
             Type* tp = ittpp->second->byClass.val;
             int offset = 0;
             int vcount = 0, ccount = 0;
@@ -2522,7 +2523,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
                 if (!done)
                 {
                     SYMBOL* sym = makeID(StorageClass::member_, mi->sp->tp, nullptr, mi->sp->name);
-                    FUNCTIONCALL shim;
+                    CallSite shim;
                     mi->sp = sym;
                     lex = SetAlternateLex(mi->initData);
                     shim.arguments = nullptr;
@@ -2533,7 +2534,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
                         mi->init = initListFactory.CreateList();
                         for (auto a : *shim.arguments)
                         {
-                            auto xinit = Allocate<INITIALIZER>();
+                            auto xinit = Allocate<Initializer>();
                             xinit->basetp = a->tp;
                             xinit->exp = a->exp;
                             mi->init->push_back(xinit);
@@ -2921,7 +2922,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         }
     }
 }
-LEXLIST* handleStaticAssert(LEXLIST* lex)
+LexList* handleStaticAssert(LexList* lex)
 {
     RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
     if (!needkw(&lex, Keyword::openpa_))
@@ -2951,14 +2952,14 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
         if (MATCHKW(lex, Keyword::comma_))
         {
             lex = getsym();
-            if (lex->data->type != l_astr)
+            if (lex->data->type != LexType::l_astr_)
             {
                 error(ERR_NEEDSTRING);
             }
             else
             {
                 int i, pos = 0;
-                while (lex->data->type == l_astr)
+                while (lex->data->type == LexType::l_astr_)
                 {
                     Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->data->value.s.w;
                     lex = getsym();
@@ -2985,7 +2986,7 @@ LEXLIST* handleStaticAssert(LEXLIST* lex)
     }
     return lex;
 }
-LEXLIST* insertNamespace(LEXLIST* lex, Linkage linkage, StorageClass storage_class, bool* linked)
+LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked)
 {
     bool anon = false;
     char buf[256], *p;
@@ -3193,7 +3194,7 @@ static void InsertTag(SYMBOL* sym, StorageClass storage_class, bool allowDups)
     if (!allowDups || !sp1 || (sym != sp1 && sym->sb->mainsym && sym->sb->mainsym != sp1->sb->mainsym))
         table->Add(sym);
 }
-LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate, bool hasAttributes)
+LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate, bool hasAttributes)
 {
     SYMBOL* sp;
     if (MATCHKW(lex, Keyword::namespace_))
@@ -3252,7 +3253,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
         if (!isTypename && ISID(lex))
         {
-            LEXLIST* idsym = lex;
+            LexList* idsym = lex;
             lex = getsym();
             attributes oldAttribs = basisAttribs;
             basisAttribs = {0};
@@ -3402,7 +3403,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
     }
     return lex;
 }
-static void balancedAttributeParameter(LEXLIST** lex)
+static void balancedAttributeParameter(LexList** lex)
 {
     Keyword start = KW(*lex);
     Keyword endp = (Keyword) - 1;
@@ -3464,9 +3465,9 @@ Type* AttributeFinish(SYMBOL* sym, Type* tp)
     }
     if (sym->sb->attribs.inheritable.cleanup && sym->sb->storage_class == StorageClass::auto_)
     {
-        FUNCTIONCALL* fc = Allocate<FUNCTIONCALL>();
+        CallSite* fc = Allocate<CallSite>();
         fc->arguments = initListListFactory.CreateList();
-        auto arg = Allocate<INITLIST>();
+        auto arg = Allocate<Argument>();
         arg->tp = &stdpointer;
         arg->exp = varNode(ExpressionNode::auto_, sym);
         fc->arguments->push_back(arg);
@@ -3518,7 +3519,7 @@ static const std::unordered_map<std::string, int, StringHash> gccStyleAttribName
 #define DEFAULT_CONSTRUCTOR_PRIORITY 101
 #define DEFAULT_DESTRUCTOR_PRIORITY 101
 
-void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
+void ParseOut___attribute__(LexList** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, Keyword::attribute_))
     {
@@ -3551,7 +3552,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
-                                    if ((*lex)->data->type == l_astr)
+                                    if ((*lex)->data->type == LexType::l_astr_)
                                     {
                                         char buf[1024];
                                         int i;
@@ -3702,7 +3703,7 @@ void ParseOut___attribute__(LEXLIST** lex, SYMBOL* funcsp)
                                 if (MATCHKW(*lex, Keyword::openpa_))
                                 {
                                     *lex = getsym();
-                                    if ((*lex)->data->type == l_astr)
+                                    if ((*lex)->data->type == LexType::l_astr_)
                                     {
                                         char buf[1024];
                                         int i;
@@ -3870,7 +3871,7 @@ std::string StripUnderscores(std::string str)
     }
     return str;
 }
-bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
+bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
     bool rv = false;
@@ -4185,7 +4186,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                             *lex = getsym();
                             if (basisAttribs.uninheritable.deprecationText)
                             {
-                                if ((*lex)->data->type == l_astr)
+                                if ((*lex)->data->type == LexType::l_astr_)
                                 {
                                     char buf[1024];
                                     int i;
@@ -4232,7 +4233,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
 }
 // these tests fall flat because they don't test the specific constructor
 // used to construct things...
-static bool hasNoBody(std::list<STATEMENT*>* stmts)
+static bool hasNoBody(std::list<Statement*>* stmts)
 {
     if (stmts)
     {
@@ -4338,7 +4339,7 @@ bool MatchesConstFunction(SYMBOL* sym)
     }
     return true;
 }
-LEXLIST* getDeclType(LEXLIST* lex, SYMBOL* funcsp, Type** tn)
+LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
 {
     bool hasAmpersand = false;
     bool hasAuto = false;
@@ -4524,13 +4525,13 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             InsertLocalStaticUnInitializer(newFunc, body);
 
             EXPRESSION* callexp = exprNode(ExpressionNode::func_, nullptr, nullptr);
-            callexp->v.func = Allocate<FUNCTIONCALL>();
+            callexp->v.func = Allocate<CallSite>();
             callexp->v.func->sp = atexitfunc;
             callexp->v.func->functp = atexitfunc->tp;
             callexp->v.func->fcall = varNode(ExpressionNode::pc_, atexitfunc);
             callexp->v.func->ascall = true;
             callexp->v.func->arguments = initListListFactory.CreateList();
-            auto arg = Allocate<INITLIST>();
+            auto arg = Allocate<Argument>();
             callexp->v.func->arguments->push_back(arg);
             arg->tp = &stdpointer;
             arg->exp = varNode(ExpressionNode::pc_, newFunc);
@@ -4576,8 +4577,8 @@ static int CountMembers(SYMBOL* sym)
     return count;
 }
 
-LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
-                              std::list<BLOCKDATA*>& block)
+LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
+                              std::list<FunctionBlock*>& block)
 {
     lex = getsym();
     if (!ISID(lex))
@@ -4630,7 +4631,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                     auto copy = anonymousVar(storage_class, btp);
                     if (btp->IsStructured())
                     {
-                        std::list<INITIALIZER*>* constructors = nullptr;
+                        std::list<Initializer*>* constructors = nullptr;
 
                         for (int i = 0; i < identifiers.size(); i++)
                         {
@@ -4647,12 +4648,12 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                             }
                             else
                             {
-                                auto st = stmtNode(lex, block, StatementNode::expr_);
+                                auto st = Statement::MakeStatement(lex, block, StatementNode::expr_);
                                 st->select = expx;
                             }
          
                         }
-                        std::list<INITIALIZER*>* destructors = nullptr;
+                        std::list<Initializer*>* destructors = nullptr;
                         EXPRESSION* sz = nullptr;
                         if (identifiers.size() > 1)
                         {
@@ -4682,13 +4683,13 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                             storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
                             storage_class != StorageClass::mutable_)
                         {
-                            std::list<INITIALIZER*>* constructors = initListFactory.CreateList();
+                            std::list<Initializer*>* constructors = initListFactory.CreateList();
                             initInsert(&constructors, tp, epc, 0, false);
                             insertDynamicInitializer(copy->v.sp, constructors);
                         }
                         else
                         {
-                            auto st = stmtNode(lex, block, StatementNode::expr_);
+                            auto st = Statement::MakeStatement(lex, block, StatementNode::expr_);
                             st->select = epc;
                         }
                     }
@@ -4700,7 +4701,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                         initInsert(&sym->sb->init, btp, copy, (i++) * btp->size, true);
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
                         {
-                            STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                            Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
                             s->select = varNode(ExpressionNode::auto_, sym);
                         }
                     }
@@ -4774,8 +4775,8 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                          }
                     }
                     auto copy = anonymousVar(storage_class, tp);
-                    std::list<INITIALIZER*>* constructors = nullptr;
-                    std::list<INITIALIZER*>* destructors = nullptr;
+                    std::list<Initializer*>* constructors = nullptr;
+                    std::list<Initializer*>* destructors = nullptr;
 
                     auto src = exp;
                     auto dest = copy;
@@ -4791,7 +4792,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                     }
                     else
                     {
-                        auto st = stmtNode(lex, block, StatementNode::expr_);
+                        auto st = Statement::MakeStatement(lex, block, StatementNode::expr_);
                         st->select = expx;
                     }
                     expx = dest;
@@ -4820,7 +4821,7 @@ LEXLIST* GetStructuredBinding(LEXLIST* lex, SYMBOL* funcsp, StorageClass storage
                         initInsert(&sym->sb->init, (*it)->tp, copy, (*it)->sb->offset + offset, true);
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
                         {
-                            STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                            Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
                             s->select = varNode(ExpressionNode::auto_, sym);
                         }
                         ++it;

@@ -43,7 +43,7 @@ extern SYMBOL* argFriend;
 SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
 std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing = false);
 SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly);
-LEXLIST* nestedPath(LEXLIST* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
+LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
                     bool isType, int flags);
 SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, bool tagsOnly);
 SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* arg);
@@ -51,10 +51,10 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name);
 SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, bool toErr);
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALUEDATA*>* ns, bool tagsOnly, bool throughClass,
                      bool namespaceOnly);
-LEXLIST* nestedSearch(LEXLIST* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
+LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
                       bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType);
-LEXLIST* getIdName(LEXLIST* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType);
-LEXLIST* id_expression(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
+LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType);
+LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
                        bool tagsOnly, bool membersOnly, char* idname, int flags);
 SYMBOL* LookupSym(char* name);
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress);
@@ -74,11 +74,11 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
 bool sameTemplateSelector(Type* tnew, Type* told);
 bool sameTemplatePointedTo(Type* tnew, Type* told, bool quals = false);
 bool sameTemplate(Type* P, Type* A, bool quals = false);
-SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, Type* atp);
-SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args);
+SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp);
+SYMBOL* GetOverloadedTemplate(SYMBOL* sp, CallSite* args);
 void weedgathering(Optimizer::LIST** gather);
-SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, int flags);
-SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONCALL* args, Type* atp, int toErr,
+SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, int flags);
+SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, Type* atp, int toErr,
                               bool maybeConversion, int flags);
 SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** exp, int flags);
 

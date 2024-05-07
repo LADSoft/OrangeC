@@ -173,7 +173,7 @@ SYMBOL* SymAlloc()
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name)
 {    
     SYMBOL* sp = SymAlloc();
-    LEXLIST* lex = context->cur ? context->cur->prev : context->last;
+    LexList* lex = context->cur ? context->cur->prev : context->last;
     if (name && strstr(name, "++"))
         sp->sb->compilerDeclared = true;
     sp->name = name;
@@ -309,7 +309,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
         diag("InsertSymbol: cannot insert");
     }
 }
-LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
+LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
                    StorageClass storage_class)
 {
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
@@ -941,7 +941,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         }
     }
 }
-static LEXLIST* structbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
+static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
     STRUCTSYM sl;
     (void)funcsp;
@@ -1117,7 +1117,7 @@ static bool compareStructSyms(SymbolTable<SYMBOL>* left, SymbolTable<SYMBOL>* ri
     }
     return itl == left->end() && itr == right->end();
 }
-LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
+LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable)
 {
     int oldParsingTemplateArgs;
@@ -1187,7 +1187,7 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     parsingDefaultTemplateArgs = oldParsingTemplateArgs;
     return lex;
 }
-static unsigned char* ParseUUID(LEXLIST** lex)
+static unsigned char* ParseUUID(LexList** lex)
 {
     if (MATCHKW(*lex, Keyword::uuid_))
     {
@@ -1195,7 +1195,7 @@ static unsigned char* ParseUUID(LEXLIST** lex)
         unsigned char* rv = Allocate<unsigned char>(16);
         *lex = getsym();
         needkw(lex, Keyword::openpa_);
-        if ((*lex)->data->type == l_astr)
+        if ((*lex)->data->type == LexType::l_astr_)
         {
             int i;
             int count = ((Optimizer::SLCHAR*)(*lex)->data->value.s.w)->count;
@@ -1225,7 +1225,7 @@ static unsigned char* ParseUUID(LEXLIST** lex)
     }
     return nullptr;
 }
-LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
+LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
                            Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
@@ -1530,7 +1530,7 @@ LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     basisAttribs = oldAttribs;
     return lex;
 }
-static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, AccessLevel access, Type* fixedType,
+static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, AccessLevel access, Type* fixedType,
                          bool scoped)
 {
     long long enumval = 0;
@@ -1700,7 +1700,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
     spi->sb->declaring = false;
     return lex;
 }
-LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque,
+LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque,
                          bool* defd)
 {
     SymbolTable<SYMBOL>* table;
@@ -1851,7 +1851,7 @@ LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
     basisAttribs = oldAttribs;
     return lex;
 }
-static LEXLIST* getStorageClass(LEXLIST* lex, SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage,
+static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage,
                                 Optimizer::ADDRESS* address, bool* blocked, bool* isExplicit, AccessLevel access)
 {
     (void)access;
@@ -1870,7 +1870,7 @@ static LEXLIST* getStorageClass(LEXLIST* lex, SYMBOL* funcsp, StorageClass* stor
                 lex = getsym();
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    if (lex->data->type == l_astr)
+                    if (lex->data->type == LexType::l_astr_)
                     {
                         Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->data->value.s.w;
                         char buf[256];
@@ -2023,7 +2023,7 @@ static LEXLIST* getStorageClass(LEXLIST* lex, SYMBOL* funcsp, StorageClass* stor
     }
     return lex;
 }
-LEXLIST* parse_declspec(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
+LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
 {
     (void)linkage;
     if (needkw(&lex, Keyword::openpa_))
@@ -2052,7 +2052,7 @@ LEXLIST* parse_declspec(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linka
                         else if (!isintconst(exp))
                             error(ERR_CONSTANT_VALUE_EXPECTED);
                         int align = exp->v.i;
-                        LEXLIST* pos = lex;
+                        LexList* pos = lex;
                         if (needkw(&lex, Keyword::closepa_))
                             lex = prevsym(pos);
                         basisAttribs.inheritable.structAlign = align;
@@ -2106,7 +2106,7 @@ LEXLIST* parse_declspec(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linka
     }
     return lex;
 }
-static LEXLIST* getLinkageQualifiers(LEXLIST* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
+static LexList* getLinkageQualifiers(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
 {
     while (KWTYPE(lex, TT_LINKAGE))
     {
@@ -2194,7 +2194,7 @@ static LEXLIST* getLinkageQualifiers(LEXLIST* lex, Linkage* linkage, Linkage* li
                 if (MATCHKW(lex, Keyword::openpa_))
                 {
                     lex = getsym();
-                    if (lex->data->type == l_astr)
+                    if (lex->data->type == LexType::l_astr_)
                     {
                         int i, len = ((Optimizer::SLCHAR*)lex->data->value.s.w)->count;
                         importFile = Allocate<char>(len + 1);
@@ -2211,7 +2211,7 @@ static LEXLIST* getLinkageQualifiers(LEXLIST* lex, Linkage* linkage, Linkage* li
     }
     return lex;
 }
-LEXLIST* getQualifiers(LEXLIST* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend)
+LexList* getQualifiers(LexList* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
     {
@@ -2231,7 +2231,7 @@ LEXLIST* getQualifiers(LEXLIST* lex, Type** tp, Linkage* linkage, Linkage* linka
     ParseAttributeSpecifiers(&lex, theCurrentFunc, true);
     return lex;
 }
-static LEXLIST* nestedTypeSearch(LEXLIST* lex, SYMBOL** sym)
+static LexList* nestedTypeSearch(LexList* lex, SYMBOL** sym)
 {
     *sym = nullptr;
     lex = nestedSearch(lex, sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, true);
@@ -2241,7 +2241,7 @@ static LEXLIST* nestedTypeSearch(LEXLIST* lex, SYMBOL** sym)
     }
     return lex;
 }
-static bool isPointer(LEXLIST* lex)
+static bool isPointer(LexList* lex)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
         lex = getsym();
@@ -2271,7 +2271,7 @@ bool intcmp(Type* t1, Type* t2)
     }
     return t1->type == t2->type;
 }
-static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
+static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
 {
     /* two oldstyle declarations aren't compared */
     if ((spo && !spo->sb->oldstyle && spo->sb->hasproto) || !sp->sb->oldstyle)
@@ -2413,9 +2413,9 @@ static void matchFunctionDeclaration(LEXLIST* lex, SYMBOL* sp, SYMBOL* spo, bool
         }
     }
 }
-LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces)
+LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
 {
-    LEXLIST** cur = savePos, * last = nullptr;
+    LexList** cur = savePos, * last = nullptr;
     int paren = 0;
     int brack = 0;
     int ltgt = 0;
@@ -2430,7 +2430,7 @@ LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces)
             }
             else if (kw == Keyword::end_ && !--paren)
             {
-                *cur = Allocate<LEXLIST>();
+                *cur = Allocate<LexList>();
                 **cur = *lex;
                 (*cur)->prev = last;
                 last = *cur;
@@ -2477,8 +2477,8 @@ LEXLIST* getDeferredData(LEXLIST* lex, LEXLIST** savePos, bool braces)
                 ltgt--;
             }
         }
-        *cur = Allocate<LEXLIST>();
-        if (lex->data->type == l_id)
+        *cur = Allocate<LexList>();
+        if (lex->data->type == LexType::l_id_)
             lex->data->value.s.a = litlate(lex->data->value.s.a);
         **cur = *lex;
         (*cur)->prev = last;
@@ -2508,14 +2508,14 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
         }
         if (al && fr)
         {
-            FUNCTIONCALL* epx = Allocate<FUNCTIONCALL>();
-            FUNCTIONCALL* ld = Allocate<FUNCTIONCALL>();
+            CallSite* epx = Allocate<CallSite>();
+            CallSite* ld = Allocate<CallSite>();
             epx->ascall = true;
             epx->fcall = varNode(ExpressionNode::pc_, al);
             epx->sp = al;
             epx->functp = al->tp;
             epx->arguments = initListListFactory.CreateList();
-            auto arg = Allocate<INITLIST>();
+            auto arg = Allocate<Argument>();
             epx->arguments->push_back(arg);
             arg->tp = &stdint;
             arg->exp = ep2;
@@ -2526,7 +2526,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             ld->fcall = varNode(ExpressionNode::pc_, fr);
             ld->sp = fr;
             ld->functp = fr->tp;
-            arg = Allocate<INITLIST>();
+            arg = Allocate<Argument>();
             ld->arguments = initListListFactory.CreateList();
             ld->arguments->push_back(arg);
             arg->tp = &stdpointer;
@@ -2585,7 +2585,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* bt
     *index += sou;
     return mul;
 }
-static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOCKDATA*>& block, Type* btp, bool bypointer)
+static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<FunctionBlock*>& block, Type* btp, bool bypointer)
 {
     EXPRESSION *result = nullptr, **rptr = &result;
     Type* tp1 = btp;
@@ -2645,7 +2645,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
     }
     if (result != nullptr)
     {
-        STATEMENT* st = stmtNode(nullptr, block, StatementNode::declare_);
+        Statement* st = Statement::MakeStatement(nullptr, block, StatementNode::declare_);
         st->hasvla = true;
         if (sp->sb->storage_class != StorageClass::typedef_ && !bypointer)
         {
@@ -2703,7 +2703,7 @@ static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
     }
     return true;
 }
-LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
+LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
                                   StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                                   bool* isExplicit, bool* constexpression, Type** tp, Linkage* linkage, Linkage* linkage2,
                                   Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
@@ -2849,7 +2849,7 @@ static bool sameNameSpace(SYMBOL* left, SYMBOL* right)
     }
     return false;
 }
-LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<BLOCKDATA*>& block,
+LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<FunctionBlock*>& block,
                  bool needsemi, int asExpression, bool inTemplate, AccessLevel access)
 {
     bool isExtern = false;
@@ -4289,8 +4289,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     }
                                     else
                                     {
-                                        lex = body(lex, sp);
-                                        bodygen(sp);
+                                        StatementGenerator sg(lex, sp);
+                                        sg.Body();
+                                        sg.BodyGen();
                                     }
                                 }
                                 if (sp->sb->constexpression)
@@ -4348,7 +4349,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         }
                                         lex = getsym();
                                     }
-                                    else if (lex->data->type != l_i || lex->data->value.i != 0)
+                                    else if (lex->data->type != LexType::i_ || lex->data->value.i != 0)
                                     {
                                         error(ERR_PURE_SPECIFIER_CONST_ZERO);
                                     }
@@ -4361,7 +4362,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 else if (sp->sb->constexpression && sp->sb->storage_class != StorageClass::external_ && !sp->tp->IsFunction() &&
                                          !sp->tp->IsStructured())
                                 {
-                                    error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
+                                    error(ERR_CONSTEXPR_REQUIRES_Initializer);
                                 }
                                 else if (sp->sb->parentClass && !sp->templateParams &&
                                          !(Optimizer::architecture == ARCHITECTURE_MSIL))
@@ -4376,7 +4377,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                  sp->sb->runtimeSym = anonymousVar(StorageClass::auto_, &stdpointer)->v.sp;
                             }
-                            LEXLIST* hold = lex;
+                            LexList* hold = lex;
                             bool structuredArray = false;
                             if (notype)
                             {
@@ -4401,7 +4402,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 /* special case consts that can later have their address taken, because they are not autos and it will cause errors later*/
                                 if (!sp->tp->IsInt() || !sp->tp->IsConst())
                                 {
-                                    STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
+                                    Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
                                     s->select = varNode(ExpressionNode::auto_, sp);
                                 }
                             }
@@ -4493,9 +4494,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     {
                                         if (!sp->sb->constexpression)
                                         {
-                                            STATEMENT* st;
+                                            Statement* st;
                                             currentLineData(block, hold, 0);
-                                            st = stmtNode(hold, block, StatementNode::expr_);
+                                            st = Statement::MakeStatement(hold, block, StatementNode::expr_);
                                             if (!sp->tp->IsStructured() || !sp->tp->BaseType()->sp->sb->islambda)
                                             {
                                                 st->select =
@@ -4516,9 +4517,9 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         }
                                         else if (sp->tp->IsStructured())
                                         {
-                                            STATEMENT* st;
+                                            Statement* st;
                                             currentLineData(block, hold, 0);
-                                            st = stmtNode(hold, block, StatementNode::expr_);
+                                            st = Statement::MakeStatement(hold, block, StatementNode::expr_);
                                             st->select = varNode(ExpressionNode::constexprconstructor_, sp);
                                             st->select->left = convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
                                         }
@@ -4528,7 +4529,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     {
                                         if (sp->sb->storage_class != StorageClass::localstatic_)
                                         {
-                                            STATEMENT* st;
+                                            Statement* st;
                                             if (block.size() > 1)
                                             {
                                                 auto it = block.begin();
@@ -4540,7 +4541,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                                     // be accesed in the switch body
                                                     ++it;
                                                     int n = (*it)->statements->size();
-                                                    st = stmtNode(hold, emptyBlockdata, StatementNode::expr_);
+                                                    st = Statement::MakeStatement(hold, emptyBlockdata, StatementNode::expr_);
                                                     auto itb = (*it)->statements->begin();
                                                     for (int i = 0; i < n; i++, ++itb)
                                                         ;
@@ -4548,7 +4549,7 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                                 }
                                                 else
                                                 {
-                                                    st = stmtNode(hold, emptyBlockdata, StatementNode::expr_);
+                                                    st = Statement::MakeStatement(hold, emptyBlockdata, StatementNode::expr_);
                                                     block.front()->statements->push_front(st);
                                                 }
                                                 st->select = exprNode(ExpressionNode::initobj_, varNode(ExpressionNode::auto_, sp), nullptr);

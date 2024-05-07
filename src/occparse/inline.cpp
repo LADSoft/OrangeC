@@ -70,7 +70,7 @@ static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
 static std::unordered_set<std::string, StringHash> didInlines;
 
-static FUNCTIONCALL* function_list[MAX_INLINE_NESTING];
+static CallSite* function_list[MAX_INLINE_NESTING];
 static int function_listcount;
 static int namenumber;
 
@@ -235,7 +235,7 @@ void dumpInlines(void)
                             if (origsym->sb->deferredCompile)
                             {
                                 STRUCTSYM s1, s;
-                                LEXLIST* lex;
+                                LexList* lex;
                                 SYMBOL* pc = sym;
                                 while (pc->sb->parentClass)
                                     pc = pc->sb->parentClass;
@@ -593,7 +593,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
      * sym in an inline function to force allocation of the variables
      */
     EXPRESSION *temp, *temp1;
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     int i;
     (void)fromlval;
     if (node == 0)
@@ -862,7 +862,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             }
             if (temp->v.func == nullptr)
             {
-                temp->v.func = Allocate<FUNCTIONCALL>();
+                temp->v.func = Allocate<CallSite>();
                 *temp->v.func = *fp;
                 if (temp->v.func->arguments)
                 {
@@ -870,7 +870,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     temp->v.func->arguments->clear();
                     for (auto a : args)
                     {
-                        auto il = Allocate<INITLIST>();
+                        auto il = Allocate<Argument>();
                         *il = *a;
                         il->exp = inlineexpr(a->exp, nullptr);
                         temp->v.func->arguments->push_back(il);
@@ -893,14 +893,14 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
 
 /*-------------------------------------------------------------------------*/
 
-std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
+std::list<Statement*>* inlinestmt(std::list<Statement*>* blocks)
 {
     if (blocks)
     {
-        std::list<STATEMENT*>* out = stmtListFactory.CreateList();
+        std::list<Statement*>* out = stmtListFactory.CreateList();
         for (auto block : *blocks)
         {
-            auto stmt = Allocate<STATEMENT>();
+            auto stmt = Allocate<Statement>();
             out->push_back(stmt);
             *stmt = *block;
             block = stmt;
@@ -960,7 +960,7 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
     }
     return nullptr;
 }
-static void inlineResetReturn(STATEMENT* block, Type* rettp, EXPRESSION* retnode)
+static void inlineResetReturn(Statement* block, Type* rettp, EXPRESSION* retnode)
 {
     EXPRESSION* exp;
     if (rettp->IsStructured())
@@ -989,7 +989,7 @@ static EXPRESSION* newReturn(Type* tp)
         exp = intNode(ExpressionNode::c_i_, 0);
     return exp;
 }
-static void reduceReturns(std::list<STATEMENT*>* blocks, Type* rettp, EXPRESSION* retnode)
+static void reduceReturns(std::list<Statement*>* blocks, Type* rettp, EXPRESSION* retnode)
 {
     if (blocks)
     {
@@ -1042,7 +1042,7 @@ static void reduceReturns(std::list<STATEMENT*>* blocks, Type* rettp, EXPRESSION
         }
     }
 }
-static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, Type* rettp)
+static EXPRESSION* scanReturn(std::list<Statement*>* blocks, Type* rettp)
 {
     EXPRESSION* rv = nullptr;
     if (blocks)
@@ -1317,21 +1317,21 @@ static bool sideEffects(EXPRESSION* node)
     }
     return rv;
 }
-static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<STATEMENT*> **stp)
+static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<Statement*> **stp)
 {
     if (!sx->sb->altered && !sx->sb->addressTaken && !sideEffects(exp))
     {
         // well if the expression is too complicated it gets evaluated over and over
         // but maybe the backend can clean it up again...
-        sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)exp;
+        sx->sb->inlineFunc.stmt = (std::list<Statement*>*)exp;
     }
     else
     {
         EXPRESSION* tnode = anonymousVar(StorageClass::auto_, sx->tp);
         deref(sx->tp, &tnode);
-        sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)tnode;
+        sx->sb->inlineFunc.stmt = (std::list<Statement*>*)tnode;
         tnode = exprNode(ExpressionNode::assign_, tnode, exp);
-        auto stmt = Allocate<STATEMENT>();
+        auto stmt = Allocate<Statement>();
         stmt->type = StatementNode::expr_;
         stmt->select = tnode;
         if (!*stp)
@@ -1339,10 +1339,10 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<STATEMENT*> **stp)
         (*stp)->push_back(stmt);
     }
 }
-static std::list<STATEMENT*>* SetupArguments1(FUNCTIONCALL* params)
+static std::list<Statement*>* SetupArguments1(CallSite* params)
 {
-    std::list<STATEMENT*>* st = nullptr;
-    std::list<INITLIST*>::iterator al, ale = al;
+    std::list<Statement*>* st = nullptr;
+    std::list<Argument*>::iterator al, ale = al;
     if (params->arguments)
     {
         al = params->arguments->begin();
@@ -1379,7 +1379,7 @@ void SetupVariables(SYMBOL* sym)
             {
                 EXPRESSION* ev = anonymousVar(StorageClass::auto_, sx->tp);
                 deref(sx->tp, &ev);
-                sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)ev;
+                sx->sb->inlineFunc.stmt = (std::list<Statement*>*)ev;
             }
         }
         syms = syms->Next();
@@ -1387,7 +1387,7 @@ void SetupVariables(SYMBOL* sym)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
+EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
 {
     bool found = false;
     EXPRESSION* newExpression;
@@ -1427,7 +1427,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         allocated = true;
         AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
-    std::list<STATEMENT*>* stmt = stmtListFactory.CreateList();
+    std::list<Statement*>* stmt = stmtListFactory.CreateList();
     auto stmt1 = SetupArguments1(params);
     SetupVariables(params->sp);
     function_list[function_listcount++] = params;
@@ -1436,7 +1436,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     {
         // this will kill the ret val but we don't care since we've modified params
 
-        auto stmt2 = Allocate<STATEMENT>();
+        auto stmt2 = Allocate<Statement>();
         stmt2->type = StatementNode::block_;
         stmt2->lower = stmt1;
         stmt->push_front(stmt2);
@@ -1477,7 +1477,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     }
     return newExpression;
 }
-static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
+static bool IsEmptyBlocks(std::list<Statement*>* blocks)
 {
     bool rv = true;
     if (blocks)
@@ -1521,9 +1521,9 @@ static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
         }
     return rv;
 }
-bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
+bool IsEmptyFunction(CallSite* params, SYMBOL* funcsp)
 {
-    STATEMENT* st;
+    Statement* st;
     if (!params->functp->IsFunction())
         return false;
     if (!params->sp->sb->inlineFunc.stmt)

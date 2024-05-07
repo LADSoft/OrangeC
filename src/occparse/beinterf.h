@@ -23,6 +23,8 @@
  * 
  */
 
+struct KeyWord;
+
 namespace Parser
 {
 int needsAtomicLockFromType(Type* tp);
@@ -35,5 +37,5 @@ int alignment(StorageClass sc, Type* tp);
 int getAlign(StorageClass sc, Type* tp);
 const char* getUsageText(void);
 const char* getHelpText(void);
-KEYWORD* GetProcKeywords(void);
+KeyWord* GetProcKeywords(void);
 }  // namespace Parser

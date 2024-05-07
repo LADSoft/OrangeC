@@ -55,6 +55,7 @@
 #include "memory.h"
 #include "declare.h"
 #include "init.h"
+#include "lex.h"
 #include "help.h"
 #include "beinterf.h"
 #include "inasm.h"
@@ -128,7 +129,7 @@ Optimizer::IMODE* make_direct(int i)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_genword(STATEMENT* stmt, SYMBOL* funcsp)
+void gen_genword(Statement* stmt, SYMBOL* funcsp)
 /*
  * generate data in the code seg
  */
@@ -201,14 +202,14 @@ static void AddProfilerData(SYMBOL* funcsp)
     LCHAR* pname;
     if (Optimizer::cparams.prm_profiler)
     {
-        STRING* string;
+        StringData* string;
         int i;
         int l = strlen(funcsp->sb->decoratedName);
         pname = Allocate<LCHAR>(l + 1);
         for (i = 0; i < l + 1; i++)
             pname[i] = funcsp->sb->decoratedName[i];
-        string = Allocate<STRING>();
-        string->strtype = l_astr;
+        string = Allocate<StringData>();
+        string->strtype = LexType::l_astr_;
         string->size = 1;
         string->pointers = Allocate<Optimizer::SLCHAR*>();
         string->pointers[0] = Allocate<Optimizer::SLCHAR>();
@@ -298,7 +299,7 @@ int gcs_compare(void const* left, void const* right)
 }
 /*-------------------------------------------------------------------------*/
 
-void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
+void genxswitch(Statement* stmt, SYMBOL* funcsp)
 /*
  *      analyze and generate best switch statement.
  */
@@ -366,7 +367,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     breaklab = oldbreak;
 }
 
-void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue)
+void genselect(Statement* stmt, SYMBOL* funcsp, bool jmptrue)
 {
     if (stmt->altlabel + codeLabelOffset)
     {
@@ -384,7 +385,7 @@ void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue)
     }
 }
 /*-------------------------------------------------------------------------*/
-static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, int transferLab, std::list<STATEMENT*>* lower)
+static void gen_try(SYMBOL* funcsp, Statement* stmt, int startLab, int endLab, int transferLab, std::list<Statement*>* lower)
 {
     Optimizer::gen_label(startLab);
     stmt->tryStart = ++consIndex;
@@ -399,7 +400,7 @@ static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, i
     tryStart = stmt->tryStart;
     tryEnd = stmt->tryEnd;
 }
-static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transferLab, std::list<STATEMENT*>* lower)
+static void gen_catch(SYMBOL* funcsp, Statement* stmt, int startLab, int transferLab, std::list<Statement*>* lower)
 {
     int oldtryStart = tryStart;
     int oldtryEnd = tryEnd;
@@ -417,7 +418,7 @@ static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transfe
     stmt->tryStart = tryStart;
     stmt->tryEnd = tryEnd;
 }
-static void gen___try(SYMBOL* funcsp, std::list<STATEMENT*> stmts)
+static void gen___try(SYMBOL* funcsp, std::list<Statement*> stmts)
 {
     int label = Optimizer::nextLabel++;
     for (auto stmt : stmts)
@@ -486,7 +487,7 @@ void gen_except(bool begin, xcept* xc)
 /*
  *      generate a return statement.
  */
-void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* allocaAP)
+void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* allocaAP)
 {
     bool refbyval = false;
     Optimizer::IMODE* ap = nullptr, * ap1 = nullptr, * ap3;
@@ -789,7 +790,7 @@ void gen_func(void* exp, int start)
 }
 void gen_dbgblock(int start) { Optimizer::gen_icode(start ? Optimizer::i_dbgblock : Optimizer::i_dbgblockend, 0, 0, 0); }
 
-void gen_asm(STATEMENT* stmt)
+void gen_asm(Statement* stmt)
 /*
  * generate an ASM statement
  */
@@ -806,7 +807,7 @@ void gen_asm(STATEMENT* stmt)
     add_intermed(newQuad);
 #endif
 }
-void gen_asmdata(STATEMENT* stmt)
+void gen_asmdata(Statement* stmt)
 {
     Optimizer::QUAD* newQuad;
     newQuad = Allocate<Optimizer::QUAD>();
@@ -818,7 +819,7 @@ void gen_asmdata(STATEMENT* stmt)
 
 /*-------------------------------------------------------------------------*/
 
-Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flags)
+Optimizer::IMODE* genstmt(std::list<Statement*>* stmts, SYMBOL* funcsp, int flags)
 /*
  *      genstmt will generate a statement and follow the next pointer
  *      until the block is generated.
@@ -899,7 +900,7 @@ Optimizer::IMODE* genstmt(std::list<STATEMENT*>* stmts, SYMBOL* funcsp, int flag
                     auto ilx = il;
                     while (ilx != ile && (*ilx)->type != StatementNode::seh_try_)
                         ilx++;
-                    std::list<STATEMENT*> stmts(il, ilx);
+                    std::list<Statement*> stmts(il, ilx);
                     gen___try(funcsp, stmts);
                     if ((*il)->destexp)
                     {
@@ -1266,7 +1267,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::nextLabel += 2;  // temporary
     inlineSymStructPtr.clear();
 }
-void genASM(std::list<STATEMENT*>* st)
+void genASM(std::list<Statement*>* st)
 {
     Optimizer::cseg();
     contlab = breaklab = -1;

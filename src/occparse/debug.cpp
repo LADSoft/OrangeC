@@ -23,68 +23,69 @@
  */
 
 #include "compiler.h"
+#include "lex.h"
 namespace Parser
 {
-void displayLexeme(LEXLIST* lex)
+void displayLexeme(LexList* lex)
 {
     const LCHAR* w;
     switch (lex->data->type)
     {
-        case l_i:
+        case LexType::i_:
             printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
-        case l_ui:
+        case LexType::ui_:
             printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
-        case l_l:
+        case LexType::l_:
             printf("long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
-        case l_ul:
+        case LexType::ul_:
             printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
-        case l_ll:
+        case LexType::ll_:
             printf("long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
-        case l_ull:
+        case LexType::ull_:
             printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
             break;
-        case l_f:
+        case LexType::l_f_:
             printf("float constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
-        case l_d:
+        case LexType::l_d_:
             printf("double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
-        case l_ld:
+        case LexType::l_ld_:
             printf("long double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
             break;
-        case l_u8str:
-        case l_astr:
-        case l_msilstr:
-        case l_wstr:
-            if (lex->data->type == l_wstr)
+        case LexType::l_u8str_:
+        case LexType::l_astr_:
+        case LexType::l_msilstr_:
+        case LexType::l_wstr_:
+            if (lex->data->type == LexType::l_wstr_)
                 printf("wide string: ");
-            else if (lex->data->type == l_msilstr)
+            else if (lex->data->type == LexType::l_msilstr_)
                 printf("msil string: ");
-            else if (lex->data->type == l_astr)
+            else if (lex->data->type == LexType::l_astr_)
                 printf("ascii string: ");
-            else if (lex->data->type == l_u8str)
+            else if (lex->data->type == LexType::l_u8str_)
                 printf("utf8 string: ");
             w = lex->data->value.s.w;
             while (*w)
                 fputc(*w++, stdout);
             fputc('\n', stdout);
             break;
-        case l_achr:
+        case LexType::l_achr_:
             printf("ascii char: ");
-        case l_wchr:
-            if (lex->data->type == l_wchr)
+        case LexType::l_wchr_:
+            if (lex->data->type == LexType::l_wchr_)
                 printf("wide char: ");
             fputc((int)lex->data->value.i, stdout);
             break;
-        case l_id:
+        case LexType::l_id_:
             printf("id: %s\n", lex->data->value.s.a);
             break;
-        case l_kw:
+        case LexType::l_kw_:
             printf("kw: %s\n", lex->data->kw->name);
             break;
         default:

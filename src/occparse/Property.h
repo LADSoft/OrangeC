@@ -26,7 +26,7 @@
 namespace Parser
 {
 void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3);
-LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags);
+LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags);
 Type* find_boxed_type(Type* in);
 Type* find_unboxed_type(Type* in);
 }  // namespace Parser

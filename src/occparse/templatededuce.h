@@ -37,18 +37,18 @@ static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool a
 void NormalizePacked(Type* tpo);
 static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, SymbolTable<SYMBOL>::iterator funcArgsEnd,
                                   SymbolTable<SYMBOL>::iterator templateArgs, SymbolTable<SYMBOL>::iterator templateArgsEnd,
-                                  std::list<INITLIST*>::iterator its, std::list<INITLIST*>::iterator itse, bool allowSelectors,
+                                  std::list<Argument*>::iterator its, std::list<Argument*>::iterator itse, bool allowSelectors,
                                   bool baseClasses);
 void ScrubTemplateValues(SYMBOL* func);
 void PushPopTemplateArgs(SYMBOL* func, bool push);
-SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args);
+SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args);
 static bool TemplateDeduceFromType(Type* P, Type* A);
 SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym);
 static bool TemplateDeduceFromConversionType(Type* orig, Type* tp);
 SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, Type* tp);
 int TemplatePartialDeduceFromType(Type* orig, Type* sym, bool byClass);
 int TemplatePartialDeduce(Type* origl, Type* origr, Type* syml, Type* symr, bool byClass);
-int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Type* tpr, FUNCTIONCALL* fcall);
+int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Type* tpr, CallSite* fcall);
 static SYMBOL* SynthesizeTemplate(Type* tp, SYMBOL* rvt, sym::_symbody* rvs, Type* tpt);
-void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams, Type* atype, bool asClass, bool save);
+void TemplatePartialOrdering(SYMBOL** table, int count, CallSite* funcparams, Type* atype, bool asClass, bool save);
 }  // namespace Parser

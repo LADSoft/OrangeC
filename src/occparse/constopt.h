@@ -31,7 +31,6 @@ long long MaxOut(BasicType size, long long value);
 void dooper(EXPRESSION** node, int mode);
 void addaside(EXPRESSION* node);
 bool expressionHasSideEffects(EXPRESSION *exp);
-EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add = true);
 int opt0(EXPRESSION** node);
 void enswap(EXPRESSION** one, EXPRESSION** two);
 int fold_const(EXPRESSION* node);
@@ -39,5 +38,5 @@ int typedconsts(EXPRESSION* node1);
 bool msilConstant(EXPRESSION* exp);
 void RemoveSizeofOperators(EXPRESSION* constant);
 void optimize_for_constants(EXPRESSION** expr);
-LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed);
+LexList* optimized_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed);
 }  // namespace Parser

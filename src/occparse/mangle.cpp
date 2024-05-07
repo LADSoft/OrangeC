@@ -28,6 +28,7 @@
 #include "config.h"
 #include "unmangle.h"
 #include "OptUtils.h"
+#include "lex.h"
 #include "help.h"
 #include "memory.h"
 #include "mangle.h"

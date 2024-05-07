@@ -33,6 +33,7 @@
 #include "Utils.h"
 #include "CmdSwitch.h"
 #include "config.h"
+#include "lex.h"
 #include "help.h"
 #include "beinterf.h"
 #include "types.h"

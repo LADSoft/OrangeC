@@ -51,6 +51,7 @@
 #include <cstdio>
 #include "symtab.h"
 #include "osutil.h"
+#include "declcpp.h"
 
 namespace Parser
 {
@@ -125,7 +126,7 @@ void DumpErrorNameToHelpMap()
     printf("Name to help map Keyword::end_.\n");
 }
 
-void EnterInstantiation(LEXLIST* lex, SYMBOL* sym)
+void EnterInstantiation(LexList* lex, SYMBOL* sym)
 {
     if (lex)
     {
@@ -406,9 +407,9 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         }
     if (!file)
     {
-        if (context && context->last->data->type != l_none)
+        if (context && context->last->data->type != LexType::none_)
         {
-            LEXLIST* lex = context->cur ? context->cur->prev : context->last;
+            LexList* lex = context->cur ? context->cur->prev : context->last;
             line = lex->data->errline;
             file = lex->data->errfile;
         }
@@ -782,7 +783,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     currentErrorLine = 0;
     printerr(err, nullptr, 0, argbuf, buf);
 }
-static BALANCE* newbalance(LEXLIST* lex, BALANCE* bal)
+static BALANCE* newbalance(LexList* lex, BALANCE* bal)
 {
     BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
@@ -797,7 +798,7 @@ static BALANCE* newbalance(LEXLIST* lex, BALANCE* bal)
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
+static void setbalance(LexList* lex, BALANCE** bal, bool assumeTemplate)
 {
     switch (KW(lex))
     {
@@ -867,7 +868,7 @@ static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim(LEXLIST** lex, Keyword* skimlist, bool assumeTemplate)
+void errskim(LexList** lex, Keyword* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
@@ -886,12 +887,12 @@ void errskim(LEXLIST** lex, Keyword* skimlist, bool assumeTemplate)
         *lex = getsym();
     }
 }
-void skip(LEXLIST** lex, Keyword kw)
+void skip(LexList** lex, Keyword kw)
 {
     if (MATCHKW(*lex, kw))
         *lex = getsym();
 }
-bool needkw(LEXLIST** lex, Keyword kw)
+bool needkw(LexList** lex, Keyword kw)
 {
     if (lex && MATCHKW(*lex, kw))
     {
@@ -906,7 +907,7 @@ bool needkw(LEXLIST** lex, Keyword kw)
 }
 void specerror(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 
-static bool hasGoto(std::list<STATEMENT*>* statements)
+static bool hasGoto(std::list<Statement*>* statements)
 {
     if (!statements)
         return false;
@@ -950,7 +951,7 @@ static bool hasGoto(std::list<STATEMENT*>* statements)
     }
     return false;
 }
-static bool hasDeclarations(std::list<STATEMENT*>* statements)
+static bool hasDeclarations(std::list<Statement*>* statements)
 {
     if (!statements)
         return false;
@@ -995,7 +996,7 @@ static bool hasDeclarations(std::list<STATEMENT*>* statements)
     }
     return false;
 }
-static void labelIndexes(std::list<STATEMENT*>* statements, int* min, int* max)
+static void labelIndexes(std::list<Statement*>* statements, int* min, int* max)
 {
     if (!statements)
         return;
@@ -1043,7 +1044,7 @@ static void labelIndexes(std::list<STATEMENT*>* statements, int* min, int* max)
         }
     }
 }
-static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
+static VLASHIM* mkshim(_vlaTypes type, int level, int label, Statement* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)
 {
     VLASHIM* rv = Allocate<VLASHIM>();
@@ -1063,7 +1064,7 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VL
     return rv;
 }
 /* thisll be sluggish if there are lots of gotos & labels... */
-static std::list<VLASHIM*> getVLAList(std::list<STATEMENT*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
+static std::list<VLASHIM*> getVLAList(std::list<Statement*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
                            int level, bool* branched)
 {
     std::list<VLASHIM*> rv;
@@ -1312,7 +1313,7 @@ static void validateGotos(std::list<VLASHIM*>& vlashims, std::list<VLASHIM*>& ro
         }
     }
 }
-void checkGotoPastVLA(std::list<STATEMENT*>*statements, bool first)
+void checkGotoPastVLA(std::list<Statement*>*statements, bool first)
 {
     if (hasGoto(statements) && hasDeclarations(statements))
     {
@@ -1329,17 +1330,17 @@ void checkGotoPastVLA(std::list<STATEMENT*>*statements, bool first)
         validateGotos(list, list);
     }
 }
-void checkUnlabeledReferences(std::list<BLOCKDATA*>& block)
+void checkUnlabeledReferences(std::list<FunctionBlock*>& block)
 {
     int i;
     for (auto sp : *labelSyms)
     {
         if (sp->sb->storage_class == StorageClass::ulabel_)
         {
-            STATEMENT* st;
+            Statement* st;
             specerror(ERR_UNDEFINED_LABEL, sp->name, sp->sb->declfile, sp->sb->declline);
             sp->sb->storage_class = StorageClass::label_;
-            st = stmtNode(nullptr, block, StatementNode::label_);
+            st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
             st->label = sp->sb->offset;
         }
     }
@@ -1471,7 +1472,7 @@ static void assignmentAssign(EXPRESSION* left, bool assign)
 }
 void assignmentUsages(EXPRESSION* node, bool first)
 {
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     if (node == 0)
         return;
     switch (node->type)
@@ -1716,7 +1717,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
 }
 static int checkDefaultExpression(EXPRESSION* node)
 {
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     int rv = false;
     if (node == 0)
         return 0;
@@ -1946,6 +1947,63 @@ void checkDefaultArguments(SYMBOL* spi)
     if (r & 2)
     {
         error(ERR_LAMBDA_CANNOT_CAPTURE);
+    }
+}
+void CheckUndefinedStructures(SYMBOL* funcsp)
+{
+    Type* tp = funcsp->tp->BaseType()->btp;
+    if (tp->IsStructured() && !tp->BaseType()->sp->tp->syms)
+    {
+        tp = PerformDeferredInitialization(tp, funcsp);
+        if (!tp->BaseType()->sp->tp->syms)
+        {
+            currentErrorLine = 0;
+            errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
+        }
+    }
+    for (auto sym : *funcsp->tp->BaseType()->syms)
+    {
+        Type* tp = sym->tp->BaseType();
+        if (tp->IsStructured() && !tp->BaseType()->sp->tp->syms)
+        {
+            if (tp->BaseType()->sp->sb->templateLevel)
+            {
+                auto sym1 = tp->BaseType()->sp;
+                std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
+                while (!stk.empty())
+                    stk.pop();
+                auto it = sym1->templateParams->begin();
+                auto ite = sym1->templateParams->end();
+                for (; it != ite;)
+                {
+                    if (it->second->packed && it->second->byPack.pack)
+                    {
+                        stk.push(it);
+                        stk.push(ite);
+                        ite = it->second->byPack.pack->end();
+                        it = it->second->byPack.pack->begin();
+                    }
+                    it->second->byClass.dflt = it->second->byClass.val;
+                    if (++it != ite && !stk.empty())
+                    {
+                        ite = stk.top();
+                        stk.pop();
+                        it = stk.top();
+                        stk.pop();
+                        ++it;
+                    }
+                }
+                sym1 = GetClassTemplate(sym1, sym1->templateParams, false);
+                if (sym1)
+                    tp->BaseType()->sp = sym1;
+            }
+            tp = PerformDeferredInitialization(tp, funcsp);
+            if (!tp->BaseType()->sp->tp->syms)
+            {
+                currentErrorLine = 0;
+                errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
+            }
+        }
     }
 }
 }  // namespace Parser

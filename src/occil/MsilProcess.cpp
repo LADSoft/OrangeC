@@ -41,36 +41,20 @@
 #include "invoke.h"
 #include "memory.h"
 
-// must match the definition in c.h
-enum e_lexType
+// must match the definition in lex.h
+    // clang-format off
+enum class LexType : unsigned char
 {
-    l_none,
-    l_i,
-    l_ui,
-    l_l,
-    l_ul,
-    l_ll,
-    l_ull,
-    l_f,
-    l_d,
-    l_ld,
-    l_I,
-    l_id,
-    l_kw,
-    l_astr,
-    l_wstr,
-    l_ustr,
-    l_Ustr,
-    l_u8str,
-    l_msilstr,
-    l_achr,
-    l_wchr,
-    l_uchr,
-    l_Uchr,
-    l_qualifiedname,
-    l_asminst,
-    l_asmreg
+    none_,
+    i_, ui_, l_, ul_, ll_, ull_,
+    bitint_, ubitint_,
+    l_f_, l_d_, l_ld_, l_I_,
+    l_astr_, l_wstr_, l_ustr_, l_Ustr_, l_u8str_, l_msilstr_,
+    l_achr_, l_wchr_, l_uchr_, l_Uchr_, l_u8chr_,
+    l_id_, l_kw_, l_qualifiedName_,
+    l_asmInstruction_, l_asmRegister_
 };
+// clang-format on
 
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
@@ -1334,17 +1318,17 @@ void msil_oa_gen_strlab(Optimizer::SimpleSymbol* sp)
 Type* GetStringType(int lab, int type)
 {
     std::string name;
-    switch (type)
+    switch ((LexType)type)
     {
-        case l_ustr:
-        case l_astr:
-        case l_u8str:
+        case LexType::l_ustr_:
+        case LexType::l_astr_:
+        case LexType::l_u8str_:
             name = "int8_";
             break;
-        case l_Ustr:
+        case LexType::l_Ustr_:
             name = "int32_";
             break;
-        case l_wstr:
+        case LexType::l_wstr_:
             name = "int16_";
             break;
     }

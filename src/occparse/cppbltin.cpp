@@ -105,7 +105,7 @@ void ParseBuiltins(void)
         "bool __stdcall __rtllinkage ___ckdadd(void*, int, void*, int, void*, int);"
         "bool __stdcall __rtllinkage ___ckdmul(void*, int, void*, int, void*, int);"
         "bool __stdcall __rtllinkage ___ckdsub(void*, int, void*, int, void*, int);";
-    LEXLIST* lex;
+    LexList* lex;
 
     if (Optimizer::cparams.prm_cplusplus)
     {

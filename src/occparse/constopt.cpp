@@ -43,6 +43,7 @@
 #include "templatededuce.h"
 #include "floatconv.h"
 #include "memory.h"
+#include "lex.h"
 #include "help.h"
 #include "expr.h"
 #include "ifloatconv.h"
@@ -52,13 +53,13 @@
 #include "cpplookup.h"
 #include "beinterf.h"
 #include "exprcpp.h"
-#include "lex.h"
 #include "dsw.h"
 #include "constexpr.h"
 #include "ccerr.h"
 #include "rtti.h"
 #include "symtab.h"
 #include "types.h"
+#include "stmt.h"
 
 namespace Parser
 {
@@ -1264,51 +1265,6 @@ void addaside(EXPRESSION* node)
 }
 
 /*-------------------------------------------------------------------------*/
-EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
-{
-    EXPRESSION* rv;
-    switch (node->type)
-    {
-        case ExpressionNode::global_:
-        case ExpressionNode::auto_:
-        case ExpressionNode::threadlocal_:
-        case ExpressionNode::cvarpointer_:
-            return node;
-        case ExpressionNode::add_: {
-        case ExpressionNode::structadd_:
-            auto rv1 = relptr(node->left, offset, true);
-            auto rv2 = relptr(node->right, offset, true);
-            if (rv1)
-                return rv1;
-            else
-                return rv2;
-            break;
-        }
-        case ExpressionNode::sub_: {
-            auto rv1 = rv = relptr(node->left, offset, false);
-            auto rv2 = relptr(node->right, offset, false);
-            if (rv1)
-                return rv1;
-            else
-                return rv2;
-            break;
-        }
-        default:
-            if (castvalue(node))
-            {
-                return relptr(node->left, offset, add);
-            }
-            if (isintconst(node))
-            {
-                if (add)
-                    offset += node->v.i;
-                else
-                    offset -= node->v.i;
-            }
-            return nullptr;
-    }
-    return rv;
-}
 bool expressionHasSideEffects(EXPRESSION *exp)
 {
     std::stack<EXPRESSION*> stk;
@@ -2489,7 +2445,7 @@ int opt0(EXPRESSION** node)
                             dropStructureDeclaration();
                             break;
                         }
-                        FUNCTIONCALL* func = Allocate<FUNCTIONCALL>();
+                        CallSite* func = Allocate<CallSite>();
                         *func = *next->v.func;
                         func->sp = sym;
                         func->thistp = Type::MakeType(BasicType::pointer_, tp);
@@ -2641,7 +2597,7 @@ int opt0(EXPRESSION** node)
                                     }
                                 Type* ctype = sym->tp;
                                 EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
-                                FUNCTIONCALL funcparams = { };
+                                CallSite funcparams = { };
                                 funcparams.arguments = (*find).arguments;
                                 funcparams.templateParams = (*find).templateParams;
                                 funcparams.ascall = true;
@@ -3196,11 +3152,11 @@ int fold_const(EXPRESSION* node)
             break;
         case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
-            LEXLIST* lex = SetAlternateLex(node->v.construct.deferred);
+            LexList* lex = SetAlternateLex(node->v.construct.deferred);
             if (node->v.construct.tp->IsArithmetic())
             {
 
-                std::list<INITIALIZER*> *init = nullptr, *dest = nullptr;
+                std::list<Initializer*> *init = nullptr, *dest = nullptr;
                 lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, 0);
                 if (init)
                     *node = *init->front()->exp;
@@ -3930,7 +3886,7 @@ void optimize_for_constants(EXPRESSION** expr)
         rebalance(expr);
     }
 }
-LEXLIST* optimized_expression(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
+LexList* optimized_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
 {
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);

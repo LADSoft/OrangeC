@@ -38,11 +38,11 @@
 #include "templateinst.h"
 #include "templatededuce.h"
 #include "declare.h"
+#include "lex.h"
 #include "help.h"
 #include "expr.h"
 #include "cpplookup.h"
 #include "occparse.h"
-#include "lex.h"
 #include "memory.h"
 #include "init.h"
 #include "exprcpp.h"
@@ -80,7 +80,7 @@
 
 namespace Parser
 {
-typedef bool(*EvalFunc)(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+typedef bool(*EvalFunc)(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                        EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
 
 static std::unordered_map<Keyword, EvalFunc> dispatcher = {
@@ -258,7 +258,7 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
     return exp;
 }
 
-static void left_fold(LEXLIST* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION** resultexp, LEXLIST* start, Type* seedtp, EXPRESSION* seedexp, Type *foldtp, EXPRESSION* foldexp)
+static void left_fold(LexList* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION** resultexp, LexList* start, Type* seedtp, EXPRESSION* seedexp, Type *foldtp, EXPRESSION* foldexp)
 {
     auto it = dispatcher.find(lex->data->kw->key);
     if (it == dispatcher.end())
@@ -271,7 +271,7 @@ static void left_fold(LEXLIST* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION*
     bool first = true;
     *resulttp = seedtp;
     *resultexp = seedexp;
-    std::list<INITLIST*>* lptr = nullptr;
+    std::list<Argument*>* lptr = nullptr;
     expandPackedInitList(&lptr, funcsp, start, foldexp);
     if (!lptr)
     {
@@ -324,7 +324,7 @@ static void left_fold(LEXLIST* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION*
         }
     }
 }
-static void right_fold(LEXLIST* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION** resultexp, LEXLIST* start, Type* seedtp, EXPRESSION* seedexp, Type *foldtp, EXPRESSION* foldexp)
+static void right_fold(LexList* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION** resultexp, LexList* start, Type* seedtp, EXPRESSION* seedexp, Type *foldtp, EXPRESSION* foldexp)
 {
     auto it = dispatcher.find(lex->data->kw->key);
     if (it == dispatcher.end())
@@ -335,7 +335,7 @@ static void right_fold(LEXLIST* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION
     }
     *resulttp = seedtp;
     *resultexp = seedexp;
-    std::list<INITLIST*>* lptr = nullptr;
+    std::list<Argument*>* lptr = nullptr;
     expandPackedInitList(&lptr, funcsp, start, foldexp);
     if (!lptr)
     {
@@ -393,7 +393,7 @@ static void right_fold(LEXLIST* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION
 }
 
 
-void eval_unary_left_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LEXLIST* start,
+void eval_unary_left_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList* start,
     Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -407,7 +407,7 @@ void eval_unary_left_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** result
         left_fold(lex, funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_unary_right_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LEXLIST* start,
+void eval_unary_right_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList* start,
     Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -421,8 +421,8 @@ void eval_unary_right_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resul
         right_fold(lex, funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_binary_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LEXLIST* leftstart,
-    Type* lefttp, EXPRESSION* leftexp, LEXLIST* rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
+void eval_binary_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList* leftstart,
+    Type* lefttp, EXPRESSION* leftexp, LexList* rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
     int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -454,7 +454,7 @@ void eval_binary_fold(LEXLIST* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
     }
 }
 
-void eval_unary_plus(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
+void eval_unary_plus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
                     bool ismutable, int flags)
 {
     *resulttp = lefttp;
@@ -493,7 +493,7 @@ void eval_unary_plus(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, E
         *resulttp = &stdint;
     }
 }
-void eval_unary_minus(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
+void eval_unary_minus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -537,7 +537,7 @@ void eval_unary_minus(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, 
         *resultexp = exprNode(ExpressionNode::uminus_, *resultexp, nullptr);
     }
 }
-void eval_unary_not(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
+void eval_unary_not(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -575,7 +575,7 @@ void eval_unary_not(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EX
     else
         *resulttp = &stdint;
 }
-void eval_unary_complement(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
+void eval_unary_complement(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -625,7 +625,7 @@ void eval_unary_complement(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resul
             cast((*resulttp)->BaseType(), resultexp);
     }
 }
-void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
+void eval_unary_autoincdec(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -714,7 +714,7 @@ void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **result
             *resultexp = exprNode(ExpressionNode::comma_, exp3, *resultexp);
     }
 }
-bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
+bool eval_binary_pm(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
                     EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -776,7 +776,7 @@ bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXP
             }
             if (righttp->BaseType()->btp->IsFunction())
             {
-                FUNCTIONCALL *funcparams = Allocate<FUNCTIONCALL>();
+                CallSite *funcparams = Allocate<CallSite>();
                 if (((*resulttp)->BaseType())->sp->sb->vbaseEntries)
                 {
                     EXPRESSION *ec =
@@ -832,7 +832,7 @@ bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXP
     return false;
 }
 
-bool eval_binary_times(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
+bool eval_binary_times(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
                     EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -960,7 +960,7 @@ bool eval_binary_times(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
     }
     return false;
 }
-bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
+bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
     EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -1164,7 +1164,7 @@ bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
     }
     return false;
 }
-bool eval_binary_shift(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
+bool eval_binary_shift(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
     EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -1228,7 +1228,7 @@ bool eval_binary_shift(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
     }
     return false;
 }
-bool eval_binary_inequality(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
+bool eval_binary_inequality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
                        Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -1349,7 +1349,7 @@ bool eval_binary_inequality(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resul
         *resulttp = &stdint;
     return false;
 }
-bool eval_binary_equality(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
+bool eval_binary_equality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
                             Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -1515,7 +1515,7 @@ bool eval_binary_equality(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resultt
         *resulttp = &stdint;
     return false;
 }
-bool eval_binary_logical(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
+bool eval_binary_logical(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
                           Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -1604,7 +1604,7 @@ bool eval_binary_logical(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp
     *resultexp = exprNode(type, *resultexp, rightexp);
     return false;
 }
-bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
+bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
                           Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);
@@ -1721,7 +1721,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         SYMBOL *conv = lookupNonspecificCast(righttp->BaseType()->sp, *resulttp);
         if (conv)
         {
-            FUNCTIONCALL *params = Allocate<FUNCTIONCALL>();
+            CallSite *params = Allocate<CallSite>();
             params->thisptr = rightexp;
             params->thistp = righttp;
             params->ascall = true;
@@ -2294,7 +2294,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         thunkForImportTable(resultexp);
     return false;
 }
-bool eval_binary_comma(LEXLIST *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
+bool eval_binary_comma(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
                        Type *righttp, EXPRESSION *rightexp, bool ismutable, int flags)
 {
     auto kw = KW(lex);

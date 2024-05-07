@@ -31,13 +31,13 @@
 #include "initbackend.h"
 #include "unmangle.h"
 #include "OptUtils.h"
+#include "lex.h"
 #include "help.h"
 #include "ccerr.h"
 #include "declare.h"
 #include "declcpp.h"
 #include "symtab.h"
 #include "stmt.h"
-#include "lex.h"
 #include "declare.h"
 #include "beinterf.h"
 #include "memory.h"
@@ -715,7 +715,7 @@ bool Type::SameExceptionType(Type* typ2)
         {
             if (typ2->IsFunction())
             {
-                parseNoexcept(typ2->BaseType()->sp);
+                StatementGenerator::ParseNoExceptClause(typ2->BaseType()->sp);
             }
             while (typ2->IsPtr())
             {
@@ -729,11 +729,11 @@ bool Type::SameExceptionType(Type* typ2)
             typ2 = typ2->BaseType();
             if (typ1->IsFunction())
             {
-                parseNoexcept(typ1->sp);
+                StatementGenerator::ParseNoExceptClause(typ1->sp);
             }
             if (typ2->IsFunction())
             {
-                parseNoexcept(typ2->sp);
+                StatementGenerator::ParseNoExceptClause(typ2->sp);
             }
             if (typ1->sp->sb->noExcept && !typ2->sp->sb->noExcept)
                 return false;
@@ -1201,7 +1201,7 @@ void Type::ToString(char* buf)
 
 
 
-void TypeGenerator::ExceptionSpecifiers(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class)
+void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class)
 {
     (void)storage_class;
     switch (KW(lex))
@@ -1276,7 +1276,7 @@ void TypeGenerator::ExceptionSpecifiers(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL* s
         {
             sp->sb->xcMode = xc_none;
             sp->sb->noExcept = true;
-            sp->sb->deferredNoexcept = (LEXLIST*)-1;
+            sp->sb->deferredNoexcept = (LexList*)-1;
             if (!sp->sb->xc)
                 sp->sb->xc = Allocate<xcept>();
         }
@@ -1285,7 +1285,7 @@ void TypeGenerator::ExceptionSpecifiers(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL* s
         break;
     }
 }
-Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class)
+Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class)
 {
     bool foundFinal = false;
     bool foundOverride = false;
@@ -1437,7 +1437,7 @@ void TypeGenerator::ResolveVLAs(Type* tp)
         tp = tp->btp;
     }
 }
-Type* TypeGenerator::ArrayType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
+Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
     bool msil)
 {
     EXPRESSION* constant = nullptr;
@@ -1562,7 +1562,7 @@ Type* TypeGenerator::ArrayType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, StorageC
     }
     return tp;
 }
-Type* TypeGenerator::AfterName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
+Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
     int consdest, bool funcptr)
 {
     bool isvla = false;
@@ -1691,14 +1691,14 @@ Type* TypeGenerator::AfterName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
     }
     return tp;
 }
-Type* TypeGenerator::BeforeName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
     bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
     bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr)
 {
     SYMBOL* sp;
     Type* ptype = nullptr;
     BasicType xtype = BasicType::none_;
-    LEXLIST* pos = lex;
+    LexList* pos = lex;
     bool doneAfter = false;
 
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && MATCHKW(lex, Keyword::openbr_))
@@ -1915,7 +1915,7 @@ Type* TypeGenerator::BeforeName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
     else
         switch (KW(lex))
         {
-            LEXLIST* start;
+            LexList* start;
         case Keyword::openpa_:
             if (beforeOnly)
                 break;
@@ -2216,7 +2216,7 @@ Type* TypeGenerator::BeforeName(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
     ParseAttributeSpecifiers(&lex, funcsp, true);
     return tp;
 }
-Type* TypeGenerator::UnadornedType(LEXLIST*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
     Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
     bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
     bool constexpression)
@@ -2729,7 +2729,7 @@ founddecltype:
             SYMBOL* strSym = nullptr;
             SYMBOL* sp = nullptr;
             bool destructor = false;
-            LEXLIST* placeholder = lex;
+            LexList* placeholder = lex;
             bool inTemplate = false;  // hides function parameter
             lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, false, storage_class, false, true);
             if (sp && (istype(sp) || (sp->sb && ((sp->sb->storage_class == StorageClass::type_ && inTemplate) ||
@@ -3147,7 +3147,7 @@ founddecltype:
                 if (typeName || ISID(lex))
                 {
                     tn = Type::MakeType(BasicType::any_);
-                    if (lex->data->type == l_id)
+                    if (lex->data->type == LexType::l_id_)
                     {
                         SYMBOL* sp = makeID(StorageClass::global_, tn, nullptr, litlate(lex->data->value.s.a));
                         tn->sp = sp;
@@ -3268,7 +3268,7 @@ exit:
     sizeQualifiers(tp);
     return tp;
 }
-Type* TypeGenerator::PointerQualifiers(LEXLIST*& lex, Type* tp, bool allowstatic)
+Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic)
 {
     while (KWTYPE(lex, TT_TYPEQUAL) || (allowstatic && MATCHKW(lex, Keyword::static_)))
     {
@@ -3328,7 +3328,7 @@ Type* TypeGenerator::PointerQualifiers(LEXLIST*& lex, Type* tp, bool allowstatic
     }
     return tp;
 }
-Type* TypeGenerator::FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
+Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
     bool funcptr)
 {
     (void)storage_class;
@@ -3339,7 +3339,7 @@ Type* TypeGenerator::FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin
     bool pastfirst = false;
     bool voiderror = false;
     bool hasellipse = false;
-    LEXLIST* placeholder = lex;
+    LexList* placeholder = lex;
     STRUCTSYM s;
     NAMESPACEVALUEDATA internalNS = {};
     SymbolTable<SYMBOL>* symbolTable = symbols.CreateSymbolTable();
@@ -3358,7 +3358,7 @@ Type* TypeGenerator::FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin
     basisAttribs = { 0 };
     ParseAttributeSpecifiers(&lex, funcsp, true);
     bool structured = false;
-    if (TypeGenerator::StartOfType(lex, &structured, true) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)) ||
+    if (TypeGenerator::StartOfType(lex, &structured, true) && (!Optimizer::cparams.prm_cplusplus || StatementGenerator::ResolvesToDeclaration(lex, structured)) ||
         MATCHKW(lex, Keyword::constexpr_))
     {
         sp->sb->hasproto = true;
@@ -3418,7 +3418,7 @@ Type* TypeGenerator::FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin
                     error(ERR_AUTO_NOT_ALLOWED_IN_PARAMETER);
                 else if (Optimizer::cparams.prm_cplusplus && tp->btp->IsStructured() && (MATCHKW(lex, Keyword::openpa_) || MATCHKW(lex, Keyword::begin_)))
                 {
-                    LEXLIST* cur = lex;
+                    LexList* cur = lex;
                     lex = getsym();
                     if (!MATCHKW(lex, Keyword::star_) && !MATCHKW(lex, Keyword::and_) && !TypeGenerator::StartOfType(lex, nullptr, true))
                     {
@@ -3885,7 +3885,7 @@ Type* TypeGenerator::FunctionParams(LEXLIST*& lex, SYMBOL* funcsp, SYMBOL** spin
         error(ERR_VOID_ONLY_PARAMETER);
     return tp;
 }
-Type* TypeGenerator::TypeId(LEXLIST*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing)
+Type* TypeGenerator::TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing)
 {
     Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
@@ -3926,7 +3926,7 @@ bool istype(SYMBOL* sym)
     }
     return (sym->tp->type != BasicType::templateselector_ && sym->sb->storage_class == StorageClass::type_) || sym->sb->storage_class == StorageClass::typedef_;
 }
-bool TypeGenerator::StartOfType(LEXLIST*& lex, bool* structured, bool assumeType)
+bool TypeGenerator::StartOfType(LexList*& lex, bool* structured, bool assumeType)
 {
     if (structured)
         *structured = false;
@@ -3934,12 +3934,12 @@ bool TypeGenerator::StartOfType(LEXLIST*& lex, bool* structured, bool assumeType
     if (!lex)
         return false;
 
-    if (lex->data->type == l_id)
+    if (lex->data->type == LexType::l_id_)
     {
         auto tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
         if (tparam)
         {
-            LEXLIST* placeHolder = lex;
+            LexList* placeHolder = lex;
             bool member;
             lex = getsym();
             member = MATCHKW(lex, Keyword::classsel_);
@@ -3956,11 +3956,11 @@ bool TypeGenerator::StartOfType(LEXLIST*& lex, bool* structured, bool assumeType
             }
         }
     }
-    if (lex->data->type == l_id || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::decltype_))
+    if (lex->data->type == LexType::l_id_ || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::decltype_))
     {
         bool isdecltype = MATCHKW(lex, Keyword::decltype_);
         SYMBOL *sym, *strSym = nullptr;
-        LEXLIST* placeholder = lex;
+        LexList* placeholder = lex;
         bool dest = false;
         nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))

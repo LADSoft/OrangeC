@@ -35,10 +35,10 @@
 #include "expr.h"
 #include "lambda.h"
 #include "occparse.h"
+#include "lex.h"
 #include "help.h"
 #include "cpplookup.h"
 #include "mangle.h"
-#include "lex.h"
 #include "constopt.h"
 #include "memory.h"
 #include "init.h"
@@ -544,7 +544,7 @@ static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym)
         }
     }
 }
-std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LEXLIST* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
+std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
                                                SYMBOL* sp, bool definition)
 {
     (void)lex;
@@ -743,9 +743,9 @@ void restoreParams(SYMBOL** table, int count)
         }
     }
 }
-static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
+static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
 {
-    std::list<INITLIST*>* rv = nullptr;
+    std::list<Argument*>* rv = nullptr;
     bool dofunc = false;
     bool doparam = false;
     if (exp->v.func->arguments)
@@ -787,7 +787,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                                         tp = Type::MakeType(BasicType::volatile_, tp);
                                     if (!rv)
                                         rv = initListListFactory.CreateList();
-                                    auto arg1 = Allocate<INITLIST>();
+                                    auto arg1 = Allocate<Argument>();
                                     arg1->tp = tp;
                                     arg1->exp = intNode(ExpressionNode::c_i_, 0);
                                     rv->push_back(arg1);
@@ -797,7 +797,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                     }
                     else
                     {
-                        auto arg1 = Allocate<INITLIST>();
+                        auto arg1 = Allocate<Argument>();
                         *arg1 = *arg;
                         tp = tp1->templateParam->second->byClass.val;
                         if (tp)
@@ -815,7 +815,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                 }
                 else
                 {
-                    auto arg1 = Allocate<INITLIST>();
+                    auto arg1 = Allocate<Argument>();
                     *arg1 = *arg;
                     if (!rv)
                         rv = initListListFactory.CreateList();
@@ -846,7 +846,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                             std::deque<TEMPLATEPARAM*> defaults;
                             std::deque<std::pair<Type**, Type*>> types;
                             packIndex = i;
-                            auto arg1 = Allocate<INITLIST>();
+                            auto arg1 = Allocate<Argument>();
                             *arg1 = *arg;
                             if (!rv)
                                 rv = initListListFactory.CreateList();
@@ -934,7 +934,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                     }
                     else
                     {
-                        auto arg1 = Allocate<INITLIST>();
+                        auto arg1 = Allocate<Argument>();
                         *arg1 = *arg;
                         arg1->tp = LookupTypeFromExpression(arg1->exp, nullptr, false);
                         if (arg1->tp == nullptr)
@@ -946,7 +946,7 @@ static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp)
                 }
                 else
                 {
-                    auto arg1 = Allocate<INITLIST>();
+                    auto arg1 = Allocate<Argument>();
                     *arg1 = *arg;
                     if (!rv)
                         rv = initListListFactory.CreateList();
@@ -1223,7 +1223,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                         dropStructureDeclaration();
                         break;
                     }
-                    FUNCTIONCALL* func = Allocate<FUNCTIONCALL>();
+                    CallSite* func = Allocate<CallSite>();
                     *func = *next->v.func;
                     func->sp = sym;
                     func->thistp = Type::MakeType(BasicType::pointer_, tp);
@@ -1494,7 +1494,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                         }
                     }
                 }
-                std::list<INITLIST*>* old = exp->v.func->arguments;
+                std::list<Argument*>* old = exp->v.func->arguments;
                 std::list<TEMPLATEPARAMPAIR>* oldp = exp->v.func->templateParams;
                 exp->v.func->arguments = ExpandArguments(exp);
                 exp->v.func->templateParams = ExpandParams(exp);
@@ -1533,7 +1533,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     rve = rve->BaseType()->btp;
                 if (rve->IsFunctionPtr() || rve->IsFunction() || rve->IsStructured())
                 {
-                    std::list<INITLIST*>* old = nullptr;
+                    std::list<Argument*>* old = nullptr;
                     if (exp->v.func)
                     {
                         old = exp->v.func->arguments;
@@ -1640,9 +1640,9 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     Type* tp2 = LookupTypeFromExpression(exp->left, enclosing, alt);
                     Type* ctype = cons->tp;
                     Type thistp = {};
-                    FUNCTIONCALL funcparams = {};
-                    INITLIST a = {};
-                    std::list<INITLIST*> args = {&a};
+                    CallSite funcparams = {};
+                    Argument a = {};
+                    std::list<Argument*> args = {&a};
                     EXPRESSION x = {}, *xx = &x;
                     x.type = ExpressionNode::auto_;
                     x.v.sp = cons;

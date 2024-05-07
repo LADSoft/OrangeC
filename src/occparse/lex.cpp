@@ -52,6 +52,8 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
+#include "stmt.h"
+
 namespace Parser
 {
 #ifndef LONGLONG_MAX
@@ -62,11 +64,11 @@ int eofLine;
 const char* eofFile;
 bool parsingPreprocessorConstant;
 
-LEXCONTEXT* context;
+LexContext* context;
 
 int charIndex;
 
-LEXLIST* currentLex;
+LexList* currentLex;
 Optimizer::LINEDATA nullLineData = { 0, "", "", 0, 0 };
 
 static bool valid;
@@ -85,7 +87,7 @@ struct ParseHold
 
 static std::stack<ParseHold> parseStack;
 
-KEYWORD keywords[] = {
+KeywordData keywords[] = {
     {"!", 1, Keyword::not_, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
     {"!=", 2, Keyword::neq_, 0, TT_RELATION | TT_EQUALITY},
     {"#", 1, Keyword::hash_, 0, TT_UNKNOWN},
@@ -386,13 +388,13 @@ KEYWORD keywords[] = {
 };
 
 #define TABSIZE (sizeof(keywords) / sizeof(keywords[0]))
-SymbolTableFactory<KEYWORD> lexFactory;
-SymbolTable<KEYWORD>* kwSymbols;
+SymbolTableFactory<KeywordData> lexFactory;
+SymbolTable<KeywordData>* kwSymbols;
 
-static bool kwmatches(KEYWORD* kw);
+static bool kwmatches(KeywordData* kw);
 void lexini(void)
 /*
- * create a keyword Keyword::hash_ table
+ * create a keyword table
  */
 {
     bool old = Optimizer::cparams.prm_extwarning;
@@ -407,7 +409,7 @@ void lexini(void)
     }
     llminus1 = 0;
     llminus1--;
-    context = Allocate<LEXCONTEXT>();
+    context = Allocate<LexContext>();
     nextFree = 0;
     currentLine = "";
     linePointer = (const unsigned char*)currentLine.c_str();
@@ -418,7 +420,7 @@ void lexini(void)
 }
 
 /*-------------------------------------------------------------------------*/
-bool KWTYPE(LEXLIST* lex, unsigned types)
+bool KWTYPE(LexList* lex, unsigned types)
 {
     int rv = 0;
     if (ISKW(lex))
@@ -451,7 +453,7 @@ bool KWTYPE(LEXLIST* lex, unsigned types)
     return rv & types;
 }
 
-static bool kwmatches(KEYWORD* kw)
+static bool kwmatches(KeywordData* kw)
 {
     if (Optimizer::cparams.prm_assemble)
         return !!(kw->matchFlags & KW_ASSEMBLER);
@@ -471,12 +473,12 @@ static bool kwmatches(KEYWORD* kw)
     }
     return false;
 }
-KEYWORD* searchkw(const unsigned char** p)
+KeywordData* searchkw(const unsigned char** p)
 /*
  * see if the current symbol is a keyword
  */
 {
-    KEYWORD* kw;
+    KeywordData* kw;
     unsigned char buf[1000], *q = buf;
     const unsigned char* q1 = *p;
     if (isstartchar(*q1))
@@ -524,7 +526,7 @@ KEYWORD* searchkw(const unsigned char** p)
     }
     else
     {
-        KEYWORD* found = nullptr;
+        KeywordData* found = nullptr;
         int len = 0;
         while (ispunct((unsigned char)*q1))
             *q++ = *q1++, len++;
@@ -635,13 +637,13 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
     }
 }
 
-int getChar(const unsigned char** source, e_lexType* tp)
+int getChar(const unsigned char** source, LexType* tp)
 {
-    e_lexType v = l_achr;
+    LexType v = LexType::l_achr_;
     const unsigned char* p = *source;
     if (*p == 'L')
     {
-        v = l_wchr;
+        v = LexType::l_wchr_;
         p++;
     }
     else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
@@ -650,18 +652,18 @@ int getChar(const unsigned char** source, e_lexType* tp)
         {
             if (p[1] == '8')
             {
-                v = l_u8chr;
+                v = LexType::l_u8chr_;
                 p+=2;
             }
             else
             {
-                v = l_uchr;
+                v = LexType::l_uchr_;
                 p++;
             }
         }
         else if (*p == 'U')
         {
-            v = l_Uchr;
+            v = LexType::l_Uchr_;
             p++;
         }
     }
@@ -671,7 +673,7 @@ int getChar(const unsigned char** source, e_lexType* tp)
         do
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
-        i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : v == l_u8chr ? 1 : 2, &p);
+        i = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : v == LexType::l_u8chr_ ? 1 : 2, &p);
         if (i == INT_MIN)
         {
             error(ERR_INVALID_CHAR_CONSTANT);
@@ -679,14 +681,14 @@ int getChar(const unsigned char** source, e_lexType* tp)
         }
         if (*p != '\'')
         {
-            if (v == l_uchr || v == l_Uchr)
+            if (v == LexType::l_uchr_ || v == LexType::l_Uchr_)
             {
                 error(ERR_CHAR1632_CONSTANT_TOO_LONG);
             }
             else
             {
                 int j;
-                j = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+                j = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : 2, &p);
                 if (j == INT_MIN)
                 {
                     error(ERR_INVALID_CHAR_CONSTANT);
@@ -695,7 +697,7 @@ int getChar(const unsigned char** source, e_lexType* tp)
                 i = (i << 8) + j;
                 if (*p != '\'')
                 {
-                    j = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+                    j = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : 2, &p);
                     if (j == INT_MIN)
                     {
                         error(ERR_INVALID_CHAR_CONSTANT);
@@ -704,7 +706,7 @@ int getChar(const unsigned char** source, e_lexType* tp)
                     i = (i << 8) + j;
                     if (*p != '\'')
                     {
-                        j = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
+                        j = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : 2, &p);
                         if (j == INT_MIN)
                         {
                             error(ERR_INVALID_CHAR_CONSTANT);
@@ -741,7 +743,7 @@ int getChar(const unsigned char** source, e_lexType* tp)
     }
     return INT_MIN;
 }
-Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
+Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
 {
     // the static declaration speeds it up by about 5% on windows platforms.
     static LCHAR data[32768];
@@ -753,17 +755,17 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
     int len = sizeof(data) / sizeof(data[0]);
     int count = 0;
     int errored = 0;
-    e_lexType v = l_astr;
+    LexType v = LexType::l_astr_;
     if (*p == 'L')
     {
-        v = l_wstr;
+        v = LexType::l_wstr_;
         do
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
     }
     else if (*p == '@' && (Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
     {
-        v = l_msilstr;
+        v = LexType::l_msilstr_;
         do
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
@@ -772,13 +774,13 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
     {
         if (*p == 'u')
         {
-            v = l_ustr;
+            v = LexType::l_ustr_;
             do
                 p++;
             while (*p == ppDefine::MACRO_PLACEHOLDER);
             if (*p == '8')
             {
-                v = l_u8str;
+                v = LexType::l_u8str_;
                 do
                     p++;
                 while (*p == ppDefine::MACRO_PLACEHOLDER);
@@ -786,7 +788,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
         }
         else if (*p == 'U')
         {
-            v = l_Ustr;
+            v = LexType::l_Ustr_;
             do
                 p++;
             while (*p == ppDefine::MACRO_PLACEHOLDER);
@@ -938,10 +940,10 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
                 if (!*p || *p == '"')
                     continue;
                 int i;
-                if (v == l_msilstr)
+                if (v == LexType::l_msilstr_)
                     i = *p++;
                 else
-                    i = getsch(v == l_Ustr || v == l_u8str ? 8 : v == l_wstr || v == l_ustr ? 4 : 2, &p);
+                    i = getsch(v == LexType::l_Ustr_ || v == LexType::l_u8str_ ? 8 : v == LexType::l_wstr_ || v == LexType::l_ustr_ ? 4 : 2, &p);
                 if (i == INT_MIN)
                 {
                     if (!errored)
@@ -954,7 +956,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
                     error(ERR_STRING_CONSTANT_TOO_LONG);
                 else
                 {
-                    if (v == l_u8str && i > 0x7f)
+                    if (v == LexType::l_u8str_ && i > 0x7f)
                     {
                         if (i > 0x10ffff)
                             error(ERR_INVALID_CHAR_CONSTANT);
@@ -986,9 +988,9 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
                     }
                     else
                     {
-                        if (v == l_ustr && (i & 0xffff0000))
+                        if (v == LexType::l_ustr_ && (i & 0xffff0000))
                             error(ERR_INVALID_CHAR_CONSTANT);
-                        if (v == l_Ustr && i > 0x10ffff)
+                        if (v == LexType::l_Ustr_ && i > 0x10ffff)
                             error(ERR_INVALID_CHAR_CONSTANT);
                         *dest++ = i;
                         len--;
@@ -1174,19 +1176,19 @@ static int getexp(const unsigned char** ptr)
     return ival;
 }
 
-e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radix, long long* ival, unsigned char** bitintvalue)
+LexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radix, long long* ival, unsigned char** bitintvalue)
 {
     bool isunsigned = false;
     if (tolower(**ptr) == 'u')
     {
-        if (tolower((*ptr)[1]) != 'w' || tolower((*ptr)[2]) != 'b') return l_none;
+        if (tolower((*ptr)[1]) != 'w' || tolower((*ptr)[2]) != 'b') return LexType::none_;
         *ptr += 3;
         isunsigned = true;
     }
     else
     {
         if (tolower((*ptr)[0]) != 'w' || tolower((*ptr)[1]) != 'b')
-            return l_none;
+            return LexType::none_;
         *ptr += 2;
     }
     const int n = Optimizer::chosenAssembler->arch->bitintmax / CHAR_BIT;
@@ -1267,7 +1269,7 @@ e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int ra
         RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
         RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
     }
-    return isunsigned ? l_ubitint : l_bitint;
+    return isunsigned ? LexType::ubitint_ : LexType::bitint_;
 }
 
     /*
@@ -1276,17 +1278,17 @@ e_lexType getBitInt(const unsigned char *base, const unsigned char** ptr, int ra
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival, unsigned char ** bitintvalue)
+LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival, unsigned char ** bitintvalue)
 {
     int radix = 10;
     int floatradix = 0;
     int frac = 0;
     bool hasdot = false;
-    e_lexType lastst;
+    LexType lastst;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
-        return (e_lexType)INT_MIN;
+        return (LexType)INT_MIN;
     if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
-        return (e_lexType)INT_MIN;
+        return (LexType)INT_MIN;
     if (**ptr == '0')
     {
         (*ptr)++;
@@ -1318,7 +1320,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
     {
         (*ptr)++;
     }
-    if ((lastst = getBitInt(base, ptr, radix, ival, bitintvalue)) != l_none)
+    if ((lastst = getBitInt(base, ptr, radix, ival, bitintvalue)) != LexType::none_)
     {
         RequiresDialect::Feature(Dialect::c2x, "_Bitint Literals");
         return lastst;
@@ -1370,11 +1372,11 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
                 q++;
             if (*q)
             {
-                return (e_lexType)INT_MIN;
+                return (LexType)INT_MIN;
             }
             if (**ptr != 'H' && **ptr != 'h')
             {
-                return (e_lexType)INT_MIN;
+                return (LexType)INT_MIN;
             }
             (*ptr)++;
         }
@@ -1414,33 +1416,33 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
     }
     if (!floatradix && !hasdot)
     {
-        lastst = l_i;
+        lastst = LexType::i_;
         if (Utils::iequal((char*)suffix, "L"))
         {
-            lastst = l_l;
+            lastst = LexType::l_;
             suffix[0] = 0;
         }
         else if (Utils::iequal((char*)suffix, "U"))
         {
-            lastst = l_ui;
+            lastst = LexType::ui_;
             suffix[0] = 0;
         }
         else if (Utils::iequal((char*)suffix, "UL") || Utils::iequal((char*)suffix, "LU"))
         {
-            lastst = l_ul;
+            lastst = LexType::ul_;
             suffix[0] = 0;
         }
         else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "i64")))
         {
-            lastst = l_ll;
+            lastst = LexType::ll_;
             suffix[0] = 0;
         }
         else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) &&
                   (Utils::iequal((char*)suffix, "ULL") || Utils::iequal((char*)suffix, "LLU"))) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "ui64")))
         {
-            lastst = l_ull;
+            lastst = LexType::ull_;
             suffix[0] = 0;
         }
         else if (suffix[0])
@@ -1452,28 +1454,28 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
             }
             else
             {
-                lastst = l_ull;
+                lastst = LexType::ull_;
             }
         }
-        if (lastst == l_i) /* no qualifiers */
+        if (lastst == LexType::i_) /* no qualifiers */
         {
             if (*ival > INT_MAX)
             {
-                lastst = l_ui;
+                lastst = LexType::ui_;
                 if (radix == 10 || (unsigned long long)*ival > UINT_MAX)
                 {
-                    lastst = l_l;
+                    lastst = LexType::l_;
                     if (*ival > LONG_MAX)
                     {
-                        lastst = l_ul;
+                        lastst = LexType::ul_;
                         if (radix == 10 || (unsigned long long)*ival > ULONG_MAX)
                         {
                             if (radix == 10 || *ival > ULLONG_MAX)
                             {
-                                lastst = l_ll;
+                                lastst = LexType::ll_;
                             }
                             else
-                                lastst = l_ull;
+                                lastst = LexType::ull_;
                         }
                     }
                 }
@@ -1495,13 +1497,13 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
         if (Utils::iequal((char*)suffix, "F"))
         {
             float f;
-            lastst = l_f;
+            lastst = LexType::l_f_;
             Optimizer::CastToFloat(ISZ_FLOAT, rval);
             suffix[0] = 0;
         }
         else if (Utils::iequal((char*)suffix, "L"))
         {
-            lastst = l_ld;
+            lastst = LexType::l_ld_;
             Optimizer::CastToFloat(ISZ_LDOUBLE, rval);
             suffix[0] = 0;
         }
@@ -1512,13 +1514,13 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
                 suffix[0] = 0;
                 error(ERR_INVCONST);
             }
-            lastst = l_ld;
+            lastst = LexType::l_ld_;
             Optimizer::CastToFloat(ISZ_LDOUBLE, rval);
         }
         else
         {
             double d;
-            lastst = l_d;
+            lastst = LexType::l_d_;
             Optimizer::CastToFloat(ISZ_DOUBLE, rval);
         }
     }
@@ -1580,7 +1582,7 @@ int getId(const unsigned char** ptr, unsigned char* dest)
     *dest = 0;
     return 0;
 }
-LEXLIST* SkipToNextLine(void)
+LexList* SkipToNextLine(void)
 {
 
     if (!context->next)
@@ -1590,17 +1592,17 @@ LEXLIST* SkipToNextLine(void)
     }
     return getsym();
 }
-LEXLIST* getGTSym(LEXLIST* in)
+LexList* getGTSym(LexList* in)
 {
-    static LEXLIST lex;
-    static LEXEME data;
+    static LexList lex;
+    static Lexeme data;
     const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
-    KEYWORD* kw;
+    KeywordData* kw;
     kw = searchkw(&ppgreater);
     lex = *in;
     lex.data = &data;
     *lex.data = *in->data;
-    lex.data->type = l_kw;
+    lex.data->type = LexType::l_kw_;
     lex.data->kw = kw;
     return &lex;
 }
@@ -1717,6 +1719,53 @@ void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std:
     }
     fputc('\n', fil);
 }
+void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
+{
+    if (!lines)
+        lines = lineDataListFactory.CreateList();
+    auto ld = Allocate<Optimizer::LINEDATA>();
+    ld->file = fname;
+    ld->line = litlate(line);
+    ld->lineno = lineno;
+    ld->fileindex = fileindex;
+    lines->push_back(ld);
+}
+void FlushLineData(const char* file, int lineno)
+{
+    if (lines)
+    {
+        while (lines->size())
+        {
+            if (strcmp(file, lines->front()->file) != 0 || lines->front()->lineno < lineno)
+                lines->pop_front();
+            else
+                break;
+        }
+    }
+}
+std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, LexList* lex, int offset)
+{
+    if (!lex || !lines)
+        return nullptr;
+    std::list<Statement*> rv;
+    int lineno;
+    const char* file;
+    lineno = lex->data->linedata->lineno + offset + 1;
+    file = lex->data->errfile;
+    while (lines->size() && (strcmp(lines->front()->file, file) != 0 || lineno >= lines->front()->lineno))
+    {
+        rv.push_back(Statement::MakeStatement(lex, parent, StatementNode::line_));
+        rv.back()->lineData = lines->front();
+        lines->pop_front();
+    }
+    if (rv.size())
+    {
+        auto rva = stmtListFactory.CreateList();
+        *rva = rv;
+        return rva;
+    }
+    return nullptr;
+}
 static void DumpPreprocessedLine()
 {
     if (cppFile)
@@ -1738,14 +1787,14 @@ static void DumpPreprocessedLine()
         fputc('\n', cppFile);
     }
 }
-LEXLIST* getsym(void)
+LexList* getsym(void)
 {
     static std::deque<std::pair<int, int>> annotations;
-    static LEXLIST* last;
+    static LexList* last;
     static const char* origLine = "";
-    LEXLIST* lex;
-    KEYWORD* kw;
-    e_lexType tp;
+    LexList* lex;
+    KeywordData* kw;
+    LexType tp;
     bool contin;
     FPF rval;
     long long ival;
@@ -1758,7 +1807,7 @@ LEXLIST* getsym(void)
 
     if (context->cur)
     {
-        LEXLIST* rv;
+        LexList* rv;
         rv = context->cur;
         if (context->last == rv->prev)
             TemplateRegisterDeferred(context->last);
@@ -1786,8 +1835,8 @@ LEXLIST* getsym(void)
     {
         return nullptr;
     }
-    lex = Allocate<LEXLIST>();
-    lex->data = Allocate<LEXEME>();
+    lex = Allocate<LexList>();
+    lex->data = Allocate<Lexeme>();
     lex->data->linedata = nullptr;
     lex->prev = context->last;
     context->last = lex;
@@ -1856,13 +1905,13 @@ LEXLIST* getsym(void)
         int start = linePointer - (const unsigned char*)currentLine.c_str();
         if ((cval = getChar(&linePointer, &tp)) != INT_MIN)
         {
-            if (tp == l_achr && !Optimizer::cparams.prm_charisunsigned && !(cval & 0xffffff00))
-                cval = (e_lexType)(char)cval;
-            if (tp == l_uchr && (cval & 0xffff0000))
+            if (tp == LexType::l_achr_ && !Optimizer::cparams.prm_charisunsigned && !(cval & 0xffffff00))
+                cval = (char)cval;
+            if (tp == LexType::l_uchr_ && (cval & 0xffff0000))
                 error(ERR_INVALID_CHAR_CONSTANT);
             lex->data->value.i = cval;
             if (!Optimizer::cparams.prm_cplusplus)
-                lex->data->type = l_i;
+                lex->data->type = LexType::i_;
             else
                 lex->data->type = tp;
             lex->data->suffix = nullptr;
@@ -1901,18 +1950,18 @@ LEXLIST* getsym(void)
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
             unsigned char* bitintValue;
-            e_lexType tp;
+            LexType tp;
             lex->data->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival, &bitintValue)) != (unsigned)INT_MIN)
             {
-                if (tp == l_bitint || tp == l_ubitint)
+                if (tp == LexType::bitint_ || tp == LexType::ubitint_)
                 {
                     lex->data->value.b.bits = ival;
                     lex->data->value.b.value = bitintValue;
                 }
                 else
                 {
-                    if (tp < l_f)
+                    if (tp < LexType::l_f_)
                     {
                         lex->data->value.i = ival;
                     }
@@ -1941,14 +1990,14 @@ LEXLIST* getsym(void)
                 }
                 else
                 {
-                    lex->data->type = l_kw;
+                    lex->data->type = LexType::l_kw_;
                     lex->data->kw = kw;
                 }
             }
             else if (getId(&linePointer, buf + pos) != INT_MIN)
             {
                 lex->data->value.s.a = (char*)buf + pos;
-                lex->data->type = l_id;
+                lex->data->type = LexType::l_id_;
                 pos += strlen((char*)buf + pos) + 1;
                 if (pos >= sizeof(buf) - 512)
                     pos = 0;
@@ -2008,7 +2057,7 @@ LEXLIST* getsym(void)
     currentLex = lex;
     return last = lex;
 }
-LEXLIST* prevsym(LEXLIST* lex)
+LexList* prevsym(LexList* lex)
 {
     if (lex)
     {
@@ -2023,7 +2072,7 @@ LEXLIST* prevsym(LEXLIST* lex)
     }
     return lex;
 }
-LEXLIST* backupsym(void)
+LexList* backupsym(void)
 {
     if (context->cur)
     {
@@ -2037,11 +2086,11 @@ LEXLIST* backupsym(void)
     }
     return context->cur->prev;
 }
-LEXLIST* SetAlternateLex(LEXLIST* lexList)
+LexList* SetAlternateLex(LexList* lexList)
 {
     if (lexList)
     {
-        LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
+        LexContext* newContext = Allocate<LexContext>();
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;
@@ -2057,7 +2106,7 @@ LEXLIST* SetAlternateLex(LEXLIST* lexList)
         return nullptr;
     }
 }
-bool CompareLex(LEXLIST* left, LEXLIST* right)
+bool CompareLex(LexList* left, LexList* right)
 {
     while (left && right)
     {
@@ -2065,37 +2114,37 @@ bool CompareLex(LEXLIST* left, LEXLIST* right)
             break;
         switch (left->data->type)
         {
-            case l_i:
-            case l_ui:
-            case l_l:
-            case l_ul:
-            case l_ll:
-            case l_ull:
+            case LexType::i_:
+            case LexType::ui_:
+            case LexType::l_:
+            case LexType::ul_:
+            case LexType::ll_:
+            case LexType::ull_:
                 if (left->data->value.i != right->data->value.i)
                     return false;
                 break;
-            case l_f:
-            case l_d:
-            case l_ld:
+            case LexType::l_f_:
+            case LexType::l_d_:
+            case LexType::l_ld_:
                 if (left->data->value.f != right->data->value.f)
                     return false;
                 break;
-            case l_I:
+            case LexType::l_I_:
                 break;
-            case l_kw:
+            case LexType::l_kw_:
                 if (left->data->kw != right->data->kw)
                     return false;
                 break;
-            case l_id:
-            case l_astr:
-            case l_u8str:
-            case l_msilstr:
+            case LexType::l_id_:
+            case LexType::l_astr_:
+            case LexType::l_u8str_:
+            case LexType::l_msilstr_:
                 if (strcmp(left->data->value.s.a, right->data->value.s.a))
                     return false;
                 break;
-            case l_wstr:
-            case l_ustr:
-            case l_Ustr:
+            case LexType::l_wstr_:
+            case LexType::l_ustr_:
+            case LexType::l_Ustr_:
                 int i;
                 for (i = 0; left->data->value.s.w[i] && right->data->value.s.w[i]; i++)
                     if (left->data->value.s.w[i] != right->data->value.s.w[i])
@@ -2104,13 +2153,13 @@ bool CompareLex(LEXLIST* left, LEXLIST* right)
                     return false;
                 break;
 
-            case l_achr:
-            case l_wchr:
-            case l_uchr:
-            case l_Uchr:
+            case LexType::l_achr_:
+            case LexType::l_wchr_:
+            case LexType::l_uchr_:
+            case LexType::l_Uchr_:
                 if (left->data->value.i != right->data->value.i)
                     return false;
-            case l_qualifiedname:
+            case LexType::l_qualifiedName_:
             default:
                 return false;
         }
@@ -2138,13 +2187,13 @@ void SetAlternateParse(bool set, const std::string& val)
 }
 long long ParseExpression(std::string& line)
 {
-    LEXCONTEXT* oldContext = context;
-    LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
+    LexContext* oldContext = context;
+    LexContext* newContext = Allocate<LexContext>();
     context = newContext;
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
     SetAlternateParse(true, line);
-    LEXLIST* lex = getsym();
+    LexList* lex = getsym();
     parsingPreprocessorConstant = true;
     dontRegisterTemplate++;
     lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);

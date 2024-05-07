@@ -35,10 +35,10 @@
 #include "expr.h"
 #include "lambda.h"
 #include "occparse.h"
+#include "lex.h"
 #include "help.h"
 #include "cpplookup.h"
 #include "mangle.h"
-#include "lex.h"
 #include "constopt.h"
 #include "memory.h"
 #include "init.h"
@@ -779,7 +779,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                                     }
                                 Type* ctype = sp->tp;
                                 EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
-                                FUNCTIONCALL funcparams = {};
+                                CallSite funcparams = {};
                                 funcparams.arguments = rvsit->arguments;
                                 auto oldnoExcept = noExcept;
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sp, &funcparams, nullptr, false, false, 0);
@@ -1484,7 +1484,7 @@ static bool ValidArg(Type* tp)
         }
     }
 }
-static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, std::list<INITLIST*>* args)
+static bool valFromDefault(std::list<TEMPLATEPARAMPAIR>* params, bool usesParams, std::list<Argument*>* args)
 {
     if (params)
     {
@@ -1648,7 +1648,7 @@ static bool checkNonTypeTypes(std::list<TEMPLATEPARAMPAIR>* params, std::list<TE
     }
     return true;
 }
-SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func, std::list<INITLIST*>* args,
+SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func, std::list<Argument*>* args,
                                      std::list<TEMPLATEPARAMPAIR>* nparams)
 {
     bool usesParams = !!args && args->size();
@@ -1674,7 +1674,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         }
     }
     inDefaultParam++;
-    std::list<INITLIST*> arg1;
+    std::list<Argument*> arg1;
     if (args)
         arg1 = *args;
     if (!valFromDefault(params, usesParams, &arg1))
@@ -1716,7 +1716,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         }
         s.tmpl = func->templateParams;
         addTemplateDeclaration(&s);
-        std::list<INITLIST*>::iterator ita, itae;
+        std::list<Argument*>::iterator ita, itae;
         if (args)
         {
             ita = args->begin();
@@ -1743,7 +1743,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
             SYMBOL* sp = *it;
             if (sp->sb->deferredCompile)
             {
-                LEXLIST* lex;
+                LexList* lex;
                 dontRegisterTemplate += templateNestingCount != 0;
                 lex = SetAlternateLex(sp->sb->deferredCompile);
                 sp->sb->init = nullptr;
@@ -1767,7 +1767,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
     }
     s.tmpl = func->templateParams;
     addTemplateDeclaration(&s);
-    std::list<INITLIST*>::iterator check, checke;
+    std::list<Argument*>::iterator check, checke;
     if (args)
     {
         check = args->begin();
@@ -1891,8 +1891,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
     STRUCTSYM s, primary;
-    LEXLIST* head = nullptr;
-    LEXLIST* tail = nullptr;
+    LexList* head = nullptr;
+    LexList* tail = nullptr;
     SYMBOL* oldMemberClass = instantiatingMemberFuncClass;
     memset(&primary, 0, sizeof(primary));
     std::list<TEMPLATEPARAMPAIR>::iterator itPrimary, itePrimary = itPrimary;
@@ -1943,7 +1943,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
         if ((!args || itArgs == iteArgs) && !itDest->second->byClass.val && !itDest->second->packed &&
             (itPrimary == itePrimary || !itPrimary->second->packed))
         {
-            LEXLIST* lex;
+            LexList* lex;
             int n, pushCount;
             if (!itSrc->second->byClass.txtdflt)
             {
@@ -2026,7 +2026,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     if (itDest->second->byNonType.txttype)
                     {
                         int oldNesting = argumentNesting;
-                        LEXLIST* start = lex;
+                        LexList* start = lex;
                         lex = SetAlternateLex(itSrc->second->byNonType.txttype);
                         openStructs = nullptr;
                         structLevel = 0;
@@ -2204,7 +2204,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
     if (ita != itae && ita->second->type == TplType::new_)
         ++ita;
     (void)args;
-    LEXLIST* lex = nullptr;
+    LexList* lex = nullptr;
     SYMBOL* cls = sym;
     int pushCount;
     if (cls->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
@@ -2253,7 +2253,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             bool defd = false;
             SYMBOL old;
             int nsl = PushTemplateNamespace(sym);
-            LEXLIST* reinstateLex = lex;
+            LexList* reinstateLex = lex;
             bool oldTemplateType = inTemplateType;
             auto oldLambdas = lambdas;
             int oldPackIndex = packIndex;
@@ -4336,7 +4336,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
             found1->tp = SynthesizeType(found1->tp, nullptr, false);
             if (found1->sb->init)
             {
-                std::list<INITIALIZER*>* init = initListFactory.CreateList();
+                std::list<Initializer*>* init = initListFactory.CreateList();
                 auto begin = found1->sb->init->begin();
                 auto end = found1->sb->init->end();
                 RecalculateVariableTemplateInitializers(begin, end, &init, found1->tp, 0);
@@ -4689,7 +4689,7 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
                     (*rvs)->back().arguments = initListListFactory.CreateList();
                     for (auto ilx : *oldItem.arguments)
                     {
-                        auto arg = Allocate<INITLIST>();
+                        auto arg = Allocate<Argument>();
                         *arg = *ilx;
                         (*rvs)->back().arguments->push_back(arg);
                         arg->tp = SpecifyArgType(sym, arg->tp, nullptr, nullptr, origTemplate, origUsing);
@@ -4832,7 +4832,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
             }
             *last = Allocate<EXPRESSION>();
             **last = *exp;
-            (*last)->v.func = Allocate<FUNCTIONCALL>();
+            (*last)->v.func = Allocate<CallSite>();
             *(*last)->v.func = *exp->v.func;
 
             std::list<TEMPLATEPARAMPAIR>* tpxx = (*last)->v.func->templateParams;
@@ -4881,7 +4881,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                 (*last)->v.func->arguments = initListListFactory.CreateList();
                 for (auto arg : *old)
                 {
-                    auto arg1 = Allocate<INITLIST>();
+                    auto arg1 = Allocate<Argument>();
                     *arg1 = *arg;
                     (*last)->v.func->arguments->push_back(arg1);
                     arg1->exp = SpecifyArgInt(sym, arg1->exp, orig, origTemplate, origUsing);

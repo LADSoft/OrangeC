@@ -38,6 +38,7 @@
 #include "ccerr.h"
 #include "ildata.h"
 #include "occparse.h"
+#include "lex.h"
 #include "help.h"
 #include "floatconv.h"
 #include "memory.h"
@@ -45,7 +46,6 @@
 #include "beinterf.h"
 #include "initbackend.h"
 #include "types.h"
-
 namespace Parser {
 const char* beDecorateSymName(SYMBOL* sym)
 {

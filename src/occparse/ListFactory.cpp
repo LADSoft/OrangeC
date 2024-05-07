@@ -28,12 +28,12 @@
 namespace Parser
 {
     ListFactory<struct casedata*> casedataListFactory;
-    ListFactory<struct stmt*> stmtListFactory;
+    ListFactory<Statement*> stmtListFactory;
     ListFactory<struct expr*> exprListFactory;
     ListFactory<struct sym*> symListFactory;
     ListFactory<NAMESPACEVALUEDATA*> namespaceValueDataListFactory;
-    ListFactory<struct blockdata*> blockDataListFactory;
-    ListFactory<struct init*> initListFactory;
+    ListFactory<FunctionBlock*> blockDataListFactory;
+    ListFactory<Initializer*> initListFactory;
     ListFactory<struct _ccNamespaceData*> ccNameSpaceDataListFactory;
     ListFactory<struct __lambda*> lambdaListFactory;
     ListFactory<struct _memberInitializers*> memberInitializersListFactory;
@@ -41,9 +41,9 @@ namespace Parser
     ListFactory<struct _vtabEntry*> vtabEntryListFactory;
     ListFactory<struct _vbaseEntry*> vbaseEntryListFactory;
     ListFactory<struct _structSym*> structsymListFactory;
-    ListFactory<struct initlist*> initListListFactory;
+    ListFactory<Argument*> initListListFactory;
     ListFactory<struct _errl*> errlListFactory;
-    ListFactory<struct _string*> stringListFactory;
+    ListFactory<StringData*> stringListFactory;
     ListFactory<struct Optimizer::_linedata*> lineDataListFactory;
     ListFactory<TEMPLATEPARAMPAIR> templateParamPairListFactory;
     ListFactory<TEMPLATESELECTOR> templateSelectorListFactory;

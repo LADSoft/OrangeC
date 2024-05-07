@@ -50,6 +50,7 @@
 #include "ListFactory.h"
 #include "types.h"
 #include "constexpr.h"
+#include "iexpr.h"
 
 namespace Parser
 {
@@ -64,6 +65,105 @@ void helpinit()
     anonymousNotAlloc = 0;
     staticanonymousIndex = 1;
     guardFuncs.clear();
+}
+bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
+/*
+ *      equalnode will return 1 if the expressions pointed to by
+ *      node1 and node2 are equivalent.
+ */
+{
+    if (node1 == 0 || node2 == 0)
+        return 0;
+    if (node1->type != node2->type)
+        return 0;
+    if (natural_size(node1) != natural_size(node2))
+        return 0;
+    switch (node1->type)
+    {
+    case ExpressionNode::const_:
+    case ExpressionNode::pc_:
+    case ExpressionNode::global_:
+    case ExpressionNode::auto_:
+    case ExpressionNode::absolute_:
+    case ExpressionNode::threadlocal_:
+    case ExpressionNode::structelem_:
+        return node1->v.sp == node2->v.sp;
+    case ExpressionNode::labcon_:
+        return node1->v.i == node2->v.i;
+    default:
+        return (!node1->left || equalnode(node1->left, node2->left)) &&
+            (!node1->right || equalnode(node1->right, node2->right));
+    case ExpressionNode::c_i_:
+    case ExpressionNode::c_l_:
+    case ExpressionNode::c_ul_:
+    case ExpressionNode::c_ui_:
+    case ExpressionNode::c_c_:
+    case ExpressionNode::c_u16_:
+    case ExpressionNode::c_u32_:
+    case ExpressionNode::c_bool_:
+    case ExpressionNode::c_uc_:
+    case ExpressionNode::c_ll_:
+    case ExpressionNode::c_ull_:
+    case ExpressionNode::c_wc_:
+    case ExpressionNode::nullptr_:
+        return node1->v.i == node2->v.i;
+    case ExpressionNode::c_d_:
+    case ExpressionNode::c_f_:
+    case ExpressionNode::c_ld_:
+    case ExpressionNode::c_di_:
+    case ExpressionNode::c_fi_:
+    case ExpressionNode::c_ldi_:
+        return (*node1->v.f == *node2->v.f);
+    case ExpressionNode::c_dc_:
+    case ExpressionNode::c_fc_:
+    case ExpressionNode::c_ldc_:
+        return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
+    }
+}
+EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
+{
+    EXPRESSION* rv;
+    switch (node->type)
+    {
+        case ExpressionNode::global_:
+        case ExpressionNode::auto_:
+        case ExpressionNode::threadlocal_:
+        case ExpressionNode::cvarpointer_:
+            return node;
+        case ExpressionNode::add_: {
+        case ExpressionNode::structadd_:
+            auto rv1 = relptr(node->left, offset, true);
+            auto rv2 = relptr(node->right, offset, true);
+            if (rv1)
+                return rv1;
+            else
+                return rv2;
+            break;
+        }
+        case ExpressionNode::sub_: {
+            auto rv1 = rv = relptr(node->left, offset, false);
+            auto rv2 = relptr(node->right, offset, false);
+            if (rv1)
+                return rv1;
+            else
+                return rv2;
+            break;
+        }
+        default:
+            if (castvalue(node))
+            {
+                return relptr(node->left, offset, add);
+            }
+            if (isintconst(node))
+            {
+                if (add)
+                    offset += node->v.i;
+                else
+                    offset -= node->v.i;
+            }
+            return nullptr;
+    }
+    return rv;
 }
 void deprecateMessage(SYMBOL* sym)
 {
@@ -280,28 +380,28 @@ SYMBOL* getFunctionSP(Type** tp)
     }
     return nullptr;
 }
-LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
+LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
 {
     Optimizer::SLCHAR** list;
     char* suffix = nullptr;
     int count = 3;
     int pos = 0;
-    e_lexType type = l_astr;
-    STRING* string;
+    LexType type = LexType::l_astr_;
+    StringData* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
-    while (lex && (lex->data->type == l_astr || lex->data->type == l_wstr || lex->data->type == l_ustr ||
-                   lex->data->type == l_Ustr || lex->data->type == l_msilstr || lex->data->type == l_u8str ))
+    while (lex && (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_wstr_ || lex->data->type == LexType::l_ustr_ ||
+                   lex->data->type == LexType::l_Ustr_ || lex->data->type == LexType::l_msilstr_ || lex->data->type == LexType::l_u8str_ ))
     {
-        if (lex->data->type == l_u8str)
-            type = l_u8str;
-        else if (lex->data->type == l_msilstr)
-            type = l_msilstr;
-        else if (lex->data->type == l_Ustr)
-            type = l_Ustr;
-        else if (type != l_Ustr && type != l_msilstr && lex->data->type == l_ustr)
-            type = l_ustr;
-        else if (type != l_Ustr && type != l_ustr && type != l_msilstr && lex->data->type == l_wstr)
-            type = l_wstr;
+        if (lex->data->type == LexType::l_u8str_)
+            type = LexType::l_u8str_;
+        else if (lex->data->type == LexType::l_msilstr_)
+            type = LexType::l_msilstr_;
+        else if (lex->data->type == LexType::l_Ustr_)
+            type = LexType::l_Ustr_;
+        else if (type != LexType::l_Ustr_ && type != LexType::l_msilstr_ && lex->data->type == LexType::l_ustr_)
+            type = LexType::l_ustr_;
+        else if (type != LexType::l_Ustr_ && type != LexType::l_ustr_ && type != LexType::l_msilstr_ && lex->data->type == LexType::l_wstr_)
+            type = LexType::l_wstr_;
         if (lex->data->suffix)
         {
             if (suffix)
@@ -326,7 +426,7 @@ LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
         list[pos++] = (Optimizer::SLCHAR*)lex->data->value.s.w;
         lex = getsym();
     }
-    string = Allocate<STRING>();
+    string = Allocate<StringData>();
     string->strtype = type;
     string->size = pos;
     string->pointers = Allocate<Optimizer::SLCHAR*>(pos);
@@ -335,9 +435,9 @@ LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems)
     *str = string;
     return lex;
 }
-LEXLIST* concatStrings(LEXLIST* lex, EXPRESSION** expr, e_lexType* tp, int* elems)
+LexList* concatStrings(LexList* lex, EXPRESSION** expr, LexType* tp, int* elems)
 {
-    STRING* data;
+    StringData* data;
     lex = concatStringsInternal(lex, &data, elems);
     *expr = stringlit(data);
     *tp = data->strtype;
@@ -973,7 +1073,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
     }
     return exps;
 }
-EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<INITIALIZER*>* init,
+EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest)
 {
     bool local = false;
@@ -1333,7 +1433,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 {
                     if (initItem->offset || initItem != init->back())
                     {
-                        std::list<INITIALIZER*>::iterator last;
+                        std::list<Initializer*>::iterator last;
                         for (auto itx = init->end(); itx != init->begin();)
                         {
                             --itx;
@@ -1427,13 +1527,13 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
             rv = destructLocal(rv);
             rv = addLocalDestructor(rv, sym);
             EXPRESSION* guardexp = exprNode(ExpressionNode::func_, nullptr, nullptr);
-            guardexp->v.func = Allocate<FUNCTIONCALL>();
+            guardexp->v.func = Allocate<CallSite>();
             guardexp->v.func->sp = guardfunc;
             guardexp->v.func->functp = guardfunc->tp;
             guardexp->v.func->fcall = varNode(ExpressionNode::pc_, guardfunc);
             guardexp->v.func->ascall = true;
             guardexp->v.func->arguments = initListListFactory.CreateList();
-            auto arg = Allocate<INITLIST>();
+            auto arg = Allocate<Argument>();
             arg->tp = &stdpointer;
             arg->exp = guard->left;
             guardexp->v.func->arguments->push_back(arg);

@@ -80,6 +80,7 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
+#include "stmt.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -345,7 +346,7 @@ void compile(bool global)
 {
     fileIndex++;
     SET_GLOBAL(true, 1);
-    LEXLIST* lex = nullptr;
+    LexList* lex = nullptr;
     Optimizer::SymbolManager::clear();
     ListFactoryInit();
     helpinit();
@@ -400,11 +401,12 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            BLOCKDATA bd;
+            FunctionBlock bd;
             memset(&bd, 0, sizeof(bd));
             bd.type = Keyword::begin_;
-            std::list<BLOCKDATA*> block{ &bd };
-            while ((lex = statement_asm(lex, nullptr, block)) != nullptr)
+            std::list<FunctionBlock*> block{ &bd };
+            StatementGenerator sg(lex, nullptr);
+            while (sg.ParseAsm(block))
                 ;
             if (IsCompiler())
             {

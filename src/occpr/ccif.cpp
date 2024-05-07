@@ -36,6 +36,7 @@
 #include "ioptimizer.h"
 #include "memory.h"
 #include "mangle.h"
+#include "lex.h"
 #include "help.h"
 #include "symtab.h"
 #include "types.h"

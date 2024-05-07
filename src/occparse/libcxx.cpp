@@ -35,10 +35,10 @@
 #include "declcpp.h"
 #include "ccerr.h"
 #include "declcons.h"
+#include "lex.h"
 #include "help.h"
 #include "expr.h"
 #include "declare.h"
-#include "lex.h"
 #include "beinterf.h"
 #include "types.h"
 #include "memory.h"
@@ -51,28 +51,28 @@ namespace Parser
 int inNoExceptHandler;
 
 
-typedef bool INTRINS_FUNC(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_abstract(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_base_of(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_class(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_empty(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_enum(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_final(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_nothrow_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_polymorphic(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_standard_layout(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_trivial(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_trivially_destructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+typedef bool INTRINS_FUNC(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_abstract(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_base_of(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_class(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_convertible_to(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_empty(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_enum(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_final(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_literal(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_nothrow_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_nothrow_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_pod(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_polymorphic(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_standard_layout(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_trivial(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_trivially_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_trivially_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_trivially_destructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_trivially_copyable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_union(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_literal_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
 
 static struct _ihash
 {
@@ -203,7 +203,7 @@ void libcxx_builtins(void)
     }
 }
 
-bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     _ihash* p = intrinsicHash.Lookup(sym->name);
     if (p)
@@ -212,7 +212,7 @@ bool parseBuiltInTypelistFunc(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type**
     }
     return false;
 }
-static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**lptr, bool initialize = false)
+static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**lptr, bool initialize = false)
 {
     if (!*lptr)
         *lptr = initListListFactory.CreateList();
@@ -225,7 +225,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
             break;
         if (tp->BaseType()->type != BasicType::templateparam_)
         {
-            auto arg = Allocate<INITLIST>();
+            auto arg = Allocate<Argument>();
             arg->tp = tp;
             if (initialize)
                 arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
@@ -244,7 +244,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
                     {
                         if (tpl.second->byClass.val)
                         {
-                            auto arg = Allocate<INITLIST>();
+                            auto arg = Allocate<Argument>();
                             arg->tp = tpl.second->byClass.val;
                             if (initialize)
                                 arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
@@ -257,7 +257,7 @@ static LEXLIST* getTypeList(LEXLIST* lex, SYMBOL* funcsp, std::list<INITLIST*>**
             {
                 if (tp->templateParam->second->byClass.val)
                 {
-                    auto arg = Allocate<INITLIST>();
+                    auto arg = Allocate<Argument>();
                     arg->tp = tp->templateParam->second->byClass.val;
                     if (initialize)
                         arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
@@ -516,9 +516,9 @@ static bool isPOD(Type* tp)
     }
     return false;
 }
-inline INITLIST* first(std::list<INITLIST*>* args) { return args->front(); }
-inline INITLIST* second(std::list<INITLIST*>* args) { auto it = args->begin(); return (*++it); }
-static bool __is_nothrow(Type* tp, std::list<INITLIST*>* args, SYMBOL* ovl)
+inline Argument* first(std::list<Argument*>* args) { return args->front(); }
+inline Argument* second(std::list<Argument*>* args) { auto it = args->begin(); return (*++it); }
+static bool __is_nothrow(Type* tp, std::list<Argument*>* args, SYMBOL* ovl)
 {
     // recursion will have been taken care of elsewhere...
     int i = 0;
@@ -554,7 +554,7 @@ static bool __is_nothrow(Type* tp, std::list<INITLIST*>* args, SYMBOL* ovl)
                 }
             }
         }
-        FUNCTIONCALL funcparams = {};
+        CallSite funcparams = {};
         funcparams.thisptr = intNode(ExpressionNode::c_i_, 0);
         funcparams.thistp = Type::MakeType(BasicType::pointer_, tp->BaseType());
         funcparams.ascall = true;
@@ -619,7 +619,7 @@ static bool __is_nothrow(Type* tp, std::list<INITLIST*>* args, SYMBOL* ovl)
     }
     return true;
 }
-static bool nothrowConstructible(Type* tp, std::list<INITLIST*>* args)
+static bool nothrowConstructible(Type* tp, std::list<Argument*>* args)
 {
     if (tp->IsStructured())
     {
@@ -627,7 +627,7 @@ static bool nothrowConstructible(Type* tp, std::list<INITLIST*>* args)
     }
     return true;
 }
-static bool nothrowAssignable(Type* tp, std::list<INITLIST*>* args)
+static bool nothrowAssignable(Type* tp, std::list<Argument*>* args)
 {
     if (tp->IsStructured())
     {
@@ -635,10 +635,10 @@ static bool nothrowAssignable(Type* tp, std::list<INITLIST*>* args)
     }
     return true;
 }
-static bool is_abstract(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_abstract(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -650,10 +650,10 @@ static bool is_abstract(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, E
     *tp = &stdint;
     return true;
 }
-static bool is_base_of(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_base_of(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -666,10 +666,10 @@ static bool is_base_of(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EX
     *tp = &stdint;
     return true;
 }
-static bool is_class(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_class(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -681,10 +681,10 @@ static bool is_class(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
     *tp = &stdint;
     return true;
 }
-static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -774,7 +774,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                         funcparams.sp = nullptr;
                         for (auto sym : *tp2->BaseType()->btp->BaseType()->syms)
                         {
-                            auto arg = Allocate<INITLIST>();
+                            auto arg = Allocate<Argument>();
                             arg->tp = sym->tp;
                             arg->exp = intNode(ExpressionNode::c_i_, 0);
                             funcparams.arguments->push_back(arg);
@@ -872,7 +872,7 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                 {
                     int i = 0;
                     std::vector<bool>holdl, holdr;
-                    INITLIST* temp;
+                    Argument* temp;
                     EXPRESSION* cexp = nullptr;
                     SYMBOL* cons = search(tp2->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     if (cons)
@@ -937,10 +937,10 @@ static bool is_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
     *tp = &stdint;
     return true;
 }
-static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_convertible_to(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = true;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -1015,10 +1015,10 @@ static bool is_convertible_to(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type**
     *tp = &stdint;
     return true;
 }
-static bool is_empty(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_empty(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1031,10 +1031,10 @@ static bool is_empty(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
     *tp = &stdint;
     return true;
 }
-static bool is_enum(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_enum(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -1046,10 +1046,10 @@ static bool is_enum(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRE
     *tp = &stdint;
     return true;
 }
-static bool is_final(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_final(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -1062,10 +1062,10 @@ static bool is_final(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
     *tp = &stdint;
     return true;
 }
-static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_literal(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -1078,10 +1078,10 @@ static bool is_literal(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EX
     *tp = &stdint;
     return true;
 }
-static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_nothrow_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1132,10 +1132,10 @@ static bool is_nothrow_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym,
     *tp = &stdint;
     return true;
 }
-static bool is_nothrow_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_nothrow_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1174,10 +1174,10 @@ static bool is_nothrow_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Ty
     *tp = &stdint;
     return true;
 }
-static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_pod(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1189,10 +1189,10 @@ static bool is_pod(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRES
     *tp = &stdint;
     return true;
 }
-static bool is_polymorphic(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_polymorphic(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1206,10 +1206,10 @@ static bool is_polymorphic(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp
     *tp = &stdint;
     return true;
 }
-static bool is_standard_layout(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_standard_layout(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1221,10 +1221,10 @@ static bool is_standard_layout(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type*
     *tp = &stdint;
     return true;
 }
-static bool is_trivial(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_trivial(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1236,10 +1236,10 @@ static bool is_trivial(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EX
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_trivially_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1258,10 +1258,10 @@ static bool is_trivially_assignable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, 
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_trivially_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1282,10 +1282,10 @@ static bool is_trivially_constructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sy
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_destructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_trivially_destructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1297,10 +1297,10 @@ static bool is_trivially_destructible(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym
     *tp = &stdint;
     return true;
 }
-static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_trivially_copyable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments, true);
@@ -1313,10 +1313,10 @@ static bool is_trivially_copyable(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Ty
     *tp = &stdint;
     return true;
 }
-static bool is_union(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_union(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
@@ -1393,10 +1393,10 @@ bool is_literal_type(Type* tp)
     }
     return false;
 }
-static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+static bool is_literal_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments->size() == 1)
@@ -1407,10 +1407,10 @@ static bool is_literal_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** t
     *tp = &stdint;
     return true;
 }
-bool underlying_type(LEXLIST** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+bool underlying_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
+    CallSite funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);

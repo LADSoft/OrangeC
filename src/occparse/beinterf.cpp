@@ -257,5 +257,5 @@ int getAlign(StorageClass sc, Type* tp)
 }
 const char* getUsageText(void) { return Optimizer::chosenAssembler->usage_text; }
 const char* getHelpText(void) { return Optimizer::chosenAssembler->help_text; }
-KEYWORD* GetProcKeywords(void) { return (KEYWORD*)Optimizer::chosenAssembler->keywords; }
+Keyword* GetProcKeywords(void) { return (Keyword*)Optimizer::chosenAssembler->keywords; }
 }  // namespace Parser

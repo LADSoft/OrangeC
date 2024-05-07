@@ -40,13 +40,13 @@
 #include "constopt.h"
 #include "declare.h"
 #include "declcpp.h"
+#include "lex.h"
 #include "help.h"
 #include "memory.h"
 #include "expr.h"
 #include "initbackend.h"
 #include "declcons.h"
 #include "stmt.h"
-#include "lex.h"
 #include "beinterf.h"
 #include "iexpr.h"
 #include "floatconv.h"
@@ -330,7 +330,7 @@ static EXPRESSION* LookupStruct(EXPRESSION* exp)
     return nullptr;
 }
 static EXPRESSION* EvaluateExpression(EXPRESSION* node, EXPRESSION* ths, EXPRESSION* retblk, bool restart = false);
-static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, std::list<INITLIST*>& args)
+static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, std::list<Argument*>& args)
 {
     auto exp = MakeVarPtr(sym->sb->parentClass->tp->size, 1, sym, nullptr);
     for (auto sp : *sym->sb->parentClass->tp->syms)
@@ -547,7 +547,7 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
     }
     return rv;
 }
-static void pushArrayOrStruct(SYMBOL* arg, std::list<INITLIST*>& il, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap)
+static void pushArrayOrStruct(SYMBOL* arg, std::list<Argument*>& il, std::unordered_map<SYMBOL*, EXPRESSION*>& argmap)
 {
     if (arg->tp->IsStructured() && !arg->tp->BaseType()->sp->sb->initializer_list)
     {
@@ -884,17 +884,17 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
         }
         else if (exp->type == ExpressionNode::func_)
         {
-            auto func = Allocate<FUNCTIONCALL>();
+            auto func = Allocate<CallSite>();
             EXPRESSION temp = *exp, * temp1 = &temp;
             *func = *exp->v.func;
             temp1->v.func = func;
-            std::list<INITLIST*>* argslst = func->arguments;
+            std::list<Argument*>* argslst = func->arguments;
             func->arguments = initListListFactory.CreateList();
             bool failed = false;
             if (argslst)
                 for (auto args : *argslst)
                 {
-                    auto lst = Allocate<INITLIST>();
+                    auto lst = Allocate<Argument>();
                     *lst = *args;
                     func->arguments->push_back(lst);
                     auto exp2 = args->exp;
@@ -1036,10 +1036,10 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, EXPRESSION* ths, EXPRESS
     return node;
 }
 
-static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<STATEMENT*>* stmt, EXPRESSION* ths, EXPRESSION* retblk)
+static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* stmt, EXPRESSION* ths, EXPRESSION* retblk)
 {
-    std::unordered_map<int, std::list<STATEMENT*>::iterator> labels;
-    std::stack<std::list<STATEMENT*>*> stk;
+    std::unordered_map<int, std::list<Statement*>::iterator> labels;
+    std::stack<std::list<Statement*>*> stk;
     stk.push(stmt);
     while (!stk.empty())
     {
@@ -1060,8 +1060,8 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<STATEMENT*>* s
             }
         }
     }
-    std::stack<std::pair<std::list<STATEMENT*>*, std::list<STATEMENT*>::iterator>> blockList;
-    blockList.push(std::pair<std::list<STATEMENT*>*, std::list<STATEMENT*>::iterator>(stmt, stmt->begin()));
+    std::stack<std::pair<std::list<Statement*>*, std::list<Statement*>::iterator>> blockList;
+    blockList.push(std::pair<std::list<Statement*>*, std::list<Statement*>::iterator>(stmt, stmt->begin()));
     while (!blockList.empty())
     {
         bool breakout = false;
@@ -1141,9 +1141,9 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<STATEMENT*>* s
             case StatementNode::seh_try_:
             case StatementNode::try_:
                 // return value, next statement this block
-                blockList.push(std::pair<std::list<STATEMENT*>*, std::list<STATEMENT*>::iterator>(s.first, ++it));
+                blockList.push(std::pair<std::list<Statement*>*, std::list<Statement*>::iterator>(s.first, ++it));
                 // next program counter, next lower block
-                blockList.push(std::pair<std::list<STATEMENT*>*, std::list<STATEMENT*>::iterator>(stmt->lower, stmt->lower->begin()));
+                blockList.push(std::pair<std::list<Statement*>*, std::list<Statement*>::iterator>(stmt->lower, stmt->lower->begin()));
                 // break out of loop to activate
                 breakout = true;
                 break;

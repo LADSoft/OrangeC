@@ -35,10 +35,10 @@
 #include "expr.h"
 #include "lambda.h"
 #include "occparse.h"
+#include "lex.h"
 #include "help.h"
 #include "cpplookup.h"
 #include "mangle.h"
-#include "lex.h"
 #include "constopt.h"
 #include "memory.h"
 #include "init.h"
@@ -1031,7 +1031,7 @@ void NormalizePacked(Type* tpo)
 }
 static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, SymbolTable<SYMBOL>::iterator funcArgsEnd,
                                   SymbolTable<SYMBOL>::iterator templateArgs, SymbolTable<SYMBOL>::iterator templateArgsEnd,
-                                  std::list<INITLIST*>::iterator its, std::list<INITLIST*>::iterator itse, bool allowSelectors,
+                                  std::list<Argument*>::iterator its, std::list<Argument*>::iterator itse, bool allowSelectors,
                                   bool baseClasses)
 {
     bool rv = true;
@@ -1131,11 +1131,11 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
     if (retval->IsStructured() && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
         PushPopValues(retval->sp->templateParams, push);
 }
-SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
+SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
 {
     std::list<TEMPLATEPARAMPAIR>* nparams = sym->templateParams;
     Type* thistp = args->thistp;
-    std::list<INITLIST*>::iterator ita, itae;
+    std::list<Argument*>::iterator ita, itae;
 
     if (args->arguments)
     {
@@ -1683,7 +1683,7 @@ int TemplatePartialDeduce(Type* origl, Type* origr, Type* syml, Type* symr, bool
     }
     return 0;
 }
-int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Type* tpr, FUNCTIONCALL* fcall)
+int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Type* tpr, CallSite* fcall)
 {
     int which = 0;
     int arr[200], n;
@@ -1714,8 +1714,8 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Typ
         auto sArgsr = symr->tp->BaseType()->syms->begin();
         auto sArgsre = symr->tp->BaseType()->syms->end();
         bool usingargs = fcall && fcall->ascall;
-        auto ita = fcall && fcall->arguments ? fcall->arguments->begin() : std::list<INITLIST*>::iterator();
-        auto itae = fcall && fcall->arguments ? fcall->arguments->end() : std::list<INITLIST*>::iterator();
+        auto ita = fcall && fcall->arguments ? fcall->arguments->begin() : std::list<Argument*>::iterator();
+        auto itae = fcall && fcall->arguments ? fcall->arguments->end() : std::list<Argument*>::iterator();
         if (fcall && fcall->thisptr)
         {
 
@@ -1820,7 +1820,7 @@ static SYMBOL* SynthesizeTemplate(Type* tp, SYMBOL* rvt, sym::_symbody* rvs, Typ
     rv->templateParams->back().second->bySpecialization.types = r;
     return rv;
 }
-void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams, Type* atype, bool asClass, bool save)
+void TemplatePartialOrdering(SYMBOL** table, int count, CallSite* funcparams, Type* atype, bool asClass, bool save)
 {
     (void)atype;
     int i, j, c = 0;

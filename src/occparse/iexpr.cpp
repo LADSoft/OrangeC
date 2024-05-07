@@ -56,6 +56,7 @@
 #include "ildata.h"
 #include "stmt.h"
 #include "OptUtils.h"
+#include "lex.h"
 #include "help.h"
 #include "memory.h"
 #include "OptUtils.h"
@@ -2238,7 +2239,7 @@ static int push_stackblock(Type* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
 
 /*-------------------------------------------------------------------------*/
 
-static int gen_parm(INITLIST* a, SYMBOL* funcsp)
+static int gen_parm(Argument* a, SYMBOL* funcsp)
 /*
  *      push a list of parameters onto the stack and return the
  *      size of parameters pushed.
@@ -2351,7 +2352,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     push_nesting += rv;
     return rv;
 }
-static int sizeParam(INITLIST* a, SYMBOL* funcsp)
+static int sizeParam(Argument* a, SYMBOL* funcsp)
 {
     int rv;
     if (a->tp->IsBitInt())
@@ -2369,7 +2370,7 @@ static int sizeParam(INITLIST* a, SYMBOL* funcsp)
         rv += Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
     return rv;
 }
-static int genCdeclArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
+static int genCdeclArgs(std::list<Argument*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
@@ -2387,7 +2388,7 @@ static int genCdeclArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
     }
     return rv;
 }
-static void genCallLab(std::list<INITLIST*>* args, int callLab)
+static void genCallLab(std::list<Argument*>* args, int callLab)
 {
     if (args)
     {
@@ -2401,7 +2402,7 @@ static void genCallLab(std::list<INITLIST*>* args, int callLab)
         }
     }
 }
-static int genPascalArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
+static int genPascalArgs(std::list<Argument*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
@@ -2411,7 +2412,7 @@ static int genPascalArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
     }
     return rv;
 }
-static int sizeParams(std::list<INITLIST*>* args, SYMBOL* funcsp)
+static int sizeParams(std::list<Argument*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
@@ -2445,7 +2446,7 @@ Optimizer::IMODE* gen_stmt_from_expr(SYMBOL* funcsp, EXPRESSION* node, int flags
 }
 /*-------------------------------------------------------------------------*/
 
-static bool has_arg_destructors(std::list<INITLIST*>* arg)
+static bool has_arg_destructors(std::list<Argument*>* arg)
 {
     if (arg)
         for (auto t : *arg)
@@ -2453,7 +2454,7 @@ static bool has_arg_destructors(std::list<INITLIST*>* arg)
                 return true;
     return false;
 }
-static void gen_arg_destructors(SYMBOL* funcsp, std::list<INITLIST*>* arg, std::list<EXPRESSION*>* assignDestructors)
+static void gen_arg_destructors(SYMBOL* funcsp, std::list<Argument*>* arg, std::list<EXPRESSION*>* assignDestructors)
 {
     if (arg)
     {
@@ -2558,7 +2559,7 @@ static int MarkFastcall(SYMBOL* sym, Type* functp, bool thisptr)
     }
     return 0;
 }
-Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
+Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, CallSite* f)
 {
     Optimizer::SimpleExpression* rv = nullptr;
 
@@ -2627,7 +2628,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
 {
     int fastcallSize = 0;
     Optimizer::IMODE* ap3 = nullptr;
-    FUNCTIONCALL* f = node->v.func;
+    CallSite* f = node->v.func;
     bool managed = false;
     Optimizer::IMODE* stobj = nullptr;
     Optimizer::IMODE* ap = nullptr;

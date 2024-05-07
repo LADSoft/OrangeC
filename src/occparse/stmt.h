@@ -27,6 +27,123 @@
 
 namespace Parser
 {
+    struct Statement
+    {
+        std::list<Statement*>* lower;
+        std::list<Statement*>* blockTail;
+        StatementNode type;
+        EXPRESSION* select;
+        EXPRESSION* destexp;
+        Optimizer::LINEDATA* lineData;
+        union
+        {
+            Type* tp;
+            std::list<CASEDATA*>* cases;
+            FunctionBlock* parent;
+        };
+        struct sym* sp;
+        int charpos;
+        int line;
+        const char* file;
+        int label;
+        int endlabel;
+        int breaklabel;  // also the label at the end of the try block
+        int altlabel;
+        int tryStart;
+        int tryEnd;
+        int hasvla : 1;
+        int hasdeclare : 1;
+        int purelabel : 1;
+        int explicitGoto : 1;
+        int indirectGoto : 1;
+        static Statement* MakeStatement(LexList* lex, std::list<FunctionBlock*>& parent, StatementNode stype);
+    };
+    struct FunctionBlock
+    {
+        FunctionBlock* orig;
+        FunctionBlock* caseDestruct;
+        Keyword type;
+        std::list<CASEDATA*>* cases;
+        std::list<Statement*>* statements;
+        std::list<Statement*>* blockTail;
+        SymbolTable<struct sym>* table;
+        int breaklabel;
+        int continuelabel;
+        int defaultlabel;
+        int needlabel : 1;
+        int hasbreak : 1;
+        int hassemi : 1;
+        int nosemi : 1; /* ok to skip semi */
+        void AddThis(LexList* lex, std::list<FunctionBlock*>& parent);
+    };
+    struct StatementGenerator
+    {
+        StatementGenerator(LexList*& lex_in, SYMBOL* funcsp_in) : lex(lex_in), funcsp(funcsp_in) { }
+
+        bool ParseAsm(std::list<FunctionBlock*>& parent);
+        void Compound(std::list<FunctionBlock*>& parent, bool first);
+        void Body();
+        void BodyGen();
+
+        static int GetLabelValue(LexList* lex, std::list<FunctionBlock*>* parent, Statement* st);
+        static void AssignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
+        static void ParseNoExceptClause(SYMBOL* sp);
+        static bool ResolvesToDeclaration(LexList* lex, bool structured);
+        static bool HasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }
+
+    protected:
+        bool IsSelectTrue(EXPRESSION* exp);
+        bool IsSelectFalse(EXPRESSION* exp);
+        void MarkInitializersAsDeclarations(std::list<Statement*>& lst);
+        void  SelectionExpression(std::list<FunctionBlock*>& parent, EXPRESSION** exp, Keyword kw,
+            bool* declaration);
+        FunctionBlock* GetCommonParent(std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest);
+        void ThunkCatchCleanup(Statement* st, std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest);
+        void DestructSymbolsInTable(SymbolTable<SYMBOL>* syms);
+        void ThunkReturnDestructors(EXPRESSION** exp, SymbolTable<SYMBOL>* top, SymbolTable<SYMBOL>* syms);
+        void ThunkGotoDestructors(EXPRESSION** exp, std::list<FunctionBlock*>& gotoTab, std::list<FunctionBlock*>& labelTab);
+        void StartOfCaseGroup(std::list<FunctionBlock*>& parent);
+        void EndOfCaseGroup(std::list<FunctionBlock*>& parent);
+        void HandleStartOfCase(std::list<FunctionBlock*>& parent);
+        void HandleEndOfCase(std::list<FunctionBlock*>& parent);
+        void HandleEndOfSwitchBlock(std::list<FunctionBlock*>& parent);
+        void ParseBreak(std::list<FunctionBlock*>& parent);
+        void ParseCase(std::list<FunctionBlock*>& parent);
+        void ParseContinue(std::list<FunctionBlock*>& parent);
+        void ParseDefault(std::list<FunctionBlock*>& parent);
+        void ParseDo(std::list<FunctionBlock*>& parent);
+        void ParseFor(std::list<FunctionBlock*>& parent);
+        void ParseIf(std::list<FunctionBlock*>& parent);
+        void ParseGoto(std::list<FunctionBlock*>& parent);
+        void ParseLabel(std::list<FunctionBlock*>& parent);
+        EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, Type* tp, Type* boundTP);
+        void MatchReturnTypes(Type* tp1, Type* tp2);
+        void ParseReturn(std::list<FunctionBlock*>& parent);
+        void ParseSwitch(std::list<FunctionBlock*>& parent);
+        void ParseWhile(std::list<FunctionBlock*>& parent);
+        bool NoSideEffect(EXPRESSION* exp);
+        void ParseExpr(std::list<FunctionBlock*>& parent);
+        void AsmDeclare();
+        void ParseCatch(std::list<FunctionBlock*>& parent, int label, int startlab, int endlab);
+        void ParseTry(std::list<FunctionBlock*>& parent);
+        void AssignInReverse(std::list<Statement*>* current, EXPRESSION** exp);
+        void AutoDeclare(Type** tp, EXPRESSION** exp, std::list<FunctionBlock*>& parent, int asExpression);
+        void StatementWithoutNonconst(std::list<FunctionBlock*>& parent, bool viacontrol);
+        bool ThunkReturnInMain(std::list<FunctionBlock*>& parent, bool always);
+        void ReturnThisPointer(std::list<Statement*>* st, EXPRESSION* thisptr);
+        bool IsReturnTypeVoid(Type* tp);
+        void AssignCParams(int* base, SymbolTable<SYMBOL>* params, Type* rv, std::list<FunctionBlock*>& block);
+        void AssignPascalParams(int* base, SymbolTable<SYMBOL>* params, Type* rv, std::list<FunctionBlock*>& block);
+        void AssignParameterSizes(std::list<FunctionBlock*>& block);
+        int CountInlineStatements(std::list<Statement*>* block);
+        void HandleInlines();
+        void SingleStatement(std::list<FunctionBlock*>& parent, bool viacontrol);
+
+    private:
+        LexList*& lex;
+        SYMBOL* funcsp;
+    };
+
 extern bool isCallNoreturnFunction;
 
 extern int inLoopOrConditional;
@@ -43,28 +160,11 @@ extern bool functionCanThrow;
 extern int bodyIsDestructor;
 
 extern std::list<Optimizer::LINEDATA*>* lines;
-extern std::list<BLOCKDATA*> emptyBlockdata;
+extern std::list<FunctionBlock*> emptyBlockdata;
 
-extern std::stack<std::list<BLOCKDATA*>*> expressionStatements;
+extern std::stack<std::list<FunctionBlock*>*> expressionStatements;
 extern std::deque<std::pair<EXPRESSION*, Type*>> expressionReturns;
 
 void statement_ini(bool global);
 bool msilManaged(SYMBOL* s);
-void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
-void FlushLineData(const char* file, int lineno);
-std::list<STATEMENT*>* currentLineData(std::list<BLOCKDATA*>& parent, LEXLIST* lex, int offset);
-STATEMENT* stmtNode(LEXLIST* lex, std::list<BLOCKDATA*>& parent, StatementNode stype);
-void makeXCTab(SYMBOL* funcsp);
-int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st);
-LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, int label, int startlab, int endlab);
-LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent);
-bool hasInlineAsm(void);
-LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent);
-bool resolveToDeclaration(LEXLIST* lex, bool structured);
-LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol);
-LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool first);
-void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
-void parseNoexcept(SYMBOL* funcsp);
-LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp);
-void bodygen(SYMBOL* funcsp);
 }  // namespace Parser

@@ -366,7 +366,9 @@ static AMODE* UnstreamAssemblyOperand()
 static OCODE* UnstreamAssemblyInstruction()
 {
     OCODE* rv = Allocate<OCODE>();
+#ifndef ORANGE_NO_INASM
     rv->opcode = (e_opcode)UnstreamIndex();
+#endif
     rv->diag = UnstreamIndex();
     rv->noopt = UnstreamIndex();
     rv->size = UnstreamIndex();

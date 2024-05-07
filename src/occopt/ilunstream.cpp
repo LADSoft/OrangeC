@@ -1271,8 +1271,8 @@ void ReadMappingFile(SharedMemory* mem, FILE* fil)
     fseek(fil, 0, SEEK_END);
     int end = ftell(fil);
     fseek(fil, 0, SEEK_SET);
-    unsigned char* p = mem->GetMapping();
     mem->EnsureCommitted(end);
+    unsigned char* p = mem->GetMapping();
     while (end > 0)
     {
 

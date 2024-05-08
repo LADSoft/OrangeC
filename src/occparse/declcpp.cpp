@@ -1742,7 +1742,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
                 continue;
             }
         }
-        if (exp1->type == ExpressionNode::func_)
+        if (exp1->type == ExpressionNode::callsite_)
         {
             if (useAuto)
             {
@@ -1875,7 +1875,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
             spx = spx->sb->parentClass;
         }
     }
-    else if (packedExp->type == ExpressionNode::func_)
+    else if (packedExp->type == ExpressionNode::callsite_)
     {
         GatherTemplateParams(count, arg, packedExp->v.func->templateParams);
         Argument* lst;
@@ -2029,7 +2029,7 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
                 spx = &(*spx)->sb->parentClass;
             }
         }
-        else if (packedExp->type == ExpressionNode::func_)
+        else if (packedExp->type == ExpressionNode::callsite_)
         {
             packedExp->v.func->templateParams = ReplicateTemplateParams(count, arg, packedExp->v.func->templateParams, index);
             if (packedExp->v.func->arguments)
@@ -2064,17 +2064,6 @@ EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, 
         }
     }
     return packedExp;
-}
-void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>* dest)
-{
-    dest = templateParamPairListFactory.CreateList();
-    int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-    for (int i = 0; i < n; i++)
-    {
-        dest->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
-        dest->front().second->type = TplType::int_;
-        dest->front().second->byNonType.dflt = ReplicatePackedVars(count, arg, pattern, i);
-    }
 }
 int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
 {
@@ -2131,7 +2120,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                         p->exp = varNode(ExpressionNode::auto_, sym);
                         if (p->tp->IsRef())
                         {
-                            p->exp = exprNode(ExpressionNode::l_ref_, p->exp, nullptr);
+                            p->exp = exprNode(ExpressionNode::l_ref_, p->exp);
                             p->tp = p->tp->BaseType()->btp;
                         }
                         if (!p->tp->IsStructured())
@@ -3437,8 +3426,7 @@ Type* AttributeFinish(SYMBOL* sym, Type* tp)
         fc->functp = sym->sb->attribs.inheritable.cleanup->tp;
         fc->fcall = varNode(ExpressionNode::pc_, sym->sb->attribs.inheritable.cleanup);
         fc->sp = sym->sb->attribs.inheritable.cleanup;
-        EXPRESSION* expl = exprNode(ExpressionNode::func_, nullptr, nullptr);
-        expl->v.func = fc;
+        EXPRESSION* expl = funcNode(fc);
         initInsert(&sym->sb->dest, sym->tp, expl, 0, true);
     }
     return tp;
@@ -4342,12 +4330,12 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
         auto oldnoExcept = noExcept;
         lex = expression_no_check(lex, nullptr, nullptr, &(*tn), &exp, _F_SIZEOF | _F_INDECLTYPE);
         noExcept = oldnoExcept;
-        if (exp->type == ExpressionNode::func_ && exp->v.func->sp->sb->deleted)
+        if (exp->type == ExpressionNode::callsite_ && exp->v.func->sp->sb->deleted)
         {
             *tn = &stdany;
             return lex;
         }
-        if ((*tn) && (*tn)->type == BasicType::aggregate_ && exp->type == ExpressionNode::func_)
+        if ((*tn) && (*tn)->type == BasicType::aggregate_ && exp->type == ExpressionNode::callsite_)
         {
             if ((*tn)->syms->size() > 1)
             {
@@ -4376,7 +4364,7 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
                 (*tn) = exp->v.func->functp = exp->v.func->sp->tp;
             }
         }
-        if ((*tn) && (*tn)->IsFunction() && exp->type == ExpressionNode::func_)
+        if ((*tn) && (*tn)->IsFunction() && exp->type == ExpressionNode::callsite_)
         {
             if (exp->v.func->ascall)
             {
@@ -4477,7 +4465,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
                 last = &(*last)->right;
             if (*last)
             {
-                *last = exprNode(ExpressionNode::comma_, *last, nullptr);
+                *last = exprNode(ExpressionNode::comma_, *last);
                 last = &(*last)->right;
             }
             auto newFunc = makeID(StorageClass::global_, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));
@@ -4486,8 +4474,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             auto body = decl->sb->dest->front()->exp;
             InsertLocalStaticUnInitializer(newFunc, body);
 
-            EXPRESSION* callexp = exprNode(ExpressionNode::func_, nullptr, nullptr);
-            callexp->v.func = Allocate<CallSite>();
+            EXPRESSION* callexp = funcNode(Allocate<CallSite>());
             callexp->v.func->sp = atexitfunc;
             callexp->v.func->functp = atexitfunc->tp;
             callexp->v.func->fcall = varNode(ExpressionNode::pc_, atexitfunc);

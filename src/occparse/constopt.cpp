@@ -1260,7 +1260,7 @@ void dooper(EXPRESSION** node, int mode)
 
 void addaside(EXPRESSION* node)
 {
-    *asidetail = exprNode(ExpressionNode::comma_, node, 0);
+    *asidetail = exprNode(ExpressionNode::comma_, node);
     asidetail = &(*asidetail)->right;
 }
 
@@ -1276,7 +1276,7 @@ bool expressionHasSideEffects(EXPRESSION *exp)
         switch (p->type)
         {
             case ExpressionNode::atomic_:
-            case ExpressionNode::func_:
+            case ExpressionNode::callsite_:
             case ExpressionNode::thisref_:
             case ExpressionNode::assign_:
             case ExpressionNode::auto_inc_:
@@ -1531,7 +1531,7 @@ int opt0(EXPRESSION** node)
                         if (ep->left->type != ExpressionNode::auto_ && ep->type != ExpressionNode::structadd_)
                         {
                             if (ep->type == ExpressionNode::sub_)
-                                *node = exprNode(ExpressionNode::uminus_, ep->right, 0);
+                                *node = exprNode(ExpressionNode::uminus_, ep->right);
                             else
                                 *node = ep->right;
                             rv = true;
@@ -1543,7 +1543,7 @@ int opt0(EXPRESSION** node)
                     {
                         if (ep->type == ExpressionNode::sub_)
                         {
-                            *node = exprNode(ExpressionNode::uminus_, ep->right, 0);
+                            *node = exprNode(ExpressionNode::uminus_, ep->right);
                         }
                         *node = ep->right;
                     }
@@ -1629,7 +1629,7 @@ int opt0(EXPRESSION** node)
                         else if (val == 1)
                             *node = ep->right;
                         else if (val == -1)
-                            *node = exprNode(negtype, ep->right, 0);
+                            *node = exprNode(negtype, ep->right);
                         else
                         {
                             long long i = Optimizer::pwrof2(val);
@@ -1674,7 +1674,7 @@ int opt0(EXPRESSION** node)
                         if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->right;
                     else if (dval.ValueIsNegative() && dval.ValueIsOne())
-                        *node = exprNode(negtype, ep->right, 0);
+                        *node = exprNode(negtype, ep->right);
                     else
                         dooper(node, mode);
                     rv = true;
@@ -1694,7 +1694,7 @@ int opt0(EXPRESSION** node)
                         }
                         else if (val == -1)
                         {
-                            *node = exprNode(negtype, ep->left, 0);
+                            *node = exprNode(negtype, ep->left);
                         }
                         else
                         {
@@ -1734,7 +1734,7 @@ int opt0(EXPRESSION** node)
                     }
                     else if (dval.ValueIsNegative() && dval.ValueIsOne())
                     {
-                        *node = exprNode(negtype, ep->left, 0);
+                        *node = exprNode(negtype, ep->left);
                     }
                     else
                         dooper(node, mode);
@@ -1748,7 +1748,7 @@ int opt0(EXPRESSION** node)
                             *node = ep->left;
                         else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         {
-                            *node = exprNode(negtype, ep->left, 0);
+                            *node = exprNode(negtype, ep->left);
                         }
                         else
                             dooper(node, mode);
@@ -1790,7 +1790,7 @@ int opt0(EXPRESSION** node)
                         if (val == 1)
                             *node = ep->left;
                         else if (val == -1)
-                            *node = exprNode(negtype, ep->left, 0);
+                            *node = exprNode(negtype, ep->left);
                     }
                     dooper(node, mode);
                     rv = true;
@@ -1800,7 +1800,7 @@ int opt0(EXPRESSION** node)
                     if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->left;
                     if (dval.ValueIsNegative() && dval.ValueIsOne())
-                        *node = exprNode(negtype, ep->left, 0);
+                        *node = exprNode(negtype, ep->left);
                     else
                         dooper(node, mode);
                     rv = true;
@@ -1813,7 +1813,7 @@ int opt0(EXPRESSION** node)
                             *node = ep->left;
                         else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         {
-                            *node = exprNode(negtype, ep->left, 0);
+                            *node = exprNode(negtype, ep->left);
                         }
                         else
                             dooper(node, mode);
@@ -2434,7 +2434,7 @@ int opt0(EXPRESSION** node)
                         next = next->left;
                     }
                     enclosingDeclarations.Add(tp->BaseType()->sp);
-                    if (next->type == ExpressionNode::func_)
+                    if (next->type == ExpressionNode::callsite_)
                     {
                         Type* ctype = tp;
                         SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
@@ -2454,9 +2454,8 @@ int opt0(EXPRESSION** node)
                             enclosingDeclarations.Drop();
                             break;
                         }
-                        EXPRESSION* temp = varNode(ExpressionNode::func_, sym);
-                        temp->v.func = next->v.func;
-                        temp = exprNode(ExpressionNode::thisref_, temp, nullptr);
+                        EXPRESSION* temp = funcNode(next->v.func);
+                        temp = exprNode(ExpressionNode::thisref_, temp);
                         temp->v.t.thisptr = newExpr;
                         temp->v.t.tp = tp;
                         newExpr = temp;
@@ -2489,7 +2488,7 @@ int opt0(EXPRESSION** node)
                     *node = newExpr;
             }
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             // rv |= opt0(&((*node)->v.func->fcall));
             if ((*node)->v.func->thisptr)
                 rv |= opt0(&((*node)->v.func->thisptr));
@@ -2608,10 +2607,10 @@ int opt0(EXPRESSION** node)
                                     funcparams.sp = sp1;
                                     funcparams.functp = sp1->tp;
 //                                    funcparams.templateParams = nullptr;
-                                    exp1.type = ExpressionNode::func_;
+                                    exp1.type = ExpressionNode::callsite_;
                                     exp1.v.func = &funcparams;
                                     optimize_for_constants(&exp2);
-                                    if (exp1.type != ExpressionNode::thisref_ && exp1.type != ExpressionNode::func_)
+                                    if (exp1.type != ExpressionNode::thisref_ && exp1.type != ExpressionNode::callsite_)
                                     {
                                         *node = copy_expression(&exp1);
                                         return true;
@@ -2859,7 +2858,7 @@ int fold_const(EXPRESSION* node)
                             enswap(&node->left, &node->right);
                             enswap(&node->right->left, &node->left);
                             node->type = ExpressionNode::add_;
-                            node->right->left = exprNode(ExpressionNode::uminus_, node->right->left, 0);
+                            node->right->left = exprNode(ExpressionNode::uminus_, node->right->left);
                             rv = true;
                         }
                         break;
@@ -2903,7 +2902,7 @@ int fold_const(EXPRESSION* node)
 
                             enswap(&node->left, &node->right);
                             enswap(&node->left->left, &node->right);
-                            node->left->right = exprNode(ExpressionNode::uminus_, node->left->right, 0);
+                            node->left->right = exprNode(ExpressionNode::uminus_, node->left->right);
                             rv = true;
                         }
                         break;
@@ -3139,12 +3138,12 @@ int fold_const(EXPRESSION* node)
             break;
         case ExpressionNode::funcret_:
             rv |= fold_const(node->left);
-            if (node->left->type != ExpressionNode::func_ && node->left->type != ExpressionNode::funcret_)
+            if (node->left->type != ExpressionNode::callsite_ && node->left->type != ExpressionNode::funcret_)
                 *node = *node->left;
             break;
         case ExpressionNode::thisref_:
             rv |= fold_const(node->left);
-            if (node->left->type != ExpressionNode::func_ && node->left->type != ExpressionNode::funcret_)
+            if (node->left->type != ExpressionNode::callsite_ && node->left->type != ExpressionNode::funcret_)
                 *node = *node->left;
             break;
         case ExpressionNode::construct_: {
@@ -3167,7 +3166,7 @@ int fold_const(EXPRESSION* node)
             SetAlternateLex(nullptr);
         }
         break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         {
             auto thisptr = node->v.func->thisptr;
             if (thisptr)
@@ -3352,7 +3351,7 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::constexprconstructor_:
             rv |= typedconsts(node1->left);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             rv |= typedconsts(node1->v.func->fcall);
             break;
         case ExpressionNode::l_bool_:
@@ -3820,7 +3819,7 @@ bool msilConstant(EXPRESSION* exp)
             exp = exp->left;
         if (exp->type == ExpressionNode::sizeof_)
             return true;
-        if (exp->type == ExpressionNode::func_)
+        if (exp->type == ExpressionNode::callsite_)
         {
             if (exp->v.func->arguments && exp->v.func->arguments->size() == 1 && !strcmp(exp->v.func->sp->name, "ToPointer"))
                 return true;

@@ -80,7 +80,7 @@ bool checkconstexprfunc(EXPRESSION* node)
 {
     if (node->type == ExpressionNode::thisref_)
         node = node->left;
-    if (node->type == ExpressionNode::func_ && node->v.func->sp)
+    if (node->type == ExpressionNode::callsite_ && node->v.func->sp)
     {
         if (node->v.func->sp->sb->constexpression &&
             (node->v.func->sp->sb->inlineFunc.stmt || node->v.func->sp->sb->deferredCompile))
@@ -97,7 +97,7 @@ bool checkconstexprfunc(EXPRESSION* node)
 bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bool fromFunc)
 {
     if (TotalErrors() && !fromFunc &&
-        (!allowFunc || (node->type != ExpressionNode::func_ && node->type != ExpressionNode::thisref_)))  // in some error conditions nodes can get into a loop
+        (!allowFunc || (node->type != ExpressionNode::callsite_ && node->type != ExpressionNode::thisref_)))  // in some error conditions nodes can get into a loop
         // for purposes of this function...  guard against it.   Consider everything
         // CONST to avoid more errors..
         return true;
@@ -195,12 +195,12 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
                     stk.push(exp->right);
                 }
                 break;
-            case ExpressionNode::func_:
+            case ExpressionNode::callsite_:
                 if (!(!exp->v.func->ascall || (allowFunc && checkconstexprfunc(exp))))
                     return false;
                 break;
             case ExpressionNode::thisref_:
-                if (exp->left->type == ExpressionNode::func_ && !exp->left->v.func->thisptr && exp->left->v.func->sp->sb->parentClass)
+                if (exp->left->type == ExpressionNode::callsite_ && !exp->left->v.func->thisptr && exp->left->v.func->sp->sb->parentClass)
                     return false;
                 stk.push(exp->left);
                 break;
@@ -306,7 +306,7 @@ static EXPRESSION* MakeVarPtr(unsigned size, unsigned multiplier, SYMBOL* sp, EX
     {
         sp = makeID(StorageClass::auto_, &stdint, nullptr, anonvpname());
     }
-    auto exp = exprNode(ExpressionNode::cvarpointer_, nullptr, nullptr);
+    auto exp = exprNode(ExpressionNode::cvarpointer_);
     exp->v.sp = sp;
     exp->v.constexprData = { (unsigned short)size, (unsigned short)multiplier, Allocate<EXPRESSION*>(size) };
     if (base)
@@ -411,7 +411,7 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
         // returning a structure as a return value or this pointer
         if (thisptr->type == ExpressionNode::auto_ && thisptr->v.sp->sb->stackblock)
         {
-            thisptr = exprNode(ExpressionNode::substack_, intNode(ExpressionNode::c_i_, thisptr->v.sp->tp->size), nullptr);
+            thisptr = exprNode(ExpressionNode::substack_, intNode(ExpressionNode::c_i_, thisptr->v.sp->tp->size));
         }
         varptr = anonymousVar(StorageClass::auto_, &stdpointer);
         varptr->v.sp->sb->constexpression = true;
@@ -611,7 +611,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
         {
             exp = exp->left;
         }
-        if (exp->type == ExpressionNode::func_)
+        if (exp->type == ExpressionNode::callsite_)
         {
             exp = EvaluateExpression(exp, nullptr, nullptr, true);
         }
@@ -882,7 +882,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
                 }
             }
         }
-        else if (exp->type == ExpressionNode::func_)
+        else if (exp->type == ExpressionNode::callsite_)
         {
             auto func = Allocate<CallSite>();
             EXPRESSION temp = *exp, * temp1 = &temp;
@@ -907,7 +907,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
                     if (!lst->exp)
                         return false;
                     optimize_for_constants(&lst->exp);
-                    if (lst->exp->type == ExpressionNode::thisref_ || lst->exp->type == ExpressionNode::func_)
+                    if (lst->exp->type == ExpressionNode::thisref_ || lst->exp->type == ExpressionNode::callsite_)
                         failed = true;
                     while (lst->exp->type == ExpressionNode::comma_ && lst->exp->right)
                         lst->exp = lst->exp->right;
@@ -950,7 +950,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
             }
             if (!failed)
                 optimize_for_constants(&temp1);
-            if (temp1->type != ExpressionNode::func_ || temp1->v.func->sp != exp->v.func->sp)
+            if (temp1->type != ExpressionNode::callsite_ || temp1->v.func->sp != exp->v.func->sp)
             {
                 rv = temp1;
             }
@@ -1164,7 +1164,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
                     node1 = EvaluateExpression(node1, ths, node->v.func->returnEXP, true);
                     optimize_for_constants(&node1);
 
-                    if (IsConstantExpression(node1, false, false) && node1->type != ExpressionNode::func_ && node1->type != ExpressionNode::funcret_ &&
+                    if (IsConstantExpression(node1, false, false) && node1->type != ExpressionNode::callsite_ && node1->type != ExpressionNode::funcret_ &&
                         node1->type != ExpressionNode::thisref_)
                     {
                         if (node1->type == ExpressionNode::comma_ && node1->left->type == ExpressionNode::cvarpointer_)
@@ -1249,7 +1249,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
             return false;
         }
     }
-    if (exp && (exp->type == ExpressionNode::func_ || exp->type == ExpressionNode::thisref_))
+    if (exp && (exp->type == ExpressionNode::callsite_ || exp->type == ExpressionNode::thisref_))
     {
         auto** exp = &node->v.func->thisptr;
         if ((*exp)->type == ExpressionNode::thisref_)

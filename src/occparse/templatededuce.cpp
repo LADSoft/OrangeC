@@ -992,7 +992,7 @@ static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool a
     }
     if (P->IsFunctionPtr() || (P->IsRef() && P->BaseType()->btp->IsFunction()))
     {
-        if (exp->type == ExpressionNode::func_)
+        if (exp->type == ExpressionNode::callsite_)
         {
             if (exp->v.func->sp->sb->storage_class == StorageClass::overloads_)
             {

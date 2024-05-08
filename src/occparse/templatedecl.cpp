@@ -664,7 +664,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                 {
                     if (templateNestingCount)
                     {
-                        exp = exprNode(ExpressionNode::construct_, nullptr, nullptr);
+                        exp = exprNode(ExpressionNode::construct_);
                         exp->v.construct.tp = tp;
                         lex = getDeferredData(lex, &exp->v.construct.deferred, true);
                     }
@@ -2666,7 +2666,7 @@ static bool IsFullySpecialized(TEMPLATEPARAMPAIR* tpx)
                     {
                         case ExpressionNode::pc_:
                         case ExpressionNode::global_:
-                        case ExpressionNode::func_:
+                        case ExpressionNode::callsite_:
                             return true;
                         default:
                             break;

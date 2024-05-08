@@ -816,7 +816,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             temp->v.ad->value = inlineexpr(node->v.ad->value, nullptr);
             temp->v.ad->third = inlineexpr(node->v.ad->third, nullptr);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             temp->v.func = nullptr;
             fp = node->v.func;
             if (fp->sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
@@ -1289,7 +1289,7 @@ static bool sideEffects(EXPRESSION* node)
             rv |= sideEffects(node->v.ad->value);
             rv |= sideEffects(node->v.ad->third);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             rv = true;
             break;
         case ExpressionNode::stmt_:
@@ -1428,7 +1428,7 @@ EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
         stmt->push_front(stmt2);
     }
 
-    newExpression = exprNode(ExpressionNode::stmt_, nullptr, nullptr);
+    newExpression = exprNode(ExpressionNode::stmt_);
     newExpression->v.stmt = stmt;
 
     if (params->sp->sb->retcount == 1)

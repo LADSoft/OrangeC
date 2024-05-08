@@ -1903,7 +1903,7 @@ static bool ismem(EXPRESSION* exp)
             if (exp->v.func->sp->sb->isConstructor || exp->v.func->sp->sb->isDestructor)
                 return false;
             /* fallthrough */
-        case ExpressionNode::func_: {
+        case ExpressionNode::callsite_: {
             Type* tp = exp->v.func->sp->tp;
             if (tp->type == BasicType::aggregate_ || !tp->IsFunction())
                 return false;
@@ -2170,7 +2170,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                     }
                     if (ta && refa == BasicType::rref_ && expa && !ta->rref && !ta->BaseType()->rref)
                     {
-                        if (expa->type != ExpressionNode::thisref_ && expa->type != ExpressionNode::func_)
+                        if (expa->type != ExpressionNode::thisref_ && expa->type != ExpressionNode::callsite_)
                             refa = BasicType::lref_;
                     }
                     // const rref is better than const lref
@@ -2366,7 +2366,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
             {
                 int lref = expa && lvalue(expa);
                 int rref = expa && (!lvalue(expa) && (!rtype->IsStructured() || !ismem(expa)));
-                if (expa && expa->type == ExpressionNode::func_)
+                if (expa && expa->type == ExpressionNode::callsite_)
                 {
                     Type* tp = expa->v.func->sp->tp->BaseType()->btp;
                     if (tp)
@@ -3875,7 +3875,7 @@ void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref)
             EXPRESSION* expb = expa;
             if (expb->type == ExpressionNode::thisref_)
                 expb = expb->left;
-            if (expb->type == ExpressionNode::func_ && expb->v.func->sp)
+            if (expb->type == ExpressionNode::callsite_ && expb->v.func->sp)
                 if (expb->v.func->sp->tp->IsFunction())
                 {
                     func = expb->v.func->sp->sb->isConstructor || expb->v.func->sp->tp->BaseType()->btp->IsStructured();
@@ -3888,7 +3888,7 @@ void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref)
             EXPRESSION* expb = expa;
             if (expb->type == ExpressionNode::thisref_)
                expb = expb->left;
-            if (expb->type == ExpressionNode::func_)
+            if (expb->type == ExpressionNode::callsite_)
                 func2 = !expb->v.func->ascall;
             else if (expb->type == ExpressionNode::pc_)
                 func2 = true;
@@ -3988,7 +3988,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
     GetRefs(tpp, tpa, exp, lref, rref);
     if (exp && exp->type == ExpressionNode::thisref_)
         exp = exp->left;
-    if (exp && exp->type == ExpressionNode::func_)
+    if (exp && exp->type == ExpressionNode::callsite_)
     {
         if (exp->v.func->sp->tp->BaseType()->type != BasicType::aggregate_)
         {
@@ -4040,7 +4040,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
             EXPRESSION* expx = expa;
             if (expx->type == ExpressionNode::thisref_)
                 expx = expx->left;
-            if (expx->type == ExpressionNode::func_)
+            if (expx->type == ExpressionNode::callsite_)
             {
                 if (expx->v.func->returnSP)
                 {
@@ -4863,7 +4863,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                                     EXPRESSION* expx = thisptr;
                                     if (expx->type == ExpressionNode::thisref_)
                                         expx = expx->left;
-                                    if (expx->type == ExpressionNode::func_)
+                                    if (expx->type == ExpressionNode::callsite_)
                                     {
                                         if (expx->v.func->returnSP)
                                         {
@@ -6448,7 +6448,7 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
             ++itp;
         }
     }
-    if (exp2 && exp2->type == ExpressionNode::func_)
+    if (exp2 && exp2->type == ExpressionNode::callsite_)
         fpargs.templateParams = exp2->v.func->templateParams;
     fpargs.ascall = true;
     return GetOverloadedFunction(mtp, exp, sym, &fpargs, nullptr, true, false, flags);

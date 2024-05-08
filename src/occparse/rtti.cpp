@@ -685,7 +685,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
             break;
         case ExpressionNode::atomic_:
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             {
                 if (fp->arguments)

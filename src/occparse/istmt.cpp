@@ -254,7 +254,7 @@ EXPRESSION* tempVar(Type* tp, bool global)
 }
 EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
 {
-    auto val = exprNode(ExpressionNode::paramsubstitute_, left, 0);
+    auto val = exprNode(ExpressionNode::paramsubstitute_, left);
     val->v.imode = im;
     return val;
 }
@@ -532,7 +532,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                                 exp1 = exp1->left;
                             if (exp1->type == ExpressionNode::thisref_)
                                 exp1 = exp1->left;
-                            if (exp1->type == ExpressionNode::func_)
+                            if (exp1->type == ExpressionNode::callsite_)
                             {
                                 auto tpx = exp1->v.sp->tp->BaseType()->btp->BaseType();
                                 if (!tpx->IsStructured() || !tpx->sp->sb->structuredAliasType)

@@ -173,7 +173,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
             rv->msilArrayTP = Get(e->v.msilArray->tp);
             break;
 
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             rv->type = Optimizer::se_func;
             rv->ascall = e->v.func->ascall;
             break;

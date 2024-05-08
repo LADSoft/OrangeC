@@ -214,7 +214,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
         AutoDeclare(&tp, exp, parent, (kw != Keyword::for_ && kw != Keyword::if_ && kw != Keyword::switch_) | (kw == Keyword::rangefor_ ? _F_NOCHECKAUTO : 0));
         if (tp->type == BasicType::memberptr_)
         {
-            *exp = exprNode(ExpressionNode::mp_as_bool_, *exp, nullptr);
+            *exp = exprNode(ExpressionNode::mp_as_bool_, *exp);
             (*exp)->size = tp;
             tp = &stdint;
         }
@@ -233,7 +233,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
         {
             if (tp->type == BasicType::memberptr_)
             {
-                *exp = exprNode(ExpressionNode::mp_as_bool_, *exp, nullptr);
+                *exp = exprNode(ExpressionNode::mp_as_bool_, *exp);
                 (*exp)->size = tp;
                 tp = &stdint;
             }
@@ -260,7 +260,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
     }
-    *exp = exprNode(ExpressionNode::select_, *exp, nullptr);
+    *exp = exprNode(ExpressionNode::select_, *exp);
     GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
 }
 FunctionBlock* StatementGenerator::GetCommonParent(std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest)
@@ -316,8 +316,7 @@ void StatementGenerator::ThunkCatchCleanup(Statement* st, std::list<FunctionBloc
                         auto next = Allocate<Statement>();
                         *next = *st;
                         next->type = StatementNode::expr_;
-                        next->select = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                        next->select->v.func = funcparams;
+                        next->select = funcNode(funcparams);
                         it = src.front()->statements->insert(it, next);
                         break;
                     }
@@ -981,8 +980,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     fc->sp = beginFunc;
                                     fc->functp = beginFunc->tp;
                                     fc->ascall = true;
-                                    ibegin = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                    ibegin->v.func = fc;
+                                    ibegin = funcNode(fc);
                                     fc = Allocate<CallSite>();
                                     *fc = fce;
                                     fc->sp = endFunc;
@@ -994,12 +992,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         while(lvalue(expx) || castvalue(expx)) expx = expx->left;
                                         if (expx->type == ExpressionNode::thisref_)
                                             expx = expx->left;
-                                        if (expx->type == ExpressionNode::func_)
+                                        if (expx->type == ExpressionNode::callsite_)
                                             if (expx->v.func->returnEXP)
                                                 fc->thisptr = expx->v.func->returnEXP;
                                     }
-                                    iend = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                    iend->v.func = fc;
+                                    iend = funcNode(fc);
                                     iteratorType = beginFunc->tp->BaseType()->btp;
                                 }
                             }
@@ -1114,8 +1111,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         {
                                             fc->arguments->front()->tp = Type::MakeType(BasicType::lref_, fcb.arguments->front()->tp);
                                         }
-                                        ibegin = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                        ibegin->v.func = fc;
+                                        ibegin = funcNode(fc);
                                         fc = Allocate<CallSite>();
                                         *fc = fce;
                                         fc->sp = endFunc;
@@ -1143,8 +1139,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         {
                                             fc->arguments->front()->tp = Type::MakeType(BasicType::lref_, fce.arguments->front()->tp);
                                         }
-                                        iend = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                        iend->v.func = fc;
+                                        iend = funcNode(fc);
                                     }
                                 }
                                 else
@@ -1160,8 +1155,8 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         EXPRESSION* eBegin;
                         EXPRESSION* eEnd;
                         EXPRESSION* declDest = nullptr;
-                        if (selectTP->IsStructured() && iteratorType->IsStructured() && ibegin->type == ExpressionNode::func_ &&
-                            iend->type == ExpressionNode::func_)
+                        if (selectTP->IsStructured() && iteratorType->IsStructured() && ibegin->type == ExpressionNode::callsite_ &&
+                            iend->type == ExpressionNode::callsite_)
                         {       
                             eBegin = ibegin->v.func->returnEXP;
                             eEnd = iend->v.func->returnEXP;
@@ -2171,7 +2166,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     EXPRESSION* exptemp = exp1;
                     if (exptemp->type == ExpressionNode::thisref_)
                         exptemp = exptemp->left;
-                    if (exptemp->type == ExpressionNode::func_ && exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
+                    if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
                         tp->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
                         (!tp->BaseType()->sp->sb->templateLevel || sameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
                         exptemp->v.func->thisptr->type == ExpressionNode::auto_ && exptemp->v.func->thisptr->v.sp->sb->anonymous)
@@ -2212,7 +2207,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         oldrref = tp1->BaseType()->rref;
                         oldlref = tp1->BaseType()->lref;
                         tp1->BaseType()->rref = exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
-                        if (exptemp->type == ExpressionNode::func_ && exptemp->v.func->sp->tp->IsFunction() &&
+                        if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
                             exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
                             tp1->BaseType()->rref = true;
                         tp1->BaseType()->lref = !tp1->BaseType()->rref;
@@ -2285,7 +2280,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 }
                 else
                 {
-                    if (returnexp->type == ExpressionNode::func_ && !returnexp->v.func->ascall)
+                    if (returnexp->type == ExpressionNode::callsite_ && !returnexp->v.func->ascall)
                     {
                         if (returnexp->v.func->sp->sb->storage_class == StorageClass::overloads_)
                         {
@@ -2385,7 +2380,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 if (returnexp->type == ExpressionNode::labcon_)
                     returnexp->type = ExpressionNode::c_string_;
                 else if (tp1->BaseType()->type != BasicType::string_)
-                    returnexp = exprNode(ExpressionNode::x_string_, returnexp, nullptr);
+                    returnexp = exprNode(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
             else if (!tp1->ExactSameType(tp) && tp1->IsMsil())
@@ -2402,7 +2397,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             }
             if (tp->BaseType()->type == BasicType::object_)
                 if (tp1->BaseType()->type != BasicType::object_ && !tp1->IsStructured() && (!tp1->IsArray() || !tp1->BaseType()->msil))
-                    returnexp = exprNode(ExpressionNode::x_object_, returnexp, nullptr);
+                    returnexp = exprNode(ExpressionNode::x_object_, returnexp);
             if (tp1->IsStructured() && tp->IsArithmetic())
             {
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2420,7 +2415,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             {
                 returntype = tp;
             }
-            if (returnexp->type == ExpressionNode::func_)
+            if (returnexp->type == ExpressionNode::callsite_)
             {
                 if (returnexp->v.func->sp->sb->storage_class == StorageClass::overloads_)
                 {
@@ -2523,7 +2518,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             if (!isintconst(returnexp) || !isconstzero(returntype, returnexp))
                                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
                         }
-                        else if (returnexp->type != ExpressionNode::func_ || returnexp->v.func->fcall->type != ExpressionNode::l_p_)
+                        else if (returnexp->type != ExpressionNode::callsite_ || returnexp->v.func->fcall->type != ExpressionNode::l_p_)
                             error(ERR_NONPORTABLE_POINTER_CONVERSION);
                     }
                     else if (tp->IsPtr())
@@ -2774,7 +2769,7 @@ bool StatementGenerator::NoSideEffect(EXPRESSION* exp)
         exp = exp->left;
     switch (exp->type)
     {
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         case ExpressionNode::assign_:
         case ExpressionNode::auto_inc_:
         case ExpressionNode::auto_dec_:
@@ -2828,7 +2823,7 @@ void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
     {
         if (NoSideEffect(st->select))
             error(ERR_EXPRESSION_HAS_NO_EFFECT);
-        if (Optimizer::cparams.prm_cplusplus && tp->IsStructured() && select->type == ExpressionNode::func_)
+        if (Optimizer::cparams.prm_cplusplus && tp->IsStructured() && select->type == ExpressionNode::callsite_)
         {
             SYMBOL* sym = select->v.func->returnSP;
             if (sym && sym->sb->allocate)
@@ -2848,7 +2843,7 @@ void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
         {
             exp1 = exp1->left;
         }
-        if (exp1->type == ExpressionNode::func_)
+        if (exp1->type == ExpressionNode::callsite_)
         {
             auto sp = exp1->v.func->sp;
             if (sp->sb->attribs.uninheritable.nodiscard)
@@ -3780,8 +3775,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
             funcparams->arguments->push_back(arg1);
             arg1->exp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;
-            st->select = exprNode(ExpressionNode::func_, nullptr, nullptr);
-            st->select->v.func = funcparams;
+            st->select = funcNode(funcparams);
         }
     }
     if (first)

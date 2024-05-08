@@ -410,7 +410,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
-            case ExpressionNode::func_: {
+            case ExpressionNode::callsite_: {
                 if (exp->v.func->ascall)
                 {
                     *buf++ = 'f';

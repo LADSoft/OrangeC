@@ -105,21 +105,23 @@ extern int inTypedef;
 extern int resolvingStructDeclarations;
 extern std::map<int, SYMBOL*> localAnonymousUnions;
 
+// cpplookup.cpp
+LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
+    StorageClass storage_class);
+// expr.cpp
+SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
+// types.cpp
+bool intcmp(Type* t1, Type* t2);
+//
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);
 void WeedExterns(void);
 const char* AnonymousName(void);
-const char* AnonymousTypeName(void);
 const char* NewUnnamedID(void);
 SYMBOL* SymAlloc(void);
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
-LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-                   StorageClass storage_class);
-SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
-void calculateStructOffsets(SYMBOL* sp);
-void resolveAnonymousUnions(SYMBOL* sp);
 LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable);
 LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
@@ -130,10 +132,8 @@ void sizeQualifiers(Type* tp);
 LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
 LexList* getQualifiers(LexList* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
-bool intcmp(Type* t1, Type* t2);
 void checkIncompleteArray(Type* tp, const char* errorfile, int errorline);
 LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces);
-
 LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
     StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
     bool* isExplicit, bool* constexpression, Type** tp, Linkage* linkage, Linkage* linkage2,

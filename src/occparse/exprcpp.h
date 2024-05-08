@@ -25,33 +25,36 @@
 
 namespace Parser
 {
+// ccerr.cpp
 void checkscope(Type* tp1, Type* tp2);
-EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en);
+// expr group
 void qualifyForFunc(SYMBOL* sym, Type** tp, bool isMutable);
 void getThisType(SYMBOL* sym, Type** tp);
 EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, bool toError);
 EXPRESSION* getMemberNode(SYMBOL* memberSym, SYMBOL* strSym, Type** tp, SYMBOL* funcsp);
 EXPRESSION* getMemberPtr(SYMBOL* memberSym, SYMBOL* strSym, Type** tp, SYMBOL* funcsp);
-bool castToArithmeticInternal(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
-void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
-bool castToPointer(Type** tp, EXPRESSION** exp, Keyword kw, Type* other);
-bool cppCast(Type* src, Type** tp, EXPRESSION** exp);
 EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, CallSite* funcparams, SymbolTable<SYMBOL>* syms);
 Statement* do_substitute_for_function(Statement* block, CallSite* funcparams, SymbolTable<SYMBOL>* syms);
 EXPRESSION* substitute_params_for_function(CallSite* funcparams, SymbolTable<SYMBOL>* syms);
-LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
 bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
 bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
 bool doConstCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
 bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
 LexList* GetCastInfo(LexList* lex, SYMBOL* funcsp, Type** newType, Type** oldType, EXPRESSION** oldExp, bool packed);
 LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
+LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
+LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
+LexList* expression_noexcept(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp);
+
+//
+EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en);
+bool castToArithmeticInternal(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
+void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
+bool castToPointer(Type** tp, EXPRESSION** exp, Keyword kw, Type* other);
+bool cppCast(Type* src, Type** tp, EXPRESSION** exp);
+LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
 bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite* funcparams, int flags);
 bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, Type* tp1, EXPRESSION* exp1,
     std::list<Argument*>* args, int flags);
-LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
-LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
-bool isNoexcept(EXPRESSION* exp);
-LexList* expression_noexcept(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp);
 void ResolveTemplateVariable(Type** ttype, EXPRESSION** texpr, Type* rtype, Type* atype);
 }  // namespace Parser

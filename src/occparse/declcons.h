@@ -27,37 +27,39 @@ namespace Parser
 {
 extern bool noExcept;
 
+// ccerr.cpp
 void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
 void ConstexprMembersNotInitializedErrors(SYMBOL* sym);
-LexList* FindClass(LexList* lex, SYMBOL* funcsp, SYMBOL** sym);
+// decl group
 std::list<MEMBERInitializerS*>* GetMemberInitializers(LexList** lex2, SYMBOL* funcsp, SYMBOL* sym);
 void SetParams(SYMBOL* cons);
+void ConditionallyDeleteClassMethods(SYMBOL* sp);
+void createDefaultConstructors(SYMBOL* sp);
+void createDestructor(SYMBOL* sp);
+// lambda.cpp
+void createConstructorsForLambda(SYMBOL* sp);
+// stmt.cpp
+EXPRESSION* destructLocal(EXPRESSION* exp);
+void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct);
+void DestructParams(std::list<Argument*>* il);
+// expr.cpp
+void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params);
+//
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
-bool matchesDefaultConstructor(SYMBOL* sp);
 bool matchesCopy(SYMBOL* sp, bool move);
 SYMBOL* getCopyCons(SYMBOL* base, bool move);
 bool hasVTab(SYMBOL* sp);
-void createConstructorsForLambda(SYMBOL* sp);
-void createDefaultConstructors(SYMBOL* sp);
-void ConditionallyDeleteClassMethods(SYMBOL* sp);
-EXPRESSION* destructLocal(EXPRESSION* exp);
-void DestructParams(std::list<Argument*>* il);
-void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestruct);
 SYMBOL* findClassName(const char* name, SYMBOL* cls, std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase, int* offset);
 void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);
-void createDestructor(SYMBOL* sp);
 EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMBOL* cons, SymbolTable<SYMBOL>* syms, bool parseInitializers, bool doCopy,
                                  bool defaulted);
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
-void asnVirtualBases(std::list<FunctionBlock*>& b, SYMBOL* sp, std::list<VBASEENTRY*>* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst);
 void createAssignment(SYMBOL* sym, SYMBOL* asnfunc);
 void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest, SymbolTable<SYMBOL>* syms, bool defaulted);
-void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count);
 bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess,
                     bool novtab);
 bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
                      bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign, bool toErr);
 bool callConstructorParam(Type** tp, EXPRESSION** exp, Type* paramTP, EXPRESSION* paramExp, bool top, bool maybeConversion,
                           bool implicit, bool pointer, bool toErr);
-void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params);
 }  // namespace Parser

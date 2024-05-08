@@ -214,7 +214,7 @@ static void ArgDeref(Type* desttp, Type* srctp, EXPRESSION **dest)
 {
     if (desttp->IsArray())
     {
-        *dest = exprNode(ExpressionNode::l_p_, *dest, nullptr);
+        *dest = exprNode(ExpressionNode::l_p_, *dest);
     }
     else if (desttp->type == BasicType::templateselector_)
     {
@@ -276,11 +276,11 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     auto ext = val;
                     if (ext->type == ExpressionNode::thisref_)
                         ext = ext->left;
-                    if (ext->type != ExpressionNode::func_ || ext->v.func->sp->tp->BaseType()->btp->IsRef())
+                    if (ext->type != ExpressionNode::callsite_ || ext->v.func->sp->tp->BaseType()->btp->IsRef())
                     {
                         deref(tpr->BaseType()->sp->sb->structuredAliasType, &val);
                     }
-                    if (sym->sb->addressTaken && (ext->type == ExpressionNode::func_ && !ext->v.func->sp->tp->BaseType()->btp->IsRef()))   
+                    if (sym->sb->addressTaken && (ext->type == ExpressionNode::callsite_ && !ext->v.func->sp->tp->BaseType()->btp->IsRef()))   
                     {
                         src = nullptr;
                         addr = tempVar(&stdpointer);
@@ -312,7 +312,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                         if (val->type == ExpressionNode::stackblock_)
                         {
                             val = val->left;
-                            if (val->type != ExpressionNode::func_ && val->type != ExpressionNode::thisref_)
+                            if (val->type != ExpressionNode::callsite_ && val->type != ExpressionNode::thisref_)
                             {
                                 deref(sym->tp->BaseType()->sp->sb->structuredAliasType, &val);
                             }

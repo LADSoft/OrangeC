@@ -134,8 +134,7 @@ EXPRESSION* ConvertToMSILString(EXPRESSION* val)
     arg->tp = &std__string;
     fp->arguments->push_back(arg);
     fp->ascall = true;
-    EXPRESSION* rv = exprNode(ExpressionNode::func_, nullptr, nullptr);
-    rv->v.func = fp;
+    EXPRESSION* rv = funcNode(fp);
     return rv;
 }
 EXPRESSION* stringlit(StringData* s)
@@ -958,7 +957,7 @@ int dumpInit(SYMBOL* sym, Initializer* init)
                 exp = exp->left;
             while (exp->type == ExpressionNode::comma_ && exp->right)
                 exp = exp->right;
-            if (exp->type == ExpressionNode::func_ && !exp->v.func->ascall)
+            if (exp->type == ExpressionNode::callsite_ && !exp->v.func->ascall)
                 exp = exp->v.func->fcall;
             int offset = 0;
             auto exp2 = relptr(exp, offset);
@@ -1467,7 +1466,7 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
     optimize_for_constants(expr);
     if (*tp)
     {
-        if (*expr && (*expr)->type == ExpressionNode::func_ && (*expr)->v.func->sp->sb->parentClass && !(*expr)->v.func->ascall &&
+        if (*expr && (*expr)->type == ExpressionNode::callsite_ && (*expr)->v.func->sp->sb->parentClass && !(*expr)->v.func->ascall &&
             !(*expr)->v.func->asaddress)
         {
             for (auto sym : *(*expr)->v.func->functp->BaseType()->syms)
@@ -1600,7 +1599,7 @@ static LexList* initialize_arithmetic_type(LexList* lex, SYMBOL* funcsp, int off
                 exp2 = &exp;
                 while (castvalue(*exp2))
                     exp2 = &(*exp2)->left;
-                if ((*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_ &&
+                if ((*exp2)->type == ExpressionNode::callsite_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_ &&
                     (*exp2)->v.func->sp->tp->syms->size() > 0)
                 {
                     SYMBOL* sp2;
@@ -1767,20 +1766,20 @@ static LexList* initialize_pointer_type(LexList* lex, SYMBOL* funcsp, int offset
             exp2 = &exp;
             while (castvalue(*exp2))
                 exp2 = &(*exp2)->left;
-            if ((*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
+            if ((*exp2)->type == ExpressionNode::callsite_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
             {
                 Type* tp1 = nullptr;
                 SYMBOL* sp2;
                 sp2 = MatchOverloadedFunction(itype, itype->IsPtr() ? &tp : &tp1, (*exp2)->v.func->sp, exp2, 0);
                 if (sp2)
                 {
-                    if ((*exp2)->type == ExpressionNode::pc_ || ((*exp2)->type == ExpressionNode::func_ && !(*exp2)->v.func->ascall))
+                    if ((*exp2)->type == ExpressionNode::pc_ || ((*exp2)->type == ExpressionNode::callsite_ && !(*exp2)->v.func->ascall))
                     {
                         thunkForImportTable(exp2);
                     }
                 }
             }
-            if ((*exp2)->type == ExpressionNode::func_ && !(*exp2)->v.func->ascall)
+            if ((*exp2)->type == ExpressionNode::callsite_ && !(*exp2)->v.func->ascall)
             {
                 InsertInline((*exp2)->v.func->sp);
             }
@@ -1887,7 +1886,7 @@ static LexList* initialize_memberptr(LexList* lex, SYMBOL* funcsp, int offset, S
             exp2 = &exp;
             while (castvalue(*exp2))
                 exp2 = &(*exp2)->left;
-            if ((*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
+            if ((*exp2)->type == ExpressionNode::callsite_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
             {
                 Type* tp1 = nullptr;
                 if ((*exp2)->v.func->sp->sb->parentClass && !(*exp2)->v.func->asaddress)
@@ -2090,7 +2089,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
         if (!templateNestingCount && (referenceTypeError(tp, exp) != exp->type || (tp->type == BasicType::rref_ && lvalue(exp))) &&
             (!tp->BaseType()->btp->IsStructured() || exp->type != ExpressionNode::lvalue_) && (!tp->BaseType()->btp->IsPtr() || exp->type != ExpressionNode::l_p_))
         {
-            if (!isarithmeticconst(exp) && exp->type != ExpressionNode::thisref_ && exp->type != ExpressionNode::func_ &&
+            if (!isarithmeticconst(exp) && exp->type != ExpressionNode::thisref_ && exp->type != ExpressionNode::callsite_ &&
                 tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_ && !boundTP->rref && !boundTP->lref)
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
             if (sc != StorageClass::parameter_ && !boundTP->rref && !boundTP->lref)
@@ -2234,7 +2233,7 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
             bool lref = false;
             if (expx->type == ExpressionNode::thisref_)
                 expx = expx->left;
-            if (expx->type == ExpressionNode::func_)
+            if (expx->type == ExpressionNode::callsite_)
             {
                 if (expx->v.func->returnSP)
                 {
@@ -2989,7 +2988,7 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
                         while (btp->IsArray())
                             btp = btp->btp;
                         int n = desc->offset / btp->size;
-                        (*it)->fieldoffs = exprNode(ExpressionNode::umul_, intNode(ExpressionNode::c_i_, n), exprNode(ExpressionNode::sizeof_, typeNode(btp), nullptr));
+                        (*it)->fieldoffs = exprNode(ExpressionNode::umul_, intNode(ExpressionNode::c_i_, n), exprNode(ExpressionNode::sizeof_, typeNode(btp)));
                     }
                     else
                     {
@@ -3255,7 +3254,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                         Type* tp1 = nullptr;
                         lex = init_expression(lex, funcsp, itype, &tp1, &exp1, itype, false,
                                               [&exp, itype, &constructed](EXPRESSION* exp1, Type* tp1) {
-                                                  if (exp1->type == ExpressionNode::thisref_ && exp1->left->type == ExpressionNode::func_)
+                                                  if (exp1->type == ExpressionNode::thisref_ && exp1->left->type == ExpressionNode::callsite_)
                                                   {
                                                       if (exp1->left->v.func->returnEXP)
                                                       {
@@ -3493,7 +3492,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
             {
                 error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
             }
-            exp = exprNode(ExpressionNode::assign_, exprNode(ExpressionNode::l_object_, getThisNode(base), nullptr), exp);
+            exp = exprNode(ExpressionNode::assign_, exprNode(ExpressionNode::l_object_, getThisNode(base)), exp);
             exp->left->v.tp = itype;
             initInsert(&it, itype, exp, offset, true);
             if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
@@ -3597,8 +3596,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                         if (sym)
                         {
                             toErr = false;
-                            auto exp2 = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                            exp2->v.func = Allocate<CallSite>();
+                            auto exp2 = funcNode(Allocate<CallSite>());
                             exp2->v.func->sp = sym;
                             exp2->v.func->functp = sym->tp;
                             exp2->v.func->fcall = varNode(ExpressionNode::pc_, sym);
@@ -3839,7 +3837,7 @@ void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, EXPRESSION* newName)
                 stk.push(&(*exp)->left->v.func->thisptr);
             }
                 break;
-            case ExpressionNode::func_:
+            case ExpressionNode::callsite_:
             {
                 if ((*exp)->v.func->returnEXP)
                     stk.push(&(*exp)->v.func->returnEXP);

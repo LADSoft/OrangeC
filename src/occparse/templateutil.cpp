@@ -126,7 +126,7 @@ bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2)
         case ExpressionNode::const_:
         case ExpressionNode::threadlocal_:
             return exp1->v.sp->tp->ExactSameType(exp2->v.sp->tp) || sameTemplate(exp1->v.sp->tp, exp1->v.sp->tp);
-        case ExpressionNode::func_: {
+        case ExpressionNode::callsite_: {
             Type* tp1 = exp1->v.sp->tp->BaseType();
             Type* tp2 = exp2->v.sp->tp->BaseType();
             if (tp1->IsFunction() || tp2->IsFunction())
@@ -752,7 +752,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
     {
         for (auto arg : *exp->v.func->arguments)
         {
-            if (arg->exp && (arg->exp->type == ExpressionNode::func_ || arg->exp->type == ExpressionNode::funcret_))
+            if (arg->exp && (arg->exp->type == ExpressionNode::callsite_ || arg->exp->type == ExpressionNode::funcret_))
             {
                 dofunc = true;
             }
@@ -851,7 +851,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                             if (!rv)
                                 rv = initListListFactory.CreateList();
                             rv->push_back(arg1);
-                            if (arg1->exp->type == ExpressionNode::func_)
+                            if (arg1->exp->type == ExpressionNode::callsite_)
                             {
                                 if (arg1->exp->v.func->templateParams)
                                 {
@@ -910,7 +910,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                             }
                             if (arg1->tp == nullptr)
                                 arg1->tp = arg->tp;
-                            if (arg1->exp->type == ExpressionNode::func_)
+                            if (arg1->exp->type == ExpressionNode::callsite_)
                             {
                                 if (arg1->exp->v.func->templateParams)
                                 {
@@ -1212,7 +1212,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     next = next->left;
                 if (next->type == ExpressionNode::thisref_)
                     next = next->left;
-                if (next->type == ExpressionNode::func_)
+                if (next->type == ExpressionNode::callsite_)
                 {
                     Type* ctype = tp;
                     SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
@@ -1235,9 +1235,8 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                         enclosingDeclarations.Drop();
                         break;
                     }
-                    EXPRESSION* temp = varNode(ExpressionNode::func_, sym);
-                    temp->v.func = func;
-                    temp = exprNode(ExpressionNode::thisref_, temp, nullptr);
+                    EXPRESSION* temp = funcNode(func);
+                    temp = exprNode(ExpressionNode::thisref_, temp);
                     temp->v.t.thisptr = intNode(ExpressionNode::c_i_, 0);
                     temp->v.t.tp = tp;
                     tp = LookupTypeFromExpression(temp, nullptr, false);
@@ -1455,7 +1454,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 exp = exp->left;
             }
             /* fall through */
-        case ExpressionNode::func_: {
+        case ExpressionNode::callsite_: {
             Type* rv;
             EXPRESSION* exp1 = nullptr;
             if (exp->v.func->functp->BaseType()->type != BasicType::aggregate_ && !exp->v.func->functp->IsStructured() &&

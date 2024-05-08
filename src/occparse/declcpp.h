@@ -40,56 +40,59 @@ typedef struct
     SYMBOL* name;
 } THUNK;
 
+// constexpr.cpp
+bool isConstexprConstructor(SYMBOL* sym);
+
+//ccerr.cpp
 bool MustSpecialize(const char* name);
 void SpecializationError(char* str);
 void SpecializationError(SYMBOL* sym);
-void dumpVTab(SYMBOL* sym);
-void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccount, bool isVirtual);
-int classRefCount(SYMBOL* base, SYMBOL* derived);
-void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
+void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
+// decl group
 void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset);
 void calculateVirtualBaseOffsets(SYMBOL* sym);
-void deferredCompileOne(SYMBOL* cur);
-void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
 void deferredInitializeStructFunctions(SYMBOL* cur);
 void deferredInitializeStructMembers(SYMBOL* cur);
-Type* PerformDeferredInitialization(Type* tp, SYMBOL* funcsp);
-void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
 bool usesVTab(SYMBOL* sym);
-BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, AccessLevel currentAccess);
 LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess);
 void checkPackedType(SYMBOL* sym);
-std::stack<EXPRESSION*> iterateToPostOrder(EXPRESSION* exp);
-bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void checkPackedExpression(EXPRESSION* exp);
 void checkUnpackedExpression(EXPRESSION* exp);
-bool declaringTemplate(SYMBOL* sym);    
-void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp);
-void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
-void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>** dest);
-int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs);
-void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* start, EXPRESSION* packedExp);
 void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERInitializerS*>::iterator& init,
-                             std::list<MEMBERInitializerS*>::iterator& initend, std::list<MEMBERInitializerS*>* mi,
-                             std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase);
+    std::list<MEMBERInitializerS*>::iterator& initend, std::list<MEMBERInitializerS*>* mi,
+    std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase);
 void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp,
-                                                                       std::list<TEMPLATEPARAMPAIR>* templatePack,
-                                                                       std::list<MEMBERInitializerS*>** p,
-                                    LexList* start, std::list<Argument*>* list);
+    std::list<TEMPLATEPARAMPAIR>* templatePack,
+    std::list<MEMBERInitializerS*>** p,
+    LexList* start, std::list<Argument*>* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 LexList* handleStaticAssert(LexList* lex);
 LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked);
-void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
-LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate, bool hasAttributes);
-Type* AttributeFinish(SYMBOL* sym, Type* tp);
-void ParseOut___attribute__(LexList** lex, SYMBOL* funcsp);
-bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always);
-bool isConstexprConstructor(SYMBOL* sym);
-bool MatchesConstFunction(SYMBOL* sym);
-LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn);
-void CollapseReferences(Type* tp_in);
-EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);
 void CheckIsLiteralClass(Type* tp);
 LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
-                              std::list<FunctionBlock*>& block);
+    std::list<FunctionBlock*>& block);
+// templatedecl.cpp
+bool declaringTemplate(SYMBOL* sym);
+// cpplookup.cpp
+void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
+void CollapseReferences(Type* tp_in);
+// stmt.cpp
+EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);
+//
+void dumpVTab(SYMBOL* sym);
+int classRefCount(SYMBOL* base, SYMBOL* derived);
+void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
+void deferredCompileOne(SYMBOL* cur);
+void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
+Type* PerformDeferredInitialization(Type* tp, SYMBOL* funcsp);
+bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
+void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp);
+void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
+int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs);
+void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* start, EXPRESSION* packedExp);
+LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate, bool hasAttributes);
+Type* AttributeFinish(SYMBOL* sym, Type* tp);
+bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always);
+bool MatchesConstFunction(SYMBOL* sym);
+LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn);
 }  // namespace Parser

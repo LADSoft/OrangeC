@@ -409,9 +409,8 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     insertFunc(lambdas.front()->cls, func);
     func->tp->syms->remove(func->tp->syms->begin()); // elide this pointer
     st = Statement::MakeStatement(NULL, block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
-    st->select = varNode(ExpressionNode::func_, NULL);
-    st->select->v.func = params;
-    st->select = exprNode(ExpressionNode::thisref_, st->select, NULL);
+    st->select = funcNode(params);
+    st->select = exprNode(ExpressionNode::thisref_, st->select);
 
     if (!params->arguments)
         params->arguments = initListListFactory.CreateList();
@@ -529,7 +528,7 @@ static void createConverter(SYMBOL* self)
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
         func->tp->BaseType()->btp = Type::MakeType(BasicType::templatedecltype_);
-        func->tp->BaseType()->btp->templateDeclType = exprNode(ExpressionNode::func_, NULL, NULL);
+        func->tp->BaseType()->btp->templateDeclType = funcNode(f);
         func->tp->BaseType()->btp->templateDeclType->v.func = f;
         for (auto sym : *caller->tp->BaseType()->syms)
         {
@@ -797,7 +796,7 @@ static EXPRESSION* createLambda(bool noinline)
         }
         if (en)
         {
-            *cur = exprNode(ExpressionNode::comma_, en, NULL);
+            *cur = exprNode(ExpressionNode::comma_, en);
             cur = &(*cur)->right;
         }
     } 

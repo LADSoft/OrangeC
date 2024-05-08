@@ -32,37 +32,49 @@ extern std::list<SYMBOL*> importThunks;
 extern int adjustingParams;
 
 void expr_init(void);
-void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym);
 void thunkForImportTable(EXPRESSION** exp);
 void ValidateMSILFuncPtr(Type* dest, Type* src, EXPRESSION** exp);
-EXPRESSION* exprNode(ExpressionNode type, EXPRESSION* left, EXPRESSION* right);
+EXPRESSION* exprNode(ExpressionNode type, EXPRESSION* left = nullptr, EXPRESSION* right = nullptr);
 EXPRESSION* varNode(ExpressionNode type, SYMBOL* sym);
 EXPRESSION* typeNode(Type* tp);
 EXPRESSION* intNode(ExpressionNode type, long long val);
-void checkauto(Type* tp1, int err);
+EXPRESSION* funcNode(CallSite* callSite);
 void GetLogicalDestructors(std::list<EXPRESSION*>**lst, EXPRESSION* cur);
 void GetAssignDestructors(std::list<EXPRESSION*>** rv, EXPRESSION* exp);
-void checkArgs(CallSite* params, SYMBOL* funcsp);
 Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr = false);
 LexList* getInitList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** owner);
 LexList* getArgs(LexList* lex, SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack, int flags);
 LexList* getMemberInitializers(LexList* lex, SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack);
-EXPRESSION* DerivedToBase(Type* tpn, Type* tpo, EXPRESSION* exp, int flags);
-bool cloneTempStmt(Statement** block, SYMBOL** found, SYMBOL** replace);
-Type* InitializerListType(Type* arg);
-EXPRESSION* getFunc(EXPRESSION* exp);
 void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* initializerListType, std::list<Argument*>** lptr, bool operands,
     bool asref);
-void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it , SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr, bool operands, bool implicit);
-void ResolveArgumentFunctions(CallSite* args, bool toErr);
-LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
-LexList* expression_unary(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-LexList* expression_throw(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp);
+void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr, bool operands, bool implicit);
 LexList* expression_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LexList* expression_comma(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LexList* expression_no_comma(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LexList* expression_no_check(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
 LexList* expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
+#if 1
+// help.cpp
+void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym);
+EXPRESSION* getFunc(EXPRESSION* exp);
+#endif
+#if 1
+// ccerr.cpp
+void checkauto(Type* tp1, int err);
+#endif
+#if 1
+// expressions
+EXPRESSION* DerivedToBase(Type* tpn, Type* tpo, EXPRESSION* exp, int flags);
+LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
+LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+#endif
+#if 1
+// types
+Type* InitializerListType(Type* arg);
+#endif
+#if 1
+//cpplookup.cpp
+void ResolveArgumentFunctions(CallSite* args, bool toErr);
+#endif
 
-}  // namespace Parser
+    }  // namespace Parser

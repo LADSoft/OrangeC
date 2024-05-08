@@ -3513,7 +3513,7 @@ static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool ch
                         {
                             case ExpressionNode::pc_:
                             case ExpressionNode::global_:
-                            case ExpressionNode::func_:
+                            case ExpressionNode::callsite_:
                             case ExpressionNode::comma_:
                                 break;
                             default:
@@ -4793,7 +4793,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                 }
             }
         }
-        else if (exp->type == ExpressionNode::func_ || exp->type == ExpressionNode::funcret_)
+        else if (exp->type == ExpressionNode::callsite_ || exp->type == ExpressionNode::funcret_)
         {
             EXPRESSION *exp1 = nullptr, **last = &exp1;
             ;

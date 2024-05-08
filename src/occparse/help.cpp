@@ -677,7 +677,7 @@ void deref(Type* tp, EXPRESSION** exp)
             diag("deref error");
             break;
     }
-    *exp = exprNode(en, *exp, nullptr);
+    *exp = exprNode(en, *exp);
     if (tp->IsBitInt())
         (*exp)->v.b.bits = tp->bitintbits;
     if (en == ExpressionNode::l_object_)
@@ -936,7 +936,7 @@ void cast(Type* tp, EXPRESSION** exp)
             diag("cast error");
             break;
     }
-    *exp = exprNode(en, *exp, nullptr);
+    *exp = exprNode(en, *exp);
     (*exp)->v.b.bits = tp->bitintbits;
 }
 bool castvalue(EXPRESSION* exp)
@@ -1201,7 +1201,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 exp = initItem->exp;
                 if (exp->type == ExpressionNode::thisref_)
                     exp = exp->left;
-                if (thisptr && exp->type == ExpressionNode::func_)
+                if (thisptr && exp->type == ExpressionNode::callsite_)
                 {
                     EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
                         ? exprNode(ExpressionNode::add_, copy_expression(expsym), intNode(ExpressionNode::c_i_, initItem->offset))
@@ -1219,7 +1219,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else
                 {
-                    if (exp->type == ExpressionNode::func_)
+                    if (exp->type == ExpressionNode::callsite_)
                         GetAssignDestructors(&exp->v.func->destructors, exp);
                     exp = initItem->exp;
                 }
@@ -1227,7 +1227,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
             else if (!initItem->exp)
             {
                 // usually empty braces, coudl be an error though
-                exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
+                exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym));
                 exp->size = Type::MakeType(BasicType::struct_);
                 exp->size->size = initItem->offset;                
             }
@@ -1238,7 +1238,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     EXPRESSION* exp2 = initItem->exp;
                     while (exp2->type == ExpressionNode::not__lvalue_)
                         exp2 = exp2->left;
-                    if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP)
+                    if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
                     {
                         exp2->v.func->returnSP->sb->allocate = false;
                         exp2->v.func->returnEXP = copy_expression(expsym);
@@ -1297,9 +1297,9 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                         if (!btp->IsStructured() || btp->sp->sb->trivialCons)
                         {
-                            exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym), nullptr);
+                            exp = exprNode(ExpressionNode::blockclear_, copy_expression(expsym));
                             exp->size = initItem->basetp;
-                            exp = exprNode(ExpressionNode::comma_, exp, nullptr);
+                            exp = exprNode(ExpressionNode::comma_, exp);
                             expp = &exp->right;
                         }
                         else
@@ -1314,7 +1314,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                                 {
                                     int n = initItem->offset / btp->size;
-                                    asn = exprNode(ExpressionNode::sizeof_, typeNode(btp), nullptr);
+                                    asn = exprNode(ExpressionNode::sizeof_, typeNode(btp));
                                     EXPRESSION* exp4 = intNode(ExpressionNode::c_i_, n);
                                     asn = exprNode(ExpressionNode::umul_, exp4, asn);
                                 }
@@ -1372,7 +1372,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 ;
                 while (exp2->type == ExpressionNode::not__lvalue_)
                     exp2 = exp2->left;
-                if (exp2->type == ExpressionNode::func_ && exp2->v.func->returnSP)
+                if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
                 {
                     exp2->v.func->returnSP->sb->allocate = false;
                     exp2->v.func->returnEXP = copy_expression(expsym);
@@ -1397,7 +1397,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (tp->IsArray() && tp->msil)
                 {
                     Type* btp = tp;
-                    exps = exprNode(ExpressionNode::msil_array_access_, nullptr, nullptr);
+                    exps = exprNode(ExpressionNode::msil_array_access_);
                     int count = 0, i;
                     int q = initItem->offset;
                     while (btp->IsArray() && btp->msil)
@@ -1509,7 +1509,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
         optimize_for_constants(&fexp);
         if (fexp->type == ExpressionNode::thisref_)
             fexp = fexp->left->v.func->thisptr;
-        exp = exprNode(ExpressionNode::blockclear_, fexp, nullptr);
+        exp = exprNode(ExpressionNode::blockclear_, fexp);
         exp->size = tp;
         rv = exprNode(ExpressionNode::comma_, exp, rv);
     }
@@ -1526,8 +1526,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
             optimize_for_constants(&rv);
             rv = destructLocal(rv);
             rv = addLocalDestructor(rv, sym);
-            EXPRESSION* guardexp = exprNode(ExpressionNode::func_, nullptr, nullptr);
-            guardexp->v.func = Allocate<CallSite>();
+            EXPRESSION* guardexp = funcNode(Allocate<CallSite>());
             guardexp->v.func->sp = guardfunc;
             guardexp->v.func->functp = guardfunc->tp;
             guardexp->v.func->fcall = varNode(ExpressionNode::pc_, guardfunc);
@@ -1683,7 +1682,7 @@ bool isconstaddress(EXPRESSION* exp)
         case ExpressionNode::pc_:
         case ExpressionNode::labcon_:
             return true;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             return !exp->v.func->ascall;
         case ExpressionNode::threadlocal_:
         default:
@@ -2014,7 +2013,7 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
         {
             EXPRESSION* c = stk.top();
             stk.pop();
-            if (c->type == ExpressionNode::func_)
+            if (c->type == ExpressionNode::callsite_)
             {
                 doit = true;
                 break;
@@ -2030,8 +2029,8 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
             result = anonymousVar(StorageClass::auto_, &stdpointer);
             deref(&stdpointer, &result);
             exp2 = exprNode(ExpressionNode::assign_, result, exp2);
-            exp2 = exprNode(exp->type, exp2, nullptr);
-            result = exprNode(exp->type, result, nullptr);
+            exp2 = exprNode(exp->type, exp2);
+            result = exprNode(exp->type, result);
             result = exprNode(ExpressionNode::comma_, exp2, result);
         }
     }

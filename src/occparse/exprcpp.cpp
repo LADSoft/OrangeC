@@ -332,8 +332,7 @@ bool castToArithmeticInternal(bool integer, Type** tp, EXPRESSION** exp, Keyword
             *exp = DerivedToBase(cst->sb->parentClass->tp, *tp, *exp, 0);
             params->thisptr = *exp;
             {
-                e1 = varNode(ExpressionNode::func_, nullptr);
-                e1->v.func = params;
+                e1 = funcNode(params);
                 if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
                     hasFuncCall = true;
             }
@@ -418,8 +417,7 @@ bool castToPointer(Type** tp, EXPRESSION** exp, Keyword kw, Type* other)
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = true;
-                e1 = varNode(ExpressionNode::func_, nullptr);
-                e1->v.func = params;
+                e1 = funcNode(params);
                 if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
                     hasFuncCall = true;
                 *exp = e1;
@@ -473,8 +471,7 @@ bool cppCast(Type* src, Type** tp, EXPRESSION** exp)
                     callDestructor((*tp)->BaseType()->sp, nullptr, &ev, nullptr, true, false, false, true);
                     initInsert(&av->sb->dest, *tp, ev, 0, true);
                 }
-                e1 = varNode(ExpressionNode::func_, nullptr);
-                e1->v.func = params;
+                e1 = funcNode(params);
                 if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
                     hasFuncCall = true;
                 *exp = e1;
@@ -604,7 +601,7 @@ std::list<Statement*>* do_substitute_for_function(std::list<Statement*>* blocks,
 EXPRESSION* substitute_params_for_function(CallSite* funcparams, SymbolTable<SYMBOL>* syms)
 {
     auto st = do_substitute_for_function(funcparams->sp->sb->inlineFunc.stmt, funcparams, syms);
-    EXPRESSION* exp = exprNode(ExpressionNode::stmt_, 0, 0);
+    EXPRESSION* exp = exprNode(ExpressionNode::stmt_);
     exp->v.stmt = st;
     return exp;
 }
@@ -735,12 +732,11 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             if (bcall)
             {
                 exp1 = anonymousVar(StorageClass::auto_, ctype->BaseType()->sp->tp);
-                *exp = exprNode(ExpressionNode::func_, nullptr, nullptr);
+                funcparams->ascall = true;
+                funcparams->thisptr = exp1;
+                funcparams->thistp = Type::MakeType(BasicType::pointer_, ctype->BaseType()->sp->tp);
+                *exp = funcNode(funcparams);
                 *tp = bcall->tp;
-                (*exp)->v.func = funcparams;
-                (*exp)->v.func->ascall = true;
-                (*exp)->v.func->thisptr = exp1;
-                (*exp)->v.func->thistp = Type::MakeType(BasicType::pointer_, ctype->BaseType()->sp->tp);
                 lex = expression_arguments(lex, funcsp, tp, exp, 0);
             }
             else if (deduceTemplate && (Optimizer::architecture != ARCHITECTURE_MSIL))
@@ -768,9 +764,8 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                         funcparams->fcall = *exp;
                         sym = exp2->v.sp;
 
-                        *exp = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                        (*exp)->v.func = funcparams;
-                        *exp = exprNode(ExpressionNode::thisref_, *exp, nullptr);
+                        *exp = funcNode(funcparams);
+                        *exp = exprNode(ExpressionNode::thisref_, *exp);
                         sym->sb->constexpression = true;
                         optimize_for_constants(exp);
                         if ((*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
@@ -822,7 +817,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                         }
                         else
                         {
-                            EXPRESSION* clr = exprNode(ExpressionNode::blockclear_, exp2, nullptr);
+                            EXPRESSION* clr = exprNode(ExpressionNode::blockclear_, exp2);
                             clr->size = sym->tp;
                             *exp = exprNode(ExpressionNode::comma_, clr, *exp);
                         }
@@ -864,7 +859,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     *exp = funcParams.arguments->back()->exp;
                     if (throwaway && (*tp)->IsAutoType())
                         *tp = throwaway;
-                    if ((*tp)->IsFunctionPtr() && (*exp)->type == ExpressionNode::func_)
+                    if ((*tp)->IsFunctionPtr() && (*exp)->type == ExpressionNode::callsite_)
                     {
                         *exp = (*exp)->v.func->fcall;
                         if (!*exp)
@@ -962,9 +957,7 @@ bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* func
                         funcparams->ascall = true;
                         funcparams->rttiType = oldrtti;
                         funcparams->rttiType2 = newrtti;
-                        *exp = exprNode(ExpressionNode::lvalue_, 0, 0);
-                        (*exp)->left = exprNode(ExpressionNode::func_, 0, 0);
-                        (*exp)->left->v.func = funcparams;
+                        *exp = exprNode(ExpressionNode::lvalue_, funcNode(funcparams));
                     }
                     if ((*newType)->IsRef())
                         *newType = tpn;
@@ -1064,7 +1057,7 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
                     if (v->v.i != 0)
                     {
                         EXPRESSION* varsp = anonymousVar(StorageClass::auto_, &stdpointer);
-                        EXPRESSION* var = exprNode(ExpressionNode::l_p_, varsp, nullptr);
+                        EXPRESSION* var = exprNode(ExpressionNode::l_p_, varsp);
                         EXPRESSION* asn = exprNode(ExpressionNode::assign_, var, *exp);
                         EXPRESSION* left = exprNode(ExpressionNode::add_, var, v);
                         EXPRESSION* right = var;
@@ -1072,7 +1065,7 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
                             v->left = var;
                         v = exprNode(ExpressionNode::hook_, var, exprNode(ExpressionNode::comma_, left, right));
                         v = exprNode(ExpressionNode::comma_, asn, v);
-                        *exp = exprNode(ExpressionNode::lvalue_, v, nullptr);
+                        *exp = exprNode(ExpressionNode::lvalue_, v);
                     }
                     return true;
                 }
@@ -1089,7 +1082,7 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
                     if (v->v.i != 0)
                     {
                         EXPRESSION* varsp = anonymousVar(StorageClass::auto_, &stdpointer);
-                        EXPRESSION* var = exprNode(ExpressionNode::l_p_, varsp, nullptr);
+                        EXPRESSION* var = exprNode(ExpressionNode::l_p_, varsp);
                         EXPRESSION* asn = exprNode(ExpressionNode::assign_, var, *exp);
                         EXPRESSION* left = exprNode(ExpressionNode::sub_, var, v);
                         EXPRESSION* right = var;
@@ -1097,7 +1090,7 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
                             v->left = var;
                         v = exprNode(ExpressionNode::hook_, var, exprNode(ExpressionNode::comma_, left, right));
                         v = exprNode(ExpressionNode::comma_, asn, v);
-                        *exp = exprNode(ExpressionNode::lvalue_, v, nullptr);
+                        *exp = exprNode(ExpressionNode::lvalue_, v);
                     }
                     return true;
                 }
@@ -1237,7 +1230,7 @@ bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* 
         // function to int
         if ((*newType)->IsInt() || (*newType)->IsPtr())
         {
-            if ((*exp)->type == ExpressionNode::func_)
+            if ((*exp)->type == ExpressionNode::callsite_)
             {
                 LookupSingleAggregate(oldType, exp);
                 cast(*newType, exp);
@@ -1415,8 +1408,7 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
                     arg2->exp = rtti ? varNode(ExpressionNode::global_, rtti) : intNode(ExpressionNode::c_i_, 0);
                     funcparams->rttiType = rtti;
                 }
-                *exp = exprNode(ExpressionNode::func_, 0, 0);
-                (*exp)->v.func = funcparams;
+                *exp = funcNode(funcparams);
                 sym = namespacesearch("std", globalNameSpace, false, false);
                 if (sym->sb->storage_class == StorageClass::namespace_)
                 {
@@ -1485,8 +1477,7 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
         funcparams->functp = s3->tp;
         if (funcparams->sp->sb->xcMode != xc_unspecified && funcparams->sp->sb->xcMode != xc_none)
             hasFuncCall = true;
-        *exp = intNode(ExpressionNode::func_, 0);
-        (*exp)->v.func = funcparams;
+        *exp = funcNode(funcparams);
         *tp = s3->tp;
         CheckCalledException(s3, *exp);
         return true;
@@ -1763,8 +1754,7 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
         s3->sb->throughClass = s3->sb->parentClass != nullptr;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
-        *exp = intNode(ExpressionNode::func_, 0);
-        (*exp)->v.func = funcparams;
+        *exp = funcNode(funcparams);
         *tp = s3->tp;
         expression_arguments(nullptr, funcsp, tp, exp, 0);
         if (s3->sb->defaulted && kw == Keyword::assign_)
@@ -1939,8 +1929,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
         placement->ascall = true;
         placement->fcall = varNode(ExpressionNode::pc_, s1);
         //        placement->sb->noinline = (flags & _F_NOINLINE) | s1->sb->noinline;
-        exp1 = intNode(ExpressionNode::func_, 0);
-        exp1->v.func = placement;
+        exp1 = funcNode(placement);
         newfunc = exp1;
     }
     if (KW(lex) == Keyword::openpa_)
@@ -1960,7 +1949,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
             if (!initializers->arguments || !initializers->arguments->size())
             {
                 // empty arguments means value construct...
-                EXPRESSION* clr = exprNode(ExpressionNode::blockclear_, val, nullptr);
+                EXPRESSION* clr = exprNode(ExpressionNode::blockclear_, val);
                 clr->size = *tp;
                 *exp = exprNode(ExpressionNode::comma_, clr, *exp);
             }
@@ -2170,8 +2159,7 @@ LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
         funcparams->ascall = true;
         funcparams->fcall = varNode(ExpressionNode::pc_, s1);
         // funcparams->sb->noinline =  (flags & _F_NOINLINE) | s1->sb->noinline;
-        exp1 = intNode(ExpressionNode::func_, 0);
-        exp1->v.func = funcparams;
+        exp1 = funcNode(funcparams);
         exp1 = exprNode(ExpressionNode::comma_, *exp, exp1);
         exp1 = exprNode(ExpressionNode::check_nz_, exprNode(ExpressionNode::comma_, in, exp1), intNode(ExpressionNode::c_i_, 0));
         *exp = exp1;
@@ -2181,11 +2169,6 @@ LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
     *exp = exprNode(ExpressionNode::comma_, var, *exp);
     *tp = &stdvoid;
     return lex;
-}
-bool isNoexcept(EXPRESSION* exp)
-{
-    (void)exp;
-    return false;
 }
 static bool noexceptStmt(std::list<Statement*>* block);
 static bool noexceptExpression(EXPRESSION* node)
@@ -2384,7 +2367,7 @@ static bool noexceptExpression(EXPRESSION* node)
         case ExpressionNode::atomic_:
         case ExpressionNode::construct_:
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             {
                 SYMBOL* sym = fp->sp;

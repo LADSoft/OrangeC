@@ -1685,7 +1685,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
             assignmentUsages(node->v.ad->address, false);
             assignmentUsages(node->v.ad->third, false);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             {
                 if (fp->arguments)
@@ -1913,7 +1913,7 @@ static int checkDefaultExpression(EXPRESSION* node)
             rv |= checkDefaultExpression(node->v.ad->address);
             rv |= checkDefaultExpression(node->v.ad->third);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             if (fp->arguments)
                 for (auto args : *fp->arguments)

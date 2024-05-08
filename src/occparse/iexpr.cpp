@@ -299,7 +299,7 @@ static int bitintbits(EXPRESSION* node)
             case ExpressionNode::c_ubitint_:
             case ExpressionNode::x_ubitint_:
                 return node->v.b.bits;
-            case ExpressionNode::func_:
+            case ExpressionNode::callsite_:
             {
                 if (node->v.func->returnSP && node->v.func->returnSP->tp->IsBitInt())
                 {
@@ -755,7 +755,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     {
         if (node->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, node->left->right))
         {
-            if  (node->left->left->type == ExpressionNode::func_ || node->left->left->type == ExpressionNode::thisref_)
+            if  (node->left->left->type == ExpressionNode::callsite_ || node->left->left->type == ExpressionNode::thisref_)
             {
                 ap1 = gen_expr(funcsp, node->left->left, store ? 0 : F_RETURNREFBYVALUE, ISZ_ADDR);
             }
@@ -797,7 +797,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         }
         else if (node->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, node->left->left))
         {
-            if (node->left->right->type == ExpressionNode::func_ || node->left->right->type == ExpressionNode::thisref_)
+            if (node->left->right->type == ExpressionNode::callsite_ || node->left->right->type == ExpressionNode::thisref_)
             {
                 ap1 = gen_expr(funcsp, node->left->right, store ? 0 : F_RETURNREFBYVALUE, ISZ_ADDR);
             }
@@ -1537,13 +1537,13 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
             {
                 epx = epx->left;
             }
-            candidate = epx->type != ExpressionNode::func_ || epx->v.sp->tp->BaseType()->btp->IsStructured();
+            candidate = epx->type != ExpressionNode::callsite_ || epx->v.sp->tp->BaseType()->btp->IsStructured();
         }
         if (candidate)
         {
             EXPRESSION* varl = node->left;
             EXPRESSION* varr = node->right;
-            if (varr->type != ExpressionNode::func_ && varr->type != ExpressionNode::thisref_)
+            if (varr->type != ExpressionNode::callsite_ && varr->type != ExpressionNode::thisref_)
                 deref(node->size->BaseType()->sp->sb->structuredAliasType, &varr);
             int size = sizeFromType(node->size->BaseType()->sp->sb->structuredAliasType);
             ap1 = gen_expr(funcsp, varl, 0, size);
@@ -1593,7 +1593,7 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
     {
         Optimizer::IMODE *ap1;
         EXPRESSION *var = node->left;
-        if (var->type != ExpressionNode::func_ && var->type != ExpressionNode::thisref_)
+        if (var->type != ExpressionNode::callsite_ && var->type != ExpressionNode::thisref_)
             deref(node->size->BaseType()->sp->sb->structuredAliasType, &var);
         int size = sizeFromType(node->size->BaseType()->sp->sb->structuredAliasType);
         ap1 = gen_expr(funcsp, var, F_STORE, size);
@@ -2010,7 +2010,7 @@ static EXPRESSION* aliasToTemp(SYMBOL* funcsp, EXPRESSION* in)
     auto expt = in;
     if (expt->type == ExpressionNode::thisref_)
         expt = expt->left;
-    if (expt->type == ExpressionNode::func_)
+    if (expt->type == ExpressionNode::callsite_)
     {
         if (!expt->v.func->sp->sb->isConstructor)
         {
@@ -2060,7 +2060,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, Type* argtp, 
     if (exp)
     {
         EXPRESSION* ep1 = exp;
-        if (exp->type == ExpressionNode::func_)
+        if (exp->type == ExpressionNode::callsite_)
         {
 
             exp = ep1->v.func->returnEXP;
@@ -2289,7 +2289,7 @@ static int gen_parm(Argument* a, SYMBOL* funcsp)
         else if (a->tp->BaseType()->sp->sb->structuredAliasType)
         {
             EXPRESSION* val = a->exp->left;
-            if (val->type != ExpressionNode::func_ && val->type != ExpressionNode::thisref_)
+            if (val->type != ExpressionNode::callsite_ && val->type != ExpressionNode::thisref_)
                 deref(a->tp->BaseType()->sp->sb->structuredAliasType, &val);
             rv = push_param(val, funcsp, nullptr, a->tp, 0);
         }
@@ -2305,7 +2305,7 @@ static int gen_parm(Argument* a, SYMBOL* funcsp)
             EXPRESSION *val = a->exp->left, *val2 = val;
             if (val2->type == ExpressionNode::comma_)
                 val2 = val2->right;
-            if (val2->type != ExpressionNode::func_ && val2->type != ExpressionNode::thisref_ && !isarithmeticconst(val2))
+            if (val2->type != ExpressionNode::callsite_ && val2->type != ExpressionNode::thisref_ && !isarithmeticconst(val2))
             {
                 deref(a->tp->BaseType()->sp->sb->structuredAliasType, &val);
             }
@@ -3498,7 +3498,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::auto_inc_:
                 case ExpressionNode::auto_dec_:
                 case ExpressionNode::assign_:
-                case ExpressionNode::func_:
+                case ExpressionNode::callsite_:
                 case ExpressionNode::thisref_:
                 case ExpressionNode::intcall_:
                 case ExpressionNode::blockassign_:
@@ -4293,7 +4293,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case ExpressionNode::trapcall_:
             rv = gen_trapcall(funcsp, node, flags);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         case ExpressionNode::intcall_:
             rv = gen_funccall(funcsp, node, flags);
             break;
@@ -4326,7 +4326,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::auto_inc_:
                 case ExpressionNode::auto_dec_:
                 case ExpressionNode::assign_:
-                case ExpressionNode::func_:
+                case ExpressionNode::callsite_:
                 case ExpressionNode::thisref_:
                 case ExpressionNode::intcall_:
                 case ExpressionNode::blockassign_:
@@ -4391,7 +4391,7 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::funcret_:
             while (node->type == ExpressionNode::funcret_)
                 node = node->left;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         case ExpressionNode::intcall_:
             if (!node->v.func->functp || !node->v.func->functp->IsFunction())
                 return 0;

@@ -23,10 +23,12 @@
 
 namespace Parser
 {
+//types.cpp
+bool isTemplatedPointer(Type* tp);
+// localexpr
 bool isstructuredmath(Type* tp1, Type* tp2 = nullptr);
 bool smallint(Type* tp);
 bool largenum(Type* tp);
-bool isTemplatedPointer(Type* tp);
 EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags = 0);
 void eval_unary_left_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList *start, Type* lefttp,
                      EXPRESSION* leftexp, bool ismutable, int flags);

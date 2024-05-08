@@ -237,7 +237,7 @@ typedef struct
         l_fi_, l_di_, l_ldi_, l_fc_, l_dc_, l_ldc_, l_fp_, l_sp_, l_bit_,
         l_string_, l_object_, l_bitint_, l_ubitint_, msil_array_access_, msil_array_init_,
         nullptr_, memberptr_, mp_as_bool_, mp_compare_,
-        trapcall_, func_, funcret_, intcall_,
+        trapcall_, callsite_, funcret_, intcall_,
         arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
         add_, sub_, mul_, mod_, div_, lsh_, rsh_, ursh_,
         hook_, comma_, assign_, eq_, ne_,

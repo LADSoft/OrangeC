@@ -36,10 +36,68 @@ let config : Config {
     }
 }
 
-let orangefront ! : Executable {
-    .configs += config;
+let config2 : Config {
     .include_dirs += [ . ./src/occopt ./src/util ./src/ocpp ]
     .defines += [ "ORANGE_NO_MSIL" "ORANGE_NO_INASM" ]
+}
+
+let common : SourceSet {
+    .configs += [ config config2 ]
+    .sources += [
+        ./src/util/CmdFiles.cpp
+        ./src/util/CmdSwitch.cpp
+        ./src/util/crc.cpp
+        ./src/util/NamedPipe.cpp
+        ./src/util/Random.cpp
+        ./src/util/SharedMemory.cpp
+        ./src/util/ToolChain.cpp
+        ./src/util/UTF8.cpp
+        ./src/util/UTF8Table.cpp
+        ./src/util/UTF8Upper.cpp
+        ./src/util/Utils.cpp
+        ./src/util/xml.cpp
+        ./src/util/winsystem.c
+
+        ./src/util/CmdFiles.h
+        ./src/util/CmdSwitch.h
+        ./src/util/FNV_hash.h
+        ./src/util/LSDateTime.h
+        ./src/util/SharedMemory.h
+        ./src/util/ToolChain.h
+        ./src/util/UTF8.h
+        ./src/util/Utils.h
+        ./src/util/xml.h
+
+        ./src/occopt/config.cpp
+        ./src/occopt/config.h
+        ./src/occopt/configx86.cpp
+        ./src/occopt/configx86.h
+        ./src/occopt/iblock.cpp
+        ./src/occopt/iblock.h
+        ./src/occopt/ifloatconv.cpp
+        ./src/occopt/ifloatconv.h
+        ./src/occopt/ildata.cpp
+        ./src/occopt/ildata.h
+        ./src/occopt/ilstream.cpp
+        ./src/occopt/ilstream.h
+        ./src/occopt/iout.cpp
+        ./src/occopt/iout.h
+        ./src/occopt/memory.cpp
+        ./src/occopt/memory.h
+        ./src/occopt/optmodules.cpp
+        ./src/occopt/optmodules.h
+        ./src/occopt/OptUtils.cpp
+        ./src/occopt/OptUtils.h
+        ./src/occopt/output.cpp
+        ./src/occopt/output.h
+        ./src/occopt/symfuncs.cpp
+        ./src/occopt/symfuncs.h
+    ]
+}
+
+let orangefront : Executable {
+    .configs += [ config config2 ]
+    .deps += common;
     .sources += [
         ./src/occparse/beinterf.cpp
         ./src/occparse/browse.cpp
@@ -84,19 +142,6 @@ let orangefront ! : Executable {
         ./src/occparse/types.cpp
         ./src/occparse/unmangle.cpp
         ./src/occparse/wseh.cpp
-        ./src/util/CmdFiles.cpp
-        ./src/util/CmdSwitch.cpp
-        ./src/util/crc.cpp
-        ./src/util/NamedPipe.cpp
-        ./src/util/Random.cpp
-        ./src/util/SharedMemory.cpp
-        ./src/util/ToolChain.cpp
-        ./src/util/UTF8.cpp
-        ./src/util/UTF8Table.cpp
-        ./src/util/UTF8Upper.cpp
-        ./src/util/Utils.cpp
-        ./src/util/xml.cpp
-        ./src/util/winsystem.c
         ./src/ocpp/Errors.cpp
         ./src/ocpp/Floating.cpp
         ./src/ocpp/InputFile.cpp
@@ -114,18 +159,6 @@ let orangefront ! : Executable {
         ./src/ocpp/PreProcessor.cpp
         ./src/ocpp/SymbolTable.cpp
         ./src/ocpp/Token.cpp
-        ./src/occopt/config.cpp
-        ./src/occopt/ildata.cpp
-        ./src/occopt/OptUtils.cpp
-        ./src/occopt/memory.cpp
-        ./src/occopt/ifloatconv.cpp
-        ./src/occopt/iblock.cpp
-        ./src/occopt/configx86.cpp
-        ./src/occopt/output.cpp
-        ./src/occopt/symfuncs.cpp
-        ./src/occopt/optmodules.cpp
-        ./src/occopt/ilstream.cpp
-        ./src/occopt/iout.cpp
     ]
     .sources += [
         # Headers
@@ -179,55 +212,6 @@ let orangefront ! : Executable {
         ./src/occparse/unmangle.h
         ./src/occparse/winmode.h
         ./src/occparse/wseh.h
-        ./src/occopt/beinterfdefs.h
-        ./src/occopt/browsedefs.h
-        ./src/occopt/config.h
-        ./src/occopt/configmsil.h
-        ./src/occopt/configx86.h
-        ./src/occopt/ctypes.h
-        ./src/occopt/ialias.h
-        ./src/occopt/iblock.h
-        ./src/occopt/iconfl.h
-        ./src/occopt/iconst.h
-        ./src/occopt/ifloatconv.h
-        ./src/occopt/iflow.h
-        ./src/occopt/iinvar.h
-        ./src/occopt/ilazy.h
-        ./src/occopt/ildata.h
-        ./src/occopt/ilive.h
-        ./src/occopt/ilocal.h
-        ./src/occopt/iloop.h
-        ./src/occopt/ilstream.h
-        ./src/occopt/ilunstream.h
-        ./src/occopt/iopt.h
-        ./src/occopt/ioptimizer.h
-        ./src/occopt/ioptutil.h
-        ./src/occopt/iout.h
-        ./src/occopt/ipeep.h
-        ./src/occopt/ipinning.h
-        ./src/occopt/irc.h
-        ./src/occopt/ireshape.h
-        ./src/occopt/irewrite.h
-        ./src/occopt/issa.h
-        ./src/occopt/istren.h
-        ./src/occopt/localprotect.h
-        ./src/occopt/memory.h
-        ./src/occopt/optmain.h
-        ./src/occopt/optmodules.h
-        ./src/occopt/OptUtils.h
-        ./src/occopt/output.h
-        ./src/occopt/rewritemsil.h
-        ./src/occopt/rewritex86.h
-        ./src/occopt/symfuncs.h
-        ./src/util/CmdFiles.h
-        ./src/util/CmdSwitch.h
-        ./src/util/FNV_hash.h
-        ./src/util/LSDateTime.h
-        ./src/util/SharedMemory.h
-        ./src/util/ToolChain.h
-        ./src/util/UTF8.h
-        ./src/util/Utils.h
-        ./src/util/xml.h
         ./src/ocpp/Errors.h
         ./src/ocpp/Floating.h
         ./src/ocpp/InputFile.h
@@ -249,4 +233,68 @@ let orangefront ! : Executable {
         ./src/ocpp/SymbolTable.h
         ./src/ocpp/Token.h
     ]
+}
+
+let orangeopt : Executable {
+    .configs += [ config config2 ]
+    .deps += common;
+    .sources += [
+        ./src/occopt/beinterfdefs.h
+        ./src/occopt/browsedefs.h
+        ./src/occopt/ctypes.h
+        ./src/occopt/ialias.cpp
+        ./src/occopt/ialias.h
+        ./src/occopt/iconfl.cpp
+        ./src/occopt/iconfl.h
+        ./src/occopt/iconst.cpp
+        ./src/occopt/iconst.h
+        ./src/occopt/iflow.cpp
+        ./src/occopt/iflow.h
+        ./src/occopt/iinvar.cpp
+        ./src/occopt/iinvar.h
+        ./src/occopt/ilazy.cpp
+        ./src/occopt/ilazy.h
+        ./src/occopt/ilive.cpp
+        ./src/occopt/ilive.h
+        ./src/occopt/ilocal.cpp
+        ./src/occopt/ilocal.h
+        ./src/occopt/iloop.cpp
+        ./src/occopt/iloop.h
+        ./src/occopt/ilunstream.cpp
+        ./src/occopt/ilunstream.h
+        ./src/occopt/iopt.h
+        ./src/occopt/ioptimizer.h
+        ./src/occopt/ioptutil.cpp
+        ./src/occopt/ioptutil.h
+        ./src/occopt/ipeep.cpp
+        ./src/occopt/ipeep.h
+        ./src/occopt/ipinning.cpp
+        ./src/occopt/ipinning.h
+        ./src/occopt/irc.cpp
+        ./src/occopt/irc.h
+        ./src/occopt/ireshape.cpp
+        ./src/occopt/ireshape.h
+        ./src/occopt/irewrite.cpp
+        ./src/occopt/irewrite.h
+        ./src/occopt/issa.cpp
+        ./src/occopt/issa.h
+        ./src/occopt/istren.cpp
+        ./src/occopt/istren.h
+        ./src/occopt/localprotect.cpp
+        ./src/occopt/localprotect.h
+        ./src/occopt/msilprocess.cpp
+        ./src/occopt/optmain.cpp
+        ./src/occopt/optmain.h
+        ./src/occopt/optmodulerun.cpp
+        ./src/occopt/rewritemsil.cpp
+        ./src/occopt/rewritemsil.h
+        ./src/occopt/rewritex86.cpp
+        ./src/occopt/rewritex86.h
+
+        ./src/ocpp/Floating.cpp
+     ]
+}
+
+let all ! : Group {
+    .deps += [ orangefront orangeopt ]
 }

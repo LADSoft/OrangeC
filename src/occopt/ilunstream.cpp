@@ -366,6 +366,7 @@ static AMODE* UnstreamAssemblyOperand()
 static OCODE* UnstreamAssemblyInstruction()
 {
     OCODE* rv = Allocate<OCODE>();
+#ifndef ORANGE_NO_INASM
     rv->opcode = (e_opcode)UnstreamIndex();
     rv->diag = UnstreamIndex();
     rv->noopt = UnstreamIndex();
@@ -374,6 +375,9 @@ static OCODE* UnstreamAssemblyInstruction()
     rv->oper1 = UnstreamAssemblyOperand();
     rv->oper2 = UnstreamAssemblyOperand();
     rv->oper3 = UnstreamAssemblyOperand();
+#else
+    memset(rv,0,sizeof(OCODE));
+#endif
     return rv;
 }
 static Optimizer::IMODE* UnstreamOperand()
@@ -1269,8 +1273,8 @@ void ReadMappingFile(SharedMemory* mem, FILE* fil)
     fseek(fil, 0, SEEK_END);
     int end = ftell(fil);
     fseek(fil, 0, SEEK_SET);
-    unsigned char* p = mem->GetMapping();
     mem->EnsureCommitted(end);
+    unsigned char* p = mem->GetMapping();
     while (end > 0)
     {
 

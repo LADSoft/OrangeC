@@ -35,8 +35,13 @@
 using namespace std;  // borland puts the io stuff in the std namespace...
                       // microsoft does not seem to.
 
+#ifdef TARGET_OS_WINDOWS
 const char* CmdFiles::DIR_SEP = "\\";
 const char* CmdFiles::PATH_SEP = ";";
+#else
+const char* CmdFiles::DIR_SEP = "/";
+const char* CmdFiles::PATH_SEP = ":";
+#endif
 
 CmdFiles::~CmdFiles() {}
 bool CmdFiles::Add(char** array, bool recurseDirs)

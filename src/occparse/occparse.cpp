@@ -564,7 +564,6 @@ int main(int argc, char* argv[])
         {
             CompletionCompiler::ccNewFile(buffer, true);
         }
-        // why? Utils::AddExt(buffer, ".C");
         if (prm_std.GetExists())
         {
             if (prm_std.GetValue() == "c89")
@@ -712,6 +711,18 @@ int main(int argc, char* argv[])
                 }
                 if (Optimizer::cparams.prm_icdfile)
                     Optimizer::OutputIcdFile();
+                if (compileToFile)
+                {
+                    // compile to file
+                    strcpy(realOutFile, (const char*)clist->data);
+                    Utils::StripExt(realOutFile);
+                    Utils::AddExt(realOutFile, ".icf");
+                    FILE* fil = fopen(realOutFile, "wb");
+                    if (!fil)
+                        Utils::Fatal("Cannot open '%s' for write", realOutFile);
+                    Optimizer::WriteMappingFile(parserMem, fil);
+                    fclose(fil);
+                }
                 Optimizer::InitIntermediate();
             }
         }
@@ -809,22 +820,7 @@ int main(int argc, char* argv[])
             }
 #endif
     }
-    if (compileToFile)
-    {
-        // compile to file
-        if (Optimizer::outputFileName.empty())
-            strcpy(realOutFile, firstFile);
-        else
-            strcpy(realOutFile, Optimizer::outputFileName.c_str());
-        Utils::StripExt(realOutFile);
-        Utils::AddExt(realOutFile, ".icf");
-        int size = Optimizer::GetOutputSize();
-        FILE* fil = fopen(realOutFile, "wb");
-        if (!fil)
-            Utils::Fatal("Cannot open '%s' for write", realOutFile);
-        Optimizer::WriteMappingFile(parserMem, fil);
-        fclose(fil);
-    }
+
     oFree();
     globalFree();
     delete parserMem;

@@ -564,7 +564,7 @@ int main(int argc, char* argv[])
         {
             CompletionCompiler::ccNewFile(buffer, true);
         }
-        Utils::AddExt(buffer, ".C");
+        // why? Utils::AddExt(buffer, ".C");
         if (prm_std.GetExists())
         {
             if (prm_std.GetValue() == "c89")

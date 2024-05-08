@@ -2145,14 +2145,11 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
     bool hasDelegate = false;
     if (cons->sb->memberInitializers)
     {
-        int pushcount = pushContext(cls, true);
+        enclosingDeclarations.Mark();
         auto ite = cons->sb->memberInitializers->end();
-        STRUCTSYM tpl;
         if (cons->templateParams)
         {
-            tpl.tmpl = cons->templateParams;
-            addTemplateDeclaration(&tpl);
-            pushcount++;
+            enclosingDeclarations.Add(cons->templateParams);
         }
         for (auto it = cons->sb->memberInitializers->begin(); it != ite;)
         {
@@ -2487,8 +2484,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
             ++it;
             first = false;
         }
-        for (int i = 0; i < pushcount; i++)
-            dropStructureDeclaration();
+        enclosingDeclarations.Release();
     }
 }
 static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)

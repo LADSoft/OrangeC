@@ -55,7 +55,7 @@ bool HasUnevaluatedTemplateSelectors(EXPRESSION* exp);
 Type* TemplateLookupTypeFromDeclType(Type* tp);
 static bool hastemplate(EXPRESSION* exp);
 void clearoutDeduction(Type* tp);
-int pushContext(SYMBOL* cls, bool all);
+void pushContext(SYMBOL* cls, bool all);
 void SetTemplateNamespace(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);

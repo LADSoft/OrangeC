@@ -82,7 +82,7 @@ bool MustSpecialize(const char* name)
 {
     if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
         return false;
-    for (auto&& sst : structSyms)
+    for (auto&& sst : enclosingDeclarations)
     {
         if (sst.str && !strcmp(sst.str->name, name))
             return false;
@@ -805,8 +805,6 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
 void deferredCompileOne(SYMBOL* cur)
 {
     LexList* lex;
-    STRUCTSYM l, n, x, q;
-    int count = 0;
     std::list<LAMBDA*> oldLambdas;
     // function body
     if (!cur->sb->inlineFunc.stmt && (!cur->sb->templateLevel || !cur->templateParams || cur->sb->instantiated))
@@ -820,22 +818,17 @@ void deferredCompileOne(SYMBOL* cur)
         lines = nullptr;
 
         cur->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+        enclosingDeclarations.Mark();
         if (cur->templateParams && cur->sb->templateLevel)
         {
-            n.tmpl = cur->templateParams;
-            addTemplateDeclaration(&n);
-            count++;
+            enclosingDeclarations.Add(cur->templateParams);
         }
         if (cur->sb->parentClass)
         {
-            l.str = cur->sb->parentClass;
-            addStructureDeclaration(&l);
-            count++;
+            enclosingDeclarations.Add(cur->sb->parentClass);
             if (cur->sb->parentClass->templateParams)
             {
-                q.tmpl = cur->sb->parentClass->templateParams;
-                addTemplateDeclaration(&q);
-                count++;
+                enclosingDeclarations.Add(cur->sb->parentClass->templateParams);
             }
         }
         dontRegisterTemplate++;
@@ -862,10 +855,7 @@ void deferredCompileOne(SYMBOL* cur)
         SetAlternateLex(nullptr);
         dontRegisterTemplate--;
         lambdas = oldLambdas;
-        while (count--)
-        {
-            dropStructureDeclaration();
-        }
+        enclosingDeclarations.Release();
         PopTemplateNamespace(tns);
         lines = linesOld;
     }
@@ -893,27 +883,20 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 templateNestingCount++;
             }
             LexList* lex;
-            STRUCTSYM l, n, q;
             Type* tp2;
-            int count = 0;
             int tns = PushTemplateNamespace(str ? str : func);
+            enclosingDeclarations.Mark();
             if (str)
             {
-                l.str = str;
-                addStructureDeclaration(&l);
-                count++;
+                enclosingDeclarations.Add(str);
                 if (str->templateParams)
                 {
-                    n.tmpl = str->templateParams;
-                    addTemplateDeclaration(&n);
-                    count++;
+                    enclosingDeclarations.Add(str->templateParams);
                 }
             }
             if (func->templateParams)
             {
-                q.tmpl = func->templateParams;
-                addTemplateDeclaration(&q);
-                count++;
+                enclosingDeclarations.Add(func->templateParams);
             }
             //        func->tp = PerformDeferredInitialization(func->tp, nullptr);
             lex = SetAlternateLex(arg->sb->deferredCompile);
@@ -944,10 +927,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             }
             SetAlternateLex(nullptr);
             arg->sb->deferredCompile = nullptr;
-            while (count--)
-            {
-                dropStructureDeclaration();
-            }
+            enclosingDeclarations.Release();
             PopTemplateNamespace(tns);
             if (initted)
             {
@@ -959,19 +939,14 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 }
 void deferredInitializeStructFunctions(SYMBOL* cur)
 {
+    enclosingDeclarations.Mark();
     LexList* lex;
-    STRUCTSYM l, n;
-    int count = 0;
     int tns = PushTemplateNamespace(cur);
-    l.str = cur;
-    addStructureDeclaration(&l);
-    count++;
+    enclosingDeclarations.Add(cur);
 
     if (cur->templateParams)
     {
-        n.tmpl = cur->templateParams;
-        addTemplateDeclaration(&n);
-        count++;
+        enclosingDeclarations.Add(cur->templateParams);
     }
     //    dontRegisterTemplate++;
     for (auto sp : *cur->tp->syms)
@@ -1011,28 +986,20 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
         }
     }
     //    dontRegisterTemplate--;
-    while (count--)
-    {
-        dropStructureDeclaration();
-    }
+    enclosingDeclarations.Release();
     PopTemplateNamespace(tns);
 }
 void deferredInitializeStructMembers(SYMBOL* cur)
 {
     Optimizer::LIST* staticAssert;
     LexList* lex;
-    STRUCTSYM l, n;
-    int count = 0;
     int tns = PushTemplateNamespace(cur);
-    l.str = cur;
-    addStructureDeclaration(&l);
-    count++;
+    enclosingDeclarations.Mark();
+    enclosingDeclarations.Add(cur);
 
     if (cur->templateParams)
     {
-        n.tmpl = cur->templateParams;
-        addTemplateDeclaration(&n);
-        count++;
+        enclosingDeclarations.Add(cur->templateParams);
     }
     dontRegisterTemplate++;
     for (auto sp : *cur->tp->syms)
@@ -1053,15 +1020,12 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         }
     }
     dontRegisterTemplate--;
-    while (count--)
-    {
-        dropStructureDeclaration();
-    }
+    enclosingDeclarations.Release();
     PopTemplateNamespace(tns);
 }
 bool declaringTemplate(SYMBOL* sym)
 {
-    for (auto&& l : structSyms)
+    for (auto&& l : enclosingDeclarations)
     {
         if (l.str && l.str->sb->templateLevel)
         {
@@ -1214,13 +1178,11 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     bool isvirtual = false;
     bool done = false;
     SYMBOL* bcsym;
-    STRUCTSYM l;
     currentAccess = defaultAccess;
     lex = getsym();  // past ':'
     if (declsym->tp->BaseType()->type == BasicType::union_)
         error(ERR_UNION_CANNOT_HAVE_BASE_CLASSES);
-    l.str = (SYMBOL*)declsym;
-    addStructureDeclaration(&l);
+    enclosingDeclarations.Add(declsym);
     do
     {
         ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -1584,14 +1546,14 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 default:
                     error(ERR_IDENTIFIER_EXPECTED);
                     errskim(&lex, skim_end);
-                    dropStructureDeclaration();
+                    enclosingDeclarations.Drop();
                     return lex;
             }
     endloop:
         if (!done)
             ParseAttributeSpecifiers(&lex, funcsp, true);
     } while (!done);
-    dropStructureDeclaration();
+    enclosingDeclarations.Drop();
 
     declsym->sb->baseClasses = baseClasses;
     for (auto lst : *declsym->sb->baseClasses)
@@ -2593,7 +2555,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         auto itend = sp->tp->BaseType()->syms->end();
         if (it == itend)
             return;
-        if (!asFriend && getStructureDeclaration())  // nonstatic member
+        if (!asFriend && enclosingDeclarations.GetFirst())  // nonstatic member
         {
             if (sp->sb->operatorId == CI_CAST)
             {
@@ -3178,7 +3140,7 @@ void unvisitUsingDirectives(NAMESPACEVALUEDATA* v)
 static void InsertTag(SYMBOL* sym, StorageClass storage_class, bool allowDups)
 {
     SymbolTable<SYMBOL>* table;
-    SYMBOL* ssp = getStructureDeclaration();
+    SYMBOL* ssp = enclosingDeclarations.GetFirst();
     SYMBOL* sp1 = nullptr;
     if (ssp && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || storage_class == StorageClass::type_))
     {
@@ -3335,7 +3297,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
                 }
                 if (storage_class == StorageClass::member_)
-                    sp->sb->parentClass = getStructureDeclaration();
+                    sp->sb->parentClass = enclosingDeclarations.GetFirst();
                 sp->sb->usingTypedef = true;
                 SetLinkerNames(sp, Linkage::cdecl_);
                 InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
@@ -3364,7 +3326,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     {
                         for (auto sp2 : * sp->tp->syms)
                         {
-                            SYMBOL *ssp = getStructureDeclaration(), *ssp1;
+                            SYMBOL *ssp = enclosingDeclarations.GetFirst(), *ssp1;
                             SYMBOL* sp1 = CopySymbol(sp2);
                             sp1->sb->wasUsing = true;
                             ssp1 = sp1->sb->parentClass;
@@ -3380,7 +3342,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     }
                     else
                     {
-                        SYMBOL *ssp = getStructureDeclaration(), *ssp1;
+                        SYMBOL *ssp = enclosingDeclarations.GetFirst(), *ssp1;
                         SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->wasUsing = true;
                         sp1->sb->mainsym = sp;

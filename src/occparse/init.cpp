@@ -2110,7 +2110,6 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
     EXPRESSION* exp;
     bool needend = false;
     Type* tpi = itype;
-    STRUCTSYM s;
     (void)sc;
     if (MATCHKW(lex, Keyword::begin_))
     {

@@ -222,13 +222,12 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
 }
 static void GetUsingName(char* buf)
 {
-    STRUCTSYM s;
-    s.str = getStructureDeclaration();
-    if (s.str)
+    auto sym = enclosingDeclarations.GetFirst();
+    if (sym)
     {
-        addStructureDeclaration(&s);
+        enclosingDeclarations.Add(sym);
         auto sp = classsearch(buf, false, false, false);
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
         if (sp && sp->sb && sp->sb->usingTypedef)
         {
             if (sp->tp->IsStructured())
@@ -376,11 +375,9 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                         {
                             if (t->lthis)
                             {
-                                STRUCTSYM s;
-                                s.str = t->lthis->tp->BaseType()->btp->sp;
-                                addStructureDeclaration(&s);
+                                enclosingDeclarations.Add(t->lthis->tp->BaseType()->btp->sp);
                                 sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
-                                dropStructureDeclaration();
+                                enclosingDeclarations.Drop();
                             }
                         }
                         if (!sp)
@@ -497,11 +494,9 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 else
                 {
-                    STRUCTSYM s;
-                    s.str = strSym;
-                    addStructureDeclaration(&s);
+                    enclosingDeclarations.Add(strSym);
                     sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
-                    dropStructureDeclaration();
+                    enclosingDeclarations.Drop();
                 }
                 if (!sp)
                 {
@@ -931,7 +926,7 @@ SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* args)
 }
 TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
 {
-    SYMBOL* cls = getStructureDeclaration();
+    SYMBOL* cls = enclosingDeclarations.GetFirst();
     while (cls)
     {
         if (cls->templateParams)
@@ -950,10 +945,10 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, b
 {
     SYMBOL* rv = nullptr;
     SYMBOL* symrv = nullptr;
-    SYMBOL* cls = getStructureDeclaration();
+    SYMBOL* cls = enclosingDeclarations.GetFirst();
 
-    decltype(structSyms)::iterator its;
-    for( its = structSyms.begin(); its != structSyms.end(); ++its)
+    EnclosingDeclarations::iterator its;
+    for (its = enclosingDeclarations.begin(); its != enclosingDeclarations.end(); ++its)
     {
         if (!(*its).tmpl || rv)
             break;
@@ -997,7 +992,7 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, b
             cls = cls->sb->parentClass;
         }
     }
-    for (; its != structSyms.end(); ++its)
+    for (; its != enclosingDeclarations.end(); ++its)
     {
         if (rv)
             break;
@@ -1009,7 +1004,7 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, b
             rv = nullptr;
         }
     }
-    cls = getStructureDeclaration();
+    cls = enclosingDeclarations.GetFirst();
     if (cls && !rv)
     {
         /* optimize for the case where the final class has what we need */
@@ -1035,7 +1030,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
     SYMBOL* rv = nullptr;
     if (!encloser && !ns && !namespaceOnly)
     {
-        SYMBOL* ssp = getStructureDeclaration();
+        SYMBOL* ssp = enclosingDeclarations.GetFirst();
         if (funcLevel || !ssp)
         {
             if (!tagsOnly)
@@ -1104,11 +1099,9 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
         }
         else if (encloser)
         {
-            STRUCTSYM l;
-            l.str = (SYMBOL*)encloser;
-            addStructureDeclaration(&l);
+            enclosingDeclarations.Add(encloser);
             rv = classsearch(name, tagsOnly, false, true);
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
             if (rv && rv->sb)
                 rv->sb->throughClass = throughClass;
         }
@@ -1405,7 +1398,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
                 *sym = tsearch(lex->data->value.s.a);
             else
             {
-                SYMBOL* ssp = getStructureDeclaration();
+                SYMBOL* ssp = enclosingDeclarations.GetFirst();
                 if (ssp)
                 {
                     *sym =search( ssp->tp->syms, lex->data->value.s.a);
@@ -1449,7 +1442,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
         if (buf[0])
         {
             if (!encloser && membersOnly)
-                encloser = getStructureDeclaration();
+                encloser = enclosingDeclarations.GetFirst();
             *sym =
                 finishSearch(ov == CI_CAST ? overloadNameTab[CI_CAST] : buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
             if (*sym && hasTemplate)
@@ -1542,7 +1535,7 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
     SYMBOL* ssp;
     if (!Optimizer::cparams.prm_cplusplus)
         return true;
-    ssp = getStructureDeclaration();
+    ssp = enclosingDeclarations.GetFirst();
     if (ssp)
     {
         if (ssp == member)
@@ -1587,7 +1580,7 @@ static SYMBOL* AccessibleClassInstance(SYMBOL* parent)
 {
     // search through all active structure declarations
     // to try to find a structure which is derived from parent...
-    for (auto&& s : structSyms)
+    for (auto&& s : enclosingDeclarations)
     {
         if (s.str)
         {
@@ -5887,18 +5880,16 @@ static bool ValidForDeduction(SYMBOL* s)
 SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, Type* atp, int toErr,
                               bool maybeConversion, int flags)
 {
-    STRUCTSYM s;
-    s.tmpl = 0;
     if (atp && atp->IsPtr())
         atp = atp->BaseType()->btp;
     if (atp && !atp->IsFunction())
         atp = nullptr;
+    enclosingDeclarations.Mark();
     if (args && args->thisptr)
     {
         SYMBOL* spt = args->thistp->BaseType()->btp->BaseType()->sp;
-        s.tmpl = spt->templateParams;
-        if (s.tmpl)
-            addTemplateDeclaration(&s);
+        if (spt->templateParams)
+            enclosingDeclarations.Add(spt->templateParams);
     }
     if (!sp || sp->sb->storage_class == StorageClass::overloads_)
     {
@@ -5913,6 +5904,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 *exp = varNode(ExpressionNode::pc_, sp);
                 *tp = sp->tp;
             }
+            enclosingDeclarations.Release();
             return nullptr;
         }
         if (sp)
@@ -6033,7 +6025,10 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     }
                 }
                 if (n == 0)
+                {
+                    enclosingDeclarations.Release();
                     return nullptr;
+                }
                 spList.resize(n);
                 icsList.resize(n);
                 lenList.resize(n);
@@ -6337,18 +6332,16 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     {
                         if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (templateNestingCount && !instantiatingTemplate)))
                         {
-                            STRUCTSYM s;
                             if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
                                 propagateTemplateDefinition(found1);
                             if (found1->templateParams)
                             {
-                                s.tmpl = found1->templateParams;
-                                addTemplateDeclaration(&s);
+                                enclosingDeclarations.Add(found1->templateParams);
                             }
                             StatementGenerator::ParseNoExceptClause(found1);
                             if (found1->templateParams)
                             {
-                                dropStructureDeclaration();
+                                enclosingDeclarations.Drop();
                             }
                         }
                         else if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
@@ -6391,9 +6384,8 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             }
         }
     }
-     if (s.tmpl)
-        dropStructureDeclaration();
-    return sp;
+     enclosingDeclarations.Release();
+     return sp;
 }
 SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** exp, int flags)
 {

@@ -811,7 +811,6 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     SYMBOL *vpl;
     SYMLIST* hrl;
     Type* ltp;
-    STRUCTSYM ssl;
     if (funcsp)
         funcsp->sb->noinline = true;
     self = Allocate<LAMBDA>();
@@ -1091,9 +1090,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     lambdas.front()->func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     lambdas.front()->func->sb->attribs.inheritable.isInline = true;
     lambdas.front()->templateFunctions = lambda_get_template_state(lambdas.front()->func);
-    ssl.str = self->cls;
-    ssl.tmpl = NULL;
-    addStructureDeclaration(&ssl);
+    enclosingDeclarations.Add(self->cls);
     if (lambdas.front()->captureThis)
     {
         if (lambdas.size() > 1)
@@ -1148,7 +1145,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     {
         error(ERR_LAMBDA_FUNCTION_BODY_EXPECTED);
     }
-    dropStructureDeclaration();
+    enclosingDeclarations.Drop();
     localNameSpace->front()->syms = self->oldSyms;
     localNameSpace->front()->tags = self->oldTags;
     finishClass();

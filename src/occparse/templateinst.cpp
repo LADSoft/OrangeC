@@ -334,7 +334,7 @@ static std::list<TEMPLATEPARAMPAIR>** addStructParam(std::list<TEMPLATEPARAMPAIR
             if (!second)
             {
                 SYMBOL* sym = nullptr;
-                for (auto&& s : structSyms)
+                for (auto&& s : enclosingDeclarations)
                 {
                     if (s.tmpl)
                     {
@@ -1023,7 +1023,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                         if (!templateNestingCount && tpa->first)
                         {
                             bool found = false;
-                            for (auto&& p : structSyms)
+                            for (auto&& p : enclosingDeclarations)
                             {
                                 if (p.tmpl)
                                 {
@@ -1204,15 +1204,13 @@ static SYMBOL* SynthesizeParentClass(SYMBOL* sym)
 SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     SYMBOL* rsv = CopySymbol(sym);
-    STRUCTSYM s, s1;
+    enclosingDeclarations.Mark();
 
     if (sym->sb->parentClass)
     {
-        s.str = sym->sb->parentClass;
-        addStructureDeclaration(&s);
+        enclosingDeclarations.Add(sym->sb->parentClass);
     }
-    s1.tmpl = sym->templateParams;
-    addTemplateDeclaration(&s1);
+    enclosingDeclarations.Add(sym->templateParams);
     rsv->sb->parentTemplate = sym;
     rsv->sb->mainsym = sym;
     rsv->sb->parentClass = SynthesizeParentClass(rsv->sb->parentClass);
@@ -1223,11 +1221,7 @@ SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
         rsv->tp->BaseType()->sp = rsv;
     }
     rsv->templateParams = params;
-    if (sym->sb->parentClass)
-    {
-        dropStructureDeclaration();
-    }
-    dropStructureDeclaration();
+    enclosingDeclarations.Release();
     return rsv;
 }
 static int eval(EXPRESSION* exp)
@@ -1654,7 +1648,6 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
     bool usesParams = !!args && args->size();
     auto it = func->tp->BaseType()->syms->begin();
     auto ite = func->tp->BaseType()->syms->end();
-    STRUCTSYM s, s1;
     if (func->sb->isConstructor && args)
     {
         // get rid of potential constructor calls
@@ -1709,13 +1702,12 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
     if (it != ite)
     {
         bool packedOrEllipse = false;
+        enclosingDeclarations.Mark();
         if (func->sb->parentClass)
         {
-            s1.str = func->sb->parentClass;
-            addStructureDeclaration(&s1);
+            enclosingDeclarations.Add(func->sb->parentClass);
         }
-        s.tmpl = func->templateParams;
-        addTemplateDeclaration(&s);
+        enclosingDeclarations.Add(func->templateParams);
         std::list<Argument*>::iterator ita, itae;
         if (args)
         {
@@ -1732,9 +1724,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         }
         if (ita != itae && !packedOrEllipse)
         {
-            dropStructureDeclaration();
-            if (func->sb->parentClass)
-                dropStructureDeclaration();
+            enclosingDeclarations.Release();
             inDefaultParam--;
             return nullptr;
         }
@@ -1752,21 +1742,16 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
                 dontRegisterTemplate -= templateNestingCount != 0;
                 if (sp->sb->init && sp->sb->init->front()->exp && !ValidExp(&sp->sb->init->front()->exp))
                 {
-                    dropStructureDeclaration();
-                    if (func->sb->parentClass)
-                        dropStructureDeclaration();
+                    enclosingDeclarations.Release();
                     inDefaultParam--;
                     return nullptr;
                 }
             }
             ++it;
         }
-        dropStructureDeclaration();
-        if (func->sb->parentClass)
-            dropStructureDeclaration();
+        enclosingDeclarations.Release();
     }
-    s.tmpl = func->templateParams;
-    addTemplateDeclaration(&s);
+    enclosingDeclarations.Add(func->templateParams);
     std::list<Argument*>::iterator check, checke;
     if (args)
     {
@@ -1777,7 +1762,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
     {
         if (!ValidArg(sp1->tp))
         {
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
             inDefaultParam--;
             return nullptr;
         }
@@ -1870,7 +1855,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
     rv->sb->maintemplate = func;
     if (!ValidArg(func->tp->BaseType()->btp))
     {
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
         inDefaultParam--;
         return nullptr;
     }
@@ -1879,7 +1864,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         Type* tp = tpp[i];
         *(tav[i]) = tp;
     }
-    dropStructureDeclaration();
+    enclosingDeclarations.Drop();
     inDefaultParam--;
     return rv;
 }
@@ -1890,11 +1875,9 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     std::list<TEMPLATEPARAMPAIR>* defaults = nullptr;
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
-    STRUCTSYM s, primary;
     LexList* head = nullptr;
     LexList* tail = nullptr;
     SYMBOL* oldMemberClass = instantiatingMemberFuncClass;
-    memset(&primary, 0, sizeof(primary));
     std::list<TEMPLATEPARAMPAIR>::iterator itPrimary, itePrimary = itPrimary;
     if (declareSym->sb->specialized && declareSym->sb->parentTemplate &&
         !declareSym->sb->parentTemplate->templateParams->front().second->bySpecialization.types)
@@ -1910,8 +1893,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
         head = currents->bodyHead;
         tail = currents->bodyTail;
     }
-    s.tmpl = enclosing;
-    addTemplateDeclaration(&s);
+    enclosingDeclarations.Add(enclosing);
     parsingDefaultTemplateArgs++;
 
     std::list<TEMPLATEPARAMPAIR>::iterator itSrc, iteSrc = itSrc;
@@ -1940,15 +1922,17 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     }
     for (; itSrc != iteSrc && itDest != iteDest; ++itSrc, ++itDest)
     {
+        enclosingDeclarations.Mark();
         if ((!args || itArgs == iteArgs) && !itDest->second->byClass.val && !itDest->second->packed &&
             (itPrimary == itePrimary || !itPrimary->second->packed))
         {
             LexList* lex;
-            int n, pushCount;
+            int n;
             if (!itSrc->second->byClass.txtdflt)
             {
                 parsingDefaultTemplateArgs--;
-                dropStructureDeclaration();
+                enclosingDeclarations.Release();
+                enclosingDeclarations.Drop();
                 instantiatingMemberFuncClass = oldMemberClass;
                 return false;
             }
@@ -1969,13 +1953,11 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     for (++itone; itone != iteone && ittwo != itetwo; ++itone, ++ittwo)
                         defaults->push_back(TEMPLATEPARAMPAIR{itone->first, ittwo->second});
                 }
-                primary.tmpl = defaults;
-                addTemplateDeclaration(&primary);
-                pushCount = 1;
+                enclosingDeclarations.Add(defaults);
             }
             else
             {
-                pushCount = pushContext(declareSym, false);
+                pushContext(declareSym, false);
             }
             itDest->second->byClass.txtdflt = itSrc->second->byClass.txtdflt;
             itDest->second->byClass.txtargs = itSrc->second->byClass.txtargs;
@@ -1991,11 +1973,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         (!templateNestingCount && itDest->second->byClass.val->type == BasicType::templateselector_))
                     {
                         parsingDefaultTemplateArgs--;
-                        while (pushCount--)
-                            dropStructureDeclaration();
+                        enclosingDeclarations.Release();
                         PopTemplateNamespace(n);
                         SetAlternateLex(nullptr);
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                         instantiatingMemberFuncClass = oldMemberClass;
                         return false;
                     }
@@ -2010,11 +1991,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     if (!itDest->second->byTemplate.val)
                     {
                         parsingDefaultTemplateArgs--;
-                        while (pushCount--)
-                            dropStructureDeclaration();
+                        enclosingDeclarations.Release();
                         PopTemplateNamespace(n);
                         SetAlternateLex(nullptr);
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                         instantiatingMemberFuncClass = oldMemberClass;
                         return false;
                     }
@@ -2045,11 +2025,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         if (tp2->type == BasicType::any_)
                         {
                             parsingDefaultTemplateArgs--;
-                            while (pushCount--)
-                                dropStructureDeclaration();
+                            enclosingDeclarations.Release();
                             PopTemplateNamespace(n);
                             SetAlternateLex(nullptr);
-                            dropStructureDeclaration();
+                            enclosingDeclarations.Drop();
                             instantiatingMemberFuncClass = oldMemberClass;
                             return false;
                         }
@@ -2069,11 +2048,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         if (!tp1->IsPtr() && !tp1->IsInt() && !isconstzero(tp1, exp1))
                         {
                             parsingDefaultTemplateArgs--;
-                            while (pushCount--)
-                                dropStructureDeclaration();
+                            enclosingDeclarations.Release();
                             PopTemplateNamespace(n);
                             SetAlternateLex(nullptr);
-                            dropStructureDeclaration();
+                            enclosingDeclarations.Drop();
                             instantiatingMemberFuncClass = oldMemberClass;
                             return false;
                         }
@@ -2082,11 +2060,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     if (!tp2 || tp2->type == BasicType::any_)
                     {
                         parsingDefaultTemplateArgs--;
-                        while (pushCount--)
-                            dropStructureDeclaration();
+                        enclosingDeclarations.Release();
                         PopTemplateNamespace(n);
                         SetAlternateLex(nullptr);
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                         instantiatingMemberFuncClass = oldMemberClass;
                         return false;
                     }
@@ -2095,11 +2072,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                 default:
                     break;
             }
-            while (pushCount--)
-                dropStructureDeclaration();
             PopTemplateNamespace(n);
             SetAlternateLex(nullptr);
         }
+        enclosingDeclarations.Release();
         if (itArgs != iteArgs)
             ++itArgs;
         if (itPrimary != itePrimary)
@@ -2111,7 +2087,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
         currents->bodyTail = tail;
     }
     parsingDefaultTemplateArgs--;
-    dropStructureDeclaration();
+    enclosingDeclarations.Drop();
     instantiatingMemberFuncClass = oldMemberClass;
     return true;
 }
@@ -2206,7 +2182,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
     (void)args;
     LexList* lex = nullptr;
     SYMBOL* cls = sym;
-    int pushCount;
     if (cls->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
         return cls;
     if (packIndex == -1 && sym->sb->maintemplate)
@@ -2296,7 +2271,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             cls->parserSet = false;
             cls->sb->parentClass = SynthesizeParentClass(cls->sb->parentClass);
             SwapMainTemplateArgs(cls);
-            pushCount = pushContext(cls, false);
+            enclosingDeclarations.Mark();
+            pushContext(cls, false);
             cls->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
             cls->tp = old.tp->CopyType();
             cls->tp->UpdateRootTypes();
@@ -2347,8 +2323,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             expandingParams = oldExpandingParams;
             funcLevel = oldFuncLevel;
             templateHeaderCount = oldHeaderCount;
-            while (pushCount--)
-                dropStructureDeclaration();
+            enclosingDeclarations.Release(); // popContext
             SwapMainTemplateArgs(cls);
             LeaveInstantiation();
         }
@@ -2410,7 +2385,6 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
 {
     SYMBOL* orig = sym;
     bool found = false;
-    STRUCTSYM s;
     for (auto data : *sym->sb->overloadName->tp->syms)
     {
         if (data->sb->instantiated && TemplateInstantiationMatch(data, sym, true) && matchOverload(sym->tp, data->tp, true))
@@ -4382,7 +4356,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 
 TEMPLATEPARAMPAIR* TypeAliasSearch(const char* name, bool toponly)
 {
-    for (auto&& s : structSyms)
+    for (auto&& s : enclosingDeclarations)
     {
         std::list<TEMPLATEPARAMPAIR>* arg = s.tmpl;
         if (s.tmpl)
@@ -5579,14 +5553,10 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     {
         SpecifyOneArg(sp, &a, sp->templateParams, sp->sb->typeAlias);
     }
-    STRUCTSYM t1;
     if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
     {
-        t1.tmpl = sp->sb->parentClass->templateParams;
-        addTemplateDeclaration(&t1);
+        enclosingDeclarations.Add(sp->sb->parentClass->templateParams);
     }
-    STRUCTSYM t;
-    t.tmpl = args;
     if (sp->name[0] == '_' && sp->name[1] == '_')
     {
         if (sp->name[2] == 't' && !strcmp(sp->name, "__type_pack_element"))
@@ -5602,7 +5572,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             return MakeIntegerSeq(sp, args);
         }
     }
-    addTemplateDeclaration(&t);
+    enclosingDeclarations.Add(args);
     Type* basetp = sp->tp->btp;
     while (basetp->IsPtr())
         basetp = basetp->btp;
@@ -5629,10 +5599,10 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
         rv->sb->mainsym = sp;
         if (!ParseTypeAliasDefaults(rv, args, sp->templateParams, sp->sb->typeAlias))
         {
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
             if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
             {
-                dropStructureDeclaration();
+                enclosingDeclarations.Drop();
             }
             if (checked)
                 args->push_front(old);
@@ -5640,10 +5610,10 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
         }
         SpecifyTemplateSelector(&rv->sb->templateSelector, basetp->sp->sb->templateSelector, false, sp, sp->templateParams,
                                 sp->sb->typeAlias);
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
         if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
         {
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
         }
         if (!inTemplateHeader)
         {
@@ -5725,10 +5695,10 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
                 }
             }
         }
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
         if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
         {
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
         }
         if (checked)
             args->push_front(old);
@@ -5749,10 +5719,10 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
         *last = rv->tp;
         rv->tp = tpr;
     }
-    dropStructureDeclaration();
+    enclosingDeclarations.Drop();
     if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
     {
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
     }
     if (checked)
         args->push_front(old);

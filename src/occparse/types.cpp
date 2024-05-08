@@ -1519,7 +1519,7 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
             {
                 if (!tpc->IsInt())
                     error(ERR_ARRAY_INDEX_INTEGER_TYPE);
-                else if (tpc->type != BasicType::templateparam_ && isintconst(constant) && constant->v.i <= 0 - !!getStructureDeclaration())
+                else if (tpc->type != BasicType::templateparam_ && isintconst(constant) && constant->v.i <= 0 - !!enclosingDeclarations.GetFirst())
                     if (!templateNestingCount)
                         error(ERR_ARRAY_INVALID_INDEX);
                 if (tpc->type == BasicType::templateparam_)
@@ -1723,14 +1723,12 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
     {
         SYMBOL* strSymX = nullptr;
         std::list<NAMESPACEVALUEDATA*>* nsvX = nullptr;
-        STRUCTSYM s, s1;
         bool oldTemplateSpecialization = inTemplateSpecialization;
-        s.tmpl = nullptr;
         inTemplateSpecialization = inTemplateType;
         inTemplateType = false;
+        enclosingDeclarations.Mark();
         if (Optimizer::cparams.prm_cplusplus)
         {
-            STRUCTSYM s;
             bool throughClass = false;
             bool pack = false;
             if (MATCHKW(lex, Keyword::ellipse_))
@@ -1754,8 +1752,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                 {
                     if (strSym)
                         *strSym = strSymX;
-                    s1.str = strSymX;
-                    addStructureDeclaration(&s1);
+                    enclosingDeclarations.Add(strSymX);
                 }
             }
             if (nsv)
@@ -1875,7 +1872,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             std::list<TEMPLATEPARAMPAIR>* templateParams;
             SYMBOL* ssp = strSymX;
             if (!ssp)
-                ssp = getStructureDeclaration();
+                ssp = enclosingDeclarations.GetFirst();
             (*spi)->sb->parentClass = ssp;
             (*spi)->sb->templateLevel = templateNestingCount;
             templateParams = TemplateGetParams(*spi);
@@ -1883,8 +1880,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             (*spi)->sb->parentClass = nullptr;
             if (templateParams)
             {
-                s.tmpl = templateParams;
-                addTemplateDeclaration(&s);
+                enclosingDeclarations.Add(templateParams);
             }
         }
         if (nsvX && nsvX->front()->name)
@@ -1907,10 +1903,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             nameSpaceList.pop_front();
             globalNameSpace->pop_front();
         }
-        if (s.tmpl)
-            dropStructureDeclaration();
-        if (strSymX)
-            dropStructureDeclaration();
+        enclosingDeclarations.Release();
     }
     else
         switch (KW(lex))
@@ -1956,7 +1949,6 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             else if (Optimizer::cparams.prm_cplusplus && consdest)
             {
                 // constructor or destructor name
-                STRUCTSYM s;
                 const char* name;
                 if (consdest == CT_DEST)
                 {
@@ -1973,14 +1965,13 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                 *spi = sp;
                 if (*strSym)
                 {
-                    s.str = *strSym;
-                    addStructureDeclaration(&s);
+                    enclosingDeclarations.Add(*strSym);
                 }
                 lex = prevsym(start);
                 tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                 if (*strSym)
                 {
-                    dropStructureDeclaration();
+                    enclosingDeclarations.Drop();
                 }
             }
             else if (MATCHKW(lex, Keyword::openbr_))
@@ -2785,7 +2776,7 @@ founddecltype:
                 }
                 else
                 {
-                    SYMBOL* ssp = getStructureDeclaration();
+                    SYMBOL* ssp = enclosingDeclarations.GetFirst();
                     Type* tpx = sp->tp->BaseType();
                     foundsomething = true;
                     if (tpx->type == BasicType::templateparam_)
@@ -3113,17 +3104,15 @@ founddecltype:
             }
             else if (strSym && strSym->sb->templateLevel && !templateNestingCount)
             {
-                STRUCTSYM s;
                 tn = PerformDeferredInitialization(strSym->tp, funcsp);
-                s.str = tn->sp;
-                addStructureDeclaration(&s);
+                enclosingDeclarations.Add(tn->sp);
                 sp = classsearch(lex->data->value.s.a, false, false, true);
                 if (sp)
                 {
                     tn = sp->tp;
                     foundsomething = true;
                 }
-                dropStructureDeclaration();
+                enclosingDeclarations.Drop();
                 lex = getsym();
             }
             else if (MATCHKW(lex, Keyword::decltype_))
@@ -3340,10 +3329,8 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
     bool voiderror = false;
     bool hasellipse = false;
     LexList* placeholder = lex;
-    STRUCTSYM s;
     NAMESPACEVALUEDATA internalNS = {};
     SymbolTable<SYMBOL>* symbolTable = symbols.CreateSymbolTable();
-    s.tmpl = nullptr;
     lex = getsym();
     if (tp == nullptr)
         tp = &stdint;

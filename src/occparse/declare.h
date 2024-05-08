@@ -25,17 +25,77 @@
 
 #include <functional>
 #include <map>
-
+#include <stack>
+#include <deque>
 #define CT_NONE 0
 #define CT_CONS 1
 #define CT_DEST 2
 namespace Parser
 {
+    struct EnclosingDeclaration
+    {
+        SYMBOL* str;
+        std::list<TEMPLATEPARAMPAIR>* tmpl;
+    };
+    struct EnclosingDeclarations
+    {
+        typedef std::deque<EnclosingDeclaration>::iterator iterator;
+        iterator begin() { return declarations.begin(); }
+        iterator end() { return declarations.end(); }
+        inline SYMBOL* GetFirst()
+        {
+            for (auto d : declarations)
+            {
+                if (d.str)
+                    return d.str;
+            }
+            return nullptr;
+        }
+        inline void Add(SYMBOL* symbol)
+        {
+            declarations.push_front(EnclosingDeclaration{ symbol, nullptr });
+        }
+        inline void Add(std::list<TEMPLATEPARAMPAIR>* templ)
+        {
+            declarations.push_front(EnclosingDeclaration{ nullptr, templ });
+        }
+        void Drop()
+        {
+            if (!declarations.empty())
+                declarations.pop_front();
+        }
+        inline void Mark()
+        {
+            marks.push(declarations.size());
+        }
+        void Release()
+        {
+            if (marks.empty())
+            {
+                declarations.clear();
+            }
+            else
+            {
+                while (declarations.size() > marks.top())
+                    declarations.pop_front();
+                marks.pop();
+            }
+        }
+        void clear()
+        {
+            declarations.clear();
+            while (!marks.empty()) marks.pop();
+        }
+    private:
+        std::deque<EnclosingDeclaration> declarations;
+        std::stack<unsigned> marks;
+    };
+
 
 extern int inDefaultParam;
 extern char deferralBuf[100000];
 extern SYMBOL* enumSyms;
-extern std::list<STRUCTSYM> structSyms;
+extern EnclosingDeclarations enclosingDeclarations;
 extern int expandingParams;
 extern Optimizer::LIST* deferred;
 extern int structLevel;
@@ -54,10 +114,6 @@ const char* NewUnnamedID(void);
 SYMBOL* SymAlloc(void);
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
-void addStructureDeclaration(STRUCTSYM* decl);
-void addTemplateDeclaration(STRUCTSYM* decl);
-void dropStructureDeclaration(void);
-SYMBOL* getStructureDeclaration(void);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
 LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
                    StorageClass storage_class);

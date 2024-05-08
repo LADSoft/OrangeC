@@ -1204,12 +1204,10 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 {
                     next = exp->left;
                 }
-                STRUCTSYM s;
                 while (tp->IsRef())
                     tp = tp->BaseType()->btp;
                 //                tp = PerformDeferredInitialization(tp, nullptr);
-                s.str = tp->BaseType()->sp;
-                addStructureDeclaration(&s);
+                enclosingDeclarations.Add(tp->BaseType()->sp);
                 while (next->type == ExpressionNode::funcret_)
                     next = next->left;
                 if (next->type == ExpressionNode::thisref_)
@@ -1220,7 +1218,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                     if (!sym)
                     {
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                         break;
                     }
                     CallSite* func = Allocate<CallSite>();
@@ -1234,7 +1232,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     noExcept = oldnoExcept;
                     if (!sym)
                     {
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                         break;
                     }
                     EXPRESSION* temp = varNode(ExpressionNode::func_, sym);
@@ -1249,12 +1247,12 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                     if (!sym)
                     {
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                         break;
                     }
                     tp = sym->tp;
                 }
-                dropStructureDeclaration();
+                enclosingDeclarations.Drop();
                 exp = exp->right;
             }
             if (exp->type != ExpressionNode::dot_ && exp->type != ExpressionNode::pointsto_)
@@ -1884,28 +1882,19 @@ void clearoutDeduction(Type* tp)
         }
     }
 }
-int pushContext(SYMBOL* cls, bool all)
+void pushContext(SYMBOL* cls, bool all)
 {
-    STRUCTSYM* s;
-    int rv;
     if (!cls)
-        return 0;
-    rv = pushContext(cls->sb->parentClass, true);
+        return;
+    pushContext(cls->sb->parentClass, true);
     if (cls->sb->templateLevel)
     {
-        s = Allocate<STRUCTSYM>();
-        s->tmpl = copyParams(cls->templateParams, false);
-        addTemplateDeclaration(s);
-        rv++;
+        enclosingDeclarations.Add(copyParams(cls->templateParams, false));
     }
     if (all)
     {
-        s = Allocate<STRUCTSYM>();
-        s->str = cls;
-        addStructureDeclaration(s);
-        rv++;
+        enclosingDeclarations.Add(cls);
     }
-    return rv;
 }
 void SetTemplateNamespace(SYMBOL* sym)
 {
@@ -2510,9 +2499,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
     if (!templateNestingCount)
     {
         std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
-        STRUCTSYM s;
-        s.tmpl = args;
-        addTemplateDeclaration(&s);
+        enclosingDeclarations.Add(args);
         int k = 0;
         TEMPLATEPARAMPAIR* hold[200];
         if (args)
@@ -2554,7 +2541,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
                 }
             }
         }
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
         return CopyArgsBack(args, hold, k);
     }
     return args;

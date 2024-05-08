@@ -66,7 +66,7 @@ namespace Parser
 int inDefaultParam;
 char deferralBuf[100000];
 SYMBOL* enumSyms;
-std::list<STRUCTSYM> structSyms;
+EnclosingDeclarations enclosingDeclarations;
 int expandingParams;
 Optimizer::LIST* deferred;
 int structLevel;
@@ -85,7 +85,7 @@ void declare_init(void)
 {
     unnamed_tag_id = 1;
     unnamed_id = 1;
-    structSyms.clear();
+    enclosingDeclarations.clear();
     nameSpaceList.clear();
     anonymousNameSpaceName[0] = 0;
     deferred = nullptr;
@@ -199,31 +199,10 @@ SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const ch
     sprintf(buf, "%s_%08x", name, identityValue);
     return makeID(storage_class, tp, spi, litlate(buf));
 }
-void addStructureDeclaration(STRUCTSYM* decl)
-{
-    decl->tmpl = nullptr;
-    structSyms.push_front(*decl);
-}
-void addTemplateDeclaration(STRUCTSYM* decl)
-{
-    decl->str = nullptr;
-    structSyms.push_front(*decl);
-}
-void dropStructureDeclaration(void) 
-{ 
-    structSyms.pop_front(); 
-}
-SYMBOL* getStructureDeclaration(void)
-{
-    for (auto&& l : structSyms)
-        if (l.str)
-            return l.str;
-    return nullptr;
-}
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups)
 {
     SymbolTable<SYMBOL>* table;
-    SYMBOL* ssp = getStructureDeclaration();
+    SYMBOL* ssp = enclosingDeclarations.GetFirst();
 
     if (ssp && sp->sb->parentClass == ssp)
     {
@@ -234,7 +213,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
     {
         table = localNameSpace->front()->syms;
     }
-    else if (Optimizer::cparams.prm_cplusplus && sp->tp->IsFunction() && theCurrentFunc && !getStructureDeclaration())
+    else if (Optimizer::cparams.prm_cplusplus && sp->tp->IsFunction() && theCurrentFunc && !enclosingDeclarations.GetFirst())
     {
         table = localNameSpace->front()->syms;
     }
@@ -332,7 +311,7 @@ LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
                 else if (nsv)
                     *rsp = nsv->front()->tags->Lookup((*rsp)->name);
                 else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
-                    *rsp = getStructureDeclaration()->tp->tags->Lookup((*rsp)->name);
+                    *rsp = enclosingDeclarations.GetFirst()->tp->tags->Lookup((*rsp)->name);
                 else if (storage_class == StorageClass::auto_)
                     *rsp = localNameSpace->front()->tags->Lookup((*rsp)->name);
                 else
@@ -370,7 +349,7 @@ LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
     }
     else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
     {
-        strSym = getStructureDeclaration();
+        strSym = enclosingDeclarations.GetFirst();
         *table = strSym->tp->tags;
     }
     else
@@ -415,11 +394,9 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                     // ok found a pure function, look it up within top and
                     // check to see if it has been overrridden
                     SYMBOL* pq;
-                    STRUCTSYM l;
-                    l.str = (SYMBOL*)top;
-                    addStructureDeclaration(&l);
+                    enclosingDeclarations.Add(top);
                     pq = classsearch(pi->name, false, false, true);
-                    dropStructureDeclaration();
+                    enclosingDeclarations.Drop();
                     if (pq)
                     {
                         for (auto pq1 : *pq->tp->syms)
@@ -943,7 +920,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
 }
 static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
-    STRUCTSYM sl;
     (void)funcsp;
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -953,8 +929,7 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
         lst->data = sp;
     }
     lex = getsym();
-    sl.str = sp;
-    addStructureDeclaration(&sl);
+    enclosingDeclarations.Add(sp);
     sp->sb->declaring = true;
     while (lex && KW(lex) != Keyword::end_)
     {
@@ -986,7 +961,7 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
         }
     }
     sp->sb->declaring = false;
-    dropStructureDeclaration();
+    enclosingDeclarations.Drop();
     sp->sb->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
 
@@ -1356,7 +1331,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         sp->sb->attribs = basisAttribs;
         if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) &&
             (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::semicolon_)))
-            sp->sb->parentClass = getStructureDeclaration();
+            sp->sb->parentClass = enclosingDeclarations.GetFirst();
         if (nsv)
             sp->sb->parentNameSpace = nsv->front()->name;
         else
@@ -1800,7 +1775,7 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
         sp->sb->declfilenum = lex->data->linedata->fileindex;
         if (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_)
-            sp->sb->parentClass = getStructureDeclaration();
+            sp->sb->parentClass = enclosingDeclarations.GetFirst();
         if (nsv)
             sp->sb->parentNameSpace = nsv->front()->name;
         sp->sb->anonymous = charindex == -1;
@@ -3110,9 +3085,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         else if (strSym->tp->type != BasicType::templateselector_ && strSym->tp->type != BasicType::templatedecltype_)
                         {
-                            STRUCTSYM* l = Allocate<STRUCTSYM>();
-                            l->str = strSym;
-                            addStructureDeclaration(l);
+                            enclosingDeclarations.Add(strSym);
                         }
                     }
                     if (Optimizer::cparams.prm_cplusplus && tp1->IsFunction() &&
@@ -3179,7 +3152,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (strSym && strSym->tp->type != BasicType::enum_ && strSym->tp->type != BasicType::templateselector_ &&
                                     strSym->tp->type != BasicType::templatedecltype_)
                                 {
-                                    dropStructureDeclaration();
+                                    enclosingDeclarations.Drop();
                                 }
                                 break;
                             }
@@ -3220,7 +3193,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             sp->sb->anonymous = true;
                             SetLinkerNames(sp, Linkage::c_);
                             sp->sb->parent = funcsp; /* function vars have a parent */
-                            sp->sb->parentClass = getStructureDeclaration();
+                            sp->sb->parentClass = enclosingDeclarations.GetFirst();
                             InsertSymbol(sp, sp->sb->storage_class, linkage, false);
                         }
                         else
@@ -3228,8 +3201,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (asFriend)
                             {
                                 SYMBOL* sym = nullptr;
-                                auto lsit = structSyms.begin();
-                                auto lsite = structSyms.end();
+                                auto lsit = enclosingDeclarations.begin();
+                                auto lsite = enclosingDeclarations.end();
                                 while (lsit != lsite && !(*lsit).str)
                                     ++lsit;
                                 if (strSym && strSym->tp->type != BasicType::enum_ && strSym->tp->type != BasicType::templateselector_ &&
@@ -3265,7 +3238,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (strSym && strSym->tp->type != BasicType::enum_ && strSym->tp->type != BasicType::templateselector_ &&
                                 strSym->tp->type != BasicType::templatedecltype_)
                             {
-                                dropStructureDeclaration();
+                                enclosingDeclarations.Drop();
                             }
                             break;
                         }
@@ -3279,7 +3252,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             tp1 = ResolveTemplateSelectors(funcsp, tp1);
                         if ((tp1->IsStructured() && storage_class != StorageClass::typedef_) || (!templateNestingCount && !structLevel))
                             tp1 = PerformDeferredInitialization(tp1, funcsp);
-                        ssp = getStructureDeclaration();
+                        ssp = enclosingDeclarations.GetFirst();
                         if (!asFriend &&
                             (((storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_) && ssp) || (inTemplate && strSym)))
                         {
@@ -3410,7 +3383,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         if (storage_class == StorageClass::absolute_)
                             sp->sb->value.i = address;
-                        if ((!Optimizer::cparams.prm_cplusplus || !getStructureDeclaration()) && !istype(sp) &&
+                        if ((!Optimizer::cparams.prm_cplusplus || !enclosingDeclarations.GetFirst()) && !istype(sp) &&
                             sp->sb->storage_class != StorageClass::static_ && tp1->BaseType()->IsFunction() && !MATCHKW(lex, Keyword::begin_))
                             sp->sb->storage_class = StorageClass::external_;
                         if (tp1->IsVoid())
@@ -3487,7 +3460,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 }
                                 else
                                 {
-                                    ssp = getStructureDeclaration();
+                                    ssp = enclosingDeclarations.GetFirst();
                                     if (ssp && /*!ssp->tp->syms &&*/ ssp->sb->templateLevel)
                                     {
                                         SYMBOL* ssp2 = FindSpecialization(ssp, ssp->templateParams);
@@ -4030,8 +4003,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (sp->tp->IsFunction())
                             {
                                 SYMBOL* sym = nullptr;
-                                auto lsit = structSyms.begin();
-                                auto lsite = structSyms.end();
+                                auto lsit = enclosingDeclarations.begin();
+                                auto lsite = enclosingDeclarations.end();
                                 while (lsit != lsite && !(*lsit).str)
                                     ++lsit;
                                 if (strSym && strSym->tp->type != BasicType::enum_ && strSym->tp->type != BasicType::templateselector_ &&
@@ -4209,7 +4182,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (MATCHKW(lex, Keyword::begin_))
                             {
                                 if (asFriend)
-                                    sp->sb->friendContext = getStructureDeclaration();
+                                    sp->sb->friendContext = enclosingDeclarations.GetFirst();
                                 if (!templateNestingCount)
                                     sp->sb->hasBody = true;
                                 Type* tp = sp->tp;
@@ -4617,7 +4590,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     }
                     if (strSym && strSym->tp->type != BasicType::enum_ && strSym->tp->type != BasicType::templateselector_)
                     {
-                        dropStructureDeclaration();
+                        enclosingDeclarations.Drop();
                     }
                 } while (!asExpression && !inTemplate && MATCHKW(lex, Keyword::comma_) && (lex = getsym()) != nullptr);
             }

@@ -4014,15 +4014,14 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
     {
         dontRegisterTemplate++;
         LexList* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
-        STRUCTSYM s, t;
         int n = PushTemplateNamespace(funcsp);
+        enclosingDeclarations.Mark();
         if (funcsp->sb->parentClass)
         {
-            s.str = funcsp->sb->parentClass;
-            addStructureDeclaration(&s);
-            t.tmpl = funcsp->sb->parentClass->templateParams;
-            if (t.tmpl)
-                addTemplateDeclaration(&t);
+            enclosingDeclarations.Add(funcsp->sb->parentClass);
+            auto tpl = funcsp->sb->parentClass->templateParams;
+            if (tpl)
+                enclosingDeclarations.Add(tpl);
         }
         Type* tp = nullptr;
         EXPRESSION* exp = nullptr;
@@ -4045,12 +4044,7 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
                 funcsp->sb->noExcept = true;
         }
         SetAlternateLex(nullptr);
-        if (funcsp->sb->parentClass)
-        {
-            if (t.tmpl)
-                dropStructureDeclaration();
-            dropStructureDeclaration();
-        }
+        enclosingDeclarations.Release();
         PopTemplateNamespace(n);
         funcsp->sb->deferredNoexcept = (LexList*)-1;
         dontRegisterTemplate--;

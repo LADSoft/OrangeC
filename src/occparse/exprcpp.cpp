@@ -214,7 +214,7 @@ void getThisType(SYMBOL* sym, Type** tp)
 EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, bool toError)
 {
     EXPRESSION* en;
-    SYMBOL* enclosing = getStructureDeclaration();
+    SYMBOL* enclosing = enclosingDeclarations.GetFirst();
 
     if (enclosing && (!funcsp || (funcsp->sb->storage_class != StorageClass::global_ &&
                                   funcsp->sb->storage_class != StorageClass::static_)))  // lambdas will be caught by this too
@@ -1445,11 +1445,9 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
         return false;
     if ((*tp)->IsStructured())
     {
-        STRUCTSYM l;
-        l.str = (SYMBOL*)(*tp)->BaseType()->sp;
-        addStructureDeclaration(&l);
+        enclosingDeclarations.Add((*tp)->BaseType()->sp);
         s2 = classsearch(name, false, false, true);
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
         funcparams->thistp = Type::MakeType(BasicType::pointer_, (*tp)->BaseType());
         funcparams->thisptr = *exp;
     }
@@ -1506,7 +1504,6 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
     const char* name = overloadNameTab[(int)kw - (int)Keyword::new_ + CI_NEW];
     Type* tpin = *tp;
     Type* tpx;
-    STRUCTSYM l;
     if (!*tp)
         return false;
     Type* tpClean = *tp;
@@ -1555,12 +1552,12 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
         default:
             break;
     }
+    enclosingDeclarations.Mark();
     // next find some occurrance in the class or struct
     if ((*tp)->IsStructured())
     {
         int n;
-        l.str = (SYMBOL*)(*tp)->BaseType()->sp;
-        addStructureDeclaration(&l);
+        enclosingDeclarations.Add((*tp)->BaseType()->sp);
         s2 = classsearch(name, false, false, true);
         n = PushTemplateNamespace((*tp)->BaseType()->sp);  // used for more than just templates here
         s4 = namespacesearch(name, globalNameSpace, false, false);
@@ -1568,7 +1565,6 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
     }
     else
     {
-        l.str = nullptr;
         if (tpClean->BaseType()->type == BasicType::enum_ && tpClean->sp)
         {
             std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
@@ -1609,8 +1605,7 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
     // quit if there are no matches because we will use the default...
     if (!s1 && !s2 && !s4 && !s5)
     {
-        if (l.str)
-            dropStructureDeclaration();
+        enclosingDeclarations.Release();
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
@@ -1774,14 +1769,12 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
         expression_arguments(nullptr, funcsp, tp, exp, 0);
         if (s3->sb->defaulted && kw == Keyword::assign_)
             createAssignment(s3->sb->parentClass, s3);
-        if (l.str)
-            dropStructureDeclaration();
+        enclosingDeclarations.Release();
         CheckCalledException(s3, funcparams->thisptr);
         DestructParams(funcparams->arguments);
         return true;
     }
-    if (l.str)
-        dropStructureDeclaration();
+    enclosingDeclarations.Release();
     return false;
 }
 LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags)
@@ -1914,12 +1907,9 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
     {
         if ((*tp)->IsStructured())
         {
-            STRUCTSYM l;
-
-            l.str = (SYMBOL*)(*tp)->BaseType()->sp;
-            addStructureDeclaration(&l);
+            enclosingDeclarations.Add((*tp)->BaseType()->sp);
             s1 = classsearch(name, false, false, true);
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
         }
     }
     if (!s1)
@@ -2149,11 +2139,9 @@ LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
     {
         if ((*tp)->IsStructured())
         {
-            STRUCTSYM l;
-            l.str = (SYMBOL*)(*tp)->BaseType()->sp;
-            addStructureDeclaration(&l);
+            enclosingDeclarations.Add((*tp)->BaseType()->sp);
             s1 = classsearch(name, false, false, true);
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
         }
     }
     if (!s1)

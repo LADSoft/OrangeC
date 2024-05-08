@@ -62,7 +62,8 @@ static std::unordered_set<SYMBOL*> enteredInlines;
 static std::list<SYMBOL*> inlines, inlineVTabs, inlineData, inlineRttis;
 static std::unordered_map<SYMBOL *, SYMBOL*> contextMap;
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
-static int PushInline(SYMBOL* sym, bool traceback);
+static void PushInline(SYMBOL* sym, bool traceback);
+static inline void PopInline() { enclosingDeclarations.Release(); }
 static std::list<std::tuple<int, Optimizer::SimpleSymbol*, int, int>> inlineMemberPtrData;
 static std::list<std::pair<SYMBOL*, EXPRESSION *>> inlineLocalUninitializers;
 
@@ -126,8 +127,7 @@ void dumpInlines(void)
                                 int n = PushTemplateNamespace(sym);
                                 if (sym->sb->parentClass)
                                     SwapMainTemplateArgs(sym->sb->parentClass);
-                                structSyms.clear();
-//                                PushInline(sym, true);
+                                enclosingDeclarations.clear();
                                 if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ ||
                                      sym->sb->forcedefault) &&
                                     CompileInline(sym, true))
@@ -139,7 +139,7 @@ void dumpInlines(void)
                                     sym->sb->didinline = true;
                                 }
                                 instantiationList.clear();
-                                structSyms.clear();
+                                enclosingDeclarations.clear();
                                 if (sym->sb->parentClass)
                                     SwapMainTemplateArgs(sym->sb->parentClass);
                                 PopTemplateNamespace(n);
@@ -234,23 +234,20 @@ void dumpInlines(void)
                             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                             if (origsym->sb->deferredCompile)
                             {
-                                STRUCTSYM s1, s;
                                 LexList* lex;
                                 SYMBOL* pc = sym;
                                 while (pc->sb->parentClass)
                                     pc = pc->sb->parentClass;
-                                s1.str = sym->sb->parentClass;
-                                addStructureDeclaration(&s1);
-                                s.tmpl = sym->templateParams;
-                                addTemplateDeclaration(&s);
+                                enclosingDeclarations.Add(sym->sb->parentClass);
+                                enclosingDeclarations.Add(sym->templateParams);
                                 int n = PushTemplateNamespace(pc);
                                 lex = SetAlternateLex(origsym->sb->deferredCompile);
                                 sym->sb->init = nullptr;
                                 lex = initialize(lex, nullptr, sym, StorageClass::global_, true, false, _F_NOCONSTGEN);
                                 SetAlternateLex(nullptr);
                                 PopTemplateNamespace(n);
-                                dropStructureDeclaration();
-                                dropStructureDeclaration();
+                                enclosingDeclarations.Drop();
+                                enclosingDeclarations.Drop();
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
                             Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
@@ -437,8 +434,9 @@ SYMBOL* getvc1Thunk(int offset)
     }
     return rv;
 }
-static int PushInline(SYMBOL* sym, bool traceback)
+static void PushInline(SYMBOL* sym, bool traceback)
 {
+    enclosingDeclarations.Mark();
     std::stack<SYMBOL*> reverseOrder;
     reverseOrder.push(sym);
     if (traceback)
@@ -458,36 +456,25 @@ static int PushInline(SYMBOL* sym, bool traceback)
             }
         }
     }
-    int n = 0;
     while (!reverseOrder.empty())
     {
         sym = reverseOrder.top();
         reverseOrder.pop();
         EnterInstantiation(nullptr, sym);
-        STRUCTSYM t, s, r;
-        t.tmpl = nullptr;
-        r.tmpl = nullptr;
         if (sym->templateParams)
         {
-            r.tmpl = sym->templateParams;
-            addTemplateDeclaration(&r);
-            n++;
+            enclosingDeclarations.Add(sym->templateParams);
         }
         if (!sym->sb->parentClass && sym->sb->friendContext)
         {
-            s.str = sym->sb->friendContext;
-            addStructureDeclaration(&s);
-            n++;
-            SYMBOL* spt = s.str->tp->BaseType()->sp;
-            t.tmpl = spt->templateParams;
-            if (t.tmpl)
+            enclosingDeclarations.Add(sym->sb->friendContext);
+            SYMBOL* spt = sym->sb->friendContext->tp->BaseType()->sp;
+            if (spt->templateParams)
             {
-                addTemplateDeclaration(&t);
-                n++;
+                enclosingDeclarations.Add(spt->templateParams);
             }
         }
     }
-    return n;
 }
 bool CompileInline(SYMBOL* sym, bool toplevel)
 {
@@ -510,16 +497,16 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
         if (sym->sb->specialized && sym->templateParams->size() == 1)
             sym->sb->instantiated = true;
         int n1 = 0;
-        auto hold = std::move(structSyms);
+        auto hold = std::move(enclosingDeclarations);
         auto hold2 = std::move(instantiationList);
-        n1 = PushInline(sym, true);
+        PushInline(sym, true);
         ++instantiatingTemplate;
         deferredCompileOne(sym);
         --instantiatingTemplate;
         instantiationList.clear();
         instantiationList = std::move(hold2);
-        structSyms.clear();
-        structSyms = std::move(hold);
+        enclosingDeclarations.clear();
+        enclosingDeclarations = std::move(hold);
         anonymousNotAlloc = oldanon;
         inConstantExpression = oldconst;
         expandingParams = oldExpandingParams;
@@ -533,10 +520,9 @@ static void GenInline(SYMBOL* sym)
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
     int n = PushTemplateNamespace(sym);
-    int n1 = PushInline(sym, false);
+    PushInline(sym, false);
     genfunc(sym, true);
-    for (int i = 0; i < n1; i++)
-        dropStructureDeclaration();
+    PopInline();
     PopTemplateNamespace(n);
 }
 void InsertInline(SYMBOL* sym)

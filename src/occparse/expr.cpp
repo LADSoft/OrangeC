@@ -608,7 +608,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         else
                         {
                             SYMBOL* rv = nullptr;
-                            for (auto&& s : structSyms)
+                            for (auto&& s : enclosingDeclarations)
                             {
                                 if (rv)
                                     break;
@@ -1462,11 +1462,9 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             SYMBOL* sp2 = nullptr;
             if (Optimizer::cparams.prm_cplusplus)
             {
-                STRUCTSYM l;
-                l.str = (*tp)->BaseType()->sp;
-                addStructureDeclaration(&l);
+                enclosingDeclarations.Add((*tp)->BaseType()->sp);
                 lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr, 0);
-                dropStructureDeclaration();
+                enclosingDeclarations.Drop();
             }
             else
             {
@@ -1596,14 +1594,14 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                     }
                     {
                         AccessLevel access = AccessLevel::public_;
-                        SYMBOL* ssp = getStructureDeclaration();
+                        SYMBOL* ssp = enclosingDeclarations.GetFirst();
                         while (ssp)
                         {
                             if (ssp == typ2->BaseType()->sp)
                                 access = AccessLevel::protected_;
                             ssp = ssp->sb->parentClass;
                         }
-                        ssp = getStructureDeclaration();
+                        ssp = enclosingDeclarations.GetFirst();
                         if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sp2, funcsp, *exp, true))
                         {
                             errorsym(ERR_CANNOT_ACCESS, sp2);
@@ -3989,7 +3987,7 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
             if (rv->back().first)
             {
                 TEMPLATEPARAMPAIR* rv1 = nullptr;
-                for (auto&& s : structSyms)
+                for (auto&& s : enclosingDeclarations)
                 {
                     if (s.tmpl)
                     {
@@ -4176,7 +4174,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         }
         else
         {
-            SYMBOL* ss = getStructureDeclaration();
+            SYMBOL* ss = enclosingDeclarations.GetFirst();
             funcparams = exp_in->v.func;
             hasThisPtr = funcparams->thisptr != nullptr;
             if ((*tp)->BaseType()->sp)
@@ -4432,7 +4430,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             }
             else
             {
-                if (!getStructureDeclaration() && !tp_cpp->IsPtr() && !hasThisPtr)
+                if (!enclosingDeclarations.GetFirst() && !tp_cpp->IsPtr() && !hasThisPtr)
                     errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
                 operands = false;
             }
@@ -6146,7 +6144,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             *tp = &stdint;
                         }
                     }
-                    else if (getStructureDeclaration() && funcsp && funcsp->sb->parentClass)
+                    else if (enclosingDeclarations.GetFirst() && funcsp && funcsp->sb->parentClass)
                     {
                         getThisType(funcsp, tp);
                         *exp = varNode(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr

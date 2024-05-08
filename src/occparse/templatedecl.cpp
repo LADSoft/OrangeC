@@ -409,7 +409,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
     {
         TEMPLATEPARAMPAIR* cptr = nullptr;
 
-        for (auto&& s : structSyms)
+        for (auto&& s : enclosingDeclarations)
         {
             if (s.tmpl)
             {
@@ -510,11 +510,9 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                         for (++sel, ++sel; sel != sele; ++sel)
                         {
                             base = base1;
-                            STRUCTSYM ss;
-                            ss.str = base->BaseType()->sp;
-                            addStructureDeclaration(&ss);
+                            enclosingDeclarations.Add(base->BaseType()->sp);
                             s = classsearch(sel->name, false, false, false);
-                            dropStructureDeclaration();
+                            enclosingDeclarations.Drop();
                             auto it1 = sel;
                             ++it1;
                             // could be optimized
@@ -901,7 +899,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                     start = lex;
                     if (ISID(lex))
                     {
-                        for (auto&& s : structSyms)
+                        for (auto&& s : enclosingDeclarations)
                         {
                             if (s.tmpl)
                             {
@@ -1526,7 +1524,7 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
 {
     SYMBOL* found1 = nullptr;
     SYMBOL* sym = (SYMBOL*)overloads->tp->syms->front();
-    SYMBOL* sd = getStructureDeclaration();
+    SYMBOL* sd = enclosingDeclarations.GetFirst();
     saveParams(&sd, 1);
     if (sym->sb->templateLevel && !sym->sb->instantiated &&
         (!sym->sb->parentClass || sym->sb->parentClass->sb->templateLevel != sym->sb->templateLevel))
@@ -1616,8 +1614,7 @@ static SYMBOL* templateParamId(Type* tp, const char* name, int tag )
 static LexList* TemplateHeader(LexList* lex, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
 {
     inTemplateHeader++;
-    STRUCTSYM* structSyms = nullptr;
-    std::list<TEMPLATEPARAMPAIR>* lst = args;
+    std::list<TEMPLATEPARAMPAIR>* lst = args, *added = nullptr;
     if (needkw(&lex, Keyword::lt_))
     {
         while (1)
@@ -1626,14 +1623,10 @@ static LexList* TemplateHeader(LexList* lex, SYMBOL* funcsp, std::list<TEMPLATEP
                 break;
             args->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
             lex = TemplateArg(lex, funcsp, args->back(), &lst, true);
-            if (args)
+            if (args && !added)
             {
-                if (!structSyms)
-                {
-                    structSyms = Allocate<STRUCTSYM>();
-                    structSyms->tmpl = args;
-                    addTemplateDeclaration(structSyms);
-                }
+                added = args;
+                enclosingDeclarations.Add(added);
             }
             if (!MATCHKW(lex, Keyword::comma_))
                 break;
@@ -1765,7 +1758,7 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             arg.second->byTemplate.args = templateParamPairListFactory.CreateList();
             lex = TemplateHeader(lex, funcsp, arg.second->byTemplate.args);
             if (arg.second->byTemplate.args)
-                dropStructureDeclaration();
+                enclosingDeclarations.Drop();
             arg.second->packed = false;
             if (!MATCHKW(lex, Keyword::class_) && !MATCHKW(lex, Keyword::typename_))
             {
@@ -2481,7 +2474,7 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
     }
     else
     {
-        ssp = getStructureDeclaration();
+        ssp = enclosingDeclarations.GetFirst();
         if (ssp)
         {
             spi = ssp->tp->syms->Lookup(sym->name);
@@ -2874,11 +2867,9 @@ static void MarkDllLinkage(SYMBOL* sp, Linkage linkage)
 }
 static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMESPACEVALUEDATA*>* nsv, bool isExtern)
 {
-    STRUCTSYM s;
     if (strSym)
     {
-        s.str = strSym;
-        addStructureDeclaration(&s);
+        enclosingDeclarations.Add(strSym);
     }
     if (tp->IsFunction())
     {
@@ -2918,7 +2909,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
         }
         else
         {
-            ssp = getStructureDeclaration();
+            ssp = enclosingDeclarations.GetFirst();
             if (ssp)
                 spi = ssp->tp->syms->Lookup(sym->name);
             else
@@ -2952,7 +2943,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
     }
     if (strSym)
     {
-        dropStructureDeclaration();
+        enclosingDeclarations.Drop();
     }
 }
 bool inCurrentTemplate(const char* name)
@@ -2967,7 +2958,7 @@ bool inCurrentTemplate(const char* name)
 }
 bool definedInTemplate(const char* name)
 {
-    for (auto&& s : structSyms)
+    for (auto&& s : enclosingDeclarations)
     {
         if (s.str && s.str->templateParams)
             for (auto&& t : *s.str->templateParams)
@@ -3100,7 +3091,7 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
             }
         }
         while (count--)
-            dropStructureDeclaration();
+            enclosingDeclarations.Drop();
         templateHeaderCount = lasttemplateHeaderCount;
         (*currents->plast) = nullptr;
         currents->ptail = currents->plast;

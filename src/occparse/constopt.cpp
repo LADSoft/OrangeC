@@ -2433,16 +2433,14 @@ int opt0(EXPRESSION** node)
                     {
                         next = next->left;
                     }
-                    STRUCTSYM s;
-                    s.str = tp->BaseType()->sp;
-                    addStructureDeclaration(&s);
+                    enclosingDeclarations.Add(tp->BaseType()->sp);
                     if (next->type == ExpressionNode::func_)
                     {
                         Type* ctype = tp;
                         SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                         if (!sym)
                         {
-                            dropStructureDeclaration();
+                            enclosingDeclarations.Drop();
                             break;
                         }
                         CallSite* func = Allocate<CallSite>();
@@ -2453,7 +2451,7 @@ int opt0(EXPRESSION** node)
                         sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                         if (!sym)
                         {
-                            dropStructureDeclaration();
+                            enclosingDeclarations.Drop();
                             break;
                         }
                         EXPRESSION* temp = varNode(ExpressionNode::func_, sym);
@@ -2469,7 +2467,7 @@ int opt0(EXPRESSION** node)
                         SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                         if (!sym)
                         {
-                            dropStructureDeclaration();
+                            enclosingDeclarations.Drop();
                             break;
                         }
                         EXPRESSION* temp = intNode(ExpressionNode::c_i_, 0);
@@ -2482,7 +2480,7 @@ int opt0(EXPRESSION** node)
                             deref(sym->tp, &newExpr);
                         tp = sym->tp;
                     }
-                    dropStructureDeclaration();
+                    enclosingDeclarations.Drop();
                     ep = ep->right;
                 }
                 if (ep->type == ExpressionNode::dot_ || ep->type == ExpressionNode::pointsto_)
@@ -2602,7 +2600,6 @@ int opt0(EXPRESSION** node)
                                 funcparams.templateParams = (*find).templateParams;
                                 funcparams.ascall = true;
 
-                                STRUCTSYM t = { };
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, 0);
                                 if (sp1)
                                 {
@@ -2644,7 +2641,7 @@ int opt0(EXPRESSION** node)
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
                 if (!found || !found->second->byNonType.val)
                     found = nullptr;
-                for (auto&& search : structSyms)
+                for (auto&& search : enclosingDeclarations)
                 {
                     if (found)
                         break;

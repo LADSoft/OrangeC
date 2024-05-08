@@ -1332,14 +1332,14 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                 }
                 if (found1)
                 {
-                    int pushCount = pushContext(found1, false);
+                    enclosingDeclarations.Mark();
+                    pushContext(found1, false);
                     if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
                     {
                         found1 = TemplateFunctionInstantiate(found1, false);
                     }
                     CompileInline(found1, false);
-                    while (pushCount--)
-                        dropStructureDeclaration();
+                    enclosingDeclarations.Release();
                 }
             }
             if (found1 && found1->sb->inlineFunc.stmt)

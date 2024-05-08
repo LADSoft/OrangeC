@@ -944,11 +944,6 @@ typedef struct _templateSelector
     int asCall : 1;
 } TEMPLATESELECTOR;
 
-typedef struct _structSym
-{
-    SYMBOL* str;
-    std::list<TEMPLATEPARAMPAIR>* tmpl;
-} STRUCTSYM;
 struct Argument
 {
     Type* tp;

@@ -368,7 +368,6 @@ static OCODE* UnstreamAssemblyInstruction()
     OCODE* rv = Allocate<OCODE>();
 #ifndef ORANGE_NO_INASM
     rv->opcode = (e_opcode)UnstreamIndex();
-#endif
     rv->diag = UnstreamIndex();
     rv->noopt = UnstreamIndex();
     rv->size = UnstreamIndex();
@@ -376,6 +375,9 @@ static OCODE* UnstreamAssemblyInstruction()
     rv->oper1 = UnstreamAssemblyOperand();
     rv->oper2 = UnstreamAssemblyOperand();
     rv->oper3 = UnstreamAssemblyOperand();
+#else
+    memset(rv,0,sizeof(OCODE));
+#endif
     return rv;
 }
 static Optimizer::IMODE* UnstreamOperand()

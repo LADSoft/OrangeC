@@ -2020,8 +2020,8 @@ static EXPRESSION* aliasToTemp(SYMBOL* funcsp, EXPRESSION* in)
                 if (srp && srp->sp->sb->structuredAliasType)
                 {
                     auto expx = tempVar(srp);
-                    expx = exprNode(ExpressionNode::assign_, expx, in);
-                    in = exprNode(ExpressionNode::comma_, expx, expx->left);
+                    expx = MakeExpression(ExpressionNode::assign_, expx, in);
+                    in = MakeExpression(ExpressionNode::comma_, expx, expx->left);
                 }
             }
         }
@@ -3526,7 +3526,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             optimize_for_constants(&node);
             if (node->type == ExpressionNode::dot_ || node->type == ExpressionNode::pointsto_)
             {
-                node = intNode(ExpressionNode::c_i_, 0);
+                node = MakeIntExpression(ExpressionNode::c_i_, 0);
                 diag("gen_expr: member reference not valid");
             }
             rv = gen_expr(funcsp, node, flags, size);

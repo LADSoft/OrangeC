@@ -1260,7 +1260,7 @@ void dooper(EXPRESSION** node, int mode)
 
 void addaside(EXPRESSION* node)
 {
-    *asidetail = exprNode(ExpressionNode::comma_, node);
+    *asidetail = MakeExpression(ExpressionNode::comma_, node);
     asidetail = &(*asidetail)->right;
 }
 
@@ -1430,7 +1430,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
-                *node = intNode(ep->left->type, -ep->left->v.i);
+                *node = MakeIntExpression(ep->left->type, -ep->left->v.i);
                 rv = true;
             }
             else if (ep->left->type == ExpressionNode::c_bitint_ || ep->left->type == ExpressionNode::c_ubitint_)
@@ -1453,7 +1453,7 @@ int opt0(EXPRESSION** node)
             }
             else if (isfloatconst(ep->left))
             {
-                *node = intNode(ep->left->type, 0);
+                *node = MakeIntExpression(ep->left->type, 0);
                 (*node)->v.f = ep->left->v.f;
                 (*node)->v.f->Negate();
                 rv = true;
@@ -1531,7 +1531,7 @@ int opt0(EXPRESSION** node)
                         if (ep->left->type != ExpressionNode::auto_ && ep->type != ExpressionNode::structadd_)
                         {
                             if (ep->type == ExpressionNode::sub_)
-                                *node = exprNode(ExpressionNode::uminus_, ep->right);
+                                *node = MakeExpression(ExpressionNode::uminus_, ep->right);
                             else
                                 *node = ep->right;
                             rv = true;
@@ -1543,7 +1543,7 @@ int opt0(EXPRESSION** node)
                     {
                         if (ep->type == ExpressionNode::sub_)
                         {
-                            *node = exprNode(ExpressionNode::uminus_, ep->right);
+                            *node = MakeExpression(ExpressionNode::uminus_, ep->right);
                         }
                         *node = ep->right;
                     }
@@ -1629,7 +1629,7 @@ int opt0(EXPRESSION** node)
                         else if (val == 1)
                             *node = ep->right;
                         else if (val == -1)
-                            *node = exprNode(negtype, ep->right);
+                            *node = MakeExpression(negtype, ep->right);
                         else
                         {
                             long long i = Optimizer::pwrof2(val);
@@ -1674,7 +1674,7 @@ int opt0(EXPRESSION** node)
                         if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->right;
                     else if (dval.ValueIsNegative() && dval.ValueIsOne())
-                        *node = exprNode(negtype, ep->right);
+                        *node = MakeExpression(negtype, ep->right);
                     else
                         dooper(node, mode);
                     rv = true;
@@ -1694,7 +1694,7 @@ int opt0(EXPRESSION** node)
                         }
                         else if (val == -1)
                         {
-                            *node = exprNode(negtype, ep->left);
+                            *node = MakeExpression(negtype, ep->left);
                         }
                         else
                         {
@@ -1734,7 +1734,7 @@ int opt0(EXPRESSION** node)
                     }
                     else if (dval.ValueIsNegative() && dval.ValueIsOne())
                     {
-                        *node = exprNode(negtype, ep->left);
+                        *node = MakeExpression(negtype, ep->left);
                     }
                     else
                         dooper(node, mode);
@@ -1748,7 +1748,7 @@ int opt0(EXPRESSION** node)
                             *node = ep->left;
                         else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         {
-                            *node = exprNode(negtype, ep->left);
+                            *node = MakeExpression(negtype, ep->left);
                         }
                         else
                             dooper(node, mode);
@@ -1790,7 +1790,7 @@ int opt0(EXPRESSION** node)
                         if (val == 1)
                             *node = ep->left;
                         else if (val == -1)
-                            *node = exprNode(negtype, ep->left);
+                            *node = MakeExpression(negtype, ep->left);
                     }
                     dooper(node, mode);
                     rv = true;
@@ -1800,7 +1800,7 @@ int opt0(EXPRESSION** node)
                     if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->left;
                     if (dval.ValueIsNegative() && dval.ValueIsOne())
-                        *node = exprNode(negtype, ep->left);
+                        *node = MakeExpression(negtype, ep->left);
                     else
                         dooper(node, mode);
                     rv = true;
@@ -1813,7 +1813,7 @@ int opt0(EXPRESSION** node)
                             *node = ep->left;
                         else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         {
-                            *node = exprNode(negtype, ep->left);
+                            *node = MakeExpression(negtype, ep->left);
                         }
                         else
                             dooper(node, mode);
@@ -1969,7 +1969,7 @@ int opt0(EXPRESSION** node)
                 if (!ep->left->v.i)
                 {
                     rv = true;
-                    *node = intNode(ExpressionNode::c_i_, 0);
+                    *node = MakeIntExpression(ExpressionNode::c_i_, 0);
                     break;
                 }
                 else
@@ -1990,7 +1990,7 @@ int opt0(EXPRESSION** node)
                         if (isintconst(ep->right))
                         {
                             rv = true;
-                            *node = intNode(ExpressionNode::c_i_, !!ep->right->v.i);
+                            *node = MakeIntExpression(ExpressionNode::c_i_, !!ep->right->v.i);
                         }
                         else
                             switch (ep->right->type)
@@ -2001,7 +2001,7 @@ int opt0(EXPRESSION** node)
                                 case ExpressionNode::labcon_:
                                 case ExpressionNode::auto_:
                                     /* assumes nothing can be relocated to address 0 */
-                                    *node = intNode(ExpressionNode::c_i_, 1);
+                                    *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                                     rv = true;
                                     break;
                                 default:
@@ -2020,7 +2020,7 @@ int opt0(EXPRESSION** node)
                 if (ep->left->v.i)
                 {
                     rv = true;
-                    *node = intNode(ExpressionNode::c_i_, 1);
+                    *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                     break;
                 }
                 else
@@ -2037,7 +2037,7 @@ int opt0(EXPRESSION** node)
                     case ExpressionNode::labcon_:
                     case ExpressionNode::auto_:
                         /* assumes nothing can be relocated to address 0 */
-                        *node = intNode(ExpressionNode::c_i_, 1);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                         rv = true;
                         break;
                     default: {
@@ -2048,12 +2048,12 @@ int opt0(EXPRESSION** node)
                             if (ep->right->v.i)
                             {
                                 rv = true;
-                                *node = intNode(ExpressionNode::c_i_, 1);
+                                *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                             }
                             else if (isintconst(ep->left) && !ep->left->v.i)
                             {
                                 rv = true;
-                                *node = intNode(ExpressionNode::c_i_, 0);
+                                *node = MakeIntExpression(ExpressionNode::c_i_, 0);
                             }
                         }
                         else
@@ -2065,7 +2065,7 @@ int opt0(EXPRESSION** node)
                                 case ExpressionNode::labcon_:
                                 case ExpressionNode::auto_:
                                     /* assumes nothing can be relocated to address 0 */
-                                    *node = intNode(ExpressionNode::c_i_, 1);
+                                    *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                                     rv = true;
                                     break;
                                 default:
@@ -2078,12 +2078,12 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
-                *node = intNode(ExpressionNode::c_i_, (!ep->left->v.i));
+                *node = MakeIntExpression(ExpressionNode::c_i_, (!ep->left->v.i));
                 rv = true;
             }
             else if (isfloatconst(ep->left))
             {
-                *node = intNode(ExpressionNode::c_i_, ep->left->v.f->ValueIsZero());
+                *node = MakeIntExpression(ExpressionNode::c_i_, ep->left->v.f->ValueIsZero());
                 rv = true;
             }
             break;
@@ -2094,12 +2094,12 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, (ep->left->v.i == ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (ep->left->v.i == ep->right->v.i));
                     rv = true;
 
                     break;
                 case 4:
-                    *node = intNode(ExpressionNode::c_i_, (*ep->left->v.f == *ep->right->v.f));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (*ep->left->v.f == *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2112,11 +2112,11 @@ int opt0(EXPRESSION** node)
                     {
                         if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
                         {
-                            *node = intNode(ExpressionNode::c_i_, 0);
+                            *node = MakeIntExpression(ExpressionNode::c_i_, 0);
                         }
                         else
                         {
-                            *node = intNode(ExpressionNode::c_i_, 1);
+                            *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                         }
                     }
                 }
@@ -2130,11 +2130,11 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, (ep->left->v.i != ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (ep->left->v.i != ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(ExpressionNode::c_i_, (*ep->left->v.f != *ep->right->v.f));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (*ep->left->v.f != *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2145,11 +2145,11 @@ int opt0(EXPRESSION** node)
                     {
                         if (rv1->v.sp != rv2->v.sp || offset1 != offset2)
                         {
-                            *node = intNode(ExpressionNode::c_i_, 1);
+                            *node = MakeIntExpression(ExpressionNode::c_i_, 1);
                         }
                         else
                         {
-                            *node = intNode(ExpressionNode::c_i_, 0);
+                            *node = MakeIntExpression(ExpressionNode::c_i_, 0);
                         }
                         rv = true;
                     }
@@ -2164,11 +2164,11 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, (ep->left->v.i < ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (ep->left->v.i < ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(ExpressionNode::c_i_, (*ep->left->v.f < *ep->right->v.f));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (*ep->left->v.f < *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2177,7 +2177,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 < offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 < offset2);
                         rv = true;
                     }
                 }
@@ -2191,11 +2191,11 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, (ep->left->v.i <= ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (ep->left->v.i <= ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(ExpressionNode::c_i_, (*ep->left->v.f <= *ep->right->v.f));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (*ep->left->v.f <= *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2204,7 +2204,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 <= offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 <= offset2);
                         rv = true;
                     }
                 }
@@ -2218,7 +2218,7 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2227,7 +2227,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 > offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 > offset2);
                         rv = true;
                     }
                 }
@@ -2241,7 +2241,7 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2250,7 +2250,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 >= offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 >= offset2);
                         rv = true;
                     }
                 }
@@ -2264,7 +2264,7 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2273,7 +2273,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 < offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 < offset2);
                         rv = true;
                     }
                 }
@@ -2287,7 +2287,7 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2296,7 +2296,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 <= offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 <= offset2);
                         rv = true;
                     }
                 }
@@ -2310,11 +2310,11 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, (ep->left->v.i > ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (ep->left->v.i > ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(ExpressionNode::c_i_, (*ep->left->v.f > *ep->right->v.f));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2323,7 +2323,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 > offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 > offset2);
                         rv = true;
                     }
                 }
@@ -2337,11 +2337,11 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = intNode(ExpressionNode::c_i_, (ep->left->v.i >= ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (ep->left->v.i >= ep->right->v.i));
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(ExpressionNode::c_i_, (*ep->left->v.f > *ep->right->v.f));
+                    *node = MakeIntExpression(ExpressionNode::c_i_, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
                 default: {
@@ -2350,7 +2350,7 @@ int opt0(EXPRESSION** node)
                     auto rv2 = relptr(ep->right, offset2, true);
                     if (rv1 && rv2 && rv1->v.sp == rv2->v.sp)
                     {
-                        *node = intNode(ExpressionNode::c_i_, offset1 >= offset2);
+                        *node = MakeIntExpression(ExpressionNode::c_i_, offset1 >= offset2);
                         rv = true;
                     }
                 }
@@ -2454,8 +2454,8 @@ int opt0(EXPRESSION** node)
                             enclosingDeclarations.Drop();
                             break;
                         }
-                        EXPRESSION* temp = funcNode(next->v.func);
-                        temp = exprNode(ExpressionNode::thisref_, temp);
+                        EXPRESSION* temp = MakeExpression(next->v.func);
+                        temp = MakeExpression(ExpressionNode::thisref_, temp);
                         temp->v.t.thisptr = newExpr;
                         temp->v.t.tp = tp;
                         newExpr = temp;
@@ -2469,12 +2469,12 @@ int opt0(EXPRESSION** node)
                             enclosingDeclarations.Drop();
                             break;
                         }
-                        EXPRESSION* temp = intNode(ExpressionNode::c_i_, 0);
+                        EXPRESSION* temp = MakeIntExpression(ExpressionNode::c_i_, 0);
                         if (sym->sb->parentClass != tp->BaseType()->sp)
                         {
                             temp = baseClassOffset(tp->BaseType()->sp, sym->sb->parentClass, temp);
                         }
-                        newExpr = exprNode(ExpressionNode::structadd_, newExpr, temp);
+                        newExpr = MakeExpression(ExpressionNode::structadd_, newExpr, temp);
                         if (!sym->tp->IsStructured())
                             deref(sym->tp, &newExpr);
                         tp = sym->tp;
@@ -2517,7 +2517,7 @@ int opt0(EXPRESSION** node)
                 {
                     n = (*node)->v.templateParam->second->byPack.pack->size();
                 }
-                *node = intNode(ExpressionNode::c_i_, n);
+                *node = MakeIntExpression(ExpressionNode::c_i_, n);
             }
             break;
         case ExpressionNode::templateselector_:
@@ -2593,7 +2593,7 @@ int opt0(EXPRESSION** node)
                                         i->tp = SynthesizeType(i->tp, nullptr, false);
                                     }
                                 Type* ctype = sym->tp;
-                                EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+                                EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                                 CallSite funcparams = { };
                                 funcparams.arguments = (*find).arguments;
                                 funcparams.templateParams = (*find).templateParams;
@@ -2858,7 +2858,7 @@ int fold_const(EXPRESSION* node)
                             enswap(&node->left, &node->right);
                             enswap(&node->right->left, &node->left);
                             node->type = ExpressionNode::add_;
-                            node->right->left = exprNode(ExpressionNode::uminus_, node->right->left);
+                            node->right->left = MakeExpression(ExpressionNode::uminus_, node->right->left);
                             rv = true;
                         }
                         break;
@@ -2902,7 +2902,7 @@ int fold_const(EXPRESSION* node)
 
                             enswap(&node->left, &node->right);
                             enswap(&node->left->left, &node->right);
-                            node->left->right = exprNode(ExpressionNode::uminus_, node->left->right);
+                            node->left->right = MakeExpression(ExpressionNode::uminus_, node->left->right);
                             rv = true;
                         }
                         break;

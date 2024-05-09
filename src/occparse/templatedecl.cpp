@@ -664,7 +664,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                 {
                     if (templateNestingCount)
                     {
-                        exp = exprNode(ExpressionNode::construct_);
+                        exp = MakeExpression(ExpressionNode::construct_);
                         exp->v.construct.tp = tp;
                         lex = getDeferredData(lex, &exp->v.construct.deferred, true);
                     }
@@ -1318,7 +1318,7 @@ static bool sameTemplateSpecialization(Type* P, Type* A)
                 {
                     if (!templateCompareTypes(itPL->second->byNonType.tp, itPA->second->byNonType.tp, true))
                         break;
-                    if (itPL->second->byNonType.dflt && !equalTemplateIntNode(itPL->second->byNonType.dflt, itPA->second->byNonType.val))
+                    if (itPL->second->byNonType.dflt && !equalTemplateMakeIntExpression(itPL->second->byNonType.dflt, itPA->second->byNonType.val))
                         break;
                 }
             }
@@ -1359,7 +1359,7 @@ bool exactMatchOnTemplateSpecialization(std::list<TEMPLATEPARAMPAIR>* old, std::
                 case TplType::int_:
                     if (!templateCompareTypes(itold->second->byNonType.tp, itsym->second->byNonType.tp, true))
                         return false;
-                    if (itold->second->byNonType.dflt && !equalTemplateIntNode(itold->second->byNonType.dflt, itsym->second->byNonType.val))
+                    if (itold->second->byNonType.dflt && !equalTemplateMakeIntExpression(itold->second->byNonType.dflt, itsym->second->byNonType.val))
                         return false;
                     break;
                 default:
@@ -2253,7 +2253,7 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                                 }
                                 if (!templateCompareTypes(itPOrig->second->byNonType.tp, itPSym->second->byNonType.tp, true))
                                     return false;
-                                if (tsym && !equalTemplateIntNode((EXPRESSION*)torig, (EXPRESSION*)tsym))
+                                if (tsym && !equalTemplateMakeIntExpression((EXPRESSION*)torig, (EXPRESSION*)tsym))
                                     return false;
                             }
                             if (itPOrig != itePOrig || itPSym != itePSym)
@@ -2266,7 +2266,7 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                     {
                         if (!templateCompareTypes(itOrig->second->byNonType.tp, itSym->second->byNonType.tp, true))
                             return false;
-                        if (xsym && xorig && !equalTemplateIntNode((EXPRESSION*)xorig, (EXPRESSION*)xsym))
+                        if (xsym && xorig && !equalTemplateMakeIntExpression((EXPRESSION*)xorig, (EXPRESSION*)xsym))
                             return false;
                     }
                     break;
@@ -2503,14 +2503,14 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
             {
                 auto init = Allocate<Argument>();
                 init->tp = (*hr)->tp;
-                init->exp = intNode(ExpressionNode::c_i_, 0);
+                init->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 funcparams->arguments->push_back(init);
                 ++hr;
             }
             if (spi->sb->parentClass)
             {
                 funcparams->thistp = Type::MakeType(BasicType::pointer_, spi->sb->parentClass->tp);
-                funcparams->thisptr = intNode(ExpressionNode::c_i_, 0);
+                funcparams->thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
             }
             instance = GetOverloadedTemplate(spi, funcparams);
             if (instance)

@@ -214,7 +214,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
         AutoDeclare(&tp, exp, parent, (kw != Keyword::for_ && kw != Keyword::if_ && kw != Keyword::switch_) | (kw == Keyword::rangefor_ ? _F_NOCHECKAUTO : 0));
         if (tp->type == BasicType::memberptr_)
         {
-            *exp = exprNode(ExpressionNode::mp_as_bool_, *exp);
+            *exp = MakeExpression(ExpressionNode::mp_as_bool_, *exp);
             (*exp)->size = tp;
             tp = &stdint;
         }
@@ -233,7 +233,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
         {
             if (tp->type == BasicType::memberptr_)
             {
-                *exp = exprNode(ExpressionNode::mp_as_bool_, *exp);
+                *exp = MakeExpression(ExpressionNode::mp_as_bool_, *exp);
                 (*exp)->size = tp;
                 tp = &stdint;
             }
@@ -260,7 +260,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
     }
-    *exp = exprNode(ExpressionNode::select_, *exp);
+    *exp = MakeExpression(ExpressionNode::select_, *exp);
     GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
 }
 FunctionBlock* StatementGenerator::GetCommonParent(std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest)
@@ -304,10 +304,10 @@ void StatementGenerator::ThunkCatchCleanup(Statement* st, std::list<FunctionBloc
                 funcparams->ascall = true;
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
-                funcparams->fcall = varNode(ExpressionNode::pc_, sym);
+                funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
                 funcparams->arguments = initListListFactory.CreateList();
                 funcparams->arguments->push_back(arg1);
-                arg1->exp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
+                arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
                 arg1->tp = &stdpointer;
                 for (auto it = src.front()->statements->begin(); it != src.front()->statements->end(); ++it)
                 {
@@ -316,7 +316,7 @@ void StatementGenerator::ThunkCatchCleanup(Statement* st, std::list<FunctionBloc
                         auto next = Allocate<Statement>();
                         *next = *st;
                         next->type = StatementNode::expr_;
-                        next->select = funcNode(funcparams);
+                        next->select = MakeExpression(funcparams);
                         it = src.front()->statements->insert(it, next);
                         break;
                     }
@@ -742,7 +742,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 if (!declSP)
                 {
                     diag("statement_for: Cannot get range based range variable");
-                    declExp = intNode(ExpressionNode::c_i_, 0);
+                    declExp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 }
                 else
                 {
@@ -751,7 +751,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         error(ERR_FORRANGE_DECLARATOR_NO_INIT);
                     }
                     declSP->sb->dest = nullptr;
-                    declExp = varNode(ExpressionNode::auto_, declSP);
+                    declExp = MakeExpression(ExpressionNode::auto_, declSP);
                     declSP->sb->assigned = declSP->sb->attribs.inheritable.used = true;
                 }
                 lex = getsym();
@@ -786,7 +786,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         for (auto lstitem : *lst)
                         { 
                             Type* ittp = lstitem->tp;
-                            EXPRESSION* base = exprNode(ExpressionNode::add_, val, intNode(ExpressionNode::c_i_, offset));
+                            EXPRESSION* base = MakeExpression(ExpressionNode::add_, val, MakeIntExpression(ExpressionNode::c_i_, offset));
                             offset += sz;
                             if (ittp->IsRef())
                                 ittp = ittp->BaseType()->btp;
@@ -809,7 +809,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                         st->select = newExp;
                                         newExp = base;
-                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(ExpressionNode::c_i_, offset / sz), true, true,
+                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true,
                                                        false, true);
                                     }
                                 }
@@ -841,25 +841,25 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             {
                                 st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                 deref(matchtp, &base);
-                                st->select = exprNode(ExpressionNode::assign_, base, lstitem->exp);
+                                st->select = MakeExpression(ExpressionNode::assign_, base, lstitem->exp);
                             }
                         }
                         if (matchtp->IsStructured())
                         {
                             auto newExp = val;
-                            callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(ExpressionNode::c_i_, offset / sz), true, true, false,
+                            callDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true, false,
                                            true);
                             initInsert(&val->v.sp->sb->dest, matchtp, newExp, 0, false);
                         }
 
                         begin = val;
-                        size = intNode(ExpressionNode::c_i_, offset / matchtp->size);
+                        size = MakeIntExpression(ExpressionNode::c_i_, offset / matchtp->size);
                     }
                     else
                     {
                         select = anonymousVar(StorageClass::auto_, &stdint);
                         begin = select;
-                        size = intNode(ExpressionNode::c_i_, 0);
+                        size = MakeIntExpression(ExpressionNode::c_i_, 0);
                     }
                     selectTP = InitializerListType(matchtp);
                     std::list<Initializer*>* init = nullptr;
@@ -900,7 +900,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     if (lvalue(select) && select->type != ExpressionNode::l_ref_ && !selectTP->IsStructured())
                         select = select->left;
 //                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-//                    st->select = exprNode(ExpressionNode::assign_, rangeExp, select);
+//                    st->select = MakeExpression(ExpressionNode::assign_, rangeExp, select);
                     rangeExp = select;
                     if (!selectTP->IsStructured())
                     {
@@ -916,7 +916,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             error(ERR_FORRANGE_ARRAY_UNSIZED);
                         }
                         ibegin = rangeExp;
-                        iend = exprNode(ExpressionNode::add_, rangeExp, intNode(ExpressionNode::c_i_, selectTP->size));
+                        iend = MakeExpression(ExpressionNode::add_, rangeExp, MakeIntExpression(ExpressionNode::c_i_, selectTP->size));
                     }
                     else
                     {
@@ -980,7 +980,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     fc->sp = beginFunc;
                                     fc->functp = beginFunc->tp;
                                     fc->ascall = true;
-                                    ibegin = funcNode(fc);
+                                    ibegin = MakeExpression(fc);
                                     fc = Allocate<CallSite>();
                                     *fc = fce;
                                     fc->sp = endFunc;
@@ -996,7 +996,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                             if (expx->v.func->returnEXP)
                                                 fc->thisptr = expx->v.func->returnEXP;
                                     }
-                                    iend = funcNode(fc);
+                                    iend = MakeExpression(fc);
                                     iteratorType = beginFunc->tp->BaseType()->btp;
                                 }
                             }
@@ -1111,7 +1111,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         {
                                             fc->arguments->front()->tp = Type::MakeType(BasicType::lref_, fcb.arguments->front()->tp);
                                         }
-                                        ibegin = funcNode(fc);
+                                        ibegin = MakeExpression(fc);
                                         fc = Allocate<CallSite>();
                                         *fc = fce;
                                         fc->sp = endFunc;
@@ -1139,7 +1139,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         {
                                             fc->arguments->front()->tp = Type::MakeType(BasicType::lref_, fce.arguments->front()->tp);
                                         }
-                                        iend = funcNode(fc);
+                                        iend = MakeExpression(fc);
                                     }
                                 }
                                 else
@@ -1165,11 +1165,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 deref(iteratorType->BaseType()->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
                                 deref(iteratorType->BaseType()->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
                                 st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-                                st->select = exprNode(ExpressionNode::assign_, ibegin->v.func->returnEXP, ibegin);
+                                st->select = MakeExpression(ExpressionNode::assign_, ibegin->v.func->returnEXP, ibegin);
                                 ibegin->v.func->returnEXP = nullptr;
                                 ibegin->v.func->returnSP = nullptr;
                                 st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-                                st->select = exprNode(ExpressionNode::assign_, iend->v.func->returnEXP, iend);
+                                st->select = MakeExpression(ExpressionNode::assign_, iend->v.func->returnEXP, iend);
                                 iend->v.func->returnEXP = nullptr;
                                 iend->v.func->returnSP = nullptr;
 
@@ -1190,15 +1190,15 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             deref(&stdpointer, &eBegin);
                             deref(&stdpointer, &eEnd);
                             st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-                            st->select = exprNode(ExpressionNode::assign_, eBegin, ibegin);
+                            st->select = MakeExpression(ExpressionNode::assign_, eBegin, ibegin);
                             st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-                            st->select = exprNode(ExpressionNode::assign_, eEnd, iend);
+                            st->select = MakeExpression(ExpressionNode::assign_, eEnd, iend);
                         }
                         if (iteratorType->IsRef())
                             iteratorType = iteratorType->btp;
                         if (!selectTP->IsStructured() || !iteratorType->IsStructured())
                         {
-                            compare = exprNode(ExpressionNode::eq_, eBegin, eEnd);
+                            compare = MakeExpression(ExpressionNode::eq_, eBegin, eEnd);
                         }
                         else
                         {
@@ -1256,7 +1256,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 st->select = eBegin;
                                 if (!declSP->tp->IsRef())
                                     deref(selectTP->BaseType()->btp, &st->select);
-                                st->select = exprNode(ExpressionNode::assign_, decl, st->select);
+                                st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                             }
                         }
                         else
@@ -1278,7 +1278,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     st->select = eBegin;
                                     if (!declSP->tp->IsRef())
                                         deref(iteratorType->BaseType()->btp, &st->select);
-                                    st->select = exprNode(ExpressionNode::assign_, decl, st->select);
+                                    st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 }
                                 else
                                 {
@@ -1328,7 +1328,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     }
                                     deref(declSP->tp, &decl);
 
-                                    st->select = exprNode(ExpressionNode::assign_, decl, st->select);
+                                    st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 }
                                 else
                                 {
@@ -1368,8 +1368,8 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         {
                             if (selectTP->IsArray())
                                 st->select =
-                                    exprNode(ExpressionNode::assign_, eBegin,
-                                             exprNode(ExpressionNode::add_, eBegin, intNode(ExpressionNode::c_i_, selectTP->BaseType()->btp->BaseType()->size)));
+                                    MakeExpression(ExpressionNode::assign_, eBegin,
+                                             MakeExpression(ExpressionNode::add_, eBegin, MakeIntExpression(ExpressionNode::c_i_, selectTP->BaseType()->btp->BaseType()->size)));
                         }
                         else
                         {
@@ -1378,9 +1378,9 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             st->select = eBegin;
                             if (iteratorType->IsPtr())
                             {
-                                st->select = exprNode(
+                                st->select = MakeExpression(
                                     ExpressionNode::assign_, eBegin,
-                                    exprNode(ExpressionNode::add_, eBegin, intNode(ExpressionNode::c_i_, iteratorType->BaseType()->btp->BaseType()->size)));
+                                    MakeExpression(ExpressionNode::add_, eBegin, MakeIntExpression(ExpressionNode::c_i_, iteratorType->BaseType()->btp->BaseType()->size)));
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::autoinc_, funcsp, &ppType, &st->select, nullptr, nullptr,
                                                          nullptr, 0))
@@ -2138,7 +2138,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     if (!tp1)
                     {
                         tp1 = &stdint;
-                        exp1 = intNode(ExpressionNode::c_i_, 0);
+                        exp1 = MakeIntExpression(ExpressionNode::c_i_, 0);
                         error(ERR_IDENTIFIER_EXPECTED);
                     }
                     if (tp1 && tp1->IsStructured())
@@ -2189,9 +2189,9 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         }
                         auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
                         deref(&stdpointer, &targetPointer);
-                        auto targetExpr = exprNode(ExpressionNode::assign_, targetPointer, en);
+                        auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
                         ReplaceVarRef(&exp1, exptemp->v.sp, targetPointer);
-                        exp1 = exprNode(ExpressionNode::comma_, targetExpr, exp1);
+                        exp1 = MakeExpression(ExpressionNode::comma_, targetExpr, exp1);
                         returntype = tp;
                         returnexp = exp1;
                         maybeConversion = false;
@@ -2270,7 +2270,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         EXPRESSION q = {}, *v = &q;
                         v->type = ExpressionNode::c_i_;
                         v = baseClassOffset(tp->BaseType()->sp, tp1->BaseType()->sp, v);
-                        returnexp = exprNode(ExpressionNode::add_, returnexp, v);
+                        returnexp = MakeExpression(ExpressionNode::add_, returnexp, v);
                     
                     }
                     if (toErr)
@@ -2291,17 +2291,17 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             if (funcsp && tp->BaseType()->type == BasicType::memberptr_)
                             {
                                 int lbl = dumpMemberPtr(funcsp, tp, true);
-                                returnexp = intNode(ExpressionNode::labcon_, lbl);
+                                returnexp = MakeIntExpression(ExpressionNode::labcon_, lbl);
                             }
                         }
                         else
                         {
-                            returnexp = intNode(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.func->sp, tp, true));
+                            returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.func->sp, tp, true));
                         }
                     }
                     else if (returnexp->type == ExpressionNode::pc_ || returnexp->type == ExpressionNode::memberptr_)
                     {
-                        returnexp = intNode(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.sp, tp, true));
+                        returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
                     if ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                         funcsp->sb->attribs.inheritable.linkage2 == Linkage::unmanaged_ || !msilManaged(funcsp))
@@ -2312,7 +2312,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             {
                                 cast(tp, &returnexp);
                             }
-                            returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
+                            returnexp = MakeExpression(ExpressionNode::blockassign_, en, returnexp);
                             returnexp->size = tp;
                             returnexp->altdata = (void*)(tp->BaseType());
 
@@ -2331,13 +2331,13 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 }
                                 auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
                                 deref(&stdpointer, &targetPointer);
-                                auto targetExpr = exprNode(ExpressionNode::assign_, targetPointer, en);
+                                auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
                                 ReplaceVarRef(&returnexp, exptemp->v.sp, targetPointer);
-                                returnexp = exprNode(ExpressionNode::comma_, targetExpr, returnexp);
+                                returnexp = MakeExpression(ExpressionNode::comma_, targetExpr, returnexp);
                             }
                             else
                             {
-                                returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
+                                returnexp = MakeExpression(ExpressionNode::blockassign_, en, returnexp);
                                 returnexp->size = tp;
                                 returnexp->altdata = (void*)(tp->BaseType());
                             }
@@ -2380,7 +2380,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 if (returnexp->type == ExpressionNode::labcon_)
                     returnexp->type = ExpressionNode::c_string_;
                 else if (tp1->BaseType()->type != BasicType::string_)
-                    returnexp = exprNode(ExpressionNode::x_string_, returnexp);
+                    returnexp = MakeExpression(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
             else if (!tp1->ExactSameType(tp) && tp1->IsMsil())
@@ -2397,7 +2397,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             }
             if (tp->BaseType()->type == BasicType::object_)
                 if (tp1->BaseType()->type != BasicType::object_ && !tp1->IsStructured() && (!tp1->IsArray() || !tp1->BaseType()->msil))
-                    returnexp = exprNode(ExpressionNode::x_object_, returnexp);
+                    returnexp = MakeExpression(ExpressionNode::x_object_, returnexp);
             if (tp1->IsStructured() && tp->IsArithmetic())
             {
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2423,7 +2423,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                         error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     returnexp->v.func->sp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &exp1, 0);
-                    returnexp->v.func->fcall = varNode(ExpressionNode::pc_, returnexp->v.func->sp);
+                    returnexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, returnexp->v.func->sp);
                 }
             }
             if (Optimizer::cparams.prm_cplusplus && returntype->IsStructured())
@@ -2450,7 +2450,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
         if (!returnexp)
-            returnexp = intNode(ExpressionNode::c_i_, 0);  // errors
+            returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);  // errors
     }
     currentLineData(parent, lex, 0);
     ThunkReturnDestructors(&destexp, nullptr, localNameSpace->front()->syms);
@@ -2485,14 +2485,14 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 if (isconstzero(tp, st->select))
                 {
                     int lbl = dumpMemberPtr(nullptr, returntype, true);
-                    st->select = intNode(ExpressionNode::labcon_, lbl);
+                    st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
                 }
                 else
                 {
                     if (st->select->type == ExpressionNode::memberptr_)
                     {
                         int lbl = dumpMemberPtr(st->select->v.sp, returntype, true);
-                        st->select = intNode(ExpressionNode::labcon_, lbl);
+                        st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
                     }
                     if (!returntype->ExactSameType(tp))
                         error(ERR_RETMISMATCH);
@@ -3108,7 +3108,7 @@ void StatementGenerator::AssignInReverse(std::list<Statement*>* current, EXPRESS
             if ((*it)->type != StatementNode::line_ && (*it)->type != StatementNode::varstart_)
             {
                 if (*exp)
-                    *exp = exprNode(ExpressionNode::comma_, (*it)->select, *exp);
+                    *exp = MakeExpression(ExpressionNode::comma_, (*it)->select, *exp);
                 else
                     *exp = (*it)->select;
             }
@@ -3147,7 +3147,7 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
     }
     if (!*exp)
     {
-        *exp = intNode(ExpressionNode::c_i_, 0);
+        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         if (!(asExpression & _F_NOCHECKAUTO))
             errorint(ERR_NEEDY, '=');
     }
@@ -3481,7 +3481,7 @@ bool StatementGenerator::ThunkReturnInMain(std::list<FunctionBlock*>& parent, bo
     if (always || (!strcmp(funcsp->name, "main") && !funcsp->sb->parentClass && !funcsp->sb->parentNameSpace))
     {
         Statement* s = Statement::MakeStatement(nullptr, parent, StatementNode::return_);
-        s->select = intNode(ExpressionNode::c_i_, 0);
+        s->select = MakeIntExpression(ExpressionNode::c_i_, 0);
         return true;
     }
     return false;
@@ -3770,12 +3770,12 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
             funcparams->ascall = true;
             funcparams->sp = sym;
             funcparams->functp = sym->tp;
-            funcparams->fcall = varNode(ExpressionNode::pc_, sym);
+            funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
             funcparams->arguments = initListListFactory.CreateList();
             funcparams->arguments->push_back(arg1);
-            arg1->exp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
+            arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;
-            st->select = funcNode(funcparams);
+            st->select = MakeExpression(funcparams);
         }
     }
     if (first)
@@ -3837,7 +3837,7 @@ void StatementGenerator::AssignCParams(int* base, SymbolTable<SYMBOL>* params, T
     for (auto sym : *params)
     {
         Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
-        s->select = varNode(ExpressionNode::auto_, sym);
+        s->select = MakeExpression(ExpressionNode::auto_, sym);
         StatementGenerator::AssignParam(funcsp, base, sym);
     }
 }
@@ -3850,7 +3850,7 @@ void StatementGenerator::AssignPascalParams(int* base, SymbolTable<SYMBOL>* para
     {
         StatementGenerator::AssignParam(funcsp, base, stk.top());
         Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
-        s->select = varNode(ExpressionNode::auto_, stk.top());
+        s->select = MakeExpression(ExpressionNode::auto_, stk.top());
         stk.pop();
     }
 }

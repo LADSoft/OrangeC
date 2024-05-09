@@ -1525,13 +1525,13 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
                 if (tpc->type == BasicType::templateparam_)
                 {
                     tpp->size = tpp->btp->BaseType()->size;
-                    tpp->esize = intNode(ExpressionNode::c_i_, 1);
+                    tpp->esize = MakeIntExpression(ExpressionNode::c_i_, 1);
                 }
                 else if (isarithmeticconst(constant))
                 {
                     tpp->size = tpp->btp->BaseType()->size;
                     tpp->size *= constant->v.i;
-                    tpp->esize = intNode(ExpressionNode::c_i_, constant->v.i);
+                    tpp->esize = MakeIntExpression(ExpressionNode::c_i_, constant->v.i);
                 }
                 else
                 {
@@ -1547,7 +1547,7 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
         else
         {
             tpp->size = tpp->btp->size;
-            tpp->esize = intNode(ExpressionNode::c_i_, tpp->btp->size);
+            tpp->esize = MakeIntExpression(ExpressionNode::c_i_, tpp->btp->size);
             tp = tpp;
         }
         if (typein && typein->IsStructured())

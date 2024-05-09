@@ -134,7 +134,7 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                     simpleSym->anonymous = true;
                     simpleSym->inAllocTable = true;
                     Optimizer::temporarySymbols.push_back(simpleSym);
-                    dest = varNode(ExpressionNode::auto_, sym);
+                    dest = MakeExpression(ExpressionNode::auto_, sym);
                     deref(sym->tp, &dest);
                     rv = dest;
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
@@ -214,7 +214,7 @@ static void ArgDeref(Type* desttp, Type* srctp, EXPRESSION **dest)
 {
     if (desttp->IsArray())
     {
-        *dest = exprNode(ExpressionNode::l_p_, *dest);
+        *dest = MakeExpression(ExpressionNode::l_p_, *dest);
     }
     else if (desttp->type == BasicType::templateselector_)
     {
@@ -284,7 +284,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     {
                         src = nullptr;
                         addr = tempVar(&stdpointer);
-                        val = exprNode(ExpressionNode::assign_, addr, val);
+                        val = MakeExpression(ExpressionNode::assign_, addr, val);
                         gen_expr(funcsp, val, F_STORE, natural_size(val));
                     }
                     else
@@ -350,7 +350,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                         Optimizer::temporarySymbols.push_back(simpleSym);
                         simpleSym->allocate = true;
                         simpleSym->inAllocTable = true;
-                        dest = varNode(ExpressionNode::auto_, sym2);
+                        dest = MakeExpression(ExpressionNode::auto_, sym2);
                         ArgDeref(sym->tp, (*ita)->tp, &dest);
 
                         argList.push_back(createTempByRef ? dest->left : dest);

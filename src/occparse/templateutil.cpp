@@ -93,7 +93,7 @@ EXPRESSION* GetSymRef(EXPRESSION* n)
     }
     return rv;
 }
-bool equalTemplateIntNode(EXPRESSION* exp1, EXPRESSION* exp2)
+bool equalTemplateMakeIntExpression(EXPRESSION* exp1, EXPRESSION* exp2)
 {
     if (exp1->type == ExpressionNode::templateparam_)
         exp1 = exp1->v.sp->tp->templateParam->second->byNonType.val;
@@ -789,7 +789,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                                         rv = initListListFactory.CreateList();
                                     auto arg1 = Allocate<Argument>();
                                     arg1->tp = tp;
-                                    arg1->exp = intNode(ExpressionNode::c_i_, 0);
+                                    arg1->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                                     rv->push_back(arg1);
                                 }
                             }
@@ -1225,7 +1225,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     *func = *next->v.func;
                     func->sp = sym;
                     func->thistp = Type::MakeType(BasicType::pointer_, tp);
-                    func->thisptr = intNode(ExpressionNode::c_i_, 0);
+                    func->thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
                     func->arguments = ExpandArguments(next);
                     auto oldnoExcept = noExcept;
                     sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
@@ -1235,9 +1235,9 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                         enclosingDeclarations.Drop();
                         break;
                     }
-                    EXPRESSION* temp = funcNode(func);
-                    temp = exprNode(ExpressionNode::thisref_, temp);
-                    temp->v.t.thisptr = intNode(ExpressionNode::c_i_, 0);
+                    EXPRESSION* temp = MakeExpression(func);
+                    temp = MakeExpression(ExpressionNode::thisref_, temp);
+                    temp->v.t.thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
                     temp->v.t.tp = tp;
                     tp = LookupTypeFromExpression(temp, nullptr, false);
                 }

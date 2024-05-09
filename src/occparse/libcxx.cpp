@@ -229,7 +229,7 @@ static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
             arg->tp = tp;
             if (initialize)
                 arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-//            arg->exp = intNode(ExpressionNode::c_i_, 1);
+//            arg->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
             (*lptr)->push_back(arg);
         }
         else
@@ -248,7 +248,7 @@ static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
                             arg->tp = tpl.second->byClass.val;
                             if (initialize)
                                 arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-//                            arg->exp = intNode(ExpressionNode::c_i_, 1);
+//                            arg->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
                             (*lptr)->push_back(arg);
                         }
                     }
@@ -261,7 +261,7 @@ static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
                     arg->tp = tp->templateParam->second->byClass.val;
                     if (initialize)
                         arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-//                    arg->exp = intNode(ExpressionNode::c_i_, 1);
+//                    arg->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
                     (*lptr)->push_back(arg);
                 }
             }
@@ -555,7 +555,7 @@ static bool __is_nothrow(Type* tp, std::list<Argument*>* args, SYMBOL* ovl)
             }
         }
         CallSite funcparams = {};
-        funcparams.thisptr = intNode(ExpressionNode::c_i_, 0);
+        funcparams.thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
         funcparams.thistp = Type::MakeType(BasicType::pointer_, tp->BaseType());
         funcparams.ascall = true;
         funcparams.arguments = args;
@@ -646,7 +646,7 @@ static bool is_abstract(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, E
     {
         rv = first(funcparams.arguments)->tp->IsStructured() && first(funcparams.arguments)->tp->BaseType()->sp->sb->isabstract;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -662,7 +662,7 @@ static bool is_base_of(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EX
         if (first(funcparams.arguments)->tp->IsStructured() && second(funcparams.arguments)->tp->IsStructured())
             rv = classRefCount(first(funcparams.arguments)->tp->BaseType()->sp, second(funcparams.arguments)->tp->BaseType()->sp) != 0;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -677,7 +677,7 @@ static bool is_class(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
     {
         rv = first(funcparams.arguments)->tp->IsStructured() && first(funcparams.arguments)->tp->BaseType()->type != BasicType::union_;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -715,7 +715,7 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                     if (tpy->IsConst() && !tp2->IsConst() || tpy->IsVolatile() && !tp2->IsVolatile())
                     {
                         rv = false;
-                        *exp = intNode(ExpressionNode::c_i_, rv);
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
                         *tp = &stdint;
                         return true;
                     }
@@ -732,7 +732,7 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                                 spy = spy->sb->mainsym;
                             rv = sp2 == spy || sameTemplate(sp2->tp, spy->tp);
                         }
-                        *exp = intNode(ExpressionNode::c_i_, rv);
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
                         *tp = &stdint;
                         return rv;
                     }
@@ -767,7 +767,7 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                         // look for operator () with args from tp2
                         EXPRESSION* cexp = nullptr;
                         SYMBOL* bcall = search(tp3->BaseType()->syms, overloadNameTab[CI_FUNC]);
-                        funcparams.thisptr = intNode(ExpressionNode::c_i_, 0);
+                        funcparams.thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
                         funcparams.thistp = Type::MakeType(BasicType::pointer_, tp3->BaseType());
                         funcparams.ascall = true;
                         funcparams.arguments->clear();
@@ -776,7 +776,7 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                         {
                             auto arg = Allocate<Argument>();
                             arg->tp = sym->tp;
-                            arg->exp = intNode(ExpressionNode::c_i_, 0);
+                            arg->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                             funcparams.arguments->push_back(arg);
                         }
                         auto spx = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, nullptr, false, false,
@@ -877,7 +877,7 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                     SYMBOL* cons = search(tp2->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     if (cons)
                     {
-                        funcparams.thisptr = intNode(ExpressionNode::c_i_, 0);
+                        funcparams.thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
                         funcparams.thistp = Type::MakeType(BasicType::pointer_, tp2->BaseType());
                         funcparams.ascall = true;
                         funcparams.arguments->pop_front();
@@ -933,7 +933,7 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
             }
         }
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1011,7 +1011,7 @@ static bool is_convertible_to(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type**
     {
         rv = false;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1027,7 +1027,7 @@ static bool is_empty(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
         if (first(funcparams.arguments)->tp->IsStructured())
             rv = first(funcparams.arguments)->tp->BaseType()->syms->size() <= 1;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1042,7 +1042,7 @@ static bool is_enum(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRE
     {
         rv = first(funcparams.arguments)->tp->BaseType()->type == BasicType::enum_;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1058,7 +1058,7 @@ static bool is_final(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
         if (first(funcparams.arguments)->tp->IsStructured())
             rv = first(funcparams.arguments)->tp->BaseType()->sp->sb->isfinal;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1074,7 +1074,7 @@ static bool is_literal(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EX
         // yes references are literal types...
         rv = !first(funcparams.arguments)->tp->IsStructured();
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1097,7 +1097,7 @@ static bool is_nothrow_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym,
             if (tpy->IsConst() && !tp2->IsConst() || tpy->IsVolatile() && !tp2->IsVolatile())
             {
                 rv = false;
-                *exp = intNode(ExpressionNode::c_i_, rv);
+                *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
                 *tp = &stdint;
                 return true;
             }
@@ -1128,7 +1128,7 @@ static bool is_nothrow_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym,
             rv = true;
         }
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1151,7 +1151,7 @@ static bool is_nothrow_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Ty
             if (tpy->IsConst() && !tp2->IsConst() || tpy->IsVolatile() && !tp2->IsVolatile())
             {
                 rv = false;
-                *exp = intNode(ExpressionNode::c_i_, rv);
+                *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
                 *tp = &stdint;
                 return true;
             }
@@ -1170,7 +1170,7 @@ static bool is_nothrow_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Ty
             rv = true;
         }
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1185,7 +1185,7 @@ static bool is_pod(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRES
     {
         rv = first(funcparams.arguments)->tp->IsArithmetic() || !!isPOD(first(funcparams.arguments)->tp);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1202,7 +1202,7 @@ static bool is_polymorphic(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp
         if (first(funcparams.arguments)->tp->IsStructured())
             rv = !!hasVTab(first(funcparams.arguments)->tp->BaseType()->sp);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1217,7 +1217,7 @@ static bool is_standard_layout(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type*
     {
         rv = first(funcparams.arguments)->tp->IsArithmetic() || !!isStandardLayout(first(funcparams.arguments)->tp, nullptr);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1232,7 +1232,7 @@ static bool is_trivial(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EX
     {
         rv = !first(funcparams.arguments)->tp->IsStructured() || !!trivialStructure(first(funcparams.arguments)->tp);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1254,7 +1254,7 @@ static bool is_trivially_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, 
               rv = trivialAssignable(first(funcparams.arguments)->tp, second(funcparams.arguments)->tp->BaseType()->type== BasicType::rref_);
         }
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1278,7 +1278,7 @@ static bool is_trivially_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sy
               rv = trivialCopyConstructible(first(funcparams.arguments)->tp, second(funcparams.arguments)->tp->BaseType()->type== BasicType::rref_);
         }
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1293,7 +1293,7 @@ static bool is_trivially_destructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym
     {
         rv = trivialDestructor(first(funcparams.arguments)->tp);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1309,7 +1309,7 @@ static bool is_trivially_copyable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Ty
         if (first(funcparams.arguments)->tp->IsStructured())
             rv = triviallyCopyable(first(funcparams.arguments)->tp);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1324,7 +1324,7 @@ static bool is_union(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPR
     {
         rv = first(funcparams.arguments)->tp->BaseType()->type == BasicType::union_;
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1403,7 +1403,7 @@ static bool is_literal_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** t
     {
         rv = is_literal_type(first(funcparams.arguments)->tp);
     }
-    *exp = intNode(ExpressionNode::c_i_, rv);
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
 }
@@ -1466,7 +1466,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
             second = Allocate<TEMPLATEPARAM>();
             second->type = TplType::int_;
             second->byNonType.tp = it->second->byClass.dflt;
-            second->byNonType.val = intNode(ExpressionNode::c_i_, i);
+            second->byNonType.val = MakeIntExpression(ExpressionNode::c_i_, i);
             last->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
         }
         sym = GetClassTemplate(tpl, args1, false);

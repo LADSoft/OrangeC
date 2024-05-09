@@ -130,14 +130,14 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     Statement* st;
     FunctionBlock bd = { };
     std::list<FunctionBlock*> b = { &bd };
-    EXPRESSION* left = varNode(ExpressionNode::global_, backing);
-    EXPRESSION* right = varNode(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
+    EXPRESSION* left = MakeExpression(ExpressionNode::global_, backing);
+    EXPRESSION* right = MakeExpression(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     deref(sym->tp, &left);
     deref(sym->tp, &right);
     st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
-    st->select = exprNode(ExpressionNode::assign_, left, right);
+    st->select = MakeExpression(ExpressionNode::assign_, left, right);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
     p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
@@ -153,7 +153,7 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
-    st->select = varNode(ExpressionNode::global_, backing);
+    st->select = MakeExpression(ExpressionNode::global_, backing);
     deref(sym->tp, &st->select);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
     p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));

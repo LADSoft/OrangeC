@@ -211,14 +211,14 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
 
         while (tp->type == BasicType::pointer_)
         {
-            exp = exprNode(ExpressionNode::mul_, exp, tp->esize);
+            exp = MakeExpression(ExpressionNode::mul_, exp, tp->esize);
             tp = tp->BaseType()->btp;
         }
-        exp = exprNode(ExpressionNode::mul_, exp, intNode(ExpressionNode::c_i_, tp->size));
+        exp = MakeExpression(ExpressionNode::mul_, exp, MakeIntExpression(ExpressionNode::c_i_, tp->size));
     }
     else if (!tp->IsArray() && Optimizer::architecture == ARCHITECTURE_MSIL)
     {
-        exp = exprNode(ExpressionNode::sizeof_, typeNode(tp));
+        exp = MakeExpression(ExpressionNode::sizeof_, MakeExpression(tp));
     }
     else
     {
@@ -241,7 +241,7 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
                     tpx = cache->tp->BaseType();
                     if (tpx->size == 0) /* if the last element of a structure is unsized */
                                         /* sizeof doesn't add the size of the padding element */
-                        exp = intNode(ExpressionNode::c_i_, cache->sb->offset);
+                        exp = MakeIntExpression(ExpressionNode::c_i_, cache->sb->offset);
                 }
             }
         }
@@ -251,9 +251,9 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
         // array which is an argument has different sizeof requirements
         if ((flags & _F_SIZEOF) && tp->type == BasicType::pointer_ && tp->array && exp_in && exp_in->type == ExpressionNode::l_p_ &&
             exp_in->left->type == ExpressionNode::auto_ && exp_in->left->v.sp->sb->storage_class == StorageClass::parameter_)
-            exp = intNode(ExpressionNode::c_i_, getSize(BasicType::pointer_));
+            exp = MakeIntExpression(ExpressionNode::c_i_, getSize(BasicType::pointer_));
         else
-            exp = intNode(ExpressionNode::c_i_, tp->size);
+            exp = MakeIntExpression(ExpressionNode::c_i_, tp->size);
     }
     return exp;
 }
@@ -264,7 +264,7 @@ static void left_fold(LexList* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION*
     if (it == dispatcher.end())
     {
         *resulttp = foldtp;
-        *resultexp = intNode(ExpressionNode::c_i_, 0);
+        *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
         return;
     }
     auto kw = it->first;
@@ -278,7 +278,7 @@ static void left_fold(LexList* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION*
         if (!*resulttp)
         {
             *resulttp = &stdint;
-            *resultexp = intNode(ExpressionNode::c_i_, 0);
+            *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
         }
         return;
     }
@@ -330,7 +330,7 @@ static void right_fold(LexList* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION
     if (it == dispatcher.end())
     {
         *resulttp = foldtp;
-        *resultexp = intNode(ExpressionNode::c_i_, 0);
+        *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
         return;
     }
     *resulttp = seedtp;
@@ -342,7 +342,7 @@ static void right_fold(LexList* lex, SYMBOL *funcsp, Type** resulttp, EXPRESSION
         if (!*resulttp)
         {
             *resulttp = &stdint;
-            *resultexp = intNode(ExpressionNode::c_i_, 0);
+            *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
         }
         return;
     }
@@ -400,7 +400,7 @@ void eval_unary_left_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** result
     {
         error(ERR_UNARY_LEFT_FOLDING_NEEDS_VARIADIC_TEMPLATE);
         *resulttp = lefttp;
-        *resultexp = intNode(ExpressionNode::c_i_, 0);
+        *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
     }
     else
     {
@@ -414,7 +414,7 @@ void eval_unary_right_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
     {
         error(ERR_UNARY_RIGHT_FOLDING_NEEDS_VARIADIC_TEMPLATE);
         *resulttp = lefttp;
-        *resultexp = intNode(ExpressionNode::c_i_, 0);
+        *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
     }
     else
     {
@@ -432,7 +432,7 @@ void eval_binary_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
         {
             error(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE);
             *resulttp = lefttp;
-            *resultexp = intNode(ExpressionNode::c_i_, 0);
+            *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
         }
         else
         {
@@ -445,7 +445,7 @@ void eval_binary_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
         {
             error(ERR_BINARY_FOLDING_TOO_MANY_VARIADIC_TEMPLATES);
             *resulttp = lefttp;
-            *resultexp = intNode(ExpressionNode::c_i_, 0);
+            *resultexp = MakeIntExpression(ExpressionNode::c_i_, 0);
         }
         else
         {
@@ -522,19 +522,19 @@ void eval_unary_minus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, 
         error(ERR_ILL_POINTER_OPERATION);
     else if (atp && atp->BaseType()->type < BasicType::int_)
     {
-        *resultexp = exprNode(ExpressionNode::uminus_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
         cast(atp, resultexp);
         *resulttp = atp;
     }
     else if (smallint(*resulttp))
     {
         cast(&stdint, resultexp);
-        *resultexp = exprNode(ExpressionNode::uminus_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
         *resulttp = &stdint;
     }
     else
     {
-        *resultexp = exprNode(ExpressionNode::uminus_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
     }
 }
 void eval_unary_not(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, bool ismutable, int flags)
@@ -562,13 +562,13 @@ void eval_unary_not(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EX
         error(ERR_SCOPED_TYPE_MISMATCH);
     if ((*resulttp)->type == BasicType::memberptr_)
     {
-        *resultexp = exprNode(ExpressionNode::mp_as_bool_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::mp_as_bool_, *resultexp);
         (*resultexp)->size = *resulttp;
-        *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
     }
     else
     {
-        *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
     }
     if (Optimizer::cparams.prm_cplusplus)
         *resulttp = &stdbool;
@@ -608,19 +608,19 @@ void eval_unary_complement(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resul
         error(ERR_SCOPED_TYPE_MISMATCH);
     else if (atp && atp->BaseType()->type < BasicType::int_)
     {
-        *resultexp = exprNode(ExpressionNode::compl_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::compl_, *resultexp);
         cast(atp, resultexp);
         *resulttp = atp;
     }
     else if (smallint(*resulttp))
     {
         cast(&stdint, resultexp);
-        *resultexp = exprNode(ExpressionNode::compl_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::compl_, *resultexp);
         *resulttp = &stdint;
     }
     else
     {
-        *resultexp = exprNode(ExpressionNode::compl_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::compl_, *resultexp);
         if (!(*resulttp)->IsBitInt())
             cast((*resulttp)->BaseType(), resultexp);
     }
@@ -667,7 +667,7 @@ void eval_unary_autoincdec(LexList *lex, SYMBOL *funcsp,Type *atp, Type **result
         {
             EXPRESSION *exp2 = anonymousVar(StorageClass::auto_, *resulttp);
             deref(&stdpointer, &exp2);
-            exp3 = exprNode(ExpressionNode::assign_, exp2, (*resultexp)->left);
+            exp3 = MakeExpression(ExpressionNode::assign_, exp2, (*resultexp)->left);
             deref(*resulttp, &exp2);
             *resultexp = exp2;
         }
@@ -684,34 +684,34 @@ void eval_unary_autoincdec(LexList *lex, SYMBOL *funcsp,Type *atp, Type **result
             {
                 tpx = (*resulttp)->BaseType()->btp;
             }
-            *resultexp = exprNode(
+            *resultexp = MakeExpression(
                 ExpressionNode::assign_, *resultexp,
-                exprNode(kw == Keyword::autoinc_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, nodeSizeof(tpx, *resultexp)));
+                MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, nodeSizeof(tpx, *resultexp)));
             (*resultexp)->preincdec = true;
         }
         else if (kw == Keyword::autoinc_ && (*resulttp)->BaseType()->type == BasicType::bool_)
         {
-            *resultexp = exprNode(ExpressionNode::assign_, *resultexp, intNode(ExpressionNode::c_i_, 1));  // set to true as per C++
+            *resultexp = MakeExpression(ExpressionNode::assign_, *resultexp, MakeIntExpression(ExpressionNode::c_i_, 1));  // set to true as per C++
         }
         else if (kw == Keyword::autodec_ && (*resulttp)->BaseType()->type == BasicType::bool_)
         {
             if (Optimizer::cparams.prm_cplusplus)
                 error(ERR_CANNOT_USE_bool_HERE);
 
-            *resultexp = exprNode(ExpressionNode::assign_, *resultexp,
-                            intNode(ExpressionNode::c_i_, 0));  // c++ doesn't allow it, set it to true for C.
+            *resultexp = MakeExpression(ExpressionNode::assign_, *resultexp,
+                            MakeIntExpression(ExpressionNode::c_i_, 0));  // c++ doesn't allow it, set it to true for C.
         }
         else
         {
-            EXPRESSION *dest = *resultexp, *rightexp = intNode(ExpressionNode::c_i_, 1);
+            EXPRESSION *dest = *resultexp, *rightexp = MakeIntExpression(ExpressionNode::c_i_, 1);
             *resultexp = RemoveAutoIncDec(*resultexp);
             cast(*resulttp, &rightexp);
-            *resultexp = exprNode(ExpressionNode::assign_, dest,
-                            exprNode(kw == Keyword::autoinc_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp));
+            *resultexp = MakeExpression(ExpressionNode::assign_, dest,
+                            MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp));
             (*resultexp)->preincdec = true;
         }
         if (exp3)
-            *resultexp = exprNode(ExpressionNode::comma_, exp3, *resultexp);
+            *resultexp = MakeExpression(ExpressionNode::comma_, exp3, *resultexp);
     }
 }
 bool eval_binary_pm(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp, Type *righttp,
@@ -772,7 +772,7 @@ bool eval_binary_pm(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXP
             if (rightexp->type == ExpressionNode::memberptr_)
             {
                 int lab = dumpMemberPtr(rightexp->v.sp, *resulttp, true);
-                rightexp = intNode(ExpressionNode::labcon_, lab);
+                rightexp = MakeIntExpression(ExpressionNode::labcon_, lab);
             }
             if (righttp->BaseType()->btp->IsFunction())
             {
@@ -780,46 +780,46 @@ bool eval_binary_pm(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXP
                 if (((*resulttp)->BaseType())->sp->sb->vbaseEntries)
                 {
                     EXPRESSION *ec =
-                        exprNode(ExpressionNode::add_, rightexp,
-                                 intNode(ExpressionNode::c_i_, getSize(BasicType::pointer_) + getSize(BasicType::int_)));
+                        MakeExpression(ExpressionNode::add_, rightexp,
+                                 MakeIntExpression(ExpressionNode::c_i_, getSize(BasicType::pointer_) + getSize(BasicType::int_)));
                     EXPRESSION *ec1;
                     deref(&stdint, &ec);
-                    ec1 = exprNode(ExpressionNode::sub_, ec, intNode(ExpressionNode::c_i_, 1));
+                    ec1 = MakeExpression(ExpressionNode::sub_, ec, MakeIntExpression(ExpressionNode::c_i_, 1));
                     deref(&stdint, &ec1);
                     ec =
-                        exprNode(ExpressionNode::hook_, ec, exprNode(ExpressionNode::comma_, ec1, intNode(ExpressionNode::c_i_, 0)));
-                    *resultexp = exprNode(ExpressionNode::add_, *resultexp, ec);
+                        MakeExpression(ExpressionNode::hook_, ec, MakeExpression(ExpressionNode::comma_, ec1, MakeIntExpression(ExpressionNode::c_i_, 0)));
+                    *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, ec);
                 }
                 else
                 {
                     EXPRESSION *ec =
-                        exprNode(ExpressionNode::add_, rightexp, intNode(ExpressionNode::c_i_, getSize(BasicType::pointer_)));
+                        MakeExpression(ExpressionNode::add_, rightexp, MakeIntExpression(ExpressionNode::c_i_, getSize(BasicType::pointer_)));
                     deref(&stdpointer, &ec);
-                    *resultexp = exprNode(ExpressionNode::add_, *resultexp, ec);
+                    *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, ec);
                 }
                 funcparams->sp = righttp->btp->sp;
                 funcparams->fcall = rightexp;
                 deref(&stdpointer, &funcparams->fcall);
                 funcparams->thisptr = *resultexp;
                 funcparams->thistp = Type::MakeType(BasicType::pointer_, *resulttp);
-                *resultexp = funcNode(funcparams);
+                *resultexp = MakeExpression(funcparams);
                 *resulttp = righttp->BaseType();
             }
             else
             {
                 if ((*resulttp)->sp->sb->vbaseEntries)
                 {
-                    EXPRESSION *ec = exprNode(ExpressionNode::add_, rightexp, intNode(ExpressionNode::c_i_, getSize(BasicType::int_)));
+                    EXPRESSION *ec = MakeExpression(ExpressionNode::add_, rightexp, MakeIntExpression(ExpressionNode::c_i_, getSize(BasicType::int_)));
                     EXPRESSION *ec1;
                     deref(&stdint, &ec);
-                    ec1 = exprNode(ExpressionNode::add_, ec, intNode(ExpressionNode::c_i_, -1));
-                    ec1 = exprNode(ExpressionNode::add_, *resultexp, ec1);
+                    ec1 = MakeExpression(ExpressionNode::add_, ec, MakeIntExpression(ExpressionNode::c_i_, -1));
+                    ec1 = MakeExpression(ExpressionNode::add_, *resultexp, ec1);
                     deref(&stdint, &ec1);
-                    *resultexp = exprNode(ExpressionNode::hook_, ec, exprNode(ExpressionNode::comma_, ec1, *resultexp));
+                    *resultexp = MakeExpression(ExpressionNode::hook_, ec, MakeExpression(ExpressionNode::comma_, ec1, *resultexp));
                 }
                 deref(&stdint, &rightexp);
-                *resultexp = exprNode(ExpressionNode::add_, *resultexp, rightexp);
-                *resultexp = exprNode(ExpressionNode::add_, *resultexp, intNode(ExpressionNode::c_i_, -1));
+                *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, rightexp);
+                *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, MakeIntExpression(ExpressionNode::c_i_, -1));
                 if (!righttp->BaseType()->btp->IsStructured())
                 {
                     deref(righttp->BaseType()->btp, resultexp);
@@ -871,7 +871,7 @@ bool eval_binary_times(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
         if ((*resulttp)->IsImaginary() && righttp->IsImaginary())
         {
             if (kw == Keyword::star_)
-                *resultexp = exprNode(ExpressionNode::uminus_, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
             m1 = (int)(*resulttp)->type - (int)BasicType::float__imaginary_;
             m2 = (int)(int)righttp->type - (int)BasicType::float__imaginary_;
             m1 = m1 > m2 ? m1 : m2;
@@ -955,7 +955,7 @@ bool eval_binary_times(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
             default:
                 break;
         }
-        *resultexp = exprNode(type, *resultexp, rightexp);
+        *resultexp = MakeExpression(type, *resultexp, rightexp);
     }
     return false;
 }
@@ -999,11 +999,11 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
         if ((*resultexp)->type == ExpressionNode::labcon_ && (*resultexp)->string)
             (*resultexp)->type = ExpressionNode::c_string_;
         else if (!(*resulttp)->IsMsil())
-            *resultexp = exprNode(ExpressionNode::x_object_, *resultexp);
+            *resultexp = MakeExpression(ExpressionNode::x_object_, *resultexp);
         if (rightexp->type == ExpressionNode::labcon_ && rightexp->string)
             rightexp->type = ExpressionNode::c_string_;
         else if (!righttp->IsMsil())
-            rightexp = exprNode(ExpressionNode::x_object_, rightexp);
+            rightexp = MakeExpression(ExpressionNode::x_object_, rightexp);
     }
     else if (kw == Keyword::plus_ && (*resulttp)->IsPtr() && righttp->IsPtr())
         error(ERR_ILL_POINTER_ADDITION);
@@ -1041,7 +1041,7 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
     {
         // MSIL back Keyword::end_ will take care of figuring out what function to call
         // to perform the concatenation
-        *resultexp = exprNode(ExpressionNode::add_, *resultexp, rightexp);
+        *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, rightexp);
         *resulttp = &std__string;
     }
     else if ((*resulttp)->IsPtr())
@@ -1064,8 +1064,8 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
                 cast(&stdinative, resultexp);
                 cast(&stdinative, &rightexp);
             }
-            *resultexp = exprNode(ExpressionNode::sub_, *resultexp, rightexp);
-            *resultexp = exprNode(ExpressionNode::arraydiv_, *resultexp, ns);
+            *resultexp = MakeExpression(ExpressionNode::sub_, *resultexp, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::arraydiv_, *resultexp, ns);
             *resulttp = &stdint; /* ptrdiff_t */
         }
         else
@@ -1077,8 +1077,8 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
             /*				*resulttp = righttp = destSize(*resulttp, righttp, resultexp, &rightexp, false, nullptr); */
             if (smallint(righttp))
                 cast(&stdint, &rightexp);
-            rightexp = exprNode(ExpressionNode::umul_, rightexp, ns);
-            *resultexp = exprNode(kw == Keyword::plus_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp);
+            rightexp = MakeExpression(ExpressionNode::umul_, rightexp, ns);
+            *resultexp = MakeExpression(kw == Keyword::plus_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp);
         }
     }
     else if (righttp->IsPtr())
@@ -1101,8 +1101,8 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
         }
         if (smallint(*resulttp))
             cast(&stdint, resultexp);
-        *resultexp = exprNode(ExpressionNode::umul_, *resultexp, ns);
-        *resultexp = exprNode(ExpressionNode::add_, *resultexp, rightexp);
+        *resultexp = MakeExpression(ExpressionNode::umul_, *resultexp, ns);
+        *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, rightexp);
         *resulttp = righttp;
     }
     else
@@ -1151,14 +1151,14 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
                 cast(tpa, &rightexp);
             }
             if (kw != Keyword::plus_)
-                rightexp = exprNode(ExpressionNode::uminus_, rightexp);
-            *resultexp = exprNode(ExpressionNode::add_, *resultexp, rightexp);
+                rightexp = MakeExpression(ExpressionNode::uminus_, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, rightexp);
             cast(*resulttp, resultexp);
         }
         else
         {
             *resulttp = destSize(*resulttp, righttp, resultexp, &rightexp, true, atp);
-            *resultexp = exprNode(kw == Keyword::plus_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp);
+            *resultexp = MakeExpression(kw == Keyword::plus_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp);
         }
     }
     return false;
@@ -1223,7 +1223,7 @@ bool eval_binary_shift(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
         {
             cast(&stdint, &rightexp);
         }
-        *resultexp = exprNode(type, *resultexp, exprNode(ExpressionNode::shiftby_, rightexp));
+        *resultexp = MakeExpression(type, *resultexp, MakeExpression(ExpressionNode::shiftby_, rightexp));
     }
     return false;
 }
@@ -1268,14 +1268,14 @@ bool eval_binary_inequality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resul
         {
             if (righttp->syms->size() > 1)
                 errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)righttp->syms->front())->name);
-            rightexp = varNode(ExpressionNode::pc_, righttp->syms->front());
+            rightexp = MakeExpression(ExpressionNode::pc_, righttp->syms->front());
             righttp = ((SYMBOL*)righttp->syms->front())->tp;
         }
         else if ((righttp->IsPtr() || righttp->BaseType()->type == BasicType::memberptr_) && (*resulttp)->type == BasicType::aggregate_)
         {
             if ((*resulttp)->syms->size() > 1)
                 errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*resulttp)->syms->front())->name);
-            (*resultexp) = varNode(ExpressionNode::pc_, (*resulttp)->syms->front());
+            (*resultexp) = MakeExpression(ExpressionNode::pc_, (*resulttp)->syms->front());
             (*resulttp) = ((SYMBOL*)(*resulttp)->syms->front())->tp;
         }
     }
@@ -1341,7 +1341,7 @@ bool eval_binary_inequality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resul
             type = (*resulttp)->IsUnsigned() ? ExpressionNode::ule_ : ExpressionNode::le_;
             break;
     }
-    *resultexp = exprNode(type, *resultexp, rightexp);
+    *resultexp = MakeExpression(type, *resultexp, rightexp);
     if (Optimizer::cparams.prm_cplusplus)
         *resulttp = &stdbool;
     else
@@ -1385,14 +1385,14 @@ bool eval_binary_equality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resultt
         {
             if (righttp->syms->size() > 1)
                 errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)righttp->syms->front())->name);
-            rightexp = varNode(ExpressionNode::pc_, righttp->syms->front());
+            rightexp = MakeExpression(ExpressionNode::pc_, righttp->syms->front());
             righttp = ((SYMBOL*)righttp->syms->front())->tp;
         }
         else if ((righttp->IsPtr() || righttp->BaseType()->type == BasicType::memberptr_) && (*resulttp)->type == BasicType::aggregate_)
         {
             if (righttp->syms->size() > 1)
                 errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*resulttp)->syms->front())->name);
-            (*resultexp) = varNode(ExpressionNode::pc_, (*resulttp)->syms->front());
+            (*resultexp) = MakeExpression(ExpressionNode::pc_, (*resulttp)->syms->front());
             (*resulttp) = ((SYMBOL*)(*resulttp)->syms->front())->tp;
         }
     }
@@ -1446,28 +1446,28 @@ bool eval_binary_equality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resultt
             {
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
             }
-            *resultexp = exprNode(ExpressionNode::mp_compare_, *resultexp, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::mp_compare_, *resultexp, rightexp);
             (*resultexp)->size = *resulttp;
             if (kw == Keyword::neq_)
-                *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
             done = true;
         }
         else if (isconstzero(righttp, rightexp))
         {
-            *resultexp = exprNode(ExpressionNode::mp_as_bool_, *resultexp);
+            *resultexp = MakeExpression(ExpressionNode::mp_as_bool_, *resultexp);
             (*resultexp)->size = *resulttp;
             if (kw == Keyword::eq_)
-                *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
             done = true;
         }
         else if ((*resulttp)->BaseType()->btp->ExactSameType(righttp))
         {
             int lbl = dumpMemberPtr(rightexp->v.sp, *resulttp, true);
-            rightexp = intNode(ExpressionNode::labcon_, lbl);
-            *resultexp = exprNode(ExpressionNode::mp_compare_, *resultexp, rightexp);
+            rightexp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+            *resultexp = MakeExpression(ExpressionNode::mp_compare_, *resultexp, rightexp);
             (*resultexp)->size = *resulttp;
             if (kw == Keyword::neq_)
-                *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
             done = true;
         }
         else
@@ -1479,20 +1479,20 @@ bool eval_binary_equality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resultt
     {
         if (isconstzero(*resulttp, *resultexp))
         {
-            *resultexp = exprNode(ExpressionNode::mp_as_bool_, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::mp_as_bool_, rightexp);
             (*resultexp)->size = righttp;
             if (kw == Keyword::eq_)
-                *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
             done = true;
         }
         else if ((*resulttp)->ExactSameType(righttp->BaseType()->btp))
         {
             int lbl = dumpMemberPtr((*resultexp)->v.sp, righttp, true);
-            (*resultexp) = intNode(ExpressionNode::labcon_, lbl);
-            *resultexp = exprNode(ExpressionNode::mp_compare_, *resultexp, rightexp);
+            (*resultexp) = MakeIntExpression(ExpressionNode::labcon_, lbl);
+            *resultexp = MakeExpression(ExpressionNode::mp_compare_, *resultexp, rightexp);
             (*resultexp)->size = righttp;
             if (kw == Keyword::neq_)
-                *resultexp = exprNode(ExpressionNode::not_, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::not_, *resultexp);
             done = true;
         }
         else
@@ -1506,7 +1506,7 @@ bool eval_binary_equality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resultt
             (!fittedConst(*resulttp, *resultexp) && !fittedConst(righttp, rightexp)) || !(*resulttp)->IsInt() || !righttp->IsInt())
             if (!(*resulttp)->IsStructured() && !righttp->IsStructured())
                 destSize(*resulttp, righttp, resultexp, &rightexp, true, nullptr);
-        *resultexp = exprNode(kw == Keyword::eq_ ? ExpressionNode::eq_ : ExpressionNode::ne_, *resultexp, rightexp);
+        *resultexp = MakeExpression(kw == Keyword::eq_ ? ExpressionNode::eq_ : ExpressionNode::ne_, *resultexp, rightexp);
     }
     if (Optimizer::cparams.prm_cplusplus)
         *resulttp = &stdbool;
@@ -1592,15 +1592,15 @@ bool eval_binary_logical(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp
     }
     if ((*resulttp)->BaseType()->type == BasicType::memberptr_)
     {
-        *resultexp = exprNode(ExpressionNode::mp_as_bool_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::mp_as_bool_, *resultexp);
         (*resultexp)->size = *resulttp;
     }
     if (righttp->BaseType()->type == BasicType::memberptr_)
     {
-        rightexp = exprNode(ExpressionNode::mp_as_bool_, rightexp);
+        rightexp = MakeExpression(ExpressionNode::mp_as_bool_, rightexp);
         rightexp->size = righttp;
     }
-    *resultexp = exprNode(type, *resultexp, rightexp);
+    *resultexp = MakeExpression(type, *resultexp, rightexp);
     return false;
 }
 bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXPRESSION **resultexp, Type *lefttp, EXPRESSION *leftexp,
@@ -1685,7 +1685,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         if (funcsp && (*resulttp)->BaseType()->type == BasicType::memberptr_)
         {
             int lbl = dumpMemberPtr(funcsp, *resulttp, true);
-            rightexp = intNode(ExpressionNode::labcon_, lbl);
+            rightexp = MakeIntExpression(ExpressionNode::labcon_, lbl);
         }
         if (funcsp)
         {
@@ -1725,9 +1725,9 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
             params->thistp = righttp;
             params->ascall = true;
             params->functp = conv->tp;
-            params->fcall = varNode(ExpressionNode::pc_, conv);
+            params->fcall = MakeExpression(ExpressionNode::pc_, conv);
             params->sp = conv;
-            rightexp = funcNode(params);
+            rightexp = MakeExpression(params);
             righttp = conv->tp->BaseType()->btp;
         }
     }
@@ -1782,7 +1782,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                     if (rightexp->type == ExpressionNode::labcon_ && rightexp->string)
                         rightexp->type = ExpressionNode::c_string_;
                     else if (!righttp->IsMsil())
-                        rightexp = exprNode(ExpressionNode::x_object_, rightexp);
+                        rightexp = MakeExpression(ExpressionNode::x_object_, rightexp);
                 }
                 else if ((*resulttp)->IsMsil() || righttp->IsMsil())
                     error(ERR_NOT_AN_ALLOWED_TYPE);
@@ -1811,7 +1811,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                             cast(&stdint, &rightexp);
                             ns = nodeSizeof((*resulttp)->BaseType()->btp, rightexp);
                         }
-                        rightexp = exprNode(ExpressionNode::umul_, rightexp, ns);
+                        rightexp = MakeExpression(ExpressionNode::umul_, rightexp, ns);
                     }
                 }
                 else if (righttp->IsPtr())
@@ -1849,7 +1849,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                         cast(&stdint, &rightexp);
                         ns = nodeSizeof((*resulttp)->BaseType()->btp, rightexp);
                     }
-                    rightexp = exprNode(ExpressionNode::umul_, rightexp, ns);
+                    rightexp = MakeExpression(ExpressionNode::umul_, rightexp, ns);
                 }
                 break;
             case Keyword::assign_:
@@ -1861,7 +1861,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                 else if ((*resulttp)->BaseType()->type == BasicType::object_)
                 {
                     if (righttp->type != BasicType::object_ && !righttp->IsStructured() && (!righttp->IsArray() || !righttp->BaseType()->msil))
-                        rightexp = exprNode(ExpressionNode::x_object_, rightexp);
+                        rightexp = MakeExpression(ExpressionNode::x_object_, rightexp);
                 }
                 else if ((*resulttp)->IsMsil() || righttp->IsMsil())
                     error(ERR_NOT_AN_ALLOWED_TYPE);
@@ -1869,7 +1869,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                 {
                     if ((*resulttp)->IsArray() && (*resulttp)->msil && !(*resulttp)->ExactSameType(righttp) && natural_size(*resultexp) != ISZ_OBJECT)
                     {
-                        *resultexp = exprNode(ExpressionNode::l_object_, *resultexp);
+                        *resultexp = MakeExpression(ExpressionNode::l_object_, *resultexp);
                         (*resultexp)->v.tp = righttp;
                     }
                     if (righttp->IsArithmetic())
@@ -1920,7 +1920,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                                         {
                                             if (isAccessible(tpn->sp, tpn->sp, tpo->sp, funcsp, AccessLevel::public_, false))
                                             {
-                                                rightexp = exprNode(ExpressionNode::sub_, rightexp, v);
+                                                rightexp = MakeExpression(ExpressionNode::sub_, rightexp, v);
                                                 found = true;
                                             }
                                         }
@@ -1935,7 +1935,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                                         {
                                             if (isAccessible(tpo->sp, tpo->sp, tpn->sp, funcsp, AccessLevel::public_, false))
                                             {
-                                                rightexp = exprNode(ExpressionNode::add_, rightexp, v);
+                                                rightexp = MakeExpression(ExpressionNode::add_, rightexp, v);
                                                 found = true;
                                             }
                                         }
@@ -2087,16 +2087,16 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         if (rightexp->type == ExpressionNode::labcon_ && rightexp->string)
             rightexp->type = ExpressionNode::c_string_;
         else if (!righttp->IsMsil() && !righttp->IsStructured() && (!righttp->IsArray() || !righttp->BaseType()->msil))
-            rightexp = exprNode(ExpressionNode::x_object_, rightexp);
+            rightexp = MakeExpression(ExpressionNode::x_object_, rightexp);
         if (op == ExpressionNode::assign_)
         {
-            *resultexp = exprNode(op, *resultexp, rightexp);
+            *resultexp = MakeExpression(op, *resultexp, rightexp);
         }
         else
         {
             EXPRESSION *dest = *resultexp;
-            *resultexp = exprNode(op, *resultexp, rightexp);
-            *resultexp = exprNode(ExpressionNode::assign_, dest, *resultexp);
+            *resultexp = MakeExpression(op, *resultexp, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::assign_, dest, *resultexp);
         }
     }
     else if ((*resulttp)->BaseType()->type == BasicType::memberptr_)
@@ -2110,14 +2110,14 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         else if (rightexp->type == ExpressionNode::memberptr_)
         {
             int lbl = dumpMemberPtr(rightexp->v.sp, *resulttp, true);
-            rightexp = intNode(ExpressionNode::labcon_, lbl);
-            *resultexp = exprNode(ExpressionNode::blockassign_, *resultexp, rightexp);
+            rightexp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+            *resultexp = MakeExpression(ExpressionNode::blockassign_, *resultexp, rightexp);
             (*resultexp)->size = *resulttp;
             (*resultexp)->altdata = (void*)(*resulttp);
         }
         else if (isconstzero(righttp, rightexp) || rightexp->type == ExpressionNode::nullptr_)
         {
-            *resultexp = exprNode(ExpressionNode::blockclear_, *resultexp);
+            *resultexp = MakeExpression(ExpressionNode::blockclear_, *resultexp);
             (*resultexp)->size = *resulttp;
         }
         else if (rightexp->type == ExpressionNode::callsite_ && rightexp->v.func->returnSP)
@@ -2128,7 +2128,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         }
         else
         {
-            *resultexp = exprNode(ExpressionNode::blockassign_, *resultexp, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::blockassign_, *resultexp, rightexp);
             (*resultexp)->size = *resulttp;
             (*resultexp)->altdata = (void*)(*resulttp);
         }
@@ -2150,7 +2150,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         }
         else
         {
-            *resultexp = exprNode(ExpressionNode::blockassign_, *resultexp, rightexp);
+            *resultexp = MakeExpression(ExpressionNode::blockassign_, *resultexp, rightexp);
             (*resultexp)->size = *resulttp;
             (*resultexp)->altdata = (void*)(*resulttp);
             if ((*resulttp)->IsAtomic())
@@ -2159,7 +2159,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                 (*resultexp)->size->size -= ATOMIC_FLAG_SPACE;
             }
         }
-        *resultexp = exprNode(ExpressionNode::not__lvalue_, *resultexp);
+        *resultexp = MakeExpression(ExpressionNode::not__lvalue_, *resultexp);
     }
     else
     {
@@ -2179,12 +2179,12 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                 }
                 else if ((*resulttp)->IsArray() && (*resulttp)->BaseType()->msil)
                 {
-                    *resultexp = exprNode(ExpressionNode::l_object_, *resultexp);
+                    *resultexp = MakeExpression(ExpressionNode::l_object_, *resultexp);
                     (*resultexp)->v.tp = *resulttp;
                 }
             }
 
-            *resultexp = exprNode(op, *resultexp, rightexp);
+            *resultexp = MakeExpression(op, *resultexp, rightexp);
             // unallocated var for destructor
             GetAssignDestructors(&(*resultexp)->v.logicaldestructors.left, *resultexp);
         }
@@ -2210,43 +2210,43 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                 if (kw == Keyword::asleftshift_ || kw == Keyword::asrightshift_)
                 {
                     cast(&stdint, &rightexp);
-                    *resultexp = exprNode(op, src, rightexp);
+                    *resultexp = MakeExpression(op, src, rightexp);
                 }
                 else
                 {
                     auto tp2 = destSize(*resulttp, righttp, &src, &rightexp, false, nullptr);
-                    *resultexp = exprNode(op, src, rightexp);
+                    *resultexp = MakeExpression(op, src, rightexp);
                     if (!tp2->SameType(*resulttp))
                         cast(*resulttp, resultexp);
                 }
-                *resultexp = exprNode(ExpressionNode::assign_, dest, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::assign_, dest, *resultexp);
             }
             else if (kw == Keyword::asmod_ || kw == Keyword::asdivide_ || (*resulttp)->BaseType()->type == BasicType::bool_)
             {
                 int n = natural_size(*resultexp);
                 destSize(*resulttp, righttp, &src, &rightexp, false, nullptr);
-                *resultexp = exprNode(op, src, rightexp);
+                *resultexp = MakeExpression(op, src, rightexp);
                 if (natural_size(rightexp) != n)
                     cast((*resulttp), resultexp);
-                *resultexp = exprNode(ExpressionNode::assign_, dest, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::assign_, dest, *resultexp);
             }
             else if (kw == Keyword::asleftshift_ || kw == Keyword::asrightshift_)
             {
                 int n = natural_size(*resultexp);
                 if (natural_size(rightexp) != n)
                     cast(&stdint, &rightexp);
-                *resultexp = exprNode(op, src, rightexp);
-                *resultexp = exprNode(ExpressionNode::assign_, dest, *resultexp);
+                *resultexp = MakeExpression(op, src, rightexp);
+                *resultexp = MakeExpression(ExpressionNode::assign_, dest, *resultexp);
             }
             else
             {
                 int n = natural_size(*resultexp);
                 if (natural_size(rightexp) != n)
                     destSize(*resulttp, righttp, &src, &rightexp, false, nullptr);
-                *resultexp = exprNode(op, src, rightexp);
+                *resultexp = MakeExpression(op, src, rightexp);
                 if (natural_size(*resultexp) != n)
                     cast(*resulttp, resultexp);
-                *resultexp = exprNode(ExpressionNode::assign_, dest, *resultexp);
+                *resultexp = MakeExpression(ExpressionNode::assign_, dest, *resultexp);
             }
         }
     }
@@ -2306,7 +2306,7 @@ bool eval_binary_comma(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp,
     else
     {
         *resulttp = righttp;
-        *resultexp = exprNode(ExpressionNode::comma_, *resultexp, rightexp);
+        *resultexp = MakeExpression(ExpressionNode::comma_, *resultexp, rightexp);
         resultexp = &(*resultexp)->right;
     }
     return false;

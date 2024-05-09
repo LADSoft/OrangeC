@@ -120,7 +120,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                             {
                                 CallSite fcall = {};
                                 Type* tp = nullptr;
-                                EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+                                EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                                 SYMBOL* sp = func->sb->overloadName;
                                 fcall.arguments = initListListFactory.CreateList();
                                 for (auto sym : *func->tp->BaseType()->syms)
@@ -162,7 +162,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 thunks[count].entry = entry;
                                 if (func->sb->attribs.inheritable.linkage2 == Linkage::import_)
                                 {
-                                    EXPRESSION* exp = varNode(ExpressionNode::pc_, func);
+                                    EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, func);
                                     thunkForImportTable(&exp);
                                     thunks[count].func = exp->v.sp;
                                 }
@@ -180,7 +180,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                             {
                                 if (func->sb->attribs.inheritable.linkage2 == Linkage::import_)
                                 {
-                                    EXPRESSION* exp = varNode(ExpressionNode::pc_, func);
+                                    EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, func);
                                     thunkForImportTable(&exp);
                                     Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
                                 }
@@ -2117,10 +2117,10 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                         SYMBOL* sym = *it;
                         Argument* p = Allocate<Argument>();
                         p->tp = sym->tp;
-                        p->exp = varNode(ExpressionNode::auto_, sym);
+                        p->exp = MakeExpression(ExpressionNode::auto_, sym);
                         if (p->tp->IsRef())
                         {
-                            p->exp = exprNode(ExpressionNode::l_ref_, p->exp);
+                            p->exp = MakeExpression(ExpressionNode::l_ref_, p->exp);
                             p->tp = p->tp->BaseType()->btp;
                         }
                         if (!p->tp->IsStructured())
@@ -3420,13 +3420,13 @@ Type* AttributeFinish(SYMBOL* sym, Type* tp)
         fc->arguments = initListListFactory.CreateList();
         auto arg = Allocate<Argument>();
         arg->tp = &stdpointer;
-        arg->exp = varNode(ExpressionNode::auto_, sym);
+        arg->exp = MakeExpression(ExpressionNode::auto_, sym);
         fc->arguments->push_back(arg);
         fc->ascall = true;
         fc->functp = sym->sb->attribs.inheritable.cleanup->tp;
-        fc->fcall = varNode(ExpressionNode::pc_, sym->sb->attribs.inheritable.cleanup);
+        fc->fcall = MakeExpression(ExpressionNode::pc_, sym->sb->attribs.inheritable.cleanup);
         fc->sp = sym->sb->attribs.inheritable.cleanup;
-        EXPRESSION* expl = funcNode(fc);
+        EXPRESSION* expl = MakeExpression(fc);
         initInsert(&sym->sb->dest, sym->tp, expl, 0, true);
     }
     return tp;
@@ -4465,7 +4465,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
                 last = &(*last)->right;
             if (*last)
             {
-                *last = exprNode(ExpressionNode::comma_, *last);
+                *last = MakeExpression(ExpressionNode::comma_, *last);
                 last = &(*last)->right;
             }
             auto newFunc = makeID(StorageClass::global_, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));
@@ -4474,16 +4474,16 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             auto body = decl->sb->dest->front()->exp;
             InsertLocalStaticUnInitializer(newFunc, body);
 
-            EXPRESSION* callexp = funcNode(Allocate<CallSite>());
+            EXPRESSION* callexp = MakeExpression(Allocate<CallSite>());
             callexp->v.func->sp = atexitfunc;
             callexp->v.func->functp = atexitfunc->tp;
-            callexp->v.func->fcall = varNode(ExpressionNode::pc_, atexitfunc);
+            callexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, atexitfunc);
             callexp->v.func->ascall = true;
             callexp->v.func->arguments = initListListFactory.CreateList();
             auto arg = Allocate<Argument>();
             callexp->v.func->arguments->push_back(arg);
             arg->tp = &stdpointer;
-            arg->exp = varNode(ExpressionNode::pc_, newFunc);
+            arg->exp = MakeExpression(ExpressionNode::pc_, newFunc);
             *last = callexp;
         }
     }
@@ -4584,8 +4584,8 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
 
                         for (int i = 0; i < identifiers.size(); i++)
                         {
-                            auto src = i ? exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, i * btp->size)) : exp;
-                            auto dest = i ? exprNode(ExpressionNode::add_, copy, intNode(ExpressionNode::c_i_, i * btp->size)) : copy;
+                            auto src = i ? MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, i * btp->size)) : exp;
+                            auto dest = i ? MakeExpression(ExpressionNode::add_, copy, MakeIntExpression(ExpressionNode::c_i_, i * btp->size)) : copy;
                             Type* ctype = btp;
                             auto expx = dest;
                             callConstructorParam(&ctype, &expx, btp, src, true, false, true, false, true);
@@ -4606,7 +4606,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         EXPRESSION* sz = nullptr;
                         if (identifiers.size() > 1)
                         {
-                            sz = intNode(ExpressionNode::c_i_, identifiers.size());
+                            sz = MakeIntExpression(ExpressionNode::c_i_, identifiers.size());
                         }
                         auto expy = copy;
                         callDestructor(btp->sp, nullptr, &expy, sz, true, false, false, true);
@@ -4625,7 +4625,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                     }
                     else
                     {
-                        auto epc = exprNode(ExpressionNode::blockassign_, copy, exp);
+                        auto epc = MakeExpression(ExpressionNode::blockassign_, copy, exp);
                         epc->size = tp;
                         epc->altdata = (void*)(tp);
                         if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
@@ -4651,7 +4651,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
                         {
                             Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
-                            s->select = varNode(ExpressionNode::auto_, sym);
+                            s->select = MakeExpression(ExpressionNode::auto_, sym);
                         }
                     }
                 }
@@ -4771,7 +4771,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
                         {
                             Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
-                            s->select = varNode(ExpressionNode::auto_, sym);
+                            s->select = MakeExpression(ExpressionNode::auto_, sym);
                         }
                         ++it;
                     }

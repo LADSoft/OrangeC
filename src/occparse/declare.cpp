@@ -2486,7 +2486,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             CallSite* epx = Allocate<CallSite>();
             CallSite* ld = Allocate<CallSite>();
             epx->ascall = true;
-            epx->fcall = varNode(ExpressionNode::pc_, al);
+            epx->fcall = MakeExpression(ExpressionNode::pc_, al);
             epx->sp = al;
             epx->functp = al->tp;
             epx->arguments = initListListFactory.CreateList();
@@ -2494,10 +2494,10 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             epx->arguments->push_back(arg);
             arg->tp = &stdint;
             arg->exp = ep2;
-            ep2 = funcNode(epx);
-            ep2 = exprNode(ExpressionNode::assign_, ep1, ep2);
+            ep2 = MakeExpression(epx);
+            ep2 = MakeExpression(ExpressionNode::assign_, ep1, ep2);
             ld->ascall = true;
-            ld->fcall = varNode(ExpressionNode::pc_, fr);
+            ld->fcall = MakeExpression(ExpressionNode::pc_, fr);
             ld->sp = fr;
             ld->functp = fr->tp;
             arg = Allocate<Argument>();
@@ -2505,22 +2505,22 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             ld->arguments->push_back(arg);
             arg->tp = &stdpointer;
             arg->exp = ep1;
-            unloader = funcNode(ld);
+            unloader = MakeExpression(ld);
             ep1 = ep2;
         }
         else
         {
             diag("llallocatevla: cannot find allocator");
-            return intNode(ExpressionNode::c_i_, 0);
+            return MakeIntExpression(ExpressionNode::c_i_, 0);
         }
     }
     else
     {
         EXPRESSION* var = anonymousVar(StorageClass::auto_, &stdpointer);
-        loader = exprNode(ExpressionNode::savestack_, var);
-        unloader = exprNode(ExpressionNode::loadstack_, var);
-        ep1 = exprNode(ExpressionNode::assign_, ep1, exprNode(ExpressionNode::alloca_, ep2));
-        ep1 = exprNode(ExpressionNode::comma_, loader, ep1);
+        loader = MakeExpression(ExpressionNode::savestack_, var);
+        unloader = MakeExpression(ExpressionNode::loadstack_, var);
+        ep1 = MakeExpression(ExpressionNode::assign_, ep1, MakeExpression(ExpressionNode::alloca_, ep2));
+        ep1 = MakeExpression(ExpressionNode::comma_, loader, ep1);
     }
 
     initInsert(&sp->sb->dest, sp->tp, unloader, 0, false);
@@ -2535,9 +2535,9 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* bt
         mul = vlaSetSizes(rptr, vlanode, btp->btp, sp, index, vlaindex, sou);
         mul1 = Allocate<EXPRESSION>();
         if (!btp->esize)
-            btp->esize = intNode(ExpressionNode::c_i_, 1);
+            btp->esize = MakeIntExpression(ExpressionNode::c_i_, 1);
         *mul1 = *btp->esize;
-        mul = mul1 = exprNode(ExpressionNode::arraymul_, mul, mul1);
+        mul = mul1 = MakeExpression(ExpressionNode::arraymul_, mul, mul1);
         btp->sp = sp;
         btp->vlaindex = (*vlaindex)++;
     }
@@ -2546,14 +2546,14 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* bt
 #ifdef ERROR
 #    error Sizeof vla of vla
 #endif
-        mul = intNode(ExpressionNode::c_i_, btp->size);
+        mul = MakeIntExpression(ExpressionNode::c_i_, btp->size);
         mul1 = Allocate<EXPRESSION>();
         *mul1 = *mul;
     }
-    store = exprNode(ExpressionNode::add_, vlanode, intNode(ExpressionNode::c_i_, *index));
+    store = MakeExpression(ExpressionNode::add_, vlanode, MakeIntExpression(ExpressionNode::c_i_, *index));
     deref(&stdint, &store);
-    store = exprNode(ExpressionNode::assign_, store, mul1);
-    **rptr = exprNode(ExpressionNode::comma_, store);
+    store = MakeExpression(ExpressionNode::assign_, store, mul1);
+    **rptr = MakeExpression(ExpressionNode::comma_, store);
     *rptr = &(**rptr)->right;
     *index += sou;
     return mul;
@@ -2588,9 +2588,9 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
     {
         SYMBOL* dest = sp;
         SYMBOL* src = sp->tp->sp;
-        *rptr = exprNode(ExpressionNode::comma_);
+        *rptr = MakeExpression(ExpressionNode::comma_);
         rptr = &(*rptr)->right;
-        result->left = exprNode(ExpressionNode::blockassign_, varNode(ExpressionNode::auto_, dest), varNode(ExpressionNode::auto_, src));
+        result->left = MakeExpression(ExpressionNode::blockassign_, MakeExpression(ExpressionNode::auto_, dest), MakeExpression(ExpressionNode::auto_, src));
         dest->tp->size = src->tp->size;
         result->left->size = src->tp;
         result->altdata = (void*)src->tp;
@@ -2604,13 +2604,13 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
         int index = soa + sou;
         int vlaindex = 0;
         size = (count + 2) * (sou) + soa;
-        vlanode = varNode(ExpressionNode::auto_, vlasp);
+        vlanode = MakeExpression(ExpressionNode::auto_, vlasp);
         vlaSetSizes(&rptr, vlanode, btp, vlasp, &index, &vlaindex, sou);
 
-        ep = exprNode(ExpressionNode::add_, vlanode, intNode(ExpressionNode::c_i_, soa));
+        ep = MakeExpression(ExpressionNode::add_, vlanode, MakeIntExpression(ExpressionNode::c_i_, soa));
         deref(&stdint, &ep);
-        ep = exprNode(ExpressionNode::assign_, ep, intNode(ExpressionNode::c_i_, count));
-        *rptr = exprNode(ExpressionNode::comma_, ep);
+        ep = MakeExpression(ExpressionNode::assign_, ep, MakeIntExpression(ExpressionNode::c_i_, count));
+        *rptr = MakeExpression(ExpressionNode::comma_, ep);
         rptr = &(*rptr)->right;
 
         sp->tp->BaseType()->size = size; /* size field is actually size of VLA header block */
@@ -2622,12 +2622,12 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
         st->hasvla = true;
         if (sp->sb->storage_class != StorageClass::typedef_ && !bypointer)
         {
-            EXPRESSION* ep1 = exprNode(ExpressionNode::add_, varNode(ExpressionNode::auto_, sp), intNode(ExpressionNode::c_i_, 0));
-            EXPRESSION* ep2 = exprNode(ExpressionNode::add_, varNode(ExpressionNode::auto_, sp), intNode(ExpressionNode::c_i_, soa + sou * (count + 1)));
+            EXPRESSION* ep1 = MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::auto_, sp), MakeIntExpression(ExpressionNode::c_i_, 0));
+            EXPRESSION* ep2 = MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::auto_, sp), MakeIntExpression(ExpressionNode::c_i_, soa + sou * (count + 1)));
             deref(&stdpointer, &ep1);
             deref(&stdint, &ep2);
             ep1 = llallocateVLA(sp, ep1, ep2);
-            *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : exprNode(ExpressionNode::comma_, ep1);
+            *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : MakeExpression(ExpressionNode::comma_, ep1);
             sp->sb->assigned = true;
         }
         st->select = result;
@@ -4374,7 +4374,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (!sp->tp->IsInt() || !sp->tp->IsConst())
                                 {
                                     Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
-                                    s->select = varNode(ExpressionNode::auto_, sp);
+                                    s->select = MakeExpression(ExpressionNode::auto_, sp);
                                 }
                             }
                             if (!sp->sb->label && (sp->sb->storage_class == StorageClass::static_ || sp->sb->storage_class == StorageClass::localstatic_) &&
@@ -4491,7 +4491,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             Statement* st;
                                             currentLineData(block, hold, 0);
                                             st = Statement::MakeStatement(hold, block, StatementNode::expr_);
-                                            st->select = varNode(ExpressionNode::constexprconstructor_, sp);
+                                            st->select = MakeExpression(ExpressionNode::constexprconstructor_, sp);
                                             st->select->left = convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
                                         }
                                     }
@@ -4523,7 +4523,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                                     st = Statement::MakeStatement(hold, emptyBlockdata, StatementNode::expr_);
                                                     block.front()->statements->push_front(st);
                                                 }
-                                                st->select = exprNode(ExpressionNode::initobj_, varNode(ExpressionNode::auto_, sp));
+                                                st->select = MakeExpression(ExpressionNode::initobj_, MakeExpression(ExpressionNode::auto_, sp));
                                             }
                                         }
                                     }

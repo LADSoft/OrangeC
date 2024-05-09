@@ -319,7 +319,7 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                     }
                     exp = change ? &to->second->byNonType.val : &to->second->byNonType.temp;
                     if (itTA->second->byNonType.val && to->second->byNonType.val &&
-                        !equalTemplateIntNode(to->second->byNonType.val, *exp))
+                        !equalTemplateMakeIntExpression(to->second->byNonType.val, *exp))
                         return false;
                     to->second->deduced = true;
                     *exp = itTA->second->byNonType.val;

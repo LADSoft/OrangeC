@@ -265,7 +265,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
                 }
                 else
                 {
-                    EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+                    EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                     callDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, true, true);
                     if (exp && exp->left)
                     {
@@ -281,7 +281,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)
             {
-                EXPRESSION* exp = varNode(ExpressionNode::pc_, sym);
+                EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, sym);
                 thunkForImportTable(&exp);
                 sym = exp->v.sp;
             }

@@ -394,7 +394,7 @@ static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& unini
     Optimizer::cseg();
 
     iexpr_func_init();
-    gen_func(varNode(ExpressionNode::global_, newFunc), 1);
+    gen_func(MakeExpression(ExpressionNode::global_, newFunc), 1);
     Optimizer::gen_virtual(currentFunction, Optimizer::vt_code);
     Optimizer::addblock(-1);
     Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
@@ -952,13 +952,13 @@ static void inlineResetReturn(Statement* block, Type* rettp, EXPRESSION* retnode
     if (rettp->IsStructured())
     {
         diag("structure in inlineResetReturn");
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
     }
     else
     {
         exp = block->select;
         cast(rettp, &exp);
-        exp = exprNode(ExpressionNode::assign_, retnode, exp);
+        exp = MakeExpression(ExpressionNode::assign_, retnode, exp);
     }
     block->type = StatementNode::expr_;
     block->select = exp;
@@ -972,7 +972,7 @@ static EXPRESSION* newReturn(Type* tp)
         deref(tp, &exp);
     }
     else
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
     return exp;
 }
 static void reduceReturns(std::list<Statement*>* blocks, Type* rettp, EXPRESSION* retnode)
@@ -1316,7 +1316,7 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<Statement*> **stp)
         EXPRESSION* tnode = anonymousVar(StorageClass::auto_, sx->tp);
         deref(sx->tp, &tnode);
         sx->sb->inlineFunc.stmt = (std::list<Statement*>*)tnode;
-        tnode = exprNode(ExpressionNode::assign_, tnode, exp);
+        tnode = MakeExpression(ExpressionNode::assign_, tnode, exp);
         auto stmt = Allocate<Statement>();
         stmt->type = StatementNode::expr_;
         stmt->select = tnode;
@@ -1428,7 +1428,7 @@ EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
         stmt->push_front(stmt2);
     }
 
-    newExpression = exprNode(ExpressionNode::stmt_);
+    newExpression = MakeExpression(ExpressionNode::stmt_);
     newExpression->v.stmt = stmt;
 
     if (params->sp->sb->retcount == 1)
@@ -1452,10 +1452,10 @@ EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
     if (newExpression->type == ExpressionNode::stmt_)
         if (newExpression->v.stmt->front()->type == StatementNode::block_)
             if (!newExpression->v.stmt->front()->lower)
-                newExpression = intNode(ExpressionNode::c_i_, 0);  // noop if there is no body
+                newExpression = MakeIntExpression(ExpressionNode::c_i_, 0);  // noop if there is no body
     if (newExpression->type == ExpressionNode::stmt_)
     {
-        newExpression->left = intNode(ExpressionNode::c_i_, 0);
+        newExpression->left = MakeIntExpression(ExpressionNode::c_i_, 0);
         if (params->sp->tp->BaseType()->btp->IsStructured())
             cast(&stdpointer, &newExpression->left);
         else

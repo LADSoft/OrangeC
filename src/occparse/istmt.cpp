@@ -124,7 +124,7 @@ Optimizer::IMODE* make_direct(int i)
  *      make a direct reference to an immediate value.
  */
 {
-    return make_ioffset(intNode(ExpressionNode::c_i_, i));
+    return make_ioffset(MakeIntExpression(ExpressionNode::c_i_, i));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -254,7 +254,7 @@ EXPRESSION* tempVar(Type* tp, bool global)
 }
 EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
 {
-    auto val = exprNode(ExpressionNode::paramsubstitute_, left);
+    auto val = MakeExpression(ExpressionNode::paramsubstitute_, left);
     val->v.imode = im;
     return val;
 }
@@ -470,13 +470,13 @@ void gen_except(bool begin, xcept* xc)
     auto tab = Allocate<Optimizer::IMODE>();
     tab->mode = Optimizer::i_immed;
     tab->size = ISZ_ADDR;
-    tab->offset = Optimizer::SymbolManager::Get(varNode(ExpressionNode::auto_, xc->xctab));
+    tab->offset = Optimizer::SymbolManager::Get(MakeExpression(ExpressionNode::auto_, xc->xctab));
     if (begin)
     {
         auto lab = Allocate<Optimizer::IMODE>();
         lab->mode = Optimizer::i_immed;
         lab->size = ISZ_ADDR;
-        lab->offset = Optimizer::SymbolManager::Get(varNode(ExpressionNode::pc_, xc->xclab));
+        lab->offset = Optimizer::SymbolManager::Get(MakeExpression(ExpressionNode::pc_, xc->xclab));
         gen_icode(Optimizer::i_beginexcept, nullptr, tab, lab);
     }
     else
@@ -633,7 +633,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 {
                     if ((flags & F_RETURNSTRUCTBYVALUE) && inlineSymThisPtr.size() && funcsp->sb->isConstructor && funcsp->sb->parentClass->sb->structuredAliasType)
                     {
-                        exp = exprNode(ExpressionNode::structadd_, exp, intNode(ExpressionNode::c_i_, 0));
+                        exp = MakeExpression(ExpressionNode::structadd_, exp, MakeIntExpression(ExpressionNode::c_i_, 0));
                         deref(funcsp->sb->parentClass->sb->structuredAliasType, &exp);
                     }
                     ap3 = gen_expr(funcsp, exp, flags & F_RETURNSTRUCTBYVALUE, size);
@@ -1100,7 +1100,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;
     Optimizer::SimpleSymbol* oldCurrentFunction;
-    EXPRESSION* funcexp = varNode(ExpressionNode::global_, funcsp);
+    EXPRESSION* funcexp = MakeExpression(ExpressionNode::global_, funcsp);
     SYMBOL* tmpl = funcsp;
     if (TotalErrors())
         return;
@@ -1154,8 +1154,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     {
         EXPRESSION* exp;
         Optimizer::temporarySymbols.push_back(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab));
-        xcexp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
-        xcexp = exprNode(ExpressionNode::add_, xcexp, intNode(ExpressionNode::c_i_, XCTAB_INDEX_OFS));
+        xcexp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
+        xcexp = MakeExpression(ExpressionNode::add_, xcexp, MakeIntExpression(ExpressionNode::c_i_, XCTAB_INDEX_OFS));
     }
     else
     {
@@ -1189,7 +1189,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     {
         if (funcsp->tp->BaseType()->syms->size() && ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->sb->thisPtr)
         {
-            EXPRESSION* exp = varNode(ExpressionNode::auto_, ((SYMBOL*)funcsp->tp->BaseType()->syms->front()));
+            EXPRESSION* exp = MakeExpression(ExpressionNode::auto_, ((SYMBOL*)funcsp->tp->BaseType()->syms->front()));
             exp->v.sp->tp->used = true;
             gen_varstart(exp);
         }

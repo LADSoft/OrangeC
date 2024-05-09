@@ -3812,7 +3812,7 @@ bool sameTemplate(Type* P, Type* A, bool quals)
                     EXPRESSION* pat = PA->second->byNonType.val && !PA->second->byNonType.dflt ? PA->second->byNonType.val : PA->second->byNonType.dflt;
                     if (!templateCompareTypes(PL->second->byNonType.tp, PA->second->byNonType.tp, true))
                         break;
-                    if ((!plt || !pat) || !equalTemplateIntNode(plt, pat))
+                    if ((!plt || !pat) || !equalTemplateMakeIntExpression(plt, pat))
                         break;
                 }
             }
@@ -5858,7 +5858,7 @@ static bool ValidForDeduction(SYMBOL* s)
                                     }
                                 }
                             }
-                            *exp = varNode(ExpressionNode::pc_, found1);
+                            *exp = MakeExpression(ExpressionNode::pc_, found1);
                         }
                     }
                 }
@@ -5901,7 +5901,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             if (sp->tp->syms->begin() != sp->tp->syms->end())
             {
                 sp = *sp->tp->syms->begin();
-                *exp = varNode(ExpressionNode::pc_, sp);
+                *exp = MakeExpression(ExpressionNode::pc_, sp);
                 *tp = sp->tp;
             }
             enclosingDeclarations.Release();
@@ -6379,7 +6379,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             if (sp)
             {
                 sp->tp->BaseType()->btp->UpdateRootTypes();
-                *exp = varNode(ExpressionNode::pc_, sp);
+                *exp = MakeExpression(ExpressionNode::pc_, sp);
                 *tp = sp->tp;
             }
         }
@@ -6425,13 +6425,13 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
     if (found && (*itp)->sb->thisPtr)
     {
         fpargs.thistp = (*itp)->tp;
-        fpargs.thisptr = intNode(ExpressionNode::c_i_, 0);
+        fpargs.thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
         ++itp;
     }
     else if (tp->type == BasicType::memberptr_)
     {
         fpargs.thistp = Type::MakeType(BasicType::pointer_, tp->sp->tp);
-        fpargs.thisptr = intNode(ExpressionNode::c_i_, 0);
+        fpargs.thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
     }
     if (found)
     {
@@ -6439,7 +6439,7 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
         {
             auto il = Allocate<Argument>();
             il->tp = ((*itp))->tp;
-            il->exp = intNode(ExpressionNode::c_i_, 0);
+            il->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
             if (il->tp->IsRef())
                 il->tp = il->tp->BaseType()->btp;
             if (!fpargs.arguments)

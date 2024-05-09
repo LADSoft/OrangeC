@@ -778,7 +778,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                                         i->tp = SynthesizeType(i->tp, nullptr, false);
                                     }
                                 Type* ctype = sp->tp;
-                                EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+                                EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                                 CallSite funcparams = {};
                                 funcparams.arguments = rvsit->arguments;
                                 auto oldnoExcept = noExcept;
@@ -3156,7 +3156,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             case TplType::int_: {
                                 EXPRESSION* exp = copy_expression(itParams->second->byNonType.val);
                                 optimize_for_constants(&exp);
-                                if (itParams->second->byNonType.val && !equalTemplateIntNode(exp, (EXPRESSION*)dflt))
+                                if (itParams->second->byNonType.val && !equalTemplateMakeIntExpression(exp, (EXPRESSION*)dflt))
                                     rv = nullptr;
                             }
                             break;
@@ -3216,7 +3216,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                                 }
                                 if (exp && itParams->second->byNonType.dflt &&
                                     itParams->second->byNonType.dflt->type != ExpressionNode::templateparam_ &&
-                                    !equalTemplateIntNode(itParams->second->byNonType.dflt, exp))
+                                    !equalTemplateMakeIntExpression(itParams->second->byNonType.dflt, exp))
                                     rv = nullptr;
                             }
                         }
@@ -3313,7 +3313,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                                 EXPRESSION* exp = copy_expression(itParams->second->byNonType.val);
                                 optimize_for_constants(&exp);
                                 if (itParams->second->byNonType.dflt &&
-                                    !equalTemplateIntNode(exp, itParams->second->byNonType.dflt))
+                                    !equalTemplateMakeIntExpression(exp, itParams->second->byNonType.dflt))
                                     rv = nullptr;
                             }
                             break;

@@ -127,14 +127,14 @@ EXPRESSION* ConvertToMSILString(EXPRESSION* val)
     CallSite* fp = Allocate<CallSite>();
     fp->functp = var->tp;
     fp->sp = var;
-    fp->fcall = varNode(ExpressionNode::global_, var);
+    fp->fcall = MakeExpression(ExpressionNode::global_, var);
     fp->arguments = initListListFactory.CreateList();
     auto arg = Allocate<Argument>();
     arg->exp = val;
     arg->tp = &std__string;
     fp->arguments->push_back(arg);
     fp->ascall = true;
-    EXPRESSION* rv = funcNode(fp);
+    EXPRESSION* rv = MakeExpression(fp);
     return rv;
 }
 EXPRESSION* stringlit(StringData* s)
@@ -163,10 +163,10 @@ EXPRESSION* stringlit(StringData* s)
                 }
                 if (i >= s->size)
                 {
-                    rv = intNode(ExpressionNode::labcon_, lp->label);
+                    rv = MakeIntExpression(ExpressionNode::labcon_, lp->label);
                     rv->string = s;
                     rv->size = Type::MakeType(BasicType::struct_);
-                    rv->altdata = intNode(ExpressionNode::c_i_, (int)s->strtype);
+                    rv->altdata = MakeIntExpression(ExpressionNode::c_i_, (int)s->strtype);
                     lp->refCount++;
                     if (Optimizer::msilstrings)
                     {
@@ -179,10 +179,10 @@ EXPRESSION* stringlit(StringData* s)
     }
     s->label = Optimizer::nextLabel++;
     strtab.push_back(s);
-    rv = intNode(ExpressionNode::labcon_, s->label);
+    rv = MakeIntExpression(ExpressionNode::labcon_, s->label);
     rv->string = s;
     rv->size = Type::MakeType(BasicType::struct_);
-    rv->altdata = intNode(ExpressionNode::c_i_, (int)s->strtype);
+    rv->altdata = MakeIntExpression(ExpressionNode::c_i_, (int)s->strtype);
     s->refCount++;
     if (Optimizer::msilstrings)
     {
@@ -593,7 +593,7 @@ static void dumpDynamicInitializers(void)
                     if (++i == 10)
                     {
                         exp1 = *next;
-                        *next = intNode(ExpressionNode::c_i_, 0);  // fill in the final right with a value
+                        *next = MakeIntExpression(ExpressionNode::c_i_, 0);  // fill in the final right with a value
                         stmt.push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::expr_));
                         stmt.back()->select = exp;
 
@@ -646,7 +646,7 @@ static void dumpTLSInitializers(void)
             codeLabel = INT_MIN;
             while (TLSInitializers)
             {
-                EXPRESSION* exp = varNode(ExpressionNode::threadlocal_, TLSInitializers->sp);
+                EXPRESSION* exp = MakeExpression(ExpressionNode::threadlocal_, TLSInitializers->sp);
                 Statement* stmt = Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::expr_);
                 exp = convertInitToExpression(TLSInitializers->init->front()->basetp, TLSInitializers->sp, nullptr, nullptr,
                                               TLSInitializers->init, exp, false);
@@ -714,7 +714,7 @@ static void dumpTLSDestructors(void)
             codeLabel = INT_MIN;
             while (TLSDestructors)
             {
-                EXPRESSION* exp = varNode(ExpressionNode::threadlocal_, TLSDestructors->sp);
+                EXPRESSION* exp = MakeExpression(ExpressionNode::threadlocal_, TLSDestructors->sp);
                 exp = convertInitToExpression(TLSDestructors->init->front()->basetp, TLSDestructors->sp, nullptr, nullptr,
                                               TLSDestructors->init, exp, true);
                 auto stmt = Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::expr_);
@@ -1491,7 +1491,7 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                 expandPackedInitList(&temp, funcsp, start, *expr);
                 if (!temp || !temp->size())
                 {
-                    *expr = intNode(ExpressionNode::c_i_, 0);
+                    *expr = MakeIntExpression(ExpressionNode::c_i_, 0);
                     *tp = itype;
                 }
                 else
@@ -1528,7 +1528,7 @@ static LexList* initialize_bool_type(LexList* lex, SYMBOL* funcsp, int offset, S
     }
     if (Optimizer::cparams.prm_cplusplus && needend && MATCHKW(lex, Keyword::end_))
     {
-        exp = intNode(ExpressionNode::c_bool_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_bool_, 0);
     }
     else
     {
@@ -1580,7 +1580,7 @@ static LexList* initialize_arithmetic_type(LexList* lex, SYMBOL* funcsp, int off
     }
     if (Optimizer::cparams.prm_cplusplus && needend && MATCHKW(lex, Keyword::end_))
     {
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         cast(itype, &exp);
     }
     else
@@ -1723,7 +1723,7 @@ static LexList* initialize_pointer_type(LexList* lex, SYMBOL* funcsp, int offset
     }
     if (Optimizer::cparams.prm_cplusplus && needend && MATCHKW(lex, Keyword::end_))
     {
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
     }
     else
     {
@@ -1870,7 +1870,7 @@ static LexList* initialize_memberptr(LexList* lex, SYMBOL* funcsp, int offset, S
     }
     if (Optimizer::cparams.prm_cplusplus && needend && MATCHKW(lex, Keyword::end_))
     {
-        exp = intNode(ExpressionNode::memberptr_, 0);  // no SP means fill it with zeros...
+        exp = MakeIntExpression(ExpressionNode::memberptr_, 0);  // no SP means fill it with zeros...
     }
     else
     {
@@ -1894,7 +1894,7 @@ static LexList* initialize_memberptr(LexList* lex, SYMBOL* funcsp, int offset, S
                 funcsp = MatchOverloadedFunction(itype, &tp1, (*exp2)->v.func->sp, exp2, 0);
                 if (funcsp)
                 {
-                    exp = varNode(ExpressionNode::memberptr_, funcsp);
+                    exp = MakeExpression(ExpressionNode::memberptr_, funcsp);
                 }
                 if (tp1 && !itype->btp->ExactSameType(tp1))
                 {
@@ -1936,7 +1936,7 @@ static LexList* initialize_memberptr(LexList* lex, SYMBOL* funcsp, int offset, S
         }
         else
         {
-            exp = intNode(ExpressionNode::memberptr_, 0);  // no SP means fill it with zeros...
+            exp = MakeIntExpression(ExpressionNode::memberptr_, 0);  // no SP means fill it with zeros...
         }
     }
     initInsert(init, itype, exp, offset, false);
@@ -2148,7 +2148,7 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
                 if (tp->BaseType()->nullptrType || (tp->IsInt() && isconstzero(tp, exp)))
                 {
                     int lbl = dumpMemberPtr(nullptr, itype1, true);
-                    exp = intNode(ExpressionNode::labcon_, lbl);
+                    exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
                 }
                 else if (tp->type == BasicType::aggregate_)
                 {
@@ -2159,11 +2159,11 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
                         if (funcsp)
                         {
                             int lbl = dumpMemberPtr(funcsp, tp, true);
-                            exp = intNode(ExpressionNode::labcon_, lbl);
+                            exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
                         }
                         else
                         {
-                            exp = intNode(ExpressionNode::c_i_, 0);
+                            exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                         }
                     }
                     else
@@ -2181,11 +2181,11 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
                         if (funcsp)
                         {
                             int lbl = dumpMemberPtr(funcsp, tp, true);
-                            exp = intNode(ExpressionNode::labcon_, lbl);
+                            exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
                         }
                         else
                         {
-                            exp = intNode(ExpressionNode::c_i_, 0);
+                            exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                         }
                     }
                 }
@@ -2198,10 +2198,10 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
                 {
                     if (sc != StorageClass::parameter_)
                         exp1 = createTemporary(itype1, nullptr);
-                    exp = exprNode(ExpressionNode::blockassign_, exp1, exp);
+                    exp = MakeExpression(ExpressionNode::blockassign_, exp1, exp);
                     exp->size = Type::MakeType(BasicType::memberptr_);
                     exp->altdata = (void*)(&stdpointer);
-                    exp = exprNode(ExpressionNode::comma_, exp, exp1);
+                    exp = MakeExpression(ExpressionNode::comma_, exp, exp1);
                 }
             }
         }
@@ -2325,7 +2325,7 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
                             if (ismember(sym))
                             {
                                 (*dest)->back()->fieldsp = sym;
-                                (*dest)->back()->fieldoffs = intNode(ExpressionNode::c_i_, (*descin)->offset);
+                                (*dest)->back()->fieldoffs = MakeIntExpression(ExpressionNode::c_i_, (*descin)->offset);
                             }
                         }
                     }
@@ -2641,7 +2641,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR* cache)
                 while (temp && temp->size == 0)
                 {
                     temp->size = size;
-                    temp->esize = intNode(ExpressionNode::c_i_, size / base);
+                    temp->esize = MakeIntExpression(ExpressionNode::c_i_, size / base);
                     temp = temp->btp;
                 }
             }
@@ -2716,7 +2716,7 @@ static LexList* read_strings(LexList* lex, std::list<Initializer*>** next, AGGRE
             int i;
             for (i = 0; i < len; i++)
             {
-                EXPRESSION* exp = intNode(ExpressionNode::c_i_, string->pointers[j]->str[i]);
+                EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, string->pointers[j]->str[i]);
                 initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, false); /* nullptr=no initializer */
                 (*desc)->reloffset += btp->size;
                 index++;
@@ -2726,7 +2726,7 @@ static LexList* read_strings(LexList* lex, std::list<Initializer*>** next, AGGRE
     }
     if (max == INT_MAX / 16)
     {
-        EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+        EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
 
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, false); /* nullptr=no initializer */
         max = (*desc)->reloffset / btp->size;
@@ -2734,7 +2734,7 @@ static LexList* read_strings(LexList* lex, std::list<Initializer*>** next, AGGRE
     }
     if (nothingWritten)
     {
-        EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+        EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
 
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, false); /* nullptr=no initializer */
     }
@@ -2744,7 +2744,7 @@ static LexList* read_strings(LexList* lex, std::list<Initializer*>** next, AGGRE
     }
     if ((*desc)->reloffset < max * btp->size)
     {
-        EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+        EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
 
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, false); /* nullptr=no initializer */
         (*desc)->reloffset += btp->size;
@@ -2838,7 +2838,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
     {
         case StorageClass::member_:
         case StorageClass::mutable_:
-            exp = exprNode(ExpressionNode::add_, varNode(ExpressionNode::thisshim_, nullptr), intNode(ExpressionNode::c_i_, sym->sb->offset));
+            exp = MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::thisshim_), MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
             break;
         case StorageClass::auto_:
         case StorageClass::parameter_:
@@ -2847,29 +2847,29 @@ EXPRESSION* getThisNode(SYMBOL* sym)
                            * of course the usage restraints of the
                            * register keyword are enforced elsewhere
                            */
-            exp = varNode(ExpressionNode::auto_, sym);
+            exp = MakeExpression(ExpressionNode::auto_, sym);
             break;
 
         case StorageClass::localstatic_:
             if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
-                exp = varNode(ExpressionNode::threadlocal_, sym);
+                exp = MakeExpression(ExpressionNode::threadlocal_, sym);
             else
-                exp = varNode(ExpressionNode::global_, sym);
+                exp = MakeExpression(ExpressionNode::global_, sym);
             break;
         case StorageClass::absolute_:
-            exp = varNode(ExpressionNode::absolute_, sym);
+            exp = MakeExpression(ExpressionNode::absolute_, sym);
             break;
         case StorageClass::static_:
         case StorageClass::global_:
         case StorageClass::external_:
             if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
-                exp = varNode(ExpressionNode::threadlocal_, sym);
+                exp = MakeExpression(ExpressionNode::threadlocal_, sym);
             else
-                exp = varNode(ExpressionNode::global_, sym);
+                exp = MakeExpression(ExpressionNode::global_, sym);
             break;
         default:
             diag("getThisNode: unknown storage class");
-            exp = intNode(ExpressionNode::c_i_, 0);
+            exp = MakeIntExpression(ExpressionNode::c_i_, 0);
             break;
     }
     return exp;
@@ -2988,11 +2988,11 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
                         while (btp->IsArray())
                             btp = btp->btp;
                         int n = desc->offset / btp->size;
-                        (*it)->fieldoffs = exprNode(ExpressionNode::umul_, intNode(ExpressionNode::c_i_, n), exprNode(ExpressionNode::sizeof_, typeNode(btp)));
+                        (*it)->fieldoffs = MakeExpression(ExpressionNode::umul_, MakeIntExpression(ExpressionNode::c_i_, n), MakeExpression(ExpressionNode::sizeof_, MakeExpression(btp)));
                     }
                     else
                     {
-                        (*it)->fieldoffs = intNode(ExpressionNode::c_i_, desc->offset);
+                        (*it)->fieldoffs = MakeIntExpression(ExpressionNode::c_i_, desc->offset);
                     }
                 }
             }
@@ -3026,7 +3026,7 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
                                     for (int i = 0; i < size; i++, ++it)
                                         ;
                                     (*it)->fieldsp = fieldsp;
-                                    (*it)->fieldoffs = intNode(ExpressionNode::c_i_, desc->offset);
+                                    (*it)->fieldoffs = MakeIntExpression(ExpressionNode::c_i_, desc->offset);
                                 }
                             }
                         }
@@ -3093,7 +3093,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
     bool implicit = false;
     EXPRESSION* baseexp = nullptr;
     if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) && itype->IsStructured())
-        baseexp = exprNode(ExpressionNode::add_, getThisNode(base), intNode(ExpressionNode::c_i_, offset));
+        baseexp = MakeExpression(ExpressionNode::add_, getThisNode(base), MakeIntExpression(ExpressionNode::c_i_, offset));
 
     if (MATCHKW(lex, Keyword::assign_))
     {
@@ -3492,7 +3492,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
             {
                 error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
             }
-            exp = exprNode(ExpressionNode::assign_, exprNode(ExpressionNode::l_object_, getThisNode(base)), exp);
+            exp = MakeExpression(ExpressionNode::assign_, MakeExpression(ExpressionNode::l_object_, getThisNode(base)), exp);
             exp->left->v.tp = itype;
             initInsert(&it, itype, exp, offset, true);
             if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
@@ -3596,10 +3596,10 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                         if (sym)
                         {
                             toErr = false;
-                            auto exp2 = funcNode(Allocate<CallSite>());
+                            auto exp2 = MakeExpression(Allocate<CallSite>());
                             exp2->v.func->sp = sym;
                             exp2->v.func->functp = sym->tp;
-                            exp2->v.func->fcall = varNode(ExpressionNode::pc_, sym);
+                            exp2->v.func->fcall = MakeExpression(ExpressionNode::pc_, sym);
                             exp2->v.func->ascall = true;
                             exp2->v.func->thisptr = exp1;
                             exp2->v.func->thistp = Type::MakeType(BasicType::pointer_, tp1);
@@ -3609,7 +3609,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                                 {
                                     auto bn = baseexp;
                                     deref(sym->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType, &bn);
-                                    exp2 = exprNode(ExpressionNode::assign_, bn, exp2);
+                                    exp2 = MakeExpression(ExpressionNode::assign_, bn, exp2);
                                 }
                                 else
                                 {
@@ -3625,7 +3625,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                             EXPRESSION* v = Allocate<EXPRESSION>();
                             v->type = ExpressionNode::c_i_;
                             v = baseClassOffset(tp1->BaseType()->sp, itype->BaseType()->sp, v);
-                            exp1 = exprNode(ExpressionNode::add_, exp1, v);
+                            exp1 = MakeExpression(ExpressionNode::add_, exp1, v);
                             Type* ctype = itype; 
                             auto exp2 = baseexp;
                             callConstructorParam(&ctype, &exp2, ctype, exp1, true, false, false, false, false);
@@ -3698,12 +3698,12 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                     Type *ctype = btp, *tn = btp;
                     EXPRESSION* exp;
                     if (last)
-                        exp = exprNode(ExpressionNode::add_, getThisNode(base), intNode(ExpressionNode::c_i_, last));
+                        exp = MakeExpression(ExpressionNode::add_, getThisNode(base), MakeIntExpression(ExpressionNode::c_i_, last));
                     else
                         exp = getThisNode(base);
                     if (n > 1)
                     {
-                        sz = intNode(ExpressionNode::c_i_, n);
+                        sz = MakeIntExpression(ExpressionNode::c_i_, n);
                         tn = Type::MakeType(BasicType::pointer_, btp);
                         tn->array = true;
                         tn->size = n * s;
@@ -3743,7 +3743,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
             exp = getThisNode(base);
             if (n > 1)
             {
-                sz = intNode(ExpressionNode::c_i_, n);
+                sz = MakeIntExpression(ExpressionNode::c_i_, n);
                 tn = Type::MakeType(BasicType::pointer_, btp);
                 tn->array = true;
                 tn->size = n * s;
@@ -3872,7 +3872,7 @@ static LexList* initialize_auto(LexList * lex, SYMBOL * funcsp, int offset, Stor
     }
     if (Optimizer::cparams.prm_cplusplus && needend && MATCHKW(lex, Keyword::end_))
     {
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         sym->tp = &stdint;  // sets type for variable
         initInsert(init, sym->tp, exp, offset, false);
     }
@@ -4511,7 +4511,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 std::list<Initializer *>* init = nullptr;
                 int n = sym->tp->size / (z->size);
                 Type* ctype = z;
-                EXPRESSION* sz = n > 1 ? intNode(ExpressionNode::c_i_, n) : nullptr;
+                EXPRESSION* sz = n > 1 ? MakeIntExpression(ExpressionNode::c_i_, n) : nullptr;
                 EXPRESSION* baseexp = getThisNode(sym);
                 EXPRESSION* exp = baseexp;
                 errors[ERR_NO_OVERLOAD_MATCH_FOUND].level = 0;
@@ -4618,7 +4618,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     if (Optimizer::initializeScalars && !sym->sb->anonymous && !sym->sb->init &&
         (sym->tp->IsArithmetic() || (sym->tp->IsPtr() && !sym->tp->IsArray())) && sym->sb->storage_class == StorageClass::auto_)
     {
-        EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
+        EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         cast(sym->tp, &exp);
         optimize_for_constants(&exp);
         initInsert(&sym->sb->init, sym->tp, exp, 0, false);
@@ -4673,7 +4673,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             tp->UpdateRootTypes();
             if (!IsConstantExpression(sym->sb->init->front()->exp, false, true))
             {
-                sym->sb->init->front()->exp = intNode(ExpressionNode::c_i_, 0);
+                sym->sb->init->front()->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);
             }
         }
@@ -4681,7 +4681,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         {
             if (!IsConstantExpression(sym->sb->init->front()->exp, false, true))
             {
-                sym->sb->init->front()->exp = intNode(ExpressionNode::c_i_, 0);
+                sym->sb->init->front()->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);
             }
         }
@@ -4743,7 +4743,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             sym->sb->init->push_back(Allocate<Initializer>());
             sym->sb->init->front()->offset = sym->tp->size - ATOMIC_FLAG_SPACE;
             sym->sb->init->front()->basetp = &stdint;
-            sym->sb->init->front()->exp = intNode(ExpressionNode::c_i_, 0);
+            sym->sb->init->front()->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         }
     }
     if (sym->tp->IsRef() && sym->sb->storage_class != StorageClass::typedef_)

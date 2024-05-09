@@ -1343,7 +1343,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 FunctionBlock bd = {};
                 std::list<FunctionBlock*> b = { &bd };
                 Statement* st;
-                EXPRESSION* thisptr = varNode(ExpressionNode::auto_, *it);
+                EXPRESSION* thisptr = MakeExpression(ExpressionNode::auto_, *it);
                 EXPRESSION* e1;
                 CallSite* params = Allocate<CallSite>();
                 (*it)->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
@@ -1353,7 +1353,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 localNameSpace->front()->syms = consfunc->tp->BaseType()->syms;
                 params->thisptr = thisptr;
                 params->thistp = Type::MakeType(BasicType::pointer_, sp->tp);
-                params->fcall = varNode(ExpressionNode::pc_, match);
+                params->fcall = MakeExpression(ExpressionNode::pc_, match);
                 params->functp = match->tp;
                 params->sp = match;
                 params->ascall = true;
@@ -1363,11 +1363,11 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 {
                     Argument *x = Allocate<Argument>(), **p;
                     x->tp = Type::MakeType(BasicType::int_);
-                    x->exp = intNode(ExpressionNode::c_i_, 1);
+                    x->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
                     params->arguments->push_back(x);
                 }
-                e1 = funcNode(params);
-                e1 = exprNode(ExpressionNode::thisref_, e1);
+                e1 = MakeExpression(params);
+                e1 = MakeExpression(ExpressionNode::thisref_, e1);
                 e1->v.t.thisptr = params->thisptr;
                 e1->v.t.tp = sp->tp;
                 st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
@@ -1607,7 +1607,7 @@ EXPRESSION* destructLocal(EXPRESSION* exp)
         SYMBOL* sp = destructList.top();
         destructList.pop();
         if (sp->sb->dest && sp->sb->dest->front()->exp)
-            rv = exprNode(ExpressionNode::comma_, rv, sp->sb->dest->front()->exp);
+            rv = MakeExpression(ExpressionNode::comma_, rv, sp->sb->dest->front()->exp);
     }
     return rv;
 }
@@ -1687,7 +1687,7 @@ void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestru
                         optimize_for_constants(&iexp);
                         if (*exp)
                         {
-                            *exp = exprNode(ExpressionNode::comma_, iexp, *exp);
+                            *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
                         }
                         else
                         {
@@ -1705,7 +1705,7 @@ void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestru
                     optimize_for_constants(&iexp);
                     if (*exp)
                     {
-                        *exp = exprNode(ExpressionNode::comma_, iexp, *exp);
+                        *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
                     }
                     else
                     {
@@ -1723,13 +1723,13 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
     (void)mi;
     if (doCopy && (matchesCopy(parentCons, false) || matchesCopy(parentCons, true)))
     {
-        thisptr = exprNode(ExpressionNode::structadd_, thisptr, intNode(ExpressionNode::c_i_, offset));
-        otherptr = exprNode(ExpressionNode::structadd_, otherptr, intNode(ExpressionNode::c_i_, offset));
+        thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
+        otherptr = MakeExpression(ExpressionNode::structadd_, otherptr, MakeIntExpression(ExpressionNode::c_i_, offset));
         thisptr->right->keepZero = true;
         otherptr->right->keepZero = true;
         if (member->tp->IsStructured() || member->tp->IsArray() || member->tp->BaseType()->type == BasicType::memberptr_)
         {
-            EXPRESSION* exp = exprNode(ExpressionNode::blockassign_, thisptr, otherptr);
+            EXPRESSION* exp = MakeExpression(ExpressionNode::blockassign_, thisptr, otherptr);
             Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
             exp->size = member->tp;
             exp->altdata = (void*)member->tp;
@@ -1742,7 +1742,7 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
             EXPRESSION* exp;
             deref(member->tp, &thisptr);
             deref(member->tp, &otherptr);
-            exp = exprNode(ExpressionNode::assign_, thisptr, otherptr);
+            exp = MakeExpression(ExpressionNode::assign_, thisptr, otherptr);
             optimize_for_constants(&exp);
             st->select = exp;
         }
@@ -1769,16 +1769,16 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
             if (mi && mi->size() && mi->front()->valueInit)
             {
-                auto ths = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, member->sb->offset));
-                auto clr = exprNode(ExpressionNode::blockclear_, ths);
+                auto ths = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, member->sb->offset));
+                auto clr = MakeExpression(ExpressionNode::blockclear_, ths);
                 clr->size = member->tp;
-                exp = exprNode(ExpressionNode::comma_, clr, exp);
+                exp = MakeExpression(ExpressionNode::comma_, clr, exp);
             }
         }
         else
         {
-            exp = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, member->sb->offset));
-            exp = exprNode(ExpressionNode::blockclear_, exp);
+            exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, member->sb->offset));
+            exp = MakeExpression(ExpressionNode::blockclear_, exp);
             exp->size = member->tp;
         }
         st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
@@ -1788,7 +1788,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
     else
     {
         Type* ctype = member->tp;
-        EXPRESSION* exp = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, memberOffs));
+        EXPRESSION* exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
         if (doCopy && matchesCopy(parentCons, false))
         {
             if (useDefault)
@@ -1798,7 +1798,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             }
             else
             {
-                EXPRESSION* other = exprNode(ExpressionNode::add_, otherptr, intNode(ExpressionNode::c_i_, memberOffs));
+                EXPRESSION* other = MakeExpression(ExpressionNode::add_, otherptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
 
                 Type* tp = Type::MakeType(BasicType::lref_, member->tp);
                 tp->size = getSize(BasicType::pointer_);
@@ -1823,8 +1823,8 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             }
             else
             {
-                EXPRESSION* other = exprNode(ExpressionNode::add_, otherptr, intNode(ExpressionNode::c_i_, memberOffs));
-                other = exprNode(ExpressionNode::not__lvalue_, other);
+                EXPRESSION* other = MakeExpression(ExpressionNode::add_, otherptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
+                other = MakeExpression(ExpressionNode::not__lvalue_, other);
                 Type* tp = Type::MakeType(BasicType::rref_, member->tp);
 
                 auto it = parentCons->tp->BaseType()->syms->begin();
@@ -1874,9 +1874,9 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
                 if (mix->sp && !mix->init)
                 {
-                    EXPRESSION* clr = exprNode(ExpressionNode::blockclear_, exp);
+                    EXPRESSION* clr = MakeExpression(ExpressionNode::blockclear_, exp);
                     clr->size = mix->sp->tp;
-                    exp = exprNode(ExpressionNode::comma_, clr, exp);
+                    exp = MakeExpression(ExpressionNode::comma_, clr, exp);
                 }
                 // previously, callConstructor can return false here, meaning that funcparams->sp is null
                 // This used to create a nullptr dereference in PromoteConstructorArgs
@@ -1902,18 +1902,18 @@ static void virtualBaseThunks(std::list<FunctionBlock*>& b, SYMBOL* sp, EXPRESSI
     {
         for (auto entry : *sp->sb->vbaseEntries)
         {
-            EXPRESSION* left = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, entry->pointerOffset));
-            EXPRESSION* right = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, entry->structOffset));
+            EXPRESSION* left = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, entry->pointerOffset));
+            EXPRESSION* right = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, entry->structOffset));
             EXPRESSION* asn;
             deref(&stdpointer, &left);
-            asn = exprNode(ExpressionNode::assign_, left, right);
+            asn = MakeExpression(ExpressionNode::assign_, left, right);
             if (!*pos)
             {
                 *pos = asn;
             }
             else
             {
-                *pos = exprNode(ExpressionNode::comma_, *pos, asn);
+                *pos = MakeExpression(ExpressionNode::comma_, *pos, asn);
                 pos = &(*pos)->right;
             }
         }
@@ -1932,19 +1932,19 @@ static void HandleEntries(EXPRESSION** pos, std::list<VTABENTRY*>* entries, EXPR
     {
         if (!entry->isdead && entry->isvirtual == isvirtual && hasVTab(entry->cls))
         {
-            EXPRESSION* left = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, entry->dataOffset));
+            EXPRESSION* left = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, entry->dataOffset));
             EXPRESSION* right =
-                exprNode(ExpressionNode::add_, exprNode(ExpressionNode::add_, vtabBase, intNode(ExpressionNode::c_i_, entry->vtabOffset)), intNode(ExpressionNode::c_i_, VTAB_XT_OFFS));
+                MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::add_, vtabBase, MakeIntExpression(ExpressionNode::c_i_, entry->vtabOffset)), MakeIntExpression(ExpressionNode::c_i_, VTAB_XT_OFFS));
             EXPRESSION* asn;
             deref(&stdpointer, &left);
-            asn = exprNode(ExpressionNode::assign_, left, right);
+            asn = MakeExpression(ExpressionNode::assign_, left, right);
             if (!*pos)
             {
                 *pos = asn;
             }
             else
             {
-                *pos = exprNode(ExpressionNode::comma_, *pos, asn);
+                *pos = MakeExpression(ExpressionNode::comma_, *pos, asn);
                 pos = &(*pos)->right;
             }
         }
@@ -1961,7 +1961,7 @@ static void dovtabThunks(std::list<FunctionBlock*>& b, SYMBOL* sym, EXPRESSION* 
     Statement* st;
     SYMBOL* localsp;
     localsp = sym->sb->vtabsp;
-    EXPRESSION* vtabBase = varNode(ExpressionNode::global_, localsp);
+    EXPRESSION* vtabBase = MakeExpression(ExpressionNode::global_, localsp);
     if (localsp->sb->attribs.inheritable.linkage2 == Linkage::import_)
         deref(&stdpointer, &vtabBase);
     HandleEntries(&first, entries, thisptr, vtabBase, isvirtual);
@@ -2199,7 +2199,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             {
                                 lex = getsym();
                                 init->init = nullptr;
-                                initInsert(&init->init, init->sp->tp, intNode(ExpressionNode::c_i_, 0), 0, false);
+                                initInsert(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0, false);
                                 done = true;
                             }
                             else
@@ -2536,7 +2536,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                                  bool defaulted)
 {
     BASECLASS* bc;
-    EXPRESSION* thisptr = varNode(ExpressionNode::auto_, syms->front());
+    EXPRESSION* thisptr = MakeExpression(ExpressionNode::auto_, syms->front());
     EXPRESSION* otherptr = nullptr;
     int oldCodeLabel = codeLabel;
     if (defaulted)
@@ -2544,7 +2544,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
     auto it = syms->begin();
     ++it;
     if (it != syms->end())
-        otherptr = varNode(ExpressionNode::auto_, *it);
+        otherptr = MakeExpression(ExpressionNode::auto_, *it);
     deref(&stdpointer, &thisptr);
     deref(&stdpointer, &otherptr);
     if (parseInitializers)
@@ -2584,7 +2584,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
             if (sym->sb->vbaseEntries)
             {
                 SYMBOL* sp = makeID(StorageClass::parameter_, &stdint, nullptr, AnonymousName());
-                EXPRESSION* val = varNode(ExpressionNode::auto_, sp);
+                EXPRESSION* val = MakeExpression(ExpressionNode::auto_, sp);
                 int lbl = codeLabel++;
                 Statement* st;
                 sp->sb->constop = true;
@@ -2737,15 +2737,15 @@ void asnVirtualBases(std::list<FunctionBlock*>& b, SYMBOL* sp, std::list<VBASEEN
 }
 static void genAsnData(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* member, int offset, EXPRESSION* thisptr, EXPRESSION* other)
 {
-    EXPRESSION* left = exprNode(ExpressionNode::structadd_, thisptr, intNode(ExpressionNode::c_i_, offset));
-    EXPRESSION* right = exprNode(ExpressionNode::structadd_, other, intNode(ExpressionNode::c_i_, offset));
+    EXPRESSION* left = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
+    EXPRESSION* right = MakeExpression(ExpressionNode::structadd_, other, MakeIntExpression(ExpressionNode::c_i_, offset));
     left->right->keepZero = true;
     right->right->keepZero = true;
     Statement* st;
     (void)cls;
     if (member->tp->IsStructured() || member->tp->IsArray())
     {
-        left = exprNode(ExpressionNode::blockassign_, left, right);
+        left = MakeExpression(ExpressionNode::blockassign_, left, right);
         left->size = member->tp;
         left->altdata = (void*)member->tp;
     }
@@ -2753,7 +2753,7 @@ static void genAsnData(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* member
     {
         deref(member->tp, &left);
         deref(member->tp, &right);
-        left = exprNode(ExpressionNode::assign_, left, right);
+        left = MakeExpression(ExpressionNode::assign_, left, right);
     }
     st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
     optimize_for_constants(&left);
@@ -2769,11 +2769,11 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
     Type* tp = base->tp->CopyType();
     SYMBOL* asn1;
     SYMBOL* cons = search(base->tp->BaseType()->syms, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
-    EXPRESSION* left = exprNode(ExpressionNode::add_, thisptr, intNode(ExpressionNode::c_i_, offset));
-    EXPRESSION* right = exprNode(ExpressionNode::add_, other, intNode(ExpressionNode::c_i_, offset));
+    EXPRESSION* left = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
+    EXPRESSION* right = MakeExpression(ExpressionNode::add_, other, MakeIntExpression(ExpressionNode::c_i_, offset));
     if (move)
     {
-        right = exprNode(ExpressionNode::not__lvalue_, right);
+        right = MakeExpression(ExpressionNode::not__lvalue_, right);
     }
     if (isconst)
     {
@@ -2822,7 +2822,7 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = true;
-        exp = funcNode(params);
+        exp = MakeExpression(params);
     }
     st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
     optimize_for_constants(&exp);
@@ -2831,14 +2831,14 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
 static EXPRESSION* thunkAssignments(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMBOL* asnfunc, SymbolTable<SYMBOL>* syms, bool move, bool isconst)
 {
     auto it = syms->begin();
-    EXPRESSION* thisptr = varNode(ExpressionNode::auto_, *it);
+    EXPRESSION* thisptr = MakeExpression(ExpressionNode::auto_, *it);
     EXPRESSION* other = nullptr;
     BASECLASS* base;
     int oldCodeLabel = codeLabel;
     codeLabel = INT_MIN;
     ++it;
     if (it != syms->end())  // this had better be true
-        other = varNode(ExpressionNode::auto_, *it);
+        other = MakeExpression(ExpressionNode::auto_, *it);
     deref(&stdpointer, &thisptr);
     deref(&stdpointer, &other);
     if (sym->tp->type == BasicType::union_)
@@ -2946,7 +2946,7 @@ static void genDestructorCall(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* 
         return;
     exp = base;
     deref(&stdpointer, &exp);
-    exp = exprNode(ExpressionNode::add_, exp, intNode(ExpressionNode::c_i_, offset));
+    exp = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, offset));
     dest = (SYMBOL*)dest->tp->BaseType()->syms->front();
     if (dest->sb->defaulted && !dest->sb->inlineFunc.stmt)
     {
@@ -2983,7 +2983,7 @@ static void undoVars(std::list<FunctionBlock*>& b, SymbolTable<SYMBOL>* vars, EX
                         tp = tp->BaseType()->btp;
                     tp = tp->BaseType();
                     if (tp->IsStructured())
-                        genDestructorCall(b, tp->sp, nullptr, base, intNode(ExpressionNode::c_i_, s->tp->size / tp->size), s->sb->offset, true);
+                        genDestructorCall(b, tp->sp, nullptr, base, MakeIntExpression(ExpressionNode::c_i_, s->tp->size / tp->size), s->sb->offset, true);
                 }
             }
         }
@@ -3016,7 +3016,7 @@ void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest,
             return;
         if (defaulted)
             codeLabel = INT_MIN;
-        thisptr = varNode(ExpressionNode::auto_, syms->front());
+        thisptr = MakeExpression(ExpressionNode::auto_, syms->front());
         undoVars(b, sp->tp->BaseType()->syms, thisptr);
         undoBases(b, sp, sp->sb->baseClasses, thisptr);
         if (sp->sb->vbaseEntries)
@@ -3024,7 +3024,7 @@ void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest,
             auto it = syms->begin();
             ++it;
             auto sp1 = *it;
-            EXPRESSION* val = varNode(ExpressionNode::auto_, sp1);
+            EXPRESSION* val = MakeExpression(ExpressionNode::auto_, sp1);
             int lbl = codeLabel++;
             Statement* st;
             sp1->sb->decoratedName = sp1->name;
@@ -3088,8 +3088,8 @@ void createDestructor(SYMBOL* sp)
 }
 void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count)
 {
-    EXPRESSION* size = intNode(ExpressionNode::c_i_, (*tp)->size);
-    EXPRESSION *econs = (cons ? varNode(ExpressionNode::pc_, cons) : nullptr), *edest = varNode(ExpressionNode::pc_, dest);
+    EXPRESSION* size = MakeIntExpression(ExpressionNode::c_i_, (*tp)->size);
+    EXPRESSION *econs = (cons ? MakeExpression(ExpressionNode::pc_, cons) : nullptr), *edest = MakeExpression(ExpressionNode::pc_, dest);
     CallSite* params = Allocate<CallSite>();
     SYMBOL* asn1;
     Argument* arg0 = Allocate<Argument>();  // this
@@ -3110,7 +3110,7 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     thunkForImportTable(&edest);
     arg0->exp = *exp;
     arg0->tp = &stdpointer;
-    arg1->exp = econs ? econs : intNode(ExpressionNode::c_i_, 0);
+    arg1->exp = econs ? econs : MakeIntExpression(ExpressionNode::c_i_, 0);
     arg1->tp = &stdpointer;
     arg2->exp = edest;
     arg2->tp = &stdpointer;
@@ -3130,7 +3130,7 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = true;
-        *exp = funcNode(params);
+        *exp = MakeExpression(params);
     }
 }
 bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess,
@@ -3168,7 +3168,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         {
             auto exp_in = params->thisptr;
             deref(&stdpointer, &exp_in);
-            exp_in = exprNode(ExpressionNode::add_, exp_in, intNode(ExpressionNode::c_i_, dest1->sb->vtaboffset));
+            exp_in = MakeExpression(ExpressionNode::add_, exp_in, MakeIntExpression(ExpressionNode::c_i_, dest1->sb->vtaboffset));
             deref(&stdpointer, &exp_in);
             params->fcall = exp_in;
         }
@@ -3176,7 +3176,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
             noExcept &= dest1->sb->noExcept;
     }
     else
-        params->fcall = varNode(ExpressionNode::pc_, dest1);
+        params->fcall = MakeExpression(ExpressionNode::pc_, dest1);
     if (dest1)
     {
         CheckCalledException(dest1, params->thisptr);
@@ -3205,17 +3205,17 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
             {
                 Argument *x = Allocate<Argument>(), **p;
                 x->tp = Type::MakeType(BasicType::int_);
-                x->exp = intNode(ExpressionNode::c_i_, top);
+                x->exp = MakeIntExpression(ExpressionNode::c_i_, top);
                 if (!params->arguments)
                     params->arguments = initListListFactory.CreateList();
                 params->arguments->push_back(x);
                 params->sp->sb->noinline = true;
             }
-            *exp = funcNode(params);
+            *exp = MakeExpression(params);
         }
         if (*exp && !pointer)
         {
-            *exp = exprNode(ExpressionNode::thisref_, *exp);
+            *exp = MakeExpression(ExpressionNode::thisref_, *exp);
             (*exp)->dest = true;
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
@@ -3308,7 +3308,7 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 oparams->returnEXP = *exp;
                 oparams->returnSP = sp;
             }
-            e1 = funcNode(oparams);
+            e1 = MakeExpression(oparams);
             params = oparams;
         }
         else
@@ -3440,18 +3440,18 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 {
                     Argument *x = Allocate<Argument>(), **p;
                     x->tp = Type::MakeType(BasicType::int_);
-                    x->exp = intNode(ExpressionNode::c_i_, top);
+                    x->exp = MakeIntExpression(ExpressionNode::c_i_, top);
                     if (!params->arguments)
                         params->arguments = initListListFactory.CreateList();
                     params->arguments->push_back(x);
                     params->sp->sb->noinline = true;
                 }
-                e1 = funcNode(params);
+                e1 = MakeExpression(params);
             }
         }
         if (params->sp->sb->constexpression)
         {
-            EXPRESSION* node = funcNode(params);
+            EXPRESSION* node = MakeExpression(params);
             if (EvaluateConstexprFunction(node))
             {
                 e1 = node;
@@ -3464,12 +3464,12 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             EXPRESSION* exp1 = params->thisptr;
             if ((exp1->type == ExpressionNode::add_ || exp1->type == ExpressionNode::structadd_) && isconstzero(&stdint, exp1->right))
                 exp1 = exp1->left;
-            *exp = exprNode(ExpressionNode::assign_, exp1, *exp);
+            *exp = MakeExpression(ExpressionNode::assign_, exp1, *exp);
             params->thisptr = nullptr;
         }
         else if (*exp && !pointer)
         {
-            *exp = exprNode(ExpressionNode::thisref_, *exp);
+            *exp = MakeExpression(ExpressionNode::thisref_, *exp);
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
             optimize_for_constants(exp);  // for constexpr constructors

@@ -262,7 +262,7 @@ static EXPRESSION* inasm_ident(void)
             sym->tp = Type::MakeType(BasicType::unsigned_);
             sym->sb->offset = codeLabel++;
             labelSyms->Add(sym);
-            node = intNode(ExpressionNode::labcon_, sym->sb->offset);
+            node = MakeIntExpression(ExpressionNode::labcon_, sym->sb->offset);
         }
         else
         {
@@ -273,10 +273,10 @@ static EXPRESSION* inasm_ident(void)
             {
                 case StorageClass::absolute_:
                     Optimizer::SymbolManager::Get(sym);
-                    node = varNode(ExpressionNode::absolute_, sym);
+                    node = MakeExpression(ExpressionNode::absolute_, sym);
                     break;
                 case StorageClass::overloads_:
-                    node = varNode(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());
+                    node = MakeExpression(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());
                     InsertInline(sym->tp->syms->front());
                     break;
                 case StorageClass::localstatic_:
@@ -284,7 +284,7 @@ static EXPRESSION* inasm_ident(void)
                 case StorageClass::external_:
                 case StorageClass::static_: {
                     Optimizer::SimpleSymbol* sym1 = Optimizer::SymbolManager::Get(sym);
-                    node = varNode(ExpressionNode::global_, sym);
+                    node = MakeExpression(ExpressionNode::global_, sym);
                     InsertGlobal(sym);
                     if (sym->tp->IsFunction())
                         InsertInline(sym);
@@ -293,17 +293,17 @@ static EXPRESSION* inasm_ident(void)
                 }
                 case StorageClass::const_:
                     /* constants and enums */
-                    node = intNode(ExpressionNode::c_i_, sym->sb->value.i);
+                    node = MakeIntExpression(ExpressionNode::c_i_, sym->sb->value.i);
                     break;
                 case StorageClass::label_:
                 case StorageClass::ulabel_:
-                    node = intNode(ExpressionNode::labcon_, sym->sb->offset);
+                    node = MakeIntExpression(ExpressionNode::labcon_, sym->sb->offset);
                     break;
                 case StorageClass::auto_:
                 case StorageClass::register_:
                     sym->sb->allocate = true;
                 case StorageClass::parameter_:
-                    node = varNode(ExpressionNode::auto_, sym);
+                    node = MakeExpression(ExpressionNode::auto_, sym);
                     sym->sb->inasm = true;
                     break;
                 default:
@@ -363,7 +363,7 @@ static EXPRESSION* inasm_label(void)
     {
         if (insdata->atype == op_reserved)
         {
-            node = intNode(ExpressionNode::labcon_, sym->sb->offset);
+            node = MakeIntExpression(ExpressionNode::labcon_, sym->sb->offset);
             return node;
         }
         else if (insdata->atype != op_label)
@@ -378,7 +378,7 @@ static EXPRESSION* inasm_label(void)
         return 0;
     }
     inasm_getsym();
-    node = intNode(ExpressionNode::labcon_, sym->sb->offset);
+    node = MakeIntExpression(ExpressionNode::labcon_, sym->sb->offset);
     return node;
 }
 
@@ -634,20 +634,20 @@ static AMODE* inasm_mem(void)
                 case LexType::l_:
                 case LexType::ul_:
                     if (node)
-                        node = exprNode(subtract ? ExpressionNode::sub_ : ExpressionNode::add_, node, intNode(ExpressionNode::c_i_, lex->data->value.i));
+                        node = MakeExpression(subtract ? ExpressionNode::sub_ : ExpressionNode::add_, node, MakeIntExpression(ExpressionNode::c_i_, lex->data->value.i));
                     else if (subtract)
-                        node = intNode(ExpressionNode::c_i_, -lex->data->value.i);
+                        node = MakeIntExpression(ExpressionNode::c_i_, -lex->data->value.i);
                     else
-                        node = intNode(ExpressionNode::c_i_, lex->data->value.i);
+                        node = MakeIntExpression(ExpressionNode::c_i_, lex->data->value.i);
                     inasm_getsym();
                     break;
                 case LexType::l_kw_:
                     if (MATCHKW(lex, Keyword::plus_) || MATCHKW(lex, Keyword::minus_))
                     {
                         if (node)
-                            node = exprNode(ExpressionNode::add_, node, intNode(ExpressionNode::c_i_, 0));
+                            node = MakeExpression(ExpressionNode::add_, node, MakeIntExpression(ExpressionNode::c_i_, 0));
                         else
-                            node = intNode(ExpressionNode::c_i_, 0);
+                            node = MakeIntExpression(ExpressionNode::c_i_, 0);
                         break;
                     }
                     /* fallthrough */
@@ -906,7 +906,7 @@ static AMODE* aimmed(long long i)
 {
     AMODE* rv = Allocate<AMODE>();
     rv->mode = am_immed;
-    rv->offset = (Optimizer::SimpleExpression*)intNode(ExpressionNode::c_i_, i);
+    rv->offset = (Optimizer::SimpleExpression*)MakeIntExpression(ExpressionNode::c_i_, i);
     return rv;
 }
 static AMODE* inasm_immed(void)

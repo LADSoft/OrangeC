@@ -315,12 +315,13 @@ FILE* Utils::TempName(std::string& name)
 }
 
 /*
- * If no extension, add the one specified
+ * Add ext to buffer
  */
 void Utils::AddExt(char* buffer, const char* ext)
 {
-    char* pos = (char*)strrchr(buffer, '.');
-    if (!pos || strcmp(pos,ext) != 0 )
+    //char* pos = (char*)strrchr(buffer, '.');
+    //if (!pos || strcmp(pos,ext) != 0 )
+    // NOTE: the strcmp gives no added value; AddExt is always preceded by StripExt
         strcat(buffer, ext);
 }
 

@@ -1018,7 +1018,8 @@ void InsertOneFile(const char* filename, char* path, int drive)
         buffer[0] = a;
     if (!inserted)
     {
-        Utils::AddExt(buffer, ".c");
+        // RK: why should filenames without extension be supported and default to .c? What about .cpp?
+        // Utils::AddExt(buffer, ".c");
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return;
@@ -1103,7 +1104,8 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
     }
     else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
-        Utils::AddExt(buf, ext);
+        // TODO RK: why would we change the output filename given by the user?
+        // Utils::AddExt(buf, ext);
     }
     else
     {

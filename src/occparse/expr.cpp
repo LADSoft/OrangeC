@@ -86,6 +86,9 @@ int inAssignRHS;
 
 
 std::list<SYMBOL*> importThunks;
+static SYMBOL* msilToString;
+
+std::list<StringData*> strtab;
 /* lvaule */
 /* handling of const int */
 /*--------------------------------------------------------------------------------------------------------------------------------
@@ -114,25 +117,7 @@ void expr_init(void)
     inNothrowHandler = 0;
     argFriend = nullptr;
     argumentNesting = 0;
-}
-void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym)
-{
-    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && lex->data->errfile)
-    {
-        auto runtimeData = Allocate<Optimizer::RUNTIMEDATA>();
-        const char* p = strrchr(lex->data->errfile, '/');
-        if (!p)
-            p = strrchr(lex->data->errfile, '\\');
-        if (!p)
-            p = lex->data->errfile;
-        else
-            p++;
-        runtimeData->fileName = p;
-        runtimeData->varName = sym->sb->decoratedName;
-        runtimeData->lineno = lex->data->errline;
-        runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
-        exp->runtimeData = runtimeData;
-    }
+    strtab.clear();
 }
 void thunkForImportTable(EXPRESSION** exp)
 {
@@ -173,6 +158,108 @@ void thunkForImportTable(EXPRESSION** exp)
             Optimizer::EnterExternal(Optimizer::SymbolManager::Get(sym));
         }
     }
+}
+static SYMBOL* LookupMsilToString()
+{
+    if (!msilToString)
+    {
+        SYMBOL* sym = namespacesearch("lsmsilcrtl", globalNameSpace, false, false);
+        if (sym && sym->sb->storage_class == StorageClass::namespace_)
+        {
+            sym = namespacesearch("CString", sym->sb->nameSpaceValues, true, false);
+            if (sym && sym->tp->IsStructured())
+            {
+                sym = search(sym->tp->BaseType()->syms, "ToPointer");
+                if (sym)
+                {
+                    for (auto sp : *sym->tp->syms)
+                    {
+                        if (sp->sb->storage_class == StorageClass::static_)
+                        {
+                            msilToString = sp;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!msilToString)
+        {
+            Utils::Fatal("internal error");
+        }
+    }
+    return msilToString;
+}
+EXPRESSION* ConvertToMSILString(EXPRESSION* val)
+{
+    val->type = ExpressionNode::c_string_;
+    SYMBOL* var = LookupMsilToString();
+
+    CallSite* fp = Allocate<CallSite>();
+    fp->functp = var->tp;
+    fp->sp = var;
+    fp->fcall = MakeExpression(ExpressionNode::global_, var);
+    fp->arguments = initListListFactory.CreateList();
+    auto arg = Allocate<Argument>();
+    arg->exp = val;
+    arg->tp = &std__string;
+    fp->arguments->push_back(arg);
+    fp->ascall = true;
+    EXPRESSION* rv = MakeExpression(fp);
+    return rv;
+}
+EXPRESSION* stringlit(StringData* s)
+/*
+ *      make s a string literal and return it's label number.
+ */
+{
+    EXPRESSION* rv;
+    if (Optimizer::cparams.prm_mergestrings)
+    {
+        for (auto lp : strtab)
+        {
+            int i;
+            if (s->size == lp->size && s->strtype == lp->strtype)
+            {
+                /* but it won't get in here if s and lp are the same, but
+                 * resulted from different concatenation sequences
+                 * this whole behavior of using strings over is undefined
+                 * in the standard...
+                 */
+                for (i = 0; i < s->size && i < lp->size; i++)
+                {
+                    if (lp->pointers[i]->count != s->pointers[i]->count ||
+                        Optimizer::wchart_cmp(lp->pointers[i]->str, s->pointers[i]->str, s->pointers[i]->count))
+                        break;
+                }
+                if (i >= s->size)
+                {
+                    rv = MakeIntExpression(ExpressionNode::labcon_, lp->label);
+                    rv->string = s;
+                    rv->size = Type::MakeType(BasicType::struct_);
+                    rv->altdata = MakeIntExpression(ExpressionNode::c_i_, (int)s->strtype);
+                    lp->refCount++;
+                    if (Optimizer::msilstrings)
+                    {
+                        rv = ConvertToMSILString(rv);
+                    }
+                    return rv;
+                }
+            }
+        }
+    }
+    s->label = Optimizer::nextLabel++;
+    strtab.push_back(s);
+    rv = MakeIntExpression(ExpressionNode::labcon_, s->label);
+    rv->string = s;
+    rv->size = Type::MakeType(BasicType::struct_);
+    rv->altdata = MakeIntExpression(ExpressionNode::c_i_, (int)s->strtype);
+    s->refCount++;
+    if (Optimizer::msilstrings)
+    {
+        rv = ConvertToMSILString(rv);
+    }
+    return rv;
 }
 static EXPRESSION* GetUUIDData(SYMBOL* cls)
 {
@@ -426,20 +513,6 @@ static bool inreg(EXPRESSION* exp, bool first)
         return inreg(exp->left, first) || inreg(exp->right, first);
     else
         return false;
-}
-void checkauto(Type* tp1, int err)
-{
-    if (tp1->IsAutoType())
-    {
-        error(err);
-        while (tp1->type == BasicType::const_ || tp1->type == BasicType::volatile_ || tp1->type == BasicType::lrqual_ || tp1->type == BasicType::rrqual_)
-        {
-            tp1->size = getSize(BasicType::int_);
-            tp1 = tp1->btp;
-        }
-        tp1->type = BasicType::int_;
-        tp1->size = getSize(BasicType::int_);
-    }
 }
 static void tagNonConst(SYMBOL* sym, Type* tp)
 {
@@ -1807,7 +1880,7 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
         if (tp2)
         {
             LookupSingleAggregate(tp2, &expr2);
-            if ((isstructuredmath(*tp, tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+            if (((*tp)->IsStructuredMath(tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                 ( insertOperatorFunc(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags) ||
                   (Optimizer::architecture != ARCHITECTURE_MSIL && castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false))))
             {
@@ -2227,7 +2300,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                             }
                             else if ((*itp)->tp->IsArithmetic() && decl->tp->IsArithmetic())
                             {
-                                if (decl->tp->BaseType()->type != (*itp)->tp->BaseType()->type && largenum(decl->tp))
+                                if (decl->tp->BaseType()->type != (*itp)->tp->BaseType()->type && decl->tp->IsLargeEnum())
                                 {
                                     cast(decl->tp, &(*itp)->exp);
                                 }
@@ -2419,7 +2492,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
         errskim(&lex, finish == Keyword::closepa_ ? skim_closepa : skim_end);
         skip(&lex, finish);
     }
-    DestructParams(*lptr);
+    StatementGenerator::DestructorsForArguments(*lptr);
     return lex;
 }
 LexList* getInitList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** owner)
@@ -2683,65 +2756,6 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
                 rv = true;
             }
         }
-    }
-    return rv;
-}
-Type* InitializerListType(Type* arg)
-{
-    SYMBOL* sym = namespacesearch("std", globalNameSpace, false, false);
-    if (sym && sym->sb->storage_class == StorageClass::namespace_)
-    {
-        sym = namespacesearch("initializer_list", sym->sb->nameSpaceValues, true, false);
-        if (sym)
-        {
-            std::list<TEMPLATEPARAMPAIR>* tplp = templateParamPairListFactory.CreateList();
-            auto tpl = Allocate<TEMPLATEPARAM>();
-            tpl->type = TplType::typename_;
-            tpl->byClass.dflt = arg;
-            tplp->push_back(TEMPLATEPARAMPAIR{ nullptr, tpl });
-            auto sym1 = GetClassTemplate(sym, tplp, true);
-            if (sym1)
-            {
-                sym1 = TemplateClassInstantiate(sym1, tplp, false, StorageClass::auto_);
-                if (sym1)
-                    sym = sym1;
-            }
-        }
-    }
-    Type* rtp;
-    if (sym)
-    {
-        rtp = sym->tp;
-    }
-    else
-    {
-        rtp = Type::MakeType(BasicType::struct_);
-        rtp->sp = makeID(StorageClass::type_, rtp, nullptr, "initializer_list");
-        rtp->sp->sb->initializer_list = true;
-    }
-    return rtp;
-}
-EXPRESSION* getFunc(EXPRESSION* exp)
-{
-    EXPRESSION* rv = nullptr;
-    while (exp->type == ExpressionNode::comma_ && exp->right)
-    {
-        rv = getFunc(exp->left);
-        if (rv)
-            return rv;
-        exp = exp->right;
-    }
-    if (exp->type == ExpressionNode::thisref_)
-        exp = exp->left;
-    if (exp->type == ExpressionNode::add_)
-    {
-        rv = getFunc(exp->left);
-        if (!rv)
-            rv = getFunc(exp->right);
-    }
-    else if (exp->type == ExpressionNode::callsite_)
-    {
-        return exp;
     }
     return rv;
 }
@@ -3057,6 +3071,39 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         }
     }
 }
+void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params)
+{
+    if (!cons1)
+    {
+        return;
+    }
+    auto it = cons1->tp->BaseType()->syms->begin();
+    auto ite = cons1->tp->BaseType()->syms->end();
+    if ((*it)->sb->thisPtr)
+        ++it;
+    std::list<Argument*>::iterator args, argse;
+    if (params->arguments)
+    {
+        args = params->arguments->begin();
+        argse = params->arguments->end();
+    }
+    while (it != ite && args != argse)
+    {
+        SYMBOL* sp = *it;
+        Type* tps = sp->tp->BaseType();
+        Type* tpa = (*args)->tp->BaseType();
+        if (tps->IsArithmetic() && tpa->IsArithmetic())
+        {
+            if (tps->type > BasicType::int_ && tps->type != tpa->type)
+            {
+                (*args)->tp = sp->tp;
+                cast(sp->tp, &(*args)->exp);
+            }
+        }
+        ++it;
+        ++args;
+    }
+}
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr, bool operands, bool implicit)
 {
     std::list<Argument*>::iterator itl, itle;
@@ -3226,7 +3273,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 params->arguments->insert(params->arguments->begin(), itl, itle);
                                 tp = (*itpinit)->tp;
                             }
-                            p->tp = InitializerListType(tp);
+                            p->tp = tp->InitializerListType();
                             p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                             CreateInitializerList(nullptr, p->tp, tp, &params->arguments, true, sym->tp->IsRef());
                             **itl = *params->arguments->front();
@@ -4029,37 +4076,6 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
         }
     }
     return rv;
-}
-void ResolveArgumentFunctions(CallSite* args, bool toErr)
-{
-    if (args->arguments)
-    {
-        for (auto argl : *args->arguments)
-        {
-            if (argl->tp && argl->tp->type == BasicType::aggregate_)
-            {
-                auto it = argl->tp->syms->begin();
-                SYMBOL* func = *it;
-                if (!func->sb->templateLevel && ++it == argl->tp->syms->end())
-                {
-                    argl->tp = func->tp;
-                    argl->exp = MakeExpression(ExpressionNode::pc_, func);
-                }
-                else if (argl->exp->type == ExpressionNode::callsite_ && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
-                {
-                    Type* ctype = argl->tp;
-                    EXPRESSION* exp = nullptr;
-                    auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr,
-                        false, 0);
-                    if (sp)
-                    {
-                        argl->tp = ctype;
-                        argl->exp = exp;
-                    }
-                }
-            }
-        }
-    }
 }
 LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
@@ -6921,7 +6937,7 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? GetSymRef(exp1) : nullptr;
         btp = (*tp)->BaseType();
         tp1 = LookupSingleAggregate(btp, &exp1, true);
-        if ((isstructuredmath(*tp) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+        if (((*tp)->IsStructuredMath() || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_any, Keyword::unary_and_, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
         {
             return lex;
@@ -7079,7 +7095,7 @@ static LexList* expression_deref(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRES
 {
     lex = getsym();
     lex = expression_cast(lex, funcsp, nullptr, tp, exp, nullptr, flags);
-    if ((isstructuredmath(*tp) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
+    if (((*tp)->IsStructuredMath() || Optimizer::architecture == ARCHITECTURE_MSIL) &&
         insertOperatorFunc(ovcl_unary_pointer, Keyword::unary_star_, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
     {
         return lex;
@@ -7219,7 +7235,7 @@ static LexList* expression_postfix(LexList* lex, SYMBOL* funcsp, Type* atp, Type
             case Keyword::autodec_:
                 kw = KW(lex);
                 lex = getsym();
-                if (isstructuredmath(*tp))
+                if ((*tp)->IsStructuredMath())
                 {
                     if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                         insertOperatorFunc(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr, flags))
@@ -7495,7 +7511,7 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                                 case Keyword::autodec_:
                                     kw = KW(lex);
                                     lex = getsym();
-                                    if (isstructuredmath(*tp))
+                                    if ((*tp)->IsStructuredMath())
                                     {
                                         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                                             insertOperatorFunc(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr,

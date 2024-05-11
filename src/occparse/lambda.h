@@ -29,5 +29,6 @@ extern std::list<LAMBDA*> lambdas;
 
 void lambda_init(void);
 SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit);
+void createConstructorsForLambda(SYMBOL* sp);
 LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
 }  // namespace Parser

@@ -27,25 +27,15 @@ namespace Parser
 {
 extern bool noExcept;
 
-// ccerr.cpp
-void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
-void ConstexprMembersNotInitializedErrors(SYMBOL* sym);
 // decl group
-std::list<MEMBERInitializerS*>* GetMemberInitializers(LexList** lex2, SYMBOL* funcsp, SYMBOL* sym);
+std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList** lex2, SYMBOL* funcsp, SYMBOL* sym);
 void SetParams(SYMBOL* cons);
 void ConditionallyDeleteClassMethods(SYMBOL* sp);
+void createConstructorsForLambda(SYMBOL* sp);
 void createDefaultConstructors(SYMBOL* sp);
 void createDestructor(SYMBOL* sp);
-// lambda.cpp
-void createConstructorsForLambda(SYMBOL* sp);
-// stmt.cpp
-EXPRESSION* destructLocal(EXPRESSION* exp);
-void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct);
-void DestructParams(std::list<Argument*>* il);
-// expr.cpp
-void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params);
-//
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
+//
 bool matchesCopy(SYMBOL* sp, bool move);
 SYMBOL* getCopyCons(SYMBOL* base, bool move);
 bool hasVTab(SYMBOL* sp);

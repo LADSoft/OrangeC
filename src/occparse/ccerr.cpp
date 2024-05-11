@@ -24,6 +24,7 @@
 
 #include "compiler.h"
 #include <cstdarg>
+#include <unordered_set>
 #include "PreProcessor.h"
 #include "Utils.h"
 #include "Errors.h"
@@ -52,7 +53,7 @@
 #include "symtab.h"
 #include "osutil.h"
 #include "declcpp.h"
-
+#include "beinterf.h"
 namespace Parser
 {
 
@@ -2004,6 +2005,177 @@ void CheckUndefinedStructures(SYMBOL* funcsp)
                 errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
             }
         }
+    }
+}
+void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
+{
+    if (sp->sb->isConstructor)
+    {
+        if (!notype)
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+        else if (sp->sb->storage_class == StorageClass::virtual_)
+            errorstr(ERR_INVALID_STORAGE_CLASS, "virtual");
+        else if (sp->sb->storage_class == StorageClass::static_)
+            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+        else if (sp->tp->IsConst() || sp->tp->IsVolatile())
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
+    }
+    else if (sp->sb->isDestructor)
+    {
+        if (!notype)
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+        else if (sp->sb->storage_class == StorageClass::static_)
+            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+        else if (sp->tp->IsConst() || sp->tp->IsVolatile())
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
+    }
+    else if (sp->sb->parentClass && !strcmp(sp->name, sp->sb->parentClass->name))
+    {
+        error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+    }
+}
+static bool HasConstexprConstructorInternal(SYMBOL* sym)
+{
+    sym = search(sym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
+    if (sym)
+    {
+        for (auto sp : *sym->tp->syms)
+        {
+            if (sp->sb->constexpression)
+                return true;
+        }
+    }
+    return false;
+}
+static bool HasConstexprConstructor(Type* tp)
+{
+    auto sym = tp->BaseType()->sp;
+    if (HasConstexprConstructorInternal(sym))
+        return true;
+    if (sym->sb->specializations)
+        for (auto specialize : *sym->sb->specializations)
+            if (HasConstexprConstructorInternal(specialize))
+                return true;
+    return false;
+}
+void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        for (auto sym : *cons->tp->syms)
+        {
+            if (sym->sb->constexpression)
+            {
+                std::unordered_set<std::string, StringHash> initialized;
+                if (sym->sb->memberInitializers)
+                    for (auto m : *sym->sb->memberInitializers)
+                        initialized.insert(m->name);
+                for (auto sp : *sym->sb->parentClass->tp->syms)
+                {
+                    if (!sp->sb->init && ismemberdata(sp))
+                    {
+                        if (initialized.find(sp->name) == initialized.end())
+                        {
+                            // this should check the actual base class constructor in use
+                            // but that would be difficult to get at this point.
+                            if (!sp->tp->IsStructured() || !HasConstexprConstructor(sp->tp))
+                                errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, sp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+bool MustSpecialize(const char* name)
+{
+    if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
+        return false;
+    for (auto&& sst : enclosingDeclarations)
+    {
+        if (sst.str && !strcmp(sst.str->name, name))
+            return false;
+    }
+    return true;
+}
+void SpecializationError(char* str)
+{
+    if (MustSpecialize(str))
+        errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, str);
+}
+
+void SpecializationError(SYMBOL* sym)
+{
+    if (MustSpecialize(sym->name))
+        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
+}
+void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
+{
+    for (auto cur : *sym->tp->syms)
+    {
+        if (cur->sb->storage_class == StorageClass::static_ && (cur->tp->hasbits || localClassWarnings))
+            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+        if (sym != cur && !strcmp(sym->name, cur->name))
+        {
+            if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
+                cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
+            {
+                errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
+                break;
+            }
+        }
+        if (cur->sb->storage_class == StorageClass::overloads_)
+        {
+            for (auto cur1 : *cur->tp->syms)
+            {
+                if (localClassWarnings)
+                {
+                    if (cur1->tp->IsFunction())
+                        if (!cur1->tp->BaseType()->sp->sb->inlineFunc.stmt)
+                            errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
+                }
+                if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
+                    if (cur1->sb->storage_class != StorageClass::virtual_)
+                        error(ERR_SPECIFIER_VIRTUAL_FUNC);
+            }
+        }
+    }
+}
+void checkauto(Type* tp1, int err)
+{
+    if (tp1->IsAutoType())
+    {
+        error(err);
+        while (tp1->type == BasicType::const_ || tp1->type == BasicType::volatile_ || tp1->type == BasicType::lrqual_ || tp1->type == BasicType::rrqual_)
+        {
+            tp1->size = getSize(BasicType::int_);
+            tp1 = tp1->btp;
+        }
+        tp1->type = BasicType::int_;
+        tp1->size = getSize(BasicType::int_);
+    }
+}
+void checkscope(Type* tp1, Type* tp2)
+{
+    tp1 = tp1->BaseType();
+    tp2 = tp2->BaseType();
+    if (tp1->scoped != tp2->scoped)
+    {
+        error(ERR_SCOPED_TYPE_MISMATCH);
+    }
+    else if (tp1->scoped && tp2->scoped)
+    {
+        SYMBOL* sp1 = nullptr, * sp2 = nullptr;
+        if ((tp1)->type == BasicType::enum_)
+            sp1 = (tp1)->sp;
+        else
+            sp1 = (tp1)->btp->sp;
+        if (tp2->type == BasicType::enum_)
+            sp2 = tp2->sp;
+        else
+            sp2 = tp2->btp->sp;
+        if (sp1 != sp2)
+            error(ERR_SCOPED_TYPE_MISMATCH);
     }
 }
 }  // namespace Parser

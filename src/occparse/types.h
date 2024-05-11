@@ -98,6 +98,10 @@ struct Type
 
     bool IsFunctionPtr();
     bool IsStructured();
+    bool IsTemplatedPointer();
+    bool IsStructuredMath(Type* tp2 = nullptr);
+    bool IsSmallInt();
+    bool IsLargeEnum();
     void ToString(char* buf);
     bool SameExceptionType(Type* typ);
     bool SameCharType(Type* tp);
@@ -106,6 +110,9 @@ struct Type
     bool ExactSameTypeNoQualifiers(Type* other) { return CompareTypes(this, other, 2); }
     inline void BasicTypeToString(char* buf) { BasicTypeToString(buf, this); }
     Type* CopyType(bool deep = false, std::function<void(Type*&, Type*&)> callback = nullptr);
+    bool IsConstWithArr();
+    bool SameIntegerType(Type* t2);
+    Type* InitializerListType();
     static Type* MakeType(Type& tp, BasicType type, Type* base = nullptr);
     static Type* MakeType(BasicType type, Type* base = nullptr);
     static bool CompareTypes(Type* typ1, Type* typ2, int exact);

@@ -40,14 +40,6 @@ typedef struct
     SYMBOL* name;
 } THUNK;
 
-// constexpr.cpp
-bool isConstexprConstructor(SYMBOL* sym);
-
-//ccerr.cpp
-bool MustSpecialize(const char* name);
-void SpecializationError(char* str);
-void SpecializationError(SYMBOL* sym);
-void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
 // decl group
 void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset);
 void calculateVirtualBaseOffsets(SYMBOL* sym);
@@ -58,12 +50,12 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
 void checkPackedType(SYMBOL* sym);
 void checkPackedExpression(EXPRESSION* exp);
 void checkUnpackedExpression(EXPRESSION* exp);
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERInitializerS*>::iterator& init,
-    std::list<MEMBERInitializerS*>::iterator& initend, std::list<MEMBERInitializerS*>* mi,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
+    std::list<MEMBERINITIALIZERS*>::iterator& initend, std::list<MEMBERINITIALIZERS*>* mi,
     std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase);
 void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp,
     std::list<TEMPLATEPARAMPAIR>* templatePack,
-    std::list<MEMBERInitializerS*>** p,
+    std::list<MEMBERINITIALIZERS*>** p,
     LexList* start, std::list<Argument*>* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 LexList* handleStaticAssert(LexList* lex);

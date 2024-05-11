@@ -117,69 +117,6 @@ static std::unordered_map<Keyword, EvalFunc> dispatcher = {
     {Keyword::asxor_, eval_binary_assign},
     {Keyword::comma_, eval_binary_comma},
 };
-bool isstructuredmath(Type* righttp, Type* tp2)
-{
-    if (Optimizer::cparams.prm_cplusplus)
-    {
-        if (righttp->IsStructured() || righttp->BaseType()->type == BasicType::enum_ || (righttp->IsInt() && righttp->scoped))
-        {
-            return true;
-        }
-        if (tp2 && (tp2->IsStructured() || tp2->BaseType()->type == BasicType::enum_ || (tp2->IsInt() && tp2->scoped)))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-bool smallint(Type * tp)
-{
-    tp = tp->BaseType();
-    if (tp->type < BasicType::int_)
-    {
-        return true;
-    }
-    else if (tp->IsBitInt())
-    {
-        int sz = getSize(BasicType::int_) * CHAR_BIT;
-        return tp->bitintbits < sz;
-    }
-    else
-    {
-        return false;
-    }
-}
-bool largenum(Type * tp)
-{
-    tp = tp->BaseType();
-    if (tp->type > BasicType::int_)
-    {
-        if (tp->IsBitInt())
-        {
-            int sz = getSize(BasicType::int_) * CHAR_BIT;
-            return tp->bitintbits > sz || (tp->bitintbits == sz && tp->type == BasicType::unsigned_bitint_);
-        }
-        else
-        {
-            return true;
-        }
-    }
-    else
-    {
-        return false;
-    }
-}
-bool isTemplatedPointer(Type * tp)
-{
-    Type* tpb = tp->BaseType()->btp;
-    while (tp != tpb)
-    {
-        if (tp->templateTop)
-            return true;
-        tp = tp->btp;
-    }
-    return false;
-}
 EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
 {
     EXPRESSION* exp_in = exp;
@@ -459,7 +396,7 @@ void eval_unary_plus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, E
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
-    if (isstructuredmath(*resulttp))
+    if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_numeric, Keyword::unary_plus_, funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
@@ -487,7 +424,7 @@ void eval_unary_plus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, E
         cast(atp, resultexp);
         *resulttp = atp;
     }
-    else if (smallint(*resulttp))
+    else if ((*resulttp)->IsSmallInt())
     {
         cast(&stdint, resultexp);
         *resulttp = &stdint;
@@ -498,7 +435,7 @@ void eval_unary_minus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, 
     *resulttp = lefttp;
     *resultexp = leftexp;
     LookupSingleAggregate(*resulttp, resultexp);
-    if (isstructuredmath(*resulttp))
+    if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_numeric, Keyword::unary_minus_, funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
@@ -526,7 +463,7 @@ void eval_unary_minus(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, 
         cast(atp, resultexp);
         *resulttp = atp;
     }
-    else if (smallint(*resulttp))
+    else if ((*resulttp)->IsSmallInt())
     {
         cast(&stdint, resultexp);
         *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
@@ -542,7 +479,7 @@ void eval_unary_not(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resulttp, EX
     *resulttp = lefttp;
     *resultexp = leftexp;
     LookupSingleAggregate(*resulttp, resultexp);
-    if (isstructuredmath(*resulttp))
+    if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_numericptr, Keyword::not_, funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
@@ -580,7 +517,7 @@ void eval_unary_complement(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resul
     *resulttp = lefttp;
     *resultexp = leftexp;
     LookupSingleAggregate(*resulttp, resultexp);
-    if (isstructuredmath(*resulttp))
+    if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_int, KW(lex), funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
@@ -612,7 +549,7 @@ void eval_unary_complement(LexList *lex, SYMBOL *funcsp, Type *atp, Type **resul
         cast(atp, resultexp);
         *resulttp = atp;
     }
-    else if (smallint(*resulttp))
+    else if ((*resulttp)->IsSmallInt())
     {
         cast(&stdint, resultexp);
         *resultexp = MakeExpression(ExpressionNode::compl_, *resultexp);
@@ -629,7 +566,7 @@ void eval_unary_autoincdec(LexList *lex, SYMBOL *funcsp,Type *atp, Type **result
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
-    if (isstructuredmath(*resulttp))
+    if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_unary_prefix, KW(lex), funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
@@ -720,7 +657,7 @@ bool eval_binary_pm(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EXP
     auto kw = KW(lex);
     *resulttp = lefttp;
     *resultexp = leftexp;
-    if (isstructuredmath(*resulttp, righttp) && Optimizer::cparams.prm_cplusplus && kw == Keyword::pointstar_ &&
+    if ((*resulttp)->IsStructuredMath(righttp) && Optimizer::cparams.prm_cplusplus && kw == Keyword::pointstar_ &&
         insertOperatorFunc(ovcl_binary_any, Keyword::pointstar_, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
     {
         return true;
@@ -839,7 +776,7 @@ bool eval_binary_times(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
 
         if (Optimizer::cparams.prm_cplusplus && insertOperatorFunc(kw == Keyword::mod_ ? ovcl_binary_int : ovcl_binary_numeric, kw,
@@ -967,7 +904,7 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
@@ -1075,7 +1012,7 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
                 cast(&stdinative, resultexp);
             }
             /*				*resulttp = righttp = destSize(*resulttp, righttp, resultexp, &rightexp, false, nullptr); */
-            if (smallint(righttp))
+            if (righttp->IsSmallInt())
                 cast(&stdint, &rightexp);
             rightexp = MakeExpression(ExpressionNode::umul_, rightexp, ns);
             *resultexp = MakeExpression(kw == Keyword::plus_ ? ExpressionNode::add_ : ExpressionNode::sub_, *resultexp, rightexp);
@@ -1099,7 +1036,7 @@ bool eval_binary_add(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, EX
         {
             cast(&stdinative, &rightexp);
         }
-        if (smallint(*resulttp))
+        if ((*resulttp)->IsSmallInt())
             cast(&stdint, resultexp);
         *resultexp = MakeExpression(ExpressionNode::umul_, *resultexp, ns);
         *resultexp = MakeExpression(ExpressionNode::add_, *resultexp, rightexp);
@@ -1171,7 +1108,7 @@ bool eval_binary_shift(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
         LookupSingleAggregate(*resulttp, resultexp);
         LookupSingleAggregate(righttp, &rightexp);
@@ -1210,7 +1147,7 @@ bool eval_binary_shift(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp, 
                 type = ExpressionNode::rsh_;
         else
             type = ExpressionNode::lsh_;
-        if (smallint(*resulttp))
+        if ((*resulttp)->IsSmallInt())
         {
             *resulttp = &stdint;
             cast(*resulttp, resultexp);
@@ -1236,7 +1173,7 @@ bool eval_binary_inequality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resul
     auto opname = lex->data->kw->name;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
@@ -1356,7 +1293,7 @@ bool eval_binary_equality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resultt
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
@@ -1539,7 +1476,7 @@ bool eval_binary_logical(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp
     }
     *resulttp = lefttp;
     *resultexp = leftexp;
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
         if (Optimizer::cparams.prm_cplusplus &&
             insertOperatorFunc(kw == Keyword::lor_ || kw == Keyword::land_ ? ovcl_binary_numericptr : ovcl_binary_int, kw, funcsp,
@@ -1634,7 +1571,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
     }
     ResolveTemplateVariable(resulttp, resultexp, righttp, nullptr);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, nullptr);
-    if (isstructuredmath(*resulttp, righttp))
+    if ((*resulttp)->IsStructuredMath(righttp))
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(selovcl, kw, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
@@ -1947,7 +1884,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
                                 if (Optimizer::cparams.prm_cplusplus)
                                 {
                                     if ((!(*resulttp)->IsVoidPtr() || !righttp->IsPtr()) && !righttp->nullptrType)
-                                        if (!isTemplatedPointer(*resulttp))
+                                        if (!(*resulttp)->IsTemplatedPointer())
                                         {
                                             errorConversionOrCast(true, righttp, *resulttp);
                                         }
@@ -2056,11 +1993,11 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
             break;
         case Keyword::asdivide_:
             tp2 = destSize(*resulttp, righttp, nullptr, nullptr, false, nullptr);
-            op = (*resulttp)->IsUnsigned() && largenum(*resulttp) ? ExpressionNode::udiv_ : ExpressionNode::div_;
+            op = (*resulttp)->IsUnsigned() && (*resulttp)->IsLargeEnum() ? ExpressionNode::udiv_ : ExpressionNode::div_;
             break;
         case Keyword::asmod_:
             tp2 = destSize(*resulttp, righttp, nullptr, nullptr, false, nullptr);
-            op = (*resulttp)->IsUnsigned() && largenum(*resulttp) ? ExpressionNode::umod_ : ExpressionNode::mod_;
+            op = (*resulttp)->IsUnsigned() && (*resulttp)->IsLargeEnum() ? ExpressionNode::umod_ : ExpressionNode::mod_;
             break;
         case Keyword::assign_:
             op = ExpressionNode::assign_;

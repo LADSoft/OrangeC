@@ -288,87 +288,6 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
         diag("InsertSymbol: cannot insert");
     }
 }
-LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-                   StorageClass storage_class)
-{
-    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
-    SYMBOL* strSym = nullptr;
-
-    *rsp = nullptr;
-    if (ISID(lex) || MATCHKW(lex, Keyword::classsel_))
-    {
-        lex = nestedSearch(lex, rsp, &strSym, &nsv, nullptr, nullptr, true, storage_class, false, false);
-        if (*rsp)
-        {
-            strcpy(name, (*rsp)->name);
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::begin_))
-            {
-                // specify EXACTLY the first result if it is a definition
-                // otherwise what is found by nestedSearch is fine...
-                if (strSym)
-                    *rsp = strSym->tp->tags->Lookup((*rsp)->name);
-                else if (nsv)
-                    *rsp = nsv->front()->tags->Lookup((*rsp)->name);
-                else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
-                    *rsp = enclosingDeclarations.GetFirst()->tp->tags->Lookup((*rsp)->name);
-                else if (storage_class == StorageClass::auto_)
-                    *rsp = localNameSpace->front()->tags->Lookup((*rsp)->name);
-                else
-                    *rsp = globalNameSpace->front()->tags->Lookup((*rsp)->name);
-                if (!*rsp)
-                {
-                    if (nsv || strSym)
-                    {
-                        errorNotMember(strSym, nsv->front(), (*rsp)->sb->decoratedName);
-                    }
-                    *rsp = nullptr;
-                }
-            }
-        }
-        else if (ISID(lex))
-        {
-            strcpy(name, lex->data->value.s.a);
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::begin_))
-            {
-                if (nsv || strSym)
-                {
-                    errorNotMember(strSym, nsv->front(), name);
-                }
-            }
-        }
-    }
-    if (nsv)
-    {
-        *table = nsv->front()->tags;
-    }
-    else if (strSym)
-    {
-        *table = strSym->tp->tags;
-    }
-    else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
-    {
-        strSym = enclosingDeclarations.GetFirst();
-        *table = strSym->tp->tags;
-    }
-    else
-    {
-        if (storage_class == StorageClass::auto_)
-        {
-            *table = localNameSpace->front()->tags;
-            nsv = localNameSpace;
-        }
-        else
-        {
-            *table = globalNameSpace->front()->tags;
-            nsv = globalNameSpace;
-        }
-    }
-    *nsv_out = nsv;
-    *strSym_out = strSym;
-    return lex;
-}
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
 {
     if (sp->sb->baseClasses)
@@ -2232,20 +2151,6 @@ static bool isPointer(LexList* lex)
         }
     return false;
 }
-bool intcmp(Type* t1, Type* t2)
-{
-    while (t1->IsRef())
-        t1 = t1->BaseType()->btp;
-    while (t2->IsRef())
-        t2 = t2->BaseType()->btp;
-
-    while (t1->IsPtr() && t2->IsPtr())
-    {
-        t1 = t1->BaseType()->btp;
-        t2 = t2->BaseType()->btp;
-    }
-    return t1->type == t2->type;
-}
 static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
 {
     /* two oldstyle declarations aren't compared */
@@ -2350,7 +2255,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                     Optimizer::LIST* li = sp->sb->xc->xcDynamic;
                     while (li)
                     {
-                        if (((Type*)lo->data)->ExactSameType((Type*)li->data) && intcmp((Type*)lo->data, (Type*)li->data))
+                        if (((Type*)lo->data)->ExactSameType((Type*)li->data) && ((Type*)lo->data)->SameIntegerType((Type*)li->data))
                         {
                             break;
                         }

@@ -214,6 +214,47 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bo
     }
     return true;
 }
+// these tests fall flat because they don't test the specific constructor
+// used to construct things...
+static bool hasNoBody(std::list<Statement*>* stmts)
+{
+    if (stmts)
+    {
+        for (auto stmt : *stmts)
+        {
+            if (stmt->type != StatementNode::line_ && stmt->type != StatementNode::varstart_ && stmt->type != StatementNode::dbgblock_)
+                return false;
+            // modified this next line to use 'lower'
+            if (stmt->type == StatementNode::block_ && !hasNoBody(stmt->lower))
+                return false;
+        }
+    }
+    return true;
+}
+bool isConstexprConstructor(SYMBOL* sym)
+{
+    if (sym->sb->constexpression)
+        return true;
+    if (!sym->sb->deleted && !sym->sb->defaulted && !hasNoBody(sym->sb->inlineFunc.stmt))
+        return false;
+    for (auto sp : *sym->sb->parentClass->tp->syms)
+    {
+        if (ismemberdata(sp) && !sp->sb->init)
+        {
+            bool found = false;
+            if (sym->sb->memberInitializers)
+                for (auto memberInit : *sym->sb->memberInitializers)
+                    if (!strcmp(memberInit->name, sp->name))
+                    {
+                        found = true;
+                        break;
+                    }
+            if (!found)
+                return false;
+        }
+    }
+    return true;
+}
 bool ResolveConstExprLval(EXPRESSION** node)
 {
     bool rv = false;

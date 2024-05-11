@@ -125,7 +125,7 @@ void FreeLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label)
         sym->sb->value.i--;
 
     st = Statement::MakeStatement(nullptr, block, StatementNode::expr_);
-    destructBlock(&st->select, localNameSpace->front()->syms, true);
+    StatementGenerator::DestructorsForBlock(&st->select, localNameSpace->front()->syms, true);
     localNameSpace->front()->syms = localNameSpace->front()->syms->Next();
     localNameSpace->front()->tags = localNameSpace->front()->tags->Next();
 

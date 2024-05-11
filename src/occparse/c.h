@@ -823,7 +823,7 @@ typedef struct _memberInitializers
     int packed : 1;
     int delegating : 1;
     int valueInit : 1;
-} MEMBERInitializerS;
+} MEMBERINITIALIZERS;
 
 typedef struct _baseClass
 {

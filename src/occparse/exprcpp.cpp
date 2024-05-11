@@ -60,29 +60,6 @@ namespace Parser
 /* handling of const int */
 /*--------------------------------------------------------------------------------------------------------------------------------
  */
-void checkscope(Type* tp1, Type* tp2)
-{
-    tp1 = tp1->BaseType();
-    tp2 = tp2->BaseType();
-    if (tp1->scoped != tp2->scoped)
-    {
-        error(ERR_SCOPED_TYPE_MISMATCH);
-    }
-    else if (tp1->scoped && tp2->scoped)
-    {
-        SYMBOL *sp1 = nullptr, *sp2 = nullptr;
-        if ((tp1)->type == BasicType::enum_)
-            sp1 = (tp1)->sp;
-        else
-            sp1 = (tp1)->btp->sp;
-        if (tp2->type == BasicType::enum_)
-            sp2 = tp2->sp;
-        else
-            sp2 = tp2->btp->sp;
-        if (sp1 != sp2)
-            error(ERR_SCOPED_TYPE_MISMATCH);
-    }
-}
 static EXPRESSION** findPointerToExpression(EXPRESSION** parent, EXPRESSION* expr)
 {
     EXPRESSION** y;
@@ -1761,7 +1738,7 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
             createAssignment(s3->sb->parentClass, s3);
         enclosingDeclarations.Release();
         CheckCalledException(s3, funcparams->thisptr);
-        DestructParams(funcparams->arguments);
+        StatementGenerator::DestructorsForArguments(funcparams->arguments);
         return true;
     }
     enclosingDeclarations.Release();

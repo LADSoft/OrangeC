@@ -90,6 +90,9 @@ namespace Parser
         static void ParseNoExceptClause(SYMBOL* sp);
         static bool ResolvesToDeclaration(LexList* lex, bool structured);
         static bool HasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }
+        static EXPRESSION* DestructorsForExpression(EXPRESSION* exp);
+        static void DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct);
+        static void DestructorsForArguments(std::list<Argument*>* il);
 
     protected:
         bool IsSelectTrue(EXPRESSION* exp);

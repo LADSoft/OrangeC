@@ -941,6 +941,87 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
     }
     return nullptr;
 }
+LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
+    StorageClass storage_class)
+{
+    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
+    SYMBOL* strSym = nullptr;
+
+    *rsp = nullptr;
+    if (ISID(lex) || MATCHKW(lex, Keyword::classsel_))
+    {
+        lex = nestedSearch(lex, rsp, &strSym, &nsv, nullptr, nullptr, true, storage_class, false, false);
+        if (*rsp)
+        {
+            strcpy(name, (*rsp)->name);
+            lex = getsym();
+            if (MATCHKW(lex, Keyword::begin_))
+            {
+                // specify EXACTLY the first result if it is a definition
+                // otherwise what is found by nestedSearch is fine...
+                if (strSym)
+                    *rsp = strSym->tp->tags->Lookup((*rsp)->name);
+                else if (nsv)
+                    *rsp = nsv->front()->tags->Lookup((*rsp)->name);
+                else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
+                    *rsp = enclosingDeclarations.GetFirst()->tp->tags->Lookup((*rsp)->name);
+                else if (storage_class == StorageClass::auto_)
+                    *rsp = localNameSpace->front()->tags->Lookup((*rsp)->name);
+                else
+                    *rsp = globalNameSpace->front()->tags->Lookup((*rsp)->name);
+                if (!*rsp)
+                {
+                    if (nsv || strSym)
+                    {
+                        errorNotMember(strSym, nsv->front(), (*rsp)->sb->decoratedName);
+                    }
+                    *rsp = nullptr;
+                }
+            }
+        }
+        else if (ISID(lex))
+        {
+            strcpy(name, lex->data->value.s.a);
+            lex = getsym();
+            if (MATCHKW(lex, Keyword::begin_))
+            {
+                if (nsv || strSym)
+                {
+                    errorNotMember(strSym, nsv->front(), name);
+                }
+            }
+        }
+    }
+    if (nsv)
+    {
+        *table = nsv->front()->tags;
+    }
+    else if (strSym)
+    {
+        *table = strSym->tp->tags;
+    }
+    else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
+    {
+        strSym = enclosingDeclarations.GetFirst();
+        *table = strSym->tp->tags;
+    }
+    else
+    {
+        if (storage_class == StorageClass::auto_)
+        {
+            *table = localNameSpace->front()->tags;
+            nsv = localNameSpace;
+        }
+        else
+        {
+            *table = globalNameSpace->front()->tags;
+            nsv = globalNameSpace;
+        }
+    }
+    *nsv_out = nsv;
+    *strSym_out = strSym;
+    return lex;
+}
 SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, bool toErr)
 {
     SYMBOL* rv = nullptr;
@@ -6452,5 +6533,36 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
         fpargs.templateParams = exp2->v.func->templateParams;
     fpargs.ascall = true;
     return GetOverloadedFunction(mtp, exp, sym, &fpargs, nullptr, true, false, flags);
+}
+void ResolveArgumentFunctions(CallSite* args, bool toErr)
+{
+    if (args->arguments)
+    {
+        for (auto argl : *args->arguments)
+        {
+            if (argl->tp && argl->tp->type == BasicType::aggregate_)
+            {
+                auto it = argl->tp->syms->begin();
+                SYMBOL* func = *it;
+                if (!func->sb->templateLevel && ++it == argl->tp->syms->end())
+                {
+                    argl->tp = func->tp;
+                    argl->exp = MakeExpression(ExpressionNode::pc_, func);
+                }
+                else if (argl->exp->type == ExpressionNode::callsite_ && argl->exp->v.func->astemplate && !argl->exp->v.func->ascall)
+                {
+                    Type* ctype = argl->tp;
+                    EXPRESSION* exp = nullptr;
+                    auto sp = GetOverloadedFunction(&ctype, &exp, argl->exp->v.func->sp, argl->exp->v.func, nullptr, toErr,
+                        false, 0);
+                    if (sp)
+                    {
+                        argl->tp = ctype;
+                        argl->exp = exp;
+                    }
+                }
+            }
+        }
+    }
 }
 }  // namespace Parser

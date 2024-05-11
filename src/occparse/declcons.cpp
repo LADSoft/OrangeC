@@ -63,86 +63,6 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
                        bool isconst);
 void createDestructor(SYMBOL* sp);
 
-void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
-{
-    if (sp->sb->isConstructor)
-    {
-        if (!notype)
-            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
-        else if (sp->sb->storage_class == StorageClass::virtual_)
-            errorstr(ERR_INVALID_STORAGE_CLASS, "virtual");
-        else if (sp->sb->storage_class == StorageClass::static_)
-            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
-        else if (sp->tp->IsConst() || sp->tp->IsVolatile())
-            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
-    }
-    else if (sp->sb->isDestructor)
-    {
-        if (!notype)
-            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
-        else if (sp->sb->storage_class == StorageClass::static_)
-            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
-        else if (sp->tp->IsConst() || sp->tp->IsVolatile())
-            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
-    }
-    else if (sp->sb->parentClass && !strcmp(sp->name, sp->sb->parentClass->name))
-    {
-        error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
-    }
-}
-static bool HasConstexprConstructorInternal(SYMBOL* sym)
-{
-    sym = search(sym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
-    if (sym)
-    {
-        for (auto sp : *sym->tp->syms)
-        {
-            if (sp->sb->constexpression)
-                return true;
-        }
-    }
-    return false;
-}
-static bool HasConstexprConstructor(Type* tp)
-{
-    auto sym = tp->BaseType()->sp;
-    if (HasConstexprConstructorInternal(sym))
-        return true;
-    if (sym->sb->specializations)
-        for (auto specialize : *sym->sb->specializations)
-            if (HasConstexprConstructorInternal(specialize))
-                return true;
-     return false;
-}
-void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
-{
-    if (!templateNestingCount || instantiatingTemplate)
-    {
-        for (auto sym : *cons->tp->syms)
-        {
-            if (sym->sb->constexpression)
-            {
-                std::unordered_set<std::string, StringHash> initialized;
-                if (sym->sb->memberInitializers)
-                    for (auto m : *sym->sb->memberInitializers)
-                     initialized.insert(m->name);
-                for (auto sp : *sym->sb->parentClass->tp->syms)
-                {
-                    if (!sp->sb->init && ismemberdata(sp))
-                    {
-                        if (initialized.find(sp->name) == initialized.end())
-                        {
-                            // this should check the actual base class constructor in use
-                            // but that would be difficult to get at this point.
-                            if (!sp->tp->IsStructured() || !HasConstexprConstructor(sp->tp))
-                                errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, sp);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 LexList* FindClass(LexList* lex, SYMBOL* funcsp, SYMBOL** sym)
 {
     SYMBOL* encloser = nullptr;
@@ -165,10 +85,10 @@ LexList* FindClass(LexList* lex, SYMBOL* funcsp, SYMBOL** sym)
     }
     return lex;
 }
-std::list<MEMBERInitializerS*>* GetMemberInitializers(LexList **lex2, SYMBOL* funcsp, SYMBOL* sym)
+std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList **lex2, SYMBOL* funcsp, SYMBOL* sym)
 {
     (void)sym;
-    std::list<MEMBERInitializerS*>* rv = memberInitializersListFactory.CreateList();
+    std::list<MEMBERINITIALIZERS*>* rv = memberInitializersListFactory.CreateList();
     LexList *lex = *lex2, *last = nullptr;
     //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
     //        error(ERR_Initializer_LIST_REQUIRES_CONSTRUCTOR);
@@ -180,7 +100,7 @@ std::list<MEMBERInitializerS*>* GetMemberInitializers(LexList **lex2, SYMBOL* fu
             lex = FindClass(lex, funcsp, &sym);
             LexList** mylex;
             char name[1024];
-            auto v = Allocate<MEMBERInitializerS>();
+            auto v = Allocate<MEMBERINITIALIZERS>();
             v->line = lex->data->errline;
             v->file = lex->data->errfile;
             mylex = &v->initData;
@@ -1564,159 +1484,7 @@ void ConditionallyDeleteClassMethods(SYMBOL* sp)
         conditionallyDeleteDestructor(dest->tp->syms->front());
     }
 }
-EXPRESSION* destructLocal(EXPRESSION* exp)
-    {
-    std::stack<SYMBOL*> destructList;
-    std::stack<EXPRESSION*> stk;
-    stk.push(exp);
-    while (stk.size())
-    {
-        EXPRESSION* e = stk.top();
-        stk.pop();
-        if (!isintconst(e) && !isfloatconst(e))
-        {
-            if (e->left)
-                stk.push(e->left);
-            if (e->right)
-                stk.push(e->right);
-        }
-        if (e->type == ExpressionNode::thisref_)
-            e = e->left;
-        if (e->type == ExpressionNode::callsite_)
-        {
-            if (e->v.func->arguments)
-                for (auto il : *e->v.func->arguments)
-                    stk.push(il->exp);
-        }
-        if (e->type == ExpressionNode::auto_ && e->v.sp->sb->allocate && !e->v.sp->sb->destructed)
-        {
-            Type* tp = e->v.sp->tp;
-            while (tp->IsArray())
-                tp = tp->BaseType()->btp;
-            if (tp->IsStructured() && !tp->IsRef())
-            {
-                e->v.sp->sb->destructed = true;
-                destructList.push(e->v.sp);
-            }
-        }
-    }
-
-    EXPRESSION* rv = exp;
-    while (destructList.size())
-    {
-        SYMBOL* sp = destructList.top();
-        destructList.pop();
-        if (sp->sb->dest && sp->sb->dest->front()->exp)
-            rv = MakeExpression(ExpressionNode::comma_, rv, sp->sb->dest->front()->exp);
-    }
-    return rv;
-}
-void DestructParams(std::list<Argument*>* il)
-{
-    if (Optimizer::cparams.prm_cplusplus)
-        for (auto first : *il)
-        {
-            Type* tp = first->tp;
-            if (tp)
-            {
-                bool ref = false;
-                if (tp->IsRef())
-                {
-                    ref = true;
-                    tp = tp->BaseType()->btp;
-                }
-                else if (tp->lref || tp->rref)
-                {
-                    ref = true;
-                }
-                if (ref || !tp->IsStructured())
-                {
-                    std::stack<EXPRESSION*> stk;
-                    
-                    stk.push(first->exp);
-                    while (!stk.empty())
-                    {
-                        auto tst = stk.top();
-                        stk.pop();
-                        if (tst->type == ExpressionNode::thisref_)
-                            tst = tst->left;
-                        if (tst->type == ExpressionNode::callsite_)
-                        {
-                            if (tst->v.func->sp->sb->isConstructor)
-                            {
-                                EXPRESSION* iexp = tst->v.func->thisptr;
-                                auto sp = tst->v.func->thistp->BaseType()->btp->BaseType()->sp;
-                                int offs;
-                                auto xexp = relptr(iexp, offs);
-                                if (xexp)
-                                    xexp->v.sp->sb->destructed = true;
-                                if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
-                                {
-                                    if (!first->destructors)
-                                        first->destructors = exprListFactory.CreateList();
-                                    first->destructors->push_front(iexp);
-                                }
-                            }
-                        }
-                        else if (tst->type == ExpressionNode::comma_)
-                        {
-                            if (tst->right)
-                                stk.push(tst->right);
-                            if (tst->left)
-                                stk.push(tst->left);
-                        }
-                    }
-                }
-            }
-        }
-}
-void destructBlock(EXPRESSION** exp, SymbolTable<SYMBOL> *table, bool mainDestruct)
-{
-    for (auto sp : *table)
-    {
-        if ((sp->sb->allocate || sp->sb->storage_class == StorageClass::parameter_) && !sp->sb->destructed && !sp->tp->IsRef())
-        {
-            sp->sb->destructed = mainDestruct;
-            if (sp->sb->storage_class == StorageClass::parameter_)
-            {
-                if (sp->tp->IsStructured())
-                {
-                    EXPRESSION* iexp = getThisNode(sp);
-                    if (callDestructor(sp->tp->BaseType()->sp, nullptr, &iexp, nullptr, true, false, false, true))
-                    {
-                        optimize_for_constants(&iexp);
-                        if (*exp)
-                        {
-                            *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
-                        }
-                        else
-                        {
-                            *exp = iexp;
-                        }
-                    }
-                }
-            }
-            else if (sp->sb->storage_class != StorageClass::localstatic_ && sp->sb->dest)
-            {
-
-                EXPRESSION* iexp = sp->sb->dest->front()->exp;
-                if (iexp)
-                {
-                    optimize_for_constants(&iexp);
-                    if (*exp)
-                    {
-                        *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
-                    }
-                    else
-                    {
-                        *exp = iexp;
-                    }
-                }
-            }
-        }
-    }
-}
-static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEMBERInitializerS*>* mi, SYMBOL* member, int offset, EXPRESSION* thisptr,
+static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEMBERINITIALIZERS*>* mi, SYMBOL* member, int offset, EXPRESSION* thisptr,
                         EXPRESSION* otherptr, SYMBOL* parentCons, bool doCopy)
 {
     (void)cls;
@@ -1756,7 +1524,7 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
         st->select = exp;
     }
 }
-static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEMBERInitializerS*>* mi, SYMBOL* member, int memberOffs, bool top,
+static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEMBERINITIALIZERS*>* mi, SYMBOL* member, int memberOffs, bool top,
                                EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool baseClass, bool doCopy,
                                bool useDefault)
 {
@@ -1840,7 +1608,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
         }
         else
         {
-            MEMBERInitializerS* mix = nullptr;
+            MEMBERINITIALIZERS* mix = nullptr;
             if (mi && mi->size() && mi->front() && mi->front()->sp && baseClass)
             {
                 for (auto mi2 : *mi)
@@ -1972,7 +1740,7 @@ static void dovtabThunks(std::list<FunctionBlock*>& b, SYMBOL* sym, EXPRESSION* 
         st->select = first;
     }
 }
-static void doVirtualBases(std::list<FunctionBlock*>& b, SYMBOL* sp, std::list<MEMBERInitializerS*>* mi, std::list<VBASEENTRY*>* vbe, EXPRESSION* thisptr,
+static void doVirtualBases(std::list<FunctionBlock*>& b, SYMBOL* sp, std::list<MEMBERINITIALIZERS*>* mi, std::list<VBASEENTRY*>* vbe, EXPRESSION* thisptr,
                            EXPRESSION* otherptr, SYMBOL* parentCons, bool doCopy)
 {
     if (vbe && vbe->size())
@@ -3494,37 +3262,4 @@ bool callConstructorParam(Type** tp, EXPRESSION** exp, Type* paramTP, EXPRESSION
     return callConstructor(tp, exp, params, false, nullptr, top, maybeConversion, implicit, pointer, false, false, toErr);
 }
 
-void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params)
-{
-    if (!cons1)
-    {
-        return;
-    }
-    auto it = cons1->tp->BaseType()->syms->begin();
-    auto ite = cons1->tp->BaseType()->syms->end();
-    if ((*it)->sb->thisPtr)
-        ++it;
-    std::list<Argument*>::iterator args, argse;
-    if (params->arguments)
-    {
-        args = params->arguments->begin();
-        argse = params->arguments->end();
-    }
-    while (it != ite && args != argse)
-    {
-        SYMBOL* sp = *it;
-        Type* tps = sp->tp->BaseType();
-        Type* tpa = (*args)->tp->BaseType();
-        if (tps->IsArithmetic() && tpa->IsArithmetic())
-        {
-            if (tps->type > BasicType::int_ && tps->type != tpa->type)
-            {
-                (*args)->tp = sp->tp;
-                cast(sp->tp, &(*args)->exp);
-            }
-        }
-        ++it;
-        ++args;
-    }
-}
 }  // namespace Parser

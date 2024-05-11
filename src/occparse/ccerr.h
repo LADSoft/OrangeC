@@ -156,6 +156,14 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);
 void CheckUndefinedStructures(SYMBOL* funcsp);
+void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
+void ConstexprMembersNotInitializedErrors(SYMBOL* sym);
+bool MustSpecialize(const char* name);
+void SpecializationError(char* str);
+void SpecializationError(SYMBOL* sym);
+void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
+void checkauto(Type* tp1, int err);
+void checkscope(Type* tp1, Type* tp2);
 void EnterInstantiation(LexList* lex, SYMBOL* sp);
 void LeaveInstantiation();
 }  // namespace Parser

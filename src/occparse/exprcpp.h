@@ -25,8 +25,6 @@
 
 namespace Parser
 {
-// ccerr.cpp
-void checkscope(Type* tp1, Type* tp2);
 // expr group
 void qualifyForFunc(SYMBOL* sym, Type** tp, bool isMutable);
 void getThisType(SYMBOL* sym, Type** tp);

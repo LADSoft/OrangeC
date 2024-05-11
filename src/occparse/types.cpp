@@ -475,6 +475,73 @@ bool Type::IsStructured()
     Type* x = this;
     return (__isstructured(x->BaseType()));
 }
+bool Type::IsStructuredMath(Type* tp2)
+{
+    auto righttp = this;
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        if (righttp->IsStructured() || righttp->BaseType()->type == BasicType::enum_ || (righttp->IsInt() && righttp->scoped))
+        {
+            return true;
+        }
+        if (tp2 && (tp2->IsStructured() || tp2->BaseType()->type == BasicType::enum_ || (tp2->IsInt() && tp2->scoped)))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool Type::IsSmallInt()
+{
+    auto tp = this;
+    tp = tp->BaseType();
+    if (tp->type < BasicType::int_)
+    {
+        return true;
+    }
+    else if (tp->IsBitInt())
+    {
+        int sz = getSize(BasicType::int_) * CHAR_BIT;
+        return tp->bitintbits < sz;
+    }
+    else
+    {
+        return false;
+    }
+}
+bool Type::IsLargeEnum()
+{
+    auto tp = this;
+    tp = tp->BaseType();
+    if (tp->type > BasicType::int_)
+    {
+        if (tp->IsBitInt())
+        {
+            int sz = getSize(BasicType::int_) * CHAR_BIT;
+            return tp->bitintbits > sz || (tp->bitintbits == sz && tp->type == BasicType::unsigned_bitint_);
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+bool Type::IsTemplatedPointer()
+{
+    auto tp = this;
+    Type* tpb = tp->BaseType()->btp;
+    while (tp != tpb)
+    {
+        if (tp->templateTop)
+            return true;
+        tp = tp->btp;
+    }
+    return false;
+}
 void Type::UpdateRootTypes()
 {
     Type* tp = this;
@@ -492,6 +559,42 @@ void Type::UpdateRootTypes()
             tp = tp->btp;
         }
     }
+}
+Type* Type::InitializerListType()
+{
+    auto arg = this;
+    SYMBOL* sym = namespacesearch("std", globalNameSpace, false, false);
+    if (sym && sym->sb->storage_class == StorageClass::namespace_)
+    {
+        sym = namespacesearch("initializer_list", sym->sb->nameSpaceValues, true, false);
+        if (sym)
+        {
+            std::list<TEMPLATEPARAMPAIR>* tplp = templateParamPairListFactory.CreateList();
+            auto tpl = Allocate<TEMPLATEPARAM>();
+            tpl->type = TplType::typename_;
+            tpl->byClass.dflt = arg;
+            tplp->push_back(TEMPLATEPARAMPAIR{ nullptr, tpl });
+            auto sym1 = GetClassTemplate(sym, tplp, true);
+            if (sym1)
+            {
+                sym1 = TemplateClassInstantiate(sym1, tplp, false, StorageClass::auto_);
+                if (sym1)
+                    sym = sym1;
+            }
+        }
+    }
+    Type* rtp;
+    if (sym)
+    {
+        rtp = sym->tp;
+    }
+    else
+    {
+        rtp = Type::MakeType(BasicType::struct_);
+        rtp->sp = makeID(StorageClass::type_, rtp, nullptr, "initializer_list");
+        rtp->sp->sb->initializer_list = true;
+    }
+    return rtp;
 }
 Type* Type::MakeType(Type& tp, BasicType type, Type* base)
 {
@@ -741,6 +844,21 @@ bool Type::SameExceptionType(Type* typ2)
     }
     return true;
 }
+bool Type::SameIntegerType(Type* t2)
+{
+    auto t1 = this;
+    while (t1->IsRef())
+        t1 = t1->BaseType()->btp;
+    while (t2->IsRef())
+        t2 = t2->BaseType()->btp;
+
+    while (t1->IsPtr() && t2->IsPtr())
+    {
+        t1 = t1->BaseType()->btp;
+        t2 = t2->BaseType()->btp;
+    }
+    return t1->type == t2->type;
+}
 bool Type::SameCharType(Type* typ2)
 {
     Type* typ1 = this;
@@ -785,6 +903,20 @@ bool Type::SameCharType(Type* typ2)
     else if (typ1->type == BasicType::unsigned_short_ || typ1->type == BasicType::wchar_t_)
         return typ2->type == BasicType::unsigned_short_ || typ2->type == BasicType::wchar_t_;
     return false;
+}
+bool Type::IsConstWithArr()
+{
+    auto tp = this;
+    tp = tp->BaseType();
+    while (tp->array)
+    {
+        tp = tp->btp;
+        if (!tp->IsPtr() || !tp->BaseType()->array)
+            break;
+        else
+            tp = tp->BaseType();
+    }
+    return tp->IsConst();
 }
 char* Type::PutPointer(char* p, Type* tp)
 {

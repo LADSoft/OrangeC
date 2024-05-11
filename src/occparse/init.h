@@ -51,12 +51,6 @@ extern int ignore_global_init;
 
 
 void init_init(void);
-//expr.cpp
-EXPRESSION* stringlit(StringData* s);
-EXPRESSION* ConvertToMSILString(EXPRESSION* val);
-// types.cpp
-bool IsConstWithArr(Type* tp);
-//
 void CreateInlineConstructor(SYMBOL* sym);
 void CreateInlineDestructor(SYMBOL* sym);
 void dumpLits(void);

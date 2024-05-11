@@ -26,6 +26,7 @@
 namespace Parser
 {
 void constexprinit();
+bool isConstexprConstructor(SYMBOL* sym);
 bool ResolveConstExprLval(EXPRESSION** node);
 bool checkconstexprfunc(EXPRESSION* node);
 bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc, bool fromFunc = false);

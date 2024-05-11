@@ -72,124 +72,18 @@ static DYNAMIC_Initializer *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_Initializer *dynamicDestructors, *TLSDestructors;
 static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
-static std::list<StringData*> strtab;
-static SYMBOL* msilToString;
 static std::list<SYMBOL*> file_level_constructors;
 LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init, std::list<Initializer*>** dest, Type* itype,
                   SYMBOL* sym, bool arrayMember, int flags);
 void init_init(void)
 {
-    strtab.clear();
     symListHead = nullptr;
     dynamicInitializers = TLSInitializers = nullptr;
     dynamicDestructors = TLSDestructors = nullptr;
     initializingGlobalVar = false;
-    strtab.clear();
     file_level_constructors.clear();
 }
 
-static SYMBOL* LookupMsilToString()
-{
-    if (!msilToString)
-    {
-        SYMBOL* sym = namespacesearch("lsmsilcrtl", globalNameSpace, false, false);
-        if (sym && sym->sb->storage_class == StorageClass::namespace_)
-        {
-            sym = namespacesearch("CString", sym->sb->nameSpaceValues, true, false);
-            if (sym && sym->tp->IsStructured())
-            {
-                sym = search(sym->tp->BaseType()->syms, "ToPointer");
-                if (sym)
-                {
-                    for (auto sp : *sym->tp->syms)
-                    {
-                        if (sp->sb->storage_class == StorageClass::static_)
-                        {
-                            msilToString = sp;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        if (!msilToString)
-        {
-            Utils::Fatal("internal error");
-        }
-    }
-    return msilToString;
-}
-EXPRESSION* ConvertToMSILString(EXPRESSION* val)
-{
-    val->type = ExpressionNode::c_string_;
-    SYMBOL* var = LookupMsilToString();
-
-    CallSite* fp = Allocate<CallSite>();
-    fp->functp = var->tp;
-    fp->sp = var;
-    fp->fcall = MakeExpression(ExpressionNode::global_, var);
-    fp->arguments = initListListFactory.CreateList();
-    auto arg = Allocate<Argument>();
-    arg->exp = val;
-    arg->tp = &std__string;
-    fp->arguments->push_back(arg);
-    fp->ascall = true;
-    EXPRESSION* rv = MakeExpression(fp);
-    return rv;
-}
-EXPRESSION* stringlit(StringData* s)
-/*
- *      make s a string literal and return it's label number.
- */
-{
-    EXPRESSION* rv;
-    if (Optimizer::cparams.prm_mergestrings)
-    {
-        for (auto lp : strtab)
-        {
-            int i;
-            if (s->size == lp->size && s->strtype == lp->strtype)
-            {
-                /* but it won't get in here if s and lp are the same, but
-                 * resulted from different concatenation sequences
-                 * this whole behavior of using strings over is undefined
-                 * in the standard...
-                 */
-                for (i = 0; i < s->size && i < lp->size; i++)
-                {
-                    if (lp->pointers[i]->count != s->pointers[i]->count ||
-                        Optimizer::wchart_cmp(lp->pointers[i]->str, s->pointers[i]->str, s->pointers[i]->count))
-                        break;
-                }
-                if (i >= s->size)
-                {
-                    rv = MakeIntExpression(ExpressionNode::labcon_, lp->label);
-                    rv->string = s;
-                    rv->size = Type::MakeType(BasicType::struct_);
-                    rv->altdata = MakeIntExpression(ExpressionNode::c_i_, (int)s->strtype);
-                    lp->refCount++;
-                    if (Optimizer::msilstrings)
-                    {
-                        rv = ConvertToMSILString(rv);
-                    }
-                    return rv;
-                }
-            }
-        }
-    }
-    s->label = Optimizer::nextLabel++;
-    strtab.push_back(s);
-    rv = MakeIntExpression(ExpressionNode::labcon_, s->label);
-    rv->string = s;
-    rv->size = Type::MakeType(BasicType::struct_);
-    rv->altdata = MakeIntExpression(ExpressionNode::c_i_, (int)s->strtype);
-    s->refCount++;
-    if (Optimizer::msilstrings)
-    {
-        rv = ConvertToMSILString(rv);
-    }
-    return rv;
-}
 
 int genstring(StringData* str)
 /*
@@ -1218,19 +1112,6 @@ int dumpInit(SYMBOL* sym, Initializer* init)
     }
     return 4;
 }
-bool IsConstWithArr(Type* tp)
-{
-    tp = tp->BaseType();
-    while (tp->array)
-    {
-        tp = tp->btp;
-        if (!tp->IsPtr() || !tp->BaseType()->array)
-            break;
-        else
-            tp = tp->BaseType();
-    }
-    return tp->IsConst();
-}
 void dumpInitGroup(SYMBOL* sym, Type* tp)
 {
     if (IsCompiler())
@@ -1325,7 +1206,7 @@ static void dumpStaticInitializers(void)
                 int al;
                 while (stp->IsArray())
                     stp = stp->BaseType()->btp;
-                if ((IsConstWithArr(sym->tp) && !sym->tp->IsVolatile()) || sym->sb->storage_class == StorageClass::constant_)
+                if ((sym->tp->IsConstWithArr() && !sym->tp->IsVolatile()) || sym->sb->storage_class == StorageClass::constant_)
                 {
                     Optimizer::xconstseg();
                     sizep = &sconst;

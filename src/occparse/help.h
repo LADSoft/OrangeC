@@ -113,4 +113,6 @@ BasicType btmax(BasicType left, BasicType right);
 Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, Type* atp);
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp);
 EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp);
+void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym);
+EXPRESSION* getFunc(EXPRESSION* exp);
 }  // namespace Parser

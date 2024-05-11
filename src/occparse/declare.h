@@ -105,14 +105,8 @@ extern int inTypedef;
 extern int resolvingStructDeclarations;
 extern std::map<int, SYMBOL*> localAnonymousUnions;
 
-// cpplookup.cpp
-LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-    StorageClass storage_class);
-// expr.cpp
+// declare.cpp
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
-// types.cpp
-bool intcmp(Type* t1, Type* t2);
-//
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);
 void WeedExterns(void);

@@ -1524,7 +1524,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);
-            rv = destructLocal(rv);
+            rv = StatementGenerator::DestructorsForExpression(rv);
             rv = addLocalDestructor(rv, sym);
             EXPRESSION* guardexp = MakeExpression(Allocate<CallSite>());
             guardexp->v.func->sp = guardfunc;
@@ -2035,5 +2035,48 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
         }
     }
     return result;
+}
+void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym)
+{
+    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && lex->data->errfile)
+    {
+        auto runtimeData = Allocate<Optimizer::RUNTIMEDATA>();
+        const char* p = strrchr(lex->data->errfile, '/');
+        if (!p)
+            p = strrchr(lex->data->errfile, '\\');
+        if (!p)
+            p = lex->data->errfile;
+        else
+            p++;
+        runtimeData->fileName = p;
+        runtimeData->varName = sym->sb->decoratedName;
+        runtimeData->lineno = lex->data->errline;
+        runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
+        exp->runtimeData = runtimeData;
+    }
+}
+EXPRESSION* getFunc(EXPRESSION* exp)
+{
+    EXPRESSION* rv = nullptr;
+    while (exp->type == ExpressionNode::comma_ && exp->right)
+    {
+        rv = getFunc(exp->left);
+        if (rv)
+            return rv;
+        exp = exp->right;
+    }
+    if (exp->type == ExpressionNode::thisref_)
+        exp = exp->left;
+    if (exp->type == ExpressionNode::add_)
+    {
+        rv = getFunc(exp->left);
+        if (!rv)
+            rv = getFunc(exp->right);
+    }
+    else if (exp->type == ExpressionNode::callsite_)
+    {
+        return exp;
+    }
+    return rv;
 }
 }  // namespace Parser

@@ -78,28 +78,6 @@ char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
 int parsingUsing;
 
-bool MustSpecialize(const char* name)
-{
-    if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
-        return false;
-    for (auto&& sst : enclosingDeclarations)
-    {
-        if (sst.str && !strcmp(sst.str->name, name))
-            return false;
-    }
-    return true;
-}
-void SpecializationError(char* str)
-{
-    if (MustSpecialize(str))
-        errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, str);
-}
-
-void SpecializationError(SYMBOL* sym)
-{
-    if (MustSpecialize(sym->name))
-        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
-}
 static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTABENTRY*>* entries)
 {
     if (IsCompiler())
@@ -493,7 +471,7 @@ static void checkXT(SYMBOL* sym1, SYMBOL* sym2, bool func)
             Optimizer::LIST* l2 = sym2->sb->xc->xcDynamic;
             while (l2)
             {
-                if (((Type*)l2->data)->ExactSameType((Type*)l1->data) && intcmp((Type*)l2->data, (Type*)l1->data))
+                if (((Type*)l2->data)->ExactSameType((Type*)l1->data) && ((Type*)l2->data)->SameIntegerType((Type*)l1->data))
                     break;
                 l2 = l2->next;
             }
@@ -1086,38 +1064,6 @@ Type* PerformDeferredInitialization(Type* tp, SYMBOL* funcsp)
         tp->UpdateRootTypes();
     }
     return tp;
-}
-void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
-{
-    for (auto cur : *sym->tp->syms)
-    {
-        if (cur->sb->storage_class == StorageClass::static_ && (cur->tp->hasbits || localClassWarnings))
-            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
-        if (sym != cur && !strcmp(sym->name, cur->name))
-        {
-            if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
-                cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
-            {
-                errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
-                break;
-            }
-        }
-        if (cur->sb->storage_class == StorageClass::overloads_)
-        {
-            for (auto cur1 : *cur->tp->syms)
-            {
-                if (localClassWarnings)
-                {
-                    if (cur1->tp->IsFunction())
-                        if (!cur1->tp->BaseType()->sp->sb->inlineFunc.stmt)
-                            errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
-                }
-                if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
-                    if (cur1->sb->storage_class != StorageClass::virtual_)
-                        error(ERR_SPECIFIER_VIRTUAL_FUNC);
-            }
-        }
-    }
 }
 bool usesVTab(SYMBOL* sym)
 {
@@ -2236,12 +2182,12 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, std::list<VBASEENTRY
     }
     return vcount;
 }
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERInitializerS*>::iterator& init,
-                             std::list<MEMBERInitializerS*>::iterator& initend,
-                             std::list<MEMBERInitializerS*>* mi, std::list<BASECLASS*>* bc,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
+                             std::list<MEMBERINITIALIZERS*>::iterator& initend,
+                             std::list<MEMBERINITIALIZERS*>* mi, std::list<BASECLASS*>* bc,
                                             std::list<VBASEENTRY*>* vbase)
 {
-    MEMBERInitializerS* linit = *init;
+    MEMBERINITIALIZERS* linit = *init;
     int basecount = 0, vbasecount = 0;
     std::list<BASECLASS*> baseEntries;
     std::list<VBASEENTRY*> vbaseEntries;
@@ -2332,7 +2278,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERInitia
                         ++itb;
                     else
                         ++itv;
-                    MEMBERInitializerS* added = Allocate<MEMBERInitializerS>();
+                    MEMBERINITIALIZERS* added = Allocate<MEMBERINITIALIZERS>();
                     bool done = false;
                     lex = SetAlternateLex(arglex);
                     packIndex = i;
@@ -2388,11 +2334,11 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERInitia
         }
     }
 }
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack, std::list<MEMBERInitializerS*>** p,
+void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack, std::list<MEMBERINITIALIZERS*>** p,
                                     LexList* start, std::list<Argument*>* list)
 {
     int n = CountPacks(templatePack);
-    MEMBERInitializerS* orig = (*p)->front();
+    MEMBERINITIALIZERS* orig = (*p)->front();
     (*p)->pop_front();
     auto itp = (*p)->begin();
     if (n)
@@ -2429,7 +2375,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
         for (i = 0; i < n; i++)
         {
             LexList* lex = SetAlternateLex(start);
-            MEMBERInitializerS* mi = Allocate<MEMBERInitializerS>();
+            MEMBERINITIALIZERS* mi = Allocate<MEMBERINITIALIZERS>();
             Type* tp = ittpp->second->byClass.val;
             int offset = 0;
             int vcount = 0, ccount = 0;
@@ -4180,47 +4126,6 @@ bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always)
         }
     }
     return rv;
-}
-// these tests fall flat because they don't test the specific constructor
-// used to construct things...
-static bool hasNoBody(std::list<Statement*>* stmts)
-{
-    if (stmts)
-    {
-        for (auto stmt : *stmts)
-        {
-            if (stmt->type != StatementNode::line_ && stmt->type != StatementNode::varstart_ && stmt->type != StatementNode::dbgblock_)
-                return false;
-            // modified this next line to use 'lower'
-            if (stmt->type == StatementNode::block_ && !hasNoBody(stmt->lower))
-                return false;
-        }
-    }
-    return true;
-}
-bool isConstexprConstructor(SYMBOL* sym)
-{
-    if (sym->sb->constexpression)
-        return true;
-    if (!sym->sb->deleted && !sym->sb->defaulted && !hasNoBody(sym->sb->inlineFunc.stmt))
-        return false;
-    for (auto sp : *sym->sb->parentClass->tp->syms)
-    {
-        if (ismemberdata(sp) && !sp->sb->init)
-        {
-            bool found = false;
-            if (sym->sb->memberInitializers)
-                for (auto memberInit : *sym->sb->memberInitializers)
-                    if (!strcmp(memberInit->name, sp->name))
-                    {
-                        found = true;
-                        break;
-                    }
-            if (!found)
-                return false;
-        }
-    }
-    return true;
 }
 static bool constArgValid(Type* tp)
 {

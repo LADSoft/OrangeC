@@ -105,7 +105,7 @@ static int caseLevel = 0;
 static int controlSequences;
 static int expressions;
 static bool canFallThrough;
-static FunctionBlock* caseDestructBlock;
+static FunctionBlock* caseDestructorsForBlock;
 
 void statement_ini(bool global)
 {
@@ -113,7 +113,7 @@ void statement_ini(bool global)
     functionCanThrow = false;
     funcNesting = 0;
     funcLevel = 0;
-    caseDestructBlock = nullptr;
+    caseDestructorsForBlock = nullptr;
     caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
@@ -343,6 +343,158 @@ void StatementGenerator::DestructSymbolsInTable(SymbolTable<SYMBOL>* syms)
         sym->sb->destructed = true;
     }
 }
+EXPRESSION* StatementGenerator::DestructorsForExpression(EXPRESSION* exp)
+{
+    std::stack<SYMBOL*> destructList;
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp);
+    while (stk.size())
+    {
+        EXPRESSION* e = stk.top();
+        stk.pop();
+        if (!isintconst(e) && !isfloatconst(e))
+        {
+            if (e->left)
+                stk.push(e->left);
+            if (e->right)
+                stk.push(e->right);
+        }
+        if (e->type == ExpressionNode::thisref_)
+            e = e->left;
+        if (e->type == ExpressionNode::callsite_)
+        {
+            if (e->v.func->arguments)
+                for (auto il : *e->v.func->arguments)
+                    stk.push(il->exp);
+        }
+        if (e->type == ExpressionNode::auto_ && e->v.sp->sb->allocate && !e->v.sp->sb->destructed)
+        {
+            Type* tp = e->v.sp->tp;
+            while (tp->IsArray())
+                tp = tp->BaseType()->btp;
+            if (tp->IsStructured() && !tp->IsRef())
+            {
+                e->v.sp->sb->destructed = true;
+                destructList.push(e->v.sp);
+            }
+        }
+    }
+
+    EXPRESSION* rv = exp;
+    while (destructList.size())
+    {
+        SYMBOL* sp = destructList.top();
+        destructList.pop();
+        if (sp->sb->dest && sp->sb->dest->front()->exp)
+            rv = MakeExpression(ExpressionNode::comma_, rv, sp->sb->dest->front()->exp);
+    }
+    return rv;
+}
+void StatementGenerator::DestructorsForArguments(std::list<Argument*>* il)
+{
+    if (Optimizer::cparams.prm_cplusplus)
+        for (auto first : *il)
+        {
+            Type* tp = first->tp;
+            if (tp)
+            {
+                bool ref = false;
+                if (tp->IsRef())
+                {
+                    ref = true;
+                    tp = tp->BaseType()->btp;
+                }
+                else if (tp->lref || tp->rref)
+                {
+                    ref = true;
+                }
+                if (ref || !tp->IsStructured())
+                {
+                    std::stack<EXPRESSION*> stk;
+
+                    stk.push(first->exp);
+                    while (!stk.empty())
+                    {
+                        auto tst = stk.top();
+                        stk.pop();
+                        if (tst->type == ExpressionNode::thisref_)
+                            tst = tst->left;
+                        if (tst->type == ExpressionNode::callsite_)
+                        {
+                            if (tst->v.func->sp->sb->isConstructor)
+                            {
+                                EXPRESSION* iexp = tst->v.func->thisptr;
+                                auto sp = tst->v.func->thistp->BaseType()->btp->BaseType()->sp;
+                                int offs;
+                                auto xexp = relptr(iexp, offs);
+                                if (xexp)
+                                    xexp->v.sp->sb->destructed = true;
+                                if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
+                                {
+                                    if (!first->destructors)
+                                        first->destructors = exprListFactory.CreateList();
+                                    first->destructors->push_front(iexp);
+                                }
+                            }
+                        }
+                        else if (tst->type == ExpressionNode::comma_)
+                        {
+                            if (tst->right)
+                                stk.push(tst->right);
+                            if (tst->left)
+                                stk.push(tst->left);
+                        }
+                    }
+                }
+            }
+        }
+}
+void StatementGenerator::DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct)
+{
+    for (auto sp : *table)
+    {
+        if ((sp->sb->allocate || sp->sb->storage_class == StorageClass::parameter_) && !sp->sb->destructed && !sp->tp->IsRef())
+        {
+            sp->sb->destructed = mainDestruct;
+            if (sp->sb->storage_class == StorageClass::parameter_)
+            {
+                if (sp->tp->IsStructured())
+                {
+                    EXPRESSION* iexp = getThisNode(sp);
+                    if (callDestructor(sp->tp->BaseType()->sp, nullptr, &iexp, nullptr, true, false, false, true))
+                    {
+                        optimize_for_constants(&iexp);
+                        if (*exp)
+                        {
+                            *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
+                        }
+                        else
+                        {
+                            *exp = iexp;
+                        }
+                    }
+                }
+            }
+            else if (sp->sb->storage_class != StorageClass::localstatic_ && sp->sb->dest)
+            {
+
+                EXPRESSION* iexp = sp->sb->dest->front()->exp;
+                if (iexp)
+                {
+                    optimize_for_constants(&iexp);
+                    if (*exp)
+                    {
+                        *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
+                    }
+                    else
+                    {
+                        *exp = iexp;
+                    }
+                }
+            }
+        }
+    }
+}
 void StatementGenerator::ThunkReturnDestructors(EXPRESSION** exp, SymbolTable<SYMBOL>* top, SymbolTable<SYMBOL>* syms)
 {
     if (syms)
@@ -350,7 +502,7 @@ void StatementGenerator::ThunkReturnDestructors(EXPRESSION** exp, SymbolTable<SY
         if (syms != top)
         {
             ThunkReturnDestructors(exp, top, syms->Chain());
-            destructBlock(exp, syms, false);
+            StatementGenerator::DestructorsForBlock(exp, syms, false);
         }
     }
 }
@@ -386,20 +538,20 @@ void StatementGenerator::HandleStartOfCase(std::list<FunctionBlock*>& parent)
 {
     // this is a little buggy in that it doesn't check to see if we are already in a switch
     // statement, however if we aren't we should get a compile erroir that would halt program generation anyway
-    if (parent.front() != caseDestructBlock)
+    if (parent.front() != caseDestructorsForBlock)
     {
-        parent.front()->caseDestruct = caseDestructBlock;
-        caseDestructBlock = parent.front();
+        parent.front()->caseDestruct = caseDestructorsForBlock;
+        caseDestructorsForBlock = parent.front();
     }
 }
 void StatementGenerator::HandleEndOfCase(std::list<FunctionBlock*>& parent)
 {
-    if (parent.front() == caseDestructBlock)
+    if (parent.front() == caseDestructorsForBlock)
     {
         EXPRESSION* exp = nullptr;
         Statement* st;
         // the destruct is only used for endin
-        destructBlock(&exp, localNameSpace->front()->syms, false);
+        StatementGenerator::DestructorsForBlock(&exp, localNameSpace->front()->syms, false);
         if (exp)
         {
             st = Statement::MakeStatement(nullptr, parent, StatementNode::nop_);
@@ -410,9 +562,9 @@ void StatementGenerator::HandleEndOfCase(std::list<FunctionBlock*>& parent)
 }
 void StatementGenerator::HandleEndOfSwitchBlock(std::list<FunctionBlock*>& parent)
 {
-    if (parent.front() == caseDestructBlock)
+    if (parent.front() == caseDestructorsForBlock)
     {
-        caseDestructBlock = caseDestructBlock->caseDestruct;
+        caseDestructorsForBlock = caseDestructorsForBlock->caseDestruct;
     }
 }
 void StatementGenerator::ParseBreak(std::list<FunctionBlock*>& parent)
@@ -861,7 +1013,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         begin = select;
                         size = MakeIntExpression(ExpressionNode::c_i_, 0);
                     }
-                    selectTP = InitializerListType(matchtp);
+                    selectTP = matchtp->InitializerListType();
                     std::list<Initializer*>* init = nullptr;
                     initInsert(&init, &stdpointer, begin, 0, false);
                     initInsert(&init, &stdpointer, size, stdpointer.size, false);

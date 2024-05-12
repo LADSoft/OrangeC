@@ -1104,8 +1104,8 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
     }
     else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
-        // TODO RK: why would we change the output filename given by the user?
-        // Utils::AddExt(buf, ext);
+        if( !Utils::HasExt(buf, ext) )
+            Utils::AddExt(buf, ext);
     }
     else
     {

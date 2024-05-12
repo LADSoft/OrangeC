@@ -315,13 +315,14 @@ FILE* Utils::TempName(std::string& name)
 }
 
 /*
- * Add ext to buffer
+ * If no extension, add the one specified
  */
 void Utils::AddExt(char* buffer, const char* ext)
 {
-    // RK: back to the original code
+#ifndef ORANGE_NAMES_WITH_DOTS
     char* pos = (char*)strrchr(buffer, '.');
     if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
+#endif
         strcat(buffer, ext);
 }
 

@@ -564,6 +564,9 @@ int main(int argc, char* argv[])
         {
             CompletionCompiler::ccNewFile(buffer, true);
         }
+#ifndef ORANGE_NAMES_WITH_DOTS
+        Utils::AddExt(buffer, ".c");
+#endif
         if (prm_std.GetExists())
         {
             if (prm_std.GetValue() == "c89")
@@ -659,7 +662,7 @@ int main(int argc, char* argv[])
                 else
                 {
                     Utils::StripExt(buffer);
-                    strcat(buffer, ".i");
+                    Utils::AddExt(buffer, ".i");
                 }
                 strcpy(cppfile, buffer);
 
@@ -673,7 +676,7 @@ int main(int argc, char* argv[])
             if (Optimizer::cparams.prm_errfile)
             {
                 Utils::StripExt(buffer);
-                strcat(buffer, ".err");
+                Utils::AddExt(buffer, ".err");
                 errFile = fopen(buffer, "w");
                 if (!errFile)
                 {
@@ -685,7 +688,7 @@ int main(int argc, char* argv[])
             if (Optimizer::cparams.prm_icdfile)
             {
                 Utils::StripExt(buffer);
-                strcat(buffer, ".icd");
+                Utils::AddExt(buffer, ".icd");
                 Optimizer::icdFile = fopen(buffer, "w");
                 if (!Optimizer::icdFile)
                 {
@@ -716,7 +719,7 @@ int main(int argc, char* argv[])
                     // compile to file
                     strcpy(realOutFile, (const char*)clist->data);
                     Utils::StripExt(realOutFile);
-                    strcat(realOutFile, ".icf");
+                    Utils::AddExt(realOutFile, ".icf");
                     FILE* fil = fopen(realOutFile, "wb");
                     if (!fil)
                         Utils::Fatal("Cannot open '%s' for write", realOutFile);

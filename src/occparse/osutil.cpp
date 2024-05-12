@@ -1010,7 +1010,7 @@ void InsertOneFile(const char* filename, char* path, int drive)
         strcpy(temp, p);
         Utils::StripExt(temp);
         if (!Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_assemble)
-            strcat(temp, ".exe");
+            Utils::AddExt(temp, ".exe");
         firstFile = temp;
     }
     inserted = insert_noncompile_file(buffer);
@@ -1018,8 +1018,9 @@ void InsertOneFile(const char* filename, char* path, int drive)
         buffer[0] = a;
     if (!inserted)
     {
-        // RK: why should filenames without extension be supported and default to .c? What about .cpp?
-        // Utils::AddExt(buffer, ".c");
+#ifndef ORANGE_NAMES_WITH_DOTS
+        Utils::AddExt(buffer, ".c");
+#endif
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return;
@@ -1100,15 +1101,12 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
             p = orgbuf;
         strcat(buf, p);
         Utils::StripExt(buf);
-        strcat(buf, ext);
+        Utils::AddExt(buf, ext);
     }
     else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
-#if TARGET_OS_WINDOWS
+#ifndef ORANGE_NAMES_WITH_DOTS
         Utils::AddExt(buf, ext);
-#else
-        if( !Utils::HasExt(buf, ext) )
-            Utils::AddExt(buf, ext);
 #endif
     }
     else

@@ -1010,7 +1010,7 @@ void InsertOneFile(const char* filename, char* path, int drive)
         strcpy(temp, p);
         Utils::StripExt(temp);
         if (!Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_assemble)
-            Utils::AddExt(temp, ".exe");
+            strcat(temp, ".exe");
         firstFile = temp;
     }
     inserted = insert_noncompile_file(buffer);
@@ -1100,14 +1100,12 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
             p = orgbuf;
         strcat(buf, p);
         Utils::StripExt(buf);
-        Utils::AddExt(buf, ext);
+        strcat(buf, ext);
     }
     else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
 #if TARGET_OS_WINDOWS
-        char* pos = (char*)strrchr(buf, '.');
-        if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
-            strcat(buf, ext);
+        Utils::AddExt(buf, ext);
 #else
         if( !Utils::HasExt(buf, ext) )
             Utils::AddExt(buf, ext);

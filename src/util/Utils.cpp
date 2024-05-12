@@ -319,9 +319,9 @@ FILE* Utils::TempName(std::string& name)
  */
 void Utils::AddExt(char* buffer, const char* ext)
 {
-    //char* pos = (char*)strrchr(buffer, '.');
-    //if (!pos || strcmp(pos,ext) != 0 )
-    // NOTE: the strcmp gives no added value; AddExt is always preceded by StripExt
+    // RK: back to the original code
+    char* pos = (char*)strrchr(buffer, '.');
+    if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
         strcat(buffer, ext);
 }
 

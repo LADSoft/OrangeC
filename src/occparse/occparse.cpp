@@ -659,7 +659,7 @@ int main(int argc, char* argv[])
                 else
                 {
                     Utils::StripExt(buffer);
-                    Utils::AddExt(buffer, ".i");
+                    strcat(buffer, ".i");
                 }
                 strcpy(cppfile, buffer);
 
@@ -673,7 +673,7 @@ int main(int argc, char* argv[])
             if (Optimizer::cparams.prm_errfile)
             {
                 Utils::StripExt(buffer);
-                Utils::AddExt(buffer, ".err");
+                strcat(buffer, ".err");
                 errFile = fopen(buffer, "w");
                 if (!errFile)
                 {
@@ -685,7 +685,7 @@ int main(int argc, char* argv[])
             if (Optimizer::cparams.prm_icdfile)
             {
                 Utils::StripExt(buffer);
-                Utils::AddExt(buffer, ".icd");
+                strcat(buffer, ".icd");
                 Optimizer::icdFile = fopen(buffer, "w");
                 if (!Optimizer::icdFile)
                 {
@@ -716,7 +716,7 @@ int main(int argc, char* argv[])
                     // compile to file
                     strcpy(realOutFile, (const char*)clist->data);
                     Utils::StripExt(realOutFile);
-                    Utils::AddExt(realOutFile, ".icf");
+                    strcat(realOutFile, ".icf");
                     FILE* fil = fopen(realOutFile, "wb");
                     if (!fil)
                         Utils::Fatal("Cannot open '%s' for write", realOutFile);

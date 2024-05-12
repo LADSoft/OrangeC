@@ -431,7 +431,7 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
         char buf[260];
         strcpy(buf, name.c_str());
         Utils::StripExt(buf);
-        Utils::AddExt(buf, ".icd2");
+        strcat(buf, ".icd2");
         icdFile = fopen(buf, "w");
         if (!icdFile)
             return;
@@ -495,7 +495,7 @@ int main(int argc, char* argv[])
             strcpy(buf, files[1].c_str());
             Utils::StripExt(buf);
             strcat(buf, "_1");
-            Utils::AddExt(buf, ".icf");
+            strcat(buf, ".icf");
             outputFile = buf;
         }
         FILE* fil = fopen(files[1].c_str(), "rb");

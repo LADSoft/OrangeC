@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     {
         return librarian.Run(argc, argv);
     }
-    catch (ObjIeeeBinary::SyntaxError e)
+    catch (std::domain_error e)
     {
         std::cout << e.what() << std::endl;
     }

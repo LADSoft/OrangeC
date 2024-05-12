@@ -61,7 +61,7 @@ int main(int argc, char** argv)
     catch (std::ios_base::failure)
     {
     }
-    catch (ObjIeeeBinary::SyntaxError e)
+    catch (std::domain_error e)
     {
         std::cout << e.what() << std::endl;
     }

@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     {
         Utils::Fatal("Fatal Error...");
     }
-    catch (ObjIeeeBinary::SyntaxError e)
+    catch (std::domain_error e)
     {
         std::cout << e.what() << std::endl;
     }

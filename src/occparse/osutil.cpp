@@ -1104,8 +1104,14 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
     }
     else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
+#if TARGET_OS_WINDOWS
+        char* pos = (char*)strrchr(buf, '.');
+        if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
+            strcat(buf, ext);
+#else
         if( !Utils::HasExt(buf, ext) )
             Utils::AddExt(buf, ext);
+#endif
     }
     else
     {

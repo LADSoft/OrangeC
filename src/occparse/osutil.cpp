@@ -1018,7 +1018,9 @@ void InsertOneFile(const char* filename, char* path, int drive)
         buffer[0] = a;
     if (!inserted)
     {
+#ifndef ORANGE_NAMES_WITH_DOTS
         Utils::AddExt(buffer, ".c");
+#endif
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return;
@@ -1103,7 +1105,9 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
     }
     else if (prm_output.GetExists() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
     {
+#ifndef ORANGE_NAMES_WITH_DOTS
         Utils::AddExt(buf, ext);
+#endif
     }
     else
     {

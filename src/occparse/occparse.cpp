@@ -564,7 +564,9 @@ int main(int argc, char* argv[])
         {
             CompletionCompiler::ccNewFile(buffer, true);
         }
+#ifndef ORANGE_NAMES_WITH_DOTS
         Utils::AddExt(buffer, ".C");
+#endif
         if (prm_std.GetExists())
         {
             if (prm_std.GetValue() == "c89")

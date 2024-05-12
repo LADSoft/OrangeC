@@ -203,9 +203,11 @@ void examine_icode(QUAD* head)
 {
     switch (architecture)
     {
-        case ARCHITECTURE_MSIL:
+#ifndef ORANGE_NO_MSIL
+    case ARCHITECTURE_MSIL:
             msil_examine_icode(head);
             break;
+#endif
         case ARCHITECTURE_X86:
             x86_examine_icode(head);
             break;

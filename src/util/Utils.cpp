@@ -319,8 +319,10 @@ FILE* Utils::TempName(std::string& name)
  */
 void Utils::AddExt(char* buffer, const char* ext)
 {
+#ifndef ORANGE_NAMES_WITH_DOTS
     char* pos = (char*)strrchr(buffer, '.');
     if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
+#endif
         strcat(buffer, ext);
 }
 

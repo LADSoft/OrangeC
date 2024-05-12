@@ -1059,5 +1059,7 @@ void WriteMappingFile(SharedMemory* mem, FILE* fil)
         outputPos -= n;
         p = mem->GetMapping(pos);
     }
+    outputPos = 0;
+    outputSize = 0;
 }
 }  // namespace Optimizer

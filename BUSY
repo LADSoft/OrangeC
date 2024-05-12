@@ -38,7 +38,7 @@ let config : Config {
 
 let config2 : Config {
     .include_dirs += [ . ./src/occopt ./src/util ./src/ocpp ]
-    .defines += [ "ORANGE_NO_MSIL" "ORANGE_NO_INASM" ]
+    .defines += [ "ORANGE_NO_MSIL" "ORANGE_NO_INASM" "ORANGE_COMPILE_SINGLE_ICF_FILE" ]
 }
 
 let common : SourceSet {

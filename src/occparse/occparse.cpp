@@ -713,6 +713,20 @@ int main(int argc, char* argv[])
                 if (Optimizer::cparams.prm_icdfile)
                     Optimizer::OutputIcdFile();
                 Optimizer::InitIntermediate();
+#ifdef ORANGE_COMPILE_SINGLE_ICF_FILE
+                if (compileToFile)
+                {
+                    // compile to file
+                    Utils::StripExt(buffer);
+                    Utils::AddExt(buffer, ".icf");
+                    int size = Optimizer::GetOutputSize();
+                    FILE* fil = fopen(buffer, "wb");
+                    if (!fil)
+                        Utils::Fatal("Cannot open '%s' for write", buffer);
+                    Optimizer::WriteMappingFile(parserMem, fil);
+                    fclose(fil);
+                }
+#endif
             }
         }
         else
@@ -809,6 +823,7 @@ int main(int argc, char* argv[])
             }
 #endif
     }
+#ifndef ORANGE_COMPILE_SINGLE_ICF_FILE
     if (compileToFile)
     {
         // compile to file
@@ -825,6 +840,7 @@ int main(int argc, char* argv[])
         Optimizer::WriteMappingFile(parserMem, fil);
         fclose(fil);
     }
+#endif
     oFree();
     globalFree();
     delete parserMem;

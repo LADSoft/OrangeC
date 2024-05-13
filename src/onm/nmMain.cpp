@@ -88,7 +88,7 @@ int main(int argc, char** argv)
     {
         std::cout << e.what() << std::endl;
     }
-    catch (ObjIeeeBinary::SyntaxError e)
+    catch (std::domain_error e)
     {
         std::cout << e.what() << std::endl;
     }

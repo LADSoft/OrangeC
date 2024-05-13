@@ -26,8 +26,10 @@
 #include "ObjFile.h"
 #include "ObjIO.h"
 #include "ObjFactory.h"
+#include "ObjIeee.h"
 #include "ObjUtil.h"
 #include "ObjType.h"
+
 #include "LinkManager.h"
 #include "LinkPartition.h"
 #include "LinkTokenizer.h"
@@ -43,7 +45,6 @@
 #include <cstdio>
 #include <climits>
 #include <algorithm>
-
 int LinkManager::errors;
 int LinkManager::warnings;
 
@@ -454,26 +455,28 @@ void LinkManager::LoadFiles()
     {
         return;
     }
-    int bpmau = INT_MAX;
-    int mau = 1;
     for (auto name : objectFiles)
     {
         std::string path;
         FILE* infile = GetLibraryPath(name, path);
         if (infile)
         {
-            ObjFile* file = ioBase->Read(infile, ObjIOBase::eAll, factory);
+            ObjIeee internalBase(name, ioBase->GetCaseSensitiveFlag());
+            internalBase.SetDebugInfoFlag(ioBase->GetDebugInfoFlag());
+            ObjFile* file = internalBase.Read(infile, ObjIOBase::eAll, factory);
             if (!file)
             {
-                LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in " + name);
+                LinkError("Invalid object file " + internalBase.GetErrorQualifier() + " in " + name);
             }
             else
             {
                 file->SetInputName(name);
-                if (ioBase->GetBitsPerMAU() < bpmau)
-                    bpmau = ioBase->GetBitsPerMAU();
-                if (ioBase->GetMAUS() > mau)
-                    mau = ioBase->GetMAUS();
+                if (internalBase.GetBitsPerMAU() < ioBase->GetBitsPerMAU())
+                    ioBase->SetBitsPerMAU(internalBase.GetBitsPerMAU());
+                if (internalBase.GetMAUS() > ioBase->GetMAUS())
+                    ioBase->SetMAUS(internalBase.GetMAUS());
+                if (internalBase.GetStartAddress())
+                    ioBase->SetStartAddress(internalBase.GetStartFile(), internalBase.GetStartAddress());
                 fileData.push_back(file);
                 MergePublics(file, true);
             }
@@ -484,8 +487,6 @@ void LinkManager::LoadFiles()
             LinkError("Input file '" + name + "' does not exist.");
         }
     }
-    ioBase->SetBitsPerMAU(bpmau);
-    ioBase->SetMAUS(mau);
 }
 std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
 {

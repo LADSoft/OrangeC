@@ -75,7 +75,8 @@ class ObjIeeeBinary : public ObjIOBase
         cs(0),
         currentDataSection(nullptr),
         ioBufferPos(0),
-        lineno(0)
+        lineno(0), 
+        first(true)
     {
     }
     virtual ~ObjIeeeBinary() {}
@@ -113,6 +114,15 @@ class ObjIeeeBinary : public ObjIOBase
 
       private:
         int lineNo;
+    };
+    class BadFileError : public std::domain_error
+    {
+      public:
+        BadFileError(const std::string& name) :
+            std::domain_error(name + " is not an object file")
+        {
+        }
+        virtual ~BadFileError() noexcept {};
     };
 
   protected:
@@ -210,8 +220,16 @@ class ObjIeeeBinary : public ObjIOBase
     {
         (void)buffer;
         (void)ParseType;
-        SyntaxError e(lineno);
-        throw e;
+        if (!first)
+        {
+            SyntaxError e(lineno);
+            throw e;
+        }
+        else
+        {
+            BadFileError e(GetName());
+            throw e;
+        }
     }
 
     bool Parse(const ObjByte* buffer, eParseType ParseType);
@@ -304,6 +322,7 @@ class ObjIeeeBinary : public ObjIOBase
     size_t ioBufferLen;
     size_t ioBufferPos;
     int lineno;
+    bool first;
 };
 class ObjIeeeAscii : public ObjIOBase
 {
@@ -323,7 +342,8 @@ class ObjIeeeAscii : public ObjIOBase
         file(nullptr),
         cs(0),
         currentDataSection(nullptr),
-        lineno(0)
+        lineno(0),
+        first(true)
 
     {
     }
@@ -400,6 +420,15 @@ class ObjIeeeAscii : public ObjIOBase
       private:
         int lineNo;
     };
+    class BadFileError : public std::domain_error
+    {
+      public:
+        BadFileError(const std::string& name) :
+            std::domain_error(name + " is not an object file")
+        {
+        }
+        virtual ~BadFileError() noexcept {};
+    };
     friend class ObjIeeeAscii::ParseData;
     bool HandleWrite();
     bool BinaryWrite();
@@ -450,8 +479,16 @@ class ObjIeeeAscii : public ObjIOBase
     {
         (void)buffer;
         (void)ParseType;
-        SyntaxError e(lineno);
-        throw e;
+        if (!first)
+        {
+            SyntaxError e(lineno);
+            throw e;
+        }
+        else
+        {
+            BadFileError e(GetName());
+            throw e;
+        }
     }
 
     bool Parse(const char* buffer, eParseType ParseType);
@@ -553,6 +590,7 @@ class ObjIeeeAscii : public ObjIOBase
     size_t ioBufferLen;
     size_t ioBufferPos;
     int lineno;
+    bool first;
     static char lineend[2];
 };
 class ObjIeee : public ObjIeeeBinary

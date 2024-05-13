@@ -289,6 +289,7 @@ ObjFile* ObjIeeeBinary::HandleRead(eParseType ParseType)
         try
         {
             done = Parse(inBuf, ParseType);
+            first = false;
         }
         catch (BadCS& e)
         {

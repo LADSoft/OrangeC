@@ -11,7 +11,9 @@ endif
 
 CURFILES = $(wildcard *.c)
 
-all: cc386x sqlite3x szipx local 
+all: cc386x sqlite3x szipx local
+	echo %ERRORLEVEL%
+
 lsmsilcrtl.dll:
 	-copy $(ORANGEC)\bin\lsmsilcrtl*.dll *.* > $(NULLDEV)
 
@@ -27,11 +29,11 @@ szipx:
 local: lsmsilcrtl.dll $(CURFILES:.c=.exe)
 
 vvtest.exe: vvtest.c dll.dll
-	occil $(NETCOREDLL) vvtest /Ldll.dll
-	vvtest > vvtest.txt
+	occil $(NETCOREDLL) vvtest.c /Ldll.dll
+	vvtest > vvtest.txt.
 	fc /b vvtest.txt vvtest.cmpx
 cc.exe: cc.c
-	occil $(NETCOREDLL) cc /Lkernel32
+	occil $(NETCOREDLL) cc.c /Lkernel32
 	cc xx.cc
 	xx > xx.tst
 	fc /b xx.tst xx.cmpx
@@ -40,10 +42,10 @@ dll.exe:
 	echo hi
 
 dll.dll: dll.c
-	occil $(NETCOREDLL) /Wd dll /Na.b
+	occil $(NETCOREDLL) /Wd dll.c /Na.b
 
 r1.exe: r1.c r2.c
-	occil $(NETCOREDLL) r1 r2
+	occil $(NETCOREDLL) r1.c r2.c
 	r1 > r1.txt
 	fc /b r1.txt r1.cmpx
 r2.exe:

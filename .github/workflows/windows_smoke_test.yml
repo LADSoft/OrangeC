@@ -17,10 +17,10 @@ jobs:
     timeout-minutes : 30
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         repository: c-testsuite/c-testsuite
         path: c-testsuite
@@ -47,14 +47,14 @@ jobs:
       run: |
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" ORANGEC="$env:GITHUB_WORKSPACE" zip
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Binaries
         path: dist/ZippedBinaries.zip
     - name: Update Nightly Release
       if: github.event_name != 'pull_request'
       run: |
-        gh release update --clobber Nightly dist/ZippedBinaries.zip#WindowsBinaries dist/ZippedSources.zip#Sources
+        gh release upload --clobber Nightly dist/ZippedBinaries.zip#WindowsBinaries dist/ZippedSources.zip#Sources
         gh release edit --notes-file src/CurrentChanges.md
       env:
         GITHUB_TOKEN: ${{ github.TOKEN }}

@@ -55,6 +55,6 @@ jobs:
       if: github.event_name != 'pull_request'
       run: |
         gh release upload --clobber Nightly dist/ZippedBinaries.zip#WindowsBinaries dist/ZippedSources.zip#Sources
-        gh release edit --notes-file src/CurrentChanges.md
+        gh release edit --notes-file src/CurrentChanges.md Nightly
       env:
         GITHUB_TOKEN: ${{ github.TOKEN }}

@@ -5,6 +5,3 @@ theme:
   highlightjs: true
 plugins:
   - search
-markdown_extensions:
-  - markdown_include.include:
-      base_path: .

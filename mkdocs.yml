@@ -1,4 +1,4 @@
-site_name: Orange C Documentation				
+site_name: Orange C Documentation
 theme:
   name: readthedocs
   highlightjs: true

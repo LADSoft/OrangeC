@@ -26,14 +26,14 @@ WizardImageBackColor=clAqua
 DisableStartupPrompt=yes
 InfoAfterFile=relnotes.txt
 Compression=lzma
-UninstallDisplayIcon={app}\bin\ocide.exe,1
+;UninstallDisplayIcon={app}\bin\ocide.exe,1
 uninstallable = not IsComponentSelected('main\portable')
 ChangesAssociations=yes
 ChangesEnvironment=yes
 DisableWelcomePage=no
 
 [Messages]
-BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2019
+BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2024
 
 [Types]
 Name: "desktop"; Description: "Desktop Installation"
@@ -55,9 +55,12 @@ Name: "{%PUBLIC}\Orange C Projects"; Components: main\desktop
 Name: "{app}\appdata"; Components: main\portable
 
 [Files]
-Source: "C:\orangec\src\ocidehld.bat"; DestDir: "{app}"; DestName: "ocide.bat"; Flags: IgnoreVersion; Components: main\portable
+;Source: "C:\orangec\src\ocidehld.bat"; DestDir: "{app}"; DestName: "ocide.bat"; Flags: IgnoreVersion; Components: main\portable
 Source: "C:\orangec\license\*.*"; DestDir: "{app}\license\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\bin\*.*"; Excludes: "C:\orangec\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\bin\*.*"; Excludes: "C:\orangec\bin\lsmsilcrtl6.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\bin\*.*"; Excludes: "C:\orangec\bin\lsmsilcrtl7.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\bin\*.*"; Excludes: "C:\orangec\bin\lsmsilcrtl8.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion gacinstall; Check: IsAdminInstallMode; StrongAssemblyName: "lsmsilcrtl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=bc9b111235642d7d, ProcessorArchitecture=x86"
 ;Source: "C:\orangec\bin_7\*.*"; DestDir: "{app}\bin_7\"; Flags: IgnoreVersion;Components: main
 ;Source: "C:\orangec\bin_7\branding\*.*"; DestDir: "{app}\bin_7\branding"; Flags: IgnoreVersion;Components: main
@@ -80,37 +83,36 @@ Source: "C:\orangec\doc\occ\*.*"; DestDir: "{app}\doc\occ\"; Flags: IgnoreVersio
 Source: "C:\orangec\doc\ogrep\*.*"; DestDir: "{app}\doc\ogrep\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\olink\*.*"; DestDir: "{app}\doc\olink\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVersion; Components: main
-
 Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop; Check: IsAdminInstallMode;
 
-Source: "C:\orangec\examples\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\*.*"; DestDir: "{app}\examples\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\examples\windows examples\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{app}\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{app}\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{app}\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
 
-Source: "C:\orangec\examples\*.*"; DestDir: "{app}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\*.*"; DestDir: "{app}\examples\"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\examples\msdos\"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\examples\windows examples\"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{app}\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{app}\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{app}\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\portable
+Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\portable
 
 [Icons]
-Name: "{group}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; Components: main\desktop;
-Name: "{group}\Orange C IDE Help"; Filename: "{app}\help\ccide.chm"; Components: main\desktop;
+;Name: "{group}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; Components: main\desktop;
+;Name: "{group}\Orange C IDE Help"; Filename: "{app}\help\ccide.chm"; Components: main\desktop;
 Name: "{group}\C Language Help"; Filename: "{app}\help\chelp.chm"; Components: main\desktop;
 Name: "{group}\Runtime Help"; Filename: "{app}\help\crtl.chm"; Components: main\desktop;
 Name: "{group}\Tools Help"; Filename: "{app}\help\tools.chm"; Components: main\desktop;
-Name: "{userdesktop}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; MinVersion: 4,4; Components: main\desktop; Tasks: desktopicon
+;Name: "{userdesktop}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; MinVersion: 4,4; Components: main\desktop; Tasks: desktopicon
 
-[Run]
-Filename: "{app}\bin\ocide.exe"; Parameters: " "; Description: "Launch Orange C IDE"; Flags: runascurrentuser nowait postinstall skipifsilent unchecked; Components: main\desktop; BeforeInstall: SetEnvPath;
+;[Run]
+;Filename: "{app}\bin\ocide.exe"; Parameters: " "; Description: "Launch Orange C IDE"; Flags: runascurrentuser nowait postinstall skipifsilent unchecked; Components: main\desktop; BeforeInstall: SetEnvPath;
 
 [Registry]
 ;Root: HKLM; Subkey: "Software\LADSoft"; Flags: uninsdeletekeyifempty; Components: main\desktop;
@@ -188,11 +190,11 @@ Root: HKLM; SubKey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
 ;Root: HKCR; Subkey: "cppfile.cppfile\Shell\Open\command"; valuetype: string; ValueData: "{app}\bin\ocide ""%1"""; tasks: fileassociation; Components: main\desktop;
 
 
-[UninstallDelete]
-type: filesandordirs; Name: "{%PUBLIC}\Orange C Projects\default.cwa"; Components: main\desktop;
-type: filesandordirs; Name: "{%PUBLIC}\Orange C Projects\default.ods"; Components: main\desktop;
-type: filesandordirs; Name: "{userappdata}\Orange C\ocide.ini"; Components: main\desktop;
-type: filesandordirs; Name: "{userappdata}\Orange C"; Components: main\desktop;
+;[UninstallDelete]
+;type: filesandordirs; Name: "{%PUBLIC}\Orange C Projects\default.cwa"; Components: main\desktop;
+;type: filesandordirs; Name: "{%PUBLIC}\Orange C Projects\default.ods"; Components: main\desktop;
+;type: filesandordirs; Name: "{userappdata}\Orange C\ocide.ini"; Components: main\desktop;
+;type: filesandordirs; Name: "{userappdata}\Orange C"; Components: main\desktop;
 
 [Code]
 #ifdef UNICODE
@@ -282,7 +284,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
     begin
-      DeleteFile(ExpandConstant('{app}\help\ocide.chm:Zone.Identifier'));
+;      DeleteFile(ExpandConstant('{app}\help\ocide.chm:Zone.Identifier'));
       DeleteFile(ExpandConstant('{app}\help\tools.chm:Zone.Identifier'));
       DeleteFile(ExpandConstant('{app}\help\crtl.chm:Zone.Identifier'));
       DeleteFile(ExpandConstant('{app}\help\chelp.chm:Zone.Identifier'));

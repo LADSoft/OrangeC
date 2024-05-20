@@ -17,17 +17,20 @@ Coverity scan status:
 Orange C is currently a Win32 C++ compiler.   Long term it is going to be retargetable.
 
 
-The Orange C package also includes a C compiler for .Net, which compiles to MSIL/CIL.   It is an offshoot of Orange C that is retargeted for .NET.   Documentation may be found here: [OCCIL documentation](doc/occil.md)
+The Orange C package also includes a C compiler for .Net, which compiles to MSIL/CIL.   It is an offshoot of Orange C that is retargeted for .NET.   It is called occil.    The latest version will also produce .net core images.   Documentation may be found here: [OCCIL documentation](doc/occil.md)
 
 Source Code for Orange C is released under the GNU General Public License version 3.
 
 Current languages targeted by Orange C are C++14 and C11.
+
 
 The tools in this package that aren't specific to this toolchain are also available in standalone repositories.   This includes the [ORC resource compiler](https://www.github.com/LADSoft/ORC),[omake makefile utility](https://www.github.com/LADSoft/OMAKE), and a [C++ library to generate and parse .NET assemblies](https://www.github.com/LADSoft/DotNetPELib).
 
 The compiler can be built with various C++14 compilers, however, by default it is configured to use the Visual Studio 2022 community edition.   A solution exists which will build all files in the project, or you can use the project's omake program to build it from the command line (you can also use MSBUILD if so inclined)
 
 It is also possible to build with mingw32-make, recently we've also fixed that to work under the variants of MSYS2.
+
+In a recent addition, CMAKE support was added for this compiler.    CMAKE understands about the existance of OCC and CMAKE scripts will build for OCC.   This is at available at least in CMAKE version 3.29.3.
 
 The compiler uses a binary output format, a variant of the IEEE-695 OMF.   There are utilities to convert to the text version of IEEE-695.  I've preferred this since it is easier to debug… 
 

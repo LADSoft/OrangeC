@@ -1,0 +1,7 @@
+site_name: Orange C Documentation
+docs_dir: ./doc
+theme:
+  name: readthedocs
+  highlightjs: true
+plugins:
+  - search

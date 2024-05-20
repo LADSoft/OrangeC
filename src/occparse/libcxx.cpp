@@ -136,7 +136,7 @@ void libcxx_builtins(void)
         preProcessor->Define("__has_cxx_noexcept", "1");
         preProcessor->Define("__has_cxx_nullptr", "1");
         preProcessor->Define("__has_cxx_reference_qualified_functions", "1");
-        preProcessor->Define("__has_cxx_relaxed_constexpr", "0");
+        preProcessor->Define("__has_cxx_relaxed_constexpr", "1");
         preProcessor->Define("__has_cxx_rtti", "1");
         preProcessor->Define("__has_cxx_rvalue_references", "1");
         preProcessor->Define("__has_cxx_static_assert", "1");

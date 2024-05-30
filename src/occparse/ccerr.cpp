@@ -1953,52 +1953,18 @@ void checkDefaultArguments(SYMBOL* spi)
 void CheckUndefinedStructures(SYMBOL* funcsp)
 {
     Type* tp = funcsp->tp->BaseType()->btp;
-    if (tp->IsStructured() && !tp->BaseType()->sp->tp->syms)
+    tp->InstantiateDeferred();
+    if ((tp->IsStructured() && !tp->BaseType()->sp->tp->syms) || tp->IsDeferred())
     {
-        tp = PerformDeferredInitialization(tp, funcsp);
-        if (!tp->BaseType()->sp->tp->syms)
-        {
-            currentErrorLine = 0;
-            errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
-        }
+        currentErrorLine = 0;
+        errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
     }
     for (auto sym : *funcsp->tp->BaseType()->syms)
     {
         Type* tp = sym->tp->BaseType();
         if (tp->IsStructured() && !tp->BaseType()->sp->tp->syms)
         {
-            if (tp->BaseType()->sp->sb->templateLevel)
-            {
-                auto sym1 = tp->BaseType()->sp;
-                std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
-                while (!stk.empty())
-                    stk.pop();
-                auto it = sym1->templateParams->begin();
-                auto ite = sym1->templateParams->end();
-                for (; it != ite;)
-                {
-                    if (it->second->packed && it->second->byPack.pack)
-                    {
-                        stk.push(it);
-                        stk.push(ite);
-                        ite = it->second->byPack.pack->end();
-                        it = it->second->byPack.pack->begin();
-                    }
-                    it->second->byClass.dflt = it->second->byClass.val;
-                    if (++it != ite && !stk.empty())
-                    {
-                        ite = stk.top();
-                        stk.pop();
-                        it = stk.top();
-                        stk.pop();
-                        ++it;
-                    }
-                }
-                sym1 = GetClassTemplate(sym1, sym1->templateParams, false);
-                if (sym1)
-                    tp->BaseType()->sp = sym1;
-            }
-            tp = PerformDeferredInitialization(tp, funcsp);
+            tp->InstantiateDeferred();
             if (!tp->BaseType()->sp->tp->syms)
             {
                 currentErrorLine = 0;

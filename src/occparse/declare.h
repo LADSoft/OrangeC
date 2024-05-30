@@ -51,10 +51,7 @@ namespace Parser
             }
             return nullptr;
         }
-        inline void Add(SYMBOL* symbol)
-        {
-            declarations.push_front(EnclosingDeclaration{ symbol, nullptr });
-        }
+        void Add(SYMBOL* symbol);
         inline void Add(std::list<TEMPLATEPARAMPAIR>* templ)
         {
             declarations.push_front(EnclosingDeclaration{ nullptr, templ });

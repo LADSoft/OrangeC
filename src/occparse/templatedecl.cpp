@@ -108,6 +108,7 @@ void templateInit(void)
     classInstantiationMap.clear();
     templateNameTag = 1;
     fullySpecialized = false;
+    templateDeclarationLevel = 0;
 }
 void TemplateGetDeferred(SYMBOL* sym)
 {
@@ -159,7 +160,7 @@ std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym)
 }
 void TemplateRegisterDeferred(LexList* lex)
 {
-    if (lex && templateNestingCount && !dontRegisterTemplate)
+    if (lex && templateDeclarationLevel && !dontRegisterTemplate)
     {
         if (!lex->data->registered)
         {
@@ -655,10 +656,6 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                 if (!templateNestingCount && tp->type == BasicType::any_)
                 {
                     error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
-                }
-                else if (tp && !templateNestingCount)
-                {
-                    tp = PerformDeferredInitialization(tp, nullptr);
                 }
                 if (MATCHKW(lex, Keyword::begin_))  // initializer list?
                 {
@@ -1214,7 +1211,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     {
                                         (*lst)->back().first = itorig->first;
                                     }
-                                    if (exp->type == ExpressionNode::templateparam_ && exp->v.sp->tp->templateParam->second->byClass.dflt)
+                                    if (exp->type == ExpressionNode::templateparam_ && exp->v.sp->tp->BaseType()->templateParam->second->byClass.dflt)
                                     {
                                         *(*lst)->back().second = *exp->v.sp->tp->templateParam->second;
                                     }
@@ -1388,6 +1385,7 @@ SYMBOL* FindSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templatePa
 SYMBOL* LookupSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templateParams)
 {
     Type* tp;
+
     // maybe we know this specialization
     if (sym->sb->specializations)
     {
@@ -2385,7 +2383,8 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                         if (!ss->sb->deferredCompile)
                         {
                             ss->sb->deferredCompile = ts->sb->deferredCompile;
-                            PerformDeferredInitialization(ss->tp, nullptr);
+                            ss->tp->InstantiateDeferred();
+                            ss->tp = ss->tp->InitializeDeferred();
                         }
                         TemplateTransferClassDeferred(ss, ts);
                     }
@@ -2503,6 +2502,7 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
             {
                 auto init = Allocate<Argument>();
                 init->tp = (*hr)->tp;
+                init->tp->InstantiateDeferred();
                 init->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 funcparams->arguments->push_back(init);
                 ++hr;
@@ -2510,6 +2510,7 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
             if (spi->sb->parentClass)
             {
                 funcparams->thistp = Type::MakeType(BasicType::pointer_, spi->sb->parentClass->tp);
+                funcparams->thistp->InstantiateDeferred();
                 funcparams->thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
             }
             instance = GetOverloadedTemplate(spi, funcparams);
@@ -3007,7 +3008,8 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
         if (isExtern)
             error(ERR_DECLARE_SYNTAX);
 
-        if (templateNestingCount == 0)
+        auto oldcurrents = currents;
+        if (++templateDeclarationLevel == 1)
         {
             l.args = nullptr;
             l.ptail = &l.args;
@@ -3097,8 +3099,8 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
         currents->ptail = currents->plast;
         currents->plast = currentHold.top();
         currentHold.pop();
-        if (templateNestingCount == 0)
-            currents = nullptr;
+        currents = oldcurrents;
+        --templateDeclarationLevel;
     }
     else  // instantiation
     {

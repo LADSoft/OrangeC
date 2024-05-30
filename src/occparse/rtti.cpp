@@ -120,6 +120,7 @@ void insertXCInfo(SYMBOL* funcsp)
 {
     char name[2048];
     SYMBOL* sym;
+    InitializeFunctionArguments(funcsp);
     makeXCTab(funcsp);
     Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
     sym = makeID(StorageClass::global_, &stdpointer, nullptr, litlate(name));
@@ -309,7 +310,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
 static void DumpEnclosedStructs(Type* tp, bool genXT)
 {
     SYMBOL* sym = tp->BaseType()->sp;
-    tp = PerformDeferredInitialization(tp, nullptr);
+    tp->InstantiateDeferred();
     if (sym->sb->vbaseEntries)
     {
         for (auto vbase : *sym->sb->vbaseEntries)
@@ -377,9 +378,9 @@ static void DumpEnclosedStructs(Type* tp, bool genXT)
                 if (tp->IsConst())
                     flags |= XD_CL_CONST;
                 tp = tp->BaseType();
+                tp->InstantiateDeferred();
                 if (tp->IsStructured())
                 {
-                    tp = PerformDeferredInitialization(tp, nullptr);
                     if (genXT)
                     {
                         RTTIDumpType(tp);
@@ -427,6 +428,7 @@ SYMBOL* RTTIDumpType(Type*tp, bool symOnly)
         if (Optimizer::cparams.prm_xcept)
         {
             char name[4096];
+            tp->InstantiateDeferred();
             RTTIGetName(name, tp);
             xtSym = search(rttiSyms, name);
             if (!xtSym || !Optimizer::SymbolManager::Get(xtSym)->generated)

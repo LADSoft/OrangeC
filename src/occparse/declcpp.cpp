@@ -123,6 +123,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 if (sp)
                                     func = sp;
                             }
+                            InitializeFunctionArguments(func);
                             InsertInline(func);
                             if (func->sb->defaulted && !func->sb->inlineFunc.stmt && func->sb->isDestructor)
                                 createDestructor(func->sb->parentClass);
@@ -258,7 +259,7 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
                     {
                         sym = sym->tp->BaseType()->sp;
                     }
-                    if (sym == base)
+                    if (sym == base || sameTemplate(sym->tp, base->tp))
                     {
                         if (isVirtual || lst->isvirtual)
                             (*vcount)++;
@@ -310,6 +311,10 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
                         {
                             tp1 = tp1->BaseType()->btp;
                             tp2 = tp2->BaseType()->btp;
+                            tp1->InstantiateDeferred();
+                            tp1->InitializeDeferred();
+                            tp2->InstantiateDeferred();
+                            tp2->InitializeDeferred();
                             if (tp1->IsStructured() && tp2->IsStructured())
                             {
                                 if ((!tp1->IsConst() || tp2->IsConst()) && (!tp1->IsVolatile() || tp2->IsVolatile()))
@@ -318,7 +323,15 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
                                     tp2 = tp2->BaseType();
                                     if (tp1->sp != tp2->sp && tp2->sp != sym && classRefCount(tp1->sp, tp2->sp) != 1)
                                     {
-                                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, oldFunc->sb->parentClass, newFunc->sb->parentClass);
+                                        bool bad = tp1->sp->sb->maintemplate && tp1->sp->sb->maintemplate != tp2->sp->sb->maintemplate;
+                                        if (!bad)
+                                        {
+                                            bad = !tp1->ExactSameType(tp2) && !sameTemplate(tp1, tp2);
+                                        }
+                                        if (bad)
+                                        {
+                                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, oldFunc->sb->parentClass, newFunc->sb->parentClass);
+                                        }
                                     }
                                 }
                                 else
@@ -876,10 +889,9 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             {
                 enclosingDeclarations.Add(func->templateParams);
             }
-            //        func->tp = PerformDeferredInitialization(func->tp, nullptr);
             lex = SetAlternateLex(arg->sb->deferredCompile);
 
-            arg->tp = PerformDeferredInitialization(arg->tp, nullptr);
+            arg->tp->InstantiateDeferred();
             tp2 = arg->tp;
             if (tp2->IsRef())
                 tp2 = tp2->BaseType()->btp;
@@ -941,9 +953,9 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                         {
                             if (!sp2->sb->thisPtr)
                             {
-                                sp2->tp = PerformDeferredInitialization(sp2->tp, nullptr);
                                 if (sp2->sb->deferredCompile && !sp2->sb->init)
                                 {
+                                    sp2->tp->InstantiateDeferred();
                                     Type* tp2;
                                     lex = SetAlternateLex(sp2->sb->deferredCompile);
                                     tp2 = sp2->tp;
@@ -1012,58 +1024,6 @@ bool declaringTemplate(SYMBOL* sym)
         }
     }
     return false;
-}
-Type* PerformDeferredInitialization(Type* tp, SYMBOL* funcsp)
-{
-    (void)funcsp;
-    if (!tp)
-        return &stdany;
-    Type** tpx = &tp;
-    if ((*tpx)->IsRef())
-        tpx = &(*tpx)->BaseType()->btp;
-    Type** tpx1 = tpx;
-    while ((*tpx)->btp && !(*tpx)->IsFunction())
-        tpx = &(*tpx)->btp;
-    if (Optimizer::cparams.prm_cplusplus && !inTemplateType && (*tpx)->IsStructured())
-    {
-        SYMBOL* sym = (*tpx)->BaseType()->sp;
-        if (sym->templateParams)
-            for (auto&& tpl : *sym->templateParams)
-                if (tpl.second->usedAsUnpacked)
-                    return tp;
-        if (declaringTemplate(sym))
-        {
-            if (!sym->sb->instantiated)
-            {
-                *tpx = sym->tp;
-            }
-        }
-        else if (sym->sb->templateLevel && (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != Linkage::virtual_) &&
-                 sym->templateParams && allTemplateArgsSpecified(sym, sym->templateParams, false, true))
-        {
-            sym = TemplateClassInstantiateInternal(sym, nullptr, false);
-            if (sym)
-                *tpx = sym->tp;
-        }
-        else if (!sym->sb->templateLevel && sym->sb->parentClass && sym->sb->parentClass->sb->templateLevel &&
-                 (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != Linkage::virtual_) &&
-                 sym->sb->parentClass->templateParams &&
-                 allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams, false, true))
-        {
-            std::list<TEMPLATEPARAMPAIR>* tpl = sym->sb->parentClass->templateParams;
-            sym->templateParams = tpl;
-            sym = TemplateClassInstantiateInternal(sym, nullptr, false);
-            sym->templateParams = nullptr;
-            if (sym)
-                *tpx = sym->tp;
-        }
-        else if (!sym->sb->instantiated || ((*tpx)->size < sym->tp->size && sym->tp->size != 0))
-        {
-            *tpx = sym->tp;
-        }
-        tp->UpdateRootTypes();
-    }
-    return tp;
 }
 bool usesVTab(SYMBOL* sym)
 {
@@ -1136,6 +1096,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         {
             Type* tp = nullptr;
             tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::type_, true, true, false);
+            tp->InstantiateDeferred();
             if (!tp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1168,6 +1129,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 {
                     // in case typedef is being used as a base class specifier
                     Type* tp = bcsym->tp->BaseType();
+                    tp->InstantiateDeferred();
                     if (tp->IsStructured())
                     {
                         bcsym = tp->sp;
@@ -1231,8 +1193,9 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                         if (sp1)
                         {
                             bcsym = sp1;
+                            bcsym->tp->InstantiateDeferred();
                             if (bcsym->tp->IsStructured())
-                                bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
+                                bcsym->tp = bcsym->tp->InitializeDeferred();
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
                             if (templateNestingCount && bcsym->tp->type == BasicType::any_)
@@ -1244,12 +1207,22 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                     lex = getsym();
                                 continue;
                             }
+                            else if (bcsym && (!templateNestingCount || instantiatingTemplate))
+                            {
+                                auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                                if (bc)
+                                    baseClasses->push_back(bc);
+                            }
                         }
                     }
                     else
                     {
                         SpecializationError(bcsym);
                     }
+                    done = !MATCHKW(lex, Keyword::comma_);
+                    if (!done)
+                        lex = getsym();
+                    continue;
                 }
                 else
                 {
@@ -1417,13 +1390,14 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     Type* tp = bcsym->tp->templateParam->second->byClass.val;
                     if (tp)
                     {
+                        tp->InstantiateDeferred();
                         tp = tp->BaseType();
                         if (tp->type == BasicType::templateselector_)
                         {
                             SYMBOL* sym = (*tp->sp->sb->templateSelector)[1].sp;
                             for (int i = 2; i < (*tp->sp->sb->templateSelector).size() && sym; ++i)
                             {
-                                PerformDeferredInitialization(sym->tp, funcsp);
+                                sym->tp->InstantiateDeferred();
                                 auto lst = &(*tp->sp->sb->templateSelector)[i];
                                 sym = search(sym->tp->syms, lst->name);
                             }
@@ -1706,7 +1680,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
         }
         if (exp1->type == ExpressionNode::templateparam_)
         {
-            if (exp1->v.sp->tp->templateParam->second->packed)
+            if (exp1->v.sp->tp->BaseType()->templateParam->second->packed)
                 return true;
         }
     }
@@ -1762,6 +1736,10 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
                         if (tpl.second->byPack.pack)
                             for (auto&& tpl1 : *tpl.second->byPack.pack)
                                 GatherPackedTypes(count, arg, tpl1.second->byClass.dflt);
+                    }
+                    else if (tpl.second->byClass.dflt->IsDeferred())
+                    {
+                        GatherTemplateParams(count, arg, tpl.second->byClass.dflt->BaseType()->templateArgs);
                     }
                     else
                     {
@@ -3227,9 +3205,10 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     if (tp->IsStructured() || tp->BaseType()->type == BasicType::templateselector_)
                         sp->sb->typeAlias = lst;
                 }
-                else if (!templateNestingCount)
+                else if (sp->tp->IsDeferred())
                 {
-                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                    if (!sp->tp->BaseType()->sp->sb->templateLevel)
+                         sp->tp->InstantiateDeferred();
                 }
                 if (storage_class == StorageClass::member_)
                     sp->sb->parentClass = enclosingDeclarations.GetFirst();
@@ -4135,6 +4114,7 @@ static bool constArgValid(Type* tp)
         return false;
     if (tp->type == BasicType::templateparam_ || tp->type == BasicType::templateselector_)
         return true;
+    tp->InstantiateDeferred();
     if (tp->IsStructured())
     {
         SYMBOL *sym = tp->BaseType()->sp, *sym1;
@@ -4143,7 +4123,6 @@ static bool constArgValid(Type* tp)
         tp = tp->BaseType();
         if (sym->sb->trivialCons)
             return true;
-        tp = PerformDeferredInitialization(tp, nullptr);
         sym1 = search(tp->syms, overloadNameTab[CI_DESTRUCTOR]);
         if (sym1 && !((SYMBOL*)sym1->tp->syms->front())->sb->defaulted)
             return false;

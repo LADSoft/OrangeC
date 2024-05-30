@@ -489,6 +489,7 @@ bool matchesCopy(SYMBOL* sp, bool move)
                 if (arg1->tp->BaseType()->type == (move ? BasicType::rref_ : BasicType::lref_))
                 {
                     Type* tp = arg1->tp->BaseType()->btp;
+                    tp->InstantiateDeferred();
                     if (tp->IsStructured())
                         if (tp->BaseType()->sp == sp->sb->parentClass || tp->BaseType()->sp == sp->sb->parentClass->sb->mainsym ||
                             tp->BaseType()->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
@@ -1613,6 +1614,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             {
                 for (auto mi2 : *mi)
                 {
+                    mi2->sp->tp->InstantiateDeferred();
                     if (mi2->sp && mi2->sp->tp->IsStructured() &&
                         (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate || sameTemplate(mi2->sp->tp, member->tp)))
                     {
@@ -2707,8 +2709,8 @@ static void genDestructorCall(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* 
     SYMBOL* dest;
     EXPRESSION* exp;
     Statement* st;
-    Type* tp = PerformDeferredInitialization(sp->tp, nullptr);
-    sp = tp->sp;
+    sp->tp->InstantiateDeferred();
+    sp = sp->tp->sp;
     dest = search(sp->tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
     if (!dest)  // error handling
         return;
@@ -2913,8 +2915,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     SYMBOL* sym;
     if (!against)
         against = theCurrentFunc ? theCurrentFunc->sb->parentClass : sp;
-    if (sp->tp->size == 0)
-        sp = PerformDeferredInitialization(sp->tp, nullptr)->sp;
+    sp->tp-> InstantiateDeferred();
     stp = sp->tp;
     dest = search(sp->tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
     // if it isn't already defined get out, there will be an error from somewhere else..
@@ -3007,7 +3008,7 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
     Type* initializerListTemplate = nullptr;
     Type* initializerListType = nullptr;
     bool initializerRef = false;
-    PerformDeferredInitialization(stp, nullptr);
+    stp->InstantiateDeferred();
     sp = (*tp)->BaseType()->sp;
 
     against = theCurrentFunc ? theCurrentFunc->sb->parentClass : top ? sp : sp->sb->parentClass;

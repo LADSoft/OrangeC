@@ -89,6 +89,10 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym, 
         {
             rv = Make(sym);
         }
+        else
+        {
+            rv->outputName = sym->sb->decoratedName;
+        }
         if (definingFunction && Optimizer::architecture != ARCHITECTURE_MSIL)
         {
             // the backend requires type info for all function params in a generated function
@@ -280,6 +284,13 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(Parser::Type* tp)
 {
     int i = 0;
     Optimizer::SimpleType* rv = Allocate<Optimizer::SimpleType>();
+    if (tp->IsDeferred())
+    {
+        rv->type = st_i;
+        rv->size = getSize(BasicType::int_);
+        rv->sizeFromType = -ISZ_UINT;
+        return rv;
+    }
     bool isConst = tp->IsConst();
     bool isVolatile = tp->IsVolatile();
     bool isRestrict = tp->IsRestrict();
@@ -424,7 +435,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->i = sym->sb->value.i;
     Add(sym, rv);
     rv->storage_class = Get(sym->sb->storage_class);
-    if (!sym->tp->IsStructured() && !sym->tp->IsFunction() && sym->tp->type != BasicType::ellipse_ && sym->tp->BaseType()->type != BasicType::any_)
+    if (!sym->tp->IsStructured() && !sym->tp->IsFunction() && sym->tp->type != BasicType::ellipse_ && sym->tp->BaseType()->type != BasicType::any_ && !sym->tp->IsDeferred())
         rv->sizeFromType = sizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;

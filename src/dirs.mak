@@ -6,7 +6,7 @@
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
+     the Free Software Foundation, either version 3 of the License, or
 #     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -29,5 +29,5 @@ else
 DIRS := sqlite3 util objlib libhostfxr netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert \
        gccocc arocc clocc linkocc libocc \
-       help MSDNHelp
+       help
 endif

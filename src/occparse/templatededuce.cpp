@@ -1273,7 +1273,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                     auto it = itParams;
                     ++it;
                     if (it != iteParams || itParams->second->type != TplType::typename_ ||
-                        itInitial->second->byClass.dflt->type != BasicType::void_)
+                        (itInitial->second->byClass.dflt && itInitial->second->byClass.dflt->type != BasicType::void_))
                     {
                         if (!itParams->second->byPack.pack)
                             itParams->second->byPack.pack = templateParamPairListFactory.CreateList();

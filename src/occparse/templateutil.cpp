@@ -96,9 +96,9 @@ EXPRESSION* GetSymRef(EXPRESSION* n)
 bool equalTemplateMakeIntExpression(EXPRESSION* exp1, EXPRESSION* exp2)
 {
     if (exp1->type == ExpressionNode::templateparam_)
-        exp1 = exp1->v.sp->tp->templateParam->second->byNonType.val;
+        exp1 = exp1->v.sp->tp->BaseType()->templateParam->second->byNonType.val;
     if (exp2->type == ExpressionNode::templateparam_)
-        exp2 = exp2->v.sp->tp->templateParam->second->byNonType.val;
+        exp2 = exp2->v.sp->tp->BaseType()->templateParam->second->byNonType.val;
     if (exp1 && exp2)
     {
         if (equalnode(exp1, exp2))
@@ -997,12 +997,25 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
             {
                 if (push)
                 {
-                    defaults.push_back(item.second->packed ? (Type*)1 : (Type*)0);
-                    defaults.push_back(dflt ? item.second->byClass.dflt : item.second->byClass.val);
-                    if (item.second->packed)
+                    if (item.second->type == TplType::typename_ && !item.second->packed && (dflt ? item.second->byClass.dflt : item.second->byClass.val)->IsDeferred())
                     {
-                        PushPopDefaults(defaults, item.second->byPack.pack, dflt, push);
+                        item.second->nopop = true;
                     }
+                    else
+                    {
+                        item.second->nopop = false;
+                        defaults.push_back(item.second->packed ? (Type*)1 : (Type*)0);
+                        defaults.push_back(dflt ? item.second->byClass.dflt : item.second->byClass.val);
+                        if (item.second->packed)
+                        {
+                            PushPopDefaults(defaults, item.second->byPack.pack, dflt, push);
+                        }
+                    }
+                }
+                else if (item.second->nopop)
+                {
+                    item.second->nopop = false;
+                    continue;
                 }
                 else if (defaults.size())
                 {
@@ -1206,8 +1219,9 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 }
                 while (tp->IsRef())
                     tp = tp->BaseType()->btp;
-                //                tp = PerformDeferredInitialization(tp, nullptr);
-                enclosingDeclarations.Add(tp->BaseType()->sp);
+                enclosingDeclarations.Mark();
+                if (tp->BaseType()->sp)
+                    enclosingDeclarations.Add(tp->BaseType()->sp);
                 while (next->type == ExpressionNode::funcret_)
                     next = next->left;
                 if (next->type == ExpressionNode::thisref_)
@@ -1218,7 +1232,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                     if (!sym)
                     {
-                        enclosingDeclarations.Drop();
+                        enclosingDeclarations.Release();
                         break;
                     }
                     CallSite* func = Allocate<CallSite>();
@@ -1232,7 +1246,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     noExcept = oldnoExcept;
                     if (!sym)
                     {
-                        enclosingDeclarations.Drop();
+                        enclosingDeclarations.Release();
                         break;
                     }
                     EXPRESSION* temp = MakeExpression(func);
@@ -1246,12 +1260,12 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                     if (!sym)
                     {
-                        enclosingDeclarations.Drop();
+                        enclosingDeclarations.Release();
                         break;
                     }
                     tp = sym->tp;
                 }
-                enclosingDeclarations.Drop();
+                enclosingDeclarations.Release();
                 exp = exp->right;
             }
             if (exp->type != ExpressionNode::dot_ && exp->type != ExpressionNode::pointsto_)
@@ -1496,7 +1510,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 exp->v.func->arguments = ExpandArguments(exp);
                 exp->v.func->templateParams = ExpandParams(exp);
                 auto oldnoExcept = noExcept;
-                sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, 0);
+                sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, _F_NOEVAL);
                 noExcept = oldnoExcept;
                 exp->v.func->arguments = old;
                 exp->v.func->templateParams = oldp;
@@ -1665,20 +1679,20 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
             return tp1;
         }
         case ExpressionNode::templateparam_:
-            if (exp->v.sp->tp->templateParam->second->type == TplType::typename_)
+            if (exp->v.sp->tp->BaseType()->templateParam->second->type == TplType::typename_)
             {
-                if (exp->v.sp->tp->templateParam->second->packed)
+                if (exp->v.sp->tp->BaseType()->templateParam->second->packed)
                 {
                     Type* rv = &stdany;
                     if (packIndex < 0)
                     {
-                        if (exp->v.sp->tp->templateParam->second->byPack.pack)
-                            rv = exp->v.sp->tp->templateParam->second->byPack.pack->front().second->byClass.val;
+                        if (exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack)
+                            rv = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->front().second->byClass.val;
                     }
-                    else if (exp->v.sp->tp->templateParam->second->byPack.pack)
+                    else if (exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack)
                     {
-                        auto itl = exp->v.sp->tp->templateParam->second->byPack.pack->begin();
-                        auto itel = exp->v.sp->tp->templateParam->second->byPack.pack->end();
+                        auto itl = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->begin();
+                        auto itel = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->end();
                         for (int i = 0; i < packIndex && itl != itel; i++, ++itl)
                             ;
                         if (itl != itel)
@@ -1686,7 +1700,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     }
                     return rv;
                 }
-                return exp->v.sp->tp->templateParam->second->byClass.val;
+                return exp->v.sp->tp->BaseType()->templateParam->second->byClass.val;
             }
             return nullptr;
         case ExpressionNode::templateselector_: {
@@ -2018,7 +2032,7 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
                     }
                     else
                     {
-                        sp = nullptr;
+                        sp = ts;
                     }
                 }
                 else if (ts->tp->BaseType()->type == BasicType::templateselector_)
@@ -2033,7 +2047,8 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
         }
         if (sp)
         {
-            sp = PerformDeferredInitialization(sp->tp, nullptr)->BaseType()->sp;
+            sp->tp->InstantiateDeferred();
+            sp = sp->tp->BaseType()->sp;
             if ((sp->sb->templateLevel == 0 || sp->sb->instantiated) &&
                 (!sp->templateParams || allTemplateArgsSpecified(sp, sp->templateParams)))
             {
@@ -2054,9 +2069,12 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
                             sp = nullptr;
                         if (sp && find->isTemplate)
                         {
-                            sp = GetClassTemplate(sp, find->templateParams, theCurrentFunc);
-                            if (sp)
-                                sp->tp = PerformDeferredInitialization(sp->tp, theCurrentFunc);
+                            Type* tn = Type::MakeType(sp, find->templateParams);
+                            tn->InstantiateDeferred();
+                            if (tn->IsDeferred())
+                                sp = nullptr;
+                            else
+                                sp = tn->sp;
                         }
                     }
                     if (sp && sp->sb->access != AccessLevel::public_ && !resolvingStructDeclarations)
@@ -2417,6 +2435,89 @@ static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* 
         }
     }
     return rv;
+}
+void TemplateArgInstantiateDeferred(std::list<TEMPLATEPARAMPAIR>* args, bool initialize)
+{
+    if (args && args->size())
+    {
+        if (args->front().second->type == TplType::new_)
+        {
+            TemplateArgInstantiateDeferred(args->front().second->bySpecialization.types);
+        }
+        auto t = args->begin();
+        auto te = args->end();
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+        while (t != te)
+        {
+            if (t->second->packed)
+            {
+                if (t->second->byPack.pack && t->second->byPack.pack->size())
+                {
+                    tas.push(t);
+                    tas.push(te);
+                    te = t->second->byPack.pack->end();
+                    t = t->second->byPack.pack->begin();
+                }
+            }
+
+            if (!t->second->packed && t->second->type == TplType::typename_)
+            {
+                if (t->second->byClass.dflt)
+                {
+                    if (t->second->byClass.dflt->IsFunction() || t->second->byClass.dflt->IsFunctionPtr())
+                    {
+                        auto t1 = t->second->byClass.dflt;
+                        if (t1->IsPtr())
+                            t1 = t1->BaseType()->btp;
+                        t1 = t1->BaseType();
+                        auto old = t1->sp->tp;
+                        t1->sp->tp = t1;
+                        InitializeFunctionArguments(t1->sp);
+                        t1->sp->tp = old;
+                    }
+                    else
+                    {
+                        t->second->byClass.dflt->InstantiateDeferred();
+                        if (initialize)
+                        {
+                            t->second->byClass.dflt = t->second->byClass.dflt->InitializeDeferred();
+                        }
+                    }
+                }
+                if (t->second->byClass.val)
+                {
+                    if (t->second->byClass.val->IsFunction() || t->second->byClass.val->IsFunctionPtr())
+                    {
+                        auto t1 = t->second->byClass.val;
+                        if (t1->IsPtr())
+                            t1 = t1->BaseType()->btp;
+                        t1 = t1->BaseType();
+                        auto old = t1->sp->tp;
+                        t1->sp->tp = t1;
+                        InitializeFunctionArguments(t1->sp);
+                        t1->sp->tp = old;
+                    }
+                    else
+                    {
+                        t->second->byClass.val->InstantiateDeferred();
+                        if (initialize)
+                        {
+                            t->second->byClass.val = t->second->byClass.val->InitializeDeferred();
+                        }
+                    }
+                }
+            }
+            ++t;
+            if (t == te && !tas.empty())
+            {
+                te = tas.top();
+                tas.pop();
+                t = tas.top();
+                tas.pop();
+                ++t;
+            }
+        }
+    }
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal)
 {

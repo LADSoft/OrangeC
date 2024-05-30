@@ -593,6 +593,8 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
     {
         *tp = nullptr;
         *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, &deduceTemplate, false, true, false, false, false);
+        (*tp)->InstantiateDeferred();
+        (*tp)->InitializeDeferred();
         if ((*tp)->IsStructured() && !(*tp)->size && (!templateNestingCount || !(*tp)->BaseType()->sp->sb->templateLevel))
         {
             (*tp) = (*tp)->BaseType()->sp->tp;
@@ -614,6 +616,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             sym = anonymousVar(StorageClass::auto_, *tp)->v.sp;
 
             lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, *tp, sym, false, flags | _F_EXPLICIT);
+            (*tp)->InstantiateDeferred();
             if (init && init->size() == 1 && init->front()->exp->type == ExpressionNode::thisref_)
             {
                 *exp = init->front()->exp;
@@ -683,7 +686,6 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
         {
             Type* ctype = *tp;
             EXPRESSION* exp1;
-            ctype = PerformDeferredInitialization(ctype, funcsp);
             auto bcall = search(ctype->BaseType()->syms, overloadNameTab[CI_FUNC]);
             CallSite* funcparams = Allocate<CallSite>();
             if (bcall && !deduceTemplate && MATCHKW(lex, Keyword::openpa_))
@@ -1283,6 +1285,7 @@ LexList* GetCastInfo(LexList* lex, SYMBOL* funcsp, Type** newType, Type** oldTyp
             error(ERR_TYPE_NAME_EXPECTED);
             *newType = &stdpointer;
         }
+        (*newType)->InstantiateDeferred();
         *newType = ResolveTemplateSelectors(funcsp, *newType);
         if (needkw(&lex, Keyword::gt_))
         {
@@ -1314,6 +1317,7 @@ LexList* GetCastInfo(LexList* lex, SYMBOL* funcsp, Type** newType, Type** oldTyp
                         }
                     }
                 }
+                (*oldType)->InstantiateDeferred();
             }
             else
             {
@@ -1488,7 +1492,7 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
         ((!tp1Clean && !args) || (tp1Clean && !tp1Clean->IsStructured() && tp1Clean->BaseType()->type != BasicType::enum_)))
         return false;
 
-    *tp = PerformDeferredInitialization(*tp, funcsp);
+    (*tp)->InstantiateDeferred();
     // first find some occurrance either in the locals or in the extant global namespace
     // but only if it is binary or unary...
     switch (cls)
@@ -1835,9 +1839,10 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
         EXPRESSION* sz;
         Argument* sza;
         int n;
+        (*tp)->InstantiateDeferred();
         if ((*tp)->IsStructured())
         {
-            *tp = PerformDeferredInitialization(*tp, funcsp);
+            (*tp)->InstantiateDeferred();
             n = (*tp)->BaseType()->sp->tp->size;
         }
         else
@@ -2088,7 +2093,7 @@ LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
     }
     if (!templateNestingCount && (*tp)->BaseType()->btp->IsStructured())
     {
-        (*tp)->BaseType()->btp = PerformDeferredInitialization((*tp)->BaseType()->btp, funcsp);
+        (*tp)->BaseType()->btp->InstantiateDeferred();
         if ((*tp)->BaseType()->btp->BaseType()->sp->tp->size == 0)
             errorsym(ERR_DELETE_OF_POINTER_TO_UNDEFINED_TYPE, (*tp)->BaseType()->btp->BaseType()->sp);
     }

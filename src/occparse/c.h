@@ -298,7 +298,7 @@ typedef struct
         aggregate_, untyped_, typedef_, pointer_, lref_, rref_, lrqual_, rrqual_, struct_,
         union_, func_, class_, ifunc_, any_, auto_,
         match_none_, ellipse_, memberptr_, cond_, va_list_, objectArray_,
-        consplaceholder_, templateparam_, templateselector_, templatedecltype_, derivedfromtemplate_,
+        consplaceholder_, templateparam_, templateselector_, templatedecltype_, templatedeferredtype_, derivedfromtemplate_,
         templateholder_,
         /* last */
         none_
@@ -878,6 +878,7 @@ typedef struct _templateParam
     int replaced : 1;  // replaced during type alias substitution
     int deduced : 1;   // filled in during deduction
     int specializationParam : 1; // specialization paramneter
+    int nopop : 1;
     int flag : 1; // utility flag
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */

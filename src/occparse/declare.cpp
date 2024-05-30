@@ -98,6 +98,11 @@ void declare_init(void)
     inConstantExpression = 0;
     parsingUsing = 0;
 }
+void EnclosingDeclarations::Add(SYMBOL* symbol)
+{
+//    symbol->tp->InstantiateDeferred();
+    declarations.push_front(EnclosingDeclaration{ symbol, nullptr });
+}
 
 void InsertGlobal(SYMBOL* sp) { Optimizer::globalCache.push_back(Optimizer::SymbolManager::Get(sp)); }
 void WeedExterns()
@@ -106,7 +111,6 @@ void WeedExterns()
     {
         Optimizer::SimpleSymbol* sym = *it;
         if ((sym->ispure || sym->generated) && !sym->dontinstantiate)
-            
         {
             it = Optimizer::externals.erase(it);
         }
@@ -748,24 +752,25 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 {
                     if (s->tp->type == BasicType::aggregate_)
                     {
+                        /*
                         for (auto f : *s->tp->syms)
                         {
                             if (!f->sb->templateLevel)
                             {
                                 f->tp->BaseType()->btp = ResolveTemplateSelectors(f, f->tp->BaseType()->btp);
-                                f->tp->BaseType()->btp = PerformDeferredInitialization(f->tp->BaseType()->btp, funcsp);
                                 for (auto a : *f->tp->BaseType()->syms)
                                 {
                                     a->tp = ResolveTemplateSelectors(a, a->tp);
-                                    a->tp = PerformDeferredInitialization(a->tp, funcsp);
                                 }
                             }
                         }
+                        */
                     }
                     else if (!istype(s))
                     {
                         s->tp = ResolveTemplateSelectors(s, s->tp);
-                        s->tp = PerformDeferredInitialization(s->tp, funcsp);
+                        s->tp->InstantiateDeferred();
+                        s->tp = s->tp->InitializeDeferred();
                     }
                 }
             }
@@ -1045,7 +1050,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
             injected->sb->access = AccessLevel::public_;
         }
     }
-    if (inTemplate && templateNestingCount == 1)
+    if (inTemplate && templateDeclarationLevel == 1)
         inTemplateBody++;
     if (Optimizer::cparams.prm_cplusplus)
         if (KW(lex) == Keyword::colon_)
@@ -1072,7 +1077,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
             }
         }
     }
-    if (inTemplate && templateNestingCount == 1)
+    if (inTemplate && templateDeclarationLevel == 1)
     {
         inTemplateBody--;
         TemplateGetDeferred(sp);
@@ -2158,6 +2163,8 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
     {
         if (spo && spo->tp->IsFunction())
         {
+            if (checkReturn)
+                spo->tp->BaseType()->btp->InstantiateDeferred();
             if (checkReturn && !spo->sb->isConstructor && !spo->sb->isDestructor &&
                 !spo->tp->BaseType()->btp->ExactSameType(sp->tp->BaseType()->btp) &&
                 !sameTemplatePointedTo(spo->tp->BaseType()->btp, sp->tp->BaseType()->btp))
@@ -3153,8 +3160,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         bool checkReturn = true;
                         if (!templateNestingCount && funcsp)
                             tp1 = ResolveTemplateSelectors(funcsp, tp1);
-                        if ((tp1->IsStructured() && storage_class != StorageClass::typedef_) || (!templateNestingCount && !structLevel))
-                            tp1 = PerformDeferredInitialization(tp1, funcsp);
+                        if (storage_class != StorageClass::external_ && storage_class != StorageClass::typedef_ && linkage != Linkage::inline_ && !tp1->IsFunction() && ((!templateNestingCount || instantiatingTemplate) && !structLevel))
+                        {
+                            tp1->InstantiateDeferred();
+                            tp1 = tp1->InitializeDeferred();
+                        }
                         ssp = enclosingDeclarations.GetFirst();
                         if (!asFriend &&
                             (((storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_) && ssp) || (inTemplate && strSym)))
@@ -3266,7 +3276,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         SetLinkerNames(sp, storage_class == StorageClass::auto_ && sp->tp->IsStructured() ? Linkage::auto_ : linkage,
                                        !!sp->templateParams);
-                        if (inTemplate && templateNestingCount == 1)
+                        if (inTemplate && templateDeclarationLevel == 1)
                         {
                             inTemplateBody++;
                         }
@@ -3393,7 +3403,12 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 }
                                 if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
                                 {
+                                    if (templateNestingCount == 1 && sp->templateParams && sp->templateParams->size() == 1 && !sp->templateParams->front().second->bySpecialization.types)
+                                        instantiatingTemplate++;
+                                    InitializeFunctionArguments(sp);
                                     sym = searchOverloads(sp, spi->tp->syms);
+                                    if (templateNestingCount == 1 && sp->templateParams && sp->templateParams->size() == 1 && !sp->templateParams->front().second->bySpecialization.types)
+                                        instantiatingTemplate--;
                                     Type* retVal;
                                     TEMPLATESELECTOR* tsl = nullptr;
                                     if (!sym && storage_class_in != StorageClass::member_ && ((retVal = sp->tp->BaseType()->btp)->type == BasicType::templateselector_))
@@ -3613,7 +3628,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             }
                             else if (spi->sb->templateLevel && !spi->sb->instantiated && !templateNestingCount)
                             {
-                                if (!strSym || !strSym->sb->templateLevel || spi->sb->templateLevel != sp->sb->templateLevel + 1)
+                                if ((strSym && !strSym->sb->templateLevel) || spi->sb->templateLevel != sp->sb->templateLevel + (strSym != 0))
                                     errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
                             }
                             if (spi && spi->sb->parentClass && storage_class_in == StorageClass::member_)
@@ -3649,6 +3664,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             }
                             else
                             {
+                                if (!sp->tp->IsFunction() && !spi->tp->IsFunction())
+                                {
+                                    sp->tp->InstantiateDeferred();
+                                    spi->tp->InstantiateDeferred();
+                                }
                                 if (spi->sb->pushedTemplateSpecializationDefinition && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
                                 {
                                     spi->sb->pushedTemplateSpecializationDefinition = false;
@@ -3868,7 +3888,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             }
                             if (sp->tp->IsFunction())
                             {
-                                matchFunctionDeclaration(lex, sp, sp, checkReturn, asFriend);
+                                matchFunctionDeclaration(lex, sp, sp, false, asFriend);
                                 if (inTemplate)
                                     sp->sb->parentTemplate = sp;
                             }
@@ -3929,7 +3949,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (sp->tp->IsFunction() && (sp->tp->IsConst() || sp->tp->IsVolatile()))
                                 error(ERR_ONLY_MEMBER_CONST_VOLATILE);
                         }
-                        if (inTemplate && templateNestingCount == 1)
+                        if (inTemplate && templateDeclarationLevel == 1)
                         {
                             inTemplateBody--;
                         }
@@ -4015,7 +4035,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             ((sp->sb->storage_class != StorageClass::global_ && sp->sb->storage_class != StorageClass::static_) || sp->sb->parentClass))
                             error(ERR_INLINE_NOT_ALLOWED);
                     }
-                    if (inTemplate && templateNestingCount == 1)
+                    if (inTemplate && templateDeclarationLevel == 1)
                     {
                         inTemplateBody++;
                     }
@@ -4313,12 +4333,9 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     if (!templateNestingCount && sp1->sb->templateLevel && sp1->templateParams &&
                                         !sp1->sb->instantiated)
                                     {
-//                                        if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
-                                            sp1 = GetClassTemplate(sp1, sp1->templateParams, false);
-                                        if (sp1)
-                                            sp->tp = PerformDeferredInitialization(
-                                                sp1->tp, funcsp);  // TemplateClassInstantiate(sp1, sp1->templateParams, false,
-                                                                   // StorageClass::global_)->tp;
+                                        auto tn = Type::MakeType(sp1, sp1->templateParams);
+                                        tn->InstantiateDeferred();
+                                        sp->tp = tn;
                                     }
                                 }
                                 lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, inTemplate,
@@ -4453,7 +4470,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     }
                     if (isExplicit && !sp->sb->castoperator && !sp->sb->isConstructor)
                         error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
-                    if (inTemplate && templateNestingCount == 1)
+                    if (inTemplate && templateDeclarationLevel == 1)
                     {
                         inTemplateBody--;
                         TemplateGetDeferred(sp);

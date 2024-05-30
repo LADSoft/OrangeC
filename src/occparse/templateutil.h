@@ -59,6 +59,7 @@ void pushContext(SYMBOL* cls, bool all);
 void SetTemplateNamespace(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);
+void TemplateArgInstantiateDeferred(std::list<TEMPLATEPARAMPAIR>* args, bool initialize = false);
 static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso);
 static void FixIntSelectors(EXPRESSION** exp);
 static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLATEPARAMPAIR* arg, bool byVal);

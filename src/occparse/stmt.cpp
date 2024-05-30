@@ -1354,6 +1354,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         }
                         else
                         {
+                            iteratorType = iteratorType->BaseType();
                             Type* eqType = iteratorType;
                             compare = eBegin;
                             if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::eq_, funcsp, &eqType, &compare, iteratorType, eEnd, nullptr,
@@ -4240,7 +4241,13 @@ void StatementGenerator::Body()
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
     theCurrentFunc = funcsp;
-    funcsp->tp->BaseType()->btp = ResolveTemplateSelectors(funcsp, funcsp->tp->BaseType()->btp);
+
+
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        InitializeFunctionArguments(funcsp, true);
+    }
+
     if (inTemplateHeader)
         templateNestingCount--;
     CheckUndefinedStructures(funcsp);

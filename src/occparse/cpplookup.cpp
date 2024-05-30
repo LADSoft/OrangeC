@@ -297,8 +297,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             else
             {
                 sp = tp->BaseType()->sp;
-                if (sp)
-                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                sp->tp->InstantiateDeferred();
                 strSym = sp;
             }
             if (!qualified)
@@ -393,6 +392,8 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                 }
                                 if (params && params->second->byClass.val)
                                 {
+                                    if (!templateNestingCount || instantiatingTemplate)
+                                        params->second->byClass.val->InstantiateDeferred();
                                     sp = params->second->byClass.val->BaseType()->sp;
                                     dependentType = params->second->byClass.val;
                                 }
@@ -426,6 +427,10 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                             }
                             else
                                 break;
+                        }
+                        else if (sp && sp->tp->IsDeferred() && sp->tp->BaseType()->sp->sb->templateLevel)
+                        {
+                            dependentType = sp->tp->BaseType()->sp->tp;
                         }
                         if (sp && throughClass)
                             *throughClass = true;
@@ -645,7 +650,6 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                     deferred = true;
                                     break;
                                 }
-
                             }
                         }
                         if (!deferred && sp)
@@ -711,7 +715,9 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 if (sp && !deferred)
                 {
-                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                    // order matters here...
+                    sp->tp = sp->tp->InitializeDeferred();
+                    sp->tp->InstantiateDeferred();
                 }
                 if (sp && (!sp->sb || (sp->sb->storage_class != StorageClass::namespace_ && (!sp->tp->IsStructured() || sp->templateParams))))
                     pastClassSel = true;
@@ -747,7 +753,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 else if (sp && sp->tp->IsStructured())
                 {
-                    strSym = sp;
+                    strSym = sp->tp->BaseType()->sp;
                     if (!qualified)
                         nssym = nullptr;
                 }
@@ -1221,7 +1227,6 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         }
         return lex;
     }
-
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType, 0);
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -2936,24 +2941,10 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                         else if (k == 0 && funcparams && funcparams->thisptr && (spList[i]->sb->castoperator || (*itl)->sb->thisPtr) && (spList[i]->sb->castoperator || (*itr)->sb->thisPtr))
                         {
                             Type *tpl, *tpr;
-                            if (0 && spList[i]->sb->castoperator)
-                            {
-                                tpl = toThis(spList[i]->tp->BaseType()->btp);
-                            }
-                            else
-                            {
-                                tpl = (*itl)->tp;
-                                ++itl;
-                            }
-                            if (0 && spList[j]->sb->castoperator)
-                            {
-                                tpr = toThis(spList[j]->tp->BaseType()->btp);
-                            }
-                            else
-                            {
-                                tpr = (*itr)->tp;
-                                ++itr;
-                            }
+                            tpl = (*itl)->tp;
+                            ++itl;
+                            tpr = (*itr)->tp;
+                            ++itr;
                             arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, funcparams->thistp,
                                                         funcparams->thisptr, funcList ? funcList[i][k] : nullptr,
                                                         funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
@@ -3201,6 +3192,27 @@ static void GetMemberConstructors(std::list<SYMBOL*>& gather, SYMBOL* sym)
     if (sym->sb->baseClasses)
         for (auto bcl : *sym->sb->baseClasses)
             GetMemberConstructors(gather, bcl->cls);
+} 
+void InitializeFunctionArguments(SYMBOL* sym, bool initialize)
+{
+    sym->tp->BaseType()->btp = ResolveTemplateSelectors(sym, sym->tp->BaseType()->btp);
+    sym->tp->BaseType()->btp->InstantiateDeferred();
+    if (initialize)
+    {
+        sym->tp->BaseType()->btp = sym->tp->BaseType()->btp->InitializeDeferred();
+    }
+    for (auto a : *sym->tp->BaseType()->syms)
+    {
+        a->tp = ResolveTemplateSelectors(sym, a->tp);
+        a->tp->InstantiateDeferred();
+        if (initialize)
+        {
+            a->tp = a->tp->InitializeDeferred();
+        }
+    }
+    if (strchr(sym->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
+        SetLinkerNames(sym, Linkage::cpp_);
+
 }
 SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit)
@@ -3217,19 +3229,12 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
         inGetUserConversion++;
         if (flags & F_WITHCONS)
         {
-            if (tppp->IsStructured())
+            if (tppp->IsStructured() || tpp->IsDeferred())
             {
-                SYMBOL* sym = tppp->BaseType()->sp;
-                sym->tp = PerformDeferredInitialization(sym->tp, nullptr);
-                /*
-                if (sym->sb->templateLevel && !templateNestingCount && !sym->sb->instantiated &&
-                    allTemplateArgsSpecified(sym, sym->templateParams))
-                {
-                    sym = TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_);
-                }
-                */
-                GetMemberConstructors(gather, sym);
-                tppp = sym->tp;
+                tppp->InstantiateDeferred();
+                tppp = tppp->BaseType();
+                GetMemberConstructors(gather, tppp->sp);
+                tppp = tppp->sp->tp;
             }
         }
         GetMemberCasts(gather, tpa->BaseType()->sp);
@@ -3290,6 +3295,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                         }
                         else
                         {
+                            InitializeFunctionArguments(sym);
                             spList[i++] = sym;
                         }
                     }
@@ -3766,6 +3772,8 @@ bool sameTemplate(Type* P, Type* A, bool quals)
         A = A->btp->BaseType();
     if (!P->IsStructured() || !A->IsStructured())
         return false;
+    P = P->BaseType();
+    A = A->BaseType();
     if (!P->sp->sb || !A->sp->sb || P->sp->sb->parentClass != A->sp->sb->parentClass || strcmp(P->sp->name, A->sp->name) != 0)
         return false;
     if (P->sp->sb->templateLevel != A->sp->sb->templateLevel)
@@ -5553,6 +5561,12 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, CallSite* a
                     }
                     else
                     {
+                        // instantiate arguments and the return value here
+                        // so we can match the function properly...
+                        if (Optimizer::cparams.prm_cplusplus)
+                        {
+                            InitializeFunctionArguments(sym);
+                        }
                         spList[n] = sym;
                     }
                 }
@@ -5888,7 +5902,7 @@ static bool ValidForDeduction(SYMBOL* s)
                         deduced = TemplateClassInstantiate(deduced, &spair, false, StorageClass::global_);
                         if (deduced)
                         {
-                            deduced->tp = PerformDeferredInitialization(deduced->tp, nullptr);
+                            deduced->tp->InitializeDeferred();
                             cons = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
                             auto it1 = cons->tp->syms->begin();
                             for (int i = 0; i < found1->utilityIndex; i++, ++it1)
@@ -5966,11 +5980,63 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
     if (atp && !atp->IsFunction())
         atp = nullptr;
     enclosingDeclarations.Mark();
-    if (args && args->thisptr)
+    if (args)
     {
-        SYMBOL* spt = args->thistp->BaseType()->btp->BaseType()->sp;
-        if (spt->templateParams)
-            enclosingDeclarations.Add(spt->templateParams);
+        if (Optimizer::cparams.prm_cplusplus)
+        {
+            if (args->thistp)
+            {
+                args->thistp->InstantiateDeferred();
+//                args->thistp = args->thistp->InitializeDeferred();
+            }
+            if (args->returnSP)
+            {
+                args->returnSP->tp->InstantiateDeferred();
+//                args->returnSP->tp = args->returnSP->tp->InitializeDeferred();
+            }
+            if (args->arguments)
+                for (auto a : *args->arguments)
+                    if (a->tp)
+                    {
+                        a->tp->InstantiateDeferred();
+//                        a->tp = a->tp->InitializeDeferred();
+                    }
+            if (args->templateParams)
+                for (auto&& a : *args->templateParams)
+                {
+                    if (a.second->type == TplType::typename_)
+                    {
+                        if (a.second->packed)
+                        {
+                            if (a.second->byPack.pack)
+                            {
+                                for (auto&& b : *a.second->byPack.pack)
+                                {
+                                    if (b.second->byClass.dflt)
+                                    {
+                                        b.second->byClass.dflt->InstantiateDeferred();
+//                                        b.second->byClass.dflt = b.second->byClass.dflt->InitializeDeferred();
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (a.second->byClass.dflt)
+                            {
+                                a.second->byClass.dflt->InstantiateDeferred();
+//                                a.second->byClass.dflt = a.second->byClass.dflt->InitializeDeferred();
+                            }
+                        }
+                    }
+                }
+        }
+        if (args->thisptr)
+        {
+            SYMBOL* spt = args->thistp->BaseType()->btp->BaseType()->sp;
+            if (spt->templateParams)
+                enclosingDeclarations.Add(spt->templateParams);
+        }
     }
     if (!sp || sp->sb->storage_class == StorageClass::overloads_)
     {
@@ -6355,7 +6421,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 if (!(flags & _F_SIZEOF) || ((flags & _F_INDECLTYPE) && found1->tp->BaseType()->btp->IsAutoType()) ||
                     ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LexList*)-1))
                 {
-                    if (theCurrentFunc && !found1->sb->constexpression)
+                    if (theCurrentFunc && !(flags & _F_NOEVAL) && !found1->sb->constexpression)
                     {
                         theCurrentFunc->sb->nonConstVariableUsed = true;
                     }

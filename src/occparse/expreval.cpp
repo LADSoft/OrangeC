@@ -120,7 +120,9 @@ static std::unordered_map<Keyword, EvalFunc> dispatcher = {
 EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
 {
     EXPRESSION* exp_in = exp;
-    tp = PerformDeferredInitialization(tp->BaseType(), nullptr);
+    tp = tp->BaseType(); 
+    tp->InstantiateDeferred();
+
     if (tp->IsStructured())
         tp = tp->BaseType()->sp->tp;
     if (tp->IsRef())

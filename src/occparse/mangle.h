@@ -23,6 +23,8 @@
  * 
  */
 
+#define MANGLE_DEFERRED_TYPE_CHAR '{'
+
 namespace Parser
 {
 extern const char* overloadNameTab[];

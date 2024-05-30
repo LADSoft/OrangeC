@@ -198,6 +198,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
         }
         tnew = snew->tp->BaseType();
         told = sold->tp->BaseType();
+        told->InstantiateDeferred();
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
             if ((told->type != tnew->type || (!told->ExactSameType(tnew) && !sameTemplatePointedTo(told, tnew, true))) &&

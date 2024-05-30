@@ -895,8 +895,10 @@ char* mangleType(char* in, Type* tp, bool first)
                     *in++ = 'e';
                     break;
                 case BasicType::void_:
-                case BasicType::any_:
                     *in++ = 'v';
+                    break;
+                case BasicType::any_:
+                    *in++ = 'V'; // this needs to be distinct from void for internal matching....
                     break;
                 case BasicType::templateparam_:
                     if (tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val &&
@@ -940,6 +942,11 @@ char* mangleType(char* in, Type* tp, bool first)
                     break;
                 case BasicType::auto_:
                     *in++ = 'a';
+                    break;
+                case BasicType::templatedeferredtype_:
+                    // we want something the linkerwill treat as an error,
+                    // so we can detect problems with these not being properly replaced
+                    *in++ = MANGLE_DEFERRED_TYPE_CHAR;
                     break;
                 default:
                     diag("mangleType: unknown type");

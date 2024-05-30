@@ -75,7 +75,6 @@ inline static void UnstreamBlockType(int blockType, bool end)
     int n = UnstreamByte();
     if (n != blockType + (end ? 0x80 : 0x40))
     {
-        printf("bt\n");
         dothrow();
     }
 }

@@ -201,7 +201,7 @@ static void StreamBases(BaseList* bases)
 static void StreamType(SimpleType* type)
 {
     StreamBlockType(STT_TYPE, false);
-    if (!type)
+    if (!type || type->type == st_none)
     {
         StreamIndex(st_none);
     }

@@ -3466,6 +3466,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
             else
             {
                 lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, 0);
+                tp1->InstantiateDeferred();
                 if (!tp1)
                     error(ERR_EXPRESSION_SYNTAX);
                 else if (!itype->ExactSameType(tp1))
@@ -3885,7 +3886,8 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         }
         if (sym)
         {
-            sym = PerformDeferredInitialization(sym->tp, nullptr)->BaseType()->sp;
+            sym->tp->InstantiateDeferred();
+            sym = sym->tp->BaseType()->sp;
             for (++find, ++find ; find != finde && sym; ++ find)
             {
                 SYMBOL* spo = sym;
@@ -3900,9 +3902,12 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
                         sym = nullptr;
                     if (sym && find->isTemplate)
                     {
-                        sym = GetClassTemplate(sym, find->templateParams, false);
-                        if (sym)
-                            sym->tp = PerformDeferredInitialization(sym->tp, funcsp);
+                        auto tn = Type::MakeType(sym, find->templateParams);
+                        tn->InstantiateDeferred();
+                        if (!tn->IsDeferred())
+                            sym = tn->sp;
+                        else
+                            sym = nullptr;
                     }
                 }
             }
@@ -4148,6 +4153,17 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     int flags)
 {
     auto sp = sym->tp->BaseType()->sp;
+    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!templateNestingCount || instantiatingTemplate))
+    {
+        if (sym->tp->IsDeferred())
+        {
+            sym->tp->InstantiateDeferred();
+        }
+        else
+        {
+            sp->tp = sp->tp->InitializeDeferred();
+        }
+    }
     if (sp && sp->tp->IsStructured() && sp->sb && sp->sb->attribs.uninheritable.deprecationText)
         deprecateMessage(sym->tp->BaseType()->sp);
     Type* tp;
@@ -4205,11 +4221,33 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     tp = sym->tp->BaseType();
     if ((tp->IsPtr() && tp->array) || tp->IsRef())
         tp = tp->BaseType()->btp->BaseType();
-    if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && tp->IsStructured() && !sym->tp->IsRef() &&
-        !tp->syms)
+    if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && !sym->tp->IsRef() && !sym->sb->attribs.inheritable.isInline && !tp->syms)
     {
-        tp = PerformDeferredInitialization(tp, funcsp);
-        sym->tp = tp = tp->sp->tp;
+        int sz = sym->tp->IsPtr()? sym->tp->size / tp->size : -1;
+        tp->InstantiateDeferred();
+        if (tp->IsStructured())
+        {
+            auto tp1 = sym->tp->BaseType();
+            if (tp1->IsPtr() || tp1->IsRef())
+            {
+                tp1->btp = tp = tp->sp->tp;
+                if (sz != -1)
+                {
+                    sz = sz * tp->size;
+                    tp1 = sym->tp;
+                    while (tp1 != tp1->BaseType())
+                    {
+                        tp1->size = sz;
+                        tp1 = tp1->btp;
+                    }
+                    tp1->size = sz;
+                }
+            }
+            else
+            {
+                sym->tp = tp = tp->sp->tp;
+            }
+        }
     }
     if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && tp->IsStructured() && !sym->tp->IsRef() &&
         !tp->syms)
@@ -4271,10 +4309,10 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                             *tp3 = (*tp3)->sp->tp;
                         }
 
-                        if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && (*tp2)->IsStructured() &&
+                        if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ &&
                             !sym->tp->IsRef() && !(*tp2)->syms)
                         {
-                            *tp2 = PerformDeferredInitialization((*tp2), funcsp);
+                            (*tp2)->InstantiateDeferred();
                         }
                     }
                 }
@@ -4653,7 +4691,6 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             RequiresDialect::Feature(Dialect::cpp17, "Inline variables");
             sym->sb->attribs.inheritable.linkage4 = Linkage::none_;
             sym->sb->attribs.inheritable.isInlineData = true;
-            InsertInlineData(sym);
         }
         else
         {

@@ -2566,7 +2566,8 @@ int opt0(EXPRESSION** node)
                 }
                 if (sym)
                 {
-                    sym = PerformDeferredInitialization(sym->tp, nullptr)->BaseType()->sp;
+                    sym->tp = sym->tp->InitializeDeferred();
+                    sym = sym->tp->BaseType()->sp;
                     if (sym)
                     {
                         auto find = (*tsl).begin();
@@ -2584,6 +2585,10 @@ int opt0(EXPRESSION** node)
                                 sym = classdata((*find).name, spo, nullptr, false, false);
                                 if (sym == (SYMBOL*)-1)
                                     sym = nullptr;
+                            }
+                            if (sym)
+                            {
+                                sym->tp->InstantiateDeferred();
                             }
                             if (sym && (*find).asCall)
                             {
@@ -2634,7 +2639,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->second->type == TplType::int_)
+            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;

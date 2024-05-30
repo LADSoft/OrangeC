@@ -55,6 +55,8 @@
 #include "iblock.h"
 #include "iinline.h"
 #include "types.h"
+#include "mangle.h"
+#include "cpplookup.h"
 
 namespace Parser
 {
@@ -517,6 +519,7 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
 }
 static void GenInline(SYMBOL* sym) 
 {
+    InitializeFunctionArguments(sym);
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
     int n = PushTemplateNamespace(sym);

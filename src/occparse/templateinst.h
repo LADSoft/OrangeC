@@ -24,9 +24,10 @@
 
 namespace Parser
 {
+    extern int templateDeclarationLevel;
 Type* SolidifyType(Type* tp);
 std::list<TEMPLATEPARAMPAIR>* SolidifyTemplateParams(std::list<TEMPLATEPARAMPAIR>* in);
-std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations);
+std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations, bool unique = false);
 void SynthesizeQuals(Type*** last, Type** qual, Type*** lastQual);
 static EXPRESSION* copy_expression_data(EXPRESSION* exp);
 EXPRESSION* copy_expression(EXPRESSION* head);

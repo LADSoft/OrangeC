@@ -68,6 +68,7 @@ SYMBOL* lookupNonspecificCast(SYMBOL* sym, Type* tp);
 SYMBOL* lookupIntCast(SYMBOL* sym, Type* tp, bool implicit);
 SYMBOL* lookupArithmeticCast(SYMBOL* sym, Type* tp, bool implicit);
 SYMBOL* lookupPointerCast(SYMBOL* sym, Type* tp);
+void InitializeFunctionArguments(SYMBOL* sym, bool initialize = false);
 SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
     SYMBOL** userFunc, bool honorExplicit);
 void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref);

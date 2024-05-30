@@ -552,6 +552,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
     }
     if (sym)
     {
+        if (!(flags & _F_AMPERSAND))
+            sym->tp->InstantiateDeferred();
         browse_usage(sym, lex->data->linedata->fileindex);
         *tp = sym->tp;
         lex = getsym();
@@ -708,19 +710,19 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
         }
         else
         {
-            if (sym->tp->type == BasicType::templateparam_)
+            if (sym->tp->BaseType()->type == BasicType::templateparam_)
             {
 
-                if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) || sym->tp->templateParam->second->type == TplType::int_) &&
-                    sym->tp->templateParam->second->packed)
+                if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) || sym->tp->BaseType()->templateParam->second->type == TplType::int_) &&
+                    sym->tp->BaseType()->templateParam->second->packed)
                 {
                     if (packIndex >= 0)
                     {
                         std::list<TEMPLATEPARAMPAIR>::iterator itt, ite = itt;
-                        if (sym->tp->templateParam->second->byPack.pack)
+                        if (sym->tp->BaseType()->templateParam->second->byPack.pack)
                         {
-                            itt = sym->tp->templateParam->second->byPack.pack->begin();
-                            ite = sym->tp->templateParam->second->byPack.pack->end();
+                            itt = sym->tp->BaseType()->templateParam->second->byPack.pack->begin();
+                            ite = sym->tp->BaseType()->templateParam->second->byPack.pack->end();
                             int i;
                             for (i = 0; i < packIndex && itt != ite; i++, ++itt);
                         }
@@ -1012,7 +1014,11 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         if (((*exp) = GetConstMakeExpression(sym)))
                             break;
                         if (sym->sb->attribs.inheritable.isInlineData)
+                        {
                             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                            Optimizer::SymbolManager::Get(sym)->tp = Optimizer::SymbolManager::Get(sym->tp);
+                            InsertInlineData(sym);
+                        }
                     case StorageClass::external_: {
                         tagNonConst(funcsp, sym->tp);
                         SYMBOL* tpl = sym;
@@ -1067,12 +1073,12 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
         }
         else
         {
-            if (sym->tp->type == BasicType::templateparam_)
+            if (sym->tp->BaseType()->type == BasicType::templateparam_)
             {
-                if (*exp && (*exp)->type != ExpressionNode::packedempty_ && !sym->tp->templateParam->second->packed)
+                if (*exp && (*exp)->type != ExpressionNode::packedempty_ && !sym->tp->BaseType()->templateParam->second->packed)
                 {
-                    if (sym->tp->templateParam->second->type == TplType::int_)
-                        *tp = sym->tp->templateParam->second->byNonType.tp;
+                    if (sym->tp->BaseType()->templateParam->second->type == TplType::int_)
+                        *tp = sym->tp->BaseType()->templateParam->second->byNonType.tp;
                     else
                         *tp = &stdint;
                     if (sym->sb && sym->sb->templateLevel && sym->sb->storage_class != StorageClass::type_ && !ismember(sym) &&
@@ -1354,26 +1360,10 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
     }
     if (MATCHKW(lex, Keyword::pointsto_))
     {
-        Type* nesting[100];
-        int n = 0;
         points = true;
         do
         {
-            if ((*tp)->IsStructured())
-            {
-                Type* x = (*tp)->BaseType();
-                int i;
-                for (i = 0; i < n; i++)
-                    if (nesting[i] == x)
-                    {
-                        break;
-                    }
-                nesting[n++] = x;
-                if (n >= sizeof(nesting) / sizeof(nesting[0]))
-                {
-                    break;
-                }
-            }
+            (*tp) = (*tp)->InitializeDeferred();
         } while ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&
                  insertOperatorFunc(ovcl_pointsto, Keyword::pointsto_, funcsp, tp, exp, nullptr, nullptr, nullptr, flags));
         typein = *tp;
@@ -1383,7 +1373,10 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             *tp = (*tp)->btp;
         }
     }
-    *tp = PerformDeferredInitialization(*tp, funcsp);
+    else
+    {
+        (*tp) = (*tp)->InitializeDeferred();
+    }
     if (MATCHKW(lex, Keyword::dot_) || MATCHKW(lex, Keyword::pointsto_))
         lex = getsym();
     if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::complx_))
@@ -1399,31 +1392,35 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         {
             error(ERR_TYPE_NAME_EXPECTED);
         }
-        else if (!(*tp)->ExactSameType(tp1))
+        else 
         {
-            if (!templateNestingCount)
-                error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
-        }
-        else if ((*tp)->IsStructured())
-        {
-            // destructor
-            SYMBOL* sp2 = search(((*tp)->BaseType()->sp)->tp->syms, overloadNameTab[CI_DESTRUCTOR]);
-            if (sp2)
+            tp1->InstantiateDeferred();
+            if (!(*tp)->ExactSameType(tp1))
             {
-                if (flags && _F_IS_NOTHROW)
-                    inNothrowHandler++;
-                callDestructor((*tp)->BaseType()->sp, nullptr, exp, nullptr, true, false, false, !points);
-                if (flags && _F_IS_NOTHROW)
-                    inNothrowHandler--;
+                if (!templateNestingCount)
+                    error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
             }
-            if (needkw(&lex, Keyword::openpa_))
-                needkw(&lex, Keyword::closepa_);
-        }
-        else
-        {
-            // psuedo-destructor, no further activity required.
-            if (needkw(&lex, Keyword::openpa_))
-                needkw(&lex, Keyword::closepa_);
+            else if ((*tp)->IsStructured())
+            {
+                // destructor
+                SYMBOL* sp2 = search(((*tp)->BaseType()->sp)->tp->syms, overloadNameTab[CI_DESTRUCTOR]);
+                if (sp2)
+                {
+                    if (flags && _F_IS_NOTHROW)
+                        inNothrowHandler++;
+                    callDestructor((*tp)->BaseType()->sp, nullptr, exp, nullptr, true, false, false, !points);
+                    if (flags && _F_IS_NOTHROW)
+                        inNothrowHandler--;
+                }
+                if (needkw(&lex, Keyword::openpa_))
+                    needkw(&lex, Keyword::closepa_);
+            }
+            else
+            {
+                // psuedo-destructor, no further activity required.
+                if (needkw(&lex, Keyword::openpa_))
+                    needkw(&lex, Keyword::closepa_);
+            }
         }
         *tp = &stdvoid;
     }
@@ -1807,18 +1804,21 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
         }
         else
         {
-            if ((*exp)->type == ExpressionNode::callsite_ && (*exp)->v.func->templateParams)
+            if ((*exp)->type == ExpressionNode::callsite_)
             {
-                sp = detemplate(sp, (*exp)->v.func, nullptr);
-                if (!sp)
+                if ((*exp)->v.func->templateParams)
                 {
-                    sp = tp->syms->front();
-                }
-                else
-                {
-                    if (sp->sb->templateLevel && !templateNestingCount && sp->templateParams)
+                    sp = detemplate(sp, (*exp)->v.func, nullptr);
+                    if (!sp)
                     {
-                        sp = TemplateFunctionInstantiate(sp, false);
+                        sp = tp->syms->front();
+                    }
+                    else
+                    {
+                        if (sp->sb->templateLevel && !templateNestingCount && sp->templateParams)
+                        {
+                            sp = TemplateFunctionInstantiate(sp, false);
+                        }
                     }
                 }
             }
@@ -1929,7 +1929,6 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                 {
                     error(ERR_ASSIGN_ONLY_MSIL_ARRAY_ELEMENTS);
                 }
-                *tp = PerformDeferredInitialization(*tp, funcsp);
                 return lex;
             }
             else if ((*tp)->IsPtr() && !(*tp)->IsFunctionPtr())
@@ -1960,8 +1959,6 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                 {
                     EXPRESSION* exp1 = nullptr;
                     *tp = (*tp)->BaseType()->btp;
-                    if ((*tp)->IsStructured())
-                        *tp = PerformDeferredInitialization(*tp, funcsp);
                     cast(&stdint, &expr2);
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
@@ -2082,7 +2079,6 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
         errskim(&lex, skim_closebr);
     }
     skip(&lex, Keyword::closebr_);
-    *tp = PerformDeferredInitialization(*tp, funcsp);
     return lex;
 }
 void checkArgs(CallSite* params, SYMBOL* funcsp)
@@ -3378,7 +3374,6 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     bool sameType = false;
                     EXPRESSION* temp = p->exp;
                     Type* tpx = p->tp;
-                    sym->tp = PerformDeferredInitialization(sym->tp, nullptr);
                     if (!tpx)
                         tpx = sym->tp;
                     if (tpx->IsRef())
@@ -3524,7 +3519,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     }
                     else
                     {
-                        Type* ctype = sym->tp = PerformDeferredInitialization(sym->tp, nullptr)->BaseType();
+                        Type* ctype = sym->tp = sym->tp->InitializeDeferred()->BaseType();
                         EXPRESSION* consexp = anonymousVar(StorageClass::auto_, ctype);  // StorageClass::parameter_ to push it...
                         SYMBOL* esp = consexp->v.sp;
                         EXPRESSION* paramexp = p->exp;
@@ -4115,7 +4110,8 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             sym = nullptr;
             if (sp)
             {
-                sp = PerformDeferredInitialization(sp->tp, nullptr)->BaseType()->sp;
+                sp->tp->InstantiateDeferred();
+                sp = sp->tp->sp;
                 auto find = (*tsl).begin();
                 ++find;
                 ++find;
@@ -4132,7 +4128,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         if (sp == (SYMBOL*)-1)
                             sp = nullptr;
                     }
-                    if (sp && sp->sb->access != AccessLevel::public_)
+                    if (sp && sp->tp->type != BasicType::aggregate_ && sp->sb->access != AccessLevel::public_)
                     {
                         sp = nullptr;
                         break;
@@ -4211,6 +4207,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
     {
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
     }
+
     if (funcparams->astemplate && argumentNesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
@@ -7132,7 +7129,6 @@ static LexList* expression_deref(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRES
                     *exp = MakeExpression(ExpressionNode::lvalue_, *exp);
                 }
                 *tp = btp3;
-                *tp = PerformDeferredInitialization(*tp, funcsp);
             }
             else
             {
@@ -7475,6 +7471,7 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                 }
                 else
                 {
+                    (*tp)->InstantiateDeferred();
                     (*tp)->used = true;
                     needkw(&lex, Keyword::closepa_);
                     checkauto(*tp, ERR_AUTO_NOT_ALLOWED);

@@ -228,8 +228,10 @@ static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
             auto arg = Allocate<Argument>();
             arg->tp = tp;
             if (initialize)
-                arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-//            arg->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
+            {
+                arg->tp->InstantiateDeferred();
+                arg->tp->InitializeDeferred();
+            }
             (*lptr)->push_back(arg);
         }
         else
@@ -247,8 +249,10 @@ static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
                             auto arg = Allocate<Argument>();
                             arg->tp = tpl.second->byClass.val;
                             if (initialize)
-                                arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-//                            arg->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
+                            {
+                                arg->tp->InstantiateDeferred();
+                                arg->tp->InitializeDeferred();
+                            }
                             (*lptr)->push_back(arg);
                         }
                     }
@@ -260,8 +264,10 @@ static LexList* getTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
                     auto arg = Allocate<Argument>();
                     arg->tp = tp->templateParam->second->byClass.val;
                     if (initialize)
-                        arg->tp = PerformDeferredInitialization(arg->tp, funcsp);
-//                    arg->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
+                    {
+                        arg->tp->InstantiateDeferred();
+                        arg->tp->InitializeDeferred();
+                    }
                     (*lptr)->push_back(arg);
                 }
             }
@@ -782,6 +788,10 @@ static bool is_constructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** 
                         auto spx = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, nullptr, false, false,
                                                          _F_SIZEOF | _F_RETURN_DELETED);
                         rv = spx && spx->sb->access == AccessLevel::public_ && !spx->sb->deleted;
+                    }
+                    else if (tp3->BaseType()->nullptrType)
+                    {
+                        rv = 1;
                     }
                     else
                     {
@@ -1499,23 +1509,29 @@ static Type* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
     auto ite = args->end();
     if (it->second->type == TplType::new_)
         ++it;
+    EXPRESSION* e;
     if (it->second->packed)
     {
         if (!it->second->byPack.pack)
             return &stdany;
-        ite = it->second->byPack.pack->end();
-        it = it->second->byPack.pack->begin();
-        if (it->second->type == TplType::new_)
-            ++it;
+        auto it1 = it->second->byPack.pack->begin();
+        if (it1->second->type == TplType::new_)
+            ++it1;
+        e = it1->second->byNonType.val;
+        if (!e)
+            e = it1->second->byNonType.dflt;
     }
-    auto e = it->second->byNonType.val;
-    if (!e)
-        e = it->second->byNonType.dflt;
+    else
+    {
+        e = it->second->byNonType.val;
+        if (!e)
+            e = it->second->byNonType.dflt;
+    }
     if (e && isintconst(e))
     {
         int n = e->v.i;
         ++it;
-        if (it->second->packed)
+        if (it != ite && it->second->packed)
         {
             if (!it->second->byPack.pack)
                 return &stdany;

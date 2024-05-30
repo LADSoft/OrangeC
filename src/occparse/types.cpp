@@ -433,6 +433,41 @@ bool Type::IsArray()
         return tp->IsPtr() && tp->BaseType()->array;
     return false;
 }
+bool Type::IsDeferred(bool sym)
+{
+    Type* tp = this;
+    tp = tp->BaseType();
+    if (tp && tp->type == BasicType::templatedeferredtype_)
+        return true;
+    if (sym)
+    {
+        if (tp->IsStructured() && tp->sp->sb->templateLevel)
+        {
+            std::stack<SYMBOL*> stk;
+            stk.push(tp->sp);
+            while (!stk.empty())
+            {
+                auto sp = stk.top();
+                stk.pop();
+                if (sp->templateParams)
+                {
+                    for (auto&& tpl : *sp->templateParams)
+                    {
+                        if (tpl.second->type == TplType::typename_ && tpl.second->byClass.val)
+                        {
+                            if (tpl.second->byClass.val->BaseType()->type == BasicType::templatedeferredtype_)
+                                return true;
+                            if (tpl.second->byClass.val->IsStructured())
+                                stk.push(tpl.second->byClass.val->BaseType()->sp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 bool Type::IsUnion()
 {
     Type* tp = this;
@@ -596,6 +631,111 @@ Type* Type::InitializerListType()
     }
     return rtp;
 }
+bool Type::InstantiateDeferred(bool noErr)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+
+        auto tp = this->BaseType();
+        while (tp && tp->type != BasicType::templatedeferredtype_)
+            tp = tp->btp->BaseType();
+        if (tp)
+        {
+            bool asTypeDef = false;
+            TemplateArgInstantiateDeferred(tp->templateArgs, true);
+            SYMBOL* sym;
+            if (tp->sp->sb && tp->sp->sb->storage_class == StorageClass::typedef_ &&
+                    tp->sp->sb->templateLevel)
+            {
+                asTypeDef = true;
+                sym = GetTypeAliasSpecialization(tp->sp, tp->templateArgs);
+            }
+            else
+            {
+                sym = GetClassTemplate(tp->sp, tp->templateArgs, noErr);
+            }
+            auto args = sym->templateParams;
+            if (!args && tp->sp->sb->parentClass)
+            {
+                args = tp->sp->sb->parentClass->templateParams;
+            }
+            if (args && allTemplateArgsSpecified(sym, sym->templateParams, false, true))
+            {
+                auto old = sym->templateParams;
+                if (!asTypeDef)
+                {
+                    auto sym1 = sym;
+                    sym1->templateParams = args;
+                    sym = TemplateClassInstantiateInternal(sym, nullptr, false);
+                    sym1->templateParams = old;
+                }
+            }
+            *tp = *sym->tp;
+            this->UpdateRootTypes();
+            return true;
+        }
+        else if (this->IsStructured() && strchr(this->BaseType()->sp->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
+        {
+            TemplateArgInstantiateDeferred(this->BaseType()->sp->templateParams);
+            this->InitializeDeferred();
+            SetLinkerNames(this->BaseType()->sp, Linkage::cpp_);
+            return true;
+        }
+    }
+    return false;
+}
+Type* Type::InitializeDeferred()
+{
+    Type* tp = this;
+    if (!tp)
+        return &stdany;
+    Type** tpx = &tp;
+    if ((*tpx)->IsRef())
+        tpx = &(*tpx)->BaseType()->btp;
+    Type** tpx1 = tpx;
+    while ((*tpx)->btp && !(*tpx)->IsFunction())
+        tpx = &(*tpx)->btp;
+    if (Optimizer::cparams.prm_cplusplus && !inTemplateType && (*tpx)->IsStructured())
+    {
+        SYMBOL* sym = (*tpx)->BaseType()->sp;
+        if (sym->templateParams)
+            for (auto&& tpl : *sym->templateParams)
+                if (tpl.second->usedAsUnpacked)
+                    return tp;
+        if (declaringTemplate(sym))
+        {
+            if (!sym->sb->instantiated)
+            {
+                *tpx = sym->tp;
+            }
+        }
+        else if (sym->sb->templateLevel && (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != Linkage::virtual_) &&
+            sym->templateParams && allTemplateArgsSpecified(sym, sym->templateParams, false, true))
+        {
+            sym = TemplateClassInstantiateInternal(sym, nullptr, false);
+            if (sym)
+                *tpx = sym->tp;
+        }
+        else if (!sym->sb->templateLevel && sym->sb->parentClass && sym->sb->parentClass->sb->templateLevel &&
+            (!sym->sb->instantiated || sym->sb->attribs.inheritable.linkage4 != Linkage::virtual_) &&
+            sym->sb->parentClass->templateParams &&
+            allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams, false, true))
+        {
+            std::list<TEMPLATEPARAMPAIR>* tpl = sym->sb->parentClass->templateParams;
+            sym->templateParams = tpl;
+            sym = TemplateClassInstantiateInternal(sym, nullptr, false);
+            sym->templateParams = nullptr;
+            if (sym)
+                *tpx = sym->tp;
+        }
+        else if (!sym->sb->instantiated || ((*tpx)->size < sym->tp->size && sym->tp->size != 0))
+        {
+            *tpx = sym->tp;
+        }
+        tp->UpdateRootTypes();
+    }
+    return tp;
+}
 Type* Type::MakeType(Type& tp, BasicType type, Type* base)
 {
     tp.type = type;
@@ -652,6 +792,14 @@ Type* Type::MakeType(BasicType type, Type* base)
 {
     Type* rv = Allocate<Type>();
     return Type::MakeType(*rv, type, base);
+}
+Type* Type::MakeType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
+{
+    Type* rv = Allocate<Type>();
+    rv = Type::MakeType(*rv, BasicType::templatedeferredtype_, nullptr);
+    rv->sp = sp;
+    rv->templateArgs = args;
+    return rv;
 }
 Type* Type::CopyType(bool deep, std::function<void(Type*&, Type*&)> callback)
 {
@@ -1572,13 +1720,14 @@ void TypeGenerator::ResolveVLAs(Type* tp)
 Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
     bool msil)
 {
+    if (tp)
+        tp->InstantiateDeferred();
     EXPRESSION* constant = nullptr;
     Type* tpc = nullptr;
     Type* typein = tp;
     bool unsized = false;
     bool empty = false;
     lex = getsym(); /* past '[' */
-    tp = PerformDeferredInitialization(tp, funcsp);
     *quals = TypeGenerator::PointerQualifiers(lex, *quals, true);
     if (MATCHKW(lex, Keyword::star_))
     {
@@ -1635,7 +1784,8 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
             tp = TypeGenerator::ArrayType(lex, funcsp, tp, storage_class, vla, quals, false, msil);
         }
         tpp = Type::MakeType(BasicType::pointer_, tp);
-        tpp->btp->msil = msil;  // tag the base type as managed, e.g. so we can't take address of it
+        if (tpp->btp)
+            tpp->btp->msil = msil;  // tag the base type as managed, e.g. so we can't take address of it
         tpp->array = true;
         tpp->unsized = unsized;
         tpp->msil = msil;
@@ -1663,6 +1813,7 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
                 {
                     tpp->size = tpp->btp->BaseType()->size;
                     tpp->size *= constant->v.i;
+                    tpp->elements = constant->v.i;
                     tpp->esize = MakeIntExpression(ExpressionNode::c_i_, constant->v.i);
                 }
                 else
@@ -1733,7 +1884,7 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
             {
                 TypeGenerator::ResolveVLAs(tp);
             }
-            else if (tp->IsPtr() && tp->btp->vla)
+            else if (tp->IsPtr() && tp->btp && tp->btp->vla)
             {
                 tp->vla = true;
             }
@@ -2871,17 +3022,18 @@ founddecltype:
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
                         if (!parsingTrailingReturnOrUsing)
                         {
-                            sp1 = GetTypeAliasSpecialization(sp, lst);
-                            if (sp1)
+                            if (templateNestingCount && !instantiatingTemplate)
                             {
-                                sp = sp1;
-                                if (/*!inUsing || */ !templateNestingCount)
+                                sp1 = GetTypeAliasSpecialization(sp, lst);
+                                if (sp1)
                                 {
-                                    if (sp->tp->IsStructured())
-                                        sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
-                                    else
-                                        sp->tp = SynthesizeType(sp->tp, nullptr, false);
+                                    sp = sp1;
                                 }
+                                tn = sp->tp;
+                            }
+                            else
+                            {
+                                tn = Type::MakeType(sp, lst);
                             }
                         }
                         else
@@ -2891,13 +3043,12 @@ founddecltype:
                             sp->sb->mainsym = oldsp;
                             sp->tp = sp->tp->CopyType();
                             sp->tp->sp = sp;
-                            sp->templateParams = lst;
-                            sp->templateParams->push_front(TEMPLATEPARAMPAIR());
-                            sp->templateParams->front().second = Allocate<TEMPLATEPARAM>();
-                            sp->templateParams->front().second->type = TplType::new_;
+                            auto templateParams = lst;
+                            templateParams->push_front(TEMPLATEPARAMPAIR());
+                            templateParams->front().second = Allocate<TEMPLATEPARAM>();
+                            templateParams->front().second->type = TplType::new_;
+                            tn = Type::MakeType(sp, templateParams);
                         }
-
-                        tn = sp->tp;
                         foundsomething = true;
                     }
                     else
@@ -2953,18 +3104,25 @@ founddecltype:
                                     lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
                                     if (sp1)
                                     {
-                                        sp1 = GetClassTemplate(sp1, lst, !templateErr);
-                                        tn = nullptr;
-                                        if (sp1)
+                                        if (templateNestingCount && !instantiatingTemplate)
                                         {
-                                            if (sp1->tp->type == BasicType::typedef_)
+                                            sp1 = GetClassTemplate(sp1, lst, !templateErr);
+                                            tn = nullptr;
+                                            if (sp1)
                                             {
-                                                tn = SynthesizeType(sp1->tp, nullptr, false);
+                                                if (sp1->tp->type == BasicType::typedef_)
+                                                {
+                                                    tn = SynthesizeType(sp1->tp, nullptr, false);
+                                                }
+                                                else
+                                                {
+                                                    tn = sp1->tp;
+                                                }
                                             }
-                                            else
-                                            {
-                                                tn = sp1->tp;
-                                            }
+                                        }
+                                        else
+                                        {
+                                            tn = Type::MakeType(sp1, lst);
                                         }
                                     }
                                     else if (templateNestingCount)
@@ -3115,13 +3273,20 @@ founddecltype:
                             {
                                 if (sp->sb->parentTemplate)
                                     sp = sp->sb->parentTemplate;
-
                                 lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                                sp = GetClassTemplate(sp, lst, !templateErr);
-                                if (sp)
+                                if (templateNestingCount && !instantiatingTemplate)
                                 {
-                                    if (sp && (!templateNestingCount || inTemplateBody))
-                                        sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
+                                    sp = GetClassTemplate(sp, lst, !templateErr);
+                                    if (sp)
+                                    {
+                                        if (sp && (!templateNestingCount || inTemplateBody))
+                                            sp->tp = sp->tp->InitializeDeferred();
+                                    }
+                                }
+                                else
+                                {
+                                    tn = Type::MakeType(sp, lst);
+                                    sp = nullptr;
                                 }
                             }
                             else
@@ -3154,7 +3319,7 @@ founddecltype:
                             }
                             if (sp->tp->type == BasicType::typedef_)
                             {
-                                tn = PerformDeferredInitialization(sp->tp, funcsp);
+                                tn = sp->tp;
                                 if (!Optimizer::cparams.prm_cplusplus)
                                     while (tn != tn->BaseType()&& tn->type != BasicType::va_list_)
                                         tn = tn->btp;
@@ -3166,9 +3331,16 @@ founddecltype:
                             if (!templateNestingCount && tn->IsStructured() && tn->BaseType()->sp->sb->templateLevel &&
                                 !tn->BaseType()->sp->sb->instantiated)
                             {
-                                sp = GetClassTemplate(tn->BaseType()->sp, tn->BaseType()->sp->templateParams, false);
-                                if (sp)
-                                    tn = PerformDeferredInitialization(sp->tp, funcsp);
+                                if (templateNestingCount && !instantiatingTemplate)
+                                {
+                                    sp = GetClassTemplate(tn->BaseType()->sp, tn->BaseType()->sp->templateParams, false);
+                                    if (sp)
+                                        tn = sp->tp;
+                                }
+                                else
+                                {
+                                    tn = Type::MakeType(tn->BaseType()->sp, tn->BaseType()->sp->templateParams);
+                                }
                             }
                             //                        if (sp->sb->parentClass && !isAccessible(sp->sb->parentClass, ssp ? ssp :
                             //                        sp->sb->parentClass, sp, funcsp, ssp == sp->sb->parentClass ? AccessLevel::protected_ :
@@ -3206,24 +3378,15 @@ founddecltype:
             }
             else if (strSym && strSym->tp->BaseType()->type == BasicType::templateselector_)
             {
-                //                if (!templateNestingCount && !inTemplateSpecialization && allTemplateArgsSpecified(strSym,
-                //                strSym->templateParams))
-                //                    tn = SynthesizeType(strSym->tp, nullptr, false);
-                //                else
-                //                    tn = nullptr;
                 if (!tn || tn->type == BasicType::any_ || tn->BaseType()->type == BasicType::templateparam_)
                 {
                     SYMBOL* sym = (*strSym->tp->BaseType()->sp->sb->templateSelector)[1].sp;
-                    if ((!templateNestingCount || instantiatingTemplate) && sym->tp->IsStructured() && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
+                    if (!isTypedef && (!templateNestingCount || instantiatingTemplate) && sym->tp->IsStructured() && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
                     {
 
                         errorNotMember(sym, nsv ? nsv->front() : nullptr, (*strSym->tp->sp->sb->templateSelector)[2].name);
                     }
                     tn = strSym->tp;
-                }
-                else
-                {
-                    tn = PerformDeferredInitialization(tn, funcsp);
                 }
                 foundsomething = true;
                 lex = getsym();
@@ -3236,7 +3399,7 @@ founddecltype:
             }
             else if (strSym && strSym->sb->templateLevel && !templateNestingCount)
             {
-                tn = PerformDeferredInitialization(strSym->tp, funcsp);
+                tn = strSym->tp;
                 enclosingDeclarations.Add(tn->sp);
                 sp = classsearch(lex->data->value.s.a, false, false, true);
                 if (sp)
@@ -3555,10 +3718,6 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 }
                 tp1 = TypeGenerator::BeforeName(lex, funcsp, tp1, &spi, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3,
                     nullptr, false, false, false, false);
-                if (!templateNestingCount && !structLevel)
-                {
-                    tp1 = PerformDeferredInitialization(tp1, funcsp);
-                }
                 if (!spi)
                 {
                     spi = makeID(StorageClass::parameter_, tp1, nullptr, NewUnnamedID());

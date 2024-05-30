@@ -1201,7 +1201,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
             case StatementNode::return_:
                 if (stmt->select)
                 {
-                    auto node1 = stmt->select;
+                    auto node1 = copy_expression(stmt->select);
                     node1 = EvaluateExpression(node1, ths, node->v.func->returnEXP, true);
                     optimize_for_constants(&node1);
 

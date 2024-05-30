@@ -57,8 +57,13 @@ struct Type
     /* local symbol tables */
     SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
     SymbolTable<struct sym>* tags; /* Symbol table for nested types*/
-    TEMPLATEPARAMPAIR* templateParam;
+    union
+    {
+        TEMPLATEPARAMPAIR* templateParam;
+        std::list<TEMPLATEPARAMPAIR> *templateArgs;
+    };
     int alignment;                /* alignment pref for this structure/class/union   */
+    int elements;         /* number of elements or zero for an array whose size isn't known at compile time */
     EXPRESSION* esize;            /* enode version of size */
     Type* etype;            /* type of size field  when size isn't constant */
     int vlaindex;                 /* index into the vararray */
@@ -69,7 +74,7 @@ struct Type
     {
         void* aa = this;
         if (aa)
-        return this->rootType;
+            return this->rootType;
         return nullptr;
     }
     void UpdateRootTypes();
@@ -92,6 +97,7 @@ struct Type
     bool IsVoidPtr();
     bool IsArray();
     bool IsUnion();
+    bool IsDeferred(bool sym = false);
     bool IsRef();
     bool IsPtr();
     bool IsFunction();
@@ -102,6 +108,7 @@ struct Type
     bool IsStructuredMath(Type* tp2 = nullptr);
     bool IsSmallInt();
     bool IsLargeEnum();
+    bool IsDiffered();
     void ToString(char* buf);
     bool SameExceptionType(Type* typ);
     bool SameCharType(Type* tp);
@@ -113,8 +120,11 @@ struct Type
     bool IsConstWithArr();
     bool SameIntegerType(Type* t2);
     Type* InitializerListType();
+    bool InstantiateDeferred(bool noErr= false);
+    Type* InitializeDeferred();
     static Type* MakeType(Type& tp, BasicType type, Type* base = nullptr);
     static Type* MakeType(BasicType type, Type* base = nullptr);
+    static Type* MakeType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
     static bool CompareTypes(Type* typ1, Type* typ2, int exact);
 protected:
     static void ToString(char* buf, Type* typ);

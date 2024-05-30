@@ -76,7 +76,6 @@ int classRefCount(SYMBOL* base, SYMBOL* derived);
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
 void deferredCompileOne(SYMBOL* cur);
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
-Type* PerformDeferredInitialization(Type* tp, SYMBOL* funcsp);
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);

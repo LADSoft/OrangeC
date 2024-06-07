@@ -242,11 +242,9 @@ bool PreProcessor::GetLine(std::string& line)
                                         {
                                             if (!pragma.Check(token, line))
                                             {
-                                                if (!ppEmbed.Check(token, line))
-                                                {
-                                                    if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
+                                                if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
+                                                    if (!ppEmbed.Check(token, line))
                                                         Errors::Error("Unknown preprocessor directive");
-                                                }
                                             }
                                         }
                                     }

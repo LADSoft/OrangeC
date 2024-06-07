@@ -4,38 +4,28 @@
 #include "Token.h"
 #include "ppkw.h"
 #include <string>
-#include <stdio.h>
 #include <iostream>
 #include <initializer_list>
+#include <typeinfo>
+#include <array>
+#include <functional>
+#include <strstream>
+#include <cstdio>
 std::function<void(std::vector<embeder_size>)> embeder::embed_elements;
 
-enum embed_parser_kw
-{
-    // (
-    lparen,
-    // )
-    rparen,
-    // ""
-    doublequote,
-    // '
-    singlequote,
-};
-KeywordTable<embed_parser_kw> hasher = {{"(", embed_parser_kw::lparen},
-                                        {")", embed_parser_kw::rparen},
-                                        {"\"", embed_parser_kw::doublequote},
-                                        {"'", embed_parser_kw::singlequote}};
-enum handler_tokens
-{
-    prefix,
-    postfix,
-    limit,
-    unknown
-};
+KeywordHash hasher = {{"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
+                      {"~", kw::bcompl},      {"*", kw::star},    {"/", kw::divide}, {"%", kw::mod},   {"<<", kw::leftshift},
+                      {">>", kw::rightshift}, {">", kw::gt},      {"<", kw::lt},     {">=", kw::geq},  {"<=", kw::leq},
+                      {"==", kw::eq},         {"!=", kw::ne},     {"|", kw::bor},    {"&", kw::band},  {"^", kw::bxor},
+                      {"||", kw::lor},        {"&&", kw::land},   {"?", kw::hook},   {":", kw::colon}, {",", kw::comma},
+                      {"::", kw::coloncolon}};
+
+std::array<std::string, 3> ourKnownValues = {"prefix", "postfix", "limit"};
 
 std::tuple<std::vector<embeder_size>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info info)
 {
     std::vector<embeder_size> next_thing = {};
-    if (!has_embed(info))
+    if (!has_embed(info, true))
     {
         return {next_thing, EmbedReturnValue::EMBED_NOT_FOUND};
     }
@@ -69,15 +59,31 @@ std::tuple<std::vector<embeder_size>, EmbedReturnValue> embeder::EmbedFile(std::
     return {next_thing, has_embed(info)};
 }
 
-EmbedReturnValue embeder::has_embed(embeder_info info)
+EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
 {
     int discard;
-    EmbedReturnValue found = EmbedReturnValue::EMBED_NOT_FOUND;
     bool is_system = info.is_system;
     auto file = info.filename;
     bool found_system = false;
     std::string fil = includer.FindFile(is_system, file, false, discard, found_system);
-    if (fil != "")
+    bool FoundInvalid = false;
+    if (throw_error)
+    {
+
+        for (auto&& value : info.mapped_values)
+        {
+            auto& val = std::find(ourKnownValues.begin(), ourKnownValues.end(), value.first);
+            if (val == ourKnownValues.end())
+            {
+                // std::format C++23 my god
+                char buf[8192];
+                _snprintf_s(buf, 8192, "Invalid embed parameter: %s", value.first.c_str());
+                Errors::ErrorWithLine(std::string(buf, strlen(buf)), Errors::GetFileName(), Errors::GetErrorLine());
+                FoundInvalid = true;
+            }
+        }
+    }
+    if (fil != "" && !FoundInvalid)
     {
         if (info.limit <= 0)
         {
@@ -106,7 +112,7 @@ bool embeder::Check(kw token, std::string& args)
             thing.resize(thing.length() - 1);
         }
         this->nextLine = thing;
-        return std::get<1>(ret) != 0;
+        return true;
     }
     return false;
 }
@@ -131,22 +137,171 @@ bool embeder::GetLine(std::string& line, int& lineno)
     }
     return false;
 }
+std::array<char, 3> leftTokens = {'(', '{', '['};
+std::array<char, 3> rightTokens = {']', '}', ')'};
+// copied from a newer libcxx because this only gets added in C++20 because the C++ standards committee never thought to add it in
+// over 20 years
+bool ends_with(const std::string& str, const std::string& ending)
+{
+    return str.size() >= ending.size() && str.compare(str.size() - ending.size(), std::string::npos, ending) == 0;
+}
+bool starts_with(const std::string& str, const std::string& ending)
+{
+    return str.size() >= ending.size() && str.compare(0, ending.size(), ending) == 0;
+}
+std::string strip_underscores(const std::string& str)
+{
+    if (starts_with(str, "__") && ends_with(str, "__"))
+    {
+        return str.substr(2, str.size() - 4);
+    }
+    return str;
+}
 
 embeder_info embeder::GetEmbedFromLine(const std::string& line)
 {
     embeder_info info;
-    Tokenizer<embed_parser_kw> tokenizer(line, &hasher);
+    embeder_info blank_info;
     // Our token state machine!
     // Default unless we support an extension, don't know what that extension will look like yet though...
     info.bytes = 1;
     info.is_system = false;
     bool system_file = false;
-    info.postfix = {};
-    info.prefix = {};
-    info.filename = this->includer.ParseName(line, info.is_system);
+    info.postfix = std::vector<embeder_size>();
+    info.prefix = std::vector<embeder_size>();
+    std::string int_line = line;
+    definer.Process(int_line);
+    info.filename = this->includer.ParseName(int_line, info.is_system);
 
-    for (const Token* tk = tokenizer.Next(); tk; tk = tokenizer.Next())
+    std::string temp_string_for_tokenizer(int_line);
+    auto loc = temp_string_for_tokenizer.find(info.filename);
+    // Grabs the < or " characters,
+    char to_find = info.is_system ? '<' : '"';
+    auto first_char = temp_string_for_tokenizer.rfind(to_find, loc);
+    auto last_char = temp_string_for_tokenizer.find_first_of("\">", loc);
+    temp_string_for_tokenizer.erase(first_char, last_char);
+    //
+    //
+    Tokenizer<kw> tokenizer(temp_string_for_tokenizer, &hasher);
+    enum ParsingState
     {
+        IdentifierParsing,
+        AdditionalIdentifierParsing,
+        BalancedParsing
+    } state = IdentifierParsing;
+    std::stack<char> TokenBalancer;
+    std::string identifierString;
+    bool join_next_identifier = false;
+    std::vector<std::string> items;
+    for (const Token* tk = tokenizer.Next(); tk && !tk->IsEnd(); tk = tokenizer.Next())
+    {
+        // Constructions we don't error on
+        // identifier identifier(list, list1, list2...) identifier::identifier identifier::identifier(list, list1, list2...)
+        // Don't forget, each identifier can also look like: __identifier__ because reasons
+        // Deal with this
+
+        // Basic way of joining identifiers where possible, theoretically we should deal with this the same way we deal with C23
+        // attributes, but for now since we don't do extensions I just want to throw them into an unordered_map and mass reject it
+        // if we're not doing a has_embed
+        if (state == IdentifierParsing)
+        {
+            // Gotta love state machines!
+            // We get kicked back here from AdditionalIdentifierParsing so we reduce the logic, 
+            // this just is recursive depth search (kind of) in a "stackless" manner to generate the total value
+            if (!identifierString.empty() && tk->IsKeyword())
+            {
+                switch (tk->GetKeyword())
+                {
+                    case kw::coloncolon:
+                        identifierString += tk->GetChars();
+                        state = AdditionalIdentifierParsing;
+                        break;
+                    case kw::openpa:
+                        TokenBalancer.push('(');
+                        state = BalancedParsing;
+                        break;
+                    default:
+                        // Wheeeeeeeeee, would be nice if tokens also included position information so I could print the exact
+                        // keyword here
+                        Errors::ErrorWithLine("Syntax error: Incorrect value for a keyword in this context: ",
+                                              Errors::GetFileName(), Errors::GetErrorLine());
+                        break;
+                }
+            }
+            else if (tk->IsIdentifier())
+            {
+                if (!identifierString.empty())
+                {
+                    // Initialize this where possible
+                    auto val = info.mapped_values.find(identifierString);
+                    if (val == info.mapped_values.end())
+                    {
+                        info.mapped_values[identifierString] = std::vector<std::string>();
+                        identifierString = "";
+                    }
+                    else
+                    {
+                        Errors::ErrorWithLine("Attempted to set the same identifier twice", Errors::GetFileName(),
+                                              Errors::GetErrorLine());
+                    }
+                }
+                std::string my_copy = tk->GetId();
+                identifierString = strip_underscores(my_copy);
+                // Don't special-case our own identifiers here, what we want to do is just add ourselves to the unknown-values map
+                // if possible
+            }
+        }
+        else if (state == BalancedParsing)
+        {
+            if (tk->IsKeyword())
+            {
+                if (tk->GetKeyword() != kw::comma && tk->GetKeyword() != kw::closepa)
+                {
+                    Errors::ErrorWithLine("Syntax Error, unexpected keyword", Errors::GetFileName(), Errors::GetErrorLine());
+                }
+                else if (tk->GetKeyword() == kw::comma)
+                {
+                    // Ignore the commas, they're list separators
+                    continue;
+                }
+                else if (tk->GetKeyword() == kw::closepa)
+                {
+                    info.mapped_values[identifierString] = items;
+                    identifierString = "";
+                    items = std::vector<std::string>();
+                    state = IdentifierParsing;
+                }
+            }
+            else
+            {
+                // Theoretically a lot can be here, if it ain't a comma, just munch
+                items.push_back(tk->GetChars());
+            }
+        }
+        else if (state == AdditionalIdentifierParsing)
+        {
+            state = IdentifierParsing;
+            if (!tk->IsIdentifier() && !tk->IsKeyword())
+            {
+                Errors::ErrorWithLine("Expected a new identifier or more :: extensions", Errors::GetFileName(), Errors::GetErrorLine());
+            }
+            if (tk->IsKeyword())
+            {
+                if (tk->GetKeyword() == kw::coloncolon)
+                {
+                    identifierString += tk->GetChars();
+                    state = AdditionalIdentifierParsing;
+                }
+                else
+                {
+                    Errors::ErrorWithLine("Unexpected Keyword after identifier extension", Errors::GetFileName(), Errors::GetErrorLine());
+                }
+            }
+            if (tk->IsIdentifier())
+            {
+                identifierString += tk->GetChars();
+            }
+        }
     }
     return info;
 }

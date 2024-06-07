@@ -48,6 +48,7 @@ enum class kw
     lor,
     hook,
     colon,
+    coloncolon,
     comma,
     ellipses = 100,
 

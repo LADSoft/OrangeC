@@ -50,7 +50,7 @@ class PreProcessor
         ctx(define),
         trigraphs(Trigraph),
         pragma(&include, &define),
-        ppEmbed(include)
+        ppEmbed(include, define)
     {
         InitHash();
         Errors::SetInclude(&include);

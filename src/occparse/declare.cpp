@@ -979,7 +979,7 @@ static void TypeCRC(Type *tp, unsigned& crc)
         if (tp->IsVolatile())
             crc = Utils::PartialCRC32(crc, (const unsigned char *)&volval, sizeof(volval));
         crc = Utils::PartialCRC32(crc, (const unsigned char *)&tp->BaseType()->type, sizeof(tp->type));
-        if (tp->BaseType()->type == BasicType::struct_ || tp->BaseType()->type == BasicType::enum_)
+        if (tp->BaseType()->IsStructured() || tp->BaseType()->type == BasicType::enum_)
             crc = Utils::PartialCRC32(crc, (const unsigned char *)tp->BaseType()->sp->name, strlen(tp->BaseType()->sp->name));
         crc = Utils::PartialCRC32(crc, (const unsigned char *)&tp->BaseType()->size, sizeof(tp->size));
         if (tp->array)
@@ -3995,7 +3995,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             // this next is a little buggy as if there are multiple typedefs for a struct
                             // _Generic won't handle them right.   This is a rare case though and it is for the moment
                             // expedient to do this...
-                            if ((*tn)->type != BasicType::struct_)
+                            if ((*tn)->type != BasicType::struct_ && (*tn)->type != BasicType::union_ )
                                 *tn = (*tn)->CopyType();
                         }
                         sp->tp = Type::MakeType(BasicType::typedef_, sp->tp);

@@ -307,7 +307,7 @@ void dumpInlines(void)
                                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                                 if (sym->sb->dest)
                                     destructors.push(sym);
-                                if (sym->sb->init && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                                if (sym->sb->init && sym->sb->init->front()->exp && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                     CreateInlineConstructor(sym);
                             }
                         }

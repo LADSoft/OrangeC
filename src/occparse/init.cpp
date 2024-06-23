@@ -2008,6 +2008,7 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
         ResolveTemplateVariable(&tp, &exp, itype->BaseType()->btp, nullptr);
         DeduceAuto(&itype, tp, exp);
         DeduceAuto(&sym->tp, tp, exp);
+        itype->InstantiateDeferred();
         itype->UpdateRootTypes();
         sym->tp->UpdateRootTypes();
         if (!tp->IsRef() &&
@@ -2097,7 +2098,7 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
                 EXPRESSION* paramexp = exp;
                 Type* ctype = itype->btp->BaseType();
                 exp = ths;
-                callConstructorParam(&ctype, &exp, tp, paramexp, true, false, false, false, true);
+                callConstructorParam(&ctype, &exp, tp, paramexp, true, true, false, false, true);
             }
             else
             {

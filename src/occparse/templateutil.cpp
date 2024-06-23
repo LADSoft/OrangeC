@@ -552,6 +552,11 @@ std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEP
     currents->sp = sp;
     if (old)
     {
+        if (old->size() == 1 && old->front().second->type == TplType::new_)
+            old = old->front().second->byPack.pack;
+    }
+    if (old)
+    {
         if (sym->front().second->bySpecialization.types)
         {
             auto ito = old->begin();
@@ -1965,7 +1970,7 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
         SYMBOL* sp = nullptr;
         Type* tp;
 
-        if (ts && ts->sb && ts->sb->instantiated)
+        if (0 && ts && ts->sb && ts->sb->instantiated)
         {
             sp = ts;
         }
@@ -2043,6 +2048,8 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
                 {
                     sp = ts;
                 }
+                if (sp)
+                    sp->tp = sp->tp->InitializeDeferred();
             }
         }
         if (sp)

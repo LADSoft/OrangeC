@@ -2420,11 +2420,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     if (tp->IsStructured() && tp1->IsStructured() && classRefCount(tp->BaseType()->sp,tp1->BaseType()->sp))
                     {
                         toErr = false;
-                        EXPRESSION q = {}, *v = &q;
-                        v->type = ExpressionNode::c_i_;
-                        v = baseClassOffset(tp->BaseType()->sp, tp1->BaseType()->sp, v);
-                        returnexp = MakeExpression(ExpressionNode::add_, returnexp, v);
-                    
+                        returnexp = baseClassOffset(tp->BaseType()->sp, tp1->BaseType()->sp, returnexp);
                     }
                     if (toErr)
                     {

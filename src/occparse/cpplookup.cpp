@@ -1698,7 +1698,10 @@ bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRES
             if (funcsp->sb->parentClass)
                 parent = funcsp->sb->parentClass;
             else
-                return sym->sb->access == AccessLevel::public_;
+            {
+                // have to check for friends, otherwise it has to be public...
+                return isAccessible(derived, parent, sym, funcsp, AccessLevel::public_, asAddress);
+            }
         }
         SYMBOL* ssp = nullptr;
         if (sym->sb->throughClass && (ssp = AccessibleClassInstance(sym->sb->parentClass)) != nullptr)
@@ -3223,6 +3226,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
         Type* tppp;
         if (tpp->type == BasicType::typedef_)
             tpp = tpp->btp;
+        tpa = tpa->InitializeDeferred();
         tppp = tpp;
         if (tppp->IsRef())
             tppp = tppp->BaseType()->btp;

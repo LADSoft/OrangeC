@@ -5033,7 +5033,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
         tp->sp = CopySymbol(tp->sp);
         auto temp = tp->sp->templateParams;
         auto tpr = tp->sp->templateParams = templateParamPairListFactory.CreateList();
-        auto tps = tp->sp->sb->mainsym->templateParams;
+        auto tps = tp->sp->sb->mainsym ? tp->sp->sb->mainsym->templateParams : temp;
         auto ittps = tps->begin();
         for (auto&& tpl : *temp)
         {
@@ -5086,7 +5086,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
             ++ittps;
         }
         auto sp = GetTypeAliasSpecialization(rv->sp, tp->sp->templateParams);
-        return sp->tp;
+        return sp ? sp->tp : tp;
     }
     else if (tp->BaseType()->type == BasicType::templateparam_)
     {

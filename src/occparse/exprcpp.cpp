@@ -241,7 +241,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
         {
             deref(&stdpointer, &en);
         }
-        if (enclosing != memberSym->sb->parentClass && enclosing->sb->mainsym != memberSym->sb->parentClass)
+        if (enclosing != memberSym->sb->parentClass && enclosing->sb->mainsym != memberSym->sb->parentClass && !sameTemplate(enclosing->tp, memberSym->sb->parentClass->tp))
         {
             if (toError && classRefCount(memberSym->sb->parentClass, enclosing) != 1)
             {
@@ -1451,7 +1451,7 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, flags);
     if (s3)
     {
-        if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
+        if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, s3, funcsp, funcparams->thisptr, false))
             errorsym(ERR_CANNOT_ACCESS, s3);
         s3->sb->throughClass = s3->sb->parentClass != nullptr;
         funcparams->sp = s3;

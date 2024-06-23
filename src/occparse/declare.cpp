@@ -274,6 +274,35 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                         sp->sb->overlayIndex = n;
                         table->AddName(sp);
                     }
+                    else if (strchr(sp->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
+                    {
+                        // it has a deferred argument, try again...
+                        InitializeFunctionArguments(sp);
+                        if (table->AddOverloadName(sp))
+                        {
+                            found = false;
+                            n = 0;
+                            for (auto sp1 : *table)
+                            {
+                                if (!strcmp(sp->sb->decoratedName, (sp1)->sb->decoratedName))
+                                {
+                                    n++;
+                                    sp->tp->BaseType()->btp->InstantiateDeferred();
+                                    sp1->tp->BaseType()->btp->InstantiateDeferred();
+                                    if (sp->tp->BaseType()->btp->ExactSameType((sp1)->tp->BaseType()->btp) && sameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
+                                    {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!found)
+                            {
+                                sp->sb->overlayIndex = n;
+                                table->AddName(sp);
+                            }
+                        }
+                    }
                 }
                 sp->sb->overloadName = funcs;
                 if (sp->sb->parent != funcs->sb->parent || sp->sb->parentNameSpace != funcs->sb->parentNameSpace)
@@ -357,7 +386,7 @@ void checkIncompleteArray(Type* tp, const char* errorfile, int errorline)
     if (sp->tp->IsPtr() && sp->tp->BaseType()->size == 0)
         specerror(ERR_STRUCT_MAY_NOT_CONTAIN_INCOMPLETE_STRUCT, "", errorfile, errorline);
 }
-void calculateStructOffsets(SYMBOL* sp)
+static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
 {
     BasicType type = sp->tp->BaseType()->type;
     BasicType bittype = BasicType::none_;
@@ -458,7 +487,7 @@ void calculateStructOffsets(SYMBOL* sp)
             {
                 checkIncompleteArray(tp, p->sb->declfile, p->sb->declline);
             }
-            if (tp->IsStructured() && !tp->size && !templateNestingCount)
+            if (toerr && tp->IsStructured() && !tp->size && !templateNestingCount)
             {
                 errorsym(ERR_STRUCT_NOT_DEFINED, p);
             }
@@ -652,6 +681,54 @@ void resolveAnonymousUnions(SYMBOL* sp)
         }
     }
 }
+static bool usesTemplate(SYMBOL* internal, std::list<TEMPLATEPARAMPAIR>* params)
+{
+    std::list<SYMBOL*> working;
+    std::set<SYMBOL*> visited;
+    do
+    {
+        for (auto p : *params)
+        {
+            if (p.second->type == TplType::typename_)
+            {
+                if (p.second->byClass.val && p.second->byClass.val->IsStructured())
+                {
+                    if (visited.find(p.second->byClass.val->BaseType()->sp) == visited.end())
+                    {
+                        working.push_back(p.second->byClass.val->BaseType()->sp);
+                        visited.insert(working.back());
+                    }
+                }
+            }
+            else if (p.second->type == TplType::int_)
+            {
+                if (p.second->byNonType.tp && p.second->byNonType.tp->IsStructured())
+                {
+                    if (visited.find(p.second->byNonType.tp->BaseType()->sp) == visited.end())
+                    {
+                        working.push_back(p.second->byNonType.tp->BaseType()->sp);
+                        visited.insert(working.back());
+                    }
+                }
+            }
+        }
+        params = nullptr;
+        if (working.size())
+        {
+            SYMBOL* sp;
+            do
+            {
+                sp = working.front();
+                working.pop_front();
+                if (internal->tp->ExactSameType(sp->tp) || sameTemplate(internal->tp, sp->tp))
+                    return true;
+            } while (working.size() && !sp->templateParams);
+            if (sp->templateParams)
+                params = sp->templateParams;
+        }
+    } while (params);
+    return false;
+}
 static bool usesClass(SYMBOL* cls, SYMBOL* internal)
 {
     if (cls->tp->syms)
@@ -672,6 +749,15 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
                     tp = tp->BaseType()->btp;
                 if (internal->tp->ExactSameType(tp) || sameTemplate(internal->tp, tp))
                     return true;
+                if (tp->IsStructured())
+                {
+                    auto sp = tp->BaseType()->sp;
+                    if (sp->templateParams)
+                    {
+                        if (usesTemplate(internal, sp->templateParams))
+                            return true;
+                    }
+                }
             }
         }
     }
@@ -718,17 +804,15 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     (void)funcsp;
     int n = 0, i, j;
     Optimizer::LIST* lst = openStructs;
-    SYMBOL** syms;
-    while (lst)
-        n++, lst = lst->next;
-    syms = Allocate<SYMBOL*>(n);
-    n = 0;
+    std::vector<SYMBOL*> syms;
     lst = openStructs;
     openStructs = nullptr;
     while (lst)
     {
-        syms[n++] = (SYMBOL*)lst->data, lst = lst->next;
+        syms.push_back((SYMBOL*)lst->data);
+        lst = lst->next;
     }
+    n = syms.size();
     for (i = 0; i < n; i++)
         for (j = i + 1; j < n; j++)
             if ((syms[i] != syms[j] && !sameTemplate(syms[i]->tp, syms[j]->tp) && classRefCount(syms[j], syms[i])) ||
@@ -802,7 +886,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             SYMBOL* sp = syms[i];
             if (!sp->sb->performedStructInitialization)
             {
-                if (n > 1 && !templateNestingCount)
+                if (/*n > 1 &&*/ !templateNestingCount)
                 {
                     calculateStructOffsets(sp);
 
@@ -887,7 +971,7 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
     sp->sb->declaring = false;
     enclosingDeclarations.Drop();
     sp->sb->hasvtab = usesVTab(sp);
-    calculateStructOffsets(sp);
+    calculateStructOffsets(sp, false);
 
     if (anonymousTable)
     {
@@ -924,8 +1008,6 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
     {
         resolveAnonymousUnions(sp);
         sp->sb->trivialCons = true;
-        if (Optimizer::cparams.prm_cplusplus)
-            deferredInitializeStructMembers(sp);
         GetStructAliasType(sp);
     }
     if (!Optimizer::cparams.prm_cplusplus || structLevel == 1)
@@ -3254,7 +3336,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         if (ssp && ssp->sb->attribs.inheritable.linkage2 != Linkage::none_ && sp->sb->storage_class != StorageClass::localstatic_)
                         {
-                            if (linkage2 != Linkage::none_ && !asFriend)
+                            if (linkage2 != Linkage::none_ && linkage2 != ssp->sb->attribs.inheritable.linkage2 && !asFriend)
                                 errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
                             else if (!ssp->sb->templateLevel || !inTemplate)
                                 sp->sb->attribs.inheritable.linkage2 = ssp->sb->attribs.inheritable.linkage2;

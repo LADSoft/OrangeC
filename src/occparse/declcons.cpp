@@ -2388,6 +2388,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                 {
                     if (sp->tp->IsStructured())
                     {
+                        sp->tp->InitializeDeferred();
                         genConstructorCall(b, sp->tp->BaseType()->sp, cons->sb->memberInitializers, sp, sp->sb->offset, true, thisptr,
                                            otherptr, cons, false, doCopy, !cons->sb->defaulted);
                     }
@@ -2915,7 +2916,8 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     SYMBOL* sym;
     if (!against)
         against = theCurrentFunc ? theCurrentFunc->sb->parentClass : sp;
-    sp->tp-> InstantiateDeferred();
+    sp->tp->InstantiateDeferred();
+    sp->tp->InitializeDeferred();
     stp = sp->tp;
     dest = search(sp->tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
     // if it isn't already defined get out, there will be an error from somewhere else..

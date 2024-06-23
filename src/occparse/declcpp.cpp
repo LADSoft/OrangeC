@@ -2648,10 +2648,14 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(sym) && (sp->tp->BaseType()->syms->size() == 1 || !classOrEnumParam((*it))))
+                    else
                     {
-                        if (!templateNestingCount)
-                            errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        sym->tp->InstantiateDeferred();
+                        if (!classOrEnumParam(sym) && (sp->tp->BaseType()->syms->size() == 1 || !classOrEnumParam((*it))))
+                        {
+                            if (!templateNestingCount)
+                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        }
                     }
                     break;
                 case Keyword::not_:
@@ -2662,10 +2666,14 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(sym))
+                    else
                     {
-                        if (!templateNestingCount)
-                            errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        sym->tp->InstantiateDeferred();
+                        if (!classOrEnumParam(sym))
+                        {
+                            if (!templateNestingCount)
+                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        }
                     }
                     break;
 
@@ -2689,10 +2697,21 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(*it) && !classOrEnumParam(*++it))
+                    else
                     {
-                        if (!templateNestingCount)
-                            errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        auto test = false;
+                        (*it)->tp->InstantiateDeferred();
+                        test = classOrEnumParam(*it);
+                        if (!test)
+                        {
+                            (*++it)->tp->InstantiateDeferred();
+                            test = classOrEnumParam(*it);
+                        }
+                        if (!test)
+                        {
+                            if (!templateNestingCount)
+                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        }
                     }
                     break;
                 case Keyword::autoinc_:
@@ -2704,10 +2723,14 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
-                    else if (!classOrEnumParam(sym))
+                    else
                     {
-                        if (!templateNestingCount)
-                            errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        sym->tp->InstantiateDeferred();
+                        if (!classOrEnumParam(sym))
+                        {
+                            if (!templateNestingCount)
+                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        }
                     }
                     if (sp->tp->BaseType()->syms->size() == 2)
                     {

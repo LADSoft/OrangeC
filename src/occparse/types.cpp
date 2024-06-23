@@ -654,25 +654,29 @@ bool Type::InstantiateDeferred(bool noErr)
             {
                 sym = GetClassTemplate(tp->sp, tp->templateArgs, noErr);
             }
-            auto args = sym->templateParams;
-            if (!args && tp->sp->sb->parentClass)
+            if (sym)
             {
-                args = tp->sp->sb->parentClass->templateParams;
-            }
-            if (args && allTemplateArgsSpecified(sym, sym->templateParams, false, true))
-            {
-                auto old = sym->templateParams;
-                if (!asTypeDef)
+                auto args = sym->templateParams;
+                if (!args && tp->sp->sb->parentClass)
                 {
-                    auto sym1 = sym;
-                    sym1->templateParams = args;
-                    sym = TemplateClassInstantiateInternal(sym, nullptr, false);
-                    sym1->templateParams = old;
+                    args = tp->sp->sb->parentClass->templateParams;
                 }
+                if (args && allTemplateArgsSpecified(sym, sym->templateParams, false, true))
+                {
+                    auto old = sym->templateParams;
+                    if (!asTypeDef)
+                    {
+                        auto sym1 = sym;
+                        sym1->templateParams = args;
+                        sym = TemplateClassInstantiateInternal(sym, nullptr, false);
+                        sym1->templateParams = old;
+                    }
+                }
+                *tp = *sym->tp;
+                this->UpdateRootTypes();
+
+                return true;
             }
-            *tp = *sym->tp;
-            this->UpdateRootTypes();
-            return true;
         }
         else if (this->IsStructured() && strchr(this->BaseType()->sp->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
         {

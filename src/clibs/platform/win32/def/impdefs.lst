@@ -43,3 +43,4 @@ winmm.def
 winspool.def
 wow32.def
 wsock32.def
+ws2_32.def

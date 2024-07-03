@@ -45,9 +45,62 @@
 #include <cstdio>
 #include <climits>
 #include <algorithm>
+#include <set>
+#include <string>
+#include <cctype>
+
 int LinkManager::errors;
 int LinkManager::warnings;
 
+std::set<std::string> ignoreLibs =
+{
+"advapi32.l",
+"avicap32.l",
+"avifil32.l",
+"comctl32.l",
+"comdlg32.l",
+"ctl3d32.l",
+"gdi32.l",
+"gdiplus.l",
+"glu32.l",
+"imagehlp.l",
+"imm32.l",
+"kernel32.l",
+"lz32.l",
+"mapi32.l",
+"mfcuia32.l",
+"mgmtapi.l",
+"mpr.l",
+"msacm32.l",
+"msimg32.l",
+"msvfw32.l",
+"netapi32.l",
+"odbc32.l",
+"odbccp32.l",
+"ole32.l",
+"oleaut32.l",
+"opengl32.l",
+"pkpd32.l",
+"rasapi32.l",
+"rpcns4.l",
+"rpcrt4.l",
+"shell32.l",
+"shfolder.l",
+"shlwapi.l",
+"tapi32.l",
+"url.l",
+"urlmon.l",
+"user32.l",
+"uxtheme.l",
+"vdmdbg.l",
+"version.l",
+"wininet.l",
+"winmm.l",
+"winspool.l",
+"wow32.l",
+"wsock32.l",
+"ws2_32.l"
+};
 void HookError(int aa) {}
 
 LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile, bool CompleteLink,
@@ -550,7 +603,10 @@ void LinkManager::LoadLibraries()
             }
             else
             {
-                LinkError("Library '" + name + "' does not exist or is not a library");
+                std::string temp;
+                std::transform(temp.begin(), temp.begin(), temp.end(), tolower);
+                if (ignoreLibs.find(temp) != ignoreLibs.end())
+                    LinkError("Library '" + name + "' does not exist or is not a library");
             }
         }
     }

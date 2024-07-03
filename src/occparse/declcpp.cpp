@@ -2823,13 +2823,20 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 LexList* handleStaticAssert(LexList* lex)
 {
     RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
-    if (!needkw(&lex, Keyword::openpa_))
+    if (!MATCHKW(lex, Keyword::openpa_))
     {
         errskim(&lex, skim_closepa);
         skip(&lex, Keyword::closepa_);
     }
+    else if (structLevel && enclosingDeclarations.GetFirst())
+    {
+        LexList* deferredCompile = nullptr;
+        lex = getDeferredData(lex, &deferredCompile, false);
+        EnterStructureStaticAssert(enclosingDeclarations.GetFirst(), deferredCompile);
+    }
     else
     {
+        lex = getsym(); // past '('
         bool v = true;
         char buf[5000];
         Type* tp;

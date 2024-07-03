@@ -223,7 +223,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             else
             {
                 SYMBOL* sym = search(lambdas.front()->cls->tp->syms, lambdas.front()->thisByVal ? "*this" : "$this");
-                enclosing = lambdas.front()->lthis->tp->BaseType()->btp->sp;
+                enclosing = lambdas.front()->lthis;
                 if (sym)
                 {
                     deref(&stdpointer, &en);
@@ -976,7 +976,8 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
     if ((*newType)->IsVoid())
         return true;
     // conversion of one numeric value to another
-    if ((*newType)->IsArithmetic() && oldType->IsArithmetic())
+    if (((*newType)->IsArithmetic() || ((*newType)->type == BasicType::enum_ && !(*newType)->scoped))
+        && (oldType->IsArithmetic() || (oldType->type == BasicType::enum_ && !oldType->scoped)))
     {
         cast(*newType, exp);
         return true;

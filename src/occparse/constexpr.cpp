@@ -471,21 +471,52 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
                         undoAnonymousVar(varsp);
                     return nullptr;
                 }
-                EXPRESSION* next = MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
-                deref(sp->tp, &next);
-                next = MakeExpression(ExpressionNode::assign_, next,
-                    EvaluateExpression(ths->v.constexprData.data[sp->sb->offset], ths, nullptr, true));
-                if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
+                auto data = ths->v.constexprData.data[sp->sb->offset];
+                if (data->type == ExpressionNode::thisref_)
+                    if (data->left->type == ExpressionNode::cvarpointer_)
+                        data = data->left;
+                if (sp->tp->IsStructured() && data->type == ExpressionNode::cvarpointer_)
                 {
-                    if (varsp)
-                        undoAnonymousVar(varsp);
-                    return nullptr;
+                    for (auto sp1 : *sp->tp->BaseType()->syms)
+                    {
+                        if (ismemberdata(sp1))
+                        {
+                            EXPRESSION* next = MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset + sp1->sb->offset));
+                            deref(sp1->tp, &next);
+                            next = MakeExpression(ExpressionNode::assign_, next,
+                                EvaluateExpression(data->v.constexprData.data[sp1->sb->offset], data, nullptr, true));
+                            if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
+                            {
+                                if (varsp)
+                                    undoAnonymousVar(varsp);
+                                return nullptr;
+                            }
+                            inConstantExpression++;
+                            optimize_for_constants(&next->right);
+                            inConstantExpression--;
+                            *last = MakeExpression(ExpressionNode::comma_, *last, next);
+                            last = &(*last)->right;
+                        }
+                    }
                 }
-                inConstantExpression++;
-                optimize_for_constants(&next->right);
-                inConstantExpression--;
-                *last = MakeExpression(ExpressionNode::comma_, *last, next);
-                last = &(*last)->right;
+                else
+                {
+                    EXPRESSION* next = MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
+                    deref(sp->tp, &next);
+                    next = MakeExpression(ExpressionNode::assign_, next,
+                        EvaluateExpression(data, ths, nullptr, true));
+                    if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
+                    {
+                        if (varsp)
+                            undoAnonymousVar(varsp);
+                        return nullptr;
+                    }
+                    inConstantExpression++;
+                    optimize_for_constants(&next->right);
+                    inConstantExpression--;
+                    *last = MakeExpression(ExpressionNode::comma_, *last, next);
+                    last = &(*last)->right;
+                }
             }
         }
         if (thisptr->type == ExpressionNode::substack_)

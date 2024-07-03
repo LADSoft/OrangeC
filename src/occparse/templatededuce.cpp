@@ -737,6 +737,15 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
         {
             if (Ab->type == BasicType::enum_ && Ab->sp == Pb->sp)
                 return true;
+            if (Pb->scoped)
+            {
+                auto tp = Ab;
+                if (tp->IsInt())
+                {
+                    tp = tp->btp;
+                }
+                return tp && Pb->ExactSameType(tp);
+            }
             if (Ab->IsInt())  // && Ab->enumConst)
                 return true;
             return false;

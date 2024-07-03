@@ -104,6 +104,7 @@ extern std::map<int, SYMBOL*> localAnonymousUnions;
 
 // declare.cpp
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
+void EnterStructureStaticAssert(SYMBOL* sym, LexList * deferredCompile);
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);
 void WeedExterns(void);

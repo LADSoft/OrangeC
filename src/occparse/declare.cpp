@@ -80,6 +80,7 @@ static int unnamed_tag_id, unnamed_id;
 static char* importFile;
 static unsigned symbolKey;
 static int nameshim;
+static std::map<SYMBOL*, std::list<LexList*>> structureStaticAsserts;
 
 void declare_init(void)
 {
@@ -97,6 +98,7 @@ void declare_init(void)
     noNeedToSpecialize = 0;
     inConstantExpression = 0;
     parsingUsing = 0;
+    structureStaticAsserts.clear();
 }
 void EnclosingDeclarations::Add(SYMBOL* symbol)
 {
@@ -569,6 +571,28 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
         }
     }
 }
+void EnterStructureStaticAssert(SYMBOL* sym, LexList* deferredCompile)
+{
+    structureStaticAsserts[sym].push_back(deferredCompile);
+}
+void ParseStructureStaticAssert(SYMBOL* sym)
+{
+    auto it = structureStaticAsserts.find(sym);
+    if (it != structureStaticAsserts.end())
+    {
+        int n = PushTemplateNamespace(sym);
+        enclosingDeclarations.Add(sym);
+        auto hold = it->second;
+        for (auto deferred : hold)
+        {
+            auto temp = SetAlternateLex(deferred);
+            temp = handleStaticAssert(temp);
+            SetAlternateLex(nullptr);
+        }
+        enclosingDeclarations.Drop();
+        PopTemplateNamespace(n);
+    }
+}
 static bool validateAnonymousUnion(SYMBOL* parent, Type* unionType)
 {
     bool rv = true;
@@ -921,10 +945,12 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                     {
                         deferredInitializeStructFunctions(syms[i]);
                     }
+                    ParseStructureStaticAssert(syms[i]);
                 }
             }
         }
     }
+    structureStaticAsserts.clear();
 }
 static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
@@ -1214,9 +1240,9 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     const char* tagname;
     char newName[4096];
     BasicType type = BasicType::none_;
-    SYMBOL* sp;
+    SYMBOL* sp = nullptr;
     int charindex;
-    std::list<NAMESPACEVALUEDATA*>* nsv;
+    std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
     SYMBOL* strSym;
     AccessLevel defaultAccess;
     bool addedNew = false;
@@ -1225,6 +1251,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     bool anonymous = false;
     unsigned char* uuid;
     Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
+    bool searched = false;
     *defd = false;
     switch (KW(lex))
     {
@@ -1257,7 +1284,15 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         lex = getsym();
         linkage2 = getDefaultLinkage();
     }
-    if (ISID(lex))
+    if (MATCHKW(lex, Keyword::classsel_))
+    {
+        charindex = -1;
+        tagname = "";
+        lex = nestedSearch(lex, &sp, &strSym, &nsv, nullptr, nullptr, true, storage_class, true, true);
+        lex = getsym();
+        searched = true;
+    }
+    else if (ISID(lex))
     {
         charindex = lex->data->charindex;
         tagname = litlate(lex->data->value.s.a);
@@ -1271,29 +1306,31 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         anonymous = true;
     }
 
-    strcpy(newName, tagname);
-    if (inTemplate)
-        inTemplateSpecialization++;
-
-    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
-
-    if (inTemplate)
-        inTemplateSpecialization--;
-
-    if (!asfriend && charindex != -1 && Optimizer::cparams.prm_cplusplus && openStructs && MATCHKW(lex, Keyword::semicolon_))
+    if (!searched)
     {
-        // forward declaration within class...   erase anything found outside the class
-        if (!sp || sp->sb->parentClass != (SYMBOL*)openStructs->data)
+        strcpy(newName, tagname);
+        if (inTemplate)
+            inTemplateSpecialization++;
+
+        lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+
+        if (inTemplate)
+            inTemplateSpecialization--;
+        if (!asfriend && charindex != -1 && Optimizer::cparams.prm_cplusplus && openStructs && MATCHKW(lex, Keyword::semicolon_))
         {
-            sp = nullptr;
+            // forward declaration within class...   erase anything found outside the class
+            if (!sp || sp->sb->parentClass != (SYMBOL*)openStructs->data)
+            {
+                sp = nullptr;
+            }
         }
-    }
-    if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
-    {
-        isfinal = true;
-        lex = getsym();
-        if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
-            errorint(ERR_NEEDY, '{');
+        if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
+        {
+            isfinal = true;
+            lex = getsym();
+            if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
+                errorint(ERR_NEEDY, '{');
+        }
     }
     if (ISID(lex))
     {

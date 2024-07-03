@@ -1383,9 +1383,22 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             if (selectTP->IsPtr() && declSP->tp->IsPtr())
                                 declSP->tp = declSP->tp->BaseType()->btp;
                             declSP->tp->UpdateRootTypes();
-                            if (selectTP->IsArray() && !declSP->tp->ExactSameType(selectTP->BaseType()->btp))
+                            selectTP->UpdateRootTypes();
+                            if (selectTP->IsArray())
                             {
-                                error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                Type* tp = declSP->tp;
+                                if (tp->IsRef())
+                                {
+                                    tp = tp->BaseType()->btp;
+                                    if (!tp->btp->ExactSameType(selectTP->BaseType()->btp))
+                                    {
+                                        error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                    }
+                                }
+                                else if (!tp->ExactSameType(selectTP->BaseType()->btp))
+                                {
+                                    error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                }
                             }
                             if (declSP->tp->IsStructured())
                             {
@@ -1407,9 +1420,14 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 EXPRESSION* decl = declExp;
                                 deref(declSP->tp, &decl);
                                 st->select = eBegin;
-                                if (!declSP->tp->IsRef())
-                                    deref(selectTP->BaseType()->btp, &st->select);
+                                deref(selectTP->BaseType()->btp, &st->select);
                                 st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
+                                if (declSP->tp->IsRef())
+                                {
+                                    declSP->tp = declSP->tp->BaseType()->btp;
+                                    if (selectTP->IsPtr() && declSP->tp->IsPtr())
+                                        declSP->tp = declSP->tp->BaseType()->btp;
+                                }
                             }
                         }
                         else
@@ -2161,6 +2179,10 @@ void StatementGenerator::MatchReturnTypes(Type* tp1, Type* tp2)
 {
     if (matchReturnTypes)
     {
+        if (tp2->type == BasicType::enum_ && tp1->IsInt() && tp1->btp)
+            tp1 = tp1->btp;
+        if (tp1->type == BasicType::enum_ && tp2->IsInt() && tp2->btp)
+            tp2 = tp2->btp;
         bool err = false;
         if (tp1->IsRef())
             tp1 = tp1->BaseType()->btp;

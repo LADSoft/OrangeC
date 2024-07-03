@@ -60,6 +60,7 @@ namespace Parser
 int inGetUserConversion;
 int inSearchingFunctions;
 int inNothrowHandler;
+
 SYMBOL* argFriend;
 static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, CallSite* args, Type* atp, int flags);
 
@@ -374,10 +375,12 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                         {
                             if (t->lthis)
                             {
-                                enclosingDeclarations.Add(t->lthis->tp->BaseType()->btp->sp);
+                                enclosingDeclarations.Add(t->lthis);
                                 sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
                                 enclosingDeclarations.Drop();
                             }
+                            if (sp)
+                                break;
                         }
                         if (!sp)
                             sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
@@ -1151,7 +1154,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
             {
                 if (lambdas.front()->lthis)
                 {
-                    rv = search(lambdas.front()->lthis->tp->BaseType()->btp->syms, name);
+                    rv = search(lambdas.front()->lthis->tp->syms, name);
                     if (rv)
                         rv->sb->throughClass = true;
                 }
@@ -3220,7 +3223,7 @@ void InitializeFunctionArguments(SYMBOL* sym, bool initialize)
 SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit)
 {
-    if (inGetUserConversion < 1)
+    if (inGetUserConversion < 2)
     {
         std::list<SYMBOL*> gather;
         Type* tppp;

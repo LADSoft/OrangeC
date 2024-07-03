@@ -3525,7 +3525,10 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         EXPRESSION* paramexp = p->exp;
                         esp->sb->stackblock = true;
                         esp->sb->constexpression = true;
+                        auto currentFunc = theCurrentFunc;
+                        theCurrentFunc = func;
                         callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
+                        theCurrentFunc = currentFunc;
                         if (consexp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
                         {
                             p->exp = paramexp;
@@ -6130,7 +6133,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             SYMBOL* ths = search(lambdas.front()->cls->tp->syms, lambdas.front()->thisByVal ? "*this" : "$this");
                             if (ths)
                             {
-                                *tp = Type::MakeType(BasicType::pointer_, lambdas.front()->lthis->tp->BaseType()->btp);
+                                *tp = Type::MakeType(BasicType::pointer_, lambdas.front()->lthis->tp);
                                 *exp =
                                     MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
                                 deref(&stdpointer, exp);
@@ -8170,7 +8173,10 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                 }
                 if (Optimizer::cparams.prm_cplusplus && (tpc->IsStructured() || tph->IsStructured()) && (!tpc->lref || !tph->lref))
                 {
-                    if ( ! tpc->IsStructured() || !tph->IsStructured() || (tph->SameType(tpc) && !sameTemplate(tph, tpc, false)) || epc->type == ExpressionNode::thisref_ || epc->type == ExpressionNode::callsite_ || eph->type == ExpressionNode::thisref_ || eph->type == ExpressionNode::callsite_)
+                    if ( ! tpc->IsStructured() || !tph->IsStructured() || 
+                        (((!tpc->lref && !tpc->lref && !tph->lref && !tph->rref) || (tpc->lref != tph->lref && tpc->rref != tph->rref))
+                            && ((tph->SameType(tpc) && !sameTemplate(tph, tpc, false)) 
+                                    || epc->type == ExpressionNode::thisref_ || epc->type == ExpressionNode::callsite_ || eph->type == ExpressionNode::thisref_ || eph->type == ExpressionNode::callsite_)))
                     {
                         // structure is result of constructor or return value
                         // at this point we want to check that both sides
@@ -8266,7 +8272,7 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                                 exp = exp->left;
                             if (exp->v.func->returnSP)
                             {
-                                if (exp->v.func->returnEXP->type == ExpressionNode::auto_ && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                if (exp->v.func->returnEXP && exp->v.func->returnEXP->type == ExpressionNode::auto_ && exp->v.func->returnEXP->v.sp != rv->v.sp)
                                     exp->v.func->returnEXP->v.sp->sb->allocate = false;
                                 exp->v.func->returnEXP = rv;
                             }
@@ -8281,7 +8287,7 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                                 exp = exp->left;
                             if (exp->v.func->returnSP)
                             {
-                                if (exp->v.func->returnEXP->type == ExpressionNode::auto_ && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                if (exp->v.func->returnEXP && exp->v.func->returnEXP->type == ExpressionNode::auto_ && exp->v.func->returnEXP->v.sp != rv->v.sp)
                                     exp->v.func->returnEXP->v.sp->sb->allocate = false;
                                 exp->v.func->returnEXP = rv;
                             }

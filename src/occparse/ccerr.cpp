@@ -836,8 +836,8 @@ static void setbalance(LexList* lex, BALANCE** bal, bool assumeTemplate)
                 }
                 if (*bal && !(--(*bal)->count))
                     (*bal) = (*bal)->back;
-                break;
             }
+            break;
         case Keyword::begin_:
             if (!*bal || (*bal)->type != BAL_BEGIN)
                 *bal = newbalance(lex, *bal);

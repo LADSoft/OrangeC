@@ -167,8 +167,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
         if (mode == cmThis)
         {
             SYMBOL* lthis = lambdas.front()->lthis;
-            SYMBOL* base = lambdas.front()->lthis->tp->BaseType()->btp->sp;
-            lthis = lthis->tp->BaseType()->btp->BaseType()->sp;
+            SYMBOL* base = lthis;
             if (lthis->sb->mainsym)
                 lthis = lthis->sb->mainsym;
             if (base->sb->mainsym)
@@ -843,9 +842,13 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
         ++itx;
         self->lthis = (*itx)->lthis;
     }
-    else if (funcsp && funcsp->sb->parentClass)
+    else if (funcsp && funcsp->sb->parentClass && (funcsp->sb->storage_class == StorageClass::member_ || funcsp->sb->storage_class == StorageClass::virtual_))
     {
-        self->lthis = ((SYMBOL*)funcsp->tp->syms->front());
+        self->lthis = ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->tp->BaseType()->btp->BaseType()->sp;
+    }
+    else
+    {
+        self->lthis = enclosingDeclarations.GetFirst();
     }
     lex = getsym();  // past [
     if (funcsp)

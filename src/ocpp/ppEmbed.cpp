@@ -11,8 +11,13 @@
 #include <functional>
 #include <strstream>
 #include <cstdio>
-std::function<void(std::vector<embeder_size>)> embeder::embed_elements;
-
+#include "ppExpr.h"
+std::function<embeder::embeder_func> embeder::embed_elements;
+struct visitor_struct
+{
+    std::string operator()(embed_token_type token) { return token->GetChars(); }
+    std::string operator()(embed_value_type token) { return std::to_string(token); }
+};
 KeywordHash hasher = {{"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
                       {"~", kw::bcompl},      {"*", kw::star},    {"/", kw::divide}, {"%", kw::mod},   {"<<", kw::leftshift},
                       {">>", kw::rightshift}, {">", kw::gt},      {"<", kw::lt},     {">=", kw::geq},  {"<=", kw::leq},
@@ -20,22 +25,63 @@ KeywordHash hasher = {{"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus
                       {"||", kw::lor},        {"&&", kw::land},   {"?", kw::hook},   {":", kw::colon}, {",", kw::comma},
                       {"::", kw::coloncolon}};
 
-std::array<std::string, 3> ourKnownValues = {"prefix", "postfix", "limit"};
-
-std::tuple<std::vector<embeder_size>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info info)
+std::array<std::string, 4> ourKnownValues = {"prefix", "suffix", "limit", "if_empty"};
+static void push_back_values(std::vector<embeder_type>& embed_vec,
+                             const std::unordered_map<std::string, std::vector<embed_token_type>>& args,
+                             const std::string& map_vals_string)
 {
-    std::vector<embeder_size> next_thing = {};
-    if (!has_embed(info, true))
+    auto& prefix_val = args.find(map_vals_string);
+    if (prefix_val != args.end())
     {
-        return {next_thing, EmbedReturnValue::EMBED_NOT_FOUND};
+        for (auto&& val : prefix_val->second)
+        {
+            embed_vec.push_back(val);
+        }
+    }
+}
+static void push_back_values(std::vector<embeder_type>& embed_vec, const std::vector<embed_value_type>& embed_val_vector)
+{
+    for (auto&& val : embed_val_vector)
+    {
+        embed_vec.push_back(val);
+    }
+}
+std::string reconstruct_string(const std::vector<embed_token_type>& embed_vec)
+{
+    std::string start = "";
+
+    for (auto&& val : embed_vec)
+    {
+        start += val->GetChars() + " ";
+    }
+    return start;
+}
+
+std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info info)
+{
+    std::vector<uintmax_t> next_thing = {};
+    std::vector<embeder_type> builder = {};
+    EmbedReturnValue ret_val = has_embed(info, true);
+    if (ret_val == EmbedReturnValue::EMBED_NOT_FOUND)
+    {
+        return {builder, EmbedReturnValue::EMBED_NOT_FOUND};
     }
     bool found_system = false;
     int discard = 0;
     std::string fil = includer.FindFile(info.is_system, info.filename, false, discard, found_system);
-    if (fil != "" && info.limit != 0)
+    size_t size = Utils::file_size(fil);
+    ppExpr evaluator(false, Dialect::c2x);
+    // I would love if the above evaluator could run on tokens
+    if (info.mapped_values.find("limit") != info.mapped_values.end())
     {
-        size_t size = Utils::file_size(fil);
-        std::vector<embeder_size> builder = {};
+        auto& vals = info.mapped_values["limit"];
+        std::string line = reconstruct_string(vals);
+        info.limit = evaluator.Eval(line);
+    }
+    if (fil != "" && info.limit != 0 && size != 0)
+    {
+        push_back_values(info.prefix, info.mapped_values, "prefix");
+        push_back_values(info.suffix, info.mapped_values, "suffix");
         builder.insert(builder.end(), info.prefix.begin(), info.prefix.end());
 
         FILE* file = fopen(fil.c_str(), "rb");
@@ -48,28 +94,41 @@ std::tuple<std::vector<embeder_size>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             size_t numread = fread(&data_loc[i], info.bytes, 1, file);
         }
-        builder.insert(builder.end(), next_thing.begin(), next_thing.end());
-        builder.insert(builder.end(), info.postfix.begin(), info.postfix.end());
+
+        push_back_values(builder, next_thing);
+        builder.insert(builder.end(), info.suffix.begin(), info.suffix.end());
         if (embed_elements)
         {
             embed_elements(builder);
         }
         return {builder, has_embed(info)};
     }
-    return {next_thing, has_embed(info)};
+    else if (fil != "" && (info.limit == 0 || size == 0))
+    {
+
+        // We're placing if_empty values into here where possible
+        std::vector<embeder_type> builder = {};
+        push_back_values(builder, info.mapped_values, "if_empty");
+        builder.insert(builder.end(), next_thing.begin(), next_thing.end());
+        if (embed_elements)
+        {
+            embed_elements(builder);
+        }
+        return {builder, has_embed(info)};
+    }
+    return {builder, has_embed(info)};
 }
 
 EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
 {
     int discard;
     bool is_system = info.is_system;
-    auto file = info.filename;
+    auto& file = info.filename;
     bool found_system = false;
     std::string fil = includer.FindFile(is_system, file, false, discard, found_system);
     bool FoundInvalid = false;
     if (throw_error)
     {
-
         for (auto&& value : info.mapped_values)
         {
             auto& val = std::find(ourKnownValues.begin(), ourKnownValues.end(), value.first);
@@ -85,32 +144,49 @@ EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
     }
     if (fil != "" && !FoundInvalid)
     {
-        if (info.limit <= 0)
+        if (info.limit == 0)
         {
             return EmbedReturnValue::EMBED_EMPTY;
         }
-        return (Utils::file_size(fil) % info.bytes == 0) ? EmbedReturnValue::EMBED_EMPTY : EmbedReturnValue::EMBED_FOUND;
+        return (Utils::file_size(fil) % info.bytes == 0) ? EmbedReturnValue::EMBED_FOUND : EmbedReturnValue::EMBED_EMPTY;
     }
     return EmbedReturnValue::EMBED_NOT_FOUND;
 }
+
+std::string tokens_to_inject(std::vector<embeder_type> type)
+{
+    std::string total = "";
+    size_t type_size = type.size();
+    size_t minus_one = type_size - 1;
+    for (size_t i = 0; i < type_size; i++)
+    {
+        // Technically, here, it would make a lot of sense to kick the next "type" into cache, too bad there's no easy way to pull
+        // this off portibly.
+        auto&& val = type[i];
+        total += std::visit(visitor_struct{}, val);
+        if (std::holds_alternative<embed_value_type>(val) && i < minus_one && std::holds_alternative<embed_value_type>(type[i + 1]))
+        {
+            total += ',';
+        }
+    }
+
+    return total;
+}
+
 bool embeder::Check(kw token, std::string& args)
 {
     if (token == kw::EMBED)
     {
         // comment to check line info
         embeder_info info = GetEmbedFromLine(args);
-        auto ret = EmbedFile(args, info);
-        auto vec = std::get<0>(ret);
-        std::string thing = "";
-        for (auto&& item : vec)
+        auto return_val = EmbedFile(args, info);
+        auto vec = std::get<0>(return_val);
+        auto ret = std::get<1>(return_val);
+        if (ret == EmbedReturnValue::EMBED_NOT_FOUND)
         {
-            thing += std::to_string(item);
-            thing += ',';
+            return true;
         }
-        if (thing.length() > 0)
-        {
-            thing.resize(thing.length() - 1);
-        }
+        std::string thing = tokens_to_inject(vec);
         this->nextLine = thing;
         return true;
     }
@@ -167,8 +243,8 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
     info.bytes = 1;
     info.is_system = false;
     bool system_file = false;
-    info.postfix = std::vector<embeder_size>();
-    info.prefix = std::vector<embeder_size>();
+    info.suffix = std::vector<embeder_type>();
+    info.prefix = std::vector<embeder_type>();
     std::string int_line = line;
     definer.Process(int_line);
     info.filename = this->includer.ParseName(int_line, info.is_system);
@@ -192,8 +268,8 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
     std::stack<char> TokenBalancer;
     std::string identifierString;
     bool join_next_identifier = false;
-    std::vector<std::string> items;
-    for (const Token* tk = tokenizer.Next(); tk && !tk->IsEnd(); tk = tokenizer.Next())
+    std::vector<embed_token_type> items;
+    for (embed_token_type tk = tokenizer.NextShared(); tk && !tk->IsEnd(); tk = tokenizer.NextShared())
     {
         // Constructions we don't error on
         // identifier identifier(list, list1, list2...) identifier::identifier identifier::identifier(list, list1, list2...)
@@ -206,7 +282,7 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
         if (state == IdentifierParsing)
         {
             // Gotta love state machines!
-            // We get kicked back here from AdditionalIdentifierParsing so we reduce the logic, 
+            // We get kicked back here from AdditionalIdentifierParsing so we reduce the logic,
             // this just is recursive depth search (kind of) in a "stackless" manner to generate the total value
             if (!identifierString.empty() && tk->IsKeyword())
             {
@@ -223,8 +299,8 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
                     default:
                         // Wheeeeeeeeee, would be nice if tokens also included position information so I could print the exact
                         // keyword here
-                        Errors::ErrorWithLine("Syntax error: Incorrect value for a keyword in this context: ",
-                                              Errors::GetFileName(), Errors::GetErrorLine());
+                        Errors::ErrorWithLine("Syntax error: Incorrect value for a keyword in this context", Errors::GetFileName(),
+                                              Errors::GetErrorLine());
                         break;
                 }
             }
@@ -236,7 +312,7 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
                     auto val = info.mapped_values.find(identifierString);
                     if (val == info.mapped_values.end())
                     {
-                        info.mapped_values[identifierString] = std::vector<std::string>();
+                        info.mapped_values[identifierString] = std::vector<embed_token_type>();
                         identifierString = "";
                     }
                     else
@@ -255,27 +331,23 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
         {
             if (tk->IsKeyword())
             {
-                if (tk->GetKeyword() != kw::comma && tk->GetKeyword() != kw::closepa)
-                {
-                    Errors::ErrorWithLine("Syntax Error, unexpected keyword", Errors::GetFileName(), Errors::GetErrorLine());
-                }
-                else if (tk->GetKeyword() == kw::comma)
-                {
-                    // Ignore the commas, they're list separators
-                    continue;
-                }
-                else if (tk->GetKeyword() == kw::closepa)
+                if (tk->GetKeyword() == kw::closepa)
                 {
                     info.mapped_values[identifierString] = items;
                     identifierString = "";
-                    items = std::vector<std::string>();
+                    items = std::vector<embed_token_type>();
                     state = IdentifierParsing;
+                }
+                else
+                {
+                    // It would be *awesome* to be able to have
+                    items.push_back(tk);
                 }
             }
             else
             {
                 // Theoretically a lot can be here, if it ain't a comma, just munch
-                items.push_back(tk->GetChars());
+                items.push_back(tk);
             }
         }
         else if (state == AdditionalIdentifierParsing)
@@ -283,7 +355,8 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
             state = IdentifierParsing;
             if (!tk->IsIdentifier() && !tk->IsKeyword())
             {
-                Errors::ErrorWithLine("Expected a new identifier or more :: extensions", Errors::GetFileName(), Errors::GetErrorLine());
+                Errors::ErrorWithLine("Expected a new identifier or more :: extensions", Errors::GetFileName(),
+                                      Errors::GetErrorLine());
             }
             if (tk->IsKeyword())
             {
@@ -294,7 +367,8 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
                 }
                 else
                 {
-                    Errors::ErrorWithLine("Unexpected Keyword after identifier extension", Errors::GetFileName(), Errors::GetErrorLine());
+                    Errors::ErrorWithLine("Unexpected Keyword after identifier extension", Errors::GetFileName(),
+                                          Errors::GetErrorLine());
                 }
             }
             if (tk->IsIdentifier())

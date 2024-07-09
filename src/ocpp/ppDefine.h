@@ -107,7 +107,7 @@ class ppDefine
     };
 
   public:
-    ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect, bool Asmpp);
+    ppDefine(bool UseExtensions, ppInclude* Include, embeder* embed, Dialect dialect, bool Asmpp);
     ~ppDefine() {}
 
     void SetParams(ppCtx* Ctx, ppMacro* Macro)
@@ -165,6 +165,7 @@ class ppDefine
     ppExpr expr;
     ppCtx* ctx;
     ppMacro* macro;
+    embeder* embed;
     bool asmpp;
     int counter_val;
     time_t source_date_epoch;

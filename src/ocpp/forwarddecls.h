@@ -12,3 +12,4 @@ using KeywordHash = KeywordTable<kw>;
 template<typename T = kw>
 class Tokenizer;
 class Token;
+class embeder;

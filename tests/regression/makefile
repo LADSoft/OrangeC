@@ -50,6 +50,8 @@ heap.tst: heap.exe
 	-$< 2> heap.out
 	fc /b heap.cmpx heap.out
 
+boolc2x.exe:
+	occ /2 boolc2x.c -o boolc2x.exe
 
 %.tst: %.exe
 	$< > $*.out

@@ -225,6 +225,7 @@ class Tokenizer
     virtual ~Tokenizer() {}
     void Reset(const std::string& Line);
     const Token* Next();
+    std::shared_ptr<Token> NextShared();
     std::string GetString() { return line; }
     void SetString(const std::string& Line) { line = Line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }
@@ -235,7 +236,7 @@ class Tokenizer
   private:
     KeywordTable<T>* keywordTable;
     std::string line;
-    std::unique_ptr<Token> currentToken;
+    std::shared_ptr<Token> currentToken;
     bool caseInsensitive;
 };
 template <typename T>
@@ -325,20 +326,27 @@ const Token* Tokenizer<T>::Next()
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     if (line.empty())
-        currentToken = std::make_unique<EndToken>();
+        currentToken = std::make_shared<EndToken>();
     else if (NumericToken::Start(line))
-        currentToken = std::make_unique<NumericToken>(line);
+        currentToken = std::make_shared<NumericToken>(line);
     else if (CharacterToken::Start(line))
-        currentToken = std::make_unique<CharacterToken>(line);
+        currentToken = std::make_shared<CharacterToken>(line);
     else if (StringToken::Start(line))
-        currentToken = std::make_unique<StringToken>(line);
+        currentToken = std::make_shared<StringToken>(line);
     else if (IdentifierToken<T>::Start(line))
-        currentToken = std::make_unique<IdentifierToken<T>>(line, keywordTable, caseInsensitive);
+        currentToken = std::make_shared<IdentifierToken<T>>(line, keywordTable, caseInsensitive);
     else if (keywordTable && KeywordToken<T>::Start(line))
-        currentToken = std::make_unique<KeywordToken<T>>(line, keywordTable);
+        currentToken = std::make_shared<KeywordToken<T>>(line, keywordTable);
     else
-        currentToken = std::make_unique<ErrorToken>(line);
+        currentToken = std::make_shared<ErrorToken>(line);
     return currentToken.get();
+}
+template<typename T>
+std::shared_ptr<Token> Tokenizer<T>::NextShared()
+{
+    Next();
+    //
+    return currentToken;
 }
 template <typename T>
 void Tokenizer<T>::Reset(const std::string& Line)

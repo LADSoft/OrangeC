@@ -77,8 +77,8 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     }
 }
 
-ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect_, bool Asmpp) :
-    expr(false, dialect_), include(Include), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
+ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, embeder* embed, Dialect dialect_, bool Asmpp) :
+    expr(false, dialect_), include(Include), embed(embed), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -428,7 +428,41 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
         insert = Utils::NumberToString(counter_val++);
     }
     else
-        return 0;
+    {
+        // Only pull out the tokenizer if we use a "special"-type macro
+        Tokenizer<kw> tokenizer(macro, ppExpr::GetHash());
+        auto token = tokenizer.Next();
+        if (dialect == Dialect::c2x && token->GetId() == "__has_embed")
+        {
+            token = tokenizer.Next();
+            if (token->GetKeyword() == kw::openpa)
+            {
+                std::string line = tokenizer.GetString();
+                int n = line.rfind(")");
+                if (n == std::string::npos)
+                {
+                    end = macro.length();
+                    Errors::Error("Expected ')'");
+                }
+                else
+                {
+                    end = macro.rfind(')') + 1;
+                    std::string arg = line.substr(0, n);
+                    insert = std::to_string(embed->has_embed(embed->GetEmbedFromLine(arg)));
+                    tokenizer.SetString(line.substr(n + 1));
+                    token = tokenizer.Next();
+                }
+            }
+            else
+            {
+                Errors::Error("Expected '('");
+            }
+        }
+        else
+        {
+            return 0;
+        }
+    }
     macro.replace(begin, end - begin, insert);
     return insert.size();
 }

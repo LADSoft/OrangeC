@@ -14,14 +14,14 @@ let config : Config {
         } else {
             .ldflags += "-static"
         }
-        .cflags_cc += "-std=c++14"
+        .cflags_cc += "-std=c++11"
     	.defines += "HAVE_UNISTD_H"
     }else if (target_toolchain == `clang) {
     	# NOTE: this is an experimental compile with Clang 4.0.1 and the libc++ headers;
     	# it compiles when the original C headers from the system are available
     	# linking is yet another adventure to be solved
         .lib_names += [ "m" "stdc++" ]
-        .cflags_cc += "-std=c++14";
+        .cflags_cc += "-std=c++11";
     	.defines += "HAVE_UNISTD_H"
         .include_dirs += [
             //home/me/Programme/clang-4/includes

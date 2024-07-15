@@ -119,10 +119,13 @@ void* operator new(size_t aa)
     {
         // If malloc fails and there is a new_handler,
         // call it to try free up memory.
+
+#if __GNUC__ > 4
         std::new_handler nh = std::get_new_handler();
         if (nh)
             nh();
         else
+#endif
             throw std::bad_alloc();
     }
     rv->size = bb;

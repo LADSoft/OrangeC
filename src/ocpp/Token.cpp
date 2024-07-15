@@ -670,19 +670,19 @@ const Token* Tokenizer::Next()
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     if (line.empty())
-        currentToken = std::make_unique<EndToken>();
+        currentToken.reset(new EndToken());
     else if (NumericToken::Start(line))
-        currentToken = std::make_unique<NumericToken>(line);
+        currentToken.reset(new NumericToken(line));
     else if (CharacterToken::Start(line))
-        currentToken = std::make_unique<CharacterToken>(line);
+        currentToken.reset(new CharacterToken(line));
     else if (StringToken::Start(line))
-        currentToken = std::make_unique<StringToken>(line);
+        currentToken.reset(new StringToken(line));
     else if (IdentifierToken::Start(line))
-        currentToken = std::make_unique<IdentifierToken>(line, keywordTable, caseInsensitive);
+        currentToken.reset(new IdentifierToken(line, keywordTable, caseInsensitive));
     else if (keywordTable && KeywordToken::Start(line))
-        currentToken = std::make_unique<KeywordToken>(line, keywordTable);
+        currentToken.reset(new KeywordToken(line, keywordTable));
     else
-        currentToken = std::make_unique<ErrorToken>(line);
+        currentToken.reset(new ErrorToken(line));
     return currentToken.get();
 }
 void Tokenizer::Reset(const std::string& Line)

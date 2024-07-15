@@ -7,8 +7,8 @@
 
 let config : Config {
     if (target_toolchain == `gcc) {
-        # NOTE: this build has been successfully run on Linux x86 with GCC 12 and Linux x64 with GCC 10
-        .lib_names += [ "m" "stdc++" ]
+        # NOTE: this build has been successfully run on Linux x86 with GCC 4.8 and 12, and Linux x64 with GCC 10
+        .lib_names += [ "stdc++" "m" ] # NOTE: order is relevant to avoid missing floor reference from stl
         if build_mode == `debug {
             .ldflags += "-shared-libgcc"
         } else {

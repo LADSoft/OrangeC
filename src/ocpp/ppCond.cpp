@@ -148,7 +148,7 @@ void ppCond::HandleIf(bool val, const std::string& line, int lineno)
         skipping = old->skipping;
     if (current)
         skipList.push_front(std::move(current));
-    current = std::make_unique<skip>();
+    current.reset(new skip());
     current->line = lineno;
     if (skipping)
     {

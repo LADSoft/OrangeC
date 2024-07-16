@@ -7,21 +7,21 @@
 
 let config : Config {
     if (target_toolchain == `gcc) {
-        # NOTE: this build has been successfully run on Linux x86 with GCC 12 and Linux x64 with GCC 10
-        .lib_names += [ "m" "stdc++" ]
+        # NOTE: this build has been successfully run on Linux x86 with GCC 4.8 and 12, and Linux x64 with GCC 10
+        .lib_names += [ "stdc++" "m" ] # NOTE: order is relevant to avoid missing floor reference from stl
         if build_mode == `debug {
             .ldflags += "-shared-libgcc"
         } else {
             .ldflags += "-static"
         }
-        .cflags_cc += "-std=c++14"
+        .cflags_cc += "-std=c++11"
     	.defines += "HAVE_UNISTD_H"
     }else if (target_toolchain == `clang) {
     	# NOTE: this is an experimental compile with Clang 4.0.1 and the libc++ headers;
     	# it compiles when the original C headers from the system are available
     	# linking is yet another adventure to be solved
         .lib_names += [ "m" "stdc++" ]
-        .cflags_cc += "-std=c++14";
+        .cflags_cc += "-std=c++11";
     	.defines += "HAVE_UNISTD_H"
         .include_dirs += [
             //home/me/Programme/clang-4/includes
@@ -67,6 +67,9 @@ let common : SourceSet {
         ./src/util/UTF8.h
         ./src/util/Utils.h
         ./src/util/xml.h
+
+        ./src/ocpp/Floating.cpp
+        ./src/ocpp/Floating.h
 
         ./src/occopt/config.cpp
         ./src/occopt/config.h
@@ -143,7 +146,6 @@ let orangefront : Executable {
         ./src/occparse/unmangle.cpp
         ./src/occparse/wseh.cpp
         ./src/ocpp/Errors.cpp
-        ./src/ocpp/Floating.cpp
         ./src/ocpp/InputFile.cpp
         ./src/ocpp/MakeStubs.cpp
         ./src/ocpp/PipeArbitrator.cpp
@@ -213,7 +215,6 @@ let orangefront : Executable {
         ./src/occparse/winmode.h
         ./src/occparse/wseh.h
         ./src/ocpp/Errors.h
-        ./src/ocpp/Floating.h
         ./src/ocpp/InputFile.h
         ./src/ocpp/MakeStubs.h
         ./src/ocpp/PipeArbitrator.h
@@ -282,16 +283,11 @@ let orangeopt : Executable {
         ./src/occopt/istren.h
         ./src/occopt/localprotect.cpp
         ./src/occopt/localprotect.h
-        ./src/occopt/msilprocess.cpp
         ./src/occopt/optmain.cpp
         ./src/occopt/optmain.h
         ./src/occopt/optmodulerun.cpp
-        ./src/occopt/rewritemsil.cpp
-        ./src/occopt/rewritemsil.h
         ./src/occopt/rewritex86.cpp
         ./src/occopt/rewritex86.h
-
-        ./src/ocpp/Floating.cpp
      ]
 }
 

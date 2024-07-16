@@ -367,7 +367,7 @@ void ppPragma::HandleFar(Tokenizer& tk)
     // fixme
 }
 
-static std::tuple<std::wstring, const Token*> MunchStrings(Tokenizer& tk)
+static std::pair<std::wstring, const Token*> MunchStrings(Tokenizer& tk)
 {
     std::wstring finalStr;
     const Token* tok;

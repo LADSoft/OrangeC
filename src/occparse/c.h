@@ -82,7 +82,7 @@ public:
     SymbolTable<T>* Next() const { return next_; }
     void Chain(SymbolTable<T>* chain) { chain_ = chain; }
     SymbolTable<T>* Chain() const { return chain_; }
-    auto ReleaseNext() { auto rv = next_; if (next_) next_ = next_->next_; return rv; }
+    SymbolTable<T>* ReleaseNext() { SymbolTable<T>* rv = next_; if (next_) next_ = next_->next_; return rv; }
     int Block() const { return blockLevel_; }
     void Block(int level) { blockLevel_ = level; }
 
@@ -1251,9 +1251,7 @@ typedef struct _atomicData
 
 CONSTEXPR inline TYPE* basetype(TYPE* a)
 {
-    if (a)
-        a = a->rootType;
-    return a;
+    return a ? a->rootType : a;
 }
 
 CONSTEXPR inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }

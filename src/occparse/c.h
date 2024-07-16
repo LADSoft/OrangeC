@@ -94,7 +94,7 @@ public:
     SymbolTable<T>* Next() const { return next_; }
     void Chain(SymbolTable<T>* chain) { chain_ = chain; }
     SymbolTable<T>* Chain() const { return chain_; }
-    auto ReleaseNext() { auto rv = next_; if (next_) next_ = next_->next_; return rv; }
+    SymbolTable<T>* ReleaseNext() { SymbolTable<T>* rv = next_; if (next_) next_ = next_->next_; return rv; }
     int Block() const { return blockLevel_; }
     void Block(int level) { blockLevel_ = level; }
 

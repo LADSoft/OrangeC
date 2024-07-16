@@ -321,7 +321,7 @@ static int bitintbits(EXPRESSION* node)
 }
 static Optimizer::IMODE* bitint_unary(EXPRESSION* node) 
 {
-    static std::unordered_map<ExpressionNode, const char*> funcs = {{ExpressionNode::uminus_, "___biminus"},
+    static std::unordered_map<ExpressionNode, const char*, EnumClassHash> funcs = {{ExpressionNode::uminus_, "___biminus"},
                                                               {ExpressionNode::compl_, "___bicompl"}
     };
     int b;
@@ -342,7 +342,7 @@ static Optimizer::IMODE* bitint_unary(EXPRESSION* node)
 }
 static Optimizer::IMODE* bitint_binary(EXPRESSION* node) 
 {
-    static std::unordered_map<ExpressionNode, const char*> funcs = {{ExpressionNode::add_, "___biadd"},
+    static std::unordered_map<ExpressionNode, const char*,EnumClassHash> funcs = {{ExpressionNode::add_, "___biadd"},
         {ExpressionNode::sub_, "___bisub"}, {ExpressionNode::and_, "___biand"}, {ExpressionNode::or_, "___bior"}, {
             ExpressionNode::xor_, "___bixor"}, {ExpressionNode::mul_, "___bimul"}, {ExpressionNode::umul_, "___biumul"}, {
             ExpressionNode::div_, "___bidiv"}, {ExpressionNode::udiv_, "___biudiv"}, {ExpressionNode::mod_,

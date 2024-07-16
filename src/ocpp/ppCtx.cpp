@@ -55,7 +55,7 @@ std::string ppCtx::GetId(std::string& line)
 bool ppCtx::push(std::string& line)
 {
     define.Process(line);
-    stack.push_front(std::make_unique<CtxData>());
+    stack.push_front(std::unique_ptr<CtxData>(new CtxData()));
     CtxData* p = stack.front().get();
     p->id = nextId++;
     p->name = GetId(line);

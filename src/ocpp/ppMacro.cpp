@@ -101,7 +101,7 @@ bool ppMacro::HandleRep(std::string& line)
     }
     else if (n > 0)
     {
-        p = std::make_unique<MacroData>();
+        p.reset(new MacroData());
         p->repsLeft = (int)n;
         p->offset = 0;
         p->id = -1;

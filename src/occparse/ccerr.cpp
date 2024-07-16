@@ -523,7 +523,7 @@ int printerr(int err, const char* file, int line, ...)
 
 bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
 {
-    static std::unordered_map<Dialect, const char*> lookup = {
+    static std::unordered_map<Dialect, const char*,EnumClassHash> lookup = {
         {Dialect::c89, "C89"},     {Dialect::c99, "C99"},     {Dialect::c11, "C11"},    {Dialect::c2x, "C23"},
         {Dialect::cpp11, "C++11"}, {Dialect::cpp14, "C++14"}, {Dialect::cpp17, "C++17"}};
     if (cpp >= Dialect::c89 && cpp < Dialect::cpp11)

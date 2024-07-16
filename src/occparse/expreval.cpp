@@ -83,7 +83,7 @@ namespace Parser
 typedef bool(*EvalFunc)(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                        EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
 
-static std::unordered_map<Keyword, EvalFunc> dispatcher = {
+static std::unordered_map<Keyword, EvalFunc, EnumClassHash> dispatcher = {
     {Keyword::dotstar_, eval_binary_pm},
     {Keyword::pointstar_, eval_binary_pm},
     {Keyword::star_, eval_binary_times},

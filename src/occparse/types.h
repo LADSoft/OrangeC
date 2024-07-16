@@ -73,9 +73,7 @@ struct Type
     CONSTEXPR inline Type* BaseType()
     {
         void* aa = this;
-        if (aa)
-            return this->rootType;
-        return nullptr;
+        return aa ? this->rootType : nullptr;
     }
     void UpdateRootTypes();
     bool IsAutoType();

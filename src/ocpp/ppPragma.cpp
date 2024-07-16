@@ -428,7 +428,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
                     const Token* commaTok = tk.Next();
                     if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
                     {
-                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::pair<std::wstring, const Token*> tup = MunchStrings(tk);
                         std::wstring myString = std::get<0>(tup);
                         afterTok = std::get<1>(tup);
                         if (myString.empty())
@@ -455,7 +455,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
                     const Token* commaTok = tk.Next();
                     if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
                     {
-                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::pair<std::wstring, const Token*> tup = MunchStrings(tk);
                         std::wstring myString = std::get<0>(tup);
                         afterTok = std::get<1>(tup);
                         if (myString.empty())
@@ -485,7 +485,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
                     // Send specific info into the object comments
                     if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
                     {
-                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::pair<std::wstring, const Token*> tup = MunchStrings(tk);
                         std::wstring myString = std::get<0>(tup);
                         afterTok = std::get<1>(tup);
                         if (myString.empty())

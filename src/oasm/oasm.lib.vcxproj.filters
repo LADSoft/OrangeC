@@ -24,12 +24,6 @@
     <ClCompile Include="AsmLexer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AsmToken.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InstructionParser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Listing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

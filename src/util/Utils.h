@@ -89,6 +89,7 @@ class Utils
     static void StripExt(char* buffer);
     static bool HasExt(const char* buffer, const char* ext);
     static bool FileExists(const char* buffer);
+    static bool FileExists(std::string buffer) { return FileExists(buffer.data()); }
     static std::string FindOnPath(const std::string& name, const std::string& path);
     static std::vector<std::string> split(const std::string& strToSplit, char delimeter = ';');
     static void ReplaceAll(std::string& str, const std::string& from, const std::string& to);

@@ -69,6 +69,10 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
     bool found_system = false;
     int discard = 0;
     std::string fil = includer.FindFile(info.is_system, info.filename, false, discard, found_system);
+    if (!Utils::FileExists(fil))
+    {
+        return {builder, EmbedReturnValue::EMBED_NOT_FOUND};
+    }
     size_t size = Utils::file_size(fil);
     ppExpr evaluator(false, Dialect::c2x);
     // I would love if the above evaluator could run on tokens
@@ -184,6 +188,7 @@ bool embeder::Check(kw token, std::string& args)
         auto ret = std::get<1>(return_val);
         if (ret == EmbedReturnValue::EMBED_NOT_FOUND)
         {
+            Errors::ErrorWithLine("The embedded file was not found", Errors::GetFileName(), Errors::GetErrorLine());
             return true;
         }
         std::string thing = tokens_to_inject(vec);

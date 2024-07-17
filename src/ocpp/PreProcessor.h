@@ -70,7 +70,7 @@ class PreProcessor
     int GetErrLineNo() { return include.GetErrLineNo(); }
     const std::string& GetRealFile() { return include.GetRealFile(); }
     int GetRealLineNo() { return include.GetRealLineNo(); }
-    int GetMainLineNo() { return lineno; }
+    int GetMainLineNo() const { return lineno; }
     void Define(const std::string name, std::string value, bool caseInsensitive = false)
     {
         define.Define(name, value, nullptr, false, false, false, caseInsensitive);

@@ -764,8 +764,8 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::arraylsh_:
         case ExpressionNode::rsh_:
         case ExpressionNode::assign_:
-        case ExpressionNode::void_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::comma_:
+        case ExpressionNode::check_nz_:
             /*        case ExpressionNode::dvoid_: */
         case ExpressionNode::arraymul_:
         case ExpressionNode::arrayadd_:
@@ -792,7 +792,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::uge_:
         case ExpressionNode::ult_:
         case ExpressionNode::ule_:
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
         case ExpressionNode::intcall_:
         case ExpressionNode::stackblock_:
         case ExpressionNode::blockassign_:
@@ -931,8 +931,10 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
                 block->blockTail = inlinestmt(block->blockTail);
                 break;
             case StatementNode::passthrough_:
+#ifndef ORANGE_NO_INASM
                 if (block->lower)
                     inlineAsmStmt(block->lower);
+#endif
                 break;
             case StatementNode::nop_:
                 break;
@@ -1239,8 +1241,8 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::lsh_:
         case ExpressionNode::arraylsh_:
         case ExpressionNode::rsh_:
-        case ExpressionNode::void_:
-        case ExpressionNode::void_nz_:
+        case ExpressionNode::comma_:
+        case ExpressionNode::check_nz_:
             /*        case ExpressionNode::dvoid_: */
         case ExpressionNode::arraymul_:
         case ExpressionNode::arrayadd_:
@@ -1268,7 +1270,7 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::uge_:
         case ExpressionNode::ult_:
         case ExpressionNode::ule_:
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
         case ExpressionNode::intcall_:
         case ExpressionNode::stackblock_:
         case ExpressionNode::blockassign_:

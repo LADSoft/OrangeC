@@ -154,7 +154,7 @@ int InsertExternalFile(const char* name, bool primary)
     else
         p++;
     strcpy(buf, p);
-    InsertFile(&objlist, buf, ".o", primary);
+    InsertFile(&objlist, buf, 0, primary); // don't add an extension if we don't know what it is, let the linker deal with the file as it will
 
     // compiling via assembly
     if (Optimizer::cparams.prm_asmfile && !Optimizer::cparams.prm_compileonly)

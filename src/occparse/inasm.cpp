@@ -58,7 +58,7 @@ static Optimizer::ASMNAME* insdata;
 static LEXLIST* lex;
 
 static SYMBOL* lastsym;
-static enum e_opcode op;
+static e_opcode op;
 
 static const char* assembler_errors[] = {"Lable expected",
                                          "Illegal address mode",
@@ -140,6 +140,7 @@ void inlineAsmInit(void)
     int i = 0;
     if (IsCompiler())
     {
+#ifndef ORANGE_NO_INASM
         for (auto v : opcodeTable)
         {
             if (v[0] != 0)
@@ -154,6 +155,7 @@ void inlineAsmInit(void)
             }
             i++;
         }
+#endif
     }
     if (Optimizer::cparams.prm_assemble)
     {
@@ -971,7 +973,7 @@ AMODE* getimmed(void)
 
 /*-------------------------------------------------------------------------*/
 
-enum e_opcode inasm_op(void)
+e_opcode inasm_op(void)
 {
     int op;
     if (!lex || lex->data->type != l_asminst)
@@ -1077,7 +1079,13 @@ static void AssembleInstruction(OCODE* ins)
             std::shared_ptr<Instruction> newIns;
             std::list<Numeric*> operands;
             Optimizer::assembling = true;
-            asmError err = instructionParser->GetInstruction(&ins1, newIns, operands);
+
+            asmError err =
+#ifndef ORANGE_NO_INASM
+                    instructionParser->GetInstruction(&ins1, newIns, operands);
+#else
+                    AERR_SYNTAX;
+#endif
             Optimizer::assembling = false;
             switch (err)
             {

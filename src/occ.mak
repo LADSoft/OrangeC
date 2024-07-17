@@ -56,6 +56,10 @@ else
 CCFLAGS = /S /E- /!
 endif
 
+ifeq "$(STD)" ""
+STD := --std:c++14
+endif
+
 LINK=$(COMPILER_PATH)\bin\olink
 LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG)
 
@@ -105,7 +109,7 @@ CCFLAGS:=$(CCFLAGS) /Wcl
 endif
 endif
 CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)
-CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) $(STD)
 
 vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)

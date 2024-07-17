@@ -25,7 +25,7 @@
 #include <string.h>
 #include <wctype.h>
 
-int _RTL_FUNC wcsnicmp(wchar_t* __s1, wchar_t* __s2, size_t __n)
+int _RTL_FUNC wcsnicmp(const wchar_t* __s1, const wchar_t* __s2, size_t __n)
 {
     while (__n--)
     {
@@ -36,4 +36,4 @@ int _RTL_FUNC wcsnicmp(wchar_t* __s1, wchar_t* __s2, size_t __n)
     }
     return 0;
 }
-int _RTL_FUNC _wcsnicmp(wchar_t* __s1, wchar_t* __s2, size_t __n) { return wcsnicmp(__s1, __s2, __n); }
+int _RTL_FUNC _wcsnicmp(const wchar_t* __s1, const wchar_t* __s2, size_t __n) { return wcsnicmp(__s1, __s2, __n); }

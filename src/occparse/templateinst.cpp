@@ -3535,7 +3535,7 @@ static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool ch
                             case ExpressionNode::pc_:
                             case ExpressionNode::global_:
                             case ExpressionNode::func_:
-                            case ExpressionNode::void_:
+                            case ExpressionNode::comma_:
                                 break;
                             default:
                                 return false;
@@ -3769,7 +3769,7 @@ void DuplicateTemplateParamList(std::list<TEMPLATEPARAMPAIR>** pptr)
                 {
                     DuplicateTemplateParamList(&(*pptr)->back().second->byPack.pack);
                 }
-                else
+                else if (param.second->byClass.val)
                 {
                     (*pptr)->back().second->byClass.dflt = SynthesizeType(param.second->byClass.val, nullptr, false);
                 }
@@ -5257,7 +5257,7 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
                 if (rv)
                 {
                     optimize_for_constants(&rv);
-                    while (rv->type == ExpressionNode::void_ && rv->right)
+                    while (rv->type == ExpressionNode::comma_ && rv->right)
                         rv = rv->right;
                 }
                 if (i >= 0)

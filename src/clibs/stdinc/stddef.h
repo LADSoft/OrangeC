@@ -39,6 +39,8 @@
 typedef long double max_align_t;
 #endif
 
+#define _TRUNCATE ((size_t)-1)
+
 #ifndef RC_INVOKED
 #ifndef _PTRDIFF_T
 #    define _PTRDIFF_T

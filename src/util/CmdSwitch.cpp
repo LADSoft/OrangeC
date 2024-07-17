@@ -174,7 +174,7 @@ int CmdSwitchDefine::Parse(const char* data)
     {
         return -1;
     }
-    std::unique_ptr<define> newDefine = std::make_unique<define>();
+    std::unique_ptr<define> newDefine(new define());
     newDefine->name = name;
     if (*data == '=')
     {
@@ -212,7 +212,7 @@ int CmdSwitchFile::Parse(const char* data)
         in.seekg(0, std::ios::end);
         size_t size = in.tellg();
         in.seekg(0, std::ios::beg);
-        std::unique_ptr<char[]> data1 = std::make_unique<char[]>(size + 1);
+        std::unique_ptr<char[]> data1(new char[size + 1]);
         memset(data1.get(), 0, size + 1);
         in.read(data1.get(), size);
         data1[size] = 0;
@@ -226,7 +226,7 @@ void CmdSwitchFile::Dispatch(char* data)
 {
     int max = 10;
     argc = 1;
-    argv = std::make_unique<char*[]>(max);
+    argv.reset(new char*[max]);
     argv[0] = (char*)"";
     while (*data)
     {
@@ -235,7 +235,7 @@ void CmdSwitchFile::Dispatch(char* data)
         {
             max += 10;
             std::unique_ptr<char*[]> p = std::move(argv);
-            argv = std::make_unique<char*[]>(max);
+            argv.reset(new char*[max]);
             memcpy(argv.get(), p.get(), argc * sizeof(char*));
         }
     }
@@ -364,7 +364,11 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
-        else if ((argv[0][0] == '-' || argv[0][0] == '/' || (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
+        else if ((argv[0][0] == '-' ||
+          #ifdef TARGET_OS_WINDOWS
+                  argv[0][0] == '/' ||
+          #endif
+                  (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
                  (argv[0][1] != '-' || argv[0][2]))
         {
             const char* swtch = &argv[0][0];

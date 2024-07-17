@@ -585,7 +585,7 @@ static bool TemplateConstExpr(TYPE* tp, EXPRESSION* exp)
         return false;
     if (exp)
     {
-        while (exp->type == ExpressionNode::void_ && exp->right)
+        while (exp->type == ExpressionNode::comma_ && exp->right)
             exp = exp->right;
         int offset;
         exp = relptr(exp, offset);

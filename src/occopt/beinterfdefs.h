@@ -114,6 +114,7 @@ typedef struct
     bool prm_displaytiming;      /* display timing info */
     bool prm_makelib;            /* make library */
     int  prm_stackprotect;       /* stack protection mode */
+    int  prm_netcore_version;    /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */

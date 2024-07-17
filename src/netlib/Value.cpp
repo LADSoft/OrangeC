@@ -33,7 +33,7 @@ bool Value::ILSrcDump(PELib& peLib) const
     return true;
 }
 void Value::ObjOut(PELib& peLib, int pass) const { type_->ObjOut(peLib, pass); }
-Value* Value::ObjIn(PELib& peLib, bool definition)
+Value* Value::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals, bool definition)
 {
     switch (peLib.ObjBegin())
     {
@@ -45,7 +45,7 @@ Value* Value::ObjIn(PELib& peLib, bool definition)
             return rv;
         }
         case 'l':
-            return Local::ObjIn(peLib, false);
+            return Local::ObjIn(peLib, locals, false);
         case 'p':
             return Param::ObjIn(peLib, false);
         case 'f':
@@ -73,7 +73,7 @@ void Local::ObjOut(PELib& peLib, int pass) const
     }
     peLib.Out() << std::endl << "$le";
 }
-Local* Local::ObjIn(PELib& peLib, bool definition)
+Local* Local::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals, bool definition)
 {
     std::string name = peLib.UnformatName();
     int index = peLib.ObjInt();
@@ -92,8 +92,17 @@ Local* Local::ObjIn(PELib& peLib, bool definition)
     {
         peLib.ObjError(oe_syntax);
     }
-    Local* rv = peLib.AllocateLocal(name, tp);
-    rv->Index(index);
+    auto it = locals.find(name);
+    Local *rv;
+    if (it == locals.cend())
+    {
+        rv = peLib.AllocateLocal(name, tp);
+        rv->Index(index);
+    }
+    else
+    {
+        rv = it->second;
+    }
     return rv;
 }
 size_t Local::Render(PELib& peLib, int opcode, int operandType, Byte* result)

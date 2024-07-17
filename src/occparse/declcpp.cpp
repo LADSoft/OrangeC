@@ -1209,7 +1209,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
 LEXLIST* baseClasses(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
 {
     auto baseClasses = baseClassListFactory.CreateList();
-    enum AccessLevel currentAccess;
+    AccessLevel currentAccess;
     bool isvirtual = false;
     bool done = false;
     SYMBOL* bcsym;
@@ -2781,7 +2781,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case Keyword::not_:
                 case Keyword::complx_:
-                    // needs one arg of class or enum type
+                    // needs one arg of class or type
                     sym = *it;
                     if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() != 1)
                     {
@@ -2809,7 +2809,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 case Keyword::or_:
                 case Keyword::uparrow_:
                 case Keyword::comma_:
-                    // needs two args, one of class or enum type
+                    // needs two args, one of class or type
                     if (basetype(sp->tp)->syms->size() != 2)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
@@ -2822,7 +2822,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case Keyword::autoinc_:
                 case Keyword::autodec_:
-                    // needs one or two args, first of class or enum type
+                    // needs one or two args, first of class or type
                     // if second is present int type
                     sym = (*it);
                     if (sym->tp->type == BasicType::void_ || basetype(sp->tp)->syms->size() > 2)
@@ -3294,7 +3294,7 @@ LEXLIST* insertUsing(LEXLIST* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                         }
                     }
                     parsingTrailingReturnOrUsing--;
-                    enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+                    Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
                     bool defd = false;
                     SYMBOL* sp = nullptr;
                     bool notype = false;
@@ -3996,7 +3996,6 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                         }
                         else
                         {
-                            using namespace std::literals;
                             std::string stripped_ver = StripUnderscores((std::string)(*lex)->data->value.s.a);
                             if (stripped_ver == occNamespace)
                             {
@@ -4132,7 +4131,7 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                             else
                             {
 
-                                if (stripped_ver == "noreturn"s)
+                                if (stripped_ver == "noreturn")
                                 {
                                     *lex = getsym();
                                     special = true;
@@ -4140,30 +4139,30 @@ bool ParseAttributeSpecifiers(LEXLIST** lex, SYMBOL* funcsp, bool always)
                                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                                     basisAttribs.inheritable.linkage3 = Linkage::noreturn_;
                                 }
-                                else if (stripped_ver == "carries_dependency"s)
+                                else if (stripped_ver == "carries_dependency")
                                 {
                                     *lex = getsym();
                                     special = true;
                                 }
-                                else if (stripped_ver == "fallthrough"s)
+                                else if (stripped_ver == "fallthrough")
                                 {
                                     *lex = getsym();
                                     basisAttribs.uninheritable.fallthrough = true;
                                 }
-                                else if (stripped_ver == "maybe_unused"s)
+                                else if (stripped_ver == "maybe_unused")
                                 {
                                     *lex = getsym();
                                     basisAttribs.uninheritable.maybe_unused = true;
 
                                 }
-                                else if (stripped_ver == "nodiscard"s)
+                                else if (stripped_ver == "nodiscard")
                                 {
                                     *lex = getsym();
                                     basisAttribs.uninheritable.nodiscard = true;
                                 }
                                 else
                                 {
-                                    if (stripped_ver == "deprecated"s)
+                                    if (stripped_ver == "deprecated")
                                         basisAttribs.uninheritable.deprecationText = (char*)-1;
                                     *lex = getsym();
                                     if (MATCHKW(*lex, Keyword::classsel_))
@@ -4510,11 +4509,11 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
         {
             atexitfunc = atexitfunc->tp->syms->front();
             EXPRESSION** last = &exp;
-            while (*last && (*last)->type == ExpressionNode::void_)
+            while (*last && (*last)->type == ExpressionNode::comma_)
                 last = &(*last)->right;
             if (*last)
             {
-                *last = exprNode(ExpressionNode::void_, *last, nullptr);
+                *last = exprNode(ExpressionNode::comma_, *last, nullptr);
                 last = &(*last)->right;
             }
             auto newFunc = makeID(StorageClass::global_, &stdfunc, nullptr, litlate((std::string(decl->sb->decoratedName) + "_dest").c_str()));

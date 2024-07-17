@@ -76,6 +76,7 @@ static const unsigned char* linePointer;
 static std::string currentLine;
 static int lastBrowseIndex;
 static unsigned char* bitIntBuffer;
+static std::deque<ppDefine::TokenPos>::const_iterator tokenIterator;
 struct ParseHold
 {
     std::string currentLine;
@@ -636,7 +637,7 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
 
 int getChar(const unsigned char** source, e_lexType* tp)
 {
-    enum e_lexType v = l_achr;
+    e_lexType v = l_achr;
     const unsigned char* p = *source;
     if (*p == 'L')
     {
@@ -740,16 +741,6 @@ int getChar(const unsigned char** source, e_lexType* tp)
     }
     return INT_MIN;
 }
-int nextch()
-{
-    if (!*linePointer)
-    {
-        if (!preProcessor->GetLine(currentLine))
-            return -1;
-        linePointer = (const unsigned char*)currentLine.c_str();
-    }
-    return *linePointer++;
-}
 Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
 {
     // the static declaration speeds it up by about 5% on windows platforms.
@@ -762,7 +753,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
     int len = sizeof(data) / sizeof(data[0]);
     int count = 0;
     int errored = 0;
-    enum e_lexType v = l_astr;
+    e_lexType v = l_astr;
     if (*p == 'L')
     {
         v = l_wstr;
@@ -816,7 +807,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
         if (raw)
         {
             // fixme utf8 raw strings...
-            char preamble[16];
+            char preamble[256];
             int pcount = 0, qcount;
             LCHAR* qpos = 0;
             int lineno = preProcessor->GetErrLineNo();
@@ -824,19 +815,21 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
             bool err = false;
             while (true)
             {
-                if (*p)
+                if (!*p)
                 {
-                    st[0] = *p;
-                    do
-                        p++;
-                    while (*p == MacroStates::MACRO_PLACEHOLDER);
+                    if (!preProcessor->GetLine(currentLine))
+                    {
+                        errorint(ERR_EOF_RAW_STRING, lineno);
+                        *source = p;
+                        return nullptr;
+                    }
+                    p = (const unsigned char*)currentLine.c_str();
+                    tokenIterator = preProcessor->TokenPositions().begin();
                 }
-                else if ((st[0] = nextch()))
-                {
-                    errorint(ERR_EOF_RAW_STRING, lineno);
-                    *source = p;
-                    return nullptr;
-                }
+                st[0] = *p;
+                do
+                    p++;
+                while (*p == MacroStates::MACRO_PLACEHOLDER);
                 if (err)
                 {
                     if (st[0] == '"')
@@ -871,25 +864,39 @@ Optimizer::SLCHAR* getString(const unsigned char** source, e_lexType* tp)
             else
                 while (true)
                 {
-                    if (*p)
+                    if (!*p)
+                    {
+                        if (!preProcessor->GetLine(currentLine))
+                        {
+                            errorint(ERR_EOF_RAW_STRING, lineno);
+                            *source = p;
+                            return nullptr;
+                        }
+                        p = (const unsigned char*)currentLine.c_str();
+                        tokenIterator = preProcessor->TokenPositions().begin();
+                        st[0] = '\n';
+                    }
+                    else
                     {
                         st[0] = *p;
                         do
                             p++;
                         while (*p == MacroStates::MACRO_PLACEHOLDER);
                     }
-                    else if ((st[0] = nextch()))
-                    {
-                        errorint(ERR_EOF_RAW_STRING, lineno);
-                        *source = p;
-                        return nullptr;
-                    }
-                    if (len == 1)
+                    if (len < 3)
                     {
                         error(ERR_STRING_CONSTANT_TOO_LONG);
                     }
                     else
                     {
+#ifdef TARGET_OS_WINDOWS
+                        if (st[0] == '\n')
+                        {
+                            *dest++ = '\r';
+                            len--;
+                            count++;
+                        }
+#endif
                         *dest++ = st[0];
                         len--;
                         count++;
@@ -1275,7 +1282,7 @@ e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsign
     int floatradix = 0;
     int frac = 0;
     bool hasdot = false;
-    enum e_lexType lastst;
+    e_lexType lastst;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return (e_lexType)INT_MIN;
     if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
@@ -1738,7 +1745,7 @@ LEXLIST* getsym(void)
     static const char* origLine = "";
     LEXLIST* lex;
     KEYWORD* kw;
-    enum e_lexType tp;
+    e_lexType tp;
     bool contin;
     FPF rval;
     long long ival;
@@ -1747,7 +1754,6 @@ LEXLIST* getsym(void)
     int cval;
 
     static int trailer;
-    static std::deque<ppDefine::TokenPos>::const_iterator tokenIterator;
     Optimizer::SLCHAR* strptr;
 
     if (context->cur)
@@ -1895,7 +1901,7 @@ LEXLIST* getsym(void)
             const unsigned char* start = linePointer;
             const unsigned char* end = linePointer;
             unsigned char* bitintValue;
-            enum e_lexType tp;
+            e_lexType tp;
             lex->data->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival, &bitintValue)) != (unsigned)INT_MIN)
             {
@@ -1962,7 +1968,7 @@ LEXLIST* getsym(void)
             int end = linePointer - (const unsigned char*)currentLine.c_str();
             if (valid && tokenIterator != preProcessor->TokenPositions().end())
             {
-                auto p = *tokenIterator;
+                auto& p = *tokenIterator;
                 int oldend = end;
                 if (start <= p.newStart)
                 {

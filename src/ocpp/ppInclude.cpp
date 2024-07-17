@@ -170,8 +170,8 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
         }
         // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to the
         // cached object.
-        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, dialect, asmpp,
-                                           piper, dirs_traversed);
+        current.reset( new ppFile(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, dialect, asmpp,
+                                           piper, dirs_traversed));
         // if (current)
         if (!current->Open())
         {
@@ -378,7 +378,11 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
         }
         AddName(buf, name);
 
+#ifdef TARGET_OS_WINDOWS
         while (char* p = (char*)strchr(buf, '/'))
+#else
+        while (char* p = (char*)strchr(buf, '\\'))
+#endif
         {
             *p = CmdFiles::DIR_SEP[0];
         }

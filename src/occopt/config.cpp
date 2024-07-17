@@ -25,7 +25,9 @@
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "Utils.h"
+#ifndef ORANGE_NO_MSIL
 #include "configmsil.h"
+#endif
 #include "configx86.h"
 #include "ildata.h"
 
@@ -36,7 +38,11 @@ ARCH_DEBUG* chosenDebugger;
 
 enum asmTypes : int;
 
-ARCH_ASM* assemblerInterfaces[] = {x86AssemblerInterface, msilAssemblerInterface};
+ARCH_ASM* assemblerInterfaces[] = {x86AssemblerInterface
+                                   #ifndef ORANGE_NO_MSIL
+                                   , msilAssemblerInterface
+                                   #endif
+                                  };
 
 static ARCH_ASM* assemblerInterface;
 
@@ -44,9 +50,11 @@ void SelectBackendData()
 {
     switch (architecture)
     {
+#ifndef ORANGE_NO_MSIL
         case ARCHITECTURE_MSIL:
             assemblerInterface = msilAssemblerInterface;
             break;
+#endif
         case ARCHITECTURE_X86:
             assemblerInterface = x86AssemblerInterface;
             break;

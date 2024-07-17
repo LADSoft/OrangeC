@@ -31,6 +31,10 @@ LIB_DEPENDENCIES=netlib ocpplib occopt util
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
+ifneq "$(COMPILER)" "gcc-linux"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr
+endif
+
 include ../redirect.mak
 
 DISTRIBUTE: copyexe

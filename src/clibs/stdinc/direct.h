@@ -29,6 +29,10 @@
 #    include <stddef.h>
 #endif
 
+#ifndef __STAT_H
+#    include <sys/stat.h>
+#endif
+
 #ifndef RC_INVOKED
 #ifdef __cplusplus
 extern "C"

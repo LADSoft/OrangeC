@@ -75,8 +75,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\netil\netlib</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FALLBACK_HOST_OS="win10";TARGET_OS_WINDOWS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -88,8 +88,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_LIB;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FALLBACK_HOST_OS="win10";TARGET_OS_WINDOWS;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -102,8 +103,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\netil\netlib</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FALLBACK_HOST_OS="win10";TARGET_OS_WINDOWS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -119,10 +120,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_LIB;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>
-      </AdditionalOptions>
+      <PreprocessorDefinitions>FALLBACK_HOST_OS="win10";TARGET_OS_WINDOWS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,6 +162,7 @@
     <ClCompile Include="Method.cpp" />
     <ClCompile Include="MethodSignature.cpp" />
     <ClCompile Include="NameSpace.cpp" />
+    <ClCompile Include="NetCore.cpp" />
     <ClCompile Include="NetSignature.cpp" />
     <ClCompile Include="Operand.cpp" />
     <ClCompile Include="PECor20Headers.cpp" />
@@ -175,6 +176,11 @@
     <ClCompile Include="sha1.cpp" />
     <ClCompile Include="Type.cpp" />
     <ClCompile Include="Value.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libhostfxr\libhostfxr.vcxproj">
+      <Project>{047ac59d-a120-4b63-bf7d-4c560c68d643}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

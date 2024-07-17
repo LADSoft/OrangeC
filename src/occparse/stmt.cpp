@@ -50,7 +50,9 @@
 #include "declcpp.h"
 #include "constopt.h"
 #include "OptUtils.h"
+#ifndef ORANGE_NO_MSIL
 #include "using.h"
+#endif
 #include "declare.h"
 #include "memory.h"
 #include "exprcpp.h"
@@ -127,8 +129,10 @@ void statement_ini(bool global)
 }
 bool msilManaged(SYMBOL* s)
 {
+#ifndef ORANGE_NO_MSIL
     if (IsCompiler())
-        return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
+       return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
+#endif
     return false;
 }
 
@@ -2072,7 +2076,7 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
     }
     else
     {
-        if (exp->type == ExpressionNode::cond_)
+        if (exp->type == ExpressionNode::hook_)
         {
             exp->right->left = ConvertReturnToRef(exp->right->left, tp, boundTP);
             exp->right->right = ConvertReturnToRef(exp->right->right, tp, boundTP);
@@ -2409,9 +2413,9 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         else
                         {
                             EXPRESSION** expx = &returnexp;
-                            if (*expx && (*expx)->type == ExpressionNode::void_)
+                            if (*expx && (*expx)->type == ExpressionNode::comma_)
                             {
-                                while ((*expx)->right && (*expx)->right->type == ExpressionNode::void_)
+                                while ((*expx)->right && (*expx)->right->type == ExpressionNode::comma_)
                                     expx = &(*expx)->right;
                                 expx = &(*expx)->right;
                             }
@@ -2844,8 +2848,8 @@ static bool checkNoEffect(EXPRESSION* exp)
         case ExpressionNode::blockclear_:
         case ExpressionNode::stmt_:
         case ExpressionNode::atomic_:
-        case ExpressionNode::void_nz_:
-        case ExpressionNode::void_:
+        case ExpressionNode::check_nz_:
+        case ExpressionNode::comma_:
         case ExpressionNode::initblk_:
         case ExpressionNode::cpblk_:
         case ExpressionNode::initobj_:
@@ -2857,7 +2861,7 @@ static bool checkNoEffect(EXPRESSION* exp)
         case ExpressionNode::literalclass_:
         case ExpressionNode::funcret_:
             return checkNoEffect(exp->left);
-        case ExpressionNode::cond_:
+        case ExpressionNode::hook_:
             return checkNoEffect(exp->right->left) & checkNoEffect(exp->right->right);
         default:
             return true;
@@ -3095,6 +3099,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
     (void)funcsp;
     (void)parent;  //
     Optimizer::functionHasAssembly = true;
+#ifndef ORANGE_NO_INASM
     if (hasInlineAsm())
     {
         before->hassemi = false;
@@ -3143,6 +3148,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
         }
     }
     else
+#endif
     {
         /* if we get here the backend doesn't have an assembler, for now we
          * are just going to make an error and scan past tokens
@@ -3180,7 +3186,7 @@ static void reverseAssign(std::list<STATEMENT*>* current, EXPRESSION** exp)
             if ((*it)->type != StatementNode::line_)
             {
                 if (*exp)
-                    *exp = exprNode(ExpressionNode::void_, (*it)->select, *exp);
+                    *exp = exprNode(ExpressionNode::comma_, (*it)->select, *exp);
                 else
                     *exp = (*it)->select;
             }

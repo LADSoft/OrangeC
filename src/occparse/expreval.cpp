@@ -58,7 +58,9 @@
 #include "optmodules.h"
 #include "config.h"
 #include "constexpr.h"
+#ifndef ORANGE_NO_INASM
 #include "AsmLexer.h"
+#endif
 #include "symtab.h"
 #include "ListFactory.h"
 #include "inline.h"
@@ -81,7 +83,7 @@ namespace Parser
 typedef bool(*EvalFunc)(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** resulttp, EXPRESSION** resultexp, TYPE* lefttp,
                        EXPRESSION* leftexp, TYPE* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
 
-static std::unordered_map<Keyword, EvalFunc> dispatcher = {
+static std::unordered_map<Keyword, EvalFunc, EnumClassHash> dispatcher = {
     {Keyword::dotstar_, eval_binary_pm},
     {Keyword::pointstar_, eval_binary_pm},
     {Keyword::star_, eval_binary_times},
@@ -710,7 +712,7 @@ void eval_unary_autoincdec(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **result
             (*resultexp)->preincdec = true;
         }
         if (exp3)
-            *resultexp = exprNode(ExpressionNode::void_, exp3, *resultexp);
+            *resultexp = exprNode(ExpressionNode::comma_, exp3, *resultexp);
     }
 }
 bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXPRESSION **resultexp, TYPE *lefttp, EXPRESSION *leftexp, TYPE *righttp,
@@ -786,7 +788,7 @@ bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXP
                     ec1 = exprNode(ExpressionNode::sub_, ec, intNode(ExpressionNode::c_i_, 1));
                     deref(&stdint, &ec1);
                     ec =
-                        exprNode(ExpressionNode::cond_, ec, exprNode(ExpressionNode::void_, ec1, intNode(ExpressionNode::c_i_, 0)));
+                        exprNode(ExpressionNode::hook_, ec, exprNode(ExpressionNode::comma_, ec1, intNode(ExpressionNode::c_i_, 0)));
                     *resultexp = exprNode(ExpressionNode::add_, *resultexp, ec);
                 }
                 else
@@ -815,7 +817,7 @@ bool eval_binary_pm(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EXP
                     ec1 = exprNode(ExpressionNode::add_, ec, intNode(ExpressionNode::c_i_, -1));
                     ec1 = exprNode(ExpressionNode::add_, *resultexp, ec1);
                     deref(&stdint, &ec1);
-                    *resultexp = exprNode(ExpressionNode::cond_, ec, exprNode(ExpressionNode::void_, ec1, *resultexp));
+                    *resultexp = exprNode(ExpressionNode::hook_, ec, exprNode(ExpressionNode::comma_, ec1, *resultexp));
                 }
                 deref(&stdint, &rightexp);
                 *resultexp = exprNode(ExpressionNode::add_, *resultexp, rightexp);
@@ -969,7 +971,6 @@ bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EX
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
     if (isstructuredmath(*resulttp, righttp))
     {
-
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
             insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, resulttp, resultexp, righttp, rightexp, nullptr, flags))
         {
@@ -984,7 +985,7 @@ bool eval_binary_add(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp, EX
             }
             if (Optimizer::cparams.prm_cplusplus && righttp && isstructured(righttp))
             {
-                if (!castToArithmeticInternal(false, &righttp, &rightexp, (Keyword)-1, isstructured(*resulttp) ? &stdint : *resulttp, false))
+                if (!castToArithmeticInternal(false, &righttp, &rightexp, (Keyword)-1, isstructured(*resulttp) || ispointer(*resulttp) ? &stdint : *resulttp, false))
                     castToPointer(&righttp, &rightexp, kw, &stdpointer);
             }
             LookupSingleAggregate(*resulttp, resultexp);
@@ -1646,14 +1647,6 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
             {
                 GetAssignDestructors(&(*resultexp)->v.func->destructors, *resultexp);
             }
-            /*
-            if (asndest)
-            {
-                SYMBOL *sym = anonymousVar(StorageClass::auto_, righttp)->v.sp;
-                callDestructor(basetype(righttp)->sp, nullptr, &asndest, nullptr, true, false, false, true);
-                initInsert(&sym->sb->dest, righttp, asndest, 0, true);
-            }
-            */
             return true;
         }
     }
@@ -1678,7 +1671,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     auto exp2 = &rightexp;
     while (castvalue(*exp2))
         exp2 = &(*exp2)->left;
-    if ((*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
+    if ((isfunction(*resulttp) || isfuncptr(*resulttp)) && (*exp2)->type == ExpressionNode::func_ && (*exp2)->v.func->sp->sb->storage_class == StorageClass::overloads_)
     {
         TYPE *tp2 = nullptr;
         SYMBOL *funcsp;
@@ -1721,7 +1714,6 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     EXPRESSION *temp = GetSymRef(*resultexp);
     auto symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
     LookupSingleAggregate(righttp, &rightexp);
-
     if (isstructured(righttp))
     {
         SYMBOL *conv = lookupNonspecificCast(basetype(righttp)->sp, *resulttp);
@@ -2110,7 +2102,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
     else if (basetype(*resulttp)->type == BasicType::memberptr_)
     {
         if ((*resultexp)->type == ExpressionNode::not__lvalue_ || ((*resultexp)->type == ExpressionNode::func_ && !(*resultexp)->v.func->ascall) ||
-            (*resultexp)->type == ExpressionNode::void_ || (*resultexp)->type == ExpressionNode::memberptr_)
+            (*resultexp)->type == ExpressionNode::comma_ || (*resultexp)->type == ExpressionNode::memberptr_)
         {
             if (basetype(*resulttp)->type != BasicType::templateparam_)
                 error(ERR_LVALUE);
@@ -2146,7 +2138,7 @@ bool eval_binary_assign(LEXLIST *lex, SYMBOL *funcsp,TYPE *atp, TYPE **resulttp,
         EXPRESSION *exp2 = rightexp;
         if (((*resultexp)->type == ExpressionNode::not__lvalue_ ||
              ((*resultexp)->type == ExpressionNode::func_ && (!(*resultexp)->v.func->ascall || (*resultexp)->v.func->returnSP)) ||
-             ((*resultexp)->type == ExpressionNode::void_) && !(flags & _F_SIZEOF)))
+             ((*resultexp)->type == ExpressionNode::comma_) && !(flags & _F_SIZEOF)))
             error(ERR_LVALUE);
         if (lvalue(exp2))
             exp2 = exp2->left;
@@ -2314,7 +2306,7 @@ bool eval_binary_comma(LEXLIST *lex, SYMBOL *funcsp, TYPE *atp, TYPE **resulttp,
     else
     {
         *resulttp = righttp;
-        *resultexp = exprNode(ExpressionNode::void_, *resultexp, rightexp);
+        *resultexp = exprNode(ExpressionNode::comma_, *resultexp, rightexp);
         resultexp = &(*resultexp)->right;
     }
     return false;

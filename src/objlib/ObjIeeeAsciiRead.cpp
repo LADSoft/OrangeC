@@ -284,6 +284,7 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
         try
         {
             done = Parse(inBuf, ParseType);
+            first = false;
         }
         catch (BadCS& e)
         {

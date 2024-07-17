@@ -54,7 +54,7 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
     if (fromConditional && expressionHandler)
         return expressionHandler(line);
     floatWarned = false;
-    tokenizer = std::make_unique<Tokenizer<kw>>(line, &hash);
+    tokenizer.reset(new Tokenizer(line, &hash));
     token = tokenizer->Next();
     if (!token)
         return 0;

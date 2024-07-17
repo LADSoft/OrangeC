@@ -175,6 +175,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libocc.exe", "libocc\libocc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "linkocc.exe", "linkocc\linkocc.exe.vcxproj", "{44A57572-60CC-405F-93FE-F3433C35DD4F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhostfxr", "libhostfxr\libhostfxr.vcxproj", "{047AC59D-A120-4B63-BF7D-4C560C68D643}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -615,6 +617,14 @@ Global
 		{44A57572-60CC-405F-93FE-F3433C35DD4F}.Release|Win32.Build.0 = Release|Win32
 		{44A57572-60CC-405F-93FE-F3433C35DD4F}.Release|x64.ActiveCfg = Release|x64
 		{44A57572-60CC-405F-93FE-F3433C35DD4F}.Release|x64.Build.0 = Release|x64
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Debug|Win32.ActiveCfg = Debug|Win32
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Debug|Win32.Build.0 = Debug|Win32
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Debug|x64.ActiveCfg = Debug|x64
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Debug|x64.Build.0 = Debug|x64
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Release|Win32.ActiveCfg = Release|Win32
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Release|Win32.Build.0 = Release|Win32
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Release|x64.ActiveCfg = Release|x64
+		{047AC59D-A120-4B63-BF7D-4C560C68D643}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -698,6 +708,7 @@ Global
 		{2A9FA237-3093-4565-87F9-0594E3963FBC} = {33F0258A-B4B0-4716-B355-65F1CDC67F86}
 		{3F50B6A2-D63E-45C0-AAD6-79338202EC99} = {33F0258A-B4B0-4716-B355-65F1CDC67F86}
 		{44A57572-60CC-405F-93FE-F3433C35DD4F} = {33F0258A-B4B0-4716-B355-65F1CDC67F86}
+		{047AC59D-A120-4B63-BF7D-4C560C68D643} = {6F1242CC-95D5-4AB9-9B86-E811BAB694D9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1CBB2B0-63DA-4E55-9678-031F3127E97E}

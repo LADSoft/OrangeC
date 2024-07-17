@@ -42,11 +42,10 @@ class SharedMemory
     void SetName();
     std::string name_;
 
-    unsigned max_;
-    unsigned windowSize_;
+    const unsigned max_;
+    const unsigned windowSize_;
     unsigned current_;
     void* fileHandle_;
-    unsigned regionBase_;
-    void* regionHandle;
-    unsigned char* regionStart;
+    void* regionHandle; // result of OpenFileMapping/CreateFileMapping
+    unsigned char* regionStart; // result of MapViewOfFile(regionHandle,regionBase_,windowSize_)
 };

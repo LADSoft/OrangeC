@@ -18,7 +18,7 @@
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
- *         email: TouchStone222@runbox.com <David Lindauer>
+t
  * 
  */
 
@@ -37,15 +37,18 @@
 #include "occil.h"
 #include "using.h"
 #include "MsilProcess.h"
+#include "CmdFiles.h"
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
 #define STARTUP_TYPE_TLS_STARTUP 3
 #define STARTUP_TYPE_TLS_RUNDOWN 4
-
+#include <sstream>
 #include <vector>
 #include <string>
 using namespace DotNetPELib;
 extern PELib* peLib;
+
+extern NetCore* netCoreInstance;
 
 namespace occmsil
 {
@@ -63,8 +66,6 @@ MethodSignature* ptrUnbox;
 MethodSignature* concatStr;
 MethodSignature* concatObj;
 MethodSignature* toStr;
-MethodSignature* toInt;
-MethodSignature* toVoidStar;
 MethodSignature* delegateInvoker;
 MethodSignature* delegateAllocator;
 MethodSignature* delegateFreer;
@@ -96,6 +97,21 @@ std::map<std::string, MethodSignature*> arrayMethods;
 
 std::vector<Local*> localList;
 
+bool LoadAssembly(const char *assemblyName)
+{
+    bool rv;
+#ifdef TARGET_OS_WINDOWS
+    if (netCoreInstance)
+    {
+        rv = netCoreInstance->LoadAssembly(assemblyName);
+    }
+    else
+#endif
+    {
+        rv = peLib->LoadAssembly(assemblyName);
+    }
+    return rv;
+}
 MethodSignature* FindMethodSignature(const char* name)
 {
     void* result;
@@ -199,12 +215,6 @@ static void CreateExternalCSharpReferences()
         delegateFreer = FindMethodSignature("lsmsilcrtl.MethodPtr::Free");
         multicastDelegate = static_cast<Class*>(FindType("System.MulticastDelegate", true)->GetClass());
     }
-    Type* voidStar = peLib->AllocateType(Type::Void, 1);
-    std::vector<Type*> params = {voidStar};
-    toInt = FindMethodSignature("System.IntPtr.op_Explicit", params);
-    params.clear();
-    params.push_back(intPtr);
-    toVoidStar = FindMethodSignature("System.IntPtr.op_Explicit", params, voidStar);
 
     systemObject = FindType("System.Object", true);
 
@@ -261,19 +271,46 @@ int msil_main_preprocess(char* fileName)
     bool newFile;
     if (!peLib)
     {
-        peLib = new PELib(q, corFlags);
-
-        if (peLib->LoadAssembly("mscorlib"))
+#ifdef TARGET_OS_WINDOWS
+        if (Optimizer::cparams.prm_netcore_version)
         {
-            Utils::Fatal("could not load mscorlib.dll");
+           netCoreInstance = new NetCore(corFlags, Optimizer::cparams.prm_targettype == GUI, Optimizer::cparams.prm_netcore_version);
+           peLib = netCoreInstance->init(q);
+           if (!peLib) 
+               Utils::Fatal("internal error: netcore installation not found");
         }
-        if (!Optimizer::cparams.no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
+        else
+#endif
         {
-            Utils::Fatal("could not load lsmsilcrtl.dll");
+            peLib = new PELib(q, corFlags);
+        }
+        if (LoadAssembly(peLib->GetRuntimeName().c_str()))
+        {
+            Utils::Fatal("could not load runtime.dll");
+        }
+
+#ifdef TARGET_OS_WINDOWS
+        if (netCoreInstance && LoadAssembly("System.Console"))
+        {
+            Utils::Fatal("could not load System.Console");
+        }
+#endif
+        std::ostringstream name ;
+        name << "lsmsilcrtl";
+#ifdef TARGET_OS_WINDOWS
+        if (netCoreInstance)
+        {
+            auto runtimeAssembly = peLib->FindAssembly(peLib->GetRuntimeName());
+            if (runtimeAssembly)
+                name << runtimeAssembly->GetMajor();
+        }
+#endif
+        if (!Optimizer::cparams.no_default_libs && LoadAssembly(name.str().c_str()))
+        {
+            Utils::Fatal(std::string("could not load ") + name.str());
         }
         _apply_global_using();
 
-        // peLib->AddUsing("System");
         newFile = true;
     }
     else
@@ -281,10 +318,6 @@ int msil_main_preprocess(char* fileName)
         peLib->EmptyWorkingAssembly(q);
         newFile = false;
     }
-    //    if (p)
-    //    {
-    //        *p = '.';
-    //    }
     if (!Optimizer::prm_namespace_and_class.empty())
     {
         int npos = Optimizer::prm_namespace_and_class.find('.');
@@ -344,8 +377,21 @@ void msil_end_generation(char* fileName)
             }
         }
         if (fileName)
-            peLib->DumpOutputFile(fileName, PELib::object, false);
+        {
+#ifdef TARGET_OS_WINDOWS
+            if (netCoreInstance)
+            {
+                netCoreInstance->DumpOutputFile(fileName, PELib::object);
+            }
+            else
+#endif
+            {
+                peLib->DumpOutputFile(fileName, PELib::object, false);
+            }
+        }
         // needs work        delete peLib;
+        // needs work        delete netCoreInstance
+        netCoreInstance = nullptr;
 
         initializersHead = initializersTail = NULL;
         deinitializersHead = deinitializersTail = NULL;

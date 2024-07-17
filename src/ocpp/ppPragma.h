@@ -320,7 +320,7 @@ class Startups
     }
     ~Startups();
 
-    void Add(std::string& item, int Priority, bool startup) { list[item] = std::make_unique<Properties>(Priority, startup); }
+    void Add(std::string& item, int Priority, bool startup) { list[item].reset( new Properties(Priority, startup)); }
     typedef std::map<std::string, std::unique_ptr<Properties>>::iterator StartupIterator;
     StartupIterator begin() { return list.begin(); }
     StartupIterator end() { return list.end(); }

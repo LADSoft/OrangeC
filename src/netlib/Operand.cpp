@@ -209,7 +209,7 @@ void Operand::ObjOut(PELib& peLib, int pass) const
     }
     peLib.Out() << std::endl << "$oe";
 }
-Operand* Operand::ObjIn(PELib& peLib)
+Operand* Operand::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals)
 {
     if (peLib.ObjBegin() != 'o')
         peLib.ObjError(oe_syntax);
@@ -227,7 +227,7 @@ Operand* Operand::ObjIn(PELib& peLib)
             ch = peLib.ObjChar();
             if (ch != ',')
                 peLib.ObjError(oe_syntax);
-            rv = peLib.AllocateOperand(Value::ObjIn(peLib));
+            rv = peLib.AllocateOperand(Value::ObjIn(peLib, locals));
             break;
         case t_int:
             ch = peLib.ObjChar();

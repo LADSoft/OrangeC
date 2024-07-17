@@ -317,7 +317,7 @@ size_t Type::Render(PELib& peLib, Byte* result)
 bool BoxedType::ILSrcDump(PELib& peLib) const
 {
     // no point in looking up the type name in the assembly for this...
-    peLib.Out() << "[mscorlib]System." << typeNames_[tp_];
+    peLib.Out() << "[" << peLib.GetRuntimeName() << "]System." << typeNames_[tp_];
     return true;
 }
 void BoxedType::ObjOut(PELib& peLib, int pass) const { peLib.Out() << std::endl << "$Bb" << tp_ << std::endl << "$Be"; }
@@ -332,7 +332,7 @@ size_t BoxedType::Render(PELib& peLib, Byte* result)
     {
         size_t system = peLib.PEOut().SystemName();
         size_t name = peLib.PEOut().HashString(typeNames_[tp_]);
-        AssemblyDef* assembly = peLib.MSCorLibAssembly();
+        AssemblyDef* assembly = peLib.LoadRuntimeAssembly();
         void* result = nullptr;
         peLib.Find(std::string("System.") + typeNames_[tp_], &result, nullptr, assembly);
         if (result)

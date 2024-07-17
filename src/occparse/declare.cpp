@@ -76,6 +76,7 @@ Optimizer::LIST* openStructs;
 int parsingTrailingReturnOrUsing;
 int inTypedef;
 int resolvingStructDeclarations;
+std::map<int, SYMBOL*> localAnonymousUnions;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -83,9 +84,9 @@ static unsigned symbolKey;
 static int nameshim;
 
 static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
-                                  enum StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
+                                  StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                                   bool* isExplicit, bool* constexpression, TYPE** tp, Linkage* linkage, Linkage* linkage2,
-                                  enum Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
+                                  Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
                                   bool* asFriend);
 
 void declare_init(void)
@@ -148,7 +149,7 @@ const char* AnonymousTypeName(SYMBOL* sp, SymbolTable<SYMBOL>* table)
     // type name will depend on file name
     auto name = preProcessor->GetRealFile().c_str();
     unsigned fileCRC = Utils::CRC32((const unsigned char *)name, strlen(name));
-    // type name will also depend on the structure/enum elements defined for the type
+    // type name will also depend on the structure/elements defined for the type
     unsigned typeCRC = TypeCRC(sp);
 
     // generate type name
@@ -397,7 +398,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
     }
 }
 LEXLIST* tagsearch(LEXLIST* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-                   enum StorageClass storage_class)
+                   StorageClass storage_class)
 {
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
     SYMBOL* strSym = nullptr;
@@ -488,7 +489,7 @@ static void checkIncompleteArray(TYPE* tp, const char* errorfile, int errorline)
 }
 LEXLIST* get_type_id(LEXLIST* lex, TYPE** tp, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing)
 {
-    enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+    Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
     SYMBOL* sp = nullptr;
     SYMBOL* strSym = nullptr;
@@ -579,8 +580,8 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
 }
 void calculateStructOffsets(SYMBOL* sp)
 {
-    enum BasicType type = basetype(sp->tp)->type;
-    enum BasicType bittype = BasicType::none_;
+    BasicType type = basetype(sp->tp)->type;
+    BasicType bittype = BasicType::none_;
     int startbit = 0;
     int maxbits = 0;
     int nextoffset = 0;
@@ -812,25 +813,19 @@ static bool validateAnonymousUnion(SYMBOL* parent, TYPE* unionType)
 static void resolveAnonymousGlobalUnion(SYMBOL* sp)
 {
     validateAnonymousUnion(nullptr, sp->tp);
-    sp->sb->label = Optimizer::nextLabel++;
-    sp->sb->storage_class = StorageClass::localstatic_;
-    insertInitSym(sp);
+    InsertSymbol(sp, sp->sb->storage_class, Linkage::c_, true);
+    if (sp->sb->storage_class != StorageClass::auto_)
+    {
+        insertInitSym(sp);
+    }
     for (auto sym : *sp->tp->syms)
     {
         if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
         {
-            SYMBOL* spi;
-            if ((spi = gsearch(sym->name)) != nullptr)
-            {
-                currentErrorLine = 0;
-                preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->sb->declfile, spi->sb->declline);
-            }
-            else
-            {
-                sym->sb->storage_class = StorageClass::localstatic_;
-                sym->sb->label = sp->sb->label;
-                InsertSymbol(sym, StorageClass::static_, Linkage::c_, false);
-            }
+            sym->sb->storage_class = sp->sb->storage_class;
+            sym->sb->label = sp->sb->label;
+            sym->sb->anonymousGlobalUnion = true;
+            InsertSymbol(sym, sp->sb->storage_class, Linkage::c_, false);
         }
     }
 }
@@ -1352,24 +1347,24 @@ static unsigned char* ParseUUID(LEXLIST** lex)
     return nullptr;
 }
 static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
-                           Linkage linkage2_in, enum AccessLevel access, bool* defd, bool constexpression)
+                           Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
     SymbolTable<SYMBOL>* table = nullptr;
     const char* tagname;
     char newName[4096];
-    enum BasicType type = BasicType::none_;
+    BasicType type = BasicType::none_;
     SYMBOL* sp;
     int charindex;
     std::list<NAMESPACEVALUEDATA*>* nsv;
     SYMBOL* strSym;
-    enum AccessLevel defaultAccess;
+    AccessLevel defaultAccess;
     bool addedNew = false;
     int declline = lex->data->errline;
     int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
-    enum Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
+    Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
     *defd = false;
     switch (KW(lex))
     {
@@ -1671,7 +1666,7 @@ static LEXLIST* enumbody(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
     {
         preverrorsym(ERR_ENUM_CONSTANTS_DEFINED, spi, spi->sb->declfile, spi->sb->declline);
     }
-    spi->tp->syms = symbols.CreateSymbolTable(); /* holds a list of all the enum values, e.g. for debug info */
+    spi->tp->syms = symbols.CreateSymbolTable(); /* holds a list of all the values, e.g. for debug info */
     if (!MATCHKW(lex, Keyword::end_))
     {
         while (lex)
@@ -1842,7 +1837,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
     int declline = lex->data->errline;
     int realdeclline = lex->data->linedata->lineno;
     bool anonymous = false;
-    enum Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+    Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     *defd = false;
     lex = getsym();
     auto oldAttribs = basisAttribs;
@@ -1876,7 +1871,7 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (KW(lex) == Keyword::colon_)
     {
-        RequiresDialect::Feature(Dialect::c2x, "Underlying enum type");
+        RequiresDialect::Feature(Dialect::c2x, "Underlying type");
         lex = getsym();
         lex = get_type_id(lex, &fixedType, funcsp, StorageClass::cast_, false, true, false);
         if (!fixedType || !isint(fixedType))
@@ -1982,7 +1977,7 @@ static LEXLIST* getStorageClass(LEXLIST* lex, SYMBOL* funcsp, StorageClass* stor
 {
     (void)access;
     bool found = false;
-    enum StorageClass oldsc;
+    StorageClass oldsc;
     while (KWTYPE(lex, TT_STORAGE_CLASS))
     {
         switch (KW(lex))
@@ -2001,7 +1996,7 @@ static LEXLIST* getStorageClass(LEXLIST* lex, SYMBOL* funcsp, StorageClass* stor
                         Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->data->value.s.w;
                         char buf[256];
                         int i;
-                        enum Linkage next = Linkage::none_;
+                        Linkage next = Linkage::none_;
                         for (i = 0; i < ch->count; i++)
                         {
                             buf[i] = ch->str[i];
@@ -2453,11 +2448,11 @@ static bool isPointer(LEXLIST* lex)
     return false;
 }
 LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
-                      enum Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
+                      Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
                       bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
                       bool constexpression)
 {
-    enum BasicType type = BasicType::none_;
+    BasicType type = BasicType::none_;
     TYPE* tn = nullptr;
     TYPE* quals = nullptr;
     TYPE** tl;
@@ -2471,9 +2466,9 @@ LEXLIST* getBasicType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_o
     bool foundtypeof = false;
     bool foundsomething = false;
     bool int64 = false;
-    enum Linkage linkage = Linkage::none_;
-    enum Linkage linkage2 = Linkage::none_;
-    enum Linkage linkage3 = Linkage::none_;
+    Linkage linkage = Linkage::none_;
+    Linkage linkage2 = Linkage::none_;
+    Linkage linkage3 = Linkage::none_;
     int bitintbits = 0;
 
     *defd = false;
@@ -3934,14 +3929,14 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
             }
             else
             {
-                enum StorageClass storage_class = StorageClass::parameter_;
+                StorageClass storage_class = StorageClass::parameter_;
                 bool blocked;
                 bool constexpression;
                 Optimizer::ADDRESS address;
                 TYPE* tpb;
-                enum Linkage linkage = Linkage::none_;
-                enum Linkage linkage2 = Linkage::none_;
-                enum Linkage linkage3 = Linkage::none_;
+                Linkage linkage = Linkage::none_;
+                Linkage linkage2 = Linkage::none_;
+                Linkage linkage3 = Linkage::none_;
                 bool defd = false;
                 bool notype = false;
                 bool clonedParams = false;
@@ -4248,10 +4243,10 @@ LEXLIST* getFunctionParams(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** t
                 Optimizer::ADDRESS address;
                 bool blocked;
                 bool constexpression;
-                enum Linkage linkage = Linkage::none_;
-                enum Linkage linkage2 = Linkage::none_;
-                enum Linkage linkage3 = Linkage::none_;
-                enum StorageClass storage_class = StorageClass::parameter_;
+                Linkage linkage = Linkage::none_;
+                Linkage linkage2 = Linkage::none_;
+                Linkage linkage3 = Linkage::none_;
+                StorageClass storage_class = StorageClass::parameter_;
                 bool defd = false;
                 bool notype = false;
                 tp1 = nullptr;
@@ -4815,7 +4810,7 @@ LEXLIST* getBeforeType(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SY
 {
     SYMBOL* sp;
     TYPE* ptype = nullptr;
-    enum BasicType xtype = BasicType::none_;
+    BasicType xtype = BasicType::none_;
     LEXLIST* pos = lex;
     bool doneAfter = false;
 
@@ -5365,7 +5360,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, TYPE* bt
     store = exprNode(ExpressionNode::add_, vlanode, intNode(ExpressionNode::c_i_, *index));
     deref(&stdint, &store);
     store = exprNode(ExpressionNode::assign_, store, mul1);
-    **rptr = exprNode(ExpressionNode::void_, store, nullptr);
+    **rptr = exprNode(ExpressionNode::comma_, store, nullptr);
     *rptr = &(**rptr)->right;
     *index += sou;
     return mul;
@@ -5427,7 +5422,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
         loader = exprNode(ExpressionNode::savestack_, var, nullptr);
         unloader = exprNode(ExpressionNode::loadstack_, var, nullptr);
         ep1 = exprNode(ExpressionNode::assign_, ep1, exprNode(ExpressionNode::alloca_, ep2, nullptr));
-        ep1 = exprNode(ExpressionNode::void_, loader, ep1);
+        ep1 = exprNode(ExpressionNode::comma_, loader, ep1);
     }
 
     initInsert(&sp->sb->dest, sp->tp, unloader, 0, false);
@@ -5463,7 +5458,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
     {
         SYMBOL* dest = sp;
         SYMBOL* src = sp->tp->sp;
-        *rptr = exprNode(ExpressionNode::void_, nullptr, nullptr);
+        *rptr = exprNode(ExpressionNode::comma_, nullptr, nullptr);
         rptr = &(*rptr)->right;
         result->left = exprNode(ExpressionNode::blockassign_, varNode(ExpressionNode::auto_, dest), varNode(ExpressionNode::auto_, src));
         dest->tp->size = src->tp->size;
@@ -5485,7 +5480,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
         ep = exprNode(ExpressionNode::add_, vlanode, intNode(ExpressionNode::c_i_, soa));
         deref(&stdint, &ep);
         ep = exprNode(ExpressionNode::assign_, ep, intNode(ExpressionNode::c_i_, count));
-        *rptr = exprNode(ExpressionNode::void_, ep, nullptr);
+        *rptr = exprNode(ExpressionNode::comma_, ep, nullptr);
         rptr = &(*rptr)->right;
 
         basetype(sp->tp)->size = size; /* size field is actually size of VLA header block */
@@ -5502,7 +5497,7 @@ static void allocateVLA(LEXLIST* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<BLOC
             deref(&stdpointer, &ep1);
             deref(&stdint, &ep2);
             ep1 = llallocateVLA(sp, ep1, ep2);  // exprNode(ExpressionNode::assign_, ep1, exprNode(ExpressionNode::alloca_, ep2, nullptr));
-            *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : exprNode(ExpressionNode::void_, ep1, nullptr);
+            *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : exprNode(ExpressionNode::comma_, ep1, nullptr);
             sp->sb->assigned = true;
         }
         st->select = result;
@@ -5552,9 +5547,9 @@ static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
     return true;
 }
 static LEXLIST* getStorageAndType(LEXLIST* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
-                                  enum StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
+                                  StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                                   bool* isExplicit, bool* constexpression, TYPE** tp, Linkage* linkage, Linkage* linkage2,
-                                  enum Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
+                                  Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
                                   bool* asFriend)
 {
     bool foundType = false;
@@ -5704,11 +5699,11 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
     bool isInline = false;
     TYPE* btp;
     SYMBOL* sp;
-    enum StorageClass storage_class_in = storage_class;
-    enum Linkage linkage = Linkage::none_;
-    enum Linkage linkage2 = Linkage::none_;
-    enum Linkage linkage3 = Linkage::none_;
-    enum Linkage linkage4 = Linkage::none_;
+    StorageClass storage_class_in = storage_class;
+    Linkage linkage = Linkage::none_;
+    Linkage linkage2 = Linkage::none_;
+    Linkage linkage3 = Linkage::none_;
+    Linkage linkage4 = Linkage::none_;
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
     SYMBOL* strSym = nullptr;
     Optimizer::ADDRESS address = 0;
@@ -6030,23 +6025,32 @@ LEXLIST* declare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tprv, StorageClass storage
                             }
                         }
                         tp1 = basetype(tp1);
-                        if (Optimizer::cparams.prm_cplusplus && storage_class_in == StorageClass::global_ && tp1->type == BasicType::union_ &&
-                            tp1->sp->sb->anonymous)
+                        if (Optimizer::cparams.prm_cplusplus && tp1->type == BasicType::union_ &&
+                            tp1->sp->sb->anonymous && (storage_class_in == StorageClass::global_ || storage_class_in == StorageClass::auto_))
                         {
-                            enum StorageClass sc = storage_class_in;
-                            if (sc != StorageClass::member_ && sc != StorageClass::mutable_)
+                            StorageClass sc = storage_class_in;
+                            if (sc == StorageClass::auto_)
+                                sc = storage_class;
+                            else if (sc != StorageClass::member_ && sc != StorageClass::mutable_)
                                 sc = StorageClass::static_;
 
-                            sp = makeID(sc, tp1, nullptr, AnonymousName());
+                            int label = Optimizer::nextLabel++;
+                            char buf[50];
+                            sprintf(buf, "__anonymousUnion%d", label);
+                            sp = makeID(sc, tp1, nullptr, litlate(buf));
+                            sp->sb->label = label;
+                            sp->sb->anonymousGlobalUnion = true;
                             sp->sb->anonymous = true;
                             sp->sb->access = access;
                             SetLinkerNames(sp, Linkage::c_);
                             sp->sb->parent = funcsp; /* function vars have a parent */
                             InsertSymbol(sp, sp->sb->storage_class, linkage, false);
-                            if (storage_class != StorageClass::static_)
+                            if (sc != StorageClass::auto_ && sc != StorageClass::static_ && sc != StorageClass::localstatic_)
                             {
                                 error(ERR_GLOBAL_ANONYMOUS_UNION_NOT_STATIC);
                             }
+                            if (sc == StorageClass::auto_)
+                                localAnonymousUnions[label] = sp;
                             resolveAnonymousGlobalUnion(sp);
                         }
                         else if ((storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_) && isstructured(tp1) &&

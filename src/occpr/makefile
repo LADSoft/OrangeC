@@ -32,6 +32,10 @@ LIB_DEPENDENCIES=occparse occil occ ocpplib oasm occopt util objlib netlib sqlit
 DEFINES=x64 PARSER_ONLY
 H_FILES=$(wildcard *.h)
 
+ifneq "$(COMPILER)" "gcc-linux"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr
+endif
+
 vpath %.cpp ..$(PATHEXT2)occparse
 
 include ../redirect.mak

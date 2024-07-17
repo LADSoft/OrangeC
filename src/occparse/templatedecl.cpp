@@ -555,7 +555,7 @@ bool constructedInt(LEXLIST* lex, SYMBOL* funcsp)
     bool rv = false;
     TYPE* tp;
     LEXLIST* placeholder = lex;
-    enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+    Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
     bool notype = false;
     bool cont = false;
@@ -1104,7 +1104,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                         if (exp)
                                         {
                                             optimize_for_constants(&exp);
-                                            while (exp->type == ExpressionNode::void_ && exp->right)
+                                            while (exp->type == ExpressionNode::comma_ && exp->right)
                                                 exp = exp->right;
                                         }
                                         ConstExprPatch(&exp);
@@ -1140,7 +1140,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             if (exp)
                             {
                                 optimize_for_constants(&exp);
-                                while (exp->type == ExpressionNode::void_ && exp->right)
+                                while (exp->type == ExpressionNode::comma_ && exp->right)
                                     exp = exp->right;
                             }
                             if (tp && (int)tp->type == (int)ExpressionNode::templateparam_)
@@ -1813,7 +1813,7 @@ static LEXLIST* TemplateArg(LEXLIST* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             break;
         default:  // non-type
         {
-            enum Linkage linkage, linkage2, linkage3;
+            Linkage linkage, linkage2, linkage3;
             bool defd;
             bool notype;
             linkage = Linkage::none_;
@@ -3073,7 +3073,7 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, AccessLevel access, S
     {
         if (KWTYPE(lex, TT_STRUCT))
         {
-            enum Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+            Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
             lex = getsym();
             if (MATCHKW(lex, Keyword::declspec_))
             {
@@ -3136,7 +3136,7 @@ LEXLIST* TemplateDeclaration(LEXLIST* lex, SYMBOL* funcsp, AccessLevel access, S
         else
         {
             SYMBOL* sym = nullptr;
-            enum Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+            Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
             TYPE* tp = nullptr;
             bool defd = false;
             bool notype = false;

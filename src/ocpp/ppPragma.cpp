@@ -366,8 +366,8 @@ void ppPragma::HandleFar(Tokenizer<kw>& tk)
 {
     // fixme
 }
-
-static std::tuple<std::wstring, const Token*> MunchStrings(Tokenizer<kw>& tk)
+template <typename T>
+static std::pair<std::wstring, const Token*> MunchStrings(Tokenizer<T>& tk)
 {
     std::wstring finalStr;
     const Token* tok;
@@ -398,7 +398,7 @@ void ppPragma::HandleComment(Tokenizer<kw>& tk)
         };
         const std::unordered_map<std::string, switchVals> switchMap = {
             {"compiler", COMPILER}, {"lib", LIB}, {"linker", LINKER}, {"user", USER}};
-        auto idVal = tok->GetId();
+        std::string idVal = tok->GetId();
         std::transform(idVal.begin(), idVal.end(), idVal.begin(), ::tolower);
         auto switchVal = switchMap.find(idVal);
         if (switchVal != switchMap.end())
@@ -428,7 +428,7 @@ void ppPragma::HandleComment(Tokenizer<kw>& tk)
                     const Token* commaTok = tk.Next();
                     if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
                     {
-                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::pair<std::wstring, const Token*> tup = MunchStrings(tk);
                         std::wstring myString = std::get<0>(tup);
                         afterTok = std::get<1>(tup);
                         if (myString.empty())
@@ -455,7 +455,7 @@ void ppPragma::HandleComment(Tokenizer<kw>& tk)
                     const Token* commaTok = tk.Next();
                     if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
                     {
-                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::pair<std::wstring, const Token*> tup = MunchStrings(tk);
                         std::wstring myString = std::get<0>(tup);
                         afterTok = std::get<1>(tup);
                         if (myString.empty())
@@ -485,7 +485,7 @@ void ppPragma::HandleComment(Tokenizer<kw>& tk)
                     // Send specific info into the object comments
                     if (commaTok->IsKeyword() && commaTok->GetKeyword() == kw::comma)
                     {
-                        std::tuple<std::wstring, const Token*> tup = MunchStrings(tk);
+                        std::pair<std::wstring, const Token*> tup = MunchStrings(tk);
                         std::wstring myString = std::get<0>(tup);
                         afterTok = std::get<1>(tup);
                         if (myString.empty())

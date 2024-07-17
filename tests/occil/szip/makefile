@@ -1,6 +1,10 @@
+ifneq "$(NETCORE)" ""
+NETCOREDLL := --netcore 0
+endif
+
 all: lsmsilcrtl.dll comp.tst
 lsmsilcrtl.dll:
-	-copy $(ORANGEC)\bin\lsmsilcrtl.dll *.*
+	-copy $(ORANGEC)\bin\lsmsilcrtl*.dll *.*
 
 comp.tst: comp.exe
 	szip szip.ref encode.tst
@@ -9,7 +13,8 @@ comp.tst: comp.exe
 	fc /b decode.tst szip.ref
 
 comp.exe:
-	occil comp.c /DMY_UNSIGNED_TYPES /oszip.exe /C+f	
+	occil comp.c $(NETCOREDLL) /DMY_UNSIGNED_TYPES /oszip.exe /C+f	
 
 clean:
 	del *.exe
+	del *.dll

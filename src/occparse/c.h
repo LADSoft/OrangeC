@@ -67,8 +67,8 @@ class SymbolTable
 {
 public:
     typedef typename std::list<T*>::iterator iterator;
-  typedef typename std::list<T*>::reverse_iterator reverse_iterator;
-  iterator begin() { return inOrder_.begin(); }
+    typedef typename std::list<T*>::reverse_iterator reverse_iterator;
+    iterator begin() { return inOrder_.begin(); }
     iterator end() { return inOrder_.end(); }
     reverse_iterator rbegin() { return inOrder_.rbegin(); }
     reverse_iterator rend() { return inOrder_.rend(); }
@@ -82,7 +82,7 @@ public:
     SymbolTable<T>* Next() const { return next_; }
     void Chain(SymbolTable<T>* chain) { chain_ = chain; }
     SymbolTable<T>* Chain() const { return chain_; }
-    auto ReleaseNext() { auto rv = next_; if (next_) next_ = next_->next_; return rv; }
+    SymbolTable<T>* ReleaseNext() { SymbolTable<T>* rv = next_; if (next_) next_ = next_->next_; return rv; }
     int Block() const { return blockLevel_; }
     void Block(int level) { blockLevel_ = level; }
 
@@ -208,7 +208,7 @@ typedef struct
 // clang-format off
     enum class ExpressionNode
     {
-        void_, not__lvalue_, lvalue_, argnopush_, void_nz_, shiftby_,
+        ___ignoreme, not__lvalue_, lvalue_, argnopush_, check_nz_, shiftby_,
         global_, auto_, labcon_, absolute_, pc_, const_, threadlocal_,
         c_bit_, c_bool_, c_c_, c_uc_, c_wc_, c_s_, c_u16_, c_us_, c_i_, c_ui_,
         c_u32_, c_l_, c_ul_, c_ll_, c_ull_, c_f_, c_d_, c_ld_,
@@ -228,7 +228,7 @@ typedef struct
         trapcall_, func_, funcret_, intcall_,
         arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
         add_, sub_, mul_, mod_, div_, lsh_, rsh_, ursh_,
-        cond_, assign_, eq_, ne_,
+        hook_, comma_, assign_, eq_, ne_,
         uminus_, not_, compl_, lt_, le_, gt_, ge_,
         and_, or_, land_, lor_, xor_, umul_, auto_inc_, auto_dec_,
         udiv_, umod_, ugt_, uge_, ule_, ult_, blockclear_, stackblock_,
@@ -381,7 +381,7 @@ struct ConstExprArgArray
 typedef struct expr
 {
     struct expr *left, *right;
-    enum ExpressionNode type;
+    ExpressionNode type;
     int pragmas;
     struct typ* size; /* For block moves */
     void* altdata;
@@ -500,7 +500,7 @@ struct u_val
 };
 typedef struct typ
 {
-    enum BasicType type;        /* the type */
+    BasicType type;        /* the type */
     long size;             /* total size of type */
     struct typ* btp;       /* pointer to next type (pointers & arrays */
     struct typ* rootType;  /* pointer to base type of sequence */
@@ -542,7 +542,7 @@ typedef struct stmt
 {
     std::list<struct stmt*>* lower;
     std::list<struct stmt*>* blockTail;
-    enum StatementNode type;
+    StatementNode type;
     EXPRESSION* select;
     EXPRESSION* destexp;
     Optimizer::LINEDATA* lineData;
@@ -645,10 +645,10 @@ struct attributes
         int structAlign;                                /* alignment of structures/ unions */
         int warnAlign;                                  /* if nz, warn if not aligned */
         unsigned vectorSize;                            /* total size of a vectored attribute */
-        enum Linkage linkage;                              /* stdcall */
-        enum Linkage linkage2;                             /* export, import, msil */
-        enum Linkage linkage3;                             /* used here for noreturn */
-        enum Linkage linkage4;                             /* lvirtual */
+        Linkage linkage;                                /* stdcall */
+        Linkage linkage2;                               /* export, import, msil */
+        Linkage linkage3;                               /* used here for noreturn */
+        Linkage linkage4;                               /* lvirtual */
         struct sym* cleanup;                            /* cleanup function */
         bool packed;                                    /* True if to reset alignment to 1 */
         bool alignedAttribute;                          /* True if alignment came from gcc aligned attribute */
@@ -698,9 +698,9 @@ typedef struct sym
         std::list<NAMESPACEVALUEDATA*>* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
         Optimizer::LINEDATA* linedata;
-        enum StorageClass storage_class; /* storage class */
-        enum AccessLevel access;        /* c++ access rights for members */
-        int operatorId;          /* operator id, CI + kw for an operator function */
+        StorageClass storage_class;                /* storage class */
+        AccessLevel access;                        /* c++ access rights for members */
+        int operatorId;                /* operator id, CI + kw for an operator function */
         enum e_cm lambdaMode;
         INLINEFUNC inlineFunc;
         int overlayIndex;              /* differentiating index when function differs only in return type from similar functions */
@@ -771,6 +771,7 @@ typedef struct sym
         unsigned isDestructor : 1;     // is  adestructor
         unsigned isAssign : 1;         // is an assignment operator
         unsigned literalClass : 1;     // is a literal class
+        unsigned anonymousGlobalUnion:1; // global or function-scope union symbol
         unsigned xtEntry : 1;          // is an exception table label
         unsigned isExplicit : 1;       // explicit constructor or conversion function
         unsigned specialized : 1;      // is a template specialization
@@ -899,7 +900,7 @@ typedef struct _memberInitializers
 typedef struct _baseClass
 {
     SYMBOL* cls;
-    enum AccessLevel accessLevel;
+    AccessLevel accessLevel;
     unsigned offset;
     int isvirtual : 1;
     int top : 1;
@@ -937,7 +938,7 @@ typedef struct _templateParam
     // template = template parameter
     // new = specialization
     // first in the list is always the specialization specifier
-    enum class TplType type;
+    TplType type;
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;
@@ -1248,33 +1249,31 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-constexpr inline TYPE* basetype(TYPE* a)
+CONSTEXPR inline TYPE* basetype(TYPE* a)
 {
-    if (a)
-        a = a->rootType;
-    return a;
+    return a ? a->rootType : a;
 }
 
-constexpr inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
-constexpr inline bool isref(TYPE* x)
+CONSTEXPR inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
+CONSTEXPR inline bool isref(TYPE* x)
 {
     return (__isref(basetype(x)) ||
             (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
 }
-constexpr inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
-constexpr inline bool ispointer(TYPE* x)
+CONSTEXPR inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
+CONSTEXPR inline bool ispointer(TYPE* x)
 {
     return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
                                             __ispointer((x)->templateParam->second->byNonType.tp));
 }
 
-constexpr inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
-constexpr inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
+CONSTEXPR inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
+CONSTEXPR inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
 
-constexpr inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
-constexpr inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
+CONSTEXPR inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
+CONSTEXPR inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
 
-constexpr inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
+CONSTEXPR inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
 
 }  // namespace Parser
 

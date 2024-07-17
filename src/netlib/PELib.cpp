@@ -32,8 +32,9 @@ namespace DotNetPELib
 {
 
 extern std::string DIR_SEP;
-PELib::PELib(const std::string& AssemblyName, int CoreFlags) :
+PELib::PELib(const std::string& AssemblyName, int CoreFlags, NetCore* netCore) :
     corFlags_(CoreFlags),
+    netCore_(netCore),
     peWriter_(nullptr),
     inputStream_(nullptr),
     outputStream_(nullptr),
@@ -682,6 +683,17 @@ AssemblyDef* PELib::FindAssembly(const std::string& assemblyName) const
     }
     return nullptr;
 }
+void PELib::RemoveAssembly(AssemblyDef* assembly)
+{
+    for (std::list<AssemblyDef*>::const_iterator it = assemblyRefs_.begin(); it != assemblyRefs_.end(); ++it)
+    {
+        if ((*it) == assembly)
+        {
+            assemblyRefs_.erase(it);
+            break;
+        }
+    }
+}
 Class* PELib::LookupClass(PEReader& reader, const std::string& assemblyName, int major, int minor, int build, int revision,
                           size_t publicKeyIndex, const std::string& nameSpace, const std::string& name)
 {
@@ -715,7 +727,7 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
     WorkingAssembly()->BaseTypes(types);
     if (types)
     {
-        MSCorLibAssembly();
+        LoadRuntimeAssembly();
     }
     size_t systemIndex = 0;
     size_t objectIndex = 0;
@@ -743,15 +755,15 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
     }
     if (types)
     {
-        AssemblyDef* mscorlibAssembly = MSCorLibAssembly();
-        int assemblyIndex = mscorlibAssembly->PEIndex();
+        AssemblyDef* runtimeAssembly = LoadRuntimeAssembly();
+        int assemblyIndex = runtimeAssembly->PEIndex();
         ResolutionScope rs(ResolutionScope::AssemblyRef, assemblyIndex);
         if (types & DataContainer::basetypeObject)
         {
             void* result = nullptr;
             table = new TypeRefTableEntry(rs, objectIndex, systemIndex);
             objectIndex = peWriter_->AddTableEntry(table);
-            Find("[mscorlib]System::Object", &result);
+            Find("[" + GetRuntimeName() + "]System::Object", &result);
             if (result)
                 static_cast<Class*>(result)->PEIndex(objectIndex);
         }
@@ -760,7 +772,7 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
             void* result = nullptr;
             table = new TypeRefTableEntry(rs, valueIndex, systemIndex);
             valueIndex = peWriter_->AddTableEntry(table);
-            Find("[mscorlib]System::ValueType", &result);
+            Find("[" + GetRuntimeName() + "]System::ValueType", &result);
             if (result)
                 static_cast<Class*>(result)->PEIndex(valueIndex);
         }
@@ -769,7 +781,7 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
             void* result = nullptr;
             table = new TypeRefTableEntry(rs, enumIndex, systemIndex);
             enumIndex = peWriter_->AddTableEntry(table);
-            Find("[mscorlib]System::Enum", &result);
+            Find("[" + GetRuntimeName() + "]System::Enum", &result);
             if (result)
                 static_cast<Class*>(result)->PEIndex(enumIndex);
         }
@@ -795,15 +807,21 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
     delete peWriter_;
     return rv;
 }
-AssemblyDef* PELib::MSCorLibAssembly()
+AssemblyDef* PELib::LoadRuntimeAssembly()
 {
-    AssemblyDef* mscorlibAssembly = FindAssembly("mscorlib");
-    if (mscorlibAssembly == nullptr)
+    AssemblyDef* runtimeAssembly = FindAssembly(GetRuntimeName());
+    if (runtimeAssembly == nullptr)
     {
-        LoadAssembly("mscorlib");
-        mscorlibAssembly = FindAssembly("mscorlib");
+	// because we don't have a pal for linux, for libhostfxr we don't want to force a link...
+#ifdef TARGET_OS_WINDOWS
+        if (netCore_)
+            netCore_->LoadAssembly(GetRuntimeName());
+        else
+#endif
+            LoadAssembly(GetRuntimeName());
+        runtimeAssembly = FindAssembly(GetRuntimeName());
     }
-    return mscorlibAssembly;
+    return runtimeAssembly;
 }
 int PELib::LoadAssembly(const std::string& assemblyName, int major, int minor, int build, int revision)
 {

@@ -43,7 +43,9 @@
 #include "config.h"
 #include "occparse.h"
 #include "ildata.h"
+#ifndef ORANGE_NO_MSIL
 #include "using.h"
+#endif
 #include "configx86.h"
 #include "OptUtils.h"
 #include "configmsil.h"
@@ -176,9 +178,9 @@ CmdSwitchBool RuntimeObjectOverflow(SwitchParser, 0, 0, {"fruntime-object-overfl
 CmdSwitchBool RuntimeUninitializedVariable(SwitchParser, 0, 0, {"fruntime-uninitialized-variable"});
 CmdSwitchBool RuntimeHeapCheck(SwitchParser, 0, 0, {"fruntime-heap-check"});
 
-static std::string firstFile;
+CmdSwitchInt NetCoreSwitch(SwitchParser, 0, 5, 0, 1000, {"netcore"});
 
-enum Linkage getDefaultLinkage()
+Linkage getDefaultLinkage()
 {
     switch (Optimizer::architecture)
     {
@@ -235,8 +237,10 @@ static int parseCodegen(bool v, const char* string)
     {
         case ARCHITECTURE_X86:
             return Optimizer::parse_codegen(v, string);
+#ifndef ORANGE_NO_MSIL
         case ARCHITECTURE_MSIL:
             return Optimizer::parse_msil_codegen(v, string);
+#endif
         default:
             break;
     }
@@ -642,6 +646,7 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL: {
                 auto v = Utils::split(prm_libpath.GetValue());
                 for (auto&& s : v)
@@ -654,6 +659,7 @@ static void ParamTransfer(const char* name)
                 }
                 break;
             }
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::prm_libPath = prm_libpath.GetValue();
                 break;
@@ -663,9 +669,11 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL:
                 Optimizer::msilWinmodeSetup(prm_Winmode.GetValue().c_str());
                 break;
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup(prm_Winmode.GetValue().c_str());
                 break;
@@ -675,9 +683,11 @@ static void ParamTransfer(const char* name)
     {
         switch (Optimizer::architecture)
         {
+#ifndef ORANGE_NO_MSIL
             case ARCHITECTURE_MSIL:
                 Optimizer::msilWinmodeSetup("d");
                 break;
+#endif
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup("d");
                 break;
@@ -753,6 +763,14 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
     if (RuntimeHeapCheck.GetValue())
         Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
+#ifndef ORANGE_NO_MSIL
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && NetCoreSwitch.GetExists())
+    {
+        Optimizer::cparams.prm_netcore_version = occmsil::ValidateNetCoreVersion(NetCoreSwitch.GetValue());
+        if (Optimizer::cparams.prm_netcore_version == INT_MAX)
+            Utils::Fatal("Selected .net core version not installed"); 
+    }
+#endif
 }
 
 /*-------------------------------------------------------------------------*/
@@ -969,36 +987,26 @@ void InsertOneFile(const char* filename, char* path, int drive)
     }
     else
         *p = 0;
-    /* Allocate buffer and make .C if no extension */
     strcat(buffer, filename);
     if (buffer[0] == '-')
     {
         a = buffer[0];
         buffer[0] = 'a';
     }
-    if (firstFile.empty())
+    bool found = false;
+
+    // im gonna let them compile header files directly
+    static std::list<std::string> acceptedExtensions = { ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx" };
+    for (auto& str : acceptedExtensions)
     {
-        char temp[260];
-        char* p = (char*)strrchr(buffer, '/');
-        char* q = (char*)strrchr(buffer, '\\');
-        if (q > p)
-            p = q;
-        if (!p)
-            p = buffer;
-        else
-            p++;
-        strcpy(temp, p);
-        Utils::StripExt(temp);
-        if (!Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_assemble)
-            Utils::AddExt(temp, ".exe");
-        firstFile = temp;
+        if (Utils::HasExt(buffer, str.c_str()))
+        {
+            found = true;
+            break;
+        }
     }
-    inserted = insert_noncompile_file(buffer);
-    if (a)
-        buffer[0] = a;
-    if (!inserted)
+    if (found)
     {
-        Utils::AddExt(buffer, ".c");
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return;
@@ -1012,6 +1020,15 @@ void InsertOneFile(const char* filename, char* path, int drive)
             return;
         s->next = 0;
         s->data = newbuffer;
+    }
+    else
+    {
+        inserted = insert_noncompile_file(buffer);
+        if (!inserted)
+        {
+            // if we really don't know the extension let the linker deal with it
+            Optimizer::backendFiles.push_back(buffer);
+        }
     }
 }
 void InsertAnyFile(const char* filename, char* path, int drive)
@@ -1179,7 +1196,9 @@ int ccinit(int argc, char* argv[])
         auto splt = Utils::split(architecture, ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
-            {"msil", ARCHITECTURE_MSIL},
+    #ifndef ORANGE_NO_MSIL
+           {"msil", ARCHITECTURE_MSIL},
+    #endif
         };
         if (architectures.find(splt[0]) != architectures.end())
         {

@@ -462,6 +462,12 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
         start++;
         len--;
     }
+    while (data[start] == ELEMENT_TYPE_PTR)
+    {
+        pointerLevel++;
+        start++;
+        len--;
+    }
     if (data[start] == ELEMENT_TYPE_ARRAY)
     {
         start++;
@@ -547,6 +553,12 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
             TypeFromMethod(lib, assembly, reader, sig, data, start, len);
             rv = lib.AllocateType(sig);
             rv->PointerLevel(pointerLevel);
+            break;
+        case ELEMENT_TYPE_CMOD_REQD:
+        case ELEMENT_TYPE_CMOD_OPT:
+            start++, len--;
+            index = LoadIndex(data, start, len);
+            rv = TypeFromTypeRef(lib, assembly, reader, index, pointerLevel);
             break;
         default:
             rv = BasicType(lib, data[start], pointerLevel);

@@ -42,7 +42,7 @@ CmdSwitchFile NetLinkMain::File(SwitchParser, '@');
 CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
 CmdSwitchBool NetLinkMain::NoDefaultlibs(SwitchParser, 'n');
 CmdSwitchBool NetLinkMain::WeedPInvokes(SwitchParser, 'P');
-
+CmdSwitchInt NetLinkMain::NetCoreSwitch(SwitchParser, 0, 8, 0, 2000, { "netcore" });
 const char* NetLinkMain::helpText =
     "[options] inputfiles\n"
     "\n"
@@ -51,6 +51,9 @@ const char* NetLinkMain::helpText =
     "/n         no default libs           /oxxx      specify assembly name\n"
     "/vx.x.x.x  set assembly version      /M         managed mode\n"
     "/P         replace pinvokes\n"
+#ifdef TARGET_OS_WINDOWS
+    "--netcore:x compile for .net core version x.   x= 0 means use latest\n"
+#endif
     "@xxx       Read commands from file\n"
     "/?, --help This text\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -679,11 +682,32 @@ bool NetLinkMain::AddRTLThunks()
 }
 bool NetLinkMain::CreateExecutable(CmdFiles& files)
 {
-    return peLib->DumpOutputFile(GetOutputFile(files).c_str(),
-                                 AssemblyFile.GetValue()  ? PELib::ilasm
-                                 : LibraryFile.GetValue() ? PELib::pedll
-                                                          : PELib::peexe,
-                                 GUIApp.GetValue());
+#ifdef TARGET_OS_WINDOWS
+    if (netCore)
+    {
+        return netCore->DumpOutputFile(GetOutputFile(files).c_str(),
+            AssemblyFile.GetValue() ? PELib::ilasm
+            : LibraryFile.GetValue() ? PELib::pedll
+            : PELib::peexe);
+    }
+    else
+#endif
+    {
+        return peLib->DumpOutputFile(GetOutputFile(files).c_str(),
+            AssemblyFile.GetValue() ? PELib::ilasm
+            : LibraryFile.GetValue() ? PELib::pedll
+            : PELib::peexe,
+            GUIApp.GetValue());
+    }
+}
+bool NetLinkMain::LoadAssembly(const char* assemblyName)
+{
+#ifdef TARGET_OS_WINDOWS
+    if (netCore)
+        return netCore->LoadAssembly(assemblyName);
+    else
+#endif
+        return peLib->LoadAssembly(assemblyName);
 }
 int NetLinkMain::Run(int argc, char** argv)
 {
@@ -710,13 +734,32 @@ int NetLinkMain::Run(int argc, char** argv)
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
-    peLib = new PELib(GetAssemblyName(files), PELib::bits32);  // ilonly set by dotnetpelib
+
+#ifdef TARGET_OS_WINDOWS
+    if (NetCoreSwitch.GetExists())
+    {
+        netCore = new NetCore(PELib::bits32, GUIApp.GetValue(), NetCoreSwitch.GetValue() ? NetCoreSwitch.GetValue() : NetCore::DummyChooseLatest);
+        peLib = netCore->init(GetAssemblyName(files));
+        if (!peLib)
+        {
+            std::cout << "Could not find requested version of .Net Core runtime" << std::endl;
+            delete netCore;
+            return 1;
+        }
+    }
+    else
+#endif
+    {
+        peLib = new PELib(GetAssemblyName(files), PELib::bits32);  // ilonly set by dotnetpelib
+    }
     if (CManaged.GetValue() && !NoDefaultlibs.GetValue())
-        if (peLib->LoadAssembly("lsmsilcrtl", 0, 0, 0, 0))
+    {
+        if (LoadAssembly("lsmsilcrtl"))
         {
             std::cout << "Cannot load assembly lsmsilcrtl";
             return 1;
         }
+    }
     int assemblyVersion[4] = {0};
     if (AssemblyVersion.GetValue().size())
     {
@@ -724,7 +767,11 @@ int NetLinkMain::Run(int argc, char** argv)
                    &assemblyVersion[3]) != 4)
         {
             std::cout << "Invalid assembly version string" << std::endl;
-            delete peLib;
+
+            if (netCore)
+                delete netCore;
+            else
+                delete peLib;
             return 1;
         }
     }
@@ -732,13 +779,19 @@ int NetLinkMain::Run(int argc, char** argv)
     peLib->WorkingAssembly()->SNKFile(StrongName.GetValue().c_str());
     if (!LoadImage(files))
     {
-        delete peLib;
+        if (netCore)
+            delete netCore;
+        else
+            delete peLib;
         return 1;
     }
     if (!AddRTLThunks())
     {
         std::cout << "internal error" << std::endl;
-        delete peLib;
+        if (netCore)
+            delete netCore;
+        else
+            delete peLib;
         return 1;
     }
     if (!Validate())
@@ -749,9 +802,15 @@ int NetLinkMain::Run(int argc, char** argv)
     if (!CreateExecutable(files))
     {
         std::cout << "Error creating executable" << std::endl;
-        delete peLib;
+        if (netCore)
+            delete netCore;
+        else
+            delete peLib;
         return 1;
     }
-    delete peLib;
+    if (netCore)
+        delete netCore;
+    else
+        delete peLib;
     return 0;
 }

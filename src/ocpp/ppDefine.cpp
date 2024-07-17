@@ -54,7 +54,7 @@ ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition
     value = old.value;
     if (old.argList)
     {
-        argList = std::make_unique<DefinitionArgList>();
+        argList.reset( new DefinitionArgList());
         for (auto&& a : *old.argList)
             argList->push_back(a);
     }
@@ -71,7 +71,7 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     value = old.value;
     if (old.argList)
     {
-        argList = std::make_unique<DefinitionArgList>();
+        argList.reset( new DefinitionArgList());
         for (auto&& a : *old.argList)
             argList->push_back(a);
     }
@@ -325,7 +325,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             else
             {
                 bool hascomma = true;
-                da = std::make_unique<DefinitionArgList>();
+                da.reset( new DefinitionArgList());
                 bool done = false;
                 while (next->IsIdentifier())
                 {

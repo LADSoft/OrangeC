@@ -1618,7 +1618,10 @@ int opt0(EXPRESSION** node)
                         {
                             *node = exprNode(ExpressionNode::uminus_, ep->right, 0);
                         }
-                        *node = ep->right;
+                        else
+                        {
+                            *node = ep->right;
+                        }
                     }
                     else
                         dooper(node, mode);
@@ -1645,7 +1648,9 @@ int opt0(EXPRESSION** node)
                         *node = ep->left;
                     }
                     else
+                    {
                         dooper(node, mode);
+                    }
                     rv = true;
                     break;
                 case 22:

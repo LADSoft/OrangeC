@@ -68,8 +68,8 @@ namespace Parser
 bool initializingGlobalVar;
 int ignore_global_init;
 
-static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
-static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
+static std::list<DynamicInitializer>dynamicInitializers, TLSInitializers;
+static std::list<DynamicInitializer>dynamicDestructors, TLSDestructors;
 static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static std::list<STRING*> strtab;
@@ -82,8 +82,10 @@ void init_init(void)
 {
     strtab.clear();
     symListHead = nullptr;
-    dynamicInitializers = TLSInitializers = nullptr;
-    dynamicDestructors = TLSDestructors = nullptr;
+    dynamicInitializers.clear();
+    TLSInitializers.clear();
+    dynamicDestructors.clear();
+    TLSDestructors.clear();
     initializingGlobalVar = false;
     strtab.clear();
     file_level_constructors.clear();
@@ -459,50 +461,42 @@ void insert_file_constructor(SYMBOL* sym)
         file_level_constructors.push_back(sym);
     }
 } 
-void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init)
+void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init, bool front)
 {
     if (!ignore_global_init && !templateNestingCount)
     {
-        DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
-        di->sp = sym;
-        di->init = init;
         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
         {
-            di->next = TLSInitializers;
-            TLSInitializers = di;
+            if (front)
+                TLSInitializers.push_front(DynamicInitializer{ sym, init });
+            else
+                TLSInitializers.push_back(DynamicInitializer{ sym, init });
+
         }
         else
         {
-            di->next = dynamicInitializers;
-            dynamicInitializers = di;
+            if (front)
+                dynamicInitializers.push_front(DynamicInitializer{ sym, init });
+            else
+                dynamicInitializers.push_back(DynamicInitializer{ sym, init });
         }
     }
 }
 static void insertTLSInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init)
 {
-    DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
-    di->sp = sym;
-    di->init = init;
-    di->next = TLSInitializers;
-    TLSInitializers = di;
-    //	genstorage(sym->tp->size);
+    TLSInitializers.push_front(DynamicInitializer{ sym, init });
 }
 void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init)
 {
     if (!ignore_global_init && !templateNestingCount)
     {
-        DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
-        di->sp = sym;
-        di->init = init;
         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
         {
-            di->next = TLSDestructors;
-            TLSDestructors = di;
+            TLSDestructors.push_front(DynamicInitializer{ sym, init });
         }
         else
         {
-            di->next = dynamicDestructors;
-            dynamicDestructors = di;
+            dynamicDestructors.push_front(DynamicInitializer{ sym, init });
         }
     }
 }
@@ -570,24 +564,24 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
 }
 static void dumpDynamicInitializers(void)
 {
-    if (IsCompiler() && dynamicInitializers)
+    if (IsCompiler() && dynamicInitializers.size())
     {
         AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         int index = 0;
         int counter = 0;
         std::list<STATEMENT*> st;
         codeLabel = INT_MIN;
-        while (dynamicInitializers)
+        for (auto&& init : dynamicInitializers)
         {
-            if (!isstructured(dynamicInitializers->sp->tp) || basetype(dynamicInitializers->sp->tp)->sp->sb->trivialCons ||
-                !isintconst(dynamicInitializers->init->front()->exp))
+            if (!isstructured(init.sp->tp) || basetype(init.sp->tp)->sp->sb->trivialCons ||
+                !isintconst(init.init->front()->exp))
             {
                 EXPRESSION *exp = nullptr, **next = &exp, *exp1;
                 std::list<STATEMENT*> stmt;
                 int i = 0;
-                exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->front()->basetp
-                                                                        : dynamicInitializers->sp->tp,
-                                              dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
+                exp = convertInitToExpression(init.init ? init.init->front()->basetp
+                                                                        : init.sp->tp,
+                                              init.sp, nullptr, nullptr, init.init, nullptr, false);
 
                 while (*next && (*next)->type == ExpressionNode::comma_)
                 {
@@ -624,7 +618,6 @@ static void dumpDynamicInitializers(void)
                     st.clear();
                 }
             }
-            dynamicInitializers = dynamicInitializers->next;
         }
         callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, &st);
         FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
@@ -634,7 +627,7 @@ static void dumpTLSInitializers(void)
 {
     if (IsCompiler())
     {
-        if (TLSInitializers)
+        if (TLSInitializers.size())
         {
             AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);            
             std::list<STATEMENT*> st;
@@ -646,16 +639,15 @@ static void dumpTLSInitializers(void)
             tp->sp = funcsp;
             SetLinkerNames(funcsp, Linkage::none_);
             codeLabel = INT_MIN;
-            while (TLSInitializers)
+            for (auto&&init : TLSInitializers)
             {
-                EXPRESSION* exp = varNode(ExpressionNode::threadlocal_, TLSInitializers->sp);
+                EXPRESSION* exp = varNode(ExpressionNode::threadlocal_, init.sp);
                 STATEMENT* stmt = stmtNode(nullptr, emptyBlockdata, StatementNode::expr_);
-                exp = convertInitToExpression(TLSInitializers->init->front()->basetp, TLSInitializers->sp, nullptr, nullptr,
-                                              TLSInitializers->init, exp, false);
+                exp = convertInitToExpression(init.init->front()->basetp, init.sp, nullptr, nullptr,
+                                              init.init, exp, false);
                 optimize_for_constants(&exp);
                 stmt->select = exp;
                 st.push_back(stmt);
-                TLSInitializers = TLSInitializers->next;
             }
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
             funcsp->sb->inlineFunc.stmt->push_front(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
@@ -672,22 +664,21 @@ static void dumpTLSInitializers(void)
 }
 static void dumpDynamicDestructors(void)
 {
-    if (IsCompiler() && dynamicDestructors)
+    if (IsCompiler() && dynamicDestructors.size())
     {
         AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         int index = 0;
         int counter = 0;
         std::list<STATEMENT*> st;
         codeLabel = INT_MIN;
-        while (dynamicDestructors)
+        for (auto && dest : dynamicDestructors)
         {
-            EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->front()->basetp, dynamicDestructors->sp, nullptr, nullptr,
-                                                      dynamicDestructors->init, nullptr, true);
+            EXPRESSION* exp = convertInitToExpression(dest.init->front()->basetp, dest.sp, nullptr, nullptr,
+                                                      dest.init, nullptr, true);
             auto stmt = stmtNode(nullptr, emptyBlockdata, StatementNode::expr_);
             optimize_for_constants(&exp);
             stmt->select = exp;
             st.push_back(stmt);
-            dynamicDestructors = dynamicDestructors->next;
             if (++counter % 1500 == 0)
             {
                 callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, &st);
@@ -702,7 +693,7 @@ static void dumpTLSDestructors(void)
 {
     if (IsCompiler())
     {
-        if (TLSDestructors)
+        if (TLSDestructors.size())
         {
             AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
             std::list<STATEMENT*> st;
@@ -714,15 +705,14 @@ static void dumpTLSDestructors(void)
             tp->sp = funcsp;
             SetLinkerNames(funcsp, Linkage::none_);
             codeLabel = INT_MIN;
-            while (TLSDestructors)
+            for (auto&& dest : TLSDestructors)
             {
-                EXPRESSION* exp = varNode(ExpressionNode::threadlocal_, TLSDestructors->sp);
-                exp = convertInitToExpression(TLSDestructors->init->front()->basetp, TLSDestructors->sp, nullptr, nullptr,
-                                              TLSDestructors->init, exp, true);
+                EXPRESSION* exp = varNode(ExpressionNode::threadlocal_, dest.sp);
+                exp = convertInitToExpression(dest.init->front()->basetp, dest.sp, nullptr, nullptr,
+                                              dest.init, exp, true);
                 auto stmt = stmtNode(nullptr, emptyBlockdata, StatementNode::expr_);
                 optimize_for_constants(&exp);
                 st.push_back(stmt);
-                TLSDestructors = TLSDestructors->next;
             }
 
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
@@ -971,7 +961,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                     {
                         std::list<INITIALIZER*>* temp = initListFactory.CreateList();
                         temp->push_back(init);
-                        insertDynamicInitializer(sym, temp);
+                        insertDynamicInitializer(sym, temp, false);
                     }
                     return 0;
                 }
@@ -3141,7 +3131,7 @@ static LEXLIST* initialize_aggregate_type(LEXLIST * lex, SYMBOL * funcsp, SYMBOL
         lex = getsym();
     }
     if ((Optimizer::cparams.prm_cplusplus || ((Optimizer::architecture == ARCHITECTURE_MSIL) && !assn)) && isstructured(itype) &&
-        (basetype(itype)->sp->sb->hasUserCons || (!basetype(itype)->sp->sb->trivialCons && !MATCHKW(lex, Keyword::begin_)) || arrayMember))
+        (!basetype(itype)->sp->sb->trivialCons && (basetype(itype)->sp->sb->hasUserCons || !MATCHKW(lex, Keyword::begin_)) || arrayMember))
     {
         if ((base->sb->storage_class != StorageClass::member_ && base->sb->storage_class != StorageClass::mutable_) || MATCHKW(lex, Keyword::openpa_) || assn ||
             MATCHKW(lex, Keyword::begin_))
@@ -4227,6 +4217,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         if (sym->sb->attribs.inheritable.linkage2 == Linkage::property_)
             return initialize_property(lex, funcsp, sym, storage_class_in, asExpression, flags);
     }
+    inFunctionExpressionParsing = true;
     switch (sym->sb->storage_class)
     {
         case StorageClass::parameter_:
@@ -4747,6 +4738,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         if (sym->sb->storage_class == StorageClass::global_ || sym->sb->storage_class == StorageClass::static_ || sym->sb->storage_class == StorageClass::localstatic_)
             Optimizer::SymbolManager::Get(sym)->tp->size = sym->tp->size;
     initializingGlobalVar = false;
+    inFunctionExpressionParsing = false;
     return lex;
 }
 }  // namespace Parser

@@ -1333,15 +1333,16 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         ++it1;
         if (it1 != itend && ((*it1)->sb->init || (*it1)->sb->deferredCompile))
         {
-            if (sp->templateParams == nullptr)
+            if (sp->templateParams == nullptr || (!templateNestingCount || instantiatingTemplate))
             {
                 // will match a default constructor but has defaulted args
                 SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
+                consfunc->sb->defaulted = false;
                 SymbolTable<SYMBOL>* syms;
                 BLOCKDATA bd = {};
                 std::list<BLOCKDATA*> b = { &bd };
                 STATEMENT* st;
-                EXPRESSION* thisptr = varNode(ExpressionNode::auto_, *it);
+                EXPRESSION* thisptr = varNode(ExpressionNode::auto_, consfunc->tp->syms->front());
                 EXPRESSION* e1;
                 FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
                 (*it)->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
@@ -1366,13 +1367,10 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 }
                 e1 = varNode(ExpressionNode::func_, nullptr);
                 e1->v.func = params;
-                if (e1)  // could probably remove this, only null if ran out of memory.
-                {
-                    e1 = exprNode(ExpressionNode::thisref_, e1, nullptr);
-                    e1->v.t.thisptr = params->thisptr;
-                    e1->v.t.tp = sp->tp;
-                    // hasXCInfo = true;
-                }
+                e1 = exprNode(ExpressionNode::thisref_, e1, nullptr);
+                e1->v.t.thisptr = params->thisptr;
+                e1->v.t.tp = sp->tp;
+                // hasXCInfo = true;
                 st = stmtNode(nullptr, b, StatementNode::return_);
                 st->select = e1;
                 consfunc->sb->xcMode = cons->sb->xcMode;
@@ -1472,7 +1470,7 @@ void createDefaultConstructors(SYMBOL* sp)
                                 err |= s->sb->isConstructor && !s->sb->defaulted;
                                 err |= s->sb->deleted;
                                 err |= s->sb->access != AccessLevel::public_;
-                                err |= s->sb->isConstructor && s->sb->isExplicit;
+                                err |= s->sb->isConstructor && s->sb->isExplicit && !s->sb->defaulted;
                                 if (s->sb->isDestructor && !s->sb->defaulted)
                                     trivialDest = false;
                             }

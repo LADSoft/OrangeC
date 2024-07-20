@@ -41,6 +41,7 @@ extern int codeLabel;
 extern bool declareAndInitialize;
 extern bool functionCanThrow;
 extern int bodyIsDestructor;
+extern bool inFunctionExpressionParsing;
 
 extern std::list<Optimizer::LINEDATA*>* lines;
 extern std::list<BLOCKDATA*> emptyBlockdata;

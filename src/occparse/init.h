@@ -39,12 +39,11 @@ typedef struct _alias_
     char* alias;
 } ALIAS;
 
-typedef struct _dyninit_
+struct DynamicInitializer
 {
-    struct _dyninit_* next;
     SYMBOL* sp;
     std::list<INITIALIZER*>* init;
-} DYNAMIC_INITIALIZER;
+} ;
 
 extern bool initializingGlobalVar;
 extern int ignore_global_init;
@@ -58,7 +57,7 @@ void CreateInlineDestructor(SYMBOL* sym);
 void dumpLits(void);
 void dumpStartups(void);
 void insert_file_constructor(SYMBOL* sym);
-void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init);
+void insertDynamicInitializer(SYMBOL* sym, std::list<INITIALIZER*>* init, bool front = true);
 void insertDynamicDestructor(SYMBOL* sym, std::list<INITIALIZER*>* init);
 int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label);
 int dumpInit(SYMBOL* sym, INITIALIZER* init);

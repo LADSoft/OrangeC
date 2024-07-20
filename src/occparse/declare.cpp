@@ -554,9 +554,7 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                     {
                         for (auto pq1 : *pq->tp->syms)
                         {
-                            const char* p1 = strrchr(pq1->sb->decoratedName, '@');
-                            const char* p2 = strrchr(pi->sb->decoratedName, '@');
-                            if (p1 && p2 && !strcmp(p1, p2))
+                            if (strcmp(pq1->name, pi->name) == 0 && matchOverload(pq1->tp, pi->tp, false))
                             {
                                 if (!pq1->sb->ispure)
                                 {
@@ -1242,8 +1240,11 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable)
 {
     int oldParsingTemplateArgs;
+    int oldExpressionParsing;
     oldParsingTemplateArgs = parsingDefaultTemplateArgs;
+    oldExpressionParsing = inFunctionExpressionParsing;
     parsingDefaultTemplateArgs = 0;
+    inFunctionExpressionParsing = false;
     bool hasBody = (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_) || KW(lex) == Keyword::begin_;
     SYMBOL* injected = nullptr;
 
@@ -1305,6 +1306,7 @@ LEXLIST* innerDeclStruct(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         TemplateGetDeferred(sp);
     }
     --structLevel;
+    inFunctionExpressionParsing = oldExpressionParsing;
     parsingDefaultTemplateArgs = oldParsingTemplateArgs;
     return lex;
 }
@@ -1414,7 +1416,6 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
     strcpy(newName, tagname);
     if (inTemplate)
         inTemplateSpecialization++;
-
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
 
     if (inTemplate)
@@ -1456,6 +1457,16 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
             lex = backupsym();
         }
     }
+    if (funcsp && !inFunctionExpressionParsing && (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_)))
+    {
+        sp = nullptr;
+        nsv = nullptr;
+        if (localNameSpace->front()->tags)
+        {
+            sp = localNameSpace->front()->tags->Lookup(newName);
+        }
+        table = localNameSpace->front()->tags;
+    }
     if (!sp)
     {
         addedNew = true;
@@ -1475,13 +1486,17 @@ static LEXLIST* declstruct(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, bool inTempl
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
         sp->sb->declfilenum = lex->data->linedata->fileindex;
         sp->sb->attribs = basisAttribs;
-        if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) &&
+        if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || storage_class == StorageClass::auto_) &&
             (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::semicolon_)))
-            sp->sb->parentClass = getStructureDeclaration();
+            if (storage_class == StorageClass::auto_)
+                sp->sb->parentClass = theCurrentFunc->sb->parentClass;
+            else
+                sp->sb->parentClass = getStructureDeclaration();
         if (nsv)
             sp->sb->parentNameSpace = nsv->front()->name;
         else
             sp->sb->parentNameSpace = globalNameSpace->front()->name;
+        sp->sb->parent = funcsp;
         if (nsv && nsv->front()->name && !strcmp(sp->name, "initializer_list") && !strcmp(nsv->front()->name->name, "std"))
             sp->sb->initializer_list = true;
         if (inTemplate)
@@ -1867,8 +1882,20 @@ static LEXLIST* declenum(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, StorageClass s
     }
 
     strcpy(newName, tagname);
+
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+
     ParseAttributeSpecifiers(&lex, funcsp, true);
+    if (funcsp && (MATCHKW(lex, Keyword::colon_)  || MATCHKW(lex, Keyword::begin_)))
+    {
+        sp = nullptr;
+        nsv = nullptr;
+        if (localNameSpace->front()->tags)
+        {
+            sp = localNameSpace->front()->tags->Lookup(newName);
+        }
+        table = localNameSpace->front()->tags;
+    }
     if (KW(lex) == Keyword::colon_)
     {
         RequiresDialect::Feature(Dialect::c2x, "Underlying type");
@@ -3288,7 +3315,7 @@ founddecltype:
                             ((strSym && ((strSym->sb->mainsym && strSym->sb->mainsym == sp->sb->mainsym) ||
                                          strSym == sp->sb->mainsym || sameTemplate(strSym->tp, sp->tp))) ||
                              (!strSym && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) && ssp &&
-                              ssp == sp->sb->mainsym)))
+                              (ssp == sp || ssp == sp->sb->mainsym))))
                         {
                             if (destructor)
                             {

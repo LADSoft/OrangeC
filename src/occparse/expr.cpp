@@ -8124,7 +8124,20 @@ static LEXLIST* expression_hook(LEXLIST* lex, SYMBOL* funcsp, TYPE* atp, TYPE** 
                 }
                 if (Optimizer::cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)) && (!tpc->lref || !tph->lref))
                 {
-                    if ( ! isstructured(tpc) || !isstructured(tph) || (comparetypes(tph, tpc, false) && !sameTemplate(tph, tpc, false)) || epc->type == ExpressionNode::thisref_ || epc->type == ExpressionNode::func_ || eph->type == ExpressionNode::thisref_ || eph->type == ExpressionNode::func_)
+                    if (atp && !isstructured(atp) && (!isref(atp) || !isstructured(basetype(atp)->btp)))
+                    {
+                        if (isstructured(tpc))
+                        {
+                            if (!castToArithmeticInternal(true, &tpc, &epc, Keyword::plus_, atp, false))
+                                errorConversionOrCast(true, tpc, atp);
+                        }
+                        if (isstructured(tph))
+                        {
+                            if (!castToArithmeticInternal(true, &tph, &eph, Keyword::plus_, atp, false))
+                                errorConversionOrCast(true, tph, atp);
+                        }
+                    }
+                    else if ( ! isstructured(tpc) || !isstructured(tph) || (comparetypes(tph, tpc, false) && !sameTemplate(tph, tpc, false)) || epc->type == ExpressionNode::thisref_ || epc->type == ExpressionNode::func_ || eph->type == ExpressionNode::thisref_ || eph->type == ExpressionNode::func_)
                     {
                         // structure is result of constructor or return value
                         // at this point we want to check that both sides

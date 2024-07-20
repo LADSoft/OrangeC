@@ -7,6 +7,7 @@ CLEAN = -del *.o *.exe *.out *.tst *.res 2>NUL
 export CLEAN
 
 all: $(CDIRS)  ctestsuite
+	$(MAKE) /Care-we-fast-yet
 	echo %ERRORLEVEL%
 
 clean: $(CLEANDIRS) ctestsuite.clean

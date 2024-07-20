@@ -856,11 +856,17 @@ void deferredCompileOne(SYMBOL* cur)
         }
         oldLambdas = lambdas;
         lambdas.clear();
+        int oldStructLevel = structLevel;
+        structLevel = 0;
+        auto oldOpen = openStructs;
+        openStructs = nullptr;
         cur->sb->deferredCompile = nullptr;
         lex = body(lex, cur);
         SetAlternateLex(nullptr);
         dontRegisterTemplate--;
         lambdas = oldLambdas;
+        openStructs = oldOpen;
+        structLevel = oldStructLevel;
         while (count--)
         {
             dropStructureDeclaration();
@@ -1144,7 +1150,7 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
                 if (localClassWarnings)
                 {
                     if (isfunction(cur1->tp))
-                        if (!basetype(cur1->tp)->sp->sb->inlineFunc.stmt)
+                        if (basetype(cur1->tp)->sp && !basetype(cur1->tp)->sp->sb->inlineFunc.stmt && !basetype(cur1->tp)->sp->sb->deferredCompile)
                             errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                 }
                 if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)

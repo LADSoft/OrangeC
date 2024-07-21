@@ -476,6 +476,7 @@ static bool hasaincdec(EXPRESSION* exp)
     }
     return false;
 }
+int count3;
 Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
 /*
  *      generate a function call node and return the address mode

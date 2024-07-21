@@ -292,6 +292,8 @@ int classRefCount(SYMBOL* base, SYMBOL* derived)
 static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
 {
     bool rv = false;
+    InitializeFunctionArguments(oldFunc);
+    InitializeFunctionArguments(newFunc);
     rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp, false);
     if (rv && !oldFunc->sb->isDestructor)
     {
@@ -840,12 +842,18 @@ void deferredCompileOne(SYMBOL* cur)
         }
         oldLambdas = lambdas;
         lambdas.clear();
+        int oldStructLevel = structLevel;
+        structLevel = 0;
+        auto oldOpen = openStructs;
+        openStructs = nullptr;
         cur->sb->deferredCompile = nullptr;
         StatementGenerator sg(lex, cur);
         sg.Body();
         SetAlternateLex(nullptr);
         dontRegisterTemplate--;
         lambdas = oldLambdas;
+        openStructs = oldOpen;
+        structLevel = oldStructLevel;
         enclosingDeclarations.Release();
         PopTemplateNamespace(tns);
         lines = linesOld;

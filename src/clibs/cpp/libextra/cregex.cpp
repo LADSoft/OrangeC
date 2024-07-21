@@ -51,7 +51,7 @@ struct iregex : public std::regex
     bool inosubs;
 };
 
-static void errmap(std::regex_error& e)
+static int errmap(std::regex_error& e)
 {
     switch (e.code())
     {

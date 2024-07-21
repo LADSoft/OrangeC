@@ -133,7 +133,7 @@ namespace Parser
         void AutoDeclare(Type** tp, EXPRESSION** exp, std::list<FunctionBlock*>& parent, int asExpression);
         void StatementWithoutNonconst(std::list<FunctionBlock*>& parent, bool viacontrol);
         bool ThunkReturnInMain(std::list<FunctionBlock*>& parent, bool always);
-        void ReturnThisPointer(std::list<Statement*>* st, EXPRESSION* thisptr);
+        void ReturnThIsPtr(std::list<Statement*>* st, EXPRESSION* thisptr);
         bool IsReturnTypeVoid(Type* tp);
         void AssignCParams(int* base, SymbolTable<SYMBOL>* params, Type* rv, std::list<FunctionBlock*>& block);
         void AssignPascalParams(int* base, SymbolTable<SYMBOL>* params, Type* rv, std::list<FunctionBlock*>& block);
@@ -161,6 +161,7 @@ extern int codeLabel;
 extern bool declareAndInitialize;
 extern bool functionCanThrow;
 extern int bodyIsDestructor;
+extern bool inFunctionExpressionParsing;
 
 extern std::list<Optimizer::LINEDATA*>* lines;
 extern std::list<FunctionBlock*> emptyBlockdata;

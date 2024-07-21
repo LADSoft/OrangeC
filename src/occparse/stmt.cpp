@@ -91,6 +91,7 @@ int codeLabel;
 bool declareAndInitialize;
 bool functionCanThrow;
 int bodyIsDestructor;
+bool inFunctionExpressionParsing;
 
 std::list<FunctionBlock*> emptyBlockdata;
 
@@ -121,6 +122,7 @@ void statement_ini(bool global)
     expressions = 0;
     inLoopOrConditional = 0;
     bodyIsDestructor = 0;
+    inFunctionExpressionParsing = false;
     while (!expressionStatements.empty())
         expressionStatements.pop();
 }
@@ -228,6 +230,7 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
         /*		bool openparen = MATCHKW(lex, Keyword::openpa_); */
         if (declaration)
             *declaration = false;
+        inFunctionExpressionParsing = true;
         lex = expression(lex, funcsp, nullptr, &tp, exp, kw != Keyword::for_ && kw != Keyword::rangefor_ ? _F_SELECTOR : 0);
         if (tp)
         {
@@ -2554,9 +2557,50 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     returnexp = MakeExpression(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
-            else if (!tp1->ExactSameType(tp) && tp1->IsMsil())
+            else if (!tp->ExactSameType(tp1))
             {
-                errorConversionOrCast(true, tp1, tp);
+                bool err = false;
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    if (tp1->IsStructured())
+                    {
+                        auto tpx = tp;
+                        if (tpx->IsRef())
+                            tpx = tpx->BaseType()->btp;
+                        if (tpx->IsStructured())
+                        {
+                            if (!doStaticCast(&tp, tp1, &returnexp, funcsp, true))
+                                err = true;
+                        }
+                        else
+                        {
+                            // handles pointers as well...
+                            if (!castToArithmeticInternal(false, &tp1, &returnexp, Keyword::plus_, tpx, false))
+                                err = true;
+                        }
+                    }
+                    else if (tp1->IsPtr() && tp->IsPtr())
+                    {
+                        if (!doStaticCast(&tp, tp1, &returnexp, funcsp, true))
+                            err = true;
+                    }
+                    else if ((!tp1->IsArithmetic() && tp1->type != BasicType::enum_) || (!tp->IsArithmetic() && tp->type != BasicType::enum_))
+                    {
+                        if ((!tp->IsPtr() || (!isconstzero(tp1, returnexp) && tp1->type != BasicType::aggregate_ && !tp1->IsFunction())) &&
+                            (tp->BaseType()->type != BasicType::bool_ || !tp1->IsPtr()))
+                        {
+                            err = true;
+                        }
+                    }
+                }
+                else if (tp1->IsMsil() || tp1->IsStructured())
+                {
+                    err = true;
+                }
+                if (err)
+                {
+                    errorConversionOrCast(true, tp1, tp);
+                }
             }
             if (needend)
             {
@@ -2608,7 +2652,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         }
         if (funcsp->tp->BaseType()->btp->IsRef())
         {
-            if (tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
+            if (funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
                 returnexp = ConvertReturnToRef(returnexp, funcsp->tp->BaseType()->btp, returntype);
         }
         else if (returnexp && returnexp->type == ExpressionNode::auto_ && returnexp->v.sp->sb->storage_class == StorageClass::auto_)
@@ -3435,6 +3479,8 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
         else
             before->needlabel = false;
     }
+    bool oldExpressionParsing = inFunctionExpressionParsing;
+    inFunctionExpressionParsing = false;
     before->nosemi = false;
     expressionStatements.push(&parent);
     switch (KW(lex))
@@ -3466,6 +3512,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             canFallThrough = false;
             before->hassemi = true;
             expressionStatements.pop();
+            inFunctionExpressionParsing = oldExpressionParsing;
             return;
         case Keyword::do_:
             canFallThrough = false;
@@ -3475,11 +3522,13 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             canFallThrough = false;
             ParseWhile(parent);
             expressionStatements.pop();
+            inFunctionExpressionParsing = oldExpressionParsing;
             return;
         case Keyword::for_:
             canFallThrough = false;
             ParseFor(parent);
             expressionStatements.pop();
+            inFunctionExpressionParsing = oldExpressionParsing;
             return;
         case Keyword::switch_:
             ParseSwitch(parent);
@@ -3508,6 +3557,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             StatementWithoutNonconst(parent, false);
             before->nosemi = true;
             expressionStatements.pop();
+            inFunctionExpressionParsing = oldExpressionParsing;
             return;
         case Keyword::default_:
             EndOfCaseGroup(parent);
@@ -3520,6 +3570,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             StatementWithoutNonconst(parent, false);
             before->nosemi = true;
             expressionStatements.pop();
+            inFunctionExpressionParsing = oldExpressionParsing;
             return;
         case Keyword::continue_:
             ParseContinue(parent);
@@ -3548,6 +3599,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             canFallThrough = false;
             ParseAsm(parent);
             expressionStatements.pop();
+            inFunctionExpressionParsing = oldExpressionParsing;
             return;
         case Keyword::seh_try_:
             canFallThrough = false;
@@ -3619,12 +3671,15 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 }
                 expressionStatements.pop();
+                inFunctionExpressionParsing = oldExpressionParsing;
                 return;
             }
             else
             {
                 isCallNoreturnFunction = false;
+                inFunctionExpressionParsing = true;
                 ParseExpr(parent);
+                inFunctionExpressionParsing = false;
                 before->needlabel = isCallNoreturnFunction;
             }
         }
@@ -3640,6 +3695,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
     else
         before->hassemi = false;
     basisAttribs = {};
+    inFunctionExpressionParsing = oldExpressionParsing;
 }
 void StatementGenerator::StatementWithoutNonconst(std::list<FunctionBlock*>& parent, bool viacontrol)
 {
@@ -3657,12 +3713,12 @@ bool StatementGenerator::ThunkReturnInMain(std::list<FunctionBlock*>& parent, bo
     }
     return false;
 }
-void StatementGenerator::ReturnThisPointer(std::list<Statement*>* st, EXPRESSION* thisptr)
+void StatementGenerator::ReturnThIsPtr(std::list<Statement*>* st, EXPRESSION* thisptr)
 {
     for (auto stmt : *st)
     {
         if (stmt->lower)
-            ReturnThisPointer(stmt->lower, thisptr);
+            ReturnThIsPtr(stmt->lower, thisptr);
         if (stmt->type == StatementNode::return_)
             stmt->select = thisptr;
     }
@@ -3954,7 +4010,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         if (thisptr)
         {
             Statement::MakeStatement(nullptr, parent, StatementNode::return_);
-            ReturnThisPointer(blockstmt->statements, thisptr);
+            ReturnThIsPtr(blockstmt->statements, thisptr);
         }
     }
     auto it = parent.begin();

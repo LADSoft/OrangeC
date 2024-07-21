@@ -293,6 +293,7 @@ extern "C"
     char* ZSTR _RTL_FUNC _IMPORT _strerror(const char* ZSTR __s);
 
     FILE * _RTL_FUNC _IMPORT _wfopen(const wchar_t * restrict, const wchar_t * restrict);
+    FILE * _RTL_FUNC _IMPORT _wfsopen(const wchar_t * restrict, const wchar_t * restrict, int __shflag);
     FILE * _RTL_FUNC _IMPORT _wfreopen(const wchar_t * restrict, const wchar_t * restrict, FILE * restrict);
     FILE * _RTL_FUNC _IMPORT _wfdopen(int, const wchar_t *);
     int _RTL_FUNC _IMPORT _wremove(const wchar_t *);

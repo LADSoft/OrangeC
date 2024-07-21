@@ -136,6 +136,12 @@ static char* mangleClasses(char* in, SYMBOL* sym)
         return in;
     if (sym->sb->parentClass)
         in = mangleClasses(in, sym->sb->parentClass);
+    if (sym->sb->parent)
+    {
+        in += strlen(in);
+        Optimizer::my_sprintf(in, "@%s", sym->sb->parent->name);
+        in += strlen(in);
+    }
     if (sym->sb->castoperator)
     {
         strcat(in, "@");
@@ -146,7 +152,9 @@ static char* mangleClasses(char* in, SYMBOL* sym)
         mangleTemplate(in, sym, sym->templateParams);
     }
     else
+    {
         Optimizer::my_sprintf(in, "@%s", sym->name);
+    }
     return in + strlen(in);
 }
 static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
@@ -1248,6 +1256,11 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                 lastParent = lastParent->sb->parentClass;
             p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
             p = mangleClasses(p, sym->sb->parentClass);
+            if (sym->sb->parent)
+            {
+                Optimizer::my_sprintf(p, "@%s", sym->sb->parent->name);
+                p += strlen(p);
+            }
             *p++ = '@';
             if (sym->sb->templateLevel && sym->templateParams)
             {
@@ -1275,7 +1288,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                             tmplCount--;
                     p[1] = 0;
                 }
-                else
+                else	
                 {
                     p = mangleType(p, sym->tp, true);  // otherwise functions get their parameter list in the name
                                                        //                    if (!sym->sb->templateLevel)

@@ -1843,6 +1843,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
         (*tp)->InstantiateDeferred();
         if ((*tp)->IsStructured())
         {
+            (*tp)->InitializeDeferred();
             (*tp)->InstantiateDeferred();
             n = (*tp)->BaseType()->sp->tp->size;
         }

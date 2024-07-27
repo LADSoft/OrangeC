@@ -3279,7 +3279,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         bool checkReturn = true;
                         if (!templateNestingCount && funcsp)
                             tp1 = ResolveTemplateSelectors(funcsp, tp1);
-                        if (storage_class != StorageClass::external_ && storage_class != StorageClass::typedef_ && linkage != Linkage::inline_ && !tp1->IsFunction() && ((!templateNestingCount || instantiatingTemplate) && !structLevel))
+                        if (storage_class != StorageClass::external_ && (storage_class != StorageClass::typedef_ || !structLevel) && linkage != Linkage::inline_ && !tp1->IsFunction() && ((!templateNestingCount || instantiatingTemplate) && !structLevel))
                         {
                             tp1->InstantiateDeferred();
                             tp1 = tp1->InitializeDeferred();

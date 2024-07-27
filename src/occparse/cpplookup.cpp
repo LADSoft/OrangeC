@@ -3238,7 +3238,10 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
         {
             if (tppp->IsStructured() || tpp->IsDeferred())
             {
-                tppp->InstantiateDeferred();
+                if (tpp->IsDeferred())
+                    tppp->InstantiateDeferred();
+                else
+                    tppp = tppp->InitializeDeferred();
                 tppp = tppp->BaseType();
                 GetMemberConstructors(gather, tppp->sp);
                 tppp = tppp->sp->tp;
@@ -6348,7 +6351,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             strcpy(buf + n + 2, p);
                             buf[n] = buf[n + 1] = ':';
                             strcat(buf, "(");
-                            if (args->arguments)
+                            if (args->arguments && args->arguments->size())
                             {
                                 for (auto a : *args->arguments)
                                 {

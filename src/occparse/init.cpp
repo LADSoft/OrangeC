@@ -4224,7 +4224,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         tp = tp->BaseType()->btp->BaseType();
     if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && !sym->tp->IsRef() && !sym->sb->attribs.inheritable.isInline && !tp->syms)
     {
-        int sz = sym->tp->IsPtr()? sym->tp->size / tp->size : -1;
+        int sz = sym->tp->IsArray() ? sym->tp->size / tp->size : -1;
         tp->InstantiateDeferred();
         if (tp->IsStructured())
         {

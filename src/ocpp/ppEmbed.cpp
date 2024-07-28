@@ -131,6 +131,7 @@ EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
     bool found_system = false;
     std::string fil = includer.FindFile(is_system, file, false, discard, found_system);
     bool FoundInvalid = false;
+    std::strstream string_stream;
     if (throw_error)
     {
         for (auto&& value : info.mapped_values)
@@ -138,11 +139,11 @@ EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
             auto& val = std::find(ourKnownValues.begin(), ourKnownValues.end(), value.first);
             if (val == ourKnownValues.end())
             {
-                // std::format C++23 my god
-                char buf[8192];
-                _snprintf_s(buf, 8192, "Invalid embed parameter: %s", value.first.c_str());
-                Errors::ErrorWithLine(std::string(buf, strlen(buf)), Errors::GetFileName(), Errors::GetErrorLine());
+                // std::format C++23 my god, better than a strstream here
+                string_stream << value.first;
+                Errors::ErrorWithLine(string_stream.str(), Errors::GetFileName(), Errors::GetErrorLine());
                 FoundInvalid = true;
+                string_stream.clear();
             }
         }
     }
@@ -162,12 +163,13 @@ std::string tokens_to_inject(std::vector<embeder_type> type)
     std::string total = "";
     size_t type_size = type.size();
     size_t minus_one = type_size - 1;
+    auto visitor = visitor_struct{};
     for (size_t i = 0; i < type_size; i++)
     {
         // Technically, here, it would make a lot of sense to kick the next "type" into cache, too bad there's no easy way to pull
         // this off portibly.
         auto&& val = type[i];
-        total += std::visit(visitor_struct{}, val);
+        total += std::visit(visitor, val);
         if (std::holds_alternative<embed_value_type>(val) && i < minus_one && std::holds_alternative<embed_value_type>(type[i + 1]))
         {
             total += ',';

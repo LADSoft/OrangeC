@@ -50,24 +50,25 @@ ObjInt DictCompare::casecmp(const std::string& str1, const std::string& str2, in
     }
     return v;
 }
-ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dictionarySize, const ObjString& name)
+const std::vector<unsigned>& LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dictionarySize, const ObjString& name)
 {
+    const static std::vector<unsigned> dummy;
     if (dictionary.empty())
     {
         if (fseek(stream, 0, SEEK_END))
-            return -1;
+            return dummy;
         int end = ftell(stream);
         int size = end - dictionaryOffset;
         std::unique_ptr<ObjByte[]> buf = std::make_unique<ObjByte[]>(size);
         ObjByte* q = buf.get();
         if (fseek(stream, dictionaryOffset, SEEK_SET))
-            return -1;
+            return dummy;
         if (fread(q, size, 1, stream) != 1)
-            return -1;
+            return dummy;
         // attempt to shut up coverity
         if (feof(stream))
-            return -1;
-        char sig[4] = {'1', '0', 0, 0};
+            return dummy;
+        char sig[4] = {'1', '1', 0, 0};
         if (!memcmp(sig, q, 4))
         {
             int len;
@@ -76,10 +77,15 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
             while (len)
             {
                 q += 2;
-                int fileNum = *(int*)(q + len);
-                q[len] = 0;
-                dictionary[(char*)q] = fileNum;
-                q += len + 4;
+                std::string name = std::string((char *)q, len);
+                q += len;
+                unsigned fileNum;
+                do
+                {
+                    fileNum = *(unsigned*)(q);
+                    q += sizeof(unsigned);
+                    dictionary[name].push_back(fileNum & ~DictionaryContinuationFlag);
+                } while (fileNum & DictionaryContinuationFlag);
                 len = *(short*)q;
             }
         }
@@ -91,5 +97,5 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
     auto it = dictionary.find(name);
     if (it != dictionary.end())
         return it->second;
-    return -1;
+    return dummy;
 }

@@ -1378,9 +1378,13 @@ static void dumpStaticInitializers(void)
                 sym->sb->offset = *sizep;
                 *sizep += basetype(tp)->size;
                 if (sym->sb->anonymousGlobalUnion)
+                {
                     Optimizer::put_label(sym->sb->label);
+                }
                 else
+                {
                     Optimizer::gen_strlab(Optimizer::SymbolManager::Get(sym));
+                }
                 dumpInitGroup(sym, tp);
             }
             symListTail = symListTail->next;
@@ -4693,7 +4697,15 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             errorsym(ERR_REF_MUST_INITIALIZE, sym);
         }
     }
-    if (sym->sb->storage_class == StorageClass::static_ || sym->sb->storage_class == StorageClass::global_ || sym->sb->storage_class == StorageClass::localstatic_)
+    if (!instantiatingTemplate && !structLevel && sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent && !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
+        (!Optimizer::cparams.prm_cplusplus || !isstructured(sym->tp) || sym->sb->trivialCons) && !isatomic(sym->tp))
+    {
+            sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+            sym->sb->attribs.inheritable.isInlineData = true;
+            Optimizer::SymbolManager::Get(sym)->generated = true;
+            InsertInlineData(sym);
+    }
+    else if (sym->sb->storage_class == StorageClass::static_ || sym->sb->storage_class == StorageClass::global_ || sym->sb->storage_class == StorageClass::localstatic_)
     {
         if (instantiatingTemplate)
         {
@@ -4715,6 +4727,8 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         }
         else
         {
+            if (sym->sb->attribs.inheritable.isInlineData)
+                sym->sb->didinline = true;
             SYMBOL* tmpl;
             tmpl = sym;
             while (tmpl)

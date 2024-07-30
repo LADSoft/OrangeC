@@ -1483,8 +1483,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
     {
         noClear = true;
     }
-    for (auto initItem : *init)
+    for (auto it = init->begin(); it != init->end(); ++it)
     {
+        auto initItem = *it;
         exp = nullptr;
         if (initItem->basetp)
         {
@@ -1696,6 +1697,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
             }
             else
             {
+                exp = initItem->exp;
                 EXPRESSION* exps = copy_expression(expsym);
                 exps->init = true;
                 if (isarray(tp) && tp->msil)
@@ -1735,6 +1737,27 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else
                 {
+                    if (initItem->basetp->bits)
+                    {
+                        auto it1 = it;
+                        exp = exprNode(ExpressionNode::and_, exp, intNode(ExpressionNode::c_ui_, Optimizer::mod_mask((*it)->basetp->bits)));
+                        if ((*it)->basetp->startbit)
+                            exp = exprNode(ExpressionNode::lsh_, exp, intNode(ExpressionNode::c_i_, (*it)->basetp->startbit));
+                        while (true)
+                        {
+                            ++it1;
+                            if (it1 == init->end() || !(*it1)->exp || !(*it1)->basetp || !(*it1)->basetp->bits || (*it1)->offset != initItem->offset)
+                            {
+                                break;
+                            }
+			    auto exp1 = (*it1)->exp;
+                            exp1 = exprNode(ExpressionNode::and_, exp1, intNode(ExpressionNode::c_ui_, Optimizer::mod_mask((*it1)->basetp->bits)));
+                            if ((*it1)->basetp->startbit)
+                                exp1 = exprNode(ExpressionNode::lsh_, exp1, intNode(ExpressionNode::c_i_, (*it1)->basetp->startbit));
+                            exp = exprNode(ExpressionNode::or_, exp, exp1);
+                            ++it;                            
+                        }
+                    }
                     if (initItem->offset || initItem != init->back())
                     {
                         std::list<INITIALIZER*>::iterator last;
@@ -1756,7 +1779,6 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (exps->type != ExpressionNode::msil_array_access_)
                     deref(initItem->basetp, &exps);
                 optimize_for_constants(&exps);
-                exp = initItem->exp;
                 if (exp->type == ExpressionNode::comma_)
                 {
                     cast(initItem->basetp, &exp->right);

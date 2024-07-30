@@ -33,16 +33,14 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <cstdlib>
-#include "Token.h"
-
+#include "AsmToken.h"
+#include "TokenSettings.h"
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
 #    include <io.h>
 #endif
 
-extern bool IsSymbolCharRoutine(const char*, bool);
-bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, {"case-insensitive"});
@@ -82,6 +80,8 @@ const char* AsmMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])
 {
+    TokenizerSettings::Instance()->SetSymbolCheckFunction(IsSymbolCharRoutine);
+    TokenizerSettings::Instance()->SetDialect(Dialect::oasm);
     AsmMain rc;
     try
     {
@@ -124,7 +124,7 @@ void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
                 std::string name;
                 int value = 0;
                 npos = line.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                if (npos == std::string::npos || !Tokenizer::IsSymbolChar(line.c_str() + npos, true))
+                if (npos == std::string::npos || !TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + npos, true))
                 {
                     Errors::Error("Expected identifier");
                 }
@@ -132,7 +132,7 @@ void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
                 {
                     int npos1 = npos;
 
-                    while (npos1 != line.size() && Tokenizer::IsSymbolChar(line.c_str() + npos1, false))
+                    while (npos1 != line.size() && TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + npos1, false))
                     {
                         int n = UTF8::CharSpan(line.c_str() + npos);
                         while (n && npos1 < line.size())

@@ -41,7 +41,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 CCFLAGS = -c -D__MSVCRT__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -Wno-int-to-pointer-cast
 
-CPPFLAGS = -std=gnu++14
+CPPFLAGS = -std=gnu++17
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
 

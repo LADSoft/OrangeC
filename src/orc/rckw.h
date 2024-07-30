@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#pragma once
 enum class kw
 {
     openpa = 1,

@@ -69,6 +69,12 @@
     <ClCompile Include="MakeStubs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ppEmbed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TokenSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Errors.h">
@@ -128,7 +134,13 @@
     <ClInclude Include="MakeStubs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ppEmbed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ppCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TokenSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

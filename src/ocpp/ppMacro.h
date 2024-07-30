@@ -27,7 +27,7 @@
 
 #include "ppExpr.h"
 #include "ppDefine.h"
-
+#include "forwarddecls.h"
 #include <vector>
 #include <string>
 

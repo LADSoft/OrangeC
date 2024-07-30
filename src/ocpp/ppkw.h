@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#pragma once
 enum class kw
 {
     openpa,
@@ -48,6 +48,7 @@ enum class kw
     lor,
     hook,
     colon,
+    coloncolon,
     comma,
     ellipses = 100,
 
@@ -104,5 +105,6 @@ enum class kw
     IASSIGN,
     IMACRO,
     WARNING,
-    UNKNOWN = 10000
+    EMBED,
+    UNKNOWN = -1
 };

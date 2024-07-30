@@ -77,8 +77,8 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     }
 }
 
-ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect_, bool Asmpp) :
-    expr(false, dialect_), include(Include), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
+ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, embeder* embed, Dialect dialect_, bool Asmpp) :
+    expr(false, dialect_), include(Include), embed(embed), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -241,7 +241,7 @@ void ppDefine::Undefine(const std::string& name)
 void ppDefine::DoAssign(std::string& line, bool caseInsensitive)
 {
     bool failed = false;
-    Tokenizer tk(line, &defTokens);
+    Tokenizer<kw> tk(line, &defTokens);
     const Token* next = tk.Next();
     std::string name;
     if (!next->IsIdentifier())
@@ -289,7 +289,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             }
         }
     }
-    Tokenizer tk(line, &defTokens);
+    Tokenizer<kw> tk(line, &defTokens);
     const Token* next = tk.Next();
     bool failed = false;
     bool hasEllipses = false;
@@ -365,7 +365,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
 }
 void ppDefine::DoUndefine(std::string& line)
 {
-    Tokenizer tk(line, nullptr);
+    Tokenizer<kw> tk(line, nullptr);
     const Token* t = tk.Next();
     if (!t->IsIdentifier())
     {
@@ -428,7 +428,41 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
         insert = Utils::NumberToString(counter_val++);
     }
     else
-        return 0;
+    {
+        // Only pull out the tokenizer if we use a "special"-type macro
+        Tokenizer<kw> tokenizer(macro, ppExpr::GetHash());
+        auto token = tokenizer.Next();
+        if (dialect == Dialect::c2x && token->GetId() == "__has_embed")
+        {
+            token = tokenizer.Next();
+            if (token->GetKeyword() == kw::openpa)
+            {
+                std::string line = tokenizer.GetString();
+                int n = line.rfind(")");
+                if (n == std::string::npos)
+                {
+                    end = macro.length();
+                    Errors::Error("Expected ')'");
+                }
+                else
+                {
+                    end = macro.rfind(')') + 1;
+                    std::string arg = line.substr(0, n);
+                    insert = std::to_string(embed->has_embed(embed->GetEmbedFromLine(arg)));
+                    tokenizer.SetString(line.substr(n + 1));
+                    token = tokenizer.Next();
+                }
+            }
+            else
+            {
+                Errors::Error("Expected '('");
+            }
+        }
+        else
+        {
+            return 0;
+        }
+    }
     macro.replace(begin, end - begin, insert);
     return insert.size();
 }
@@ -452,7 +486,7 @@ std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
             inctx = true;
         }
     }
-    while (j < macroname.size() && Tokenizer::IsSymbolChar(macroname.c_str() + j, false))
+    while (j < macroname.size() && TokenizerSettings::Instance()->GetSymbolCheckFunction()(macroname.c_str() + j, false))
     {
         int n = UTF8::CharSpan(macroname.c_str() + j);
         for (int i = 0; i < n && macroname[j]; i++)
@@ -637,7 +671,7 @@ bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
         isdigit(macro[pos]))  // we would get here with the first alpha char following the number
     {
         // backtrack through all characters that could possibly be part of the number
-        while (pos >= start && (Tokenizer::IsSymbolChar(macro.c_str() + pos, false) || macro[pos] == '.' ||
+        while (pos >= start && (TokenizerSettings::Instance()->GetSymbolCheckFunction()(macro.c_str() + pos, false) || macro[pos] == '.' ||
                                 ((macro[pos] == '-' || macro[pos] == '+') && (macro[pos - 1] == 'e' || macro[pos - 1] == 'E' ||
                                                                               macro[pos - 1] == 'p' || macro[pos - 1] == 'P'))))
         {
@@ -674,7 +708,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
             if (macro[p] == waiting && NotSlashed(macro, p))
                 waiting = 0;
         }
-        else if (Tokenizer::IsSymbolChar(macro.c_str() + p, false))
+        else if (TokenizerSettings::Instance()->GetSymbolCheckFunction()(macro.c_str() + p, false))
         {
             bool doit = true;
             int q = p;
@@ -771,7 +805,7 @@ void ppDefine::SetupAlreadyReplaced(std::string& macro)
     {
         if ((macro[p] == '"' || macro[p] == '\'') && NotSlashed(macro, p))
             instr = !instr;
-        if (Tokenizer::IsSymbolChar(macro.c_str() + p, true) && !instr)
+        if (TokenizerSettings::Instance()->GetSymbolCheckFunction()(macro.c_str() + p, true) && !instr)
         {
             int q = p;
             std::string name;
@@ -816,8 +850,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
             p++;
             origPos++;
         }
-        else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
-                 (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
+        else if (TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + p, true) &&
+                 (p == begin || line[p - 1] == '$' || !TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + p - 1, false)))
         {
             TokenPos tokenPos;
             tokenPos.origStart = origPos;
@@ -1097,7 +1131,7 @@ void ppDefine::ParseAsmSubstitutions(std::string& line)
                 }
                 else if (n == 0)
                 {
-                    if ((n < line.size() - 2) && line[n + 1] == '$' && Tokenizer::IsSymbolChar(line.c_str() + n + 2, true))
+                    if ((n < line.size() - 2) && line[n + 1] == '$' && TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + n + 2, true))
                     {
                         int n1 = ctx->GetTopId();
                         if (n1 != -1)
@@ -1185,10 +1219,10 @@ void ppDefine::ReplaceAsmMacros(std::string& line)
 {
 
     int n = line.find_first_not_of(" \t\r\v\n");
-    while (n != std::string::npos && Tokenizer::IsSymbolChar(line.c_str() + n, true))
+    while (n != std::string::npos && TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + n, true))
     {
         int n1 = n;
-        while (n1 != line.size() && Tokenizer::IsSymbolChar(line.c_str() + n1, false))
+        while (n1 != line.size() && TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + n1, false))
         {
             int n5 = UTF8::CharSpan(line.c_str() + n1);
             for (int i = 0; i < n5 && n1 < line.size(); i++)
@@ -1225,10 +1259,10 @@ void ppDefine::replaceDefined(std::string& line)
         }
         while (m < line.size() && isspace(line[m]))
             m++;
-        if (Tokenizer::IsSymbolChar(line.c_str() + m, true))
+        if (TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + m, true))
         {
             int q = m++;
-            while (Tokenizer::IsSymbolChar(line.c_str() + m, false))
+            while (TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + m, false))
                 m++;
             if (Lookup(line.substr(q, m - q)))
                 val = "1";

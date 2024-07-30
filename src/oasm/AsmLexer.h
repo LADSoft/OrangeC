@@ -160,7 +160,7 @@ class Lexer
     bool atEol;
     bool atEof;
     bool stopAtEol;
-    Tokenizer* tokenizer;
+    Tokenizer<kw>* tokenizer;
     const Token* token;
     bool parsingDirective;
     static KeywordHash hash;

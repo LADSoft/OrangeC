@@ -42,6 +42,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -71,6 +72,9 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -83,9 +87,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(TargetName)</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -147,6 +152,7 @@
     <ClCompile Include="ppCond.cpp" />
     <ClCompile Include="ppCtx.cpp" />
     <ClCompile Include="ppDefine.cpp" />
+    <ClCompile Include="ppEmbed.cpp" />
     <ClCompile Include="ppError.cpp" />
     <ClCompile Include="ppExpr.cpp" />
     <ClCompile Include="ppFile.cpp" />
@@ -157,6 +163,7 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="Token.cpp" />
+    <ClCompile Include="TokenSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Errors.h" />
@@ -168,6 +175,7 @@
     <ClInclude Include="ppCond.h" />
     <ClInclude Include="ppCtx.h" />
     <ClInclude Include="ppDefine.h" />
+    <ClInclude Include="ppEmbed.h" />
     <ClInclude Include="ppErr.h" />
     <ClInclude Include="ppError.h" />
     <ClInclude Include="ppExpr.h" />
@@ -179,6 +187,7 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Token.h" />
+    <ClInclude Include="TokenSettings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

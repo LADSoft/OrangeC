@@ -134,7 +134,7 @@ class DefFile
     unsigned imageBase;
     unsigned stackSize;
     unsigned heapSize;
-    Tokenizer tokenizer;
+    Tokenizer<kw> tokenizer;
     const Token* token;
     std::fstream stream;
     int lineno;

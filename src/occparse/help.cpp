@@ -1870,7 +1870,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                           intNode(ExpressionNode::c_i_, 0));
         }
     }
-    if (isstructured(tp))
+    if (isstructured(tp) || isarray(tp))
     {
         if (*pos)
         {

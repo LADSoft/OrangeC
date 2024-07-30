@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "exefmt/MZHeader.h"
-#include "exefmt/peHeader.h"
+#include "exefmt/PEHeader.h"
 
 size_t stubSize;
 size_t oldOffset;

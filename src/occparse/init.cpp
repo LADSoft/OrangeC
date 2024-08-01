@@ -4698,7 +4698,7 @@ LEXLIST* initialize(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         }
     }
     if (!instantiatingTemplate && !structLevel && sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent && !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
-        (!Optimizer::cparams.prm_cplusplus || !isstructured(sym->tp) || sym->sb->trivialCons) && !isatomic(sym->tp))
+        (!Optimizer::cparams.prm_cplusplus || !isstructured(sym->tp) || sym->sb->trivialCons) && !isatomic(sym->tp) && sym->sb->attribs.inheritable.linkage3 == Linkage::none_)
     {
             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
             sym->sb->attribs.inheritable.isInlineData = true;

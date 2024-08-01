@@ -258,6 +258,7 @@ KEYWORD keywords[] = {
     {"__rtllinkage", 12, Keyword::rtllinkage_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__stdcall", 9, Keyword::stdcall_, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__string", 8, Keyword::string_, KW_MSIL, TT_BASETYPE},
+    {"__thread", 8, Keyword::thread_local_, 0, TT_LINKAGE},
     {"__try", 5, Keyword::seh_try_, KW_MSIL, TT_CONTROL},
     {"__typeid", 8, Keyword::typeid_, KW_NONANSI | KW_ALL, TT_VAR},
     {"__underlying_type", 17, Keyword::underlying_type_, KW_CPLUSPLUS, TT_BASETYPE},

@@ -1484,10 +1484,13 @@ int opt0(EXPRESSION** node)
             return rv;
         case ExpressionNode::structadd_:
         case ExpressionNode::arrayadd_:
+            /* can't do this here*/
+            /*
             while (ep->left->type == ExpressionNode::comma_)
                 ep->left = ep->left->right;
             while (ep->right->type == ExpressionNode::comma_)
                 ep->right = ep->right->right;
+                */
             // fallthrough
         case ExpressionNode::add_:
         case ExpressionNode::sub_:

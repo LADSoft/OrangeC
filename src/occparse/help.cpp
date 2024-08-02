@@ -1207,6 +1207,8 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
                         ? MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset))
                         : copy_expression(expsym);
+                    exp->v.func->thisptr = exp1;
+                    /*
                     if (tp->IsArray())
                     {
                         exp->v.func->arguments->front()->exp = exp1;
@@ -1215,6 +1217,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     {
                         exp->v.func->thisptr = exp1;
                     }
+                    */
                     GetAssignDestructors(&exp->v.func->destructors, exp);
                     exp = initItem->exp;
                 }

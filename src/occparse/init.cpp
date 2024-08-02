@@ -4220,6 +4220,8 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         tp = tp->BaseType()->btp->BaseType();
     if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ && !sym->tp->IsRef() && !sym->sb->attribs.inheritable.isInline && !tp->syms)
     {
+        if (tp->IsStructured())
+            tp = tp->BaseType()->sp->tp;
         int sz = sym->tp->IsArray() ? sym->tp->size / tp->size : -1;
         tp->InstantiateDeferred();
         if (tp->IsStructured())
@@ -4227,7 +4229,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             auto tp1 = sym->tp->BaseType();
             if (tp1->IsPtr() || tp1->IsRef())
             {
-                tp1->btp = tp = tp->sp->tp;
+                tp1->btp = tp;
                 if (sz != -1)
                 {
                     sz = sz * tp->size;

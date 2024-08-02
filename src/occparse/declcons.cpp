@@ -1834,7 +1834,21 @@ static EXPRESSION* unshim(EXPRESSION* exp, EXPRESSION* ths)
     *nw = *exp;
     nw->left = unshim(nw->left, ths);
     nw->right = unshim(nw->right, ths);
-    if (nw->type == ExpressionNode::stmt_)
+    if (nw->type == ExpressionNode::callsite_)
+    {
+        if (nw->v.func->sp && nw->v.func->arguments && nw->v.func->arguments->size())
+        {
+            auto a = nw->v.func->sp->name;
+            if (a[0] == '_' && a[1] == '_' && !strcmp(a, "__arrCall"))
+            {
+                for (auto&& e : *nw->v.func->arguments)
+                {
+                    e->exp = unshim(e->exp, ths);
+                }
+            }
+        }
+    }
+    else if (nw->type == ExpressionNode::stmt_)
     {
         nw->v.stmt = unshimstmt(nw->v.stmt, ths);
     }
@@ -2864,7 +2878,8 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     EXPRESSION *econs = (cons ? MakeExpression(ExpressionNode::pc_, cons) : nullptr), *edest = MakeExpression(ExpressionNode::pc_, dest);
     CallSite* params = Allocate<CallSite>();
     SYMBOL* asn1;
-    Argument* arg0 = Allocate<Argument>();  // this
+    Argument arg0_value = {};
+    Argument* arg0 = &arg0_value;  // this
     Argument* arg1 = Allocate<Argument>();  // cons
     Argument* arg2 = Allocate<Argument>();  // dest
     Argument* arg3 = Allocate<Argument>();  // size
@@ -2899,6 +2914,12 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     }
     else
     {
+        // treating this as a member function even though it isn't, because,
+        // it really is a constructor and the places other parts of the code find it in
+        // are just assuming there will be a constructor...
+        params->thistp = arg0->tp;
+        params->thisptr = arg0->exp;
+        params->arguments->pop_front();
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = true;

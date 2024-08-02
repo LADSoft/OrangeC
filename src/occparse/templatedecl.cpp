@@ -1088,6 +1088,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                 {
                                     int i;
                                     int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
+                                    /*
                                     for (i = 1; i < count; i++)
                                     {
                                         if (CountPacks(arg[i]->tp->templateParam->second->byPack.pack) != n)
@@ -1096,6 +1097,7 @@ LEXLIST* GetTemplateArguments(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                             break;
                                         }
                                     }
+                                    */
                                     for (i = 0; i < n; i++)
                                     {
                                         LEXLIST* lex = SetAlternateLex(start);

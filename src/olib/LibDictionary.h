@@ -28,6 +28,7 @@
 #include "ObjTypes.h"
 #include <cstdio>
 #include <unordered_map>
+#include <vector>
 
 class ObjFile;
 class LibFiles;

@@ -2360,11 +2360,14 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                         {
                             n = n1;
                         }
+                        /*
+
                         else if (n != n1)
                         {
                             error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
                             break;
                         }
+                        */
                     }
                 }
             }

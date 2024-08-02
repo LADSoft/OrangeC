@@ -248,7 +248,8 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
     for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         LinkSymbolData test(file, *it);
-        if (publics.find(&test) != publics.end() || virtsections.find(&test) != virtsections.end())
+        auto itv = virtsections.find(&test);
+        if (publics.find(&test) != publics.end() || itv != virtsections.end() && strncmp(static_cast<ObjSection*>((*itv)->GetAuxData())->GetName().c_str(), "vsb@", 4) != 0)
         {
             if (toerr)
                 LinkError("Duplicate public " + (*it)->GetDisplayName() + " in module " + file->GetName());
@@ -353,6 +354,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                     auto it1 = virtsections.find(&test);
                     if (it1 == virtsections.end())
                     {
+                        sym.SetOffset(new ObjExpression(*it));
                         LinkSymbolData* newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
                         newSymbol->SetAuxData(*it);
                         virtsections.insert(newSymbol);
@@ -364,6 +366,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                     }
                     else if (!(*it1)->GetAuxData())
                     {
+                        (*it1)->GetSymbol()->SetOffset(new ObjExpression(*it));
                         (*it1)->SetAuxData(*it);
                     }
                     else
@@ -442,15 +445,27 @@ bool LinkManager::ScanVirtuals()
         auto it1 = virtsections.find(*it);
         if (it1 != virtsections.end())
         {
-            if (!(*it1)->GetUsed())
+            bool toContinue = true;
+            if (strncmp(static_cast<ObjSection*>((*it1)->GetAuxData())->GetName().c_str(), "vsb@", 4) != 0 && !(*it1)->GetUsed())
             {
                 (*it1)->SetUsed(true);
                 LoadSectionExternals((*it1)->GetFile(), (ObjSection*)(*it1)->GetAuxData());
             }
-            (*it)->SetUsed(true);
-            delete (*it);
-            externals.erase(it++);
-            rv = true;
+            else
+            {
+                toContinue = false;
+            }
+            if (toContinue)
+            {
+                (*it)->SetUsed(true);
+                delete (*it);
+                externals.erase(it++);
+                rv = true;
+            }
+            else
+            {
+                ++it;
+            }
         }
         else
         {
@@ -614,20 +629,26 @@ void LinkManager::LoadLibraries()
 bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name)
 {
     bool found = false;
-    ObjInt objNum = lib->GetSymbol(name);
-    if (objNum >= 0 && !lib->HasModule(objNum))
+    auto objNum = lib->GetSymbol(name);
+    if (objNum.size())
     {
-        ObjFile* file = lib->LoadSymbol(objNum, factory);
-        if (!file)
+        for (int i = 0; i < objNum.size(); i++)
         {
-            LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + lib->GetName());
+            if (!lib->HasModule(objNum[i]))
+            {
+                ObjFile* file = lib->LoadSymbol(objNum[i], factory);
+                if (!file)
+                {
+                    LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + lib->GetName());
+                }
+                else
+                {
+                    fileData.push_back(file);
+                    MergePublics(file, false);
+                }
+                found = true;
+            }
         }
-        else
-        {
-            fileData.push_back(file);
-            MergePublics(file, false);
-        }
-        found = true;
     }
     return found;
 }
@@ -647,7 +668,7 @@ void LinkManager::ScanLibraries()
                 {
                     if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
                     {
-                        bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
+                       bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
                         // not resolved?
                         if (found)
                         {
@@ -1001,7 +1022,7 @@ void LinkManager::SetDelayParams()
     (void)LinkExpression::EnterSymbol(esym);
 }
 void LinkManager::Link()
-    {
+{
     if (!objectFiles.size())
     {
         LinkError("No input files specified");
@@ -1019,6 +1040,35 @@ void LinkManager::Link()
             {
                 ScanLibraries();
             } while (ScanVirtuals());
+            for (auto vs: virtsections)
+            {
+                if (strncmp(static_cast<ObjSection*>(vs->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
+                {
+                    ObjSymbol s(*vs->GetSymbol());
+                    s.SetName(s.GetName().substr(1));
+                    LinkSymbolData ld(&s);
+                    auto ip = publics.find(&ld);
+                    if (ip == publics.end())
+                    {
+                        (vs)->SetUsed(true);
+                        s.SetOffset(vs->GetSymbol()->GetOffset());
+                        publics.insert(new LinkSymbolData(new ObjSymbol(s)));
+                    }
+                    else
+                    {
+                        (*ip)->SetUsed(true);
+                    }
+                    auto et = externals.find(&ld);
+                    if (et == externals.end())
+                        et = externals.find(vs);
+                    if (et != externals.end())
+                    {
+                        (*et)->SetUsed(true);
+                        delete (*et);
+                        externals.erase(et);
+                    }
+                }
+            }
         }
     }
     SetDelayParams();

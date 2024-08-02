@@ -872,6 +872,9 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
         case Optimizer::vt_data:
             strcpy(buf, "vsd@");
             break;
+        case Optimizer::vt_bss:
+            strcpy(buf, "vsb@");
+            break;
         case Optimizer::vt_startup:
             strcpy(buf, "vss@");
             break;

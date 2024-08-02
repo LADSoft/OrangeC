@@ -252,7 +252,7 @@ void dumpInlines(void)
                                 enclosingDeclarations.Drop();
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
-                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
+                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                             if (sym->sb->init)
                             {
                                 if (sym->tp->IsStructured() || sym->tp->IsArray())
@@ -288,7 +288,7 @@ void dumpInlines(void)
                             else
                             {
                                 inInsert(sym);
-                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
+                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                                 if (sym->sb->init)
                                 {
                                     if (sym->tp->IsStructured() || sym->tp->IsArray())

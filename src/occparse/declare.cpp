@@ -2123,6 +2123,12 @@ LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linka
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = Linkage::export_;
                 }
+                else if (!strcmp(lex->data->value.s.a, "thread") || !strcmp(lex->data->value.s.a, "__thread__"))
+                {
+                    if (*linkage3 != Linkage::none_)
+                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                    *linkage3 = Linkage::threadlocal_;
+                }
                 else if (!strcmp(lex->data->value.s.a, "deprecated") || !strcmp(lex->data->value.s.a, "__deprecated__"))
                 {
                     basisAttribs.uninheritable.deprecationText = (char*)-1;

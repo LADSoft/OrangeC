@@ -39,7 +39,7 @@ class LinkLibrary
     LinkLibrary(const ObjString& Name, bool CaseSensitive) : name(Name), manager(name, CaseSensitive) {}
     ~LinkLibrary() { Close(); }
     ObjString GetName() { return name; }
-    ObjInt GetSymbol(const ObjString& name) { return manager.Lookup(name); }
+    const std::vector<unsigned>& GetSymbol(const ObjString& name) { return manager.Lookup(name); }
     ObjFile* LoadSymbol(ObjInt objNum, ObjFactory* factory)
     {
         loadedModules.insert(objNum);

@@ -3356,7 +3356,7 @@ founddecltype:
                             ((strSym && ((strSym->sb->mainsym && strSym->sb->mainsym == sp->sb->mainsym) ||
                                 strSym == sp->sb->mainsym || sameTemplate(strSym->tp, sp->tp))) ||
                                 (!strSym && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) && ssp &&
-                                    ssp == sp->sb->mainsym)))
+                                    (ssp == sp || ssp == sp->sb->mainsym))))
                         {
                             if (destructor)
                             {

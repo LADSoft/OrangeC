@@ -36,6 +36,7 @@ enum VirtualType
 {
     vt_code,
     vt_data,
+    vt_bss,
     vt_startup,
     vt_rundown
 };

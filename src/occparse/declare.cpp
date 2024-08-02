@@ -355,17 +355,19 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                     {
                         for (auto pq1 : *pq->tp->syms)
                         {
-                            const char* p1 = strrchr(pq1->sb->decoratedName, '@');
-                            const char* p2 = strrchr(pi->sb->decoratedName, '@');
-                            if (p1 && p2 && !strcmp(p1, p2))
+                            if (strcmp(pq1->name, pi->name) == 0)
                             {
-                                if (!pq1->sb->ispure)
+                                InitializeFunctionArguments(pq1);
+                                if (matchOverload(pq1->tp, pi->tp, false))
                                 {
-                                    return nullptr;
-                                }
-                                else
-                                {
-                                    break;
+                                    if (!pq1->sb->ispure)
+                                    {
+                                        return nullptr;
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -1128,8 +1130,11 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
                          bool* defd, SymbolTable<SYMBOL>* anonymousTable)
 {
     int oldParsingTemplateArgs;
+    int oldExpressionParsing;
     oldParsingTemplateArgs = parsingDefaultTemplateArgs;
+    oldExpressionParsing = inFunctionExpressionParsing;
     parsingDefaultTemplateArgs = 0;
+    inFunctionExpressionParsing = false;
     bool hasBody = (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_) || KW(lex) == Keyword::begin_;
     SYMBOL* injected = nullptr;
 
@@ -1191,6 +1196,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         TemplateGetDeferred(sp);
     }
     --structLevel;
+    inFunctionExpressionParsing = oldExpressionParsing;
     parsingDefaultTemplateArgs = oldParsingTemplateArgs;
     return lex;
 }
@@ -1353,6 +1359,16 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             lex = backupsym();
         }
     }
+    if (funcsp && !searched && !inFunctionExpressionParsing && (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_)))
+    {
+        sp = nullptr;
+        nsv = nullptr;
+        if (localNameSpace->front()->tags)
+        {
+            sp = localNameSpace->front()->tags->Lookup(newName);
+        }
+        table = localNameSpace->front()->tags;
+    }
     if (!sp)
     {
         addedNew = true;
@@ -1372,13 +1388,17 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
         sp->sb->declfilenum = lex->data->linedata->fileindex;
         sp->sb->attribs = basisAttribs;
-        if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) &&
+        if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || storage_class == StorageClass::auto_) &&
             (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::semicolon_)))
-            sp->sb->parentClass = enclosingDeclarations.GetFirst();
+            if (storage_class == StorageClass::auto_)
+                sp->sb->parentClass = theCurrentFunc->sb->parentClass;
+            else
+                sp->sb->parentClass = enclosingDeclarations.GetFirst();
         if (nsv)
             sp->sb->parentNameSpace = nsv->front()->name;
         else
             sp->sb->parentNameSpace = globalNameSpace->front()->name;
+        sp->sb->parent = funcsp;
         if (nsv && nsv->front()->name && !strcmp(sp->name, "initializer_list") && !strcmp(nsv->front()->name->name, "std"))
             sp->sb->initializer_list = true;
         if (inTemplate)
@@ -1764,8 +1784,20 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
     }
 
     strcpy(newName, tagname);
+
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+
     ParseAttributeSpecifiers(&lex, funcsp, true);
+    if (funcsp && (MATCHKW(lex, Keyword::colon_)  || MATCHKW(lex, Keyword::begin_)))
+    {
+        sp = nullptr;
+        nsv = nullptr;
+        if (localNameSpace->front()->tags)
+        {
+            sp = localNameSpace->front()->tags->Lookup(newName);
+        }
+        table = localNameSpace->front()->tags;
+    }
     if (KW(lex) == Keyword::colon_)
     {
         RequiresDialect::Feature(Dialect::c2x, "Underlying type");
@@ -2090,6 +2122,12 @@ LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linka
                     if (*linkage2 != Linkage::none_)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = Linkage::export_;
+                }
+                else if (!strcmp(lex->data->value.s.a, "thread") || !strcmp(lex->data->value.s.a, "__thread__"))
+                {
+                    if (*linkage3 != Linkage::none_)
+                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                    *linkage3 = Linkage::threadlocal_;
                 }
                 else if (!strcmp(lex->data->value.s.a, "deprecated") || !strcmp(lex->data->value.s.a, "__deprecated__"))
                 {

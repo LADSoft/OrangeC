@@ -3,13 +3,15 @@ DIRS = alexcs asm asmgas bzip2-1.0.5 cpplinq ellf general lame libogg-1.2.0 libv
 CDIRS = $(addsuffix .dir, $(DIRS))
 CLEANDIRS = $(addsuffix .cleandir, $(DIRS))
 
-CLEAN = -del *.o *.exe *.out *.tst *.res 2>NUL
+CLEAN = -del *.o *.exe *.out *.tst *.res *.l *.dll 2>NUL
 export CLEAN
 
 all: $(CDIRS)  ctestsuite
+	$(MAKE) /Care-we-fast-yet
 	echo %ERRORLEVEL%
 
 clean: $(CLEANDIRS) ctestsuite.clean
+	$(MAKE) /Care-we-fast-yet clean
 
 ctestsuite:
 	$(MAKE) /j:1 /Cc-testsuite

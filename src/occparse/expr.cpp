@@ -8174,7 +8174,20 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                 }
                 if (Optimizer::cparams.prm_cplusplus && (tpc->IsStructured() || tph->IsStructured()) && (!tpc->lref || !tph->lref))
                 {
-                    if ( ! tpc->IsStructured() || !tph->IsStructured() || 
+                    if (atp && !atp->IsStructured() && (!atp->IsRef() || !atp->BaseType()->btp->IsStructured()))
+                    {
+                        if (tpc->IsStructured())
+                        {
+                            if (!castToArithmeticInternal(true, &tpc, &epc, Keyword::plus_, atp, false))
+                                errorConversionOrCast(true, tpc, atp);
+                        }
+                        if (tph->IsStructured())
+                        {
+                            if (!castToArithmeticInternal(true, &tph, &eph, Keyword::plus_, atp, false))
+                                errorConversionOrCast(true, tph, atp);
+                        }
+                    }
+                    else if ( ! tpc->IsStructured() || !tph->IsStructured() || 
                         (((!tpc->lref && !tpc->lref && !tph->lref && !tph->rref) || (tpc->lref != tph->lref && tpc->rref != tph->rref))
                             && ((tph->SameType(tpc) && !sameTemplate(tph, tpc, false)) 
                                     || epc->type == ExpressionNode::thisref_ || epc->type == ExpressionNode::callsite_ || eph->type == ExpressionNode::thisref_ || eph->type == ExpressionNode::callsite_)))

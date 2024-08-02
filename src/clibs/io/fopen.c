@@ -234,6 +234,7 @@ FILE* __basefopen(const wchar_t* restrict name, const wchar_t* restrict mode, FI
     return file;
 }
 FILE* _RTL_FUNC _wfopen(const wchar_t* restrict name, const wchar_t* restrict mode) { return __basefopen(name, mode, 0, -1, SH_COMPAT); }
+FILE* _RTL_FUNC _wfsopen(const wchar_t* restrict name, const wchar_t* restrict mode, int __shmode) { return __basefopen(name, mode, 0, -1, __shmode); }
 FILE* _RTL_FUNC fopen(const char* restrict name, const char* restrict mode) 
 { 
     wchar_t buf[260], buf1[64], *p = buf, *q = buf1;

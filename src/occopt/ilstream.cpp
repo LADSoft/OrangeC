@@ -1052,7 +1052,7 @@ static void NumberTypes()
     {
         s->typeIndex = 2 * i++ + 1;
         // static members
-        if (s->storage_class != scc_external && s->storage_class != scc_global && s->storage_class != scc_constant)
+        if (s->storage_class != scc_external && s->storage_class != scc_global && s->storage_class != scc_constant && s->storage_class != scc_enumconstant)
         {
             s->fileIndex = s->typeIndex;
         }

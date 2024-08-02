@@ -1256,15 +1256,16 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         ++it1;
         if (it1 != itend && ((*it1)->sb->init || (*it1)->sb->deferredCompile))
         {
-            if (sp->templateParams == nullptr)
+            if (sp->templateParams == nullptr || (!templateNestingCount || instantiatingTemplate))
             {
                 // will match a default constructor but has defaulted args
                 SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
+                consfunc->sb->defaulted = false;
                 SymbolTable<SYMBOL>* syms;
                 FunctionBlock bd = {};
                 std::list<FunctionBlock*> b = { &bd };
                 Statement* st;
-                EXPRESSION* thisptr = MakeExpression(ExpressionNode::auto_, *it);
+                EXPRESSION* thisptr = MakeExpression(ExpressionNode::auto_, consfunc->tp->syms->front());
                 EXPRESSION* e1;
                 CallSite* params = Allocate<CallSite>();
                 (*it)->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
@@ -1390,7 +1391,7 @@ void createDefaultConstructors(SYMBOL* sp)
                                 err |= s->sb->isConstructor && !s->sb->defaulted;
                                 err |= s->sb->deleted;
                                 err |= s->sb->access != AccessLevel::public_;
-                                err |= s->sb->isConstructor && s->sb->isExplicit;
+                                err |= s->sb->isConstructor && s->sb->isExplicit && !s->sb->defaulted;
                                 if (s->sb->isDestructor && !s->sb->defaulted)
                                     trivialDest = false;
                             }

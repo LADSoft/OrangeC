@@ -2097,7 +2097,7 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
                 if (localClassWarnings)
                 {
                     if (cur1->tp->IsFunction())
-                        if (!cur1->tp->BaseType()->sp->sb->inlineFunc.stmt)
+                        if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt && !cur1->tp->BaseType()->sp->sb->deferredCompile)
                             errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                 }
                 if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)

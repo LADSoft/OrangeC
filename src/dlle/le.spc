@@ -35,6 +35,7 @@ partition {
   overlay {
 	_BSSSTART = $;
 	region {} bss [ align = 8, roundsize = 4];
+        region {} vsb* [ align = 8, roundsize = 4];
 	_BSSEND = $;
 	_BSSSIZE = _BSSEND - _BSSSTART;
   } .bss ;

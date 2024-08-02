@@ -237,7 +237,19 @@ ObjExpression* LinkRemapper::ScanExpression(ObjExpression* offset, LinkSymbolDat
                 auto it = manager->PublicFind(d);
                 if (it != manager->PublicEnd())
                 {
-                    return (*it)->GetSymbol()->GetOffset();
+                    auto ofs = (*it)->GetSymbol()->GetOffset();
+                    if (ofs->GetOp() == ObjExpression::eSection)
+                    {
+                        int n = ofs->GetSection()->GetBase();
+                        if (n)
+                        {
+                            return new ObjExpression(ObjExpression::eAdd, ofs, new ObjExpression(n));
+                        }
+                    }
+                    else
+                    {
+                        return (*it)->GetSymbol()->GetOffset();
+                    }
                 }
                 LinkExpressionSymbol* sym = LinkExpression::FindSymbol(offset->GetSymbol()->GetName());
                 if (sym)
@@ -262,6 +274,16 @@ ObjExpression* LinkRemapper::ScanExpression(ObjExpression* offset, LinkSymbolDat
                 if (n != 0)
                 {
                     return new ObjExpression(ObjExpression::eAdd, offset, new ObjExpression(n));
+                }
+                if (strncmp(offset->GetSection()->GetName().c_str(), "vsb@", 4) == 0)
+                {
+                    ObjSymbol s(offset->GetSection()->GetName().substr(4), ObjSymbol::ePublic, 0);
+                    LinkSymbolData ld(&s);
+                    auto ip = manager->PublicFind(&ld);
+                    if (ip != manager->PublicEnd())
+                    {
+                        return new ObjExpression((*ip)->GetSymbol());
+                    }
                 }
             }
             return offset;

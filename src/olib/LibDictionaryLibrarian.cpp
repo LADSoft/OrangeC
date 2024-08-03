@@ -64,8 +64,11 @@ void LibDictionary::CreateDictionary(LibFiles& files)
                             break;
                     if (j < name.size())
                     {
-                        name = name.substr(j);
-                        InsertInDictionary(name.c_str(), i);
+                        InsertInDictionary(name.c_str()+ j, i);
+                        if (strncmp((*si)->GetName().c_str(), "vsb@", 4) == 0)
+                        {
+                            InsertInDictionary(name.c_str() + j + 1, i);
+                        }
                     }
                 }
             }
@@ -83,11 +86,11 @@ void LibDictionary::InsertInDictionary(const char* name, int index)
     std::string id = buf;
     if (!caseSensitive)
         id = UTF8::ToUpper(id);
-    dictionary[id] = index;
+    dictionary[id].push_back(index);
 }
 bool LibDictionary::Write(FILE* stream)
 {
-    char sig[4] = {'1', '0', 0, 0};
+    char sig[4] = {'1', '1', 0, 0};
     if (fwrite(&sig[0], 4, 1, stream) != 1)
         return false;
     for (auto d : dictionary)
@@ -97,7 +100,15 @@ bool LibDictionary::Write(FILE* stream)
             return false;
         if (fwrite(d.first.c_str(), len, 1, stream) != 1)
             return false;
-        ObjInt fileNum = d.second;
+        auto&& list = d.second;
+        unsigned fileNum;
+        for (int i = 0; i < list.size() - 1; i++)
+        {
+            fileNum = list[i] | DictionaryContinuationFlag;
+            if (fwrite(&fileNum, sizeof(fileNum), 1, stream) != 1)
+                return false;
+        }
+        fileNum = list[list.size() - 1];
         if (fwrite(&fileNum, sizeof(fileNum), 1, stream) != 1)
             return false;
     }

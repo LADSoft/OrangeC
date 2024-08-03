@@ -1473,6 +1473,9 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
                 case Optimizer::vt_data:
                     AsmOutput("section vsd@%s virtual\n", name);
                     break;
+                case Optimizer::vt_bss:
+                    AsmOutput("section vsb@%s virtual\n", name);
+                    break;
                 case Optimizer::vt_startup:
                     AsmOutput("section vss@%s virtual\n", name);
                     break;
@@ -1525,6 +1528,9 @@ void oa_gen_endvirtual(Optimizer::SimpleSymbol* sym)
                 case Optimizer::vt_data:
                     oa_enterseg(Optimizer::dataseg);
                     break;
+                case Optimizer::vt_bss:
+                    oa_enterseg(Optimizer::bssxseg);
+                    break;
                 case Optimizer::vt_startup:
                     oa_enterseg(Optimizer::startupxseg);
                     break;
@@ -1544,6 +1550,9 @@ void oa_gen_endvirtual(Optimizer::SimpleSymbol* sym)
                 break;
             case Optimizer::vt_data:
                 oa_enterseg(Optimizer::dataseg);
+                break;
+            case Optimizer::vt_bss:
+                oa_enterseg(Optimizer::bssxseg);
                 break;
             case Optimizer::vt_startup:
                 oa_enterseg(Optimizer::startupxseg);

@@ -123,7 +123,7 @@ typedef struct _xctab
 typedef struct __xcentry
 {
     EXPRESSION* exp;
-    STATEMENT* stmt;
+    Statement* stmt;
     SYMBOL* xtSym;
     char byStmt : 1;
     char used : 1;
@@ -133,9 +133,10 @@ extern SymbolTable<SYMBOL>* rttiSyms;
 extern std::map<int, std::map<int, __xcentry*>> rttiStatements;
 
 void rtti_init(void);
-bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
+void makeXCTab(SYMBOL* funcsp);
+void insertXCInfo(SYMBOL* funcsp);
 Optimizer::SimpleSymbol* evalsp(EXPRESSION* exp);
-SYMBOL* RTTIDumpType(TYPE* tp, bool symonly = false);
+SYMBOL* RTTIDumpType(Type* tp, bool symonly = false);
 void XTDumpTab(SYMBOL* funcsp);
 #endif
 

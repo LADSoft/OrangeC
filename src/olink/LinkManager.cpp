@@ -45,9 +45,62 @@
 #include <cstdio>
 #include <climits>
 #include <algorithm>
+#include <set>
+#include <string>
+#include <cctype>
+
 int LinkManager::errors;
 int LinkManager::warnings;
 
+std::set<std::string> ignoreLibs =
+{
+"advapi32.l",
+"avicap32.l",
+"avifil32.l",
+"comctl32.l",
+"comdlg32.l",
+"ctl3d32.l",
+"gdi32.l",
+"gdiplus.l",
+"glu32.l",
+"imagehlp.l",
+"imm32.l",
+"kernel32.l",
+"lz32.l",
+"mapi32.l",
+"mfcuia32.l",
+"mgmtapi.l",
+"mpr.l",
+"msacm32.l",
+"msimg32.l",
+"msvfw32.l",
+"netapi32.l",
+"odbc32.l",
+"odbccp32.l",
+"ole32.l",
+"oleaut32.l",
+"opengl32.l",
+"pkpd32.l",
+"rasapi32.l",
+"rpcns4.l",
+"rpcrt4.l",
+"shell32.l",
+"shfolder.l",
+"shlwapi.l",
+"tapi32.l",
+"url.l",
+"urlmon.l",
+"user32.l",
+"uxtheme.l",
+"vdmdbg.l",
+"version.l",
+"wininet.l",
+"winmm.l",
+"winspool.l",
+"wow32.l",
+"wsock32.l",
+"ws2_32.l"
+};
 void HookError(int aa) {}
 
 LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile, bool CompleteLink,
@@ -195,7 +248,8 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
     for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         LinkSymbolData test(file, *it);
-        if (publics.find(&test) != publics.end() || virtsections.find(&test) != virtsections.end())
+        auto itv = virtsections.find(&test);
+        if (publics.find(&test) != publics.end() || itv != virtsections.end() && strncmp(static_cast<ObjSection*>((*itv)->GetAuxData())->GetName().c_str(), "vsb@", 4) != 0)
         {
             if (toerr)
                 LinkError("Duplicate public " + (*it)->GetDisplayName() + " in module " + file->GetName());
@@ -300,6 +354,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                     auto it1 = virtsections.find(&test);
                     if (it1 == virtsections.end())
                     {
+                        sym.SetOffset(new ObjExpression(*it));
                         LinkSymbolData* newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
                         newSymbol->SetAuxData(*it);
                         virtsections.insert(newSymbol);
@@ -311,6 +366,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                     }
                     else if (!(*it1)->GetAuxData())
                     {
+                        (*it1)->GetSymbol()->SetOffset(new ObjExpression(*it));
                         (*it1)->SetAuxData(*it);
                     }
                     else
@@ -389,15 +445,27 @@ bool LinkManager::ScanVirtuals()
         auto it1 = virtsections.find(*it);
         if (it1 != virtsections.end())
         {
-            if (!(*it1)->GetUsed())
+            bool toContinue = true;
+            if (strncmp(static_cast<ObjSection*>((*it1)->GetAuxData())->GetName().c_str(), "vsb@", 4) != 0 && !(*it1)->GetUsed())
             {
                 (*it1)->SetUsed(true);
                 LoadSectionExternals((*it1)->GetFile(), (ObjSection*)(*it1)->GetAuxData());
             }
-            (*it)->SetUsed(true);
-            delete (*it);
-            externals.erase(it++);
-            rv = true;
+            else
+            {
+                toContinue = false;
+            }
+            if (toContinue)
+            {
+                (*it)->SetUsed(true);
+                delete (*it);
+                externals.erase(it++);
+                rv = true;
+            }
+            else
+            {
+                ++it;
+            }
         }
         else
         {
@@ -550,7 +618,10 @@ void LinkManager::LoadLibraries()
             }
             else
             {
-                LinkError("Library '" + name + "' does not exist or is not a library");
+                std::string temp;
+                std::transform(temp.begin(), temp.begin(), temp.end(), tolower);
+                if (ignoreLibs.find(temp) != ignoreLibs.end())
+                    LinkError("Library '" + name + "' does not exist or is not a library");
             }
         }
     }
@@ -558,20 +629,26 @@ void LinkManager::LoadLibraries()
 bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name)
 {
     bool found = false;
-    ObjInt objNum = lib->GetSymbol(name);
-    if (objNum >= 0 && !lib->HasModule(objNum))
+    auto objNum = lib->GetSymbol(name);
+    if (objNum.size())
     {
-        ObjFile* file = lib->LoadSymbol(objNum, factory);
-        if (!file)
+        for (int i = 0; i < objNum.size(); i++)
         {
-            LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + lib->GetName());
+            if (!lib->HasModule(objNum[i]))
+            {
+                ObjFile* file = lib->LoadSymbol(objNum[i], factory);
+                if (!file)
+                {
+                    LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + lib->GetName());
+                }
+                else
+                {
+                    fileData.push_back(file);
+                    MergePublics(file, false);
+                }
+                found = true;
+            }
         }
-        else
-        {
-            fileData.push_back(file);
-            MergePublics(file, false);
-        }
-        found = true;
     }
     return found;
 }
@@ -591,7 +668,7 @@ void LinkManager::ScanLibraries()
                 {
                     if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
                     {
-                        bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
+                       bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
                         // not resolved?
                         if (found)
                         {
@@ -859,6 +936,18 @@ void LinkManager::AddGlobalsForVirtuals(ObjFile* file)
                                       new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
                 s->SetIndex(index++);
                 s->SetOffset(exp);
+                if (strncmp(static_cast<ObjSection*>(v->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
+                {
+                    auto s1 = ObjSymbol(*s);
+                    s1.SetName(s1.GetName().substr(1));
+                    LinkSymbolData v1(&s1);
+                    if (exports.find(&v1) != exports.end())
+                    {
+                        file->Add(s);
+                        s = new ObjSymbol(s1);
+                        s->SetIndex(index++);
+                    }
+                }
                 file->Add(s);
             }
         }
@@ -945,7 +1034,7 @@ void LinkManager::SetDelayParams()
     (void)LinkExpression::EnterSymbol(esym);
 }
 void LinkManager::Link()
-    {
+{
     if (!objectFiles.size())
     {
         LinkError("No input files specified");
@@ -963,6 +1052,35 @@ void LinkManager::Link()
             {
                 ScanLibraries();
             } while (ScanVirtuals());
+            for (auto vs: virtsections)
+            {
+                if (strncmp(static_cast<ObjSection*>(vs->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
+                {
+                    ObjSymbol s(*vs->GetSymbol());
+                    s.SetName(s.GetName().substr(1));
+                    LinkSymbolData ld(&s);
+                    auto ip = publics.find(&ld);
+                    if (ip == publics.end())
+                    {
+                        (vs)->SetUsed(true);
+                        s.SetOffset(vs->GetSymbol()->GetOffset());
+                        publics.insert(new LinkSymbolData(new ObjSymbol(s)));
+                    }
+                    else
+                    {
+                        (*ip)->SetUsed(true);
+                    }
+                    auto et = externals.find(&ld);
+                    if (et == externals.end())
+                        et = externals.find(vs);
+                    if (et != externals.end())
+                    {
+                        (*et)->SetUsed(true);
+                        delete (*et);
+                        externals.erase(et);
+                    }
+                }
+            }
         }
     }
     SetDelayParams();

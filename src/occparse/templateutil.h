@@ -25,10 +25,10 @@
 namespace Parser
 {
 EXPRESSION* GetSymRef(EXPRESSION* n);
-bool equalTemplateIntNode(EXPRESSION* exp1, EXPRESSION* exp2);
+bool equalTemplateMakeIntExpression(EXPRESSION* exp1, EXPRESSION* exp2);
 bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2);
 bool templateselectorcompare(std::vector<TEMPLATESELECTOR>* tsin1, std::vector<TEMPLATESELECTOR>* tsin2);
-bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact, bool sameType = true);
+bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType = true);
 bool exactMatchOnTemplateParams(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym);
 bool exactMatchOnTemplateArgs(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym);
 static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
@@ -36,35 +36,36 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
 static void checkTemplateDefaults(std::list<TEMPLATEPARAMPAIR>* args);
 bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, std::list<TEMPLATEPARAMPAIR>* special, SYMBOL* sp);
 static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym);
-std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LEXLIST* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
+std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
                                                SYMBOL* sp, bool definition);
 static bool structHasTemplateArg(std::list<TEMPLATEPARAMPAIR>* tplx);
-bool typeHasTemplateArg(TYPE* t);
+bool typeHasTemplateArg(Type* t);
 void TemplateValidateSpecialization(std::list<TEMPLATEPARAMPAIR>* arg);
 void GetPackedTypes(TEMPLATEPARAMPAIR** packs, int* count, std::list<TEMPLATEPARAMPAIR>* args);
 void saveParams(SYMBOL** table, int count);
 void restoreParams(SYMBOL** table, int count);
-static std::list<INITLIST*>* ExpandArguments(EXPRESSION* exp);
-static void PushPopDefaults(std::deque<TYPE*>& defaults, EXPRESSION* exp, bool dflt, bool push);
-void PushPopDefaults(std::deque<TYPE*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
+static std::list<Argument*>* ExpandArguments(EXPRESSION* exp);
+static void PushPopDefaults(std::deque<Type*>& defaults, EXPRESSION* exp, bool dflt, bool push);
+void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
 std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp);
-static TYPE* LookupUnaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
-static TYPE* LookupBinaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
-TYPE* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
+static Type* LookupUnaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
+static Type* LookupBinaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
+Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
 bool HasUnevaluatedTemplateSelectors(EXPRESSION* exp);
-TYPE* TemplateLookupTypeFromDeclType(TYPE* tp);
+Type* TemplateLookupTypeFromDeclType(Type* tp);
 static bool hastemplate(EXPRESSION* exp);
-void clearoutDeduction(TYPE* tp);
-int pushContext(SYMBOL* cls, bool all);
+void clearoutDeduction(Type* tp);
+void pushContext(SYMBOL* cls, bool all);
 void SetTemplateNamespace(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);
+void TemplateArgInstantiateDeferred(std::list<TEMPLATEPARAMPAIR>* args, bool initialize = false);
 static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso);
 static void FixIntSelectors(EXPRESSION** exp);
 static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLATEPARAMPAIR* arg, bool byVal);
 static std::list<TEMPLATEPARAMPAIR>* CopyArgsBack(std::list<TEMPLATEPARAMPAIR>* args, TEMPLATEPARAMPAIR* hold[], int k1);
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal);
-TYPE* ResolveTemplateSelectors(SYMBOL* sp, TYPE* tp);
+Type* ResolveTemplateSelectors(SYMBOL* sp, Type* tp);
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx, bool returnNull = false);
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
 static std::list<TEMPLATEPARAMPAIR>* ResolveConstructor(SYMBOL* sym, TEMPLATEPARAMPAIR* tpx);

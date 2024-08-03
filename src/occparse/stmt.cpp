@@ -41,12 +41,12 @@
 #include "ildata.h"
 #include "cppbltin.h"
 #include "expr.h"
+#include "lex.h"
 #include "help.h"
 #include "declcons.h"
 #include "wseh.h"
 #include "cpplookup.h"
 #include "init.h"
-#include "lex.h"
 #include "declcpp.h"
 #include "constopt.h"
 #include "OptUtils.h"
@@ -68,6 +68,7 @@
 #include "libcxx.h"
 #include "symtab.h"
 #include "ListFactory.h"
+
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
@@ -90,11 +91,12 @@ int codeLabel;
 bool declareAndInitialize;
 bool functionCanThrow;
 int bodyIsDestructor;
+bool inFunctionExpressionParsing;
 
-std::list<BLOCKDATA*> emptyBlockdata;
+std::list<FunctionBlock*> emptyBlockdata;
 
-std::stack<std::list<BLOCKDATA*>*> expressionStatements;
-std::deque<std::pair<EXPRESSION*, TYPE*>> expressionReturns;
+std::stack<std::list<FunctionBlock*>*> expressionStatements;
+std::deque<std::pair<EXPRESSION*, Type*>> expressionReturns;
 
 std::list<Optimizer::LINEDATA*>* lines;
 
@@ -104,11 +106,7 @@ static int caseLevel = 0;
 static int controlSequences;
 static int expressions;
 static bool canFallThrough;
-
-static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, std::list<BLOCKDATA*>& parent, int asExpression);
-static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol);
-
-static BLOCKDATA* caseDestructBlock;
+static FunctionBlock* caseDestructorsForBlock;
 
 void statement_ini(bool global)
 {
@@ -116,7 +114,7 @@ void statement_ini(bool global)
     functionCanThrow = false;
     funcNesting = 0;
     funcLevel = 0;
-    caseDestructBlock = nullptr;
+    caseDestructorsForBlock = nullptr;
     caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
@@ -124,6 +122,7 @@ void statement_ini(bool global)
     expressions = 0;
     inLoopOrConditional = 0;
     bodyIsDestructor = 0;
+    inFunctionExpressionParsing = false;
     while (!expressionStatements.empty())
         expressionStatements.pop();
 }
@@ -136,56 +135,9 @@ bool msilManaged(SYMBOL* s)
     return false;
 }
 
-void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
+Statement* Statement::MakeStatement(LexList* lex, std::list<FunctionBlock*>& parent, StatementNode stype)
 {
-    if (!lines)
-        lines = lineDataListFactory.CreateList();
-    auto ld = Allocate<Optimizer::LINEDATA>();
-    ld->file = fname;
-    ld->line = litlate(line);
-    ld->lineno = lineno;
-    ld->fileindex = fileindex;
-    lines->push_back(ld);
-}
-void FlushLineData(const char* file, int lineno)
-{
-    if (lines)
-    {
-        while (lines->size())
-        {
-            if (strcmp(file, lines->front()->file) != 0 || lines->front()->lineno < lineno)
-                lines->pop_front();
-            else
-                break;
-        }
-    }
-}
-std::list<STATEMENT*>* currentLineData(std::list<BLOCKDATA*>& parent, LEXLIST* lex, int offset)
-{
-    if (!lex || !lines)
-        return nullptr;
-    std::list<STATEMENT*> rv;
-    int lineno;
-    const char* file;
-    lineno = lex->data->linedata->lineno + offset + 1;
-    file = lex->data->errfile;
-    while (lines->size() && (strcmp(lines->front()->file, file) != 0 || lineno >= lines->front()->lineno))
-    {
-        rv.push_back(stmtNode(lex, parent, StatementNode::line_));
-        rv.back()->lineData = lines->front();
-        lines->pop_front();
-    }
-    if (rv.size())
-    {
-        auto rva = stmtListFactory.CreateList();
-        *rva = rv;
-        return rva;
-    }
-    return nullptr;
-}
-STATEMENT* stmtNode(LEXLIST* lex, std::list<BLOCKDATA*>& parent, StatementNode stype)
-{
-    STATEMENT* st = Allocate<STATEMENT>();
+    Statement* st = Allocate<Statement>();
     if (!lex)
         lex = context->cur ? context->cur->prev : context->last;
     st->type = stype;
@@ -214,38 +166,38 @@ STATEMENT* stmtNode(LEXLIST* lex, std::list<BLOCKDATA*>& parent, StatementNode s
     }
     return st;
 }
-static void AddBlock(LEXLIST* lex, std::list<BLOCKDATA*>& parent, BLOCKDATA* newbl)
+void FunctionBlock::AddThis(LexList* lex, std::list<FunctionBlock*>& parent)
 {
-    STATEMENT* st = stmtNode(lex, parent, StatementNode::block_);
-    st->blockTail = newbl->blockTail;
-    st->lower = newbl->statements;
+    Statement* st = Statement::MakeStatement(lex, parent, StatementNode::block_);
+    st->blockTail = this->blockTail;
+    st->lower = this->statements;
 }
-static bool isselecttrue(EXPRESSION* exp)
+bool StatementGenerator::IsSelectTrue(EXPRESSION* exp)
 {
     if (isintconst(exp->left))
         return !!exp->left->v.i;
     return false;
 }
-static bool isselectfalse(EXPRESSION* exp)
+bool StatementGenerator::IsSelectFalse(EXPRESSION* exp)
 {
     if (isintconst(exp))
         return !exp->v.i;
     return false;
 }
-static void markInitializers(std::list<STATEMENT*>& lst)
+void StatementGenerator::MarkInitializersAsDeclarations(std::list<Statement*>& lst)
 {
     for (auto it = lst.begin(); it != lst.end(); ++it)
         if ((*it)->type == StatementNode::expr_)
             (*it)->hasdeclare = true;
 }
-static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent, EXPRESSION** exp, SYMBOL* funcsp, Keyword kw,
+void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent, EXPRESSION** exp, Keyword kw,
                                      bool* declaration)
 {
-    TYPE* tp = nullptr;
+    Type* tp = nullptr;
     bool hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
     (void)parent;
     bool structured = false;
-    if (startOfType(lex, &structured, false) && (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex, structured)))
+    if (TypeGenerator::StartOfType(lex, &structured, false) && (!Optimizer::cparams.prm_cplusplus || StatementGenerator::ResolvesToDeclaration(lex, structured)))
     {
         if (declaration)
         {
@@ -261,10 +213,10 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
             error(ERR_NO_DECLARATION_HERE);
         }
         /* fixme need type */
-        lex = autodeclare(lex, funcsp, &tp, exp, parent, (kw != Keyword::for_ && kw != Keyword::if_ && kw != Keyword::switch_) | (kw == Keyword::rangefor_ ? _F_NOCHECKAUTO : 0));
+        AutoDeclare(&tp, exp, parent, (kw != Keyword::for_ && kw != Keyword::if_ && kw != Keyword::switch_) | (kw == Keyword::rangefor_ ? _F_NOCHECKAUTO : 0));
         if (tp->type == BasicType::memberptr_)
         {
-            *exp = exprNode(ExpressionNode::mp_as_bool_, *exp, nullptr);
+            *exp = MakeExpression(ExpressionNode::mp_as_bool_, *exp);
             (*exp)->size = tp;
             tp = &stdint;
         }
@@ -278,13 +230,13 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         /*		bool openparen = MATCHKW(lex, Keyword::openpa_); */
         if (declaration)
             *declaration = false;
+        inFunctionExpressionParsing = true;
         lex = expression(lex, funcsp, nullptr, &tp, exp, kw != Keyword::for_ && kw != Keyword::rangefor_ ? _F_SELECTOR : 0);
-        ConstExprPatch(exp);
         if (tp)
         {
             if (tp->type == BasicType::memberptr_)
             {
-                *exp = exprNode(ExpressionNode::mp_as_bool_, *exp, nullptr);
+                *exp = MakeExpression(ExpressionNode::mp_as_bool_, *exp);
                 (*exp)->size = tp;
                 tp = &stdint;
             }
@@ -292,7 +244,7 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
         }
     }
 
-    if (Optimizer::cparams.prm_cplusplus && tp && isstructured(tp) && kw != Keyword::for_ && kw != Keyword::rangefor_ &&
+    if (Optimizer::cparams.prm_cplusplus && tp && tp->IsStructured() && kw != Keyword::for_ && kw != Keyword::rangefor_ &&
         ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration || !*declaration))
     {
         if (!castToArithmeticInternal(false, &tp, exp, (Keyword) - 1, &stdbool, false))
@@ -302,22 +254,21 @@ static LEXLIST* selection_expression(LEXLIST* lex, std::list<BLOCKDATA*>& parent
     }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
-    else if (kw == Keyword::switch_ && !isint(tp) && basetype(tp)->type != BasicType::enum_ &&
-             (!isautotype(tp) || !isint(LookupTypeFromExpression(*exp, nullptr, false))))
+    else if (kw == Keyword::switch_ && !tp->IsInt() && tp->BaseType()->type != BasicType::enum_ &&
+             (!tp->IsAutoType() || !LookupTypeFromExpression(*exp, nullptr, false)->IsInt()))
         error(ERR_SWITCH_SELECTION_INTEGRAL);
-    else if (kw != Keyword::for_ && kw != Keyword::rangefor_ && isstructured(tp) &&
+    else if (kw != Keyword::for_ && kw != Keyword::rangefor_ && tp->IsStructured() &&
              ((kw != Keyword::if_ && kw != Keyword::switch_) || !declaration || !*declaration))
 
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
     }
-    *exp = exprNode(ExpressionNode::select_, *exp, nullptr);
+    *exp = MakeExpression(ExpressionNode::select_, *exp);
     GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
-    return lex;
 }
-static BLOCKDATA* getCommonParent(std::list<BLOCKDATA*>& src, std::list<BLOCKDATA*>& dest)
+FunctionBlock* StatementGenerator::GetCommonParent(std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest)
 {
-    BLOCKDATA* rv = nullptr;
+    FunctionBlock* rv = nullptr;
     for (auto s : src)
     {
         bool exit = false;
@@ -337,27 +288,9 @@ static BLOCKDATA* getCommonParent(std::list<BLOCKDATA*>& src, std::list<BLOCKDAT
     }
     return rv;
 }
-void makeXCTab(SYMBOL* funcsp)
+void StatementGenerator::ThunkCatchCleanup(Statement* st, std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest)
 {
-    SYMBOL* sym;
-    if (!funcsp->sb->xc)
-    {
-        funcsp->sb->xc = Allocate<xcept>();
-        Optimizer::SymbolManager::Get(funcsp)->xc = true;
-    }
-    if (!funcsp->sb->xc->xctab)
-    {
-        sym = makeID(StorageClass::auto_, &stdXC, nullptr, "$$xctab");
-        sym->sb->decoratedName = sym->name;
-        sym->sb->allocate = true;
-        sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
-        localNameSpace->front()->syms->Add(sym);
-        funcsp->sb->xc->xctab = sym;
-    }
-}
-static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, std::list<BLOCKDATA*>& src, std::list<BLOCKDATA*>& dest)
-{
-    BLOCKDATA *top = dest.size() ? getCommonParent(src, dest) : nullptr;
+    FunctionBlock *top = dest.size() ? GetCommonParent(src, dest) : nullptr;
     for (auto srch : src)
     {
         if (srch == top)
@@ -367,27 +300,26 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, std::list<BLOCKDATA
             SYMBOL* sym = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
             if (sym)
             {
-                FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                INITLIST* arg1 = Allocate<INITLIST>();  // exception table
+                CallSite* funcparams = Allocate<CallSite>();
+                Argument* arg1 = Allocate<Argument>();  // exception table
                 makeXCTab(funcsp);
-                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
+                sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
                 funcparams->ascall = true;
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
-                funcparams->fcall = varNode(ExpressionNode::pc_, sym);
+                funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
                 funcparams->arguments = initListListFactory.CreateList();
                 funcparams->arguments->push_back(arg1);
-                arg1->exp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
+                arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
                 arg1->tp = &stdpointer;
                 for (auto it = src.front()->statements->begin(); it != src.front()->statements->end(); ++it)
                 {
                     if ((*it) == st)
                     {
-                        auto next = Allocate<STATEMENT>();
+                        auto next = Allocate<Statement>();
                         *next = *st;
                         next->type = StatementNode::expr_;
-                        next->select = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                        next->select->v.func = funcparams;
+                        next->select = MakeExpression(funcparams);
                         it = src.front()->statements->insert(it, next);
                         break;
                     }
@@ -407,92 +339,241 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, std::list<BLOCKDATA
         }
     }
 }
-static void ThunkUndestructSyms(SymbolTable<SYMBOL>* syms)
+void StatementGenerator::DestructSymbolsInTable(SymbolTable<SYMBOL>* syms)
 {
     for (auto sym : *syms)
     {
         sym->sb->destructed = true;
     }
 }
-static void thunkRetDestructors(EXPRESSION** exp, SymbolTable<SYMBOL>* top, SymbolTable<SYMBOL>* syms)
+EXPRESSION* StatementGenerator::DestructorsForExpression(EXPRESSION* exp)
+{
+    std::stack<SYMBOL*> destructList;
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp);
+    while (stk.size())
+    {
+        EXPRESSION* e = stk.top();
+        stk.pop();
+        if (!isintconst(e) && !isfloatconst(e))
+        {
+            if (e->left)
+                stk.push(e->left);
+            if (e->right)
+                stk.push(e->right);
+        }
+        if (e->type == ExpressionNode::thisref_)
+            e = e->left;
+        if (e->type == ExpressionNode::callsite_)
+        {
+            if (e->v.func->arguments)
+                for (auto il : *e->v.func->arguments)
+                    stk.push(il->exp);
+        }
+        if (e->type == ExpressionNode::auto_ && e->v.sp->sb->allocate && !e->v.sp->sb->destructed)
+        {
+            Type* tp = e->v.sp->tp;
+            while (tp->IsArray())
+                tp = tp->BaseType()->btp;
+            if (tp->IsStructured() && !tp->IsRef())
+            {
+                e->v.sp->sb->destructed = true;
+                destructList.push(e->v.sp);
+            }
+        }
+    }
+
+    EXPRESSION* rv = exp;
+    while (destructList.size())
+    {
+        SYMBOL* sp = destructList.top();
+        destructList.pop();
+        if (sp->sb->dest && sp->sb->dest->front()->exp)
+            rv = MakeExpression(ExpressionNode::comma_, rv, sp->sb->dest->front()->exp);
+    }
+    return rv;
+}
+void StatementGenerator::DestructorsForArguments(std::list<Argument*>* il)
+{
+    if (Optimizer::cparams.prm_cplusplus)
+        for (auto first : *il)
+        {
+            Type* tp = first->tp;
+            if (tp)
+            {
+                bool ref = false;
+                if (tp->IsRef())
+                {
+                    ref = true;
+                    tp = tp->BaseType()->btp;
+                }
+                else if (tp->lref || tp->rref)
+                {
+                    ref = true;
+                }
+                if (ref || !tp->IsStructured())
+                {
+                    std::stack<EXPRESSION*> stk;
+
+                    stk.push(first->exp);
+                    while (!stk.empty())
+                    {
+                        auto tst = stk.top();
+                        stk.pop();
+                        if (tst->type == ExpressionNode::thisref_)
+                            tst = tst->left;
+                        if (tst->type == ExpressionNode::callsite_)
+                        {
+                            if (tst->v.func->sp->sb->isConstructor)
+                            {
+                                EXPRESSION* iexp = tst->v.func->thisptr;
+                                auto sp = tst->v.func->thistp->BaseType()->btp->BaseType()->sp;
+                                int offs;
+                                auto xexp = relptr(iexp, offs);
+                                if (xexp)
+                                    xexp->v.sp->sb->destructed = true;
+                                if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
+                                {
+                                    if (!first->destructors)
+                                        first->destructors = exprListFactory.CreateList();
+                                    first->destructors->push_front(iexp);
+                                }
+                            }
+                        }
+                        else if (tst->type == ExpressionNode::comma_)
+                        {
+                            if (tst->right)
+                                stk.push(tst->right);
+                            if (tst->left)
+                                stk.push(tst->left);
+                        }
+                    }
+                }
+            }
+        }
+}
+void StatementGenerator::DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct)
+{
+    for (auto sp : *table)
+    {
+        if ((sp->sb->allocate || sp->sb->storage_class == StorageClass::parameter_) && !sp->sb->destructed && !sp->tp->IsRef())
+        {
+            sp->sb->destructed = mainDestruct;
+            if (sp->sb->storage_class == StorageClass::parameter_)
+            {
+                if (sp->tp->IsStructured())
+                {
+                    EXPRESSION* iexp = getThisNode(sp);
+                    if (callDestructor(sp->tp->BaseType()->sp, nullptr, &iexp, nullptr, true, false, false, true))
+                    {
+                        optimize_for_constants(&iexp);
+                        if (*exp)
+                        {
+                            *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
+                        }
+                        else
+                        {
+                            *exp = iexp;
+                        }
+                    }
+                }
+            }
+            else if (sp->sb->storage_class != StorageClass::localstatic_ && sp->sb->dest)
+            {
+
+                EXPRESSION* iexp = sp->sb->dest->front()->exp;
+                if (iexp)
+                {
+                    optimize_for_constants(&iexp);
+                    if (*exp)
+                    {
+                        *exp = MakeExpression(ExpressionNode::comma_, iexp, *exp);
+                    }
+                    else
+                    {
+                        *exp = iexp;
+                    }
+                }
+            }
+        }
+    }
+}
+void StatementGenerator::ThunkReturnDestructors(EXPRESSION** exp, SymbolTable<SYMBOL>* top, SymbolTable<SYMBOL>* syms)
 {
     if (syms)
     {
         if (syms != top)
         {
-            thunkRetDestructors(exp, top, syms->Chain());
-            destructBlock(exp, syms, false);
+            ThunkReturnDestructors(exp, top, syms->Chain());
+            StatementGenerator::DestructorsForBlock(exp, syms, false);
         }
     }
 }
-static void thunkGotoDestructors(EXPRESSION** exp, std::list<BLOCKDATA*>& gotoTab, std::list<BLOCKDATA*>& labelTab)
+void StatementGenerator::ThunkGotoDestructors(EXPRESSION** exp, std::list<FunctionBlock*>& gotoTab, std::list<FunctionBlock*>& labelTab)
 {
     // find the common parent
-    std::list<BLOCKDATA*>::iterator realtop;
-    BLOCKDATA* top = getCommonParent(gotoTab, labelTab);
+    std::list<FunctionBlock*>::iterator realtop;
+    FunctionBlock* top = GetCommonParent(gotoTab, labelTab);
     auto il = gotoTab.begin();
     if ((*il) != top && (*il)->orig != top)
     {
         realtop = il;
         while ((*il) != top && (*il)->orig != top) ++il;
-        thunkRetDestructors(exp, (*il)->table, gotoTab.front()->table);
+        ThunkReturnDestructors(exp, (*il)->table, gotoTab.front()->table);
     }
 }
-static void InSwitch() {}
-static void StartOfCaseGroup(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::StartOfCaseGroup(std::list<FunctionBlock*>& parent)
 {
     caseLevel++;
-    STATEMENT* st = stmtNode(nullptr, parent, StatementNode::dbgblock_);
+    Statement* st = Statement::MakeStatement(nullptr, parent, StatementNode::dbgblock_);
     st->label = 1;
 }
-static void EndOfCaseGroup(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::EndOfCaseGroup(std::list<FunctionBlock*>& parent)
 {
     if (caseLevel)
     {
         caseLevel--;
-        STATEMENT* st = stmtNode(nullptr, parent, StatementNode::dbgblock_);
+        Statement* st = Statement::MakeStatement(nullptr, parent, StatementNode::dbgblock_);
         st->label = 0;
     }
 }
-static void HandleStartOfCase(std::list<BLOCKDATA*>& parent)
+void StatementGenerator::HandleStartOfCase(std::list<FunctionBlock*>& parent)
 {
     // this is a little buggy in that it doesn't check to see if we are already in a switch
     // statement, however if we aren't we should get a compile erroir that would halt program generation anyway
-    if (parent.front() != caseDestructBlock)
+    if (parent.front() != caseDestructorsForBlock)
     {
-        parent.front()->caseDestruct = caseDestructBlock;
-        caseDestructBlock = parent.front();
+        parent.front()->caseDestruct = caseDestructorsForBlock;
+        caseDestructorsForBlock = parent.front();
     }
 }
-static void HandleEndOfCase(std::list<BLOCKDATA*>& parent)
+void StatementGenerator::HandleEndOfCase(std::list<FunctionBlock*>& parent)
 {
-    if (parent.front() == caseDestructBlock)
+    if (parent.front() == caseDestructorsForBlock)
     {
         EXPRESSION* exp = nullptr;
-        STATEMENT* st;
+        Statement* st;
         // the destruct is only used for endin
-        destructBlock(&exp, localNameSpace->front()->syms, false);
+        StatementGenerator::DestructorsForBlock(&exp, localNameSpace->front()->syms, false);
         if (exp)
         {
-            st = stmtNode(nullptr, parent, StatementNode::nop_);
+            st = Statement::MakeStatement(nullptr, parent, StatementNode::nop_);
             st->destexp = exp;
         }
-        ThunkUndestructSyms(localNameSpace->front()->syms);
+        DestructSymbolsInTable(localNameSpace->front()->syms);
     }
 }
-static void HandleEndOfSwitchBlock(std::list<BLOCKDATA*>& parent)
+void StatementGenerator::HandleEndOfSwitchBlock(std::list<FunctionBlock*>& parent)
 {
-    if (parent.front() == caseDestructBlock)
+    if (parent.front() == caseDestructorsForBlock)
     {
-        caseDestructBlock = caseDestructBlock->caseDestruct;
+        caseDestructorsForBlock = caseDestructorsForBlock->caseDestruct;
     }
 }
-static LEXLIST* statement_break(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseBreak(std::list<FunctionBlock*>& parent)
 {
-    std::list<BLOCKDATA*>::iterator breakableStatement, last = parent.end();
+    std::list<FunctionBlock*>::iterator breakableStatement, last = parent.end();
     EXPRESSION* exp = nullptr;
-    (void)lex;
-    (void)funcsp;
     (void)parent;
     bool found = false;
     for (auto it = parent.begin(); it != parent.end(); ++it)
@@ -513,28 +594,28 @@ static LEXLIST* statement_break(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
     else
     {
         canFallThrough = true;
-        STATEMENT* st;
+        Statement* st;
         currentLineData(parent, lex, 0);
         if (last != parent.end())
-            thunkRetDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
-        st = stmtNode(lex, parent, StatementNode::goto_);
+            ThunkReturnDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
+        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
         st->label = (*breakableStatement)->breaklabel;
         st->destexp = exp;
-        auto range = std::list<BLOCKDATA*>(breakableStatement, parent.end());
-        thunkCatchCleanup(st, funcsp, parent, range);
+        auto range = std::list<FunctionBlock*>(breakableStatement, parent.end());
+        ThunkCatchCleanup(st, parent, range);
         parent.front()->needlabel = true;
         (*breakableStatement)->needlabel = false;
         (*breakableStatement)->hasbreak = true;
     }
-    return getsym();
+    lex = getsym();
 }
-static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
 {
     long long val;
-    BLOCKDATA dummy;
-    TYPE* tp = nullptr;
+    FunctionBlock dummy;
+    Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
-    BLOCKDATA* switchstmt = nullptr;
+    FunctionBlock* switchstmt = nullptr;
     lex = getsym();
     bool found = false;
     for (auto s : parent)
@@ -590,7 +671,7 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         }
         if (!found)
         {
-            STATEMENT* st = stmtNode(lex, parent, StatementNode::label_);
+            Statement* st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = codeLabel++;
             codeLabel++;  // reserve a label in case a bingen is used in the back Keyword::end_...
             auto data = Allocate<CASEDATA>();
@@ -607,14 +688,11 @@ static LEXLIST* statement_case(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         errskim(&lex, skim_colon);
         skip(&lex, Keyword::colon_);
     }
-    return lex;
 }
-static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseContinue(std::list<FunctionBlock*>& parent)
 {
-    std::list<BLOCKDATA*>::iterator continuableStatement, last = parent.end();
+    std::list<FunctionBlock*>::iterator continuableStatement, last = parent.end();
     EXPRESSION* exp = nullptr;
-    (void)lex;
-    (void)funcsp;
     bool found = false;
     for (auto it = parent.begin(); it != parent.end(); ++it)
     {
@@ -634,26 +712,24 @@ static LEXLIST* statement_continue(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCK
     else
     {
         canFallThrough = true;
-        STATEMENT* st;
+        Statement* st;
         if (last != parent.end())
-            thunkRetDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
+            ThunkReturnDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
         currentLineData(parent, lex, 0);
-        st = stmtNode(lex, parent, StatementNode::goto_);
+        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
         st->label = (*continuableStatement)->continuelabel;
         st->destexp = exp;
-        auto range = std::list<BLOCKDATA*>(continuableStatement, parent.end());
-        thunkCatchCleanup(st, funcsp, parent, range);
+        auto range = std::list<FunctionBlock*>(continuableStatement, parent.end());
+        ThunkCatchCleanup(st, parent, range);
         parent.front()->needlabel = true;
     }
-    return getsym();
+    lex = getsym();
 }
-static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseDefault(std::list<FunctionBlock*>& parent)
 {
     lex = getsym();
-    std::list<BLOCKDATA*>::iterator defaultableStatement;
+    std::list<FunctionBlock*>::iterator defaultableStatement;
     EXPRESSION* exp = nullptr;
-    (void)lex;
-    (void)funcsp;
     bool found = false;
     for (auto it = parent.begin(); it != parent.end(); ++it)
     {
@@ -673,7 +749,7 @@ static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKD
         if (!canFallThrough && !basisAttribs.uninheritable.fallthrough)
             error(ERR_FALLTHROUGH);
         canFallThrough = true;
-        STATEMENT* st = stmtNode(lex, parent, StatementNode::label_);
+        Statement* st = Statement::MakeStatement(lex, parent, StatementNode::label_);
         st->label = codeLabel++;
         if ((*defaultableStatement)->defaultlabel != -1)
             error(ERR_SWITCH_HAS_DEFAULT);
@@ -682,13 +758,12 @@ static LEXLIST* statement_default(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKD
         parent.front()->needlabel = false;
     }
     needkw(&lex, Keyword::colon_);
-    return lex;
 }
-static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
-    BLOCKDATA* dostmt = Allocate<BLOCKDATA>();
-    STATEMENT *st, *lastLabelStmt;
+    FunctionBlock* dostmt = Allocate<FunctionBlock>();
+    Statement *st, *lastLabelStmt;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
     int loopLabel = codeLabel++;
@@ -699,7 +774,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     dostmt->table = localNameSpace->front()->syms;
     parent.push_front(dostmt);
     currentLineData(parent, lex, 0);
-    st = stmtNode(lex, parent, StatementNode::label_);
+    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
     st->label = loopLabel;
     inLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
@@ -710,7 +785,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     do
     {
         lastLabelStmt = dostmt->statements->back();
-        lex = nononconststatement(lex, funcsp, parent, true);
+        StatementWithoutNonconst(parent, true);
     } while (lex && dostmt->statements->back() != lastLabelStmt && dostmt->statements->back()->purelabel);
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
     {
@@ -729,7 +804,7 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
         if (MATCHKW(lex, Keyword::openpa_))
         {
             lex = getsym();
-            lex = selection_expression(lex, parent, &select, funcsp, Keyword::do_, nullptr);
+            SelectionExpression(parent, &select, Keyword::do_, nullptr);
             if (!MATCHKW(lex, Keyword::closepa_))
             {
                 error(ERR_DOWHILE_NEEDS_CLOSEPA);
@@ -738,15 +813,15 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             }
             else
                 lex = getsym();
-            st = stmtNode(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = dostmt->continuelabel;
             currentLineData(parent, lex, 0);
-            st = stmtNode(lex, parent, StatementNode::select_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::select_);
             st->select = select;
-            if (!dostmt->hasbreak && (dostmt->needlabel || isselecttrue(st->select)))
+            if (!dostmt->hasbreak && (dostmt->needlabel || IsSelectTrue(st->select)))
                 before->needlabel = true;
             st->label = loopLabel;
-            st = stmtNode(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = dostmt->breaklabel;
         }
         else
@@ -767,15 +842,14 @@ static LEXLIST* statement_do(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
-    AddBlock(lex, parent, dostmt);
-    return lex;
+    dostmt->AddThis(lex, parent);
 }
-static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
 {
-    BLOCKDATA* before = parent.front();
-    BLOCKDATA* forstmt = Allocate<BLOCKDATA>();
-    STATEMENT *st, *lastLabelStmt;
-    std::list<STATEMENT*>* forline;
+    FunctionBlock* before = parent.front();
+    FunctionBlock* forstmt = Allocate<FunctionBlock>();
+    Statement *st, *lastLabelStmt;
+    std::list<Statement*>* forline;
     int addedBlock = 0;
     EXPRESSION *init = nullptr, *incrementer = nullptr, *select = nullptr;
     int loopLabel = codeLabel++, testlabel = codeLabel++;
@@ -800,30 +874,30 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
             if ((Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor) || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock++;
-                std::list<BLOCKDATA*> dummy(beforeit, parent.end());
+                std::list<FunctionBlock*> dummy(beforeit, parent.end());
                 AllocateLocalContext(dummy, funcsp, codeLabel++);
             }
             if (Optimizer::cparams.prm_cplusplus)
             {
-                LEXLIST* origLex = lex;
+                LexList* origLex = lex;
                 while (lex && !MATCHKW(lex, Keyword::semicolon_) && !MATCHKW(lex, Keyword::colon_))
                     lex = getsym();
                 hasColon = MATCHKW(lex, Keyword::colon_);
                 lex = prevsym(origLex);
             }
 
-            lex = selection_expression(lex, parent, &init, funcsp, hasColon ? Keyword::rangefor_ : Keyword::for_, &declaration);
+            SelectionExpression(parent, &init, hasColon ? Keyword::rangefor_ : Keyword::for_, &declaration);
             if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor && declaration && MATCHKW(lex, Keyword::colon_))
             {
                 // range based for statement
                 // we will ignore 'init'.
-                TYPE* selectTP = nullptr;
+                Type* selectTP = nullptr;
                 SYMBOL* declSP = (SYMBOL*)localNameSpace->front()->syms->front();
                 EXPRESSION* declExp;
                 if (!declSP)
                 {
                     diag("statement_for: Cannot get range based range variable");
-                    declExp = intNode(ExpressionNode::c_i_, 0);
+                    declExp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 }
                 else
                 {
@@ -832,7 +906,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         error(ERR_FORRANGE_DECLARATOR_NO_INIT);
                     }
                     declSP->sb->dest = nullptr;
-                    declExp = varNode(ExpressionNode::auto_, declSP);
+                    declExp = MakeExpression(ExpressionNode::auto_, declSP);
                     declSP->sb->assigned = declSP->sb->attribs.inheritable.used = true;
                 }
                 lex = getsym();
@@ -841,11 +915,11 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                 localNameSpace->front()->syms = static_cast<SymbolTable<SYMBOL>*>(localNameSpace->front()->syms->Next());
                 if (MATCHKW(lex, Keyword::begin_))
                 {
-                    TYPE* matchtp = &stdint;
+                    Type* matchtp = &stdint;
                     EXPRESSION *begin, *size;
-                    std::deque<std::pair<TYPE*, EXPRESSION*>> save;
-                    std::list<INITLIST*>* lst = nullptr;
-                    lex = getInitList(lex, funcsp, &lst);
+                    std::deque<std::pair<Type*, EXPRESSION*>> save;
+                    std::list<Argument*>* lst = nullptr;
+                    lex = getInitList(lex, funcsp,&lst);
                     int offset = 0;
 
                     if (lst)
@@ -853,10 +927,10 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         int n = lst->size();
 
                         matchtp = lst->front()->tp;
-                        if (isref(matchtp))
-                            matchtp = basetype(matchtp)->btp;
+                        if (matchtp->IsRef())
+                            matchtp = matchtp->BaseType()->btp;
 
-                        auto valueList = MakeType(BasicType::pointer_, matchtp);
+                        auto valueList = Type::MakeType(BasicType::pointer_, matchtp);
                         valueList->array = true;
                         valueList->size = n * matchtp->size;
 
@@ -866,20 +940,20 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
 
                         for (auto lstitem : *lst)
                         { 
-                            TYPE* ittp = lstitem->tp;
-                            EXPRESSION* base = exprNode(ExpressionNode::add_, val, intNode(ExpressionNode::c_i_, offset));
+                            Type* ittp = lstitem->tp;
+                            EXPRESSION* base = MakeExpression(ExpressionNode::add_, val, MakeIntExpression(ExpressionNode::c_i_, offset));
                             offset += sz;
-                            if (isref(ittp))
-                                ittp = basetype(ittp)->btp;
-                            if (!comparetypes(matchtp, ittp, true))
+                            if (ittp->IsRef())
+                                ittp = ittp->BaseType()->btp;
+                            if (!matchtp->ExactSameType(ittp))
                             {
-                                if (!isstructured(matchtp))
+                                if (!matchtp->IsStructured())
                                 {
                                     errorConversionOrCast(true, ittp, matchtp);
                                 }
                                 else
                                 {
-                                    TYPE* ctype = matchtp;
+                                    Type* ctype = matchtp;
                                     EXPRESSION* newExp = base;
                                     if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
                                     {
@@ -887,24 +961,24 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                     }
                                     else
                                     {
-                                        st = stmtNode(lex, parent, StatementNode::expr_);
+                                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                         st->select = newExp;
                                         newExp = base;
-                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(ExpressionNode::c_i_, offset / sz), true, true,
+                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true,
                                                        false, true);
                                     }
                                 }
                             }
-                            else if (isstructured(matchtp))
+                            else if (matchtp->IsStructured())
                             {
-                                TYPE* ctype = matchtp;
+                                Type* ctype = matchtp;
                                 EXPRESSION* newExp = base;
                                 ittp->lref = true;
                                 if (lstitem->exp->type == ExpressionNode::thisref_)
                                 {
                                     lstitem->exp->left->v.func->thisptr->v.sp->sb->dest = nullptr;
                                     lstitem->exp->left->v.func->thisptr = base;
-                                    st = stmtNode(lex, parent, StatementNode::expr_);
+                                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                     st->select = lstitem->exp;
                                 }
                                 else if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
@@ -913,45 +987,45 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                 }
                                 else
                                 {
-                                    st = stmtNode(lex, parent, StatementNode::expr_);
+                                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                     st->select = newExp;
                                 }
                                 newExp = base;
                             }
                             else
                             {
-                                st = stmtNode(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                 deref(matchtp, &base);
-                                st->select = exprNode(ExpressionNode::assign_, base, lstitem->exp);
+                                st->select = MakeExpression(ExpressionNode::assign_, base, lstitem->exp);
                             }
                         }
-                        if (isstructured(matchtp))
+                        if (matchtp->IsStructured())
                         {
                             auto newExp = val;
-                            callDestructor(matchtp->sp, matchtp->sp, &newExp, intNode(ExpressionNode::c_i_, offset / sz), true, true, false,
+                            callDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true, false,
                                            true);
                             initInsert(&val->v.sp->sb->dest, matchtp, newExp, 0, false);
                         }
 
                         begin = val;
-                        size = intNode(ExpressionNode::c_i_, offset / matchtp->size);
+                        size = MakeIntExpression(ExpressionNode::c_i_, offset / matchtp->size);
                     }
                     else
                     {
                         select = anonymousVar(StorageClass::auto_, &stdint);
                         begin = select;
-                        size = intNode(ExpressionNode::c_i_, 0);
+                        size = MakeIntExpression(ExpressionNode::c_i_, 0);
                     }
-                    selectTP = InitializerListType(matchtp);
-                    std::list<INITIALIZER*>* init = nullptr;
+                    selectTP = matchtp->InitializerListType();
+                    std::list<Initializer*>* init = nullptr;
                     initInsert(&init, &stdpointer, begin, 0, false);
                     initInsert(&init, &stdpointer, size, stdpointer.size, false);
-                    TYPE* tp2 = MakeType(BasicType::pointer_, &stdpointer);
+                    Type* tp2 = Type::MakeType(BasicType::pointer_, &stdpointer);
                     tp2->size = 2 * stdpointer.size;
                     tp2->array = true;
                     EXPRESSION* val = anonymousVar(StorageClass::auto_, tp2);
                     select = convertInitToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
-                    st = stmtNode(lex, parent, StatementNode::expr_);
+                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                     st->select = select;
                     select = val;
                 }
@@ -968,26 +1042,26 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                 {
                     EXPRESSION *ibegin = nullptr, *iend = nullptr;
                     SYMBOL *sbegin = nullptr, *send = nullptr;
-                    TYPE* iteratorType = nullptr;
-                    TYPE* tpref = MakeType(BasicType::rref_, selectTP);
+                    Type* iteratorType = nullptr;
+                    Type* tpref = Type::MakeType(BasicType::rref_, selectTP);
                     EXPRESSION* rangeExp = anonymousVar(StorageClass::auto_, tpref);
                     SYMBOL* rangeSP = rangeExp->v.sp;
-                    if (isstructured(selectTP))
-                        selectTP = basetype(selectTP)->sp->tp;
+                    if (selectTP->IsStructured())
+                        selectTP = selectTP->BaseType()->sp->tp;
                     deref(&stdpointer, &rangeExp);
                     needkw(&lex, Keyword::closepa_);
                     while (castvalue(select))
                         select = select->left;
-                    if (lvalue(select) && select->type != ExpressionNode::l_ref_ && !isstructured(selectTP))
+                    if (lvalue(select) && select->type != ExpressionNode::l_ref_ && !selectTP->IsStructured())
                         select = select->left;
-//                    st = stmtNode(lex, parent, StatementNode::expr_);
-//                    st->select = exprNode(ExpressionNode::assign_, rangeExp, select);
+//                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+//                    st->select = MakeExpression(ExpressionNode::assign_, rangeExp, select);
                     rangeExp = select;
-                    if (!isstructured(selectTP))
+                    if (!selectTP->IsStructured())
                     {
                         // create array references for Keyword::begin_ and Keyword::end_
-                        iteratorType = basetype(selectTP)->btp;
-                        if (!isarray(selectTP))
+                        iteratorType = selectTP->BaseType()->btp;
+                        if (!selectTP->IsArray())
                         {
                             error(ERR_FORRANGE_REQUIRES_STRUCT_OR_ARRAY);
                             iteratorType = &stdint;
@@ -997,20 +1071,20 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             error(ERR_FORRANGE_ARRAY_UNSIZED);
                         }
                         ibegin = rangeExp;
-                        iend = exprNode(ExpressionNode::add_, rangeExp, intNode(ExpressionNode::c_i_, selectTP->size));
+                        iend = MakeExpression(ExpressionNode::add_, rangeExp, MakeIntExpression(ExpressionNode::c_i_, selectTP->size));
                     }
                     else
                     {
                         // try to lookup in structure
-                        TYPE thisTP = {};
-                        MakeType(thisTP, BasicType::pointer_, rangeSP->tp->btp);
-                        sbegin = search(basetype(selectTP)->syms, "begin");
-                        send = search(basetype(selectTP)->syms, "end");
+                        Type thisTP = {};
+                        Type::MakeType(thisTP, BasicType::pointer_, rangeSP->tp->btp);
+                        sbegin = search(selectTP->BaseType()->syms, "begin");
+                        send = search(selectTP->BaseType()->syms, "end");
                         if (sbegin && send)
                         {
                             SYMBOL *beginFunc = nullptr, *endFunc = nullptr;
-                            FUNCTIONCALL fcb, fce;
-                            TYPE* ctp;
+                            CallSite fcb, fce;
+                            Type* ctp;
                             memset(&fcb, 0, sizeof(fcb));
                             fcb.thistp = &thisTP;
                             fcb.thisptr = rangeExp;
@@ -1025,24 +1099,24 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, 0);
                             if (beginFunc && endFunc)
                             {
-                                if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, true))
+                                if (!beginFunc->tp->BaseType()->btp->ExactSameType(endFunc->tp->BaseType()->btp))
                                 {
                                     error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
                                 }
                                 else
                                 {
-                                    FUNCTIONCALL* fc;
-                                    iteratorType = basetype(beginFunc->tp)->btp;
-                                    if (isstructured(iteratorType))
+                                    CallSite* fc;
+                                    iteratorType = beginFunc->tp->BaseType()->btp;
+                                    if (iteratorType->IsStructured())
                                     {
-                                        std::list<INITIALIZER*>* dest = nullptr;
+                                        std::list<Initializer*>* dest = nullptr;
                                         EXPRESSION* exp;
                                         fcb.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
                                         fcb.returnEXP->v.sp->sb->anonymous = false;
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(basetype(fcb.returnSP->tp)->sp, nullptr, &exp, nullptr, true, true, false, true);
+                                        callDestructor(fcb.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->sb->dest = dest;
 
@@ -1052,18 +1126,17 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(basetype(fce.returnSP->tp)->sp, nullptr, &exp, nullptr, true, true, false, true);
+                                        callDestructor(fce.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->sb->dest = dest;
                                     }
-                                    fc = Allocate<FUNCTIONCALL>();
+                                    fc = Allocate<CallSite>();
                                     *fc = fcb;
                                     fc->sp = beginFunc;
                                     fc->functp = beginFunc->tp;
                                     fc->ascall = true;
-                                    ibegin = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                    ibegin->v.func = fc;
-                                    fc = Allocate<FUNCTIONCALL>();
+                                    ibegin = MakeExpression(fc);
+                                    fc = Allocate<CallSite>();
                                     *fc = fce;
                                     fc->sp = endFunc;
                                     fc->functp = endFunc->tp;
@@ -1074,13 +1147,12 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         while(lvalue(expx) || castvalue(expx)) expx = expx->left;
                                         if (expx->type == ExpressionNode::thisref_)
                                             expx = expx->left;
-                                        if (expx->type == ExpressionNode::func_)
+                                        if (expx->type == ExpressionNode::callsite_)
                                             if (expx->v.func->returnEXP)
                                                 fc->thisptr = expx->v.func->returnEXP;
                                     }
-                                    iend = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                    iend->v.func = fc;
-                                    iteratorType = basetype(beginFunc->tp)->btp;
+                                    iend = MakeExpression(fc);
+                                    iteratorType = beginFunc->tp->BaseType()->btp;
                                 }
                             }
                             else
@@ -1115,9 +1187,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             }
                             {
                                 SYMBOL *beginFunc = nullptr, *endFunc = nullptr;
-                                INITLIST args;
-                                FUNCTIONCALL fcb, fce;
-                                TYPE* ctp;
+                                Argument args;
+                                CallSite fcb, fce;
+                                Type* ctp;
                                 memset(&fcb, 0, sizeof(fcb));
                                 memset(&args, 0, sizeof(args));
                                 args.tp = rangeSP->tp->btp;
@@ -1135,20 +1207,20 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                 endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, 0);
                                 if (beginFunc && endFunc)
                                 {
-                                    TYPE* it2;
-                                    it2 = iteratorType = basetype(beginFunc->tp)->btp;
-                                    if (isref(it2))
+                                    Type* it2;
+                                    it2 = iteratorType = beginFunc->tp->BaseType()->btp;
+                                    if (it2->IsRef())
                                         it2 = it2->btp;
-                                    if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, true))
+                                    if (!beginFunc->tp->BaseType()->btp->ExactSameType(endFunc->tp->BaseType()->btp))
                                     {
                                         error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
                                     }
                                     else
                                     {
-                                        FUNCTIONCALL* fc;
-                                        if (isstructured(iteratorType))
+                                        CallSite* fc;
+                                        if (iteratorType->IsStructured())
                                         {
-                                            std::list<INITIALIZER*>* dest = nullptr;
+                                            std::list<Initializer*>* dest = nullptr;
                                             EXPRESSION* exp;
                                             fcb.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
                                             fcb.returnSP = fcb.returnEXP->v.sp;
@@ -1167,7 +1239,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->sb->dest = dest;
                                         }
-                                        fc = Allocate<FUNCTIONCALL>();
+                                        fc = Allocate<CallSite>();
                                         *fc = fcb;
                                         fc->sp = beginFunc;
                                         fc->functp = beginFunc->tp;
@@ -1175,13 +1247,13 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         fc->arguments = initListListFactory.CreateList();
                                         for (auto i : *fcb.arguments)
                                             fc->arguments->push_back(i);
-                                        if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->front()))->tp))
+                                        if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
                                         {
                                             EXPRESSION* consexp =
-                                                anonymousVar(StorageClass::auto_, basetype(rangeSP->tp)->btp);  // StorageClass::parameter_ to push it...
+                                                anonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                             SYMBOL* esp = consexp->v.sp;
-                                            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                                            TYPE* ctype = basetype(rangeSP->tp)->btp;
+                                            CallSite* funcparams = Allocate<CallSite>();
+                                            Type* ctype = rangeSP->tp->BaseType()->btp;
                                             esp->sb->stackblock = true;
                                             funcparams->arguments = initListListFactory.CreateList();
                                             for (auto i : *fc->arguments)
@@ -1192,11 +1264,10 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         }
                                         else
                                         {
-                                            fc->arguments->front()->tp = MakeType(BasicType::lref_, fcb.arguments->front()->tp);
+                                            fc->arguments->front()->tp = Type::MakeType(BasicType::lref_, fcb.arguments->front()->tp);
                                         }
-                                        ibegin = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                        ibegin->v.func = fc;
-                                        fc = Allocate<FUNCTIONCALL>();
+                                        ibegin = MakeExpression(fc);
+                                        fc = Allocate<CallSite>();
                                         *fc = fce;
                                         fc->sp = endFunc;
                                         fc->functp = endFunc->tp;
@@ -1204,13 +1275,13 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         fc->arguments = initListListFactory.CreateList();
                                         for (auto i : *fce.arguments)
                                             fc->arguments->push_back(i);
-                                        if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->front()))->tp))
+                                        if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
                                         {
                                             EXPRESSION* consexp =
-                                                anonymousVar(StorageClass::auto_, basetype(rangeSP->tp)->btp);  // StorageClass::parameter_ to push it...
+                                                anonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                             SYMBOL* esp = consexp->v.sp;
-                                            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                                            TYPE* ctype = basetype(rangeSP->tp)->btp;
+                                            CallSite* funcparams = Allocate<CallSite>();
+                                            Type* ctype = rangeSP->tp->BaseType()->btp;
                                             esp->sb->stackblock = true;
                                             funcparams->arguments = initListListFactory.CreateList();
                                             for (auto i : *fc->arguments)
@@ -1221,10 +1292,9 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                         }
                                         else
                                         {
-                                            fc->arguments->front()->tp = MakeType(BasicType::lref_, fce.arguments->front()->tp);
+                                            fc->arguments->front()->tp = Type::MakeType(BasicType::lref_, fce.arguments->front()->tp);
                                         }
-                                        iend = exprNode(ExpressionNode::func_, nullptr, nullptr);
-                                        iend->v.func = fc;
+                                        iend = MakeExpression(fc);
                                     }
                                 }
                                 else
@@ -1240,54 +1310,55 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         EXPRESSION* eBegin;
                         EXPRESSION* eEnd;
                         EXPRESSION* declDest = nullptr;
-                        if (isstructured(selectTP) && isstructured(iteratorType) && ibegin->type == ExpressionNode::func_ &&
-                            iend->type == ExpressionNode::func_)
+                        if (selectTP->IsStructured() && iteratorType->IsStructured() && ibegin->type == ExpressionNode::callsite_ &&
+                            iend->type == ExpressionNode::callsite_)
                         {       
                             eBegin = ibegin->v.func->returnEXP;
                             eEnd = iend->v.func->returnEXP;
-                            if (basetype(iteratorType)->sp->sb->structuredAliasType)
+                            if (iteratorType->BaseType()->sp->sb->structuredAliasType)
                             {
-                                deref(basetype(iteratorType)->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
-                                deref(basetype(iteratorType)->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
-                                st = stmtNode(lex, parent, StatementNode::expr_);
-                                st->select = exprNode(ExpressionNode::assign_, ibegin->v.func->returnEXP, ibegin);
+                                deref(iteratorType->BaseType()->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
+                                deref(iteratorType->BaseType()->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
+                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st->select = MakeExpression(ExpressionNode::assign_, ibegin->v.func->returnEXP, ibegin);
                                 ibegin->v.func->returnEXP = nullptr;
                                 ibegin->v.func->returnSP = nullptr;
-                                st = stmtNode(lex, parent, StatementNode::expr_);
-                                st->select = exprNode(ExpressionNode::assign_, iend->v.func->returnEXP, iend);
+                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st->select = MakeExpression(ExpressionNode::assign_, iend->v.func->returnEXP, iend);
                                 iend->v.func->returnEXP = nullptr;
                                 iend->v.func->returnSP = nullptr;
 
                             }
                             else
                             {
-                                st = stmtNode(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                 st->select = ibegin;
-                                st = stmtNode(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                 st->select = iend;
                             }
                         }
                         else
                         {
-                            TYPE* tpx = MakeType(BasicType::pointer_, iteratorType);
+                            Type* tpx = Type::MakeType(BasicType::pointer_, iteratorType);
                             eBegin = anonymousVar(StorageClass::auto_, tpx);
                             eEnd = anonymousVar(StorageClass::auto_, tpx);
                             deref(&stdpointer, &eBegin);
                             deref(&stdpointer, &eEnd);
-                            st = stmtNode(lex, parent, StatementNode::expr_);
-                            st->select = exprNode(ExpressionNode::assign_, eBegin, ibegin);
-                            st = stmtNode(lex, parent, StatementNode::expr_);
-                            st->select = exprNode(ExpressionNode::assign_, eEnd, iend);
+                            st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                            st->select = MakeExpression(ExpressionNode::assign_, eBegin, ibegin);
+                            st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                            st->select = MakeExpression(ExpressionNode::assign_, eEnd, iend);
                         }
-                        if (isref(iteratorType))
+                        if (iteratorType->IsRef())
                             iteratorType = iteratorType->btp;
-                        if (!isstructured(selectTP) || !isstructured(iteratorType))
+                        if (!selectTP->IsStructured() || !iteratorType->IsStructured())
                         {
-                            compare = exprNode(ExpressionNode::eq_, eBegin, eEnd);
+                            compare = MakeExpression(ExpressionNode::eq_, eBegin, eEnd);
                         }
                         else
                         {
-                            TYPE* eqType = iteratorType;
+                            iteratorType = iteratorType->BaseType();
+                            Type* eqType = iteratorType;
                             compare = eBegin;
                             if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::eq_, funcsp, &eqType, &compare, iteratorType, eEnd, nullptr,
                                                     0))
@@ -1296,90 +1367,108 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             }
                         }
 
-                        st = stmtNode(lex, parent, StatementNode::select_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::select_);
                         st->label = parent.front()->breaklabel;
                         st->altlabel = testlabel;
                         st->select = compare;
 
-                        st = stmtNode(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                         st->label = loopLabel;
 
-                        std::list<BLOCKDATA*> dummy(beforeit, parent.end());
+                        std::list<FunctionBlock*> dummy(beforeit, parent.end());
                         AllocateLocalContext(dummy, funcsp, codeLabel++);
 
                         // initialize var here
-                        st = stmtNode(lex, parent, StatementNode::expr_);
-                        if (!isstructured(selectTP))
+                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                        if (!selectTP->IsStructured())
                         {
                             DeduceAuto(&declSP->tp, selectTP, declExp);
-                            if (ispointer(selectTP) && ispointer(declSP->tp))
-                                declSP->tp = basetype(declSP->tp)->btp;
-                            UpdateRootTypes(declSP->tp);
-                            if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, true))
+                            if (selectTP->IsPtr() && declSP->tp->IsPtr())
+                                declSP->tp = declSP->tp->BaseType()->btp;
+                            declSP->tp->UpdateRootTypes();
+                            selectTP->UpdateRootTypes();
+                            if (selectTP->IsArray())
                             {
-                                error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                Type* tp = declSP->tp;
+                                if (tp->IsRef())
+                                {
+                                    tp = tp->BaseType()->btp;
+                                    if (!tp->btp->ExactSameType(selectTP->BaseType()->btp))
+                                    {
+                                        error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                    }
+                                }
+                                else if (!tp->ExactSameType(selectTP->BaseType()->btp))
+                                {
+                                    error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                }
                             }
-                            if (isstructured(declSP->tp))
+                            if (declSP->tp->IsStructured())
                             {
                                 EXPRESSION* decl = declExp;
-                                TYPE* ctype = declSP->tp;
-                                FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                                INITLIST* args = Allocate<INITLIST>();
+                                Type* ctype = declSP->tp;
+                                CallSite* funcparams = Allocate<CallSite>();
+                                Argument* args = Allocate<Argument>();
                                 funcparams->arguments = initListListFactory.CreateList();
-                                funcparams->arguments->push_back(Allocate<INITLIST>());
+                                funcparams->arguments->push_back(Allocate<Argument>());
                                 funcparams->arguments->front()->tp = declSP->tp;
                                 funcparams->arguments->front()->exp = eBegin;
                                 callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(basetype(declSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false, true);
+                                callDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
                             }
-                            else if (isarray(selectTP))
+                            else if (selectTP->IsArray())
                             {
                                 EXPRESSION* decl = declExp;
                                 deref(declSP->tp, &decl);
                                 st->select = eBegin;
-                                if (!isref(declSP->tp))
-                                    deref(basetype(selectTP)->btp, &st->select);
-                                st->select = exprNode(ExpressionNode::assign_, decl, st->select);
+                                deref(selectTP->BaseType()->btp, &st->select);
+                                st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
+                                if (declSP->tp->IsRef())
+                                {
+                                    declSP->tp = declSP->tp->BaseType()->btp;
+                                    if (selectTP->IsPtr() && declSP->tp->IsPtr())
+                                        declSP->tp = declSP->tp->BaseType()->btp;
+                                }
                             }
                         }
                         else
                         {
-                            TYPE* starType = iteratorType;
+                            Type* starType = iteratorType;
                             st->select = eBegin;
-                            if (ispointer(iteratorType))
+                            if (iteratorType->IsPtr())
                             {
-                                DeduceAuto(&declSP->tp, basetype(iteratorType)->btp, declExp);
-                                UpdateRootTypes(declSP->tp);
-                                if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, true))
+                                DeduceAuto(&declSP->tp, iteratorType->BaseType()->btp, declExp);
+                                declSP->tp->UpdateRootTypes();
+                                if (!declSP->tp->ExactSameType(iteratorType->BaseType()->btp))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
-                                else if (!isstructured(declSP->tp))
+                                else if (!declSP->tp->IsStructured())
                                 {
                                     EXPRESSION* decl = declExp;
                                     deref(declSP->tp, &decl);
                                     st->select = eBegin;
-                                    if (!isref(declSP->tp))
-                                        deref(basetype(iteratorType)->btp, &st->select);
-                                    st->select = exprNode(ExpressionNode::assign_, decl, st->select);
+                                    if (!declSP->tp->IsRef())
+                                        deref(iteratorType->BaseType()->btp, &st->select);
+                                    st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 }
                                 else
                                 {
                                     EXPRESSION* decl = declExp;
-                                    TYPE* ctype = declSP->tp;
-                                    FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                                    INITLIST* args = Allocate<INITLIST>();
+                                    Type* ctype = declSP->tp;
+                                    CallSite* funcparams = Allocate<CallSite>();
+                                    Argument* args = Allocate<Argument>();
                                     funcparams->arguments = initListListFactory.CreateList();
-                                    funcparams->arguments->push_back(Allocate<INITLIST>());
+                                    funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = eBegin;
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(basetype(declSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false, true);
+                                    callDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::star_, funcsp, &starType, &st->select, nullptr, nullptr,
@@ -1390,18 +1479,18 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             else
                             {
                                 bool ref = false;
-                                if (isref(declSP->tp))
+                                if (declSP->tp->IsRef())
                                 {
                                     ref = true;
                                 }
                                 DeduceAuto(&declSP->tp, starType, declExp);
-                                UpdateRootTypes(declSP->tp);
-                                if (!comparetypes(declSP->tp, starType, true) &&
-                                    (!isarithmetic(declSP->tp) || !isarithmetic(starType)))
+                                declSP->tp->UpdateRootTypes();
+                                if (!declSP->tp->ExactSameType(starType) &&
+                                    (!declSP->tp->IsArithmetic() || !starType->IsArithmetic()))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
-                                else if (!isstructured(declSP->tp))
+                                else if (!declSP->tp->IsStructured())
                                 {
                                     EXPRESSION* decl = declExp;
                                     if (ref && (starType->lref || starType->rref))
@@ -1413,59 +1502,59 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                                     }
                                     deref(declSP->tp, &decl);
 
-                                    st->select = exprNode(ExpressionNode::assign_, decl, st->select);
+                                    st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 }
                                 else
                                 {
                                     EXPRESSION* decl = declExp;
-                                    TYPE* ctype = declSP->tp;
-                                    FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                                    INITLIST* args = Allocate<INITLIST>();
+                                    Type* ctype = declSP->tp;
+                                    CallSite* funcparams = Allocate<CallSite>();
+                                    Argument* args = Allocate<Argument>();
                                     funcparams->arguments = initListListFactory.CreateList();
-                                    funcparams->arguments->push_back(Allocate<INITLIST>());
+                                    funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = st->select;
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(basetype(declSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false, true);
+                                    callDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                         }
                         do
                         {
                             lastLabelStmt = parent.front()->statements->back();
-                            lex = nononconststatement(lex, funcsp, parent, true);
+                            StatementWithoutNonconst(parent, true);
                         } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
                         FreeLocalContext(parent, funcsp, codeLabel++);
                         if (declDest)
                         {
-                            st = stmtNode(lex, parent, StatementNode::expr_);
+                            st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                             st->select = declDest;
                         }
-                        st = stmtNode(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                         st->label = parent.front()->continuelabel;
-                        st = stmtNode(lex, parent, StatementNode::expr_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
 
                         // do ++ here
-                        if (!isstructured(selectTP))
+                        if (!selectTP->IsStructured())
                         {
-                            if (isarray(selectTP))
+                            if (selectTP->IsArray())
                                 st->select =
-                                    exprNode(ExpressionNode::assign_, eBegin,
-                                             exprNode(ExpressionNode::add_, eBegin, intNode(ExpressionNode::c_i_, basetype(basetype(selectTP)->btp)->size)));
+                                    MakeExpression(ExpressionNode::assign_, eBegin,
+                                             MakeExpression(ExpressionNode::add_, eBegin, MakeIntExpression(ExpressionNode::c_i_, selectTP->BaseType()->btp->BaseType()->size)));
                         }
                         else
                         {
-                            TYPE* ppType = iteratorType;
-                            ppType = basetype(ppType);
+                            Type* ppType = iteratorType;
+                            ppType = ppType->BaseType();
                             st->select = eBegin;
-                            if (ispointer(iteratorType))
+                            if (iteratorType->IsPtr())
                             {
-                                st->select = exprNode(
+                                st->select = MakeExpression(
                                     ExpressionNode::assign_, eBegin,
-                                    exprNode(ExpressionNode::add_, eBegin, intNode(ExpressionNode::c_i_, basetype(basetype(iteratorType)->btp)->size)));
+                                    MakeExpression(ExpressionNode::add_, eBegin, MakeIntExpression(ExpressionNode::c_i_, iteratorType->BaseType()->btp->BaseType()->size)));
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::autoinc_, funcsp, &ppType, &st->select, nullptr, nullptr,
                                                          nullptr, 0))
@@ -1474,14 +1563,14 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                             }
                             else
                             {
-                                if (isstructured(ppType))
+                                if (ppType->IsStructured())
                                 {
                                     st->select->v.func->returnEXP = anonymousVar(StorageClass::auto_, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(basetype(st->select->v.func->returnSP->tp)->sp, nullptr, &declDest, nullptr, true, true, false,
+                                    callDestructor(st->select->v.func->returnSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false,
                                                    true);
-                                    st = stmtNode(lex, parent, StatementNode::expr_);
+                                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                     st->select = declDest;
                                 }
                             }
@@ -1491,16 +1580,16 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         {
                             parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());
                         }
-                        st = stmtNode(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                         st->label = testlabel;
 
-                        st = stmtNode(lex, parent, StatementNode::notselect_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
                         st->label = loopLabel;
                         st->select = compare;
 
-                        if (!parent.front()->hasbreak && (!st->select || isselectfalse(st->select)))
+                        if (!parent.front()->hasbreak && (!st->select || IsSelectFalse(st->select)))
                             before->needlabel = true;
-                        st = stmtNode(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                         st->label = parent.front()->breaklabel;
                         before->hassemi = parent.front()->hassemi;
                         before->nosemi = parent.front()->nosemi;
@@ -1513,8 +1602,8 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                 while (addedBlock--)
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 parent.pop_front();
-                AddBlock(lex, parent, forstmt);
-                return lex;
+                forstmt->AddThis(lex, parent);
+                return;
             }
             else
             {
@@ -1533,7 +1622,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                         SYMBOL* declSP = *it;
                         if (!declSP->sb->init)
                         {
-                            if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->sb->trivialCons)
+                            if (declSP->tp->IsStructured() && !declSP->tp->BaseType()->sp->sb->trivialCons)
                             {
                                 lex = initialize(lex, funcsp, declSP, StorageClass::auto_, false, false, 0);
                             }
@@ -1557,7 +1646,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
         {
             if (!MATCHKW(lex, Keyword::semicolon_))
             {
-                TYPE* tp = nullptr;
+                Type* tp = nullptr;
                 lex = optimized_expression(lex, funcsp, nullptr, &tp, &select, true);
                 if (!tp)
                 {
@@ -1574,7 +1663,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
             {
                 if (!MATCHKW(lex, Keyword::closepa_))
                 {
-                    TYPE* tp = nullptr;
+                    Type* tp = nullptr;
                     lex = expression_comma(lex, funcsp, nullptr, &tp, &incrementer, nullptr, 0);
                     if (!tp)
                     {
@@ -1583,7 +1672,6 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                     else
                     {
                         optimize_for_constants(&incrementer);
-                        ConstExprPatch(&incrementer);
                     }
                 }
                 if (!MATCHKW(lex, Keyword::closepa_))
@@ -1597,23 +1685,23 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                     lex = getsym();
                     if (init)
                     {
-                        st = stmtNode(lex, parent, StatementNode::expr_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                         st->select = init;
                     }
                     if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_optimize_for_size ||
                         (Optimizer::chosenAssembler->arch->denyopts & DO_NOENTRYIF))
                     {
-                        st = stmtNode(lex, parent, StatementNode::goto_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
                         st->label = testlabel;
                     }
                     else
                     {
-                        st = stmtNode(lex, parent, StatementNode::notselect_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
                         st->label = parent.front()->breaklabel;
                         st->altlabel = testlabel;
                         st->select = select;
                     }
-                    st = stmtNode(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                     st->label = loopLabel;
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
@@ -1623,7 +1711,7 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                     do
                     {
                         lastLabelStmt = parent.front()->statements->back();
-                        lex = nononconststatement(lex, funcsp, parent, true);
+                        StatementWithoutNonconst(parent, true);
                     } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
@@ -1632,30 +1720,30 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
                     }
                     if (before)
                         assignmentUsages(incrementer, false);
-                    st = stmtNode(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                     st->label = parent.front()->continuelabel;
-                    st = stmtNode(lex, parent, StatementNode::expr_);
+                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                     st->select = incrementer;
                     if (forline)
                     {
                         parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());
                     }
-                    st = stmtNode(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                     st->label = testlabel;
                     if (select)
                     {
-                        st = stmtNode(lex, parent, StatementNode::select_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::select_);
                         st->label = loopLabel;
                         st->select = select;
                     }
                     else
                     {
-                        st = stmtNode(lex, parent, StatementNode::goto_);
+                        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
                         st->label = loopLabel;
                     }
-                    if (!parent.front()->hasbreak && (!st->select || isselectfalse(st->select)))
+                    if (!parent.front()->hasbreak && (!st->select || IsSelectFalse(st->select)))
                         before->needlabel = true;
-                    st = stmtNode(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                     st->label = parent.front()->breaklabel;
                     before->hassemi = parent.front()->hassemi;
                     before->nosemi = parent.front()->nosemi;
@@ -1673,12 +1761,11 @@ static LEXLIST* statement_for(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
-    AddBlock(lex, parent, forstmt);
-    return lex;
+    forstmt->AddThis(lex, parent);
 }
-static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
 {
-    STATEMENT *st, *lastLabelStmt;
+    Statement *st, *lastLabelStmt;
     EXPRESSION* select = nullptr, *init = nullptr;
     int addedBlock = 0;
     bool needlabelif;
@@ -1702,27 +1789,27 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
         bool declaration = false;
-        lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, &declaration);
+        SelectionExpression(parent, &select, Keyword::if_, &declaration);
         if (declaration && MATCHKW(lex, Keyword::semicolon_))
         {
             lex = getsym();
             init = select;
-            lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
+            SelectionExpression(parent, &select, Keyword::if_, nullptr);
         }
         if (MATCHKW(lex, Keyword::closepa_))
         {
             if (isconstexpr && !IsConstantExpression(select, false, true))
                 error(ERR_CONSTANT_VALUE_EXPECTED);
             bool optimized = false;
-            std::list<STATEMENT*>::iterator sti;
+            std::list<Statement*>::iterator sti;
             currentLineData(parent, lex, 0);
             lex = getsym();
             if (init)
             {
-                st = stmtNode(lex, parent, StatementNode::expr_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                 st->select = init;
             }
-            st = stmtNode(lex, parent, StatementNode::notselect_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
             st->label = ifbranch;
             st->select = select;
             sti = parent.front()->statements->end();
@@ -1736,7 +1823,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
             do
             {
                 lastLabelStmt = parent.front()->statements->back();
-                lex = nononconststatement(lex, funcsp, parent, true);
+                StatementWithoutNonconst(parent, true);
             } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
             needlabelif = parent.front()->needlabel;
             if (MATCHKW(lex, Keyword::else_))
@@ -1746,7 +1833,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 }
-                st = stmtNode(lex, parent, StatementNode::goto_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
                 st->label = elsebr;
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
@@ -1769,7 +1856,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                         (*sti)->label = (*st1)->label;
                     }
                 }
-                st = stmtNode(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                 st->label = ifbranch;
                 if (!parent.front()->nosemi && !parent.front()->hassemi)
                     errorint(ERR_NEEDY, ';');
@@ -1781,7 +1868,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                 do
                 {
                     lastLabelStmt = parent.front()->statements->back();
-                    lex = nononconststatement(lex, funcsp, parent, true);
+                    StatementWithoutNonconst(parent, true);
                 } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
                 if ((Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size) && !optimized)
                 {
@@ -1806,7 +1893,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                     FreeLocalContext(parent, funcsp, codeLabel++);
                     addedBlock--;
                 }
-                st = stmtNode(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                 st->label = elsebr;
             }
             else
@@ -1833,7 +1920,7 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
                     FreeLocalContext(parent, funcsp, codeLabel++);
                     addedBlock--;
                 }
-                st = stmtNode(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                 st->label = ifbranch;
             }
             if (parent.front()->hassemi)
@@ -1856,10 +1943,8 @@ static LEXLIST* statement_if(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>
     inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
-
-    return lex;
 }
-int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st)
+int StatementGenerator::GetLabelValue(LexList* lex, std::list<FunctionBlock*>* parent, Statement* st)
 {
     SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
     if (!spx)
@@ -1879,7 +1964,7 @@ int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st)
             {
                 for (auto b : *parent)
                 {
-                    auto x = Allocate<BLOCKDATA>();
+                    auto x = Allocate<FunctionBlock>();
                     *x = *b;
                     x->orig = b;
                     spx->sb->gotoBlockTable->push_back(x);
@@ -1892,10 +1977,9 @@ int GetLabelValue(LEXLIST* lex, std::list<BLOCKDATA*>* parent, STATEMENT* st)
     }
     return spx->sb->offset;
 }
-static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
-    (void)funcsp;
     (void)parent;
     lex = getsym();
     currentLineData(parent, lex, 0);
@@ -1903,35 +1987,35 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     {
         // standard c/c++ goto
         SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
-        BLOCKDATA* block = Allocate<BLOCKDATA>();
+        FunctionBlock* block = Allocate<FunctionBlock>();
         parent.push_front(block);
         block->type = Keyword::begin_;
         block->table = localNameSpace->front()->syms;
-        STATEMENT* st = stmtNode(lex, parent, StatementNode::goto_);
+        Statement* st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
         st->explicitGoto = true;
         int lbl = 0;
         if (!spx)
         {
-            lbl = GetLabelValue(lex, &parent, st);
+            lbl = StatementGenerator::GetLabelValue(lex, &parent, st);
         }
         else
         {
             lbl = spx->sb->offset;
-            thunkGotoDestructors(&st->destexp, parent, *spx->sb->gotoBlockTable);
-            thunkCatchCleanup(st, funcsp, parent, *spx->sb->gotoBlockTable);
+            ThunkGotoDestructors(&st->destexp, parent, *spx->sb->gotoBlockTable);
+            ThunkCatchCleanup(st, parent, *spx->sb->gotoBlockTable);
         }
         st->label = lbl;
         lex = getsym();
         before->needlabel = true;
         parent.pop_front();
-        AddBlock(lex, parent, block);
+        block->AddThis(lex, parent);
         canFallThrough = true;
     }
     else if (MATCHKW(lex, Keyword::star_))
     {
         // extension: computed goto
-        BLOCKDATA* block = Allocate<BLOCKDATA>();
-        STATEMENT* st = stmtNode(lex, parent, StatementNode::goto_);
+        FunctionBlock* block = Allocate<FunctionBlock>();
+        Statement* st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
         parent.push_front(block);
         block->type = Keyword::begin_;
         block->table = localNameSpace->front()->syms;
@@ -1940,17 +2024,17 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         Optimizer::functionHasAssembly = true; // don't optimize
         // turn off optimizations
         lex = getsym();
-        TYPE*tp = nullptr;
+        Type*tp = nullptr;
         EXPRESSION* exp = nullptr;
         lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
         if (!tp)
             error(ERR_IDENTIFIER_EXPECTED);
-        else if (!ispointer(tp))
+        else if (!tp->IsPtr())
             error(ERR_INVALID_POINTER_CONVERSION);
         else
         {
             st->select = exp;
-            AddBlock(lex, parent, block);
+            block->AddThis(lex, parent);
         }
         before->needlabel = true;
         parent.pop_front();
@@ -1964,15 +2048,13 @@ static LEXLIST* statement_goto(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     }
     if (funcsp->sb->constexpression)
         error(ERR_CONSTEXPR_FUNC_NO_GOTO);
-    return lex;
 }
-static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
-    STATEMENT* st;
-    (void)funcsp;
-    st = stmtNode(lex, parent, StatementNode::label_);
+    Statement* st;
+    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
     if (spx)
     {
         if (spx->sb->storage_class == StorageClass::ulabel_){
@@ -1980,8 +2062,8 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
             // may come here from assembly language...
             if (spx->sb->gotoTable && spx->sb->gotoTable->size())
             {
-                thunkGotoDestructors(&spx->sb->gotoTable->front()->destexp, *spx->sb->gotoBlockTable, parent);
-                thunkCatchCleanup(spx->sb->gotoTable->front(), funcsp, *spx->sb->gotoBlockTable, parent);
+                ThunkGotoDestructors(&spx->sb->gotoTable->front()->destexp, *spx->sb->gotoBlockTable, parent);
+                ThunkCatchCleanup(spx->sb->gotoTable->front(), *spx->sb->gotoBlockTable, parent);
             }
         }
         else
@@ -2000,7 +2082,7 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
             spx->sb->gotoBlockTable = blockDataListFactory.CreateList();
             for (auto b : parent)
             {
-                auto x = Allocate<BLOCKDATA>();
+                auto x = Allocate<FunctionBlock>();
                 *x = *b;
                 x->orig = b;
                 spx->sb->gotoBlockTable->push_back(x);
@@ -2014,9 +2096,8 @@ static LEXLIST* statement_label(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
     getsym();       /* Keyword::colon_ */
     lex = getsym(); /* next sym */
     before->needlabel = false;
-    return lex;
 }
-static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
+EXPRESSION* StatementGenerator::ConvertReturnToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
 {
     if (lvalue(exp))
     {
@@ -2024,11 +2105,11 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
         while (castvalue(exp))
             exp = exp->left;
         exp2 = exp;
-        if (!isstructured(basetype(tp)->btp))
+        if (!tp->BaseType()->btp->IsStructured())
         {
-            if (isref(basetype(tp)->btp))
+            if (tp->BaseType()->btp->IsRef())
             {
-                if (!isstructured(basetype(basetype(tp)->btp)->btp))
+                if (!tp->BaseType()->btp->BaseType()->btp->IsStructured())
                 {
                     if (exp->left->type != ExpressionNode::auto_ || exp->left->v.sp->sb->storage_class != StorageClass::parameter_)
                         exp = exp->left;
@@ -2047,14 +2128,14 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
                     exp = exp->left;
             }
         }
-        else if (basetype(tp)->btp->type == BasicType::aggregate_)
+        else if (tp->BaseType()->btp->type == BasicType::aggregate_)
         {
-            if (!isfunction(basetype(boundTP)->btp))
+            if (!boundTP->BaseType()->btp->IsFunction())
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
         }
-        else if (isfunction(basetype(tp)->btp))
+        else if (tp->BaseType()->btp->IsFunction())
         {
-            if (!isfunction(basetype(boundTP)->btp))
+            if (!boundTP->BaseType()->btp->IsFunction())
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
         }
         else if (exp->type == ExpressionNode::auto_)
@@ -2070,7 +2151,7 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
         }
         else
         {
-            if (referenceTypeError(tp, exp2) != exp2->type && (!isstructured(basetype(tp)->btp) || exp2->type != ExpressionNode::lvalue_))
+            if (referenceTypeError(tp, exp2) != exp2->type && (!tp->BaseType()->btp->IsStructured() || exp2->type != ExpressionNode::lvalue_))
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
         }
     }
@@ -2081,7 +2162,7 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
             exp->right->left = ConvertReturnToRef(exp->right->left, tp, boundTP);
             exp->right->right = ConvertReturnToRef(exp->right->right, tp, boundTP);
         }
-        else if (!isstructured(basetype(tp)->btp) && !isref(boundTP))
+        else if (!tp->BaseType()->btp->IsStructured() && !boundTP->IsRef())
         {
             error(ERR_LVALUE);
         }
@@ -2097,45 +2178,28 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
     }
     return exp;
 }
-static EXPRESSION* baseNode(EXPRESSION* node)
-{
-    if (!node)
-        return 0;
-    switch (node->type)
-    {
-        case ExpressionNode::auto_:
-        case ExpressionNode::pc_:
-        case ExpressionNode::global_:
-        case ExpressionNode::threadlocal_:
-            return node;
-        case ExpressionNode::add_: {
-            EXPRESSION* rv = baseNode(node->left);
-            if (rv)
-                return rv;
-            return baseNode(node->right);
-        }
-        default:
-            return 0;
-    }
-}
-static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
+void StatementGenerator::MatchReturnTypes(Type* tp1, Type* tp2)
 {
     if (matchReturnTypes)
     {
+        if (tp2->type == BasicType::enum_ && tp1->IsInt() && tp1->btp)
+            tp1 = tp1->btp;
+        if (tp1->type == BasicType::enum_ && tp2->IsInt() && tp2->btp)
+            tp2 = tp2->btp;
         bool err = false;
-        if (isref(tp1))
-            tp1 = basetype(tp1)->btp;
-        if (isref(tp2))
-            tp2 = basetype(tp2)->btp;
+        if (tp1->IsRef())
+            tp1 = tp1->BaseType()->btp;
+        if (tp2->IsRef())
+            tp2 = tp2->BaseType()->btp;
         while (tp1 && tp2 && !err)
         {
-            // if (isconst(tp1) != isconst(tp2) || isvolatile(tp1) != isvolatile(tp2))
+            // if (tp1->IsConst() != tp2->IsConst() || tp1->IsVolatile() != tp2->IsVolatile())
             //    err = true;
-            tp1 = basetype(tp1);
-            tp2 = basetype(tp2);
-            if (isstructured(tp1) && isstructured(tp2))
+            tp1 = tp1->BaseType();
+            tp2 = tp2->BaseType();
+            if (tp1->IsStructured() && tp2->IsStructured())
             {
-                if (!comparetypes(tp1, tp2, true) && classRefCount(tp1->sp, tp2->sp) != 1)
+                if (!tp1->ExactSameType(tp2) && classRefCount(tp1->sp, tp2->sp) != 1)
                     err = true;
             }
             else if (tp1->type != tp2->type)
@@ -2151,13 +2215,13 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
         }
     }
 }
-static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
-    STATEMENT* st;
-    TYPE* tp = nullptr;
+    Statement* st;
+    Type* tp = nullptr;
     EXPRESSION* returnexp = nullptr;
-    TYPE* returntype = nullptr;
+    Type* returntype = nullptr;
     EXPRESSION* destexp = nullptr;
 
     canFallThrough = true;
@@ -2168,33 +2232,40 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     lex = getsym();
     if (MATCHKW(lex, Keyword::semicolon_))
     {
-        if (!isvoid(basetype(funcsp->tp)->btp))
+        if (!funcsp->tp->BaseType()->btp->IsVoid())
         {
-            if (!basetype(funcsp->tp)->sp->sb->isConstructor && !basetype(funcsp->tp)->sp->sb->isDestructor)
+            if (!funcsp->tp->BaseType()->sp->sb->isConstructor && !funcsp->tp->BaseType()->sp->sb->isDestructor)
                 error(ERR_RETURN_MUST_RETURN_VALUE);
         }
     }
     else
     {
-        tp = basetype(funcsp->tp)->btp;
+        tp = funcsp->tp->BaseType()->btp;
 
-        if (isautotype(tp))
+        if (tp->IsAutoType())
         {
-            TYPE* tp1;
+            Type* tp1;
             EXPRESSION* exp1;
-            LEXLIST* current = lex;
+            LexList* current = lex;
             lex = expression(lex, funcsp, nullptr, &tp1, &exp1, _F_SIZEOF);
-            ConstExprPatch(&exp1);
+            if (tp1->BaseType()->lref)
+            {
+                tp1 = Type::MakeType(BasicType::lref_, tp1);
+            }
+            else if (tp1->BaseType()->rref)
+            {
+                tp1 = Type::MakeType(BasicType::rref_, tp1);
+            }
             lex = prevsym(current);
             while (tp1->type == BasicType::typedef_)
                 tp1 = tp1->btp;
-            DeduceAuto(&basetype(funcsp->tp)->btp, tp1, exp1);
-            tp = basetype(funcsp->tp)->btp;
-            UpdateRootTypes(funcsp->tp);
+            DeduceAuto(&funcsp->tp->BaseType()->btp, tp1, exp1);
+            tp = funcsp->tp->BaseType()->btp;
+            funcsp->tp->UpdateRootTypes();
             SetLinkerNames(funcsp, funcsp->sb->attribs.inheritable.linkage);
             matchReturnTypes = true;
         }
-        if (isstructured(tp) || isbitint(tp) || basetype(tp)->type == BasicType::memberptr_)
+        if (tp->IsStructured() || tp->IsBitInt() || tp->BaseType()->type == BasicType::memberptr_)
         {
             EXPRESSION* en = anonymousVar(StorageClass::parameter_, &stdpointer);
             SYMBOL* sp = en->v.sp;
@@ -2205,16 +2276,16 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             sp->name = "__retblock";
             sp->sb->retblk = true;
             // this next omiited the ->p
-            if ((funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_) && basetype(funcsp->tp)->syms->size() &&
-                ((SYMBOL*)basetype(funcsp->tp)->syms->front())->tp->type != BasicType::void_)
+            if ((funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_) && funcsp->tp->BaseType()->syms->size() &&
+                ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->tp->type != BasicType::void_)
                 sp->sb->offset = funcsp->sb->paramsize;
             deref(&stdpointer, &en);
-            if (Optimizer::cparams.prm_cplusplus && isstructured(tp) && (!basetype(tp)->sp->sb->trivialCons || MATCHKW(lex, Keyword::begin_)))
+            if (Optimizer::cparams.prm_cplusplus && tp->IsStructured() && (!tp->BaseType()->sp->sb->trivialCons || MATCHKW(lex, Keyword::begin_)))
             {
                 bool implicit = false;
-                if (basetype(tp)->sp->sb->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated)
+                if (tp->BaseType()->sp->sb->templateLevel && tp->BaseType()->sp->templateParams && !tp->BaseType()->sp->sb->instantiated)
                 {
-                    SYMBOL* sym = basetype(tp)->sp;
+                    SYMBOL* sym = tp->BaseType()->sp;
                     if (!allTemplateArgsSpecified(sym, sym->templateParams))
                         sym = GetClassTemplate(sym, sym->templateParams, false);
                     if (sym && allTemplateArgsSpecified(sym, sym->templateParams))
@@ -2223,7 +2294,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 if (MATCHKW(lex, Keyword::begin_))
                 {
                     implicit = true;
-                    std::list<INITIALIZER*>* init = nullptr, *dest = nullptr;
+                    std::list<Initializer*>* init = nullptr, *dest = nullptr;
                     SYMBOL* sym = nullptr;
                     sym = anonymousVar(StorageClass::localstatic_, tp)->v.sp;
                     lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, 0);
@@ -2235,34 +2306,34 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 else
                 {
                     bool oldrref, oldlref;
-                    FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-                    TYPE* ctype = tp;
+                    CallSite* funcparams = Allocate<CallSite>();
+                    Type* ctype = tp;
                     // shortcut for conversion from single expression
                     EXPRESSION* exp1 = nullptr;
-                    TYPE* tp1 = nullptr;
+                    Type* tp1 = nullptr;
                     lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, 0);
-                    MatchReturnTypes(funcsp, tp, tp1);
+                    MatchReturnTypes(tp, tp1);
                     if (!tp1)
                     {
                         tp1 = &stdint;
-                        exp1 = intNode(ExpressionNode::c_i_, 0);
+                        exp1 = MakeIntExpression(ExpressionNode::c_i_, 0);
                         error(ERR_IDENTIFIER_EXPECTED);
                     }
-                    if (tp1 && isstructured(tp1))
+                    if (tp1 && tp1->IsStructured())
                     {
                         if (sameTemplate(tp, tp1))
                         {
                             ctype = tp = tp1;
-                            basetype(funcsp->tp)->btp = tp1;
+                            funcsp->tp->BaseType()->btp = tp1;
                         }
-                        else if (comparetypes(tp, tp1, true))
+                        else if (tp->ExactSameType(tp1))
                         {
                             implicit = true;
                         }
-                        if (basetype(tp1)->sp->sb->templateLevel && basetype(tp1)->sp->templateParams &&
-                            !basetype(tp1)->sp->sb->instantiated && !templateNestingCount)
+                        if (tp1->BaseType()->sp->sb->templateLevel && tp1->BaseType()->sp->templateParams &&
+                            !tp1->BaseType()->sp->sb->instantiated && !templateNestingCount)
                         {
-                            SYMBOL* sym = basetype(tp1)->sp;
+                            SYMBOL* sym = tp1->BaseType()->sp;
                             if (!allTemplateArgsSpecified(sym, sym->templateParams))
                                 sym = GetClassTemplate(sym, sym->templateParams, false);
                             if (sym)
@@ -2273,9 +2344,9 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                     EXPRESSION* exptemp = exp1;
                     if (exptemp->type == ExpressionNode::thisref_)
                         exptemp = exptemp->left;
-                    if (exptemp->type == ExpressionNode::func_ && isfunction(exptemp->v.func->sp->tp) && exptemp->v.func->thisptr &&
-                        comparetypes(tp, basetype(exptemp->v.func->thistp)->btp, 0) &&
-                        (!basetype(tp)->sp->sb->templateLevel || sameTemplate(tp, basetype(exptemp->v.func->thistp)->btp)) &&
+                    if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
+                        tp->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
+                        (!tp->BaseType()->sp->sb->templateLevel || sameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
                         exptemp->v.func->thisptr->type == ExpressionNode::auto_ && exptemp->v.func->thisptr->v.sp->sb->anonymous)
                     {
                         exptemp->v.func->thisptr->v.sp->sb->destructed = true;
@@ -2285,37 +2356,56 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         maybeConversion = false;
                         implicit = false;
                     }
+                    else if (exptemp->type == ExpressionNode::comma_)
+                    {
+                        // a list of initializers into a temp var...   we don't want to do a constructor here because we just constructe it...
+                        // so replace the expression
+                        while (exptemp->type == ExpressionNode::comma_) exptemp = exptemp->right;
+                        if (exptemp->type == ExpressionNode::auto_)
+                        {
+                            exptemp->v.sp->sb->destructed = true;
+                        }
+                        auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
+                        deref(&stdpointer, &targetPointer);
+                        auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
+                        ReplaceVarRef(&exp1, exptemp->v.sp, targetPointer);
+                        exp1 = MakeExpression(ExpressionNode::comma_, targetExpr, exp1);
+                        returntype = tp;
+                        returnexp = exp1;
+                        maybeConversion = false;
+                        implicit = false;
+                    }
                     else
                     {
                         bool nonconst = funcsp->sb->nonConstVariableUsed;
                         funcparams->arguments = initListListFactory.CreateList();
-                        funcparams->arguments->push_back(Allocate<INITLIST>());
+                        funcparams->arguments->push_back(Allocate<Argument>());
                         funcparams->arguments->front()->tp = tp1;
                         funcparams->arguments->front()->exp = exp1;
-                        oldrref = basetype(tp1)->rref;
-                        oldlref = basetype(tp1)->lref;
-                        basetype(tp1)->rref = exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
-                        if (exptemp->type == ExpressionNode::func_ && isfunction(exptemp->v.func->sp->tp) &&
-                            basetype(basetype(exptemp->v.func->sp->tp)->btp)->type != BasicType::lref_)
-                            basetype(tp1)->rref = true;
-                        basetype(tp1)->lref = !basetype(tp1)->rref;
+                        oldrref = tp1->BaseType()->rref;
+                        oldlref = tp1->BaseType()->lref;
+                        tp1->BaseType()->rref = exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
+                        if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
+                            exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
+                            tp1->BaseType()->rref = true;
+                        tp1->BaseType()->lref = !tp1->BaseType()->rref;
                         maybeConversion = false;
                         returntype = tp;
                         // try the rref constructor first
                         if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
-                                            false, false))
+                            false, false))
                         {
                             if (funcparams->sp && matchesCopy(funcparams->sp, true))
                             {
                                 switch (exp1->type)
                                 {
-                                    case ExpressionNode::global_:
-                                    case ExpressionNode::auto_:
-                                    case ExpressionNode::threadlocal_:
-                                        exp1->v.sp->sb->dest = nullptr;
-                                        break;
-                                    default:
-                                        break;
+                                case ExpressionNode::global_:
+                                case ExpressionNode::auto_:
+                                case ExpressionNode::threadlocal_:
+                                    exp1->v.sp->sb->dest = nullptr;
+                                    break;
+                                default:
+                                    break;
                                 }
                             }
                         }
@@ -2323,42 +2413,39 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                         {
                             // not there try an lref version of the constructor
                             ctype = tp;
-                            basetype(tp1)->rref = false;
-                            basetype(tp1)->lref = true;
+                            tp1->BaseType()->rref = false;
+                            tp1->BaseType()->lref = true;
                             callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
-                                            false, true);
+                                false, true);
                         }
-                        basetype(tp1)->rref = oldrref;
-                        basetype(tp1)->lref = oldlref;
+                        tp1->BaseType()->rref = oldrref;
+                        tp1->BaseType()->lref = oldlref;
                         funcsp->sb->nonConstVariableUsed = nonconst;
                         returnexp = en;
+
                     }
                 }
             }
             else
             {
 
-                TYPE* tp1;
+                Type* tp1;
                 lex = optimized_expression(lex, funcsp, nullptr, &tp1, &returnexp, true);
                 if (!tp1)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
                 else
-                    MatchReturnTypes(funcsp, tp, tp1);
-                if (!comparetypes(tp, tp1, true) &&
-                    (!isbitint(tp) || !isbitint(tp1)) &&
-                    ((Optimizer::architecture != ARCHITECTURE_MSIL) || !isstructured(tp) || !isconstzero(&stdint, returnexp)))
+                    MatchReturnTypes(tp, tp1);
+                if (!tp->ExactSameType(tp1) &&
+                    (!tp->IsBitInt() || !tp1->IsBitInt()) &&
+                    ((Optimizer::architecture != ARCHITECTURE_MSIL) || !tp->IsStructured() || !isconstzero(&stdint, returnexp)))
                 {
                     bool toErr = true;
-                    if (isstructured(tp) && isstructured(tp1) && classRefCount(basetype(tp)->sp,basetype(tp1)->sp))
+                    if (tp->IsStructured() && tp1->IsStructured() && classRefCount(tp->BaseType()->sp,tp1->BaseType()->sp))
                     {
                         toErr = false;
-                        EXPRESSION q = {}, *v = &q;
-                        v->type = ExpressionNode::c_i_;
-                        v = baseClassOffset(basetype(tp)->sp, basetype(tp1)->sp, v);
-                        returnexp = exprNode(ExpressionNode::add_, returnexp, v);
-                    
+                        returnexp = baseClassOffset(tp->BaseType()->sp, tp1->BaseType()->sp, returnexp);
                     }
                     if (toErr)
                     {
@@ -2367,7 +2454,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 }
                 else
                 {
-                    if (returnexp->type == ExpressionNode::func_ && !returnexp->v.func->ascall)
+                    if (returnexp->type == ExpressionNode::callsite_ && !returnexp->v.func->ascall)
                     {
                         if (returnexp->v.func->sp->sb->storage_class == StorageClass::overloads_)
                         {
@@ -2375,40 +2462,59 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                             if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                                 error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                             funcsp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &returnexp, 0);
-                            if (funcsp && basetype(tp)->type == BasicType::memberptr_)
+                            if (funcsp && tp->BaseType()->type == BasicType::memberptr_)
                             {
                                 int lbl = dumpMemberPtr(funcsp, tp, true);
-                                returnexp = intNode(ExpressionNode::labcon_, lbl);
+                                returnexp = MakeIntExpression(ExpressionNode::labcon_, lbl);
                             }
                         }
                         else
                         {
-                            returnexp = intNode(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.func->sp, tp, true));
+                            returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.func->sp, tp, true));
                         }
                     }
                     else if (returnexp->type == ExpressionNode::pc_ || returnexp->type == ExpressionNode::memberptr_)
                     {
-                        returnexp = intNode(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.sp, tp, true));
+                        returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
                     if ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                         funcsp->sb->attribs.inheritable.linkage2 == Linkage::unmanaged_ || !msilManaged(funcsp))
                     {
-                        if (isbitint(tp))
+                        if (tp->IsBitInt())
                         {
-                            if (!comparetypes(tp, tp1, 0))
+                            if (!tp->SameType(tp1))
                             {
                                 cast(tp, &returnexp);
                             }
-                            returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
+                            returnexp = MakeExpression(ExpressionNode::blockassign_, en, returnexp);
                             returnexp->size = tp;
-                            returnexp->altdata = (void*)(basetype(tp));
+                            returnexp->altdata = (void*)(tp->BaseType());
 
                         }
-                        else if (!isstructured(tp) || !basetype(tp)->sp->sb->structuredAliasType)
+                        else if (!tp->IsStructured() || !tp->BaseType()->sp->sb->structuredAliasType)
                         {
-                            returnexp = exprNode(ExpressionNode::blockassign_, en, returnexp);
-                            returnexp->size = tp;
-                            returnexp->altdata = (void*)(basetype(tp));
+                            if (Optimizer::cparams.prm_cplusplus && returnexp->type == ExpressionNode::comma_)
+                            {
+                                // a list of initializers into a temp var...   we don't want to do a constructor here because we just constructe it...
+                                // so replace the expression
+                                auto exptemp = returnexp;
+                                while (exptemp->type == ExpressionNode::comma_) exptemp = exptemp->right;
+                                if (exptemp->type == ExpressionNode::auto_)
+                                {
+                                    exptemp->v.sp->sb->destructed = true;
+                                }
+                                auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
+                                deref(&stdpointer, &targetPointer);
+                                auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
+                                ReplaceVarRef(&returnexp, exptemp->v.sp, targetPointer);
+                                returnexp = MakeExpression(ExpressionNode::comma_, targetExpr, returnexp);
+                            }
+                            else
+                            {
+                                returnexp = MakeExpression(ExpressionNode::blockassign_, en, returnexp);
+                                returnexp->size = tp;
+                                returnexp->altdata = (void*)(tp->BaseType());
+                            }
                         }
                         else
                         {
@@ -2419,7 +2525,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                                     expx = &(*expx)->right;
                                 expx = &(*expx)->right;
                             }
-                            deref(basetype(tp)->sp->sb->structuredAliasType, expx);
+                            deref(tp->BaseType()->sp->sb->structuredAliasType, expx);
                         }
                     }
                     returntype = tp;
@@ -2428,7 +2534,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
         }
         else
         {
-            TYPE* tp1 = nullptr;
+            Type* tp1 = nullptr;
             bool needend = false;
             if (MATCHKW(lex, Keyword::begin_))
             {
@@ -2442,18 +2548,59 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                 error(ERR_EXPRESSION_SYNTAX);
             }
             else
-                MatchReturnTypes(funcsp, tp, tp1);
-            if (basetype(tp)->type == BasicType::string_)
+                MatchReturnTypes(tp, tp1);
+            if (tp->BaseType()->type == BasicType::string_)
             {
                 if (returnexp->type == ExpressionNode::labcon_)
                     returnexp->type = ExpressionNode::c_string_;
-                else if (basetype(tp1)->type != BasicType::string_)
-                    returnexp = exprNode(ExpressionNode::x_string_, returnexp, nullptr);
+                else if (tp1->BaseType()->type != BasicType::string_)
+                    returnexp = MakeExpression(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
-            else if (!comparetypes(tp1, tp, true) && ismsil(tp1))
+            else if (!tp->ExactSameType(tp1))
             {
-                errorConversionOrCast(true, tp1, tp);
+                bool err = false;
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    if (tp1->IsStructured())
+                    {
+                        auto tpx = tp;
+                        if (tpx->IsRef())
+                            tpx = tpx->BaseType()->btp;
+                        if (tpx->IsStructured())
+                        {
+                            if (!doStaticCast(&tp, tp1, &returnexp, funcsp, true))
+                                err = true;
+                        }
+                        else
+                        {
+                            // handles pointers as well...
+                            if (!castToArithmeticInternal(false, &tp1, &returnexp, Keyword::plus_, tpx, false))
+                                err = true;
+                        }
+                    }
+                    else if (tp1->IsPtr() && tp->IsPtr())
+                    {
+                        if (!doStaticCast(&tp, tp1, &returnexp, funcsp, true))
+                            err = true;
+                    }
+                    else if ((!tp1->IsArithmetic() && tp1->type != BasicType::enum_) || (!tp->IsArithmetic() && tp->type != BasicType::enum_))
+                    {
+                        if ((!tp->IsPtr() || (!isconstzero(tp1, returnexp) && tp1->type != BasicType::aggregate_ && !tp1->IsFunction())) &&
+                            (tp->BaseType()->type != BasicType::bool_ || !tp1->IsPtr()))
+                        {
+                            err = true;
+                        }
+                    }
+                }
+                else if (tp1->IsMsil() || tp1->IsStructured())
+                {
+                    err = true;
+                }
+                if (err)
+                {
+                    errorConversionOrCast(true, tp1, tp);
+                }
             }
             if (needend)
             {
@@ -2463,10 +2610,10 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                     skip(&lex, Keyword::end_);
                 }
             }
-            if (basetype(tp)->type == BasicType::object_)
-                if (basetype(tp1)->type != BasicType::object_ && !isstructured(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))
-                    returnexp = exprNode(ExpressionNode::x_object_, returnexp, nullptr);
-            if (isstructured(tp1) && isarithmetic(tp))
+            if (tp->BaseType()->type == BasicType::object_)
+                if (tp1->BaseType()->type != BasicType::object_ && !tp1->IsStructured() && (!tp1->IsArray() || !tp1->BaseType()->msil))
+                    returnexp = MakeExpression(ExpressionNode::x_object_, returnexp);
+            if (tp1->IsStructured() && tp->IsArithmetic())
             {
                 if (Optimizer::cparams.prm_cplusplus)
                 {
@@ -2483,7 +2630,7 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             {
                 returntype = tp;
             }
-            if (returnexp->type == ExpressionNode::func_)
+            if (returnexp->type == ExpressionNode::callsite_)
             {
                 if (returnexp->v.func->sp->sb->storage_class == StorageClass::overloads_)
                 {
@@ -2491,42 +2638,42 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
                     if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                         error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     returnexp->v.func->sp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &exp1, 0);
-                    returnexp->v.func->fcall = varNode(ExpressionNode::pc_, returnexp->v.func->sp);
+                    returnexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, returnexp->v.func->sp);
                 }
             }
-            if (Optimizer::cparams.prm_cplusplus && isstructured(returntype))
+            if (Optimizer::cparams.prm_cplusplus && returntype->IsStructured())
             {
-                TYPE* tp1 = basetype(funcsp->tp)->btp;
-                if (isref(tp1))
-                    tp1 = basetype(tp1)->btp;
+                Type* tp1 = funcsp->tp->BaseType()->btp;
+                if (tp1->IsRef())
+                    tp1 = tp1->BaseType()->btp;
                 if (cppCast(returntype, &tp1, &returnexp))
-                    returntype = tp = basetype(funcsp->tp)->btp;
+                    returntype = tp = funcsp->tp->BaseType()->btp;
             }
         }
-        if (isref(basetype(funcsp->tp)->btp))
+        if (funcsp->tp->BaseType()->btp->IsRef())
         {
-            if (basetype(basetype(tp)->btp)->type != BasicType::memberptr_)
-                returnexp = ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp, returntype);
+            if (funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
+                returnexp = ConvertReturnToRef(returnexp, funcsp->tp->BaseType()->btp, returntype);
         }
         else if (returnexp && returnexp->type == ExpressionNode::auto_ && returnexp->v.sp->sb->storage_class == StorageClass::auto_)
         {
-            if (!isstructured(basetype(funcsp->tp)->btp) && basetype(basetype(funcsp->tp)->btp)->type != BasicType::memberptr_ &&
-                !isbitint(basetype(funcsp->tp)->btp))
-                if (basetype(basetype(funcsp->tp)->btp)->type != BasicType::object_ &&
-                    (!isarray(basetype(funcsp->tp)->btp) || !basetype(funcsp->tp)->btp->msil) &&
-                    basetype(basetype(funcsp->tp)->btp)->type != BasicType::templateselector_)
+            if (!funcsp->tp->BaseType()->btp->IsStructured() && funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_ &&
+                !funcsp->tp->BaseType()->btp->IsBitInt())
+                if (funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::object_ &&
+                    (!funcsp->tp->BaseType()->btp->IsArray() || !funcsp->tp->BaseType()->btp->msil) &&
+                    funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::templateselector_)
                     error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
         if (!returnexp)
-            returnexp = intNode(ExpressionNode::c_i_, 0);  // errors
+            returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);  // errors
     }
     currentLineData(parent, lex, 0);
-    thunkRetDestructors(&destexp, nullptr, localNameSpace->front()->syms);
-    st = stmtNode(lex, parent, StatementNode::return_);
+    ThunkReturnDestructors(&destexp, nullptr, localNameSpace->front()->syms);
+    st = Statement::MakeStatement(lex, parent, StatementNode::return_);
     st->select = returnexp;
     st->destexp = destexp;
-    thunkCatchCleanup(st, funcsp, parent, emptyBlockdata);  // to top level
-    if (returnexp && returntype && !isautotype(returntype) && !matchReturnTypes)
+    ThunkCatchCleanup(st, parent, emptyBlockdata);  // to top level
+    if (returnexp && returntype && !returntype->IsAutoType() && !matchReturnTypes)
     {
         if (!tp)  // some error...
             tp = &stdint;
@@ -2543,109 +2690,108 @@ static LEXLIST* statement_return(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             {
                 error(ERR_CONSTRUCTOR_HAS_RETURN);
             }
-            else if (isstructured(returntype) || isstructured(tp))
+            else if (returntype->IsStructured() || tp->IsStructured())
             {
-                if (!comparetypes(returntype, tp, false) && !sameTemplate(returntype, tp))
+                if (!returntype->SameType(tp) && !sameTemplate(returntype, tp))
                     error(ERR_RETMISMATCH);
             }
-            else if (basetype(returntype)->type == BasicType::memberptr_ || basetype(tp)->type == BasicType::memberptr_)
+            else if (returntype->BaseType()->type == BasicType::memberptr_ || tp->BaseType()->type == BasicType::memberptr_)
             {
                 if (isconstzero(tp, st->select))
                 {
                     int lbl = dumpMemberPtr(nullptr, returntype, true);
-                    st->select = intNode(ExpressionNode::labcon_, lbl);
+                    st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
                 }
                 else
                 {
                     if (st->select->type == ExpressionNode::memberptr_)
                     {
                         int lbl = dumpMemberPtr(st->select->v.sp, returntype, true);
-                        st->select = intNode(ExpressionNode::labcon_, lbl);
+                        st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
                     }
-                    if (!comparetypes(returntype, tp, true))
+                    if (!returntype->ExactSameType(tp))
                         error(ERR_RETMISMATCH);
                 }
             }
             else
             {
-                if (!isref(basetype(funcsp->tp)->btp) &&
-                    !isbitint(basetype(funcsp->tp)->btp) &&
-                    (isarithmetic(basetype(funcsp->tp)->btp) ||
-                     (ispointer(basetype(funcsp->tp)->btp) && !isarray(basetype(funcsp->tp)->btp))))
+                if (!funcsp->tp->BaseType()->btp->IsRef() &&
+                    !funcsp->tp->BaseType()->btp->IsBitInt() &&
+                    (funcsp->tp->BaseType()->btp->IsArithmetic() ||
+                     (funcsp->tp->BaseType()->btp->IsPtr() && !funcsp->tp->BaseType()->btp->IsArray())))
                     cast(returntype, &st->select);
-                if (ispointer(returntype))
+                if (returntype->IsPtr())
                 {
-                    if (isarithmetic(tp))
+                    if (tp->IsArithmetic())
                     {
-                        if (iscomplex(tp))
+                        if (tp->IsComplex())
                             error(ERR_ILL_USE_OF_COMPLEX);
-                        else if (isfloat(tp) || isimaginary(tp))
+                        else if (tp->IsFloat() || tp->IsImaginary())
                             error(ERR_ILL_USE_OF_FLOATING);
                         else if (isarithmeticconst(returnexp))
                         {
                             if (!isintconst(returnexp) || !isconstzero(returntype, returnexp))
                                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
                         }
-                        else if (returnexp->type != ExpressionNode::func_ || returnexp->v.func->fcall->type != ExpressionNode::l_p_)
+                        else if (returnexp->type != ExpressionNode::callsite_ || returnexp->v.func->fcall->type != ExpressionNode::l_p_)
                             error(ERR_NONPORTABLE_POINTER_CONVERSION);
                     }
-                    else if (ispointer(tp))
+                    else if (tp->IsPtr())
                     {
-                        if (!comparetypes(returntype, tp, true))
+                        if (!returntype->ExactSameType(tp))
                         {
-                            if (!isvoidptr(returntype) && !isvoidptr(tp))
+                            if (!returntype->IsVoidPtr() && !tp->IsVoidPtr())
                             {
-                                if (!matchingCharTypes(returntype, tp))
+                                if (!returntype->SameCharType(tp))
                                     error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                             }
                             else
                             {
-                                if (Optimizer::cparams.prm_cplusplus && !isvoidptr(returntype) && returnexp->type != ExpressionNode::nullptr_ &&
-                                    isvoidptr(tp))
+                                if (Optimizer::cparams.prm_cplusplus && !returntype->IsVoidPtr() && returnexp->type != ExpressionNode::nullptr_ &&
+                                    tp->IsVoidPtr())
                                     error(ERR_ANSI_FORBIDS_IMPLICIT_CONVERSION_FROM_VOID);
                             }
                         }
                     }
-                    else if (isfunction(tp))
+                    else if (tp->IsFunction())
                     {
-                        if (!isvoidptr(returntype) &&
-                            (!isfunction(basetype(returntype)->btp) || !comparetypes(returntype, tp, true)))
+                        if (!returntype->IsVoidPtr() &&
+                            (!returntype->BaseType()->btp->IsFunction() || !returntype->ExactSameType(tp)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else
                         error(ERR_INVALID_POINTER_CONVERSION);
                 }
-                else if (ispointer(tp))
+                else if (tp->IsPtr())
                 {
-                    if (iscomplex(returntype))
+                    if (returntype->IsComplex())
                         error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isfloat(returntype) || isimaginary(returntype))
+                    else if (returntype->IsFloat() || returntype->IsImaginary())
                         error(ERR_ILL_USE_OF_FLOATING);
-                    else if (isint(returntype))
+                    else if (returntype->IsInt())
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 }
-                else if (ispointer(tp))
+                else if (tp->IsPtr())
                 {
-                    if (iscomplex(returntype))
+                    if (returntype->IsComplex())
                         error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isfloat(returntype) || isimaginary(returntype))
+                    else if (returntype->IsFloat() || returntype->IsImaginary())
                         error(ERR_ILL_USE_OF_FLOATING);
-                    else if (isint(returntype))
+                    else if (returntype->IsInt())
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 }
             }
         }
     }
     before->needlabel = true;
-    return lex;
 }
-static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
 {
     bool oldfallthrough = canFallThrough;
     canFallThrough = true;
     auto before = parent.front();
-    BLOCKDATA* switchstmt = Allocate<BLOCKDATA>();
-    STATEMENT* st;
+    FunctionBlock* switchstmt = Allocate<FunctionBlock>();
+    Statement* st;
     EXPRESSION* select = nullptr, *init = nullptr;
     int addedBlock = 0;
     funcsp->sb->noinline = true;
@@ -2665,7 +2811,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
         bool declaration = false;
-        lex = selection_expression(lex, parent, &select, funcsp, Keyword::switch_, &declaration);
+        SelectionExpression(parent, &select, Keyword::switch_, &declaration);
         if (declaration)
         {
             if (!needkw(&lex, Keyword::semicolon_))
@@ -2677,7 +2823,7 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             else
             {
                 init = select;
-                lex = selection_expression(lex, parent, &select, funcsp, Keyword::if_, nullptr);
+                SelectionExpression(parent, &select, Keyword::if_, nullptr);
             }
         }
         if (MATCHKW(lex, Keyword::closepa_))
@@ -2686,15 +2832,15 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             lex = getsym();
             if (init)
             {
-                st = stmtNode(lex, parent, StatementNode::expr_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                 st->select = init;
             }
-            st = stmtNode(lex, parent, StatementNode::switch_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::switch_);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
             switchstmt->cases = casedataListFactory.CreateList();
-            lex = nononconststatement(lex, funcsp, parent, true);
-            EndOfCaseGroup(funcsp, parent);
+            StatementWithoutNonconst(parent, true);
+            EndOfCaseGroup(parent);
             st->cases = switchstmt->cases;
             st->label = switchstmt->defaultlabel;
             if (st->label != -1 && switchstmt->needlabel && !switchstmt->hasbreak)
@@ -2703,10 +2849,10 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
             if (st->label == -1)
             {
                 st->label = codeLabel;
-                st = stmtNode(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                 st->label = codeLabel++;
             }
-            st = stmtNode(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = switchstmt->breaklabel;
             if (!switchstmt->nosemi && !switchstmt->hassemi)
                 errorint(ERR_NEEDY, ';');
@@ -2729,16 +2875,15 @@ static LEXLIST* statement_switch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
-    AddBlock(lex, parent, switchstmt);
+    switchstmt->AddThis(lex, parent);
     canFallThrough = oldfallthrough;
-    return lex;
 }
-static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
-    BLOCKDATA* whilestmt = Allocate<BLOCKDATA>();
-    STATEMENT *st, *lastLabelStmt;
-    std::list<STATEMENT*>* whileline;
+    FunctionBlock* whilestmt = Allocate<FunctionBlock>();
+    Statement *st, *lastLabelStmt;
+    std::list<Statement*>* whileline;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
     int loopLabel = codeLabel++;
@@ -2759,7 +2904,7 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
         bool declaration = false;
-        lex = selection_expression(lex, parent, &select, funcsp, Keyword::while_, &declaration);
+        SelectionExpression(parent, &select, Keyword::while_, &declaration);
         if (!MATCHKW(lex, Keyword::closepa_))
         {
             error(ERR_WHILE_NEEDS_CLOSEPA);
@@ -2773,18 +2918,18 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
             if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_optimize_for_size ||
                 (Optimizer::chosenAssembler->arch->denyopts & DO_NOENTRYIF))
             {
-                st = stmtNode(lex, parent, StatementNode::goto_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
                 st->label = whilestmt->continuelabel;
             }
             else
             {
-                st = stmtNode(lex, parent, StatementNode::notselect_);
+                st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
                 st->label = whilestmt->breaklabel;
                 st->altlabel = whilestmt->continuelabel;
                 st->select = select;
             }
 
-            st = stmtNode(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = loopLabel;
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
@@ -2794,25 +2939,25 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
             do
             {
                 lastLabelStmt = whilestmt->statements->back();
-                lex = nononconststatement(lex, funcsp, parent, true);
+                StatementWithoutNonconst(parent, true);
             } while (lex && whilestmt->statements->back() != lastLabelStmt && whilestmt->statements->back()->purelabel);
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock--;
                 FreeLocalContext(parent, funcsp, codeLabel++);
             }
-            st = stmtNode(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = whilestmt->continuelabel;
             if (whileline)
             {
                 parent.front()->statements->insert(parent.front()->statements->end(), whileline->begin(), whileline->end());
             }
-            st = stmtNode(lex, parent, StatementNode::select_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::select_);
             st->label = loopLabel;
             st->select = select;
-            if (!whilestmt->hasbreak && isselecttrue(st->select))
+            if (!whilestmt->hasbreak && IsSelectTrue(st->select))
                 before->needlabel = true;
-            st = stmtNode(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
             st->label = whilestmt->breaklabel;
             before->hassemi = whilestmt->hassemi;
             before->nosemi = whilestmt->nosemi;
@@ -2827,12 +2972,11 @@ static LEXLIST* statement_while(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDAT
     inLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
-    std::list<BLOCKDATA*> dummy{ whilestmt };
+    std::list<FunctionBlock*> dummy{ whilestmt };
     parent.pop_front();
-    AddBlock(lex, parent, whilestmt);
-    return lex;
+    whilestmt->AddThis(lex, parent);
 }
-static bool checkNoEffect(EXPRESSION* exp)
+bool StatementGenerator::NoSideEffect(EXPRESSION* exp)
 {
     if (exp->noexprerr)
         return false;
@@ -2840,7 +2984,7 @@ static bool checkNoEffect(EXPRESSION* exp)
         exp = exp->left;
     switch (exp->type)
     {
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         case ExpressionNode::assign_:
         case ExpressionNode::auto_inc_:
         case ExpressionNode::auto_dec_:
@@ -2858,20 +3002,20 @@ static bool checkNoEffect(EXPRESSION* exp)
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::thisref_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::funcret_:
-            return checkNoEffect(exp->left);
+        case ExpressionNode::constexprconstructor_:
+            return NoSideEffect(exp->left);
         case ExpressionNode::hook_:
-            return checkNoEffect(exp->right->left) & checkNoEffect(exp->right->right);
+            return NoSideEffect(exp->right->left) & NoSideEffect(exp->right->right);
         default:
             return true;
     }
 }
-static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
 {
-    STATEMENT* st;
+    Statement* st;
     EXPRESSION* select = nullptr;
-    TYPE* tp = nullptr;
+    Type* tp = nullptr;
     auto oldLines = lines;
     lines = nullptr;
     (void)parent;
@@ -2879,11 +3023,11 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     auto prevlex = lex;
     lex = optimized_expression(prevlex, funcsp, nullptr, &tp, &select, true);
     if (expressionReturns.size())
-        expressionReturns.back() = std::move(std::pair<EXPRESSION*, TYPE*>(select, tp));
+        expressionReturns.back() = std::move(std::pair<EXPRESSION*, Type*>(select, tp));
     lines = oldLines;
 
     currentLineData(parent, prevlex, 0);
-    st = stmtNode(lex, parent, StatementNode::expr_);
+    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
     st->select = select;
     if (!tp)
     {
@@ -2892,16 +3036,16 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
     }
     else if (tp->type != BasicType::void_ && tp->type != BasicType::any_)
     {
-        if (checkNoEffect(st->select))
+        if (NoSideEffect(st->select))
             error(ERR_EXPRESSION_HAS_NO_EFFECT);
-        if (Optimizer::cparams.prm_cplusplus && isstructured(tp) && select->type == ExpressionNode::func_)
+        if (Optimizer::cparams.prm_cplusplus && tp->IsStructured() && select->type == ExpressionNode::callsite_)
         {
             SYMBOL* sym = select->v.func->returnSP;
             if (sym && sym->sb->allocate)
             {
-                std::list<INITIALIZER*>* init = nullptr;
+                std::list<Initializer*>* init = nullptr;
                 EXPRESSION* exp = select->v.func->returnEXP;
-                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false, true);
+                callDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&init, sym->tp, exp, 0, false);
                 sym->sb->dest = init;
             }
@@ -2914,22 +3058,21 @@ static LEXLIST* statement_expr(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA
         {
             exp1 = exp1->left;
         }
-        if (exp1->type == ExpressionNode::func_)
+        if (exp1->type == ExpressionNode::callsite_)
         {
             auto sp = exp1->v.func->sp;
             if (sp->sb->attribs.uninheritable.nodiscard)
             {
                 if (!sp->sb->isConstructor && !sp->sb->isDestructor)
                 {
-                    if (!isvoid(basetype(sp->tp)->btp))
+                    if (!sp->tp->BaseType()->btp->IsVoid())
                         error(ERR_RETURN_VALUE_NO_DISCARD);
                 }
             }
         }
     }
-    return lex;
 }
-static LEXLIST* asm_declare(LEXLIST* lex)
+void StatementGenerator::AsmDeclare()
 {
     Keyword kw = lex->data->kw->key;
     do
@@ -2967,9 +3110,8 @@ static LEXLIST* asm_declare(LEXLIST* lex)
             lex = getsym();
         }
     } while (lex && MATCHKW(lex, Keyword::comma_));
-    return lex;
 }
-LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, int label, int startlab, int endlab)
+void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label, int startlab, int endlab)
 {
     auto before = parent.front();
     auto ilbefore = parent.begin();
@@ -2988,9 +3130,9 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
         lex = getsym();
         if (needkw(&lex, Keyword::openpa_))
         {
-            STATEMENT* st;
-            TYPE* tp = nullptr;
-            BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
+            Statement* st;
+            Type* tp = nullptr;
+            FunctionBlock* catchstmt = Allocate<FunctionBlock>();
             ParseAttributeSpecifiers(&lex, funcsp, true);
             catchstmt->breaklabel = label;
             catchstmt->defaultlabel = -1; /* no default */
@@ -3007,9 +3149,9 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
             {
                 lex = declare(lex, funcsp, &tp, StorageClass::catchvar_, Linkage::none_, parent, false, true, false, AccessLevel::public_);
             }
-            if (tp && isstructured(tp))
+            if (tp && tp->IsStructured())
             {
-                auto cc = getCopyCons(basetype(tp)->sp, false);
+                auto cc = getCopyCons(tp->BaseType()->sp, false);
                 if (cc && cc->sb->isExplicit)
                     error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             }
@@ -3017,7 +3159,7 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
             {
                 if (MATCHKW(lex, Keyword::begin_))
                 {
-                    lex = compound(lex, funcsp, parent, false);
+                    Compound(parent, false);
                     before->nosemi = true;
                     before->needlabel &= catchstmt->needlabel;
                     if (next)
@@ -3030,7 +3172,7 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
             }
             FreeLocalContext(parent, funcsp, codeLabel++);
             parent.pop_front();
-            st = stmtNode(lex, parent, StatementNode::catch_);
+            st = Statement::MakeStatement(lex, parent, StatementNode::catch_);
             st->label = startlab;
             st->endlabel = endlab;
             st->altlabel = codeLabel++;
@@ -3045,16 +3187,15 @@ LEXLIST* statement_catch(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pa
         }
     }
     inLoopOrConditional--;
-    return lex;
 }
-LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto ilbefore = parent.begin();
     ++ilbefore;
     auto next = ilbefore != parent.end() ? *ilbefore : nullptr;
-    STATEMENT* st;
-    BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
+    Statement* st;
+    FunctionBlock* trystmt = Allocate<FunctionBlock>();
     hasXCInfo = true;
     trystmt->breaklabel = codeLabel++;
     trystmt->defaultlabel = -1; /* no default */
@@ -3072,12 +3213,12 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
         parent.push_front(trystmt);
         AllocateLocalContext(parent, funcsp, codeLabel++);
         tryLevel++;
-        lex = compound(lex, funcsp, parent, false);
+        Compound(parent, false);
         tryLevel--;
         FreeLocalContext(parent, funcsp, codeLabel++);
         parent.pop_front();
         before->needlabel = trystmt->needlabel;
-        st = stmtNode(lex, parent, StatementNode::try_);
+        st = Statement::MakeStatement(lex, parent, StatementNode::try_);
         st->label = codeLabel++;
         st->endlabel = codeLabel++;
         st->breaklabel = trystmt->breaklabel;
@@ -3086,21 +3227,17 @@ LEXLIST* statement_try(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
         before->nosemi = true;
         if (next)
             next->nosemi = true;
-        lex = statement_catch(lex, funcsp, parent, st->breaklabel, st->label, st->endlabel);
+        ParseCatch(parent, st->breaklabel, st->label, st->endlabel);
     }
     inLoopOrConditional--;
-
-    return lex;
 }
-bool hasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }
-LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent)
+bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
-    (void)funcsp;
     (void)parent;  //
     Optimizer::functionHasAssembly = true;
 #ifndef ORANGE_NO_INASM
-    if (hasInlineAsm())
+    if (StatementGenerator::HasInlineAsm())
     {
         before->hassemi = false;
         lex = getsym();
@@ -3118,7 +3255,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
             }
             needkw(&lex, Keyword::end_);
             before->nosemi = true;
-            return lex;
+            return lex != nullptr;
         }
         else
         {
@@ -3130,7 +3267,7 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
                 if (Optimizer::cparams.prm_assemble &&
                     (MATCHKW(lex, Keyword::public_) || MATCHKW(lex, Keyword::extern_) || MATCHKW(lex, Keyword::const_)))
                 {
-                    lex = asm_declare(lex);
+                    AsmDeclare();
                 }
                 else
                 {
@@ -3174,28 +3311,28 @@ LEXLIST* statement_asm(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& pare
             lex = getsym();
         }
     }
-    return lex;
+    return lex != nullptr;
 }
-static void reverseAssign(std::list<STATEMENT*>* current, EXPRESSION** exp)
+void StatementGenerator::AssignInReverse(std::list<Statement*>* current, EXPRESSION** exp)
 {
     if (current)
     {
         for (auto it = current->end(); it != current->begin();)
         {
             --it;
-            if ((*it)->type != StatementNode::line_)
+            if ((*it)->type != StatementNode::line_ && (*it)->type != StatementNode::varstart_)
             {
                 if (*exp)
-                    *exp = exprNode(ExpressionNode::comma_, (*it)->select, *exp);
+                    *exp = MakeExpression(ExpressionNode::comma_, (*it)->select, *exp);
                 else
                     *exp = (*it)->select;
             }
         }
     }
 }
-static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, std::list<BLOCKDATA*>& parent, int asExpression)
+void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<FunctionBlock*>& parent, int asExpression)
 {
-    BLOCKDATA block;
+    FunctionBlock block;
     (void)parent;
     declareAndInitialize = false;
     memset(&block, 0, sizeof(block));
@@ -3204,7 +3341,7 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     parent.pop_front();
    
     // move any auto assignments
-    reverseAssign(block.statements, exp);
+    AssignInReverse(block.statements, exp);
 
     // now move variable declarations
     if (block.statements)
@@ -3213,27 +3350,26 @@ static LEXLIST* autodeclare(LEXLIST* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         {
             if (stmt->type == StatementNode::varstart_)
             {
-                STATEMENT* s = stmtNode(lex, parent, StatementNode::varstart_);
+                Statement* s = Statement::MakeStatement(lex, parent, StatementNode::varstart_);
                 s->select = stmt->select;
             }
             else if (stmt->type == StatementNode::line_)
             {
-                STATEMENT* s = stmtNode(lex, parent, StatementNode::line_);
+                Statement* s = Statement::MakeStatement(lex, parent, StatementNode::line_);
                 s->lineData = stmt->lineData;
             }
         }
     }
     if (!*exp)
     {
-        *exp = intNode(ExpressionNode::c_i_, 0);
-        errorint(ERR_NEEDY, '=');
+        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+        if (!(asExpression & _F_NOCHECKAUTO))
+            errorint(ERR_NEEDY, '=');
     }
-    return lex;
-
 }
-bool resolveToDeclaration(LEXLIST* lex, bool structured)
+bool StatementGenerator::ResolvesToDeclaration(LexList* lex, bool structured)
 {
-    LEXLIST* placeholder = lex;
+    LexList* placeholder = lex;
     if (ISKW(lex))
         switch (KW(lex))
         {
@@ -3311,18 +3447,11 @@ bool resolveToDeclaration(LEXLIST* lex, bool structured)
     prevsym(placeholder);
     return true;
 }
-static LEXLIST* nononconststatement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol)
-{
-    int old = funcsp->sb->nonConstVariableUsed;
-    auto rv = statement(lex, funcsp, parent, viacontrol);
-    funcsp->sb->nonConstVariableUsed = old;
-    return rv;
-}
 
-LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool viacontrol)
+void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool viacontrol)
 {
     auto before = parent.front();
-    LEXLIST* start = lex;
+    LexList* start = lex;
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (ISID(lex))
     {
@@ -3330,10 +3459,10 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
         if (MATCHKW(lex, Keyword::colon_))
         {
             lex = backupsym();
-            lex = statement_label(lex, funcsp, parent);
+            ParseLabel(parent);
             before->needlabel = false;
             before->nosemi = true;
-            return lex;
+            return;
         }
         else
         {
@@ -3350,22 +3479,24 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
         else
             before->needlabel = false;
     }
+    bool oldExpressionParsing = inFunctionExpressionParsing;
+    inFunctionExpressionParsing = false;
     before->nosemi = false;
     expressionStatements.push(&parent);
     switch (KW(lex))
     {
         case Keyword::try_:
             canFallThrough = false;
-            lex = statement_try(lex, funcsp, parent);
+            ParseTry(parent);
             break;
         case Keyword::catch_:
             canFallThrough = false;
             error(ERR_CATCH_WITHOUT_TRY);
-            lex = statement_catch(lex, funcsp, parent, 1, 1, 1);
+            ParseCatch(parent, 1, 1, 1);
             break;
         case Keyword::begin_: {
             canFallThrough = parent.front()->type == Keyword::switch_;
-            lex = compound(lex, funcsp, parent, false);
+            Compound(parent, false);
             before->nosemi = true;
             auto il = parent.begin();
             ++il;
@@ -3381,27 +3512,30 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             canFallThrough = false;
             before->hassemi = true;
             expressionStatements.pop();
-            return lex;
+            inFunctionExpressionParsing = oldExpressionParsing;
+            return;
         case Keyword::do_:
             canFallThrough = false;
-            lex = statement_do(lex, funcsp, parent);
+            ParseDo(parent);
             break;
         case Keyword::while_:
             canFallThrough = false;
-            lex = statement_while(lex, funcsp, parent);
+            ParseWhile(parent);
             expressionStatements.pop();
-            return lex;
+            inFunctionExpressionParsing = oldExpressionParsing;
+            return;
         case Keyword::for_:
             canFallThrough = false;
-            lex = statement_for(lex, funcsp, parent);
+            ParseFor(parent);
             expressionStatements.pop();
-            return lex;
+            inFunctionExpressionParsing = oldExpressionParsing;
+            return;
         case Keyword::switch_:
-            lex = statement_switch(lex, funcsp, parent);
+            ParseSwitch(parent);
             break;
         case Keyword::if_:
             canFallThrough = false;
-            lex = statement_if(lex, funcsp, parent);
+            ParseIf(parent);
             break;
         case Keyword::else_:
             canFallThrough = false;
@@ -3410,49 +3544,51 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             before->nosemi = true;
             break;
         case Keyword::case_:
-            EndOfCaseGroup(funcsp, parent);
+            EndOfCaseGroup(parent);
             while (KW(lex) == Keyword::case_)
             {
                 if (Optimizer::cparams.prm_cplusplus)
                     HandleEndOfCase(parent);
-                lex = statement_case(lex, funcsp, parent);
+                ParseCase(parent);
                 if (Optimizer::cparams.prm_cplusplus)
                     HandleStartOfCase(parent);
             }
-            StartOfCaseGroup(funcsp, parent);
-            lex = nononconststatement(lex, funcsp, parent, false);
+            StartOfCaseGroup(parent);
+            StatementWithoutNonconst(parent, false);
             before->nosemi = true;
             expressionStatements.pop();
-            return lex;
+            inFunctionExpressionParsing = oldExpressionParsing;
+            return;
         case Keyword::default_:
-            EndOfCaseGroup(funcsp, parent);
+            EndOfCaseGroup(parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
-            lex = statement_default(lex, funcsp, parent);
+            ParseDefault(parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
-            StartOfCaseGroup(funcsp, parent);
-            lex = nononconststatement(lex, funcsp, parent, false);
+            StartOfCaseGroup(parent);
+            StatementWithoutNonconst(parent, false);
             before->nosemi = true;
             expressionStatements.pop();
-            return lex;
+            inFunctionExpressionParsing = oldExpressionParsing;
+            return;
         case Keyword::continue_:
-            lex = statement_continue(lex, funcsp, parent);
+            ParseContinue(parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             break;
         case Keyword::break_:
-            lex = statement_break(lex, funcsp, parent);
+            ParseBreak(parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             break;
         case Keyword::goto_:
-            lex = statement_goto(lex, funcsp, parent);
+            ParseGoto(parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             break;
         case Keyword::return_:
-            lex = statement_return(lex, funcsp, parent);
+            ParseReturn(parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             break;
@@ -3461,28 +3597,29 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
             break;
         case Keyword::asm_:
             canFallThrough = false;
-            lex = statement_asm(lex, funcsp, parent);
+            ParseAsm(parent);
             expressionStatements.pop();
-            return lex;
+            inFunctionExpressionParsing = oldExpressionParsing;
+            return;
         case Keyword::seh_try_:
             canFallThrough = false;
-            lex = statement_SEH(lex, funcsp, parent);
+            lex = ParseSEH(lex, funcsp, parent);
             break;
         case Keyword::seh_catch_:
         case Keyword::seh_finally_:
         case Keyword::seh_fault_:
             canFallThrough = false;
             error(ERR_SEH_HANDLER_WITHOUT_TRY);
-            lex = statement_SEH(lex, funcsp, parent);
+            lex = ParseSEH(lex, funcsp, parent);
             break;
         default: {
             canFallThrough = false;
             bool structured = false;
 
-            if (((startOfType(lex, &structured, false) &&
+            if (((TypeGenerator::StartOfType(lex, &structured, false) &&
                   ((!Optimizer::cparams.prm_cplusplus &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
-                   resolveToDeclaration(lex, structured)))) ||
+                   StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                 MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::constexpr_) || MATCHKW(lex, Keyword::decltype_) ||
                 MATCHKW(lex, Keyword::static_assert_))
             {
@@ -3491,13 +3628,13 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (((startOfType(lex, &structured, false) &&
+                while (((TypeGenerator::StartOfType(lex, &structured, false) &&
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
-                          resolveToDeclaration(lex, structured)))) ||
+                          StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                        MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::decltype_) ||
                        MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_))
                 {
-                        std::list<STATEMENT*>* prev = before->statements;
+                    std::list<Statement*>* prev = before->statements;
                     before->statements = nullptr;
                     declareAndInitialize = false;
                     if (start)
@@ -3509,7 +3646,7 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                     // this originally did the last existing statement as well
                     if (before->statements)
                     {
-                        markInitializers(*before->statements);
+                        MarkInitializersAsDeclarations(*before->statements);
                         if (prev)
                         {
                             auto temp = before->statements;
@@ -3534,18 +3671,21 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 }
                 expressionStatements.pop();
-                return lex;
+                inFunctionExpressionParsing = oldExpressionParsing;
+                return;
             }
             else
             {
                 isCallNoreturnFunction = false;
-                lex = statement_expr(lex, funcsp, parent);
+                inFunctionExpressionParsing = true;
+                ParseExpr(parent);
+                inFunctionExpressionParsing = false;
                 before->needlabel = isCallNoreturnFunction;
             }
         }
     }
     if (before->nosemi && expressionReturns.size())
-        expressionReturns.back() = std::move(std::pair<EXPRESSION*, TYPE*>(nullptr, &stdvoid));
+        expressionReturns.back() = std::move(std::pair<EXPRESSION*, Type*>(nullptr, &stdvoid));
     expressionStatements.pop();
     if (MATCHKW(lex, Keyword::semicolon_))
     {
@@ -3555,51 +3695,42 @@ LEXLIST* statement(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, 
     else
         before->hassemi = false;
     basisAttribs = {};
-    return lex;
+    inFunctionExpressionParsing = oldExpressionParsing;
 }
-static bool thunkmainret(SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool always)
+void StatementGenerator::StatementWithoutNonconst(std::list<FunctionBlock*>& parent, bool viacontrol)
+{
+    int old = funcsp->sb->nonConstVariableUsed;
+    SingleStatement(parent, viacontrol);
+    funcsp->sb->nonConstVariableUsed = old;
+}
+bool StatementGenerator::ThunkReturnInMain(std::list<FunctionBlock*>& parent, bool always)
 {
     if (always || (!strcmp(funcsp->name, "main") && !funcsp->sb->parentClass && !funcsp->sb->parentNameSpace))
     {
-        STATEMENT* s = stmtNode(nullptr, parent, StatementNode::return_);
-        s->select = intNode(ExpressionNode::c_i_, 0);
+        Statement* s = Statement::MakeStatement(nullptr, parent, StatementNode::return_);
+        s->select = MakeIntExpression(ExpressionNode::c_i_, 0);
         return true;
     }
     return false;
 }
-static void thunkThisReturns(std::list<STATEMENT*>* st, EXPRESSION* thisptr)
+void StatementGenerator::ReturnThIsPtr(std::list<Statement*>* st, EXPRESSION* thisptr)
 {
     for (auto stmt : *st)
     {
         if (stmt->lower)
-            thunkThisReturns(stmt->lower, thisptr);
+            ReturnThIsPtr(stmt->lower, thisptr);
         if (stmt->type == StatementNode::return_)
             stmt->select = thisptr;
     }
 }
-static void insertXCInfo(SYMBOL* funcsp)
+bool StatementGenerator::IsReturnTypeVoid(Type* tp)
 {
-    char name[2048];
-    SYMBOL* sym;
-    makeXCTab(funcsp);
-    Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
-    sym = makeID(StorageClass::global_, &stdpointer, nullptr, litlate(name));
-    sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-    sym->sb->decoratedName = sym->name;
-    sym->sb->allocate = true;
-    sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
-    funcsp->sb->xc->xcInitLab = codeLabel++;
-    funcsp->sb->xc->xcDestLab = codeLabel++;
-    funcsp->sb->xc->xclab = sym;
-}
-static bool isvoidreturntype(TYPE* tp, SYMBOL* funcsp)
-{
-    if (isvoid(tp))
+    if (tp->IsVoid())
         return true;
     if (tp->type == BasicType::templateparam_)
     {
         if (tp->templateParam->second->byClass.val)
-            return isvoid(tp->templateParam->second->byClass.val);
+            return tp->templateParam->second->byClass.val->IsVoid();
         if (tp->templateParam->second->byClass.dflt)
         {
             std::list<TEMPLATEPARAMPAIR> temp;
@@ -3613,19 +3744,19 @@ static bool isvoidreturntype(TYPE* tp, SYMBOL* funcsp)
                 if (param.front().second->byClass.val)
                 {
                     tp = param.front().second->byClass.val;
-                    return isvoid(tp);
+                    return tp->IsVoid();
                 }
             }
         }
     }
     return false;
 }
-LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, bool first)
+void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
 {
     auto before = parent.front();
-    BLOCKDATA* blockstmt = Allocate<BLOCKDATA>();
+    FunctionBlock* blockstmt = Allocate<FunctionBlock>();
     preProcessor->MarkStdPragma();
-    STATEMENT* st;
+    Statement* st;
     EXPRESSION* thisptr = nullptr;
     browse_blockstart(lex->data->errline);
     blockstmt->type = Keyword::begin_;
@@ -3640,9 +3771,9 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
     {
         int n = 1;
         browse_startfunc(funcsp, funcsp->sb->declline);
-        for (auto sp2 : *basetype(funcsp->tp)->syms)
+        for (auto sp2 : *funcsp->tp->BaseType()->syms)
         {
-            if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c2x && sp2->tp->type != BasicType::ellipse_ && !isvoid(sp2->tp) && sp2->sb->anonymous)
+            if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c2x && sp2->tp->type != BasicType::ellipse_ && !sp2->tp->IsVoid() && sp2->sb->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
             sp2->sb->destructed = false;
             localNameSpace->front()->syms->Add(sp2);
@@ -3653,7 +3784,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         {
             ParseMemberInitializers(funcsp->sb->parentClass, funcsp);
             thisptr =
-                thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false, false);
+                thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, funcsp->tp->BaseType()->syms, true, false, false);
         }
     }
     lex = getsym(); /* past { */
@@ -3665,17 +3796,17 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
     if (!Optimizer::cparams.prm_cplusplus)
     {
         auto prev = blockstmt->statements;
-        std::list<BLOCKDATA*> tempBlockData = {blockstmt};
+        std::list<FunctionBlock*> tempBlockData = {blockstmt};
         expressionStatements.push(&tempBlockData);
         // have to defer so we can get expression like constructor calls
-        while (startOfType(lex, nullptr, false))
+        while (TypeGenerator::StartOfType(lex, nullptr, false))
         {
             blockstmt->statements = nullptr;
             declareAndInitialize = false;
             lex = declare(lex, funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false, AccessLevel::public_);
             if (blockstmt->statements)
             {
-                markInitializers(*blockstmt->statements);
+                MarkInitializersAsDeclarations(*blockstmt->statements);
                 if (prev)
                     prev->insert(prev->end(), blockstmt->statements->begin(), blockstmt->statements->end());
                 else
@@ -3734,7 +3865,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         }
         else
         {
-            lex = statement(lex, funcsp, parent, false);
+            SingleStatement(parent, false);
         }
     }
     if (first)
@@ -3748,7 +3879,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         if (expressionReturns.size())
             expressionReturns.pop_back();
         
-        return lex;
+        return;
     }
     browse_blockend(endline = lex->data->errline);
     currentLineData(parent, lex, -!first);
@@ -3796,14 +3927,14 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
         {
-            thunkDestructorTail(parent, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, false);
+            thunkDestructorTail(parent, funcsp->sb->parentClass, funcsp, funcsp->tp->BaseType()->syms, false);
         }
     }
     if (Optimizer::cparams.prm_cplusplus)
         HandleEndOfSwitchBlock(parent);
     FreeLocalContext(parent, funcsp, codeLabel++);
-    if (first && !blockstmt->needlabel && !isvoidreturntype(basetype(funcsp->tp)->btp, funcsp) &&
-        basetype(funcsp->tp)->btp->type != BasicType::auto_ && !funcsp->sb->isConstructor && basetype(funcsp->tp)->btp->type != BasicType::void_)
+    if (first && !blockstmt->needlabel && !IsReturnTypeVoid(funcsp->tp->BaseType()->btp) &&
+        funcsp->tp->BaseType()->btp->type != BasicType::auto_ && !funcsp->sb->isConstructor && funcsp->tp->BaseType()->btp->type != BasicType::void_)
     {
         if (funcsp->sb->attribs.inheritable.linkage3 == Linkage::noreturn_)
         {
@@ -3813,15 +3944,15 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         }
         else if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus)
         {
-            if (!thunkmainret(funcsp, parent, false))
+            if (!ThunkReturnInMain(parent, false))
             {
-                if (isref(basetype(funcsp->tp)->btp))
+                if (funcsp->tp->BaseType()->btp->IsRef())
                     error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
                 else
                 {
                     error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
                     if (Optimizer::chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
-                        thunkmainret(funcsp, parent, true);
+                        ThunkReturnInMain(parent, true);
                 }
             }
         }
@@ -3829,7 +3960,7 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         {
             error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
             if (Optimizer::chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
-                thunkmainret(funcsp, parent, true);
+                ThunkReturnInMain(parent, true);
         }
     }
     needkw(&lex, Keyword::end_);
@@ -3837,10 +3968,10 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
     {
         if (funcsp->sb->hasTry)
         {
-            stmtNode(nullptr, parent, StatementNode::return_);
+            Statement::MakeStatement(nullptr, parent, StatementNode::return_);
             auto it = blockstmt->statements->end();
             --it;
-            lex = statement_catch(lex, funcsp, parent, retlab, startlab, 0);
+            ParseCatch(parent, retlab, startlab, 0);
             if (++it != blockstmt->statements->end())
             {
                 int label = (*it)->altlabel;
@@ -3858,55 +3989,53 @@ LEXLIST* compound(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent, b
         SYMBOL* sym = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
         if (sym)
         {
-            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
-            STATEMENT* st = stmtNode(lex, parent, StatementNode::expr_);
-            INITLIST* arg1 = Allocate<INITLIST>();  // exception table
+            CallSite* funcparams = Allocate<CallSite>();
+            Statement* st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+            Argument* arg1 = Allocate<Argument>();  // exception table
             makeXCTab(funcsp);
-            sym = (SYMBOL*)basetype(sym->tp)->syms->front();
+            sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
             funcparams->ascall = true;
             funcparams->sp = sym;
             funcparams->functp = sym->tp;
-            funcparams->fcall = varNode(ExpressionNode::pc_, sym);
+            funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
             funcparams->arguments = initListListFactory.CreateList();
             funcparams->arguments->push_back(arg1);
-            arg1->exp = varNode(ExpressionNode::auto_, funcsp->sb->xc->xctab);
+            arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;
-            st->select = exprNode(ExpressionNode::func_, nullptr, nullptr);
-            st->select->v.func = funcparams;
+            st->select = MakeExpression(funcparams);
         }
     }
     if (first)
     {
         if (thisptr)
         {
-            stmtNode(nullptr, parent, StatementNode::return_);
-            thunkThisReturns(blockstmt->statements, thisptr);
+            Statement::MakeStatement(nullptr, parent, StatementNode::return_);
+            ReturnThIsPtr(blockstmt->statements, thisptr);
         }
     }
     auto it = parent.begin();
     ++it;
-    std::list<BLOCKDATA*> dummy(it, parent.end());
+    std::list<FunctionBlock*> dummy(it, parent.end());
     parent.pop_front();
-    AddBlock(lex, parent, blockstmt);
+    blockstmt->AddThis(lex, parent);
     preProcessor->ReleaseStdPragma();
-    return lex;
 }
-void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
+void StatementGenerator::AssignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
 {
-    TYPE* tp = basetype(param->tp);
+    Type* tp = param->tp->BaseType();
     param->sb->parent = funcsp;
     if (tp->type == BasicType::ellipse_)
         ellipsePos = *base;
     if (tp->type == BasicType::void_)
         return;
-    if (isstructured(tp) && !basetype(tp)->sp->sb->pureDest)
+    if (tp->IsStructured() && !tp->BaseType()->sp->sb->pureDest)
         hasXCInfo = true;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
     {
         // calculate index for CIL
         param->sb->offset = (*base)++;
     }
-    else if (!ispointer(tp) && tp->size <= Optimizer::chosenAssembler->arch->parmwidth)
+    else if (!tp->IsPtr() && tp->size <= Optimizer::chosenAssembler->arch->parmwidth)
     {
         param->sb->offset = *base + funcvaluesize(tp->size);
         *base += Optimizer::chosenAssembler->arch->parmwidth;
@@ -3929,30 +4058,30 @@ void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
             *base += Optimizer::chosenAssembler->arch->parmwidth - *base % Optimizer::chosenAssembler->arch->parmwidth;
     }
 }
-static void assignCParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, std::list<BLOCKDATA*>& block)
+void StatementGenerator::AssignCParams(int* base, SymbolTable<SYMBOL>* params, Type* rv, std::list<FunctionBlock*>& block)
 {
     (void)rv;
     for (auto sym : *params)
     {
-        STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
-        s->select = varNode(ExpressionNode::auto_, sym);
-        assignParam(funcsp, base, sym);
+        Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
+        s->select = MakeExpression(ExpressionNode::auto_, sym);
+        StatementGenerator::AssignParam(funcsp, base, sym);
     }
 }
-static void assignPascalParams(LEXLIST* lex, SYMBOL* funcsp, int* base, SymbolTable<SYMBOL>* params, TYPE* rv, std::list<BLOCKDATA*>& block)
+void StatementGenerator::AssignPascalParams(int* base, SymbolTable<SYMBOL>* params, Type* rv, std::list<FunctionBlock*>& block)
 {
     std::stack<SYMBOL*> stk;
     for (auto sym : *params)
         stk.push(sym);
     while (!stk.empty())
     {
-        assignParam(funcsp, base, stk.top());
-        STATEMENT* s = stmtNode(lex, block, StatementNode::varstart_);
-        s->select = varNode(ExpressionNode::auto_, stk.top());
+        StatementGenerator::AssignParam(funcsp, base, stk.top());
+        Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
+        s->select = MakeExpression(ExpressionNode::auto_, stk.top());
         stk.pop();
     }
 }
-static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& block)
+void StatementGenerator::AssignParameterSizes(std::list<FunctionBlock*>& block)
 {
     int base;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
@@ -3961,11 +4090,11 @@ static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
         base = Optimizer::chosenAssembler->arch->retblocksize;
     if (funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_)
     {
-        assignPascalParams(lex, funcsp, &base, basetype(funcsp->tp)->syms, basetype(funcsp->tp)->btp, block);
+        AssignPascalParams(&base, funcsp->tp->BaseType()->syms, funcsp->tp->BaseType()->btp, block);
     }
     else
     {
-        if ((isstructured(basetype(funcsp->tp)->btp) && !basetype(basetype(funcsp->tp)->btp)->sp->sb->structuredAliasType) || basetype(basetype(funcsp->tp)->btp)->type == BasicType::memberptr_ || isbitint(basetype(funcsp->tp)->btp))
+        if ((funcsp->tp->BaseType()->btp->IsStructured() && !funcsp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType) || funcsp->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_ || funcsp->tp->BaseType()->btp->IsBitInt())
         {
             // handle structured return values
             if (Optimizer::chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
@@ -3985,72 +4114,15 @@ static void assignParameterSizes(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDA
         if (ismember(funcsp))
         {
             // handle 'this' pointer
-            assignParam(funcsp, &base, (SYMBOL*)params->p);
+            StatementGenerator::AssignParam(&base, (SYMBOL*)params->p);
             params = params->next;
         }
         */
-        assignCParams(lex, funcsp, &base, basetype(funcsp->tp)->syms, basetype(funcsp->tp)->btp, block);
+        AssignCParams(&base, funcsp->tp->BaseType()->syms, funcsp->tp->BaseType()->btp, block);
     }
     funcsp->sb->paramsize = base - Optimizer::chosenAssembler->arch->retblocksize;
 }
-static void checkUndefinedStructures(SYMBOL* funcsp)
-{
-    TYPE* tp = basetype(funcsp->tp)->btp;
-    if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
-    {
-        tp = PerformDeferredInitialization(tp, funcsp);
-        if (!basetype(tp)->sp->tp->syms)
-        {
-            currentErrorLine = 0;
-            errorsym(ERR_STRUCT_NOT_DEFINED, basetype(tp)->sp);
-        }
-    }
-    for (auto sym : *basetype(funcsp->tp)->syms)
-    {
-        TYPE* tp = basetype(sym->tp);
-        if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
-        {
-            if (basetype(tp)->sp->sb->templateLevel)
-            {
-                auto sym1 = basetype(tp)->sp;
-                std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
-                while (!stk.empty())
-                    stk.pop();
-                auto it = sym1->templateParams->begin();
-                auto ite = sym1->templateParams->end();
-                for ( ; it != ite ;)
-                {
-                    if (it->second->packed && it->second->byPack.pack)
-                    {
-                        stk.push(it);
-                        stk.push(ite);
-                        ite = it->second->byPack.pack->end();
-                        it = it->second->byPack.pack->begin();
-                    }
-                    it->second->byClass.dflt = it->second->byClass.val;
-                    if (++it != ite && !stk.empty())
-                    {
-                        ite = stk.top();
-                        stk.pop();
-                        it = stk.top();
-                        stk.pop();
-                        ++it;
-                    }
-                }
-                sym1 = GetClassTemplate(sym1, sym1->templateParams, false);
-                if (sym1)
-                    basetype(tp)->sp = sym1;
-            }
-            tp = PerformDeferredInitialization(tp, funcsp);
-            if (!basetype(tp)->sp->tp->syms)
-            {
-                currentErrorLine = 0;
-                errorsym(ERR_STRUCT_NOT_DEFINED, basetype(tp)->sp);
-            }
-        }
-    }
-}
-static int inlineStatementCount(std::list<STATEMENT*>* block)
+int StatementGenerator::CountInlineStatements(std::list<Statement*>* block)
 {
     int rv = 0;
     if (block)
@@ -4084,11 +4156,11 @@ static int inlineStatementCount(std::list<STATEMENT*>* block)
                     break;
                 case StatementNode::switch_:
                     rv++;
-                    rv += inlineStatementCount(stmt->lower);
+                    rv += CountInlineStatements(stmt->lower);
                     break;
                 case StatementNode::block_:
                     rv++;
-                    rv += inlineStatementCount(stmt->lower) + inlineStatementCount(stmt->blockTail);
+                    rv += CountInlineStatements(stmt->lower) + CountInlineStatements(stmt->blockTail);
                     break;
                 case StatementNode::passthrough_:
                 case StatementNode::nop_:
@@ -4107,7 +4179,7 @@ static int inlineStatementCount(std::list<STATEMENT*>* block)
     }
     return rv;
 }
-static void handleInlines(SYMBOL* funcsp)
+void StatementGenerator::HandleInlines()
 {
     /* so it will get instantiated as a virtual function */
     if (!funcsp->sb->attribs.inheritable.isInline)
@@ -4142,41 +4214,40 @@ static void handleInlines(SYMBOL* funcsp)
         if (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
         {
 
-            for (auto head : *basetype(funcsp->tp)->syms)
+            for (auto head : *funcsp->tp->BaseType()->syms)
             {
-                if (isstructured(head->tp))
+                if (head->tp->IsStructured())
                 {
                     funcsp->sb->noinline = true;
                     break;
                 }
             }
         }
-        if (inlineStatementCount(funcsp->sb->inlineFunc.stmt) > 100)
+        if (CountInlineStatements(funcsp->sb->inlineFunc.stmt) > 100)
         {
             funcsp->sb->noinline = true;
         }
     }
 }
-void parseNoexcept(SYMBOL* funcsp)
+void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
 {
-    if (funcsp->sb->deferredNoexcept && funcsp->sb->deferredNoexcept != (LEXLIST*)-1)
+    if (funcsp->sb->deferredNoexcept && funcsp->sb->deferredNoexcept != (LexList*)-1)
     {
         dontRegisterTemplate++;
-        LEXLIST* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
-        STRUCTSYM s, t;
+        LexList* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         int n = PushTemplateNamespace(funcsp);
+        enclosingDeclarations.Mark();
         if (funcsp->sb->parentClass)
         {
-            s.str = funcsp->sb->parentClass;
-            addStructureDeclaration(&s);
-            t.tmpl = funcsp->sb->parentClass->templateParams;
-            if (t.tmpl)
-                addTemplateDeclaration(&t);
+            enclosingDeclarations.Add(funcsp->sb->parentClass);
+            auto tpl = funcsp->sb->parentClass->templateParams;
+            if (tpl)
+                enclosingDeclarations.Add(tpl);
         }
-        TYPE* tp = nullptr;
+        Type* tp = nullptr;
         EXPRESSION* exp = nullptr;
         AllocateLocalContext(emptyBlockdata, nullptr, 0);
-        for (auto sp2 : *basetype(funcsp->tp)->syms)
+        for (auto sp2 : *funcsp->tp->BaseType()->syms)
         {
             localNameSpace->front()->syms->Add(sp2);
         }
@@ -4194,18 +4265,13 @@ void parseNoexcept(SYMBOL* funcsp)
                 funcsp->sb->noExcept = true;
         }
         SetAlternateLex(nullptr);
-        if (funcsp->sb->parentClass)
-        {
-            if (t.tmpl)
-                dropStructureDeclaration();
-            dropStructureDeclaration();
-        }
+        enclosingDeclarations.Release();
         PopTemplateNamespace(n);
-        funcsp->sb->deferredNoexcept = (LEXLIST*)-1;
+        funcsp->sb->deferredNoexcept = (LexList*)-1;
         dontRegisterTemplate--;
     }
 }
-LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
+void StatementGenerator::Body()
 {
     int oldNoexcept = funcsp->sb->noExcept;
     if (bodyIsDestructor)
@@ -4222,9 +4288,9 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     SymbolTable<SYMBOL>* oldSyms = localNameSpace->front()->syms;
     SymbolTable<SYMBOL>* oldLabelSyms = labelSyms;
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
-    BLOCKDATA* block = Allocate<BLOCKDATA>();
-    std::list<BLOCKDATA*> parent { block };
-    std::list<STATEMENT*>* startStmt;
+    FunctionBlock* block = Allocate<FunctionBlock>();
+    std::list<FunctionBlock*> parent { block };
+    std::list<Statement*>* startStmt;
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
     bool oldHasFuncCall = hasFuncCall;
@@ -4233,7 +4299,6 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     bool oldNoExcept = noExcept;
     int oldEllipsePos = ellipsePos;
     ellipsePos = 0;
-    constexprfunctioninit(true);
     noExcept = true;
     expressions = 0;
     controlSequences = 0;
@@ -4250,11 +4315,17 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
     theCurrentFunc = funcsp;
-    basetype(funcsp->tp)->btp = ResolveTemplateSelectors(funcsp, basetype(funcsp->tp)->btp);
+
+
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        InitializeFunctionArguments(funcsp, true);
+    }
+
     if (inTemplateHeader)
         templateNestingCount--;
-    checkUndefinedStructures(funcsp);
-    parseNoexcept(funcsp);
+    CheckUndefinedStructures(funcsp);
+    StatementGenerator::ParseNoExceptClause(funcsp);
     if (!inNoExceptHandler)
     {
         FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
@@ -4266,16 +4337,16 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         }
         funcsp->sb->declaring = true;
         labelSyms = symbols.CreateSymbolTable();
-        assignParameterSizes(lex, funcsp, parent);
+        StatementGenerator::AssignParameterSizes(parent);
         funcsp->sb->startLine = lex->data->errline;
-        lex = compound(lex, funcsp, parent, true);
-        if (isstructured(basetype(funcsp->tp)->btp))
-            assignParameterSizes(lex, funcsp, parent);
+        Compound(parent, true);
+        if (funcsp->tp->BaseType()->btp->IsStructured())
+            StatementGenerator::AssignParameterSizes(parent);
         refreshBackendParams(funcsp);
         checkUnlabeledReferences(parent);
         checkGotoPastVLA(block->statements, true);
-        if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
-            basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
+        if (funcsp->tp->BaseType()->btp->IsAutoType() && !templateNestingCount)
+            funcsp->tp->BaseType()->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
         {
             if ((!oldNoexcept || funcsp->sb->isDestructor) && funcsp->sb->noExcept && !funcsp->sb->deferredNoexcept && !noExcept)
@@ -4313,7 +4384,7 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
         {
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-            funcsp->sb->inlineFunc.stmt->push_back(stmtNode(lex, emptyBlockdata, StatementNode::block_));
+            funcsp->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(lex, emptyBlockdata, StatementNode::block_));
             funcsp->sb->inlineFunc.stmt->front()->lower = block->statements;
             funcsp->sb->inlineFunc.stmt->front()->blockTail = block->blockTail;
             funcsp->sb->declaring = false;
@@ -4325,9 +4396,9 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
             // if it is variadic don't allow it to be inline
             if (funcsp->sb->attribs.inheritable.isInline)
             {
-                if (basetype(funcsp->tp)->syms->size())
+                if (funcsp->tp->BaseType()->syms->size())
                 {
-                    if (basetype(funcsp->tp)->syms->back()->tp->type == BasicType::ellipse_)
+                    if (funcsp->tp->BaseType()->syms->back()->tp->type == BasicType::ellipse_)
                         funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline =
                             false;
                 }
@@ -4335,9 +4406,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
         }
         if (IsCompiler() && funcNesting == 1)  // top level function
             localFree();
-        handleInlines(funcsp);
+        HandleInlines();
     }
-    constexprfunctioninit(false);
     ellipsePos = oldEllipsePos;
     noExcept = oldNoExcept;
     controlSequences = oldControlSequences;
@@ -4359,9 +4429,8 @@ LEXLIST* body(LEXLIST* lex, SYMBOL* funcsp)
     templateNestingCount = oldNestingCount;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
-    return lex;
 }
-void bodygen(SYMBOL* funcsp)
+void StatementGenerator::BodyGen()
 {
     if (funcsp->sb->inlineFunc.stmt)
     {

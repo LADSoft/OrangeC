@@ -56,6 +56,7 @@
 #include "ildata.h"
 #include "stmt.h"
 #include "OptUtils.h"
+#include "lex.h"
 #include "help.h"
 #include "memory.h"
 #include "OptUtils.h"
@@ -72,6 +73,7 @@
 #include "templatededuce.h"
 #include "constopt.h"
 #include "FNV_hash.h"
+#include "types.h"
 
 namespace Parser
 {
@@ -93,7 +95,7 @@ static int inline_level;
 static int stackblockOfs;
 
 Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size);
-Optimizer::IMODE* gen_comma_(EXPRESSION* node, SYMBOL* funcsp);
+Optimizer::IMODE* gen_void_(EXPRESSION* node, SYMBOL* funcsp);
 Optimizer::IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp);
 void truejmp(EXPRESSION* node, SYMBOL* funcsp, int label);
 void falsejmp(EXPRESSION* node, SYMBOL* funcsp, int label);
@@ -130,7 +132,7 @@ void DumpIncDec(SYMBOL* funcsp)
     incdecListLast = incdecList;
     while (l)
     {
-        gen_comma_((EXPRESSION*)l->data, funcsp);
+        gen_void_((EXPRESSION*)l->data, funcsp);
         l = l->next;
     }
 }
@@ -297,9 +299,9 @@ static int bitintbits(EXPRESSION* node)
             case ExpressionNode::c_ubitint_:
             case ExpressionNode::x_ubitint_:
                 return node->v.b.bits;
-            case ExpressionNode::func_:
+            case ExpressionNode::callsite_:
             {
-                if (node->v.func->returnSP && isbitint(node->v.func->returnSP->tp))
+                if (node->v.func->returnSP && node->v.func->returnSP->tp->IsBitInt())
                 {
                     return (node->v.func->returnSP->tp->type == BasicType::bitint_ ? -1 : 1) *
                            node->v.func->returnSP->tp->bitintbits;
@@ -703,8 +705,8 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             siz1 = ISZ_UINT;
     }
     EXPRESSION* esym = GetSymRef(node->left);
-    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != ExpressionNode::labcon_ && !isstructured(esym->v.sp->tp) && (!isref(esym->v.sp->tp) || !isstructured(basetype(esym->v.sp->tp)->btp)) && !esym->v.sp->sb->thisPtr &&
-//    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != ExpressionNode::labcon_ && !isstructured(esym->v.sp->tp) && !esym->v.sp->sb->thisPtr &&
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != ExpressionNode::labcon_ && !esym->v.sp->tp->IsStructured() && (!esym->v.sp->tp->IsRef() || !esym->v.sp->tp->BaseType()->btp->IsStructured()) && !esym->v.sp->sb->thisPtr &&
+//    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != ExpressionNode::labcon_ && !esym->v.sp->tp->IsStructured() && !esym->v.sp->sb->thisPtr &&
         siz1 != sizeFromType(esym->v.sp->tp))
     {
         // natural size of the symbol isn't the same as the size we are saving/loading
@@ -753,7 +755,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     {
         if (node->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, node->left->right))
         {
-            if  (node->left->left->type == ExpressionNode::func_ || node->left->left->type == ExpressionNode::thisref_)
+            if  (node->left->left->type == ExpressionNode::callsite_ || node->left->left->type == ExpressionNode::thisref_)
             {
                 ap1 = gen_expr(funcsp, node->left->left, store ? 0 : F_RETURNREFBYVALUE, ISZ_ADDR);
             }
@@ -795,7 +797,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         }
         else if (node->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, node->left->left))
         {
-            if (node->left->right->type == ExpressionNode::func_ || node->left->right->type == ExpressionNode::thisref_)
+            if (node->left->right->type == ExpressionNode::callsite_ || node->left->right->type == ExpressionNode::thisref_)
             {
                 ap1 = gen_expr(funcsp, node->left->right, store ? 0 : F_RETURNREFBYVALUE, ISZ_ADDR);
             }
@@ -839,9 +841,9 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     else if ((Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND) &&
              (node->left->type == ExpressionNode::global_ || node->left->type == ExpressionNode::auto_) &&
-             ((isarray(node->left->v.sp->tp) && node->left->v.sp->sb->storage_class != StorageClass::parameter_ &&
-               !basetype(node->left->v.sp->tp)->msil) ||
-              isstructured(node->left->v.sp->tp)))
+             ((node->left->v.sp->tp->IsArray() && node->left->v.sp->sb->storage_class != StorageClass::parameter_ &&
+               !node->left->v.sp->tp->BaseType()->msil) ||
+              node->left->v.sp->tp->IsStructured()))
     {
         ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
         ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
@@ -1434,7 +1436,7 @@ static void DumpLogicalDestructors(SYMBOL* funcsp, std::list<EXPRESSION*>* node)
 {
     for (auto node1 : *node)
     {
-        gen_comma_(node1, funcsp);
+        gen_void_(node1, funcsp);
     }
 }
 Optimizer::IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
@@ -1519,7 +1521,7 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
             if (ap2 != ap3)
                 Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
             Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
-            Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get((TYPE*)node->altdata);
+            Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get((Type*)node->altdata);
             Optimizer::intermed_tail->blockassign = true;
             Optimizer::intermed_tail->oldmode = mode;
         }
@@ -1527,7 +1529,7 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
     else
     {
         bool candidate =
-            node->size && isstructured(node->size) && basetype(node->size)->sp && basetype(node->size)->sp->sb->structuredAliasType;
+            node->size && node->size->IsStructured() && node->size->BaseType()->sp && node->size->BaseType()->sp->sb->structuredAliasType;
         if (candidate)
         {
             auto epx = node->right;
@@ -1535,17 +1537,17 @@ Optimizer::IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
             {
                 epx = epx->left;
             }
-            candidate = epx->type != ExpressionNode::func_ || isstructured(basetype(epx->v.sp->tp)->btp);
+            candidate = epx->type != ExpressionNode::callsite_ || epx->v.sp->tp->BaseType()->btp->IsStructured();
         }
         if (candidate)
         {
             EXPRESSION* varl = node->left;
             EXPRESSION* varr = node->right;
-            if (varr->type != ExpressionNode::func_ && varr->type != ExpressionNode::thisref_)
-                deref(basetype(node->size)->sp->sb->structuredAliasType, &varr);
-            int size = sizeFromType(basetype(node->size)->sp->sb->structuredAliasType);
+            if (varr->type != ExpressionNode::callsite_ && varr->type != ExpressionNode::thisref_)
+                deref(node->size->BaseType()->sp->sb->structuredAliasType, &varr);
+            int size = sizeFromType(node->size->BaseType()->sp->sb->structuredAliasType);
             ap1 = gen_expr(funcsp, varl, 0, size);
-            ap6 = indnode(ap1, sizeFromType(basetype(node->size)->sp->sb->structuredAliasType));
+            ap6 = indnode(ap1, sizeFromType(node->size->BaseType()->sp->sb->structuredAliasType));
             ap3 = gen_expr(funcsp, varr, F_VOL | F_RETURNSTRUCTBYVALUE, size);
             ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
             if (ap2 != ap3)
@@ -1587,13 +1589,13 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
         Optimizer::gen_icode(Optimizer::i__initobj, nullptr, ap, nullptr);
         return ap1;
     }
-    else if (node->size && isstructured(node->size) && basetype(node->size)->sp && basetype(node->size)->sp->sb->structuredAliasType)
+    else if (node->size && node->size->IsStructured() && node->size->BaseType()->sp && node->size->BaseType()->sp->sb->structuredAliasType)
     {
         Optimizer::IMODE *ap1;
         EXPRESSION *var = node->left;
-        if (var->type != ExpressionNode::func_ && var->type != ExpressionNode::thisref_)
-            deref(basetype(node->size)->sp->sb->structuredAliasType, &var);
-        int size = sizeFromType(basetype(node->size)->sp->sb->structuredAliasType);
+        if (var->type != ExpressionNode::callsite_ && var->type != ExpressionNode::thisref_)
+            deref(node->size->BaseType()->sp->sb->structuredAliasType, &var);
+        int size = sizeFromType(node->size->BaseType()->sp->sb->structuredAliasType);
         ap1 = gen_expr(funcsp, var, F_STORE, size);
         Optimizer::gen_icode(Optimizer::i_assn, ap1, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
         return (ap1);
@@ -1687,12 +1689,12 @@ Optimizer::IMODE* gen_cpsizeof(EXPRESSION* node, SYMBOL* funcsp, bool cp, int fl
     return ap1;
 }
 /*-------------------------------------------------------------------------*/
-static void PushArrayLimits(SYMBOL* funcsp, TYPE* tp)
+static void PushArrayLimits(SYMBOL* funcsp, Type* tp)
 {
-    if (!tp || !isarray(tp))
+    if (!tp || !tp->IsArray())
         return;
-    int n1 = basetype(tp)->size;
-    int n2 = basetype(basetype(tp)->btp)->size;
+    int n1 = tp->BaseType()->size;
+    int n2 = tp->BaseType()->btp->BaseType()->size;
     if (n1 && n2)
     {
         Optimizer::IMODE* ap = Optimizer::tempreg(-ISZ_UINT, 0);
@@ -1702,13 +1704,13 @@ static void PushArrayLimits(SYMBOL* funcsp, TYPE* tp)
     else
     {
         Optimizer::IMODE* ap;
-        if (basetype(tp)->esize)
-            ap = gen_expr(funcsp, basetype(tp)->esize, 0, -ISZ_UINT);
+        if (tp->BaseType()->esize)
+            ap = gen_expr(funcsp, tp->BaseType()->esize, 0, -ISZ_UINT);
         else
             ap = Optimizer::make_immed(-ISZ_UINT, 1);  // not really creating something, but give it a size so we can proceed.
         Optimizer::gen_icode(Optimizer::i_parm, 0, ap, 0);
     }
-    PushArrayLimits(funcsp, basetype(tp)->btp);
+    PushArrayLimits(funcsp, tp->BaseType()->btp);
 }
 
 Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
@@ -1728,11 +1730,11 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
     (void)size;
     if (node->right->type == ExpressionNode::msil_array_init_)
     {
-        TYPE* base = node->right->v.tp;
+        Type* base = node->right->v.tp;
         PushArrayLimits(funcsp, node->right->v.tp);
-        while (isarray(base))
-            base = basetype(base)->btp;
-        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, isstructured(base) ? ISZ_OBJECT : sizeFromType(base));
+        while (base->IsArray())
+            base = base->BaseType()->btp;
+        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, base->IsStructured() ? ISZ_OBJECT : sizeFromType(base));
         ap2 = Allocate<Optimizer::IMODE>();
         ap2->mode = Optimizer::i_immed;
         ap2->offset = Optimizer::SymbolManager::Get(node->right);
@@ -1741,9 +1743,9 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
     }
     else if (node->left->type == ExpressionNode::msil_array_access_)
     {
-        TYPE* base = node->left->v.msilArray->tp;
-        while (isarray(base))
-            base = basetype(base)->btp;
+        Type* base = node->left->v.msilArray->tp;
+        while (base->IsArray())
+            base = base->BaseType()->btp;
         gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
         ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), sizeFromType(base));
         // Optimizer::gen_icode(Optimizer::i_parm, 0, ap2, 0);
@@ -1794,7 +1796,7 @@ Optimizer::IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                     case ExpressionNode::global_:
                     case ExpressionNode::pc_:
                     case ExpressionNode::threadlocal_:
-                        if (isstructured(node->right->v.sp->tp))
+                        if (node->right->v.sp->tp->IsStructured())
                         {
                             ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE) | F_OBJECT, natural_size(node->left));
                             break;
@@ -2008,18 +2010,18 @@ static EXPRESSION* aliasToTemp(SYMBOL* funcsp, EXPRESSION* in)
     auto expt = in;
     if (expt->type == ExpressionNode::thisref_)
         expt = expt->left;
-    if (expt->type == ExpressionNode::func_)
+    if (expt->type == ExpressionNode::callsite_)
     {
         if (!expt->v.func->sp->sb->isConstructor)
         {
-            if (isstructured(basetype(expt->v.func->sp->tp)->btp))
+            if (expt->v.func->sp->tp->BaseType()->btp->IsStructured())
             {
-                auto srp = basetype(basetype(expt->v.func->sp->tp)->btp);
+                auto srp = expt->v.func->sp->tp->BaseType()->btp->BaseType();
                 if (srp && srp->sp->sb->structuredAliasType)
                 {
                     auto expx = tempVar(srp);
-                    expx = exprNode(ExpressionNode::assign_, expx, in);
-                    in = exprNode(ExpressionNode::comma_, expx, expx->left);
+                    expx = MakeExpression(ExpressionNode::assign_, expx, in);
+                    in = MakeExpression(ExpressionNode::comma_, expx, expx->left);
                 }
             }
         }
@@ -2027,7 +2029,7 @@ static EXPRESSION* aliasToTemp(SYMBOL* funcsp, EXPRESSION* in)
     return in;
 }
 /*-------------------------------------------------------------------------*/
-int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, int flags)
+int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, Type* argtp, int flags)
 /*
  *      push the operand expression onto the stack.
  */
@@ -2038,16 +2040,27 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
     int temp;
     int rv = 0;
     EXPRESSION* exp = getFunc(ep);
+    bool complexblock = false;
     if (!exp && ep->type == ExpressionNode::comma_)
     {
         exp = ep->left;
         if (exp && exp->type != ExpressionNode::blockassign_ && exp->type != ExpressionNode::blockclear_)
-            exp = nullptr;
+        {
+            if (exp->type != ExpressionNode::assign_ || exp->right->type != ExpressionNode::auto_ || !exp->right->v.sp->sb->stackblock)
+            {
+                exp = nullptr;
+            }
+            else
+            {
+                complexblock = true;
+                exp = exp->right;
+            }
+        }
     }
     if (exp)
     {
         EXPRESSION* ep1 = exp;
-        if (exp->type == ExpressionNode::func_)
+        if (exp->type == ExpressionNode::callsite_)
         {
 
             exp = ep1->v.func->returnEXP;
@@ -2060,7 +2073,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
         {
             exp = ep;
         }
-        else
+        else if (!complexblock)
         {
             exp = exp->left;
         }
@@ -2152,7 +2165,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE* argtp, 
 
 /*-------------------------------------------------------------------------*/
 
-static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXPRESSION* valist)
+static int push_stackblock(Type* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXPRESSION* valist)
 /*
  * Push a structure on the stack
  */
@@ -2226,7 +2239,7 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXP
 
 /*-------------------------------------------------------------------------*/
 
-static int gen_parm(INITLIST* a, SYMBOL* funcsp)
+static int gen_parm(Argument* a, SYMBOL* funcsp)
 /*
  *      push a list of parameters onto the stack and return the
  *      size of parameters pushed.
@@ -2240,10 +2253,10 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             return 0;
     }
 
-    if (ispointer(a->tp) || isref(a->tp))
+    if (a->tp->IsPtr() || a->tp->IsRef())
     {
-        TYPE* btp = basetype(a->tp);
-        if (btp->vla || basetype(btp->btp)->vla)
+        Type* btp = a->tp->BaseType();
+        if (btp->vla || btp->btp->BaseType()->vla)
         {
             rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
             DumpIncDec(funcsp);
@@ -2251,8 +2264,8 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             return rv;
         }
     }
-    if ((!Optimizer::cparams.prm_cplusplus && isstructured(a->tp)) ||
-        ((Optimizer::architecture == ARCHITECTURE_MSIL) && isarray(a->tp) && basetype(a->tp)->msil))
+    if ((!Optimizer::cparams.prm_cplusplus && a->tp->IsStructured()) ||
+        ((Optimizer::architecture == ARCHITECTURE_MSIL) && a->tp->IsArray() && a->tp->BaseType()->msil))
     {
         if (a->exp->type != ExpressionNode::stackblock_ && (Optimizer::architecture == ARCHITECTURE_MSIL))
         {
@@ -2273,11 +2286,11 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
                 rv = push_param(a->exp, funcsp, a->valist ? a->exp : nullptr, a->tp, F_OBJECT);
             }
         }
-        else if (basetype(a->tp)->sp->sb->structuredAliasType)
+        else if (a->tp->BaseType()->sp->sb->structuredAliasType)
         {
             EXPRESSION* val = a->exp->left;
-            if (val->type != ExpressionNode::func_ && val->type != ExpressionNode::thisref_)
-                deref(basetype(a->tp)->sp->sb->structuredAliasType, &val);
+            if (val->type != ExpressionNode::callsite_ && val->type != ExpressionNode::thisref_)
+                deref(a->tp->BaseType()->sp->sb->structuredAliasType, &val);
             rv = push_param(val, funcsp, nullptr, a->tp, 0);
         }
         else
@@ -2287,14 +2300,14 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     }
     else if (a->exp->type == ExpressionNode::stackblock_)
     {
-        if (a->tp->type != BasicType::memberptr_ && basetype(a->tp)->sp->sb->structuredAliasType)
+        if (a->tp->type != BasicType::memberptr_ && a->tp->BaseType()->sp->sb->structuredAliasType)
         {
             EXPRESSION *val = a->exp->left, *val2 = val;
             if (val2->type == ExpressionNode::comma_)
                 val2 = val2->right;
-            if (val2->type != ExpressionNode::func_ && val2->type != ExpressionNode::thisref_)
+            if (val2->type != ExpressionNode::callsite_ && val2->type != ExpressionNode::thisref_ && !isarithmeticconst(val2))
             {
-                deref(basetype(a->tp)->sp->sb->structuredAliasType, &val);
+                deref(a->tp->BaseType()->sp->sb->structuredAliasType, &val);
             }
             rv = push_param(val, funcsp, nullptr, a->tp, 0);
         }
@@ -2303,7 +2316,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
         }
     }
-    else if (isstructured(a->tp) && a->exp->type == ExpressionNode::thisref_)  // constructor
+    else if (a->tp->IsStructured() && a->exp->type == ExpressionNode::thisref_)  // constructor
     {
         EXPRESSION* ths = a->exp->v.t.thisptr;
         if (ths && ths->type == ExpressionNode::auto_ && ths->v.sp->sb->stackblock)
@@ -2331,7 +2344,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     else
     {
         int flags = 0;
-        if (isstructured(a->tp) && basetype(a->tp)->sp->sb->structuredAliasType)
+        if (a->tp->IsStructured() && a->tp->BaseType()->sp->sb->structuredAliasType)
             flags = F_RETURNSTRUCTBYVALUE;
         rv = push_param(a->exp, funcsp, a->valist ? a->exp : nullptr, a->tp, flags);
     }
@@ -2339,25 +2352,25 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     push_nesting += rv;
     return rv;
 }
-static int sizeParam(INITLIST* a, SYMBOL* funcsp)
+static int sizeParam(Argument* a, SYMBOL* funcsp)
 {
     int rv;
-    if (isbitint(a->tp))
+    if (a->tp->IsBitInt())
     {
-        rv = basetype(a->tp)->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
+        rv = a->tp->BaseType()->bitintbits + Optimizer::chosenAssembler->arch->bitintunderlying - 1;
         rv /= Optimizer::chosenAssembler->arch->bitintunderlying;
         rv *= Optimizer::chosenAssembler->arch->bitintunderlying;
         rv /= CHAR_BIT;
     }
-    else if (ispointer(a->tp) || isref(a->tp) || a->tp->type == BasicType::func_ || a->tp->type == BasicType::ifunc_ || a->byRef)
+    else if (a->tp->IsPtr() || a->tp->IsRef() || a->tp->type == BasicType::func_ || a->tp->type == BasicType::ifunc_ || a->byRef)
         rv = Optimizer::sizeFromISZ(ISZ_ADDR);
     else
-        rv = basetype(a->tp)->size;
+        rv = a->tp->BaseType()->size;
     if (rv % Optimizer::chosenAssembler->arch->stackalign)
         rv += Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
     return rv;
 }
-static int genCdeclArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
+static int genCdeclArgs(std::list<Argument*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
@@ -2375,7 +2388,7 @@ static int genCdeclArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
     }
     return rv;
 }
-static void genCallLab(std::list<INITLIST*>* args, int callLab)
+static void genCallLab(std::list<Argument*>* args, int callLab)
 {
     if (args)
     {
@@ -2389,7 +2402,7 @@ static void genCallLab(std::list<INITLIST*>* args, int callLab)
         }
     }
 }
-static int genPascalArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
+static int genPascalArgs(std::list<Argument*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
@@ -2399,7 +2412,7 @@ static int genPascalArgs(std::list<INITLIST*>* args, SYMBOL* funcsp)
     }
     return rv;
 }
-static int sizeParams(std::list<INITLIST*>* args, SYMBOL* funcsp)
+static int sizeParams(std::list<Argument*>* args, SYMBOL* funcsp)
 {
     int rv = 0;
     if (args)
@@ -2433,7 +2446,7 @@ Optimizer::IMODE* gen_stmt_from_expr(SYMBOL* funcsp, EXPRESSION* node, int flags
 }
 /*-------------------------------------------------------------------------*/
 
-static bool has_arg_destructors(std::list<INITLIST*>* arg)
+static bool has_arg_destructors(std::list<Argument*>* arg)
 {
     if (arg)
         for (auto t : *arg)
@@ -2441,7 +2454,7 @@ static bool has_arg_destructors(std::list<INITLIST*>* arg)
                 return true;
     return false;
 }
-static void gen_arg_destructors(SYMBOL* funcsp, std::list<INITLIST*>* arg, std::list<EXPRESSION*>* assignDestructors)
+static void gen_arg_destructors(SYMBOL* funcsp, std::list<Argument*>* arg, std::list<EXPRESSION*>* assignDestructors)
 {
     if (arg)
     {
@@ -2457,7 +2470,7 @@ static void gen_arg_destructors(SYMBOL* funcsp, std::list<INITLIST*>* arg, std::
         for (auto e : *assignDestructors)
             gen_expr(funcsp, e, F_NOVALUE, ISZ_UINT);
 }
-static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
+static int MarkFastcall(SYMBOL* sym, Type* functp, bool thisptr)
 {
 #ifndef CPPTHISCALL
     if (sym->sb->attribs.inheritable.linkage != Linkage::fastcall_)
@@ -2472,12 +2485,12 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
 
             Optimizer::QUAD* tail = Optimizer::intermed_tail;
             int i = 0;
-            if (isfunction(functp))
+            if (functp->IsFunction())
             {
-                if (basetype(functp)->sp)
-                    sym = basetype(functp)->sp;
+                if (functp->BaseType()->sp)
+                    sym = functp->BaseType()->sp;
                 if (!ismember(sym) && sym->sb->attribs.inheritable.linkage != Linkage::fastcall_ &&
-                    basetype(sym->tp)->type != BasicType::memberptr_)
+                    sym->tp->BaseType()->type != BasicType::memberptr_)
                     return 0;
             }
             else
@@ -2485,10 +2498,10 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                 return 0;
             }
 
-            int structret = !!isstructured(basetype(sym->tp)->btp);
+            int structret = !!sym->tp->BaseType()->btp->IsStructured();
 
-            auto it = basetype(functp)->syms->begin();
-            auto itend = basetype(functp)->syms->end();
+            auto it = functp->BaseType()->syms->begin();
+            auto itend = functp->BaseType()->syms->end();
             while (it != itend && tail && tail->dc.opcode != Optimizer::i_block)
             {
 
@@ -2496,9 +2509,9 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                 {
                     // change it to a move
                     SYMBOL* sp = *it;
-                    TYPE* tp = basetype(sp->tp);
+                    Type* tp = sp->tp->BaseType();
                     if (thisptr || ((tp->type < BasicType::float_ ||
-                                     (tp->type == BasicType::pointer_ && basetype(basetype(tp)->btp)->type != BasicType::func_) || isref(tp)) &&
+                                     (tp->type == BasicType::pointer_ && tp->BaseType()->btp->BaseType()->type != BasicType::func_) || tp->IsRef()) &&
                                     sp->sb->offset - (Optimizer::chosenAssembler->arch->fastcallRegCount + structret) *
                                                          Optimizer::chosenAssembler->arch->parmwidth <
                                         Optimizer::chosenAssembler->arch->retblocksize))
@@ -2546,7 +2559,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
     }
     return 0;
 }
-Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
+Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, CallSite* f)
 {
     Optimizer::SimpleExpression* rv = nullptr;
 
@@ -2559,7 +2572,7 @@ Optimizer::SimpleExpression* CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
                     count++;
         if (count)
         {
-            auto tp = MakeType(BasicType::pointer_, MakeType(BasicType::object_));
+            auto tp = Type::MakeType(BasicType::pointer_, Type::MakeType(BasicType::object_));
             tp->size = 0;
             tp->array = tp->msil = true;
             rv = Optimizer::SymbolManager::Get(anonymousVar(StorageClass::auto_, tp));
@@ -2615,7 +2628,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
 {
     int fastcallSize = 0;
     Optimizer::IMODE* ap3 = nullptr;
-    FUNCTIONCALL* f = node->v.func;
+    CallSite* f = node->v.func;
     bool managed = false;
     Optimizer::IMODE* stobj = nullptr;
     Optimizer::IMODE* ap = nullptr;
@@ -2657,7 +2670,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(f->sp)))
         managed = true;
-    if (f->returnEXP && managed && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp)))
+    if (f->returnEXP && managed && (f->functp->BaseType()->btp->IsStructured() || f->functp->BaseType()->btp->IsBitInt()))
     {
         switch (f->returnEXP->type)
         {
@@ -2676,8 +2689,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         int v = Optimizer::sizeFromISZ(ISZ_ADDR);
         if (v % Optimizer::chosenAssembler->arch->stackalign)
             v = v + Optimizer::chosenAssembler->arch->stackalign - v % Optimizer::chosenAssembler->arch->stackalign;
-        if (isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
-                                      basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_))
+        if (f->functp->IsFunction() && (f->functp->BaseType()->btp->IsStructured() || f->functp->BaseType()->btp->IsBitInt() ||
+                                      f->functp->BaseType()->btp->BaseType()->type == BasicType::memberptr_))
         {
             if (f->returnEXP)
                 n += v;
@@ -2717,8 +2730,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     if (f->sp->sb->attribs.inheritable.linkage == Linkage::pascal_)
     {
-        if (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
-            basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_)
+        if (f->functp->BaseType()->btp->IsStructured() || f->functp->BaseType()->btp->IsBitInt() ||
+            f->functp->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
         {
             if (f->returnEXP)
                 push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, F_OBJECT);
@@ -2753,8 +2766,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 varargarray = CreateMsilVarargs(funcsp, f);
-            if (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
-                basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_)
+            if (f->functp->BaseType()->btp->IsStructured() || f->functp->BaseType()->btp->IsBitInt() ||
+                f->functp->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
             {
                 if (f->returnEXP && !managed)
                     push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, 0);
@@ -2806,8 +2819,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         fastcallSize = MarkFastcall(f->sp, f->functp, !!f->thisptr);
         if (!(Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
         {
-            if (isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp) ||
-                                          basetype(basetype(f->functp)->btp)->type == BasicType::memberptr_))
+            if (f->functp->IsFunction() && (f->functp->BaseType()->btp->IsStructured() || f->functp->BaseType()->btp->IsBitInt() ||
+                                          f->functp->BaseType()->btp->BaseType()->type == BasicType::memberptr_))
             {
                 if (f->returnEXP && !managed)
                     push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, 0);
@@ -2873,20 +2886,20 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
     }
     gosub->altsp = Optimizer::SymbolManager::Get(f->sp);
-    if ((f->sp->sb->storage_class == StorageClass::typedef_ || f->sp->sb->storage_class == StorageClass::cast_) && isfuncptr(f->sp->tp))
+    if ((f->sp->sb->storage_class == StorageClass::typedef_ || f->sp->sb->storage_class == StorageClass::cast_) && f->sp->tp->IsFunctionPtr())
     {
         Optimizer::typedefs.push_back(gosub->altsp);
     }
     gosub->fastcall = !!fastcallSize;
 
-    if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != BasicType::memberptr_)
+    if ((flags & F_NOVALUE) && !f->functp->BaseType()->btp->IsStructured() && f->functp->BaseType()->btp->type != BasicType::memberptr_)
     {
-        if (basetype(f->functp)->btp->type == BasicType::void_)
+        if (f->functp->BaseType()->btp->type == BasicType::void_)
             gosub->novalue = 0;
         else
-            gosub->novalue = sizeFromType(basetype(f->functp)->btp);
+            gosub->novalue = sizeFromType(f->functp->BaseType()->btp);
     }
-    else if (isfunction(f->functp) && isstructured(basetype(f->functp)->btp))
+    else if (f->functp->IsFunction() && f->functp->BaseType()->btp->IsStructured())
     {
         if ((flags & F_NOVALUE) && !managed)
             gosub->novalue = -2;
@@ -2907,9 +2920,9 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (f->returnEXP && !managed)
             n++;
         Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n),
-            Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
+            Optimizer::make_parmadj(!f->functp->BaseType()->btp->IsVoid()));
     }
-    if (f->returnEXP && managed && isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || isbitint(basetype(f->functp)->btp)))
+    if (f->returnEXP && managed && f->functp->IsFunction() && (f->functp->BaseType()->btp->IsStructured() || f->functp->BaseType()->btp->IsBitInt()))
     {
         if (!(flags & F_INRETURN))
         {
@@ -2921,7 +2934,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 *ap1 = *stobj;
                 ap1->mode = Optimizer::i_ind;
                 ap1->size = ISZ_OBJECT;
-                ap1->offset->sp->tp = Optimizer::SymbolManager::Get(basetype(f->returnSP->tp));
+                ap1->offset->sp->tp = Optimizer::SymbolManager::Get(f->returnSP->tp->BaseType());
             }
             else
             {
@@ -2938,7 +2951,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             ap = nullptr;
         }
     }
-    else if (!(flags & F_NOVALUE) && isfunction(f->functp) && isarray(basetype(f->functp)->btp))
+    else if (!(flags & F_NOVALUE) && f->functp->IsFunction() && f->functp->BaseType()->btp->IsArray())
     {
         Optimizer::IMODE* ap1;
         int siz1;
@@ -2953,13 +2966,13 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             ap1 = Optimizer::tempreg(ISZ_OBJECT, 0);
         }
-        ap1->offset->sp->tp = Optimizer::SymbolManager::Get(basetype(basetype(f->functp)->btp));
+        ap1->offset->sp->tp = Optimizer::SymbolManager::Get(f->functp->BaseType()->btp->BaseType());
         ap = Optimizer::tempreg(ISZ_OBJECT, 0);
         ap->retval = true;
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, 0);
         ap = ap1;
     }
-    else if (!(flags & F_NOVALUE) && isfunction(f->functp) && !isvoid(basetype(f->functp)->btp))
+    else if (!(flags & F_NOVALUE) && f->functp->IsFunction() && !f->functp->BaseType()->btp->IsVoid())
     {
         /* structures handled by callee... */
         if ((flags & F_RETURNSTRUCTBYVALUE) && f->sp->sb->isConstructor && f->sp->sb->parentClass->sb->structuredAliasType)
@@ -2974,11 +2987,11 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             if (ap1 != ap)
                 gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
         }
-        else if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != BasicType::memberptr_ &&
-                 !isbitint(basetype(f->functp)->btp))
+        else if (!f->functp->BaseType()->btp->IsStructured() && f->functp->BaseType()->btp->type != BasicType::memberptr_ &&
+                 !f->functp->BaseType()->btp->IsBitInt())
         {
             Optimizer::IMODE *ap1, *ap2;
-            int siz1 = sizeFromType(basetype(f->functp)->btp);
+            int siz1 = sizeFromType(f->functp->BaseType()->btp);
             ap1 = Optimizer::tempreg(siz1, 0);
             ap1->retval = true;
             Optimizer::gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(siz1, 0), ap1, 0);
@@ -2989,11 +3002,11 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             ap1 = Optimizer::tempreg(ISZ_ADDR, 0);
             ap1->retval = true;
             Optimizer::gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(ISZ_ADDR, 0), ap1, 0);
-            if (!(flags & (F_RETURNSTRUCTBYVALUE | F_RETURNSTRUCTNOADJUST)) && isstructured(basetype(f->functp)->btp))
+            if (!(flags & (F_RETURNSTRUCTBYVALUE | F_RETURNSTRUCTNOADJUST)) && f->functp->BaseType()->btp->IsStructured())
             {                
-                if (basetype(basetype(f->functp)->btp)->sp->sb->structuredAliasType)
+                if (f->functp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
                 {
-                    auto tpr = basetype(basetype(f->functp)->btp)->sp->sb->structuredAliasType;
+                    auto tpr = f->functp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType;
                     auto expr = tempVar(tpr, node->structByAddress);
                     Optimizer::IMODE* ap2 = gen_expr(funcsp, expr, F_STORE, natural_size(expr));
                     gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
@@ -3078,7 +3091,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         int sz;
         Optimizer::i_ops op;
         case Optimizer::ao_init:
-            if (isstructured(node->v.ad->tp))
+            if (node->v.ad->tp->IsStructured())
             {
                 Optimizer::IMODE *ap1, *ap2, *ap6;
                 av = gen_expr(funcsp, node->v.ad->address, F_VOL, ISZ_UINT);
@@ -3138,7 +3151,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             break;
         case Optimizer::ao_load:
             av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-            if (isstructured(node->v.ad->tp))
+            if (node->v.ad->tp->IsStructured())
             {
                 if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= node->v.ad->tp->size &&
                      (node->v.ad->tp->size & (node->v.ad->tp->size - 1)) == 0))
@@ -3205,7 +3218,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             }
             break;
         case Optimizer::ao_store:
-            if (isstructured(node->v.ad->tp))
+            if (node->v.ad->tp->IsStructured())
             {
                 if ((Optimizer::chosenAssembler->arch->isLockFreeSize >= node->v.ad->tp->size &&
                      (node->v.ad->tp->size & (node->v.ad->tp->size - 1)) == 0))
@@ -3299,7 +3312,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             break;
         case Optimizer::ao_modify_fetch:
         case Optimizer::ao_fetch_modify:
-            if (isstructured(node->v.ad->tp))
+            if (node->v.ad->tp->IsStructured())
             {
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
                 Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
@@ -3376,7 +3389,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
         case Optimizer::ao_cmpxchgstrong:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
             Optimizer::gen_icode(Optimizer::i_atomic_thread_fence, nullptr, left, nullptr);
-            if (isstructured(node->v.ad->tp))
+            if (node->v.ad->tp->IsStructured())
             {
 
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
@@ -3485,7 +3498,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::auto_inc_:
                 case ExpressionNode::auto_dec_:
                 case ExpressionNode::assign_:
-                case ExpressionNode::func_:
+                case ExpressionNode::callsite_:
                 case ExpressionNode::thisref_:
                 case ExpressionNode::intcall_:
                 case ExpressionNode::blockassign_:
@@ -3494,6 +3507,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::cpblk_:
                 case ExpressionNode::initblk_:
                 case ExpressionNode::initobj_:
+                case ExpressionNode::constexprconstructor_:
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
                     Optimizer::intermed_tail->dc.v.label = 1;
@@ -3512,7 +3526,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             optimize_for_constants(&node);
             if (node->type == ExpressionNode::dot_ || node->type == ExpressionNode::pointsto_)
             {
-                node = intNode(ExpressionNode::c_i_, 0);
+                node = MakeIntExpression(ExpressionNode::c_i_, 0);
                 diag("gen_expr: member reference not valid");
             }
             rv = gen_expr(funcsp, node, flags, size);
@@ -3676,10 +3690,10 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             }
             if (!(flags & F_STORE))
             {
-                TYPE* base = node->v.msilArray->tp;
-                while (isarray(base))
-                    base = basetype(base)->btp;
-                rv = Optimizer::tempreg(isstructured(base) ? ISZ_OBJECT : sizeFromType(base), 0);
+                Type* base = node->v.msilArray->tp;
+                while (base->IsArray())
+                    base = base->BaseType()->btp;
+                rv = Optimizer::tempreg(base->IsStructured() ? ISZ_OBJECT : sizeFromType(base), 0);
                 ap1 = Allocate<Optimizer::IMODE>();
                 ap1->size = rv->size;
                 ap1->mode = Optimizer::i_immed;
@@ -3760,7 +3774,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 Optimizer::EnterExternal(sym);
                 if (sym->inlineSym)
                     InsertInline(sym->inlineSym);
-                else if (isfunction(node->v.sp->tp))
+                else if (node->v.sp->tp->IsFunction())
                     InsertInline(node->v.sp);
             }
             if (sym->imaddress && (Optimizer::architecture != ARCHITECTURE_MSIL))
@@ -3776,7 +3790,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                     ap1->msilObject = true;
                 ap1->size = size;
             }
-            if (isarray(node->v.sp->tp) && basetype(node->v.sp->tp)->msil && !store)
+            if (node->v.sp->tp->IsArray() && node->v.sp->tp->BaseType()->msil && !store)
                 ap1->msilObject = true;
             ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
             if (ap1 != ap2)
@@ -4172,22 +4186,32 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             EXPRESSION* search = node;
             while (search && search->type == ExpressionNode::comma_)
             {
-                gen_comma_(search->left, funcsp);
+                gen_void_(search->left, funcsp);
                 search = search->right;
             }
             ap1 = gen_expr(funcsp, search, flags, size);
             rv = ap1;
         }
         break;
-        case ExpressionNode::literalclass_:
-            gen_comma_(node->left, funcsp);
+            gen_void_(node->left, funcsp);
             ap1 = Optimizer::make_immed(size, 0);
+            rv = ap1;
+            break;
+        case ExpressionNode::constexprconstructor_:
+            if (!node->v.sp->sb->ignoreconstructor)
+            {
+                ap1 = gen_expr(funcsp, node->left, flags, size);
+            }
+            else
+            {
+                ap1 = Optimizer::make_immed(size, 0);
+            }
             rv = ap1;
             break;
         case ExpressionNode::thisref_:
             if (node->dest && xcexp)
             {
-                if (!basetype(node->v.t.tp)->sp->sb->pureDest)
+                if (!node->v.t.tp->BaseType()->sp->sb->pureDest)
                 {
                     int offset = 0;
                     auto exp = relptr(node->v.t.thisptr, offset, true);
@@ -4208,7 +4232,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             ap1 = gen_expr(funcsp, node->left, flags, size);
             if (!node->dest && xcexp)
             {
-                if (!basetype(node->v.t.tp)->sp->sb->pureDest)
+                if (!node->v.t.tp->BaseType()->sp->sb->pureDest)
                 {
                     node->v.t.thisptr->xcInit = ++consIndex;
                     gen_xcexp_expression(consIndex);
@@ -4258,7 +4282,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case ExpressionNode::check_nz_:
             lab0 = Optimizer::nextLabel++;
             falsejmp(node->left->left, funcsp, lab0);
-            gen_comma_(node->left->right, funcsp);
+            gen_void_(node->left->right, funcsp);
             Optimizer::gen_label(lab0);
             ap3 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
             ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
@@ -4269,7 +4293,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
         case ExpressionNode::trapcall_:
             rv = gen_trapcall(funcsp, node, flags);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         case ExpressionNode::intcall_:
             rv = gen_funccall(funcsp, node, flags);
             break;
@@ -4302,7 +4326,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::auto_inc_:
                 case ExpressionNode::auto_dec_:
                 case ExpressionNode::assign_:
-                case ExpressionNode::func_:
+                case ExpressionNode::callsite_:
                 case ExpressionNode::thisref_:
                 case ExpressionNode::intcall_:
                 case ExpressionNode::blockassign_:
@@ -4312,6 +4336,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case ExpressionNode::initblk_:
                 case ExpressionNode::initobj_:
                 case ExpressionNode::select_:
+                case ExpressionNode::constexprconstructor_:
                     break;
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
@@ -4329,9 +4354,9 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
 
 /*-------------------------------------------------------------------------*/
 
-Optimizer::IMODE* gen_comma_(EXPRESSION* node, SYMBOL* funcsp)
+Optimizer::IMODE* gen_void_(EXPRESSION* node, SYMBOL* funcsp)
 {
-    if (node->type != ExpressionNode::auto_ && node->type != ExpressionNode::cshimthis_)
+    if (node->type != ExpressionNode::auto_)
         gen_expr(funcsp, node, F_NOVALUE | F_RETURNSTRUCTNOADJUST, natural_size(node));
     return 0;
 }
@@ -4366,17 +4391,17 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::funcret_:
             while (node->type == ExpressionNode::funcret_)
                 node = node->left;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
         case ExpressionNode::intcall_:
-            if (!node->v.func->functp || !isfunction(node->v.func->functp))
+            if (!node->v.func->functp || !node->v.func->functp->IsFunction())
                 return 0;
-            if (isstructured(basetype(node->v.func->functp)->btp) || basetype(node->v.func->functp)->btp->type == BasicType::memberptr_)
+            if (node->v.func->functp->BaseType()->btp->IsStructured() || node->v.func->functp->BaseType()->btp->type == BasicType::memberptr_)
                 return ISZ_ADDR;
             else if (node->v.func->ascall)
             {
-                if (node->v.func->sp && isarray(basetype(node->v.func->sp->tp)->btp))
+                if (node->v.func->sp && node->v.func->sp->tp->BaseType()->btp->IsArray())
                     return ISZ_OBJECT;
-                return sizeFromType(basetype(node->v.func->functp)->btp);
+                return sizeFromType(node->v.func->functp->BaseType()->btp);
             }
             else
                 return ISZ_ADDR;
@@ -4572,6 +4597,7 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::argnopush_:
         case ExpressionNode::thisref_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             return natural_size(node->left);
             /*		case ExpressionNode::array_:
                         return ISZ_ADDR ;
@@ -4591,8 +4617,6 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::not_:
         case ExpressionNode::mp_compare_:
         case ExpressionNode::mp_as_bool_:
-            return -ISZ_UINT;
-        case ExpressionNode::literalclass_:
             return -ISZ_UINT;
         case ExpressionNode::comma_:
             while (node->type == ExpressionNode::comma_ && node->right)

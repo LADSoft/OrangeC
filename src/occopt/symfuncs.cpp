@@ -32,7 +32,7 @@ namespace Optimizer
 std::unordered_map<unsigned long long, Optimizer::SimpleSymbol*> SymbolManager::symbols;
 std::unordered_map<std::string, Optimizer::SimpleSymbol*> SymbolManager::globalSymbols;
 
-bool comparetypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int exact)
+bool CompareTypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int exact)
 {
     if (typ1->type == st_any || typ2->type == st_any)
         return true;
@@ -59,7 +59,7 @@ bool comparetypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int 
                 typ1 = typ1->btp;
                 typ2 = typ2->btp;
             }
-            return comparetypes(typ1, typ2, true);
+            return CompareTypes(typ1, typ2, true);
         }
 
         else
@@ -73,7 +73,7 @@ bool comparetypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int 
             typ1 = typ1->btp;
         if (typ2->type == st_pointer)
             typ2 = typ2->btp;
-        if (!comparetypes(typ1->btp, typ2->btp, exact))
+        if (!CompareTypes(typ1->btp, typ2->btp, exact))
             return false;
         if (!!typ1->sp != !!typ2->sp)
             return false;
@@ -85,7 +85,7 @@ bool comparetypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int 
             {
                 Optimizer::SimpleSymbol* s1 = (Optimizer::SimpleSymbol*)l1->data;
                 Optimizer::SimpleSymbol* s2 = (Optimizer::SimpleSymbol*)l2->data;
-                if (!comparetypes(s1->tp, s2->tp, exact))
+                if (!CompareTypes(s1->tp, s2->tp, exact))
                     return false;
             }
 
@@ -115,7 +115,7 @@ bool comparetypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int 
                 //                if (classRefCount(typ1->sp, typ2->sp) != 1)
                 return false;
             }
-            return comparetypes(typ1->btp, typ2->btp, exact);
+            return CompareTypes(typ1->btp, typ2->btp, exact);
         }
     }
     if (typ1->type == typ2->type && typ1->type == st___string)
@@ -151,7 +151,7 @@ bool equalnode(Optimizer::SimpleExpression* left, Optimizer::SimpleExpression* r
     switch (left->type)
     {
         case Optimizer::se_msil_array_init:
-            return comparetypes(left->tp, right->tp, true);
+            return CompareTypes(left->tp, right->tp, true);
         case Optimizer::se_uminus:
             return equalnode(left->left, right->left);
         case Optimizer::se_add:

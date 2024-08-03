@@ -26,27 +26,171 @@
 #define MAX_LOOKBACK 1024
 namespace Parser
 {
+    /* error list */
+    struct errl
+    {
+        int errornumber;
+        void* data;
+    };
+
+    /* used for error skimming */
+#define BALANCE struct balance
+#define BAL_PAREN 0
+#define BAL_BRACKET 1
+#define BAL_BEGIN 2
+#define BAL_LT 3
+#define ERRORS struct errl
+
+    struct balance
+    {
+        struct balance* back;
+        short type;
+        short count;
+    };
+
+    // clang-format off
+    enum _matchFlags : int
+    {
+        KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
+        KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
+        KW_386 = 128, KW_68K = 256, KW_C2X = 512, KW_ALL = 0x40000000
+    };
+    // clang-format on
+    // clang-format off
+
+    enum _tokenTypes
+    {
+        TT_BASE = 1,
+        TT_BOOL = 2,
+        TT_INT = 4,
+        TT_FLOAT = 8,
+        TT_COMPLEX = 16,
+        TT_TYPEQUAL = 32,
+        TT_POINTERQUAL = 64,
+        TT_UNARY = 128,
+        TT_BINARY = 0x100,
+        TT_OPERATOR = 0x200,
+        TT_ASSIGN = 0x400,
+        TT_RELATION = 0x800,
+        TT_EQUALITY = 0x1000,
+        TT_INEQUALITY = 0x2000,
+        TT_POINTER = 0x4000,
+        TT_STORAGE_CLASS = 0x8000,
+        TT_CONTROL = 0x10000,
+        TT_BLOCK = 0x20000,
+        TT_PRIMARY = 0x40000,
+        TT_SELECTOR = 0x80000,
+        TT_VAR = 0x100000,
+        TT_BASETYPE = 0x200000,
+        TT_INCREMENT = 0x400000,
+        TT_SWITCH = 0x800000,
+        TT_ENUM = 0x1000000,
+        TT_STRUCT = 0x2000000,
+        TT_TYPENAME = 0x4000000,
+        TT_TYPEDEF = 0x8000000,
+        TT_VOID = 0x10000000,
+        TT_CLASS = 0x20000000,
+        TT_LINKAGE = 0x40000000,
+        TT_DECLARE = 0x80000000UL,
+        TT_UNKNOWN = 0
+    };
+    // clang-format on
+
+    struct KeywordData
+    {
+        const char* name;
+        int len;
+        Keyword key;
+        unsigned matchFlags;
+        unsigned tokenTypes;
+    };
+
+
+    // must match the definition in msilprocess.cpp
+    // clang-format off
+    enum class LexType : unsigned
+    {
+        none_,
+        i_, ui_, l_, ul_, ll_, ull_,
+        bitint_, ubitint_,
+        l_f_, l_d_, l_ld_, l_I_, 
+        l_astr_, l_wstr_, l_ustr_, l_Ustr_, l_u8str_, l_msilstr_,
+        l_achr_, l_wchr_, l_uchr_, l_Uchr_, l_u8chr_,
+        l_id_, l_kw_, l_qualifiedName_,
+        l_asmInstruction_, l_asmRegister_
+    };
+    // clang-format on
+
+    struct StringData
+    {
+        LexType strtype;
+        int size;
+        int label;
+        int refCount;
+        char* suffix;
+        Optimizer::SLCHAR** pointers;
+    };
+
+    struct Lexeme
+    {
+        LexType type;
+        struct u_val value;
+        char* litaslit;
+        char* suffix;
+        Optimizer::LINEDATA* linedata;
+        int errline;
+        const char* errfile;
+        int charindex;
+        int charindexend;
+        int filenum;
+        KeywordData* kw;
+        SYMBOL* typequal;
+        int registered : 1;
+    };
+
+    struct LexList
+    {
+        LexList* next, * prev;
+        Lexeme* data;
+    };
+    struct LexContext
+    {
+        LexContext* next;
+        LexList* cur;
+        LexList* last;
+    };
+
+#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
+#define ISID(lex) (lex && (lex)->data->type == LexType::l_id_)
+#define ISKW(lex) (lex && (lex)->data->type == LexType::l_kw_)
+#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
+    bool KWTYPE(LexList* lex, unsigned types);
+#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
+
 extern Optimizer::LINEDATA nullLineData;
 extern int eofLine;
 extern const char* eofFile;
 extern bool parsingPreprocessorConstant;
-extern LEXCONTEXT* context;
+extern LexContext* context;
 extern int charIndex;
-extern SymbolTable<KEYWORD>* kwSymbols;
-extern LEXLIST* currentLex;
+extern SymbolTable<KeywordData>* kwSymbols;
+extern LexList* currentLex;
 
 void lexini(void);
-KEYWORD* searchkw(const unsigned char** p);
-LEXLIST* SkipToNextLine(void);
-LEXLIST* getGTSym(LEXLIST* in);
+KeywordData* searchkw(const unsigned char** p);
+LexList* SkipToNextLine(void);
+LexList* getGTSym(LexList* in);
 void SkipToEol();
 bool AtEol();
 void CompilePragma(const unsigned char** linePointer);
-LEXLIST* getsym(void);
-LEXLIST* prevsym(LEXLIST* lex);
-LEXLIST* backupsym(void);
-LEXLIST* SetAlternateLex(LEXLIST* lexList);
-bool CompareLex(LEXLIST* left, LEXLIST* right);
+void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
+void FlushLineData(const char* file, int lineno);
+std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, LexList* lex, int offset);
+LexList* getsym(void);
+LexList* prevsym(LexList* lex);
+LexList* backupsym(void);
+LexList* SetAlternateLex(LexList* lexList);
+bool CompareLex(LexList* left, LexList* right);
 void SetAlternateParse(bool set, const std::string& val);
 long long ParseExpression(std::string& line);
 }  // namespace Parser

@@ -46,8 +46,8 @@ class ObjType;
 class LinkRemapper
 {
   public:
-    LinkRemapper(LinkManager& Manager, ObjFactory& Factory, ObjIndexManager& IndexManager, bool CompleteLink) :
-        manager(&Manager), factory(&Factory), indexManager(&IndexManager), completeLink(CompleteLink)
+      LinkRemapper(LinkManager& Manager, ObjFactory& Factory, ObjIndexManager& IndexManager, bool CompleteLink) :
+          manager(&Manager), factory(&Factory), indexManager(&IndexManager), completeLink(CompleteLink)
     {
     }
     ~LinkRemapper() {}

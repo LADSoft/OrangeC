@@ -50,6 +50,17 @@ namespace Parser
 
 bool IsCompiler();
 
+struct Type;
+struct Statement;
+struct FunctionBlock;
+struct LexList;
+struct Lexeme;
+struct LexContext;
+struct KeywordData;
+struct CallSite;
+struct Argument;
+struct StringData;
+
 class StringHash
 {
 public:
@@ -76,6 +87,7 @@ public:
     T* back() const { return inOrder_.back(); }
     T* front() const { return inOrder_.front(); }
     inline void remove(iterator it);
+    inline void remove(T* sym);
     inline iterator insert(iterator it, struct sym* sym);
     inline T* Lookup(const std::string& name) const;
     void Next(SymbolTable<T>* next) { next_ = next; }
@@ -225,7 +237,7 @@ typedef struct
         l_fi_, l_di_, l_ldi_, l_fc_, l_dc_, l_ldc_, l_fp_, l_sp_, l_bit_,
         l_string_, l_object_, l_bitint_, l_ubitint_, msil_array_access_, msil_array_init_,
         nullptr_, memberptr_, mp_as_bool_, mp_compare_,
-        trapcall_, func_, funcret_, intcall_,
+        trapcall_, callsite_, funcret_, intcall_,
         arraymul_, arraylsh_, arraydiv_, arrayadd_, structadd_, structelem_,
         add_, sub_, mul_, mod_, div_, lsh_, rsh_, ursh_,
         hook_, comma_, assign_, eq_, ne_,
@@ -235,10 +247,10 @@ typedef struct
         blockassign_, bits_,
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
-        construct_, literalclass_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
-        type_, pointsto_, dot_, select_,
+        construct_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
+        type_, pointsto_, dot_, select_, constexprconstructor_,
         // stuff that can only appear temporarily in constexpr expressions
-        cshimref_, cshimthis_, paramsubstitute_
+        cvarpointer_, paramsubstitute_
     };
 // clang-format on
 
@@ -286,7 +298,7 @@ typedef struct
         aggregate_, untyped_, typedef_, pointer_, lref_, rref_, lrqual_, rrqual_, struct_,
         union_, func_, class_, ifunc_, any_, auto_,
         match_none_, ellipse_, memberptr_, cond_, va_list_, objectArray_,
-        consplaceholder_, templateparam_, templateselector_, templatedecltype_, derivedfromtemplate_,
+        consplaceholder_, templateparam_, templateselector_, templatedecltype_, templatedeferredtype_, derivedfromtemplate_,
         templateholder_,
         /* last */
         none_
@@ -374,7 +386,8 @@ typedef std::pair<struct sym*, struct _templateParam*> TEMPLATEPARAMPAIR;
 
 struct ConstExprArgArray
 {
-    int size;
+    unsigned short size;
+    unsigned short multiplier;
     struct expr** data;
 };
 
@@ -383,7 +396,7 @@ typedef struct expr
     struct expr *left, *right;
     ExpressionNode type;
     int pragmas;
-    struct typ* size; /* For block moves */
+    Type* size; /* For block moves */
     void* altdata;
     Optimizer::RUNTIMEDATA* runtimeData;
     struct
@@ -399,23 +412,23 @@ typedef struct expr
                 struct ConstExprArgArray constexprData;
             };
             const char* name; /* name during base class processing */
-            struct functioncall* func;
+            CallSite* func;
             struct _atomicData* ad;
-            std::list<struct stmt*>* stmt;
+            std::list<Statement*>* stmt;
             struct Optimizer::_imode_* imode;
             struct _msilarray* msilArray;
             SymbolTable<struct sym>* syms;
-            struct typ* tp;
+            Type* tp;
             struct expr* exp;
             struct
             {
                 struct expr* thisptr;
-                struct typ* tp;
+                Type* tp;
             } t;
             struct
             {
-                struct typ* tp;
-                struct lexlist* deferred;
+                Type* tp;
+                LexList* deferred;
             } construct;
             struct
             {
@@ -431,7 +444,7 @@ typedef struct expr
         TEMPLATEPARAMPAIR* templateParam;
         std::vector<struct _templateSelector>* templateSelector;
     } v;
-    struct _string* string;
+    StringData* string;
     int xcInit, xcDest;
     int lockOffset;
     char bits;
@@ -458,7 +471,7 @@ typedef struct _msilarray
 {
     int count;
     int max;
-    struct typ* tp;
+    Type* tp;
     EXPRESSION* base;
     EXPRESSION* indices[1];  // expands
 } MSIL_ARRAY;
@@ -498,109 +511,22 @@ struct u_val
         _COMPLEX_S* c;
     };
 };
-typedef struct typ
-{
-    BasicType type;        /* the type */
-    long size;             /* total size of type */
-    struct typ* btp;       /* pointer to next type (pointers & arrays */
-    struct typ* rootType;  /* pointer to base type of sequence */
-    int used : 1;          /* type has actually been used in a declaration or cast or expression */
-    int array : 1;         /* not a dereferenceable pointer */
-    int msil : 1;          /* allocate as an MSIL array */
-    int byRefArray : 1;    /* array base address is a reference type */
-    int vla : 1;           /* varriable length array */
-    int unsized : 1;       /* type doesn't need a size */
-    int hasbits : 1;       /* type is a bit type */
-    int anonymousbits : 1; /* type is a bit type without a name */
-    int scoped : 1;        /* c++ scoped enumeration */
-    int fixed : 1;         /* c++ fixed enumeration */
-    int nullptrType : 1;   /* c++: std::nullptr */
-    int templateTop : 1;
-    int enumConst : 1; /* is an enumeration constant */
-    int lref : 1;
-    int rref : 1;
-    int decltypeauto : 1;
-    int decltypeautoextended : 1;
-    int stringconst : 1;
-    char bits;      /* -1 for not a bit val, else bit field len */
-    char startbit;  /* start of bit field */
-    int bitintbits;
-    struct sym* sp; /* pointer to a symbol which describes the type */
-    /* local symbol tables */
-    SymbolTable<struct sym>* syms; /* Symbol table for structs & functions */
-    SymbolTable<struct sym>* tags; /* Symbol table for nested types*/
-    TEMPLATEPARAMPAIR* templateParam;
-    int alignment;                /* alignment pref for this structure/class/union   */
-    EXPRESSION* esize;            /* enode version of size */
-    struct typ* etype;            /* type of size field  when size isn't constant */
-    int vlaindex;                 /* index into the vararray */
-    EXPRESSION* templateDeclType; /* for BasicType::templatedecltype_, used in templates */
-    struct typ* typedefType;      /* The typedef which describes this type */
-} TYPE;
 
-typedef struct stmt
-{
-    std::list<struct stmt*>* lower;
-    std::list<struct stmt*>* blockTail;
-    StatementNode type;
-    EXPRESSION* select;
-    EXPRESSION* destexp;
-    Optimizer::LINEDATA* lineData;
-    union
-    {
-        TYPE* tp;
-        std::list<CASEDATA*>* cases;
-        struct blockdata* parent;
-    };
-    struct sym* sp;
-    int charpos;
-    int line;
-    const char* file;
-    int label;
-    int endlabel;
-    int breaklabel;  // also the label at the end of the try block
-    int altlabel;
-    int tryStart;
-    int tryEnd;
-    int hasvla : 1;
-    int hasdeclare : 1;
-    int purelabel : 1;
-    int explicitGoto : 1;
-    int indirectGoto : 1;
-} STATEMENT;
 
-typedef struct blockdata
-{
-    struct blockdata* orig;
-    struct blockdata* caseDestruct;
-    Keyword type;
-    std::list<CASEDATA*>* cases;
-    std::list<STATEMENT*>* statements;
-    std::list<STATEMENT*>* blockTail;
-    SymbolTable<struct sym>* table;
-    int breaklabel;
-    int continuelabel;
-    int defaultlabel;
-    int needlabel : 1;
-    int hasbreak : 1;
-    int hassemi : 1;
-    int nosemi : 1; /* ok to skip semi */
-} BLOCKDATA;
-
-typedef struct init
+struct Initializer
 {
     int offset;
-    TYPE* basetp;
+    Type* basetp;
     struct sym* fieldsp;
     EXPRESSION* fieldoffs;
     EXPRESSION* exp;
     int tag; /* sequence number */
     int noassign : 1;
-} INITIALIZER;
+};
 
 typedef struct ifunc
 {
-    std::list<STATEMENT*>* stmt;
+    std::list<Statement*>* stmt;
     SymbolTable<struct sym>* syms;
     SymbolTable<struct sym>* tags;
 } INLINEFUNC;
@@ -676,7 +602,7 @@ struct attributes
 typedef struct sym
 {
     const char* name;
-    TYPE* tp;
+    Type* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
     unsigned short utilityIndex;
     unsigned short packed : 1;       // packed template param instance
@@ -734,8 +660,10 @@ typedef struct sym
         unsigned allocaUsed : 1;
         unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
         unsigned constexpression : 1;  /* declared with constexpression */
+        unsigned ignoreconstructor : 1; /* don't generate code for constexpression constructor */
         unsigned addressTaken : 1;     /* address taken */
         unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
+        unsigned usingTypedef : 1;     /* typedef defined as a 'using' statement */
         unsigned redeclared : 1;       /* symbol was declared more than once */
         unsigned thisPtr : 1;          /*is a this pointer*/
         unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */
@@ -827,15 +755,15 @@ typedef struct sym
         struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
         struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
         std::list<struct _memberInitializers*>* memberInitializers; /* initializers for constructor */
-        std::list<STATEMENT*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
-        std::list<BLOCKDATA*>* gotoBlockTable;
+        std::list<Statement*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        std::list<FunctionBlock*>* gotoBlockTable;
         /* these fields depend on storage_class */
         struct u_val value;
         std::list<struct _baseClass*>* baseClasses;
         std::list<struct _vbaseEntry*>* vbaseEntries;
         std::list<struct _vtabEntry*>* vtabEntries;
-        struct lexlist* deferredCompile;
-        struct lexlist* deferredNoexcept;
+        LexList* deferredCompile;
+        LexList* deferredNoexcept;
         std::list<struct sym*>* templateNameSpace;
         short templateLevel;
         std::list<TEMPLATEPARAMPAIR>* typeAlias;
@@ -845,13 +773,13 @@ typedef struct sym
         std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
                                                      // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
-        std::list<struct init *>* init, *lastInit, *dest;
+        std::list<Initializer *>* init, *lastInit, *dest;
         // clang-format off
             enum e_xc xcMode, xcModeSpecified;
         // clang-format on
         struct xcept* xc;
         std::list<struct sym*>* friends;
-        TYPE* structuredAliasType;
+        Type* structuredAliasType;
         attributes attribs;
     } * sb;
 } SYMBOL;
@@ -863,11 +791,11 @@ typedef struct __lambda
     SYMBOL* cls;
     SYMBOL* func;
     SYMBOL* lthis;
-    TYPE* functp;
+    Type* functp;
     SYMBOL* enclosingFunc;
     SymbolTable<SYMBOL>* oldSyms;
     SymbolTable<SYMBOL>* oldTags;
-    TYPE* rv;
+    Type* rv;
     int index;
     int isMutable : 1;
     int captureThis : 1;
@@ -888,10 +816,10 @@ typedef struct _memberInitializers
     const char* name;
     SYMBOL* sp;
     SYMBOL* basesym;
-    std::list<INITIALIZER*>* init;
+    std::list<Initializer*>* init;
     int line;
     const char* file;
-    struct lexlist* initData;
+    LexList* initData;
     int packed : 1;
     int delegating : 1;
     int valueInit : 1;
@@ -950,6 +878,7 @@ typedef struct _templateParam
     int replaced : 1;  // replaced during type alias substitution
     int deduced : 1;   // filled in during deduction
     int specializationParam : 1; // specialization paramneter
+    int nopop : 1;
     int flag : 1; // utility flag
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
@@ -961,7 +890,7 @@ typedef struct _templateParam
         {
             SYMBOL* dflt;
             SYMBOL* val;
-            struct lexlist* txtdflt;
+            LexList* txtdflt;
             std::list<SYMBOL*>* txtargs;
             SYMBOL* temp;
             std::list<TEMPLATEPARAMPAIR>* args;
@@ -969,21 +898,21 @@ typedef struct _templateParam
         } byTemplate;
         struct
         {
-            TYPE* dflt;
-            TYPE* val;
-            struct lexlist* txtdflt;
+            Type* dflt;
+            Type* val;
+            LexList* txtdflt;
             std::list<SYMBOL*>* txtargs;
-            TYPE* temp;
+            Type* temp;
         } byClass;
         struct
         {
             EXPRESSION* dflt;
             EXPRESSION* val;
-            struct lexlist* txtdflt;
+            LexList* txtdflt;
             std::list<SYMBOL*>* txtargs;
             EXPRESSION* temp;
-            struct lexlist* txttype;
-            TYPE* tp;
+            LexList* txttype;
+            Type* tp;
         } byNonType;
         struct
         {
@@ -1007,44 +936,39 @@ typedef struct _templateSelector
     {
         SYMBOL* sp;
         const char* name;
-        TYPE* tp;
+        Type* tp;
     };
     std::list<TEMPLATEPARAMPAIR>* templateParams;
-    std::list<struct initlist*>* arguments;
+    std::list<Argument*>* arguments;
     int isTemplate : 1;
     int isDeclType : 1;
     int asCall : 1;
 } TEMPLATESELECTOR;
 
-typedef struct _structSym
+struct Argument
 {
-    SYMBOL* str;
-    std::list<TEMPLATEPARAMPAIR>* tmpl;
-} STRUCTSYM;
-typedef struct initlist
-{
-    TYPE* tp;
+    Type* tp;
     EXPRESSION* exp;
     std::list<struct expr*>* destructors;
-    std::list<struct initlist*>* nested;
+    std::list<Argument*>* nested;
     int byRef : 1;
     int packed : 1;
     int vararg : 1;
     int valist : 1;
     int initializer_list : 1;
-} INITLIST;
+};
 
-typedef struct functioncall
+struct CallSite
 {
     SYMBOL* sp;
-    TYPE* functp;
+    Type* functp;
     EXPRESSION* fcall;
-    std::list<INITLIST*>* arguments;
+    std::list<Argument*>* arguments;
     std::list<struct expr*>* destructors;
     SYMBOL* returnSP;
     EXPRESSION* returnEXP;
     EXPRESSION* thisptr;
-    TYPE* thistp;
+    Type* thistp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
     NAMESPACEVALUEDATA* nameSpace;
     SYMBOL* rttiType;
@@ -1057,178 +981,18 @@ typedef struct functioncall
     int asaddress : 1;
     int vararg : 1;
     int resolvedCall : 1;
-} FUNCTIONCALL;
+};
 
 #define MAX_STRLEN 16384
 #define MAX_STLP1 (MAX_STRLEN + 1)
 
-/* error list */
-struct errl
-{
-    int errornumber;
-    void* data;
-};
-
-/* used for error skimming */
-#define BALANCE struct balance
-#define BAL_PAREN 0
-#define BAL_BRACKET 1
-#define BAL_BEGIN 2
-#define BAL_LT 3
-#define ERRORS struct errl
-
-struct balance
-{
-    struct balance* back;
-    short type;
-    short count;
-};
-
-// clang-format off
-    enum _matchFlags : int
-    {
-        KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
-        KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
-        KW_386 = 128, KW_68K = 256, KW_C2X = 512, KW_ALL = 0x40000000
-    };
-// clang-format on
-// clang-format off
-
-    enum _tokenTypes
-    {
-        TT_BASE = 1,
-        TT_BOOL = 2,
-        TT_INT = 4,
-        TT_FLOAT = 8,
-        TT_COMPLEX = 16,
-        TT_TYPEQUAL = 32,
-        TT_POINTERQUAL = 64,
-        TT_UNARY = 128,
-        TT_BINARY = 0x100,
-        TT_OPERATOR = 0x200,
-        TT_ASSIGN = 0x400,
-        TT_RELATION = 0x800,
-        TT_EQUALITY = 0x1000,
-        TT_INEQUALITY = 0x2000,
-        TT_POINTER = 0x4000,
-        TT_STORAGE_CLASS = 0x8000,
-        TT_CONTROL = 0x10000,
-        TT_BLOCK = 0x20000,
-        TT_PRIMARY = 0x40000,
-        TT_SELECTOR = 0x80000,
-        TT_VAR = 0x100000,
-        TT_BASETYPE = 0x200000,
-        TT_INCREMENT = 0x400000,
-        TT_SWITCH = 0x800000,
-        TT_ENUM = 0x1000000,
-        TT_STRUCT = 0x2000000,
-        TT_TYPENAME = 0x4000000,
-        TT_TYPEDEF = 0x8000000,
-        TT_VOID = 0x10000000,
-        TT_CLASS = 0x20000000,
-        TT_LINKAGE = 0x40000000,
-        TT_DECLARE = 0x80000000UL,
-        TT_UNKNOWN = 0
-    };
-// clang-format on
-
-typedef struct kwblk
-{
-    const char* name;
-    int len;
-    Keyword key;
-    unsigned matchFlags;
-    unsigned tokenTypes;
-} KEYWORD;
-
-
-enum e_lexType
-{
-    l_none,
-    l_i,
-    l_ui,
-    l_l,
-    l_ul,
-    l_ll,
-    l_ull,
-    l_bitint,
-    l_ubitint,
-    l_f,
-    l_d,
-    l_ld,
-    l_I,
-    l_id,
-    l_kw,
-    l_astr,
-    l_wstr,
-    l_ustr,
-    l_Ustr,
-    l_u8str,
-    l_msilstr,
-    l_achr,
-    l_wchr,
-    l_u8chr,
-    l_uchr,
-    l_Uchr,
-    l_qualifiedname,
-    l_asminst,
-    l_asmreg
-};
-
-typedef struct _string
-{
-    enum e_lexType strtype;
-    int size;
-    int label;
-    int refCount;
-    char* suffix;
-    Optimizer::SLCHAR** pointers;
-} STRING;
-
-typedef struct lexeme
-{
-    // clang-format off
-        enum e_lexType type;
-    // clang-format on
-    struct u_val value;
-    char* litaslit;
-    char* suffix;
-    Optimizer::LINEDATA* linedata;
-    int errline;
-    const char* errfile;
-    int charindex;
-    int charindexend;
-    int filenum;
-    KEYWORD* kw;
-    SYMBOL* typequal;
-    int registered : 1;
-} LEXEME;
-
-typedef struct lexlist
-{
-    struct lexlist *next, *prev;
-    struct lexeme* data;
-} LEXLIST;
-typedef struct lexContext
-{
-    struct lexContext* next;
-    LEXLIST* cur;
-    LEXLIST* last;
-} LEXCONTEXT;
-
-#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
-#define ISID(lex) (lex && (lex)->data->type == l_id)
-#define ISKW(lex) (lex && (lex)->data->type == l_kw)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-bool KWTYPE(LEXLIST* lex, unsigned types);
-#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
 
 struct templateListData
 {
     std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
     std::list<TEMPLATEPARAMPAIR>**ptail, **plast, **phold;
-    LEXLIST *head, *tail;
-    LEXLIST *bodyHead, *bodyTail;
+    LexList *head, *tail;
+    LexList *bodyHead, *bodyTail;
     SYMBOL* sp;
 };
 
@@ -1246,34 +1010,8 @@ typedef struct _atomicData
     EXPRESSION* address;
     EXPRESSION* value;
     EXPRESSION* third;
-    TYPE* tp;
+    Type* tp;
 } ATOMICDATA;
-
-CONSTEXPR inline TYPE* basetype(TYPE* a)
-{
-    return a ? a->rootType : a;
-}
-
-CONSTEXPR inline bool __isref(TYPE* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
-CONSTEXPR inline bool isref(TYPE* x)
-{
-    return (__isref(basetype(x)) ||
-            (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
-}
-CONSTEXPR inline bool __ispointer(TYPE* x) { return ((x)->type == BasicType::pointer_ || (x)->type == BasicType::seg_); }
-CONSTEXPR inline bool ispointer(TYPE* x)
-{
-    return (__ispointer(basetype(x)) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
-                                            __ispointer((x)->templateParam->second->byNonType.tp));
-}
-
-CONSTEXPR inline bool __isfunction(TYPE* x) { return ((x)->type == BasicType::func_ || (x)->type == BasicType::ifunc_); }
-CONSTEXPR inline bool isfunction(TYPE* x) { return (__isfunction(basetype(x))); }
-
-CONSTEXPR inline bool isfuncptr(TYPE* x) { return (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp)); }
-CONSTEXPR inline bool __isstructured(TYPE* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
-
-CONSTEXPR inline bool isstructured(TYPE* x) { return (__isstructured(basetype(x))); }
 
 }  // namespace Parser
 

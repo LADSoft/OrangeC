@@ -6,6 +6,7 @@ partition {
 partition {
   overlay {
     region {} code [ align = 2];
+        region {} vsc* [ align = 8, roundsize = 4];
 	region {} const [ align = 4];
     region {} string [ align = 2];
   } ROM;
@@ -15,7 +16,9 @@ partition {
   overlay {
     RAMDATA = $;
     region {} data [ align = 4];
+        region {} vsd* [ align = 8, roundsize = 4];
 	region {} bss [ align = 4];
+        region {} vsb* [ align = 8, roundsize = 4];
   } RAM ;
 } pt2 [addr=RAMBASE];
 

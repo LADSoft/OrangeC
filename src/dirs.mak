@@ -29,5 +29,5 @@ else
 DIRS := sqlite3 util objlib libhostfxr netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert \
        gccocc arocc clocc linkocc libocc \
-       help MSDNHelp
+       help
 endif

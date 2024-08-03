@@ -33,6 +33,7 @@
 #include "OptUtils.h"
 #include "declare.h"
 #include "memory.h"
+#include "lex.h"
 #include "help.h"
 #include "beinterf.h"
 #include "ildata.h"
@@ -45,6 +46,9 @@
 #include "cpplookup.h"
 #include "inline.h"
 #include "symtab.h"
+#include "types.h"
+#include "stmt.h"
+#include "cppbltin.h"
 
 namespace Parser
 {
@@ -94,59 +98,39 @@ void rtti_init(void)
 {
     rttiSyms = symbols.CreateSymbolTable(); 
 }
-bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
-/*
- *      equalnode will return 1 if the expressions pointed to by
- *      node1 and node2 are equivalent.
- */
+void makeXCTab(SYMBOL* funcsp)
 {
-    if (node1 == 0 || node2 == 0)
-        return 0;
-    if (node1->type != node2->type)
-        return 0;
-    if (natural_size(node1) != natural_size(node2))
-        return 0;
-    switch (node1->type)
+    SYMBOL* sym;
+    if (!funcsp->sb->xc)
     {
-        case ExpressionNode::const_:
-        case ExpressionNode::pc_:
-        case ExpressionNode::global_:
-        case ExpressionNode::auto_:
-        case ExpressionNode::absolute_:
-        case ExpressionNode::threadlocal_:
-        case ExpressionNode::structelem_:
-            return node1->v.sp == node2->v.sp;
-        case ExpressionNode::labcon_:
-            return node1->v.i == node2->v.i;
-        default:
-            return (!node1->left || equalnode(node1->left, node2->left)) &&
-                   (!node1->right || equalnode(node1->right, node2->right));
-        case ExpressionNode::c_i_:
-        case ExpressionNode::c_l_:
-        case ExpressionNode::c_ul_:
-        case ExpressionNode::c_ui_:
-        case ExpressionNode::c_c_:
-        case ExpressionNode::c_u16_:
-        case ExpressionNode::c_u32_:
-        case ExpressionNode::c_bool_:
-        case ExpressionNode::c_uc_:
-        case ExpressionNode::c_ll_:
-        case ExpressionNode::c_ull_:
-        case ExpressionNode::c_wc_:
-        case ExpressionNode::nullptr_:
-            return node1->v.i == node2->v.i;
-        case ExpressionNode::c_d_:
-        case ExpressionNode::c_f_:
-        case ExpressionNode::c_ld_:
-        case ExpressionNode::c_di_:
-        case ExpressionNode::c_fi_:
-        case ExpressionNode::c_ldi_:
-            return (*node1->v.f == *node2->v.f);
-        case ExpressionNode::c_dc_:
-        case ExpressionNode::c_fc_:
-        case ExpressionNode::c_ldc_:
-            return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
+        funcsp->sb->xc = Allocate<xcept>();
+        Optimizer::SymbolManager::Get(funcsp)->xc = true;
     }
+    if (!funcsp->sb->xc->xctab)
+    {
+        sym = makeID(StorageClass::auto_, &stdXC, nullptr, "$$xctab");
+        sym->sb->decoratedName = sym->name;
+        sym->sb->allocate = true;
+        sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
+        localNameSpace->front()->syms->Add(sym);
+        funcsp->sb->xc->xctab = sym;
+    }
+}
+void insertXCInfo(SYMBOL* funcsp)
+{
+    char name[2048];
+    SYMBOL* sym;
+    InitializeFunctionArguments(funcsp);
+    makeXCTab(funcsp);
+    Optimizer::my_sprintf(name, "@.xc%s", funcsp->sb->decoratedName);
+    sym = makeID(StorageClass::global_, &stdpointer, nullptr, litlate(name));
+    sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+    sym->sb->decoratedName = sym->name;
+    sym->sb->allocate = true;
+    sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
+    funcsp->sb->xc->xcInitLab = codeLabel++;
+    funcsp->sb->xc->xcDestLab = codeLabel++;
+    funcsp->sb->xc->xclab = sym;
 }
 
 static char* addNameSpace(char* buf, SYMBOL* sym)
@@ -168,36 +152,36 @@ static char* addParent(char* buf, SYMBOL* sym)
     Optimizer::my_sprintf(buf, "%s", sym->name);
     return buf + strlen(buf);
 }
-static char* RTTIGetDisplayName(char* buf, TYPE* tp)
+static char* RTTIGetDisplayName(char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
         if (tp->templateParam && tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val)
             tp = tp->templateParam->second->byClass.val;
     }
-    if (isconst(tp))
+    if (tp->IsConst())
     {
         Optimizer::my_sprintf(buf, "%s ", "const");
         buf += strlen(buf);
     }
-    if (isvolatile(tp))
+    if (tp->IsVolatile())
     {
         Optimizer::my_sprintf(buf, "%s ", "volatile");
         buf += strlen(buf);
     }
-    tp = basetype(tp);
-    if (isstructured(tp) || tp->type == BasicType::enum_)
+    tp = tp->BaseType();
+    if (tp->IsStructured() || tp->type == BasicType::enum_)
     {
         buf = addParent(buf, tp->sp);
     }
-    else if (ispointer(tp))
+    else if (tp->IsPtr())
     {
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '*';
         *buf++ = ' ';
         *buf = 0;
     }
-    else if (isref(tp))
+    else if (tp->IsRef())
     {
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '&';
@@ -213,20 +197,20 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
         strcpy(buf, "any");
         buf += strlen(buf);
     }
-    else if (isfunction(tp))
+    else if (tp->IsFunction())
     {
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
         *buf++ = ')';
         *buf++ = '(';
-        for (auto sym : *basetype(tp)->syms)
+        for (auto sym : *tp->BaseType()->syms)
         {
             buf = RTTIGetDisplayName(buf, sym->tp);
             *buf++ = ',';
             *buf++ = ' ';
         }
-        if (basetype(tp)->syms->size())
+        if (tp->BaseType()->syms->size())
             buf -= 2;
         *buf++ = ')';
         *buf = 0;
@@ -238,7 +222,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
     }
     return buf;
 }
-static char* RTTIGetName(char* buf, TYPE* tp)
+static char* RTTIGetName(char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
@@ -251,23 +235,23 @@ static char* RTTIGetName(char* buf, TYPE* tp)
     buf = mangleType(buf, tp, true);
     return buf;
 }
-static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
+static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
 {
     char name[4096], *p;
     SYMBOL* sym = nullptr;
-    if (ispointer(tp))
+    if (tp->IsPtr())
     {
-        sym = RTTIDumpType(basetype(tp)->btp);
-        flags = isarray(tp) ? XD_ARRAY : XD_POINTER;
+        sym = RTTIDumpType(tp->BaseType()->btp);
+        flags = tp->IsArray() ? XD_ARRAY : XD_POINTER;
     }
-    else if (isref(tp))
+    else if (tp->IsRef())
     {
-        sym = RTTIDumpType(basetype(tp)->btp);
+        sym = RTTIDumpType(tp->BaseType()->btp);
         flags = XD_REF;
     }
-    else if (isstructured(tp) && !basetype(tp)->sp->sb->trivialCons)
+    else if (tp->IsStructured() && !tp->BaseType()->sp->sb->trivialCons)
     {
-        sym = search(basetype(tp)->syms, overloadNameTab[CI_DESTRUCTOR]);
+        sym = search(tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
         // at this point if the class was never instantiated the destructor
         // may not have been created...
         if (sym)
@@ -276,14 +260,14 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             {
                 // if it is deleted we just won't call it...
                 // still need the xt table entry though...
-                if (basetype(sym->tp)->syms->size() && basetype(sym->tp)->syms->front()->sb->deleted)
+                if (sym->tp->BaseType()->syms->size() && sym->tp->BaseType()->syms->front()->sb->deleted)
                 {
                     sym = nullptr;
                 }
                 else
                 {
-                    EXPRESSION* exp = intNode(ExpressionNode::c_i_, 0);
-                    callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
+                    EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                    callDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, true, true);
                     if (exp && exp->left)
                     {
                         sym = exp->left->v.func->sp;
@@ -293,12 +277,12 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             }
             else
             {
-                sym = (SYMBOL*)basetype(sym->tp)->syms->front();
+                sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)
             {
-                EXPRESSION* exp = varNode(ExpressionNode::pc_, sym);
+                EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, sym);
                 thunkForImportTable(&exp);
                 sym = exp->v.sp;
             }
@@ -323,10 +307,10 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
         Optimizer::genbyte(*p);
     Optimizer::genbyte(0);
 }
-static void DumpEnclosedStructs(TYPE* tp, bool genXT)
+static void DumpEnclosedStructs(Type* tp, bool genXT)
 {
-    SYMBOL* sym = basetype(tp)->sp;
-    tp = PerformDeferredInitialization(tp, nullptr);
+    SYMBOL* sym = tp->BaseType()->sp;
+    tp->InstantiateDeferred();
     if (sym->sb->vbaseEntries)
     {
         for (auto vbase : *sym->sb->vbaseEntries)
@@ -384,19 +368,19 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         {
             if (member->sb->storage_class == StorageClass::member_ || member->sb->storage_class == StorageClass::mutable_)
             {
-                TYPE* tp = member->tp;
+                Type* tp = member->tp;
                 int flags = XD_CL_ENCLOSED;
-                if (isref(tp))
+                if (tp->IsRef())
                 {
-                    tp = basetype(tp)->btp;
+                    tp = tp->BaseType()->btp;
                     flags |= XD_CL_BYREF;
                 }
-                if (isconst(tp))
+                if (tp->IsConst())
                     flags |= XD_CL_CONST;
-                tp = basetype(tp);
-                if (isstructured(tp))
+                tp = tp->BaseType();
+                tp->InstantiateDeferred();
+                if (tp->IsStructured())
                 {
-                    tp = PerformDeferredInitialization(tp, nullptr);
                     if (genXT)
                     {
                         RTTIDumpType(tp);
@@ -406,7 +390,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         }
     }
 }
-static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpStruct(SYMBOL* xtSym, Type* tp)
 {
     Optimizer::SymbolManager::Get(xtSym)->generated = true;
     DumpEnclosedStructs(tp, true);
@@ -415,28 +399,28 @@ static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
     Optimizer::genint(0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpArray(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpArray(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(BasicType::int_));
     Optimizer::genint(tp->size / (tp->btp->size));
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpPointer(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpPointer(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_POINTER);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpRef(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpRef(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_REF);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
+static void RTTIDumpArithmetic(SYMBOL* xtSym, Type* tp)
 {
     RTTIDumpHeader(xtSym, tp, 0);
     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
 }
-SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
+SYMBOL* RTTIDumpType(Type*tp, bool symOnly)
 {
     SYMBOL* xtSym = nullptr;
     if (IsCompiler())
@@ -444,6 +428,7 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
         if (Optimizer::cparams.prm_xcept)
         {
             char name[4096];
+            tp->InstantiateDeferred();
             RTTIGetName(name, tp);
             xtSym = search(rttiSyms, name);
             if (!xtSym || !Optimizer::SymbolManager::Get(xtSym)->generated)
@@ -452,8 +437,8 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
                 {
                     xtSym = makeID(StorageClass::global_, tp, nullptr, litlate(name));
                     xtSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                    if (isstructured(tp))
-                        xtSym->sb->attribs.inheritable.linkage2 = basetype(tp)->sp->sb->attribs.inheritable.linkage2;
+                    if (tp->IsStructured())
+                        xtSym->sb->attribs.inheritable.linkage2 = tp->BaseType()->sp->sb->attribs.inheritable.linkage2;
                     xtSym->sb->decoratedName = xtSym->name;
                     xtSym->sb->xtEntry = true;
                     rttiSyms->Add(xtSym);
@@ -461,14 +446,14 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
                 if (!symOnly)
                 {
                     Optimizer::SymbolManager::Get(xtSym)->generated = true;
-                    switch (basetype(tp)->type)
+                    switch (tp->BaseType()->type)
                     {
                         case BasicType::lref_:
                         case BasicType::rref_:
                             RTTIDumpRef(xtSym, tp);
                             break;
                         case BasicType::pointer_:
-                            if (isarray(tp))
+                            if (tp->IsArray())
                                 RTTIDumpArray(xtSym, tp);
                             else
                                 RTTIDumpPointer(xtSym, tp);
@@ -485,13 +470,13 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
             }
             else if (!symOnly)
             {
-                while (ispointer(tp) || isref(tp))
-                    tp = basetype(tp)->btp;
-                if (isstructured(tp) && !basetype(tp)->sp->sb->dontinstantiate)
+                while (tp->IsPtr() || tp->IsRef())
+                    tp = tp->BaseType()->btp;
+                if (tp->IsStructured() && !tp->BaseType()->sp->sb->dontinstantiate)
                 {
                     SYMBOL* xtSym2;
                     // xtSym *should* be there.
-                    RTTIGetName(name, basetype(tp));
+                    RTTIGetName(name, tp->BaseType());
                     xtSym2 = search(rttiSyms, name);
                     if (xtSym2 && xtSym2->sb->dontinstantiate)
                     {
@@ -504,10 +489,10 @@ SYMBOL* RTTIDumpType(TYPE*tp, bool symOnly)
     }
     return xtSym;
 }
-static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst);
+static void XCStmt(std::list<Statement*>* block, std::list<XCENTRY*>& lst);
 static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
 {
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     if (node == 0)
         return;
     switch (node->type)
@@ -582,7 +567,6 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::l_wc_:
             XCExpression(node->left, lst);
             break;
@@ -695,6 +679,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::lvalue_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             XCExpression(node->left, lst);
             break;
         case ExpressionNode::thisref_:
@@ -702,7 +687,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
             break;
         case ExpressionNode::atomic_:
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             {
                 if (fp->arguments)
@@ -722,7 +707,7 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
             break;
     }
 }
-static void XCStmt(std::list<STATEMENT*>* block, std::list<XCENTRY*>& lst)
+static void XCStmt(std::list<Statement*>* block, std::list<XCENTRY*>& lst)
 {
     if (block)
     {
@@ -796,7 +781,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
             Optimizer::LIST* p = funcsp->sb->xc->xcDynamic;
             while (p)
             {
-                TYPE* tp = (TYPE*)p->data;
+                Type* tp = (Type*)p->data;
                 if (tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
                 {
                     if (tp->templateParam->second->type == TplType::typename_)
@@ -813,7 +798,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
                 }
                 else
                 {
-                    list[count++] = RTTIDumpType((TYPE*)p->data);
+                    list[count++] = RTTIDumpType((Type*)p->data);
                 }
                 p = p->next;
             }
@@ -932,13 +917,13 @@ void XTDumpTab(SYMBOL* funcsp)
             if (p->byStmt)
             {
                 if (p->stmt->tp)
-                    p->xtSym = RTTIDumpType(basetype(p->stmt->tp));
+                    p->xtSym = RTTIDumpType(p->stmt->tp->BaseType());
             }
             else
             {
                 // ExpressionNode::thisref_
-                if (basetype(p->exp->v.t.tp)->sp->sb->hasDest)
-                    p->xtSym = RTTIDumpType(basetype(p->exp->v.t.tp));
+                if (p->exp->v.t.tp->BaseType()->sp->sb->hasDest)
+                    p->xtSym = RTTIDumpType(p->exp->v.t.tp->BaseType());
             }
         }
         throwSym = DumpXCSpecifiers(funcsp);

@@ -45,10 +45,10 @@ namespace Parser
     extern SymbolTableFactory<SYMBOL> symbols;
 
     void syminit(void);
-    void AllocateLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
+    void AllocateLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label);
     void TagSyms(SymbolTable<SYMBOL>* syms);
-    void FreeLocalContext(std::list<BLOCKDATA*>& block, SYMBOL* sym, int label);
-    bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
+    void FreeLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label);
+    bool matchOverload(Type* tnew, Type* told, bool argsOnly);
     SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table);
     SYMBOL* gsearch(const char* name);
     SYMBOL* tsearch(const char* name);
@@ -86,6 +86,12 @@ void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
 {
     lookupTable_.erase((*it)->name);
     return inOrder_.remove(*it);
+}
+template<class T>
+inline void SymbolTable<T>::remove(T* sym)
+{
+    lookupTable_.erase(sym->name);
+    inOrder_.remove(sym);
 }
 template<class T>
 typename SymbolTable<T>::iterator SymbolTable<T>::insert(typename SymbolTable<T>::iterator it, SYMBOL* sym)

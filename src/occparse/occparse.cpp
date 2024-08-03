@@ -79,7 +79,8 @@
 #include "constexpr.h"
 #include "symtab.h"
 #include "ListFactory.h"
-
+#include "types.h"
+#include "stmt.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -334,12 +335,12 @@ static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
         }
         else if (sym->sb->storage_class == StorageClass::typedef_)
         {
-            TYPE* tp = sym->tp;
-            while (ispointer(tp) || isref(tp))
+            Type* tp = sym->tp;
+            while (tp->IsPtr() || tp->IsRef())
             {
-                tp = basetype(tp)->btp;
+                tp = tp->BaseType()->btp;
             }
-            if (!isstructured(tp) || !basetype(tp)->sp->sb->templateLevel || basetype(tp)->sp->sb->instantiated)
+            if (!tp->IsStructured() || !tp->BaseType()->sp->sb->templateLevel || tp->BaseType()->sp->sb->instantiated)
                 Optimizer::typedefs.push_back(Optimizer::SymbolManager::Get(sym));
         }
     }
@@ -348,7 +349,7 @@ void compile(bool global)
 {
     fileIndex++;
     SET_GLOBAL(true, 1);
-    LEXLIST* lex = nullptr;
+    LexList* lex = nullptr;
     Optimizer::SymbolManager::clear();
     ListFactoryInit();
     helpinit();
@@ -403,11 +404,12 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            BLOCKDATA bd;
+            FunctionBlock bd;
             memset(&bd, 0, sizeof(bd));
             bd.type = Keyword::begin_;
-            std::list<BLOCKDATA*> block{ &bd };
-            while ((lex = statement_asm(lex, nullptr, block)) != nullptr)
+            std::list<FunctionBlock*> block{ &bd };
+            StatementGenerator sg(lex, nullptr);
+            while (sg.ParseAsm(block))
                 ;
             if (IsCompiler())
             {

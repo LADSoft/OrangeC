@@ -754,10 +754,10 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eVirtualFunctionEnd:
                         case ObjDebugTag::eBlockEnd:
                         case ObjDebugTag::eFunctionEnd: {
-
-                            int end = currentLine->GetLineNumber();
+                            // currentLine could be null for example for the dynamic sections that aren't related to normal code gen...
+                            int end = currentLine ? currentLine->GetLineNumber() : 0;
                             // this next line is a safety, used to use start line
-                            int fileId = currentLine->GetFile()->GetIndex();
+                            int fileId = currentLine ? currentLine->GetFile()->GetIndex() : 0;
                             for (auto obj : currentContext->vars)
                             {
                                 ObjSymbol* s = obj.first;

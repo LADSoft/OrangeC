@@ -54,9 +54,9 @@ bool LibManager::LoadLibrary()
         return false;
     return true;
 }
-ObjInt LibManager::Lookup(const ObjString& name)
+const std::vector<unsigned>& LibManager::Lookup(const ObjString& name)
 {
     if (header.sig == LibHeader::LIB_SIG)
         return dictionary.Lookup(stream, header.dictionaryOffset, header.dictionaryBlocks, name);
-    return 0;
+    return std::vector<unsigned>();
 }

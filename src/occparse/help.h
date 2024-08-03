@@ -27,7 +27,6 @@
 #include <unordered_map>
 namespace Parser
 {
-
 template <class T>
 class NestedStack;
 template <class T>
@@ -75,61 +74,45 @@ class NestedStack
 };
 
 extern int anonymousNotAlloc;
-void helpinit(void);
-void deprecateMessage(SYMBOL* sym);
-bool ismember(SYMBOL* sym);
-bool istype(SYMBOL* sym);
 bool ismemberdata(SYMBOL* sym);
-bool startOfType(LEXLIST* lex, bool* structured, bool assumeType);
-void UpdateRootTypes(TYPE* tp);
-bool isDerivedFromTemplate(TYPE* tp);
-bool isautotype(TYPE* tp);
-bool isunsigned(TYPE* tp);
-bool isbitint(TYPE* tp);
-bool isint(TYPE* tp);
-bool isfloat(TYPE* tp);
-bool iscomplex(TYPE* tp);
-bool isimaginary(TYPE* tp);
-bool isarithmetic(TYPE* tp);
-bool ismsil(TYPE* tp);
-bool isconstraw(const TYPE* tp);
-bool isconst(const TYPE* tp);
+bool ismember(SYMBOL* sym);
+void helpinit(void);
+bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
+EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add = true);
+void deprecateMessage(SYMBOL* sym);
+bool isDerivedFromTemplate(Type* tp);
 bool isconstexpr(const EXPRESSION* expa);
-bool isvolatile(const TYPE* tp);
-bool islrqual(TYPE* tp);
-bool isrrqual(TYPE* tp);
-bool isrestrict(TYPE* tp);
-bool isatomic(TYPE* tp);
-bool isvoid(TYPE* tp);
-bool isvoidptr(TYPE* tp);
-bool isarray(TYPE* tp);
-bool isunion(TYPE* tp);
-void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp);
-SYMBOL* getFunctionSP(TYPE** tp);
-LEXLIST* concatStringsInternal(LEXLIST* lex, STRING** str, int* elems);
-LEXLIST* concatStrings(LEXLIST* lex, EXPRESSION** expr, e_lexType* tp, int* elems);
+EXPRESSION* createTemporary(Type* tp, EXPRESSION* val);
+EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val);
+void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp);
+SYMBOL* getFunctionSP(Type** tp);
+LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems);
+LexList* concatStrings(LexList* lex, EXPRESSION** expr, LexType* tp, int* elems);
 bool isintconst(EXPRESSION* exp);
 bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);
 bool iscomplexconst(EXPRESSION* exp);
-EXPRESSION* anonymousVar(StorageClass storage_class, TYPE* tp);
+void undoAnonymousVar(SYMBOL* sp);
+EXPRESSION* anonymousVar(StorageClass storage_class, Type* tp);
 EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits);
-void deref(TYPE* tp, EXPRESSION** exp);
-int sizeFromType(TYPE* tp);
-void cast(TYPE* tp, EXPRESSION** exp);
+void deref(Type* tp, EXPRESSION** exp);
+int sizeFromType(Type* tp);
+void cast(Type* tp, EXPRESSION** exp);
 bool castvalue(EXPRESSION* exp);
 bool xvalue(EXPRESSION* exp);
 bool lvalue(EXPRESSION* exp);
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<INITIALIZER*>* init,
+EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest);
-bool assignDiscardsConst(TYPE* dest, TYPE* source);
-bool isconstzero(TYPE* tp, EXPRESSION* exp);
-bool fittedConst(TYPE* tp, EXPRESSION* exp);
+bool assignDiscardsConst(Type* dest, Type* source);
+bool isconstzero(Type* tp, EXPRESSION* exp);
+bool fittedConst(Type* tp, EXPRESSION* exp);
 bool isarithmeticconst(EXPRESSION* exp);
 bool isconstaddress(EXPRESSION* exp);
 SYMBOL*(CopySymbol)(SYMBOL* sym_in, bool full);
 BasicType btmax(BasicType left, BasicType right);
-TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp);
+Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, Type* atp);
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp);
-EXPRESSION* EvaluateDest(EXPRESSION*exp, TYPE* tp);
+EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp);
+void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym);
+EXPRESSION* getFunc(EXPRESSION* exp);
 }  // namespace Parser

@@ -55,7 +55,7 @@
 namespace Parser
 {
 struct sym;
-struct typ;
+struct Type;
 struct expr;
 enum class BasicType : int;
 enum class StorageClass : int;
@@ -328,11 +328,11 @@ struct SimpleExpression
 
 struct SymbolManager
 {
-    static SimpleSymbol* Get(struct Parser::sym* sym);
+    static SimpleSymbol* Get(struct Parser::sym* sym, bool definingFunction = false);
     static SimpleSymbol* Test(struct Parser::sym* sym);
     static SimpleExpression* Get(struct Parser::expr* e);
     static e_scc_type Get(Parser::StorageClass storage_class);
-    static SimpleType* Get(struct Parser::typ* tp);
+    static SimpleType* Get(struct Parser::Type* tp);
     static st_type Get(Parser::BasicType type);
     static void clear();
     static SimpleSymbol* Get(const char* name);

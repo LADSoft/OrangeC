@@ -36,6 +36,8 @@
 #include "lex.h"
 #include "memory.h"
 #include "OptUtils.h"
+#include "types.h"
+
 #ifndef HAVE_UNISTD_H
 #    include <direct.h>
 #else
@@ -198,17 +200,17 @@ void browse_variable(SYMBOL* var)
         case StorageClass::type_:
             break;
         default:
-            if (!isfunction(var->tp))
+            if (!var->tp->IsFunction())
                 return;
             break;
     }
     bri = Allocate<Optimizer::BROWSEINFO>();
-    bri->type = isfunction(var->tp) ? BRS_PROTOTYPE : BRS_VARIABLE;
+    bri->type = var->tp->IsFunction() ? BRS_PROTOTYPE : BRS_VARIABLE;
     getBrowseName(name, var);
     bri->name = litlate(name);
     bri->lineno = var->sb->declline;
     bri->charpos = var->sb->declcharpos >= 0 ? var->sb->declcharpos : 0;
-    bri->flags = (var->sb->storage_class == StorageClass::external_ || isfunction(var->tp) ? BRF_EXTERNAL : 0) |
+    bri->flags = (var->sb->storage_class == StorageClass::external_ || var->tp->IsFunction() ? BRF_EXTERNAL : 0) |
                  (var->sb->storage_class == StorageClass::static_ ? BRF_STATIC : 0) | (var->sb->storage_class == StorageClass::type_ ? BRF_TYPE : 0);
     bri->filenum = var->sb->declfilenum;
     addBrowseRecord(bri);

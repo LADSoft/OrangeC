@@ -28,6 +28,7 @@
 #include "ObjTypes.h"
 #include <cstdio>
 #include <unordered_map>
+#include <vector>
 
 class ObjFile;
 class LibFiles;
@@ -55,10 +56,11 @@ struct DictHash
 class LibDictionary
 {
   public:
-    typedef std::unordered_map<ObjString, ObjInt, DictHash, DictCompare> Dictionary;
+    const unsigned DictionaryContinuationFlag = 1 << (sizeof(unsigned) * CHAR_BIT - 1);
+    typedef std::unordered_map<ObjString, std::vector<unsigned>, DictHash, DictCompare> Dictionary;
     LibDictionary(bool CaseSensitive = true) : caseSensitive(CaseSensitive) { DictCompare::caseSensitive = CaseSensitive; }
     ~LibDictionary() {}
-    ObjInt Lookup(FILE* stream, ObjInt dictOffset, ObjInt dictPages, const ObjString& str);
+    const std::vector<unsigned>& Lookup(FILE* stream, ObjInt dictOffset, ObjInt dictPages, const ObjString& str);
     bool Write(FILE* stream);
     void CreateDictionary(LibFiles& files);
     void Clear() { dictionary.clear(); }

@@ -28,9 +28,12 @@
 #include "config.h"
 #include "unmangle.h"
 #include "OptUtils.h"
+#include "lex.h"
 #include "help.h"
 #include "memory.h"
 #include "mangle.h"
+#include "declare.h"
+#include "types.h"
 #include <algorithm>
 namespace Parser
 {
@@ -133,6 +136,12 @@ static char* mangleClasses(char* in, SYMBOL* sym)
         return in;
     if (sym->sb->parentClass)
         in = mangleClasses(in, sym->sb->parentClass);
+    if (sym->sb->parent)
+    {
+        in += strlen(in);
+        Optimizer::my_sprintf(in, "@%s", sym->sb->parent->name);
+        in += strlen(in);
+    }
     if (sym->sb->castoperator)
     {
         strcat(in, "@");
@@ -143,7 +152,9 @@ static char* mangleClasses(char* in, SYMBOL* sym)
         mangleTemplate(in, sym, sym->templateParams);
     }
     else
+    {
         Optimizer::my_sprintf(in, "@%s", sym->name);
+    }
     return in + strlen(in);
 }
 static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
@@ -403,10 +414,11 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 break;
             case ExpressionNode::thisref_:
             case ExpressionNode::funcret_:
+            case ExpressionNode::constexprconstructor_:
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
                 break;
-            case ExpressionNode::func_: {
+            case ExpressionNode::callsite_: {
                 if (exp->v.func->ascall)
                 {
                     *buf++ = 'f';
@@ -435,7 +447,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
             case ExpressionNode::pc_:
             case ExpressionNode::global_:
             case ExpressionNode::const_:
-                if (isfunction(exp->v.sp->tp))
+                if (exp->v.sp->tp->IsFunction())
                 {
                     *buf++ = 'e';
                     *buf++ = '?';
@@ -686,7 +698,7 @@ static char* getName(char* in, SYMBOL* sym)
         in++;
     return in;
 }
-char* mangleType(char* in, TYPE* tp, bool first)
+char* mangleType(char* in, Type* tp, bool first)
 {
     char nm[4096];
     int i;
@@ -701,39 +713,39 @@ char* mangleType(char* in, TYPE* tp, bool first)
     {
         while (tp->type == BasicType::typedef_)
             tp = tp->btp;
-        if (isstructured(tp) && basetype(tp)->sp->sb && basetype(tp)->sp->sb->templateLevel)
+        if (tp->IsStructured() && tp->BaseType()->sp->sb && tp->BaseType()->sp->sb->templateLevel)
         {
             {
-                if (isconst(tp))
+                if (tp->IsConst())
                     *in++ = 'x';
-                if (isvolatile(tp))
+                if (tp->IsVolatile())
                     *in++ = 'y';
-                if (islrqual(tp))
+                if (tp->IsLRefQual())
                     *in++ = 'r';
-                if (isrrqual(tp))
+                if (tp->IsRRefQual())
                     *in++ = 'R';
             }
-            in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
+            in = mangleTemplate(in, tp->BaseType()->sp, tp->BaseType()->sp->templateParams);
             return in;
         }
         else
         {
-            if (isconst(tp))
+            if (tp->IsConst())
                 *in++ = 'x';
-            if (isvolatile(tp))
+            if (tp->IsVolatile())
                 *in++ = 'y';
-            if (islrqual(tp))
+            if (tp->IsLRefQual())
                 *in++ = 'r';
-            if (isrrqual(tp))
+            if (tp->IsRRefQual())
                 *in++ = 'R';
-            tp = basetype(tp);
-            if (isint(tp) && tp->btp && tp->btp->type == BasicType::enum_)
+            tp = tp->BaseType();
+            if (tp->IsInt() && tp->btp && tp->btp->type == BasicType::enum_)
                 tp = tp->btp;
             switch (tp->type)
             {
                 case BasicType::func_:
                 case BasicType::ifunc_:
-                    if (basetype(tp)->sp && ismember(basetype(tp)->sp) && !first)
+                    if (tp->BaseType()->sp && ismember(tp->BaseType()->sp) && !first)
                     {
                         *in++ = 'M';
                         in = getName(in, tp->sp->sb->parentClass);
@@ -752,10 +764,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::memberptr_:
                     *in++ = 'M';
                     in = getName(in, tp->sp);
-                    if (isfunction(tp->btp))
+                    if (tp->btp->IsFunction())
                     {
                         *in++ = 'q';
-                        for (auto sym : *basetype(tp->btp)->syms)
+                        for (auto sym : *tp->btp->BaseType()->syms)
                         {
                             if (!sym->sb->thisPtr)
                                 in = mangleType(in, sym->tp, true);
@@ -891,12 +903,14 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'e';
                     break;
                 case BasicType::void_:
-                case BasicType::any_:
                     *in++ = 'v';
+                    break;
+                case BasicType::any_:
+                    *in++ = 'V'; // this needs to be distinct from void for internal matching....
                     break;
                 case BasicType::templateparam_:
                     if (tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val &&
-                        basetype(tp->templateParam->second->byClass.val)->type != BasicType::templateparam_)
+                        tp->templateParam->second->byClass.val->BaseType()->type != BasicType::templateparam_)
                         in = mangleType(in, tp->templateParam->second->byClass.val, false);
                     else
                         in = getName(in, tp->templateParam->first);
@@ -937,6 +951,11 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 case BasicType::auto_:
                     *in++ = 'a';
                     break;
+                case BasicType::templatedeferredtype_:
+                    // we want something the linkerwill treat as an error,
+                    // so we can detect problems with these not being properly replaced
+                    *in++ = MANGLE_DEFERRED_TYPE_CHAR;
+                    break;
                 default:
                     diag("mangleType: unknown type");
                     break;
@@ -947,9 +966,9 @@ char* mangleType(char* in, TYPE* tp, bool first)
     *in = 0;
     return in;
 }
-static bool validType(TYPE* tp, bool byVal)
+static bool validType(Type* tp, bool byVal)
 {
-    tp = basetype(tp);
+    tp = tp->BaseType();
     switch (tp->type)
     {
     case BasicType::templateselector_:
@@ -1061,10 +1080,10 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                         switch (param.second->type)
                         {
                             case TplType::typename_:
-                                if (!validType((TYPE*)dflt, byVal))
+                                if (!validType((Type*)dflt, byVal))
                                     return false;
                                 result += 'c';
-                                *(mangleType(buf, (TYPE*)dflt, true)) = 0;
+                                *(mangleType(buf, (Type*)dflt, true)) = 0;
                                 break;
                             case TplType::int_:
                                 result += 'i';
@@ -1099,10 +1118,10 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                     switch (param.second->type)
                     {
                         case TplType::typename_:
-                            if (!validType((TYPE*)dflt, byVal))
+                            if (!validType((Type*)dflt, byVal))
                                 return false;
                             result += 'c';
-                            *(mangleType(buf, (TYPE*)dflt, true)) = 0;
+                            *(mangleType(buf, (Type*)dflt, true)) = 0;
                             break;
                         case TplType::int_:
                             if (((EXPRESSION*)dflt)->type == ExpressionNode::templateparam_)
@@ -1152,7 +1171,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             if (sym->sb->storage_class != StorageClass::label_ && sym->sb->storage_class != StorageClass::parameter_ &&
                 sym->sb->storage_class != StorageClass::namespace_ && sym->sb->storage_class != StorageClass::namespace_alias_ &&
                 sym->sb->storage_class != StorageClass::ulabel_ &&
-                (isfunction(sym->tp) || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
+                (sym->tp->IsFunction() || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
                 linkage = Linkage::cpp_;
             else
                 linkage = Linkage::c_;
@@ -1237,6 +1256,11 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                 lastParent = lastParent->sb->parentClass;
             p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
             p = mangleClasses(p, sym->sb->parentClass);
+            if (sym->sb->parent)
+            {
+                Optimizer::my_sprintf(p, "@%s", sym->sb->parent->name);
+                p += strlen(p);
+            }
             *p++ = '@';
             if (sym->sb->templateLevel && sym->templateParams)
             {
@@ -1247,14 +1271,14 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                 strcpy(p, sym->name);
                 p += strlen(p);
             }
-            if (isfunction(sym->tp))
+            if (sym->tp->IsFunction())
             {
                 *p++ = '.';
                 if (sym->sb->castoperator)
                 {
                     int tmplCount = 0;
                     *p++ = 'o';
-                    p = mangleType(p, basetype(sym->tp)->btp, true);  // cast operators get their cast type in the name
+                    p = mangleType(p, sym->tp->BaseType()->btp, true);  // cast operators get their cast type in the name
                     *p++ = '.';
                     p = mangleType(p, sym->tp, true);  // add the $qv
                     while (p > errbuf && (*--p != '.' || tmplCount))
@@ -1264,7 +1288,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                             tmplCount--;
                     p[1] = 0;
                 }
-                else
+                else	
                 {
                     p = mangleType(p, sym->tp, true);  // otherwise functions get their parameter list in the name
                                                        //                    if (!sym->sb->templateLevel)
@@ -1275,7 +1299,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                                 tmplCount++;
                             else if (*p == '#')
                                 tmplCount--;
-                        if (basetype(sym->tp)->btp->type == BasicType::memberptr_)
+                        if (sym->tp->BaseType()->btp->type == BasicType::memberptr_)
                         {
                             while (p > errbuf && (*--p != '.' || tmplCount))
                                 if (*p == '~')

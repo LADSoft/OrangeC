@@ -38,13 +38,14 @@
 #include "ccerr.h"
 #include "ildata.h"
 #include "occparse.h"
+#include "lex.h"
 #include "help.h"
 #include "floatconv.h"
 #include "memory.h"
 #include "OptUtils.h"
 #include "beinterf.h"
 #include "initbackend.h"
-
+#include "types.h"
 namespace Parser {
 const char* beDecorateSymName(SYMBOL* sym)
 {
@@ -78,7 +79,7 @@ void Optimizer::SymbolManager::clear()
     globalSymbols.clear();
 }
 
-Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym, bool definingFunction)
 {
     if (sym && sym->sb)
     {
@@ -87,6 +88,28 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
         if (!rv)
         {
             rv = Make(sym);
+        }
+        else
+        {
+            rv->outputName = sym->sb->decoratedName;
+        }
+        if (definingFunction && Optimizer::architecture != ARCHITECTURE_MSIL)
+        {
+            // the backend requires type info for all function params in a generated function
+            // but, we don't want to generate all the param types for each call site
+            // and each prototype.   So we just get in here for functions that are
+            // actually being defined.
+            if (sym->tp->BaseType()->syms && rv && !rv->syms)
+            {
+                Optimizer::LIST** p = &rv->syms;
+                for (auto sp : *sym->tp->BaseType()->syms)
+                {
+                    *p = Allocate<Optimizer::LIST>();
+                    (*p)->data = Get(sp);
+                    EnterType((Optimizer::SimpleSymbol*)(*p)->data);
+                    p = &(*p)->next;
+                }
+            }
         }
         return rv;
     }
@@ -154,7 +177,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
             rv->msilArrayTP = Get(e->v.msilArray->tp);
             break;
 
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             rv->type = Optimizer::se_func;
             rv->ascall = e->v.func->ascall;
             break;
@@ -257,17 +280,24 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
     }
     return rv;
 }
-Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
+Optimizer::SimpleType* Optimizer::SymbolManager::Get(Parser::Type* tp)
 {
     int i = 0;
     Optimizer::SimpleType* rv = Allocate<Optimizer::SimpleType>();
-    bool isConst = isconst(tp);
-    bool isVolatile = isvolatile(tp);
-    bool isRestrict = isrestrict(tp);
-    bool isAtomic = isatomic(tp);
+    if (tp->IsDeferred())
+    {
+        rv->type = st_i;
+        rv->size = getSize(BasicType::int_);
+        rv->sizeFromType = -ISZ_UINT;
+        return rv;
+    }
+    bool isConst = tp->IsConst();
+    bool isVolatile = tp->IsVolatile();
+    bool isRestrict = tp->IsRestrict();
+    bool isAtomic = tp->IsAtomic();
     bool isvalist = false;
     bool istypedef = false;
-    while (tp != basetype(tp))
+    while (tp != tp->BaseType())
     {
         if (tp->type == BasicType::va_list_)
             isvalist = true;
@@ -275,17 +305,17 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             istypedef = true;
         tp = tp->btp;
     }
-    if (isstructured(tp) && basetype(tp)->sp && basetype(tp)->sp->sb->structuredAliasType)
+    if (tp->IsStructured() && tp->BaseType()->sp && tp->BaseType()->sp->sb->structuredAliasType)
     {
-        auto tp1 = basetype(tp)->sp->sb->structuredAliasType;
-        if (ispointer(tp1))
+        auto tp1 = tp->BaseType()->sp->sb->structuredAliasType;
+        if (tp1->IsPtr())
             tp1 = &stdpointer;
-        if (basetype(tp1)->type == BasicType::enum_)
+        if (tp1->BaseType()->type == BasicType::enum_)
             tp1 = tp1->btp;
         rv->structuredAlias = Get(tp1);
     }
-    if ((isstructured(tp) && basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated) ||
-        basetype(tp)->type == BasicType::auto_)
+    if ((tp->IsStructured() && tp->BaseType()->sp->sb->templateLevel && !tp->BaseType()->sp->sb->instantiated) ||
+        tp->BaseType()->type == BasicType::auto_)
     {
         rv->type = st_i;
         rv->size = getSize(BasicType::int_);
@@ -295,12 +325,12 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
     {
         rv->type = Get(tp->type);
 
-        if (basetype(tp)->sp)
+        if (tp->BaseType()->sp)
         {
-            rv->sp = Get(basetype(tp)->sp);
+            rv->sp = Get(tp->BaseType()->sp);
         }
         rv->size = tp->size;
-        if (!isstructured(tp) && !isfunction(tp) && tp->type != BasicType::ellipse_ && basetype(tp)->type != BasicType::any_)
+        if (!tp->IsStructured() && !tp->IsFunction() && tp->type != BasicType::ellipse_ && tp->BaseType()->type != BasicType::any_)
             rv->sizeFromType = sizeFromType(tp);
         else
             rv->sizeFromType = ISZ_ADDR;
@@ -324,18 +354,18 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->type != BasicType::aggregate_ && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
+        if (tp->type != BasicType::aggregate_ && (!tp->IsFunction() || Optimizer::architecture == ARCHITECTURE_MSIL) && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
         {
             Optimizer::LIST** p = &rv->sp->syms;
             for (auto sp : *tp->syms)
             {
                 *p = Allocate<Optimizer::LIST>();
-                if (isfunction(tp) && sp->sb->parent)
-                    sp->sb->parent->sb->decoratedName = basetype(tp)->sp->sb->decoratedName;
+                if (tp->IsFunction() && sp->sb->parent)
+                    sp->sb->parent->sb->decoratedName = tp->BaseType()->sp->sb->decoratedName;
                 (*p)->data = Get(sp);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
-                    if (sp->sb->storage_class == StorageClass::static_ || isfunction(sp->tp))
+                    if (sp->sb->storage_class == StorageClass::static_ || sp->tp->IsFunction())
                     {
                         Optimizer::SimpleSymbol* ns = Allocate<Optimizer::SimpleSymbol>();
                         *ns = *(Optimizer::SimpleSymbol*)(*p)->data;
@@ -343,7 +373,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
                     }
                     EnterType((Optimizer::SimpleSymbol*)(*p)->data);
                 }
-                else if (isfunction(tp))
+                else if (tp->IsFunction())
                 {
                     EnterType((Optimizer::SimpleSymbol*)(*p)->data);
                 }
@@ -370,11 +400,11 @@ namespace Parser
 {
 void refreshBackendParams(SYMBOL* funcsp)
 {
-    if (isfunction(funcsp->tp))
+    if (funcsp->tp->IsFunction())
     {
-        basetype(funcsp->tp)->sp = funcsp;
-        auto it = basetype(funcsp->tp)->syms->begin();
-        auto ite = basetype(funcsp->tp)->syms->end();
+        funcsp->tp->BaseType()->sp = funcsp;
+        auto it = funcsp->tp->BaseType()->syms->begin();
+        auto ite = funcsp->tp->BaseType()->syms->end();
         Optimizer::LIST* syms = Optimizer::SymbolManager::Get(funcsp)->syms;
         while (it != ite && syms)
         {
@@ -397,15 +427,15 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     Optimizer::SimpleSymbol* rv = Allocate<Optimizer::SimpleSymbol>();
     rv->name = sym->name;
     rv->align =
-        sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(StorageClass::auto_, basetype(sym->tp));
-    rv->size = basetype(sym->tp)->size;
+        sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(StorageClass::auto_, sym->tp->BaseType());
+    rv->size = sym->tp->BaseType()->size;
     rv->importfile = sym->sb->importfile;
     if (sym->sb->parentNameSpace)
         rv->namespaceName = sym->sb->parentNameSpace->name;
     rv->i = sym->sb->value.i;
     Add(sym, rv);
     rv->storage_class = Get(sym->sb->storage_class);
-    if (!isstructured(sym->tp) && !isfunction(sym->tp) && sym->tp->type != BasicType::ellipse_ && basetype(sym->tp)->type != BasicType::any_)
+    if (!sym->tp->IsStructured() && !sym->tp->IsFunction() && sym->tp->type != BasicType::ellipse_ && sym->tp->BaseType()->type != BasicType::any_ && !sym->tp->IsDeferred())
         rv->sizeFromType = sizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;
@@ -435,7 +465,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->msil = sym->sb->msil;
     rv->templateLevel = sym->sb->templateLevel;
     rv->hasParams = sym->sb->paramsize != 0;
-    rv->isstructured = isstructured(sym->tp);
+    rv->isstructured = sym->tp->IsStructured();
     rv->anonymous = sym->sb->anonymous;
     rv->allocate = sym->sb->allocate;
     rv->thisPtr = sym->sb->thisPtr;
@@ -469,16 +499,16 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
 
     rv->outputName = beDecorateSymName(sym);
     rv->stackProtectExplicit = sym->sb->attribs.uninheritable.stackProtect;
-    if (isarray(sym->tp))
+    if (sym->tp->IsArray())
     {
         // the backend will also check if the address of a variable is being taken...
         // and before we pack up the function we will check theCurrentFunc->sb->usesAlloca
         // we don't know any of that definitively right now.
         rv->stackProtectStrong = true;
-        TYPE *tp1 = sym->tp;
-        while (isarray(tp1))
-            tp1 = basetype(tp1)->btp;
-        tp1 = basetype(tp1);
+        Type *tp1 = sym->tp;
+        while (tp1->IsArray())
+            tp1 = tp1->BaseType()->btp;
+        tp1 = tp1->BaseType();
         rv->stackProtectBasic = (tp1->type == BasicType::char_ || tp1->type == BasicType::unsigned_char_) && sym->tp->size >= STACK_PROTECT_MINIMUM_CONSIDERED;
     }
     return rv;

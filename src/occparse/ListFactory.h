@@ -54,12 +54,12 @@ private:
 void ListFactoryInit();
 
 extern ListFactory<struct casedata*> casedataListFactory;
-extern ListFactory<struct stmt*> stmtListFactory;
+extern ListFactory<Statement*> stmtListFactory;
 extern ListFactory<struct expr*> exprListFactory;
 extern ListFactory<struct sym*> symListFactory;
 extern ListFactory<NAMESPACEVALUEDATA*> namespaceValueDataListFactory;
-extern ListFactory<struct blockdata*> blockDataListFactory;
-extern ListFactory<struct init*> initListFactory;
+extern ListFactory<FunctionBlock*> blockDataListFactory;
+extern ListFactory<Initializer*> initListFactory;
 extern ListFactory<struct _ccNamespaceData*> ccNameSpaceDataListFactory;
 extern ListFactory<struct __lambda*> lambdaListFactory;
 extern ListFactory<struct _memberInitializers*> memberInitializersListFactory;
@@ -67,9 +67,9 @@ extern ListFactory<struct _baseClass*> baseClassListFactory;
 extern ListFactory<struct _vtabEntry*> vtabEntryListFactory;
 extern ListFactory<struct _vbaseEntry*> vbaseEntryListFactory;
 extern ListFactory<struct _structSym*> structsymListFactory;
-extern ListFactory<struct initlist*> initListListFactory;
+extern ListFactory<Argument*> initListListFactory;
 extern ListFactory<struct _errl*> errlListFactory;
-extern ListFactory<struct _string*> stringListFactory;
+extern ListFactory<StringData*> stringListFactory;
 extern ListFactory<struct Optimizer::_linedata*> lineDataListFactory;
 extern ListFactory<TEMPLATEPARAMPAIR> templateParamPairListFactory;
 extern ListFactory<TEMPLATESELECTOR> templateSelectorListFactory;

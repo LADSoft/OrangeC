@@ -25,5 +25,5 @@
 
 namespace Parser
 {
-LEXLIST* statement_SEH(LEXLIST* lex, SYMBOL* funcsp, std::list<BLOCKDATA*>& parent);
+LexList* ParseSEH(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent);
 }

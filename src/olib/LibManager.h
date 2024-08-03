@@ -61,7 +61,7 @@ class LibManager
     void ExtractFile(const ObjString& name) { files.Extract(stream, name); }
     void ReplaceFile(const ObjString& name) { files.Replace(name); }
     void ReplaceFile(ObjFile& obj) { files.Replace(obj); }
-    ObjInt Lookup(const ObjString& name);
+    const std::vector<unsigned>& Lookup(const ObjString& name);
     ObjFile* LoadModule(ObjInt index, ObjFactory* factory) { return files.LoadModule(stream, index, factory); }
     bool LoadLibrary();
     int SaveLibrary();

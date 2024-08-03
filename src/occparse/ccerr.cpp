@@ -24,6 +24,7 @@
 
 #include "compiler.h"
 #include <cstdarg>
+#include <unordered_set>
 #include "PreProcessor.h"
 #include "Utils.h"
 #include "Errors.h"
@@ -51,7 +52,8 @@
 #include <cstdio>
 #include "symtab.h"
 #include "osutil.h"
-
+#include "declcpp.h"
+#include "beinterf.h"
 namespace Parser
 {
 
@@ -125,7 +127,7 @@ void DumpErrorNameToHelpMap()
     printf("Name to help map Keyword::end_.\n");
 }
 
-void EnterInstantiation(LEXLIST* lex, SYMBOL* sym)
+void EnterInstantiation(LexList* lex, SYMBOL* sym)
 {
     if (lex)
     {
@@ -406,9 +408,9 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         }
     if (!file)
     {
-        if (context && context->last->data->type != l_none)
+        if (context && context->last->data->type != LexType::none_)
         {
-            LEXLIST* lex = context->cur ? context->cur->prev : context->last;
+            LexList* lex = context->cur ? context->cur->prev : context->last;
             line = lex->data->errline;
             file = lex->data->errfile;
         }
@@ -662,7 +664,7 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
     Optimizer::my_sprintf(buf, "'%s' is not a member of '", unopped);
     if (strSym)
     {
-        typeToString(buf + strlen(buf), strSym->tp);
+        strSym->tp->ToString(buf + strlen(buf));
     }
     else if (nsv)
     {
@@ -721,31 +723,31 @@ void errorstrsym(int err, const char* name, SYMBOL* sym2)
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
 }
-void errorstringtype(int err, char* str, TYPE* tp1)
+void errorstringtype(int err, char* str, Type* tp1)
 {
     char tpb1[4096];
     memset(tpb1, 0, sizeof(tpb1));
-    typeToString(tpb1, tp1);
+    tp1->ToString(tpb1);
     printerr(err, nullptr, 0, str, tpb1);
 }
 
-void errortype(int err, TYPE* tp1, TYPE* tp2)
+void errortype(int err, Type* tp1, Type* tp2)
 {
     char tpb1[4096], tpb2[4096];
     memset(tpb1, 0, sizeof(tpb1));
     memset(tpb2, 0, sizeof(tpb2));
-    typeToString(tpb1, tp1);
+    tp1->ToString(tpb1);
     if (tp2)
-        typeToString(tpb2, tp2);
+        tp2->ToString(tpb2);
     printerr(err, nullptr, 0, tpb1, tpb2);
 }
-void errorConversionOrCast(bool convert, TYPE* tp1, TYPE* tp2)
+void errorConversionOrCast(bool convert, Type* tp1, Type* tp2)
 {
-    if (isstructured(tp1))
+    if (tp1->IsStructured())
     {
         errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, tp1, tp2);
     }
-    else if (isstructured(tp2))
+    else if (tp2->IsStructured())
     {
         errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, tp1, tp2);
     }
@@ -782,7 +784,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     currentErrorLine = 0;
     printerr(err, nullptr, 0, argbuf, buf);
 }
-static BALANCE* newbalance(LEXLIST* lex, BALANCE* bal)
+static BALANCE* newbalance(LexList* lex, BALANCE* bal)
 {
     BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
@@ -797,7 +799,7 @@ static BALANCE* newbalance(LEXLIST* lex, BALANCE* bal)
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
+static void setbalance(LexList* lex, BALANCE** bal, bool assumeTemplate)
 {
     switch (KW(lex))
     {
@@ -834,8 +836,8 @@ static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
                 }
                 if (*bal && !(--(*bal)->count))
                     (*bal) = (*bal)->back;
-                break;
             }
+            break;
         case Keyword::begin_:
             if (!*bal || (*bal)->type != BAL_BEGIN)
                 *bal = newbalance(lex, *bal);
@@ -867,7 +869,7 @@ static void setbalance(LEXLIST* lex, BALANCE** bal, bool assumeTemplate)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim(LEXLIST** lex, Keyword* skimlist, bool assumeTemplate)
+void errskim(LexList** lex, Keyword* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
@@ -886,12 +888,12 @@ void errskim(LEXLIST** lex, Keyword* skimlist, bool assumeTemplate)
         *lex = getsym();
     }
 }
-void skip(LEXLIST** lex, Keyword kw)
+void skip(LexList** lex, Keyword kw)
 {
     if (MATCHKW(*lex, kw))
         *lex = getsym();
 }
-bool needkw(LEXLIST** lex, Keyword kw)
+bool needkw(LexList** lex, Keyword kw)
 {
     if (lex && MATCHKW(*lex, kw))
     {
@@ -906,7 +908,7 @@ bool needkw(LEXLIST** lex, Keyword kw)
 }
 void specerror(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 
-static bool hasGoto(std::list<STATEMENT*>* statements)
+static bool hasGoto(std::list<Statement*>* statements)
 {
     if (!statements)
         return false;
@@ -950,7 +952,7 @@ static bool hasGoto(std::list<STATEMENT*>* statements)
     }
     return false;
 }
-static bool hasDeclarations(std::list<STATEMENT*>* statements)
+static bool hasDeclarations(std::list<Statement*>* statements)
 {
     if (!statements)
         return false;
@@ -995,7 +997,7 @@ static bool hasDeclarations(std::list<STATEMENT*>* statements)
     }
     return false;
 }
-static void labelIndexes(std::list<STATEMENT*>* statements, int* min, int* max)
+static void labelIndexes(std::list<Statement*>* statements, int* min, int* max)
 {
     if (!statements)
         return;
@@ -1043,7 +1045,7 @@ static void labelIndexes(std::list<STATEMENT*>* statements, int* min, int* max)
         }
     }
 }
-static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
+static VLASHIM* mkshim(_vlaTypes type, int level, int label, Statement* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)
 {
     VLASHIM* rv = Allocate<VLASHIM>();
@@ -1063,7 +1065,7 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VL
     return rv;
 }
 /* thisll be sluggish if there are lots of gotos & labels... */
-static std::list<VLASHIM*> getVLAList(std::list<STATEMENT*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
+static std::list<VLASHIM*> getVLAList(std::list<Statement*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
                            int level, bool* branched)
 {
     std::list<VLASHIM*> rv;
@@ -1312,7 +1314,7 @@ static void validateGotos(std::list<VLASHIM*>& vlashims, std::list<VLASHIM*>& ro
         }
     }
 }
-void checkGotoPastVLA(std::list<STATEMENT*>*statements, bool first)
+void checkGotoPastVLA(std::list<Statement*>*statements, bool first)
 {
     if (hasGoto(statements) && hasDeclarations(statements))
     {
@@ -1329,17 +1331,17 @@ void checkGotoPastVLA(std::list<STATEMENT*>*statements, bool first)
         validateGotos(list, list);
     }
 }
-void checkUnlabeledReferences(std::list<BLOCKDATA*>& block)
+void checkUnlabeledReferences(std::list<FunctionBlock*>& block)
 {
     int i;
     for (auto sp : *labelSyms)
     {
         if (sp->sb->storage_class == StorageClass::ulabel_)
         {
-            STATEMENT* st;
+            Statement* st;
             specerror(ERR_UNDEFINED_LABEL, sp->name, sp->sb->declfile, sp->sb->declline);
             sp->sb->storage_class = StorageClass::label_;
-            st = stmtNode(nullptr, block, StatementNode::label_);
+            st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
             st->label = sp->sb->offset;
         }
     }
@@ -1411,7 +1413,7 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                     if (sp->sb->storage_class == StorageClass::global_ || sp->sb->storage_class == StorageClass::static_ ||
                         sp->sb->storage_class == StorageClass::localstatic_)
                         /* void will be caught earlier */
-                        if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) &&
+                        if (!sp->tp->IsFunction() && !sp->tp->IsArray() && sp->tp->size == 0 && !sp->tp->IsVoid() &&
                             sp->tp->type != BasicType::any_ && !sp->sb->templateLevel)
                             errorsym(ERR_UNSIZED, sp);
                 }
@@ -1471,7 +1473,7 @@ static void assignmentAssign(EXPRESSION* left, bool assign)
 }
 void assignmentUsages(EXPRESSION* node, bool first)
 {
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     if (node == 0)
         return;
     switch (node->type)
@@ -1482,6 +1484,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
             break;
         case ExpressionNode::const_:
         case ExpressionNode::msil_array_access_:
+        case ExpressionNode::cvarpointer_:
             break;
         case ExpressionNode::c_ll_:
         case ExpressionNode::c_ull_:
@@ -1605,7 +1608,6 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::alloca_:
         case ExpressionNode::loadstack_:
         case ExpressionNode::savestack_:
-        case ExpressionNode::literalclass_:
             assignmentUsages(node->left, false);
             break;
         case ExpressionNode::assign_:
@@ -1674,6 +1676,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case ExpressionNode::lvalue_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             assignmentUsages(node->left, false);
             break;
         case ExpressionNode::atomic_:
@@ -1683,7 +1686,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
             assignmentUsages(node->v.ad->address, false);
             assignmentUsages(node->v.ad->third, false);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             {
                 if (fp->arguments)
@@ -1715,7 +1718,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
 }
 static int checkDefaultExpression(EXPRESSION* node)
 {
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     int rv = false;
     if (node == 0)
         return 0;
@@ -1793,7 +1796,6 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
             rv |= checkDefaultExpression(node->left);
             break;
         case ExpressionNode::uminus_:
@@ -1902,6 +1904,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::thisref_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= checkDefaultExpression(node->left);
             break;
         case ExpressionNode::atomic_:
@@ -1911,7 +1914,7 @@ static int checkDefaultExpression(EXPRESSION* node)
             rv |= checkDefaultExpression(node->v.ad->address);
             rv |= checkDefaultExpression(node->v.ad->third);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             fp = node->v.func;
             if (fp->arguments)
                 for (auto args : *fp->arguments)
@@ -1945,6 +1948,200 @@ void checkDefaultArguments(SYMBOL* spi)
     if (r & 2)
     {
         error(ERR_LAMBDA_CANNOT_CAPTURE);
+    }
+}
+void CheckUndefinedStructures(SYMBOL* funcsp)
+{
+    Type* tp = funcsp->tp->BaseType()->btp;
+    tp->InstantiateDeferred();
+    if ((tp->IsStructured() && !tp->BaseType()->sp->tp->syms) || tp->IsDeferred())
+    {
+        currentErrorLine = 0;
+        errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
+    }
+    for (auto sym : *funcsp->tp->BaseType()->syms)
+    {
+        Type* tp = sym->tp->BaseType();
+        if (tp->IsStructured() && !tp->BaseType()->sp->tp->syms)
+        {
+            tp->InstantiateDeferred();
+            if (!tp->BaseType()->sp->tp->syms)
+            {
+                currentErrorLine = 0;
+                errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
+            }
+        }
+    }
+}
+void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
+{
+    if (sp->sb->isConstructor)
+    {
+        if (!notype)
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+        else if (sp->sb->storage_class == StorageClass::virtual_)
+            errorstr(ERR_INVALID_STORAGE_CLASS, "virtual");
+        else if (sp->sb->storage_class == StorageClass::static_)
+            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+        else if (sp->tp->IsConst() || sp->tp->IsVolatile())
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
+    }
+    else if (sp->sb->isDestructor)
+    {
+        if (!notype)
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+        else if (sp->sb->storage_class == StorageClass::static_)
+            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+        else if (sp->tp->IsConst() || sp->tp->IsVolatile())
+            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
+    }
+    else if (sp->sb->parentClass && !strcmp(sp->name, sp->sb->parentClass->name))
+    {
+        error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
+    }
+}
+static bool HasConstexprConstructorInternal(SYMBOL* sym)
+{
+    sym = search(sym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
+    if (sym)
+    {
+        for (auto sp : *sym->tp->syms)
+        {
+            if (sp->sb->constexpression)
+                return true;
+        }
+    }
+    return false;
+}
+static bool HasConstexprConstructor(Type* tp)
+{
+    auto sym = tp->BaseType()->sp;
+    if (HasConstexprConstructorInternal(sym))
+        return true;
+    if (sym->sb->specializations)
+        for (auto specialize : *sym->sb->specializations)
+            if (HasConstexprConstructorInternal(specialize))
+                return true;
+    return false;
+}
+void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
+{
+    if (!templateNestingCount || instantiatingTemplate)
+    {
+        for (auto sym : *cons->tp->syms)
+        {
+            if (sym->sb->constexpression)
+            {
+                std::unordered_set<std::string, StringHash> initialized;
+                if (sym->sb->memberInitializers)
+                    for (auto m : *sym->sb->memberInitializers)
+                        initialized.insert(m->name);
+                for (auto sp : *sym->sb->parentClass->tp->syms)
+                {
+                    if (!sp->sb->init && ismemberdata(sp))
+                    {
+                        if (initialized.find(sp->name) == initialized.end())
+                        {
+                            // this should check the actual base class constructor in use
+                            // but that would be difficult to get at this point.
+                            if (!sp->tp->IsStructured() || !HasConstexprConstructor(sp->tp))
+                                errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, sp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+bool MustSpecialize(const char* name)
+{
+    if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
+        return false;
+    for (auto&& sst : enclosingDeclarations)
+    {
+        if (sst.str && !strcmp(sst.str->name, name))
+            return false;
+    }
+    return true;
+}
+void SpecializationError(char* str)
+{
+    if (MustSpecialize(str))
+        errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, str);
+}
+
+void SpecializationError(SYMBOL* sym)
+{
+    if (MustSpecialize(sym->name))
+        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
+}
+void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
+{
+    for (auto cur : *sym->tp->syms)
+    {
+        if (cur->sb->storage_class == StorageClass::static_ && (cur->tp->hasbits || localClassWarnings))
+            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+        if (sym != cur && !strcmp(sym->name, cur->name))
+        {
+            if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
+                cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
+            {
+                errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
+                break;
+            }
+        }
+        if (cur->sb->storage_class == StorageClass::overloads_)
+        {
+            for (auto cur1 : *cur->tp->syms)
+            {
+                if (localClassWarnings)
+                {
+                    if (cur1->tp->IsFunction())
+                        if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt && !cur1->tp->BaseType()->sp->sb->deferredCompile)
+                            errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
+                }
+                if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
+                    if (cur1->sb->storage_class != StorageClass::virtual_)
+                        error(ERR_SPECIFIER_VIRTUAL_FUNC);
+            }
+        }
+    }
+}
+void checkauto(Type* tp1, int err)
+{
+    if (tp1->IsAutoType())
+    {
+        error(err);
+        while (tp1->type == BasicType::const_ || tp1->type == BasicType::volatile_ || tp1->type == BasicType::lrqual_ || tp1->type == BasicType::rrqual_)
+        {
+            tp1->size = getSize(BasicType::int_);
+            tp1 = tp1->btp;
+        }
+        tp1->type = BasicType::int_;
+        tp1->size = getSize(BasicType::int_);
+    }
+}
+void checkscope(Type* tp1, Type* tp2)
+{
+    tp1 = tp1->BaseType();
+    tp2 = tp2->BaseType();
+    if (tp1->scoped != tp2->scoped)
+    {
+        error(ERR_SCOPED_TYPE_MISMATCH);
+    }
+    else if (tp1->scoped && tp2->scoped)
+    {
+        SYMBOL* sp1 = nullptr, * sp2 = nullptr;
+        if ((tp1)->type == BasicType::enum_)
+            sp1 = (tp1)->sp;
+        else
+            sp1 = (tp1)->btp->sp;
+        if (tp2->type == BasicType::enum_)
+            sp2 = tp2->sp;
+        else
+            sp2 = tp2->btp->sp;
+        if (sp1 != sp2)
+            error(ERR_SCOPED_TYPE_MISMATCH);
     }
 }
 }  // namespace Parser

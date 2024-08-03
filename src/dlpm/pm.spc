@@ -25,6 +25,7 @@ partition {
 	INITSIZE = $ - RAMBASE;
 	_BSSSTART = $;
 	region {} bss [ align = 8, roundsize = 4];
+        region {} vsb* [ align = 8, roundsize = 4];
 	_BSSEND = $;
 	STACKBASE = $;
 	STACKTOP = STACKBASE + STACKSIZE;

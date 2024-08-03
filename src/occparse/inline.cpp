@@ -54,6 +54,9 @@
 #include "iexpr.h"
 #include "iblock.h"
 #include "iinline.h"
+#include "types.h"
+#include "mangle.h"
+#include "cpplookup.h"
 
 namespace Parser
 {
@@ -61,7 +64,8 @@ static std::unordered_set<SYMBOL*> enteredInlines;
 static std::list<SYMBOL*> inlines, inlineVTabs, inlineData, inlineRttis;
 static std::unordered_map<SYMBOL *, SYMBOL*> contextMap;
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
-static int PushInline(SYMBOL* sym, bool traceback);
+static void PushInline(SYMBOL* sym, bool traceback);
+static inline void PopInline() { enclosingDeclarations.Release(); }
 static std::list<std::tuple<int, Optimizer::SimpleSymbol*, int, int>> inlineMemberPtrData;
 static std::list<std::pair<SYMBOL*, EXPRESSION *>> inlineLocalUninitializers;
 
@@ -69,7 +73,7 @@ static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
 static std::unordered_set<std::string, StringHash> didInlines;
 
-static FUNCTIONCALL* function_list[MAX_INLINE_NESTING];
+static CallSite* function_list[MAX_INLINE_NESTING];
 static int function_listcount;
 static int namenumber;
 
@@ -118,15 +122,14 @@ void dumpInlines(void)
                             }
                             else
                             {
-                                if (isfunction(sym->tp) && !sym->sb->inlineFunc.stmt && Optimizer::cparams.prm_cplusplus)
+                                if (sym->tp->IsFunction() && !sym->sb->inlineFunc.stmt && Optimizer::cparams.prm_cplusplus)
                                 {
                                     propagateTemplateDefinition(sym);
                                 }
                                 int n = PushTemplateNamespace(sym);
                                 if (sym->sb->parentClass)
                                     SwapMainTemplateArgs(sym->sb->parentClass);
-                                structSyms.clear();
-//                                PushInline(sym, true);
+                                enclosingDeclarations.clear();
                                 if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ ||
                                      sym->sb->forcedefault) &&
                                     CompileInline(sym, true))
@@ -138,7 +141,7 @@ void dumpInlines(void)
                                     sym->sb->didinline = true;
                                 }
                                 instantiationList.clear();
-                                structSyms.clear();
+                                enclosingDeclarations.clear();
                                 if (sym->sb->parentClass)
                                     SwapMainTemplateArgs(sym->sb->parentClass);
                                 PopTemplateNamespace(n);
@@ -194,7 +197,7 @@ void dumpInlines(void)
                 }
                 for (auto&& local : inlineLocalUninitializers)
                 {
-                     DumpInlineLocalUninitializer(local);
+                    DumpInlineLocalUninitializer(local);
                 }
                 inlineLocalUninitializers.clear();
             } while (!done);
@@ -233,29 +236,26 @@ void dumpInlines(void)
                             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                             if (origsym->sb->deferredCompile)
                             {
-                                STRUCTSYM s1, s;
-                                LEXLIST* lex;
+                                LexList* lex;
                                 SYMBOL* pc = sym;
                                 while (pc->sb->parentClass)
                                     pc = pc->sb->parentClass;
-                                s1.str = sym->sb->parentClass;
-                                addStructureDeclaration(&s1);
-                                s.tmpl = sym->templateParams;
-                                addTemplateDeclaration(&s);
+                                enclosingDeclarations.Add(sym->sb->parentClass);
+                                enclosingDeclarations.Add(sym->templateParams);
                                 int n = PushTemplateNamespace(pc);
                                 lex = SetAlternateLex(origsym->sb->deferredCompile);
                                 sym->sb->init = nullptr;
                                 lex = initialize(lex, nullptr, sym, StorageClass::global_, true, false, _F_NOCONSTGEN);
                                 SetAlternateLex(nullptr);
                                 PopTemplateNamespace(n);
-                                dropStructureDeclaration();
-                                dropStructureDeclaration();
+                                enclosingDeclarations.Drop();
+                                enclosingDeclarations.Drop();
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
-                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
+                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                             if (sym->sb->init)
                             {
-                                if (isstructured(sym->tp) || isarray(sym->tp))
+                                if (sym->tp->IsStructured() || sym->tp->IsArray())
                                 {
                                     dumpInitGroup(sym, sym->tp);
                                 }
@@ -268,7 +268,7 @@ void dumpInlines(void)
                             }
                             else
                             {
-                                Optimizer::genstorage(basetype(sym->tp)->size);
+                                Optimizer::genstorage(sym->tp->BaseType()->size);
                             }
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                             if (sym->sb->dest)
@@ -288,10 +288,10 @@ void dumpInlines(void)
                             else
                             {
                                 inInsert(sym);
-                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_data);
+                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                                 if (sym->sb->init)
                                 {
-                                    if (isstructured(sym->tp) || isarray(sym->tp))
+                                    if (sym->tp->IsStructured() || sym->tp->IsArray())
                                     {
                                         dumpInitGroup(sym, sym->tp);
                                     }
@@ -303,11 +303,11 @@ void dumpInlines(void)
                                     }
                                 }
                                 else
-                                    Optimizer::genstorage(basetype(sym->tp)->size);
+                                    Optimizer::genstorage(sym->tp->BaseType()->size);
                                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                                 if (sym->sb->dest)
                                     destructors.push(sym);
-                                if (sym->sb->init && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                                if (sym->sb->init && sym->sb->init->front()->exp && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                     CreateInlineConstructor(sym);
                             }
                         }
@@ -396,7 +396,7 @@ static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& unini
     Optimizer::cseg();
 
     iexpr_func_init();
-    gen_func(varNode(ExpressionNode::global_, newFunc), 1);
+    gen_func(MakeExpression(ExpressionNode::global_, newFunc), 1);
     Optimizer::gen_virtual(currentFunction, Optimizer::vt_code);
     Optimizer::addblock(-1);
     Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
@@ -436,8 +436,9 @@ SYMBOL* getvc1Thunk(int offset)
     }
     return rv;
 }
-static int PushInline(SYMBOL* sym, bool traceback)
+static void PushInline(SYMBOL* sym, bool traceback)
 {
+    enclosingDeclarations.Mark();
     std::stack<SYMBOL*> reverseOrder;
     reverseOrder.push(sym);
     if (traceback)
@@ -457,36 +458,25 @@ static int PushInline(SYMBOL* sym, bool traceback)
             }
         }
     }
-    int n = 0;
     while (!reverseOrder.empty())
     {
         sym = reverseOrder.top();
         reverseOrder.pop();
         EnterInstantiation(nullptr, sym);
-        STRUCTSYM t, s, r;
-        t.tmpl = nullptr;
-        r.tmpl = nullptr;
         if (sym->templateParams)
         {
-            r.tmpl = sym->templateParams;
-            addTemplateDeclaration(&r);
-            n++;
+            enclosingDeclarations.Add(sym->templateParams);
         }
         if (!sym->sb->parentClass && sym->sb->friendContext)
         {
-            s.str = sym->sb->friendContext;
-            addStructureDeclaration(&s);
-            n++;
-            SYMBOL* spt = basetype(s.str->tp)->sp;
-            t.tmpl = spt->templateParams;
-            if (t.tmpl)
+            enclosingDeclarations.Add(sym->sb->friendContext);
+            SYMBOL* spt = sym->sb->friendContext->tp->BaseType()->sp;
+            if (spt->templateParams)
             {
-                addTemplateDeclaration(&t);
-                n++;
+                enclosingDeclarations.Add(spt->templateParams);
             }
         }
     }
-    return n;
 }
 bool CompileInline(SYMBOL* sym, bool toplevel)
 {
@@ -499,22 +489,28 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
         int oldPackIndex = packIndex;
         int oldArgumentNesting = argumentNesting;
         int oldExpandingParams = expandingParams;
+        int oldconst = inConstantExpression;
+        int oldanon = anonymousNotAlloc;
+        anonymousNotAlloc = 0;
+        inConstantExpression = 0;
         packIndex = -1;
         argumentNesting = 0;
         expandingParams = 0;
         if (sym->sb->specialized && sym->templateParams->size() == 1)
             sym->sb->instantiated = true;
         int n1 = 0;
-        auto hold = std::move(structSyms);
+        auto hold = std::move(enclosingDeclarations);
         auto hold2 = std::move(instantiationList);
-        n1 = PushInline(sym, true);
+        PushInline(sym, true);
         ++instantiatingTemplate;
         deferredCompileOne(sym);
         --instantiatingTemplate;
         instantiationList.clear();
         instantiationList = std::move(hold2);
-        structSyms.clear();
-        structSyms = std::move(hold);
+        enclosingDeclarations.clear();
+        enclosingDeclarations = std::move(hold);
+        anonymousNotAlloc = oldanon;
+        inConstantExpression = oldconst;
         expandingParams = oldExpandingParams;
         argumentNesting = oldArgumentNesting;
         packIndex = oldPackIndex;
@@ -523,13 +519,13 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
 }
 static void GenInline(SYMBOL* sym) 
 {
+    InitializeFunctionArguments(sym);
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
     int n = PushTemplateNamespace(sym);
-    int n1 = PushInline(sym, false);
+    PushInline(sym, false);
     genfunc(sym, true);
-    for (int i = 0; i < n1; i++)
-        dropStructureDeclaration();
+    PopInline();
     PopTemplateNamespace(n);
 }
 void InsertInline(SYMBOL* sym)
@@ -538,7 +534,7 @@ void InsertInline(SYMBOL* sym)
     {
         enteredInlines.insert(sym);
         contextMap[sym] = theCurrentFunc;
-        if (isfunction(sym->tp))
+        if (sym->tp->IsFunction())
         {
             inlines.push_back(sym);
         }
@@ -586,7 +582,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
      * sym in an inline function to force allocation of the variables
      */
     EXPRESSION *temp, *temp1;
-    FUNCTIONCALL* fp;
+    CallSite* fp;
     int i;
     (void)fromlval;
     if (node == 0)
@@ -749,7 +745,6 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::savestack_:
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::lvalue_:
-        case ExpressionNode::literalclass_:
         case ExpressionNode::x_string_:
         case ExpressionNode::x_object_:
             temp->left = inlineexpr(node->left, nullptr);
@@ -813,6 +808,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::initobj_:
         case ExpressionNode::sizeof_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             temp->left = inlineexpr(node->left, nullptr);
             break;
         case ExpressionNode::atomic_:
@@ -823,7 +819,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             temp->v.ad->value = inlineexpr(node->v.ad->value, nullptr);
             temp->v.ad->third = inlineexpr(node->v.ad->third, nullptr);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             temp->v.func = nullptr;
             fp = node->v.func;
             if (fp->sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
@@ -855,7 +851,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             }
             if (temp->v.func == nullptr)
             {
-                temp->v.func = Allocate<FUNCTIONCALL>();
+                temp->v.func = Allocate<CallSite>();
                 *temp->v.func = *fp;
                 if (temp->v.func->arguments)
                 {
@@ -863,7 +859,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     temp->v.func->arguments->clear();
                     for (auto a : args)
                     {
-                        auto il = Allocate<INITLIST>();
+                        auto il = Allocate<Argument>();
                         *il = *a;
                         il->exp = inlineexpr(a->exp, nullptr);
                         temp->v.func->arguments->push_back(il);
@@ -886,14 +882,14 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
 
 /*-------------------------------------------------------------------------*/
 
-std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
+std::list<Statement*>* inlinestmt(std::list<Statement*>* blocks)
 {
     if (blocks)
     {
-        std::list<STATEMENT*>* out = stmtListFactory.CreateList();
+        std::list<Statement*>* out = stmtListFactory.CreateList();
         for (auto block : *blocks)
         {
-            auto stmt = Allocate<STATEMENT>();
+            auto stmt = Allocate<Statement>();
             out->push_back(stmt);
             *stmt = *block;
             block = stmt;
@@ -953,36 +949,36 @@ std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks)
     }
     return nullptr;
 }
-static void inlineResetReturn(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
+static void inlineResetReturn(Statement* block, Type* rettp, EXPRESSION* retnode)
 {
     EXPRESSION* exp;
-    if (isstructured(rettp))
+    if (rettp->IsStructured())
     {
         diag("structure in inlineResetReturn");
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
     }
     else
     {
         exp = block->select;
         cast(rettp, &exp);
-        exp = exprNode(ExpressionNode::assign_, retnode, exp);
+        exp = MakeExpression(ExpressionNode::assign_, retnode, exp);
     }
     block->type = StatementNode::expr_;
     block->select = exp;
 }
-static EXPRESSION* newReturn(TYPE* tp)
+static EXPRESSION* newReturn(Type* tp)
 {
     EXPRESSION* exp;
-    if (!isstructured(tp) && !isvoid(tp))
+    if (!tp->IsStructured() && !tp->IsVoid())
     {
         exp = anonymousVar(StorageClass::auto_, tp);
         deref(tp, &exp);
     }
     else
-        exp = intNode(ExpressionNode::c_i_, 0);
+        exp = MakeIntExpression(ExpressionNode::c_i_, 0);
     return exp;
 }
-static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION* retnode)
+static void reduceReturns(std::list<Statement*>* blocks, Type* rettp, EXPRESSION* retnode)
 {
     if (blocks)
     {
@@ -1035,7 +1031,7 @@ static void reduceReturns(std::list<STATEMENT*>* blocks, TYPE* rettp, EXPRESSION
         }
     }
 }
-static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
+static EXPRESSION* scanReturn(std::list<Statement*>* blocks, Type* rettp)
 {
     EXPRESSION* rv = nullptr;
     if (blocks)
@@ -1055,9 +1051,9 @@ static EXPRESSION* scanReturn(std::list<STATEMENT*>* blocks, TYPE* rettp)
                 break;
             case StatementNode::return_:
                 rv = block->select;
-                if (!isstructured(rettp))
+                if (!rettp->IsStructured())
                 {
-                    if (isref(rettp))
+                    if (rettp->IsRef())
                         deref(&stdpointer, &rv);
                     else
                         cast(rettp, &rv);
@@ -1177,7 +1173,6 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::l_ubitint_:
         case ExpressionNode::l_string_:
         case ExpressionNode::l_object_:
-        case ExpressionNode::literalclass_:
             rv = sideEffects(node->left);
             break;
         case ExpressionNode::uminus_:
@@ -1286,6 +1281,7 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::thisref_:
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
+        case ExpressionNode::constexprconstructor_:
             rv |= sideEffects(node->left);
             break;
         case ExpressionNode::atomic_:
@@ -1296,7 +1292,7 @@ static bool sideEffects(EXPRESSION* node)
             rv |= sideEffects(node->v.ad->value);
             rv |= sideEffects(node->v.ad->third);
             break;
-        case ExpressionNode::func_:
+        case ExpressionNode::callsite_:
             rv = true;
             break;
         case ExpressionNode::stmt_:
@@ -1310,21 +1306,21 @@ static bool sideEffects(EXPRESSION* node)
     }
     return rv;
 }
-static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<STATEMENT*> **stp)
+static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<Statement*> **stp)
 {
     if (!sx->sb->altered && !sx->sb->addressTaken && !sideEffects(exp))
     {
         // well if the expression is too complicated it gets evaluated over and over
         // but maybe the backend can clean it up again...
-        sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)exp;
+        sx->sb->inlineFunc.stmt = (std::list<Statement*>*)exp;
     }
     else
     {
         EXPRESSION* tnode = anonymousVar(StorageClass::auto_, sx->tp);
         deref(sx->tp, &tnode);
-        sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)tnode;
-        tnode = exprNode(ExpressionNode::assign_, tnode, exp);
-        auto stmt = Allocate<STATEMENT>();
+        sx->sb->inlineFunc.stmt = (std::list<Statement*>*)tnode;
+        tnode = MakeExpression(ExpressionNode::assign_, tnode, exp);
+        auto stmt = Allocate<Statement>();
         stmt->type = StatementNode::expr_;
         stmt->select = tnode;
         if (!*stp)
@@ -1332,17 +1328,17 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<STATEMENT*> **stp)
         (*stp)->push_back(stmt);
     }
 }
-static std::list<STATEMENT*>* SetupArguments1(FUNCTIONCALL* params)
+static std::list<Statement*>* SetupArguments1(CallSite* params)
 {
-    std::list<STATEMENT*>* st = nullptr;
-    std::list<INITLIST*>::iterator al, ale = al;
+    std::list<Statement*>* st = nullptr;
+    std::list<Argument*>::iterator al, ale = al;
     if (params->arguments)
     {
         al = params->arguments->begin();
         ale = params->arguments->end();
     }
-    auto it = basetype(params->sp->tp)->syms->begin();
-    auto ite = basetype(params->sp->tp)->syms->end();
+    auto it = params->sp->tp->BaseType()->syms->begin();
+    auto ite = params->sp->tp->BaseType()->syms->end();
     if (ismember(params->sp))
     {
         setExp(*it, params->thisptr, &st);
@@ -1372,7 +1368,7 @@ void SetupVariables(SYMBOL* sym)
             {
                 EXPRESSION* ev = anonymousVar(StorageClass::auto_, sx->tp);
                 deref(sx->tp, &ev);
-                sx->sb->inlineFunc.stmt = (std::list<STATEMENT*>*)ev;
+                sx->sb->inlineFunc.stmt = (std::list<Statement*>*)ev;
             }
         }
         syms = syms->Next();
@@ -1380,7 +1376,7 @@ void SetupVariables(SYMBOL* sym)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
+EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
 {
     bool found = false;
     EXPRESSION* newExpression;
@@ -1390,7 +1386,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     {
         return nullptr;
     }
-    if (!isfunction(params->functp))
+    if (!params->functp->IsFunction())
     {
         return nullptr;
     }
@@ -1420,7 +1416,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         allocated = true;
         AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
-    std::list<STATEMENT*>* stmt = stmtListFactory.CreateList();
+    std::list<Statement*>* stmt = stmtListFactory.CreateList();
     auto stmt1 = SetupArguments1(params);
     SetupVariables(params->sp);
     function_list[function_listcount++] = params;
@@ -1429,13 +1425,13 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     {
         // this will kill the ret val but we don't care since we've modified params
 
-        auto stmt2 = Allocate<STATEMENT>();
+        auto stmt2 = Allocate<Statement>();
         stmt2->type = StatementNode::block_;
         stmt2->lower = stmt1;
         stmt->push_front(stmt2);
     }
 
-    newExpression = exprNode(ExpressionNode::stmt_, nullptr, nullptr);
+    newExpression = MakeExpression(ExpressionNode::stmt_);
     newExpression->v.stmt = stmt;
 
     if (params->sp->sb->retcount == 1)
@@ -1443,11 +1439,11 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         /* optimization for simple inline functions that only have
          * one return statement, don't save to an intermediate variable
          */
-        scanReturn(stmt, basetype(params->sp->tp)->btp);
+        scanReturn(stmt, params->sp->tp->BaseType()->btp);
     }
     else if (params->sp->sb->retcount)
     {
-        newExpression->left = newReturn(basetype(params->sp->tp)->btp);
+        newExpression->left = newReturn(params->sp->tp->BaseType()->btp);
         reduceReturns(stmt, params->sp->tp->btp, newExpression->left);
     }
     optimize_for_constants(&newExpression->left);
@@ -1459,18 +1455,18 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     if (newExpression->type == ExpressionNode::stmt_)
         if (newExpression->v.stmt->front()->type == StatementNode::block_)
             if (!newExpression->v.stmt->front()->lower)
-                newExpression = intNode(ExpressionNode::c_i_, 0);  // noop if there is no body
+                newExpression = MakeIntExpression(ExpressionNode::c_i_, 0);  // noop if there is no body
     if (newExpression->type == ExpressionNode::stmt_)
     {
-        newExpression->left = intNode(ExpressionNode::c_i_, 0);
-        if (isstructured(basetype(params->sp->tp)->btp))
+        newExpression->left = MakeIntExpression(ExpressionNode::c_i_, 0);
+        if (params->sp->tp->BaseType()->btp->IsStructured())
             cast(&stdpointer, &newExpression->left);
         else
-            cast(basetype(basetype(params->sp->tp)->btp), &newExpression->left);
+            cast(params->sp->tp->BaseType()->btp->BaseType(), &newExpression->left);
     }
     return newExpression;
 }
-static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
+static bool IsEmptyBlocks(std::list<Statement*>* blocks)
 {
     bool rv = true;
     if (blocks)
@@ -1514,10 +1510,10 @@ static bool IsEmptyBlocks(std::list<STATEMENT*>* blocks)
         }
     return rv;
 }
-bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
+bool IsEmptyFunction(CallSite* params, SYMBOL* funcsp)
 {
-    STATEMENT* st;
-    if (!isfunction(params->functp))
+    Statement* st;
+    if (!params->functp->IsFunction())
         return false;
     if (!params->sp->sb->inlineFunc.stmt)
         return false;

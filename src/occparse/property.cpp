@@ -35,8 +35,8 @@
 #include "memory.h"
 #include "ccerr.h"
 #include "Property.h"
-#include "help.h"
 #include "lex.h"
+#include "help.h"
 #include "istmt.h"
 #include "init.h"
 #include "templatedecl.h"
@@ -45,6 +45,7 @@
 #include "templatededuce.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "types.h"
 namespace Parser
 {
 void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3)
@@ -64,7 +65,7 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     value = makeID(StorageClass::parameter_, sym->tp, nullptr, "value");
     value->sb->attribs.inheritable.used = true;  // to avoid unused variable errors
     rv->sb->access = AccessLevel::public_;
-    rv->tp = MakeType(BasicType::func_, &stdvoid);
+    rv->tp = Type::MakeType(BasicType::func_, &stdvoid);
     rv->tp->sp = rv;
     rv->tp->syms = symbols.CreateSymbolTable();
     SetLinkerNames(value, Linkage::cdecl_);
@@ -80,7 +81,7 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
     nullparam = makeID(StorageClass::parameter_, &stdvoid, nullptr, "__void");
     rv->sb->access = AccessLevel::public_;
-    rv->tp = MakeType(BasicType::func_, sym->tp);
+    rv->tp = Type::MakeType(BasicType::func_, sym->tp);
     rv->tp->sp = rv;
     rv->tp->syms = symbols.CreateSymbolTable();
     SetLinkerNames(nullparam, Linkage::cdecl_);
@@ -94,7 +95,7 @@ static void insertfunc(SYMBOL* in, SymbolTable<SYMBOL>* syms)
     SYMBOL* funcs = syms->Lookup(in->name);
     if (!funcs)
     {
-        auto tp = MakeType(BasicType::aggregate_);
+        auto tp = Type::MakeType(BasicType::aggregate_);
         funcs = makeID(StorageClass::overloads_, tp, 0, litlate(in->name));
         tp->sp = funcs;
         SetLinkerNames(funcs, Linkage::cdecl_);
@@ -126,19 +127,19 @@ static SYMBOL* CreateBackingVariable(SYMBOL* sym)
 static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
 {
     SYMBOL* p = CreateSetterPrototype(sym);
-    STATEMENT* st;
-    BLOCKDATA bd = { };
-    std::list<BLOCKDATA*> b = { &bd };
-    EXPRESSION* left = varNode(ExpressionNode::global_, backing);
-    EXPRESSION* right = varNode(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
+    Statement* st;
+    FunctionBlock bd = { };
+    std::list<FunctionBlock*> b = { &bd };
+    EXPRESSION* left = MakeExpression(ExpressionNode::global_, backing);
+    EXPRESSION* right = MakeExpression(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     deref(sym->tp, &left);
     deref(sym->tp, &right);
-    st = stmtNode(nullptr, b, StatementNode::expr_);
-    st->select = exprNode(ExpressionNode::assign_, left, right);
+    st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
+    st->select = MakeExpression(ExpressionNode::assign_, left, right);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
+    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
@@ -146,23 +147,23 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
 static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
 {
     SYMBOL* p = CreateGetterPrototype(sym);
-    STATEMENT* st;
-    BLOCKDATA bd = {};
-    std::list<BLOCKDATA*> b { &bd };
+    Statement* st;
+    FunctionBlock bd = {};
+    std::list<FunctionBlock*> b { &bd };
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
-    st = stmtNode(nullptr, b, StatementNode::return_);
-    st->select = varNode(ExpressionNode::global_, backing);
+    st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
+    st->select = MakeExpression(ExpressionNode::global_, backing);
     deref(sym->tp, &st->select);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(stmtNode(nullptr, emptyBlockdata, StatementNode::block_));
+    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
-LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
+LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
 {
-    if (isstructured(sym->tp))
+    if (sym->tp->IsStructured())
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
     if (funcsp || sym->sb->storage_class == StorageClass::parameter_)
         error(ERR_NO_PROPERTY_IN_FUNCTION);
@@ -214,8 +215,9 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
                 }
                 else
                 {
-                    lex = body(lex, prototype);
-                    bodygen(prototype);
+                    StatementGenerator sg(lex, prototype);
+                    sg.Body();
+                    sg.BodyGen();
                     insertfunc(prototype, globalNameSpace->front()->syms);
                 }
             }
@@ -265,7 +267,7 @@ LEXLIST* initialize_property(LEXLIST* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
     }
     return lex;
 }
-TYPE* find_boxed_type(TYPE* in)
+Type* find_boxed_type(Type* in)
 {
     static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Uint8",
                                       "Int16",  "Int16",   "UInt16", "UInt16", 
@@ -273,7 +275,7 @@ TYPE* find_boxed_type(TYPE* in)
                                       "Int64", "UInt64",  "",      "",       "Single", "Double",  "Double", 
                                       "Single", "Double","Double",  
                                       "",      "",       "",       "",        "", "String"};
-    if (isarray(basetype(in)) && basetype(in)->msil)
+    if (in->BaseType()->IsArray() && in->BaseType()->msil)
     {
         SYMBOL* sym = search(globalNameSpace->front()->syms , "System");
         if (sym && sym->sb->storage_class == StorageClass::namespace_)
@@ -283,29 +285,29 @@ TYPE* find_boxed_type(TYPE* in)
                 return sym2->tp;
         }
     }
-    else if ((int)basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
+    else if ((int)in->BaseType()->type < sizeof(typeNames) / sizeof(typeNames[0]))
     {
         SYMBOL* sym = search(globalNameSpace->front()->syms, "System");
         if (sym && sym->sb->storage_class == StorageClass::namespace_)
         {
-            SYMBOL* sym2 = search(sym->sb->nameSpaceValues->front()->syms, typeNames[(int)basetype(in)->type]);
+            SYMBOL* sym2 = search(sym->sb->nameSpaceValues->front()->syms, typeNames[(int)in->BaseType()->type]);
             if (sym2)
                 return sym2->tp;
         }
     }
     return nullptr;
 }
-TYPE* find_unboxed_type(TYPE* in)
+Type* find_unboxed_type(Type* in)
 {
-    if (isstructured(in))
+    if (in->IsStructured())
     {
-        in = basetype(in);
+        in = in->BaseType();
         if (in->sp->sb->parentNameSpace && !in->sp->sb->parentClass && !strcmp(in->sp->sb->parentNameSpace->name, "System"))
         {
             const char* name = in->sp->name;
             static const char* typeNames[] = {"Bool",  "Char",   "Int8",   "UInt8",   "Int16",  "UInt16", "Int32", "UInt32",
                                               "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "String"};
-            static TYPE* typeVals[] = {&stdbool,          &stdchar,    &stdchar,     &stdunsignedchar, &stdshort,
+            static Type* typeVals[] = {&stdbool,          &stdchar,    &stdchar,     &stdunsignedchar, &stdshort,
                                        &stdunsignedshort, &stdint,     &stdunsigned, &stdlonglong,     &stdunsignedlonglong,
                                        &stdinative,       &stdunative, &stdfloat,    &stddouble,       &std__string};
             for (int i = 0; i < sizeof(typeNames) / sizeof(typeNames[0]); i++)

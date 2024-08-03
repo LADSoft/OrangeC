@@ -39,9 +39,9 @@ void InsertInlineData(SYMBOL* sym);
 void InsertRttiType(SYMBOL *tp);
 void InsertMemberPointer(int label, Optimizer::SimpleSymbol *sym, int offset1, int offset2); EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
 void InsertLocalStaticUnInitializer(SYMBOL* func, EXPRESSION* body);
-std::list<STATEMENT*>* inlinestmt(std::list<STATEMENT*>* blocks);
+std::list<Statement*>* inlinestmt(std::list<Statement*>* blocks);
 void SetupVariables(SYMBOL* sym);
-EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp);
-bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp);
+EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp);
+bool IsEmptyFunction(CallSite* params, SYMBOL* funcsp);
 
 }  // namespace Parser

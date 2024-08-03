@@ -4672,7 +4672,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             errorsym(ERR_REF_MUST_INITIALIZE, sym);
         }
     }
-    if (!instantiatingTemplate && !structLevel && sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent && !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && !instantiatingTemplate && !structLevel && sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent && !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
         (!Optimizer::cparams.prm_cplusplus || !sym->tp->IsStructured() || sym->sb->trivialCons) && !sym->tp->IsAtomic() && sym->sb->attribs.inheritable.linkage3 == Linkage::none_)
     {
             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;

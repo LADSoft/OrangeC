@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <unordered_map>
 #include <vector>
+#include <climits>
 
 class ObjFile;
 class LibFiles;

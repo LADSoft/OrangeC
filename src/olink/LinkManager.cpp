@@ -936,6 +936,18 @@ void LinkManager::AddGlobalsForVirtuals(ObjFile* file)
                                       new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
                 s->SetIndex(index++);
                 s->SetOffset(exp);
+                if (strncmp(static_cast<ObjSection*>(v->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
+                {
+                    auto s1 = ObjSymbol(*s);
+                    s1.SetName(s1.GetName().substr(1));
+                    LinkSymbolData v1(&s1);
+                    if (exports.find(&v1) != exports.end())
+                    {
+                        file->Add(s);
+                        s = new ObjSymbol(s1);
+                        s->SetIndex(index++);
+                    }
+                }
                 file->Add(s);
             }
         }

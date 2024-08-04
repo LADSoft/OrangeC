@@ -33,6 +33,10 @@ LIB_DEPENDENCIES=occparse occil occ ocpplib oasm occopt util objlib netlib sqlit
 DEFINES=x64 PARSER_ONLY
 H_FILES=$(wildcard *.h)
 
+ifeq "$(COMPILER)" "MINGW64"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) occparse
+endif
+
 ifneq "$(COMPILER)" "gcc-linux"
 LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr
 endif

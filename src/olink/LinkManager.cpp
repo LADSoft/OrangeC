@@ -940,7 +940,8 @@ void LinkManager::AddGlobalsForVirtuals(ObjFile* file)
                 if (strncmp(static_cast<ObjSection*>(v->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
                 {
                     auto s1 = ObjSymbol(*s);
-                    s1.SetName(s1.GetName().substr(1));
+                    auto name = s1.GetName().substr(1);
+                    s1.SetName(name);
                     LinkSymbolData v1(&s1);
                     if (exports.find(&v1) != exports.end())
                     {
@@ -1058,7 +1059,8 @@ void LinkManager::Link()
                 if (strncmp(static_cast<ObjSection*>(vs->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
                 {
                     ObjSymbol s(*vs->GetSymbol());
-                    s.SetName(s.GetName().substr(1));
+                    auto name = s.GetName().substr(1);
+                    s.SetName(name);
                     LinkSymbolData ld(&s);
                     auto ip = publics.find(&ld);
                     if (ip == publics.end())

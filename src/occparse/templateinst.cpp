@@ -3550,7 +3550,9 @@ static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool ch
                     }
                 }
             }
-            break;
+            if (!arg->second->byNonType.tp)
+                return false;
+            return checkArgType(arg->second->byNonType.tp, checkDeduced, checkDeclaring);
         case TplType::template_: {
             return true;
         }

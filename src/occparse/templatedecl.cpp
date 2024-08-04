@@ -1911,7 +1911,7 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                     }
                 }
                 arg.second->byNonType.txttype = txttype;
-                if (tp->BaseType()->type != BasicType::templateparam_ && tp->BaseType()->type != BasicType::templateselector_ &&
+                if (tp->BaseType()->type != BasicType::templateparam_ && tp->BaseType()->type != BasicType::templateselector_ && tp->BaseType()->type != BasicType::templatedeferredtype_ &&
                     tp->BaseType()->type != BasicType::enum_ && !tp->IsInt() && !tp->IsPtr() && tp->BaseType()->type != BasicType::lref_ && 
                     (!templateNestingCount || tp->BaseType()->type != BasicType::any_))
                 {
@@ -3026,9 +3026,9 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
         currentHold.push(currents->plast);
         currents->plast = currents->ptail;
         templateNestingCount++;
-        instantiatingTemplate = 0;
         while (MATCHKW(lex, Keyword::template_))
         {
+            instantiatingTemplate = 0;
             std::list<TEMPLATEPARAMPAIR>* temp;
             templateHeaderCount++;
             temp = (*currents->ptail) = templateParamPairListFactory.CreateList();

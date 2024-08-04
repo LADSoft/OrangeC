@@ -201,8 +201,14 @@ bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType)
         ++tss2;
         ++tss2;
         for (; tss1 != (*left).end() && tss2 != (*right).end(); ++tss1, ++tss2)
+        {
             if (strcmp(tss1->name, tss2->name))
                 return false;
+            if (tss1->isTemplate != tss2->isTemplate)
+                return false;
+            if (tss1->isTemplate && !exactMatchOnTemplateArgs(tss1->templateParams, tss2->templateParams))
+                return false;
+        }
         return tss1 == (*left).end() && tss2 == (*right).end();
     }
     else

@@ -1281,314 +1281,317 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
 bool EvaluateConstexprFunction(EXPRESSION*& node)
 {
     bool rv = false;
-    if (node->v.func->sp->sb->isConstructor)
+    if (!templateNestingCount || instantiatingTemplate)
     {
-        // we don't completely support constexpr constructors for classes with base classes right now...t 
-        if (node->v.func->sp->sb->parentClass->sb->baseClasses && node->v.func->sp->sb->parentClass->sb->baseClasses->size())
+        if (node->v.func->sp->sb->isConstructor)
         {
-            for (auto&& v : *node->v.func->sp->sb->parentClass->sb->baseClasses)
+            // we don't completely support constexpr constructors for classes with base classes right now...t 
+            if (node->v.func->sp->sb->parentClass->sb->baseClasses && node->v.func->sp->sb->parentClass->sb->baseClasses->size())
             {
-                if (!v->cls->sb->trivialCons)
+                for (auto&& v : *node->v.func->sp->sb->parentClass->sb->baseClasses)
                 {
-                    return false;
-                }
-            }
-            if (nestedMaps.size() == 0)
-            {
-                auto members = false;
-                for (auto&& v : *node->v.func->sp->sb->parentClass->tp->syms)
-                {
-                    members |= v->sb->storage_class == StorageClass::mutable_;
-                    members |= v->sb->storage_class == StorageClass::member_;
-                    if (members)
-                        break;
-                }
-                if (!members)
-                    return false;
-            }
-        }
-    }
-
-    auto exp = node->v.func->thisptr;
-    if (exp && exp->type == ExpressionNode::add_)
-        exp = exp->left;
-    if (exp && exp->type == ExpressionNode::l_p_)
-    {
-        int offset = 0;
-        exp = relptr(exp->left, offset);
-        if (exp && (exp->v.sp->sb->thisPtr || (!functionNestingCount && exp->v.sp->sb->retblk)))
-        {
-            return false;
-        }
-    }
-    if (exp && (exp->type == ExpressionNode::callsite_ || exp->type == ExpressionNode::thisref_))
-    {
-        auto** exp = &node->v.func->thisptr;
-        if ((*exp)->type == ExpressionNode::thisref_)
-            exp = &(*exp)->left;
-        if (!EvaluateConstexprFunction(*exp))
-            return false;
-    }
-    if (node->v.func->returnEXP)
-    {
-        int offset = 0;
-        auto exp1 = relptr(node->v.func->returnEXP, offset);
-        if (exp1)
-        {
-            if (exp1->type == ExpressionNode::global_ || (exp1->type == ExpressionNode::auto_ && !exp1->v.sp->sb->anonymous))
-                if (!exp1->v.sp->sb->constexpression)
-                    return false;
-        }
-    }
-    if (exp && exp->type == ExpressionNode::auto_)
-    {
-        if (inLoopOrConditional)
-            return false;
-        if (!exp->v.sp->sb->constexpression && !exp->v.sp->sb->retblk)
-        {
-            return false;
-        }
-    }
-    if (exp && exp->type == ExpressionNode::global_ && !exp->v.sp->sb->constexpression)
-        return false;
-    bool found = false;
-    if (node->v.func->arguments)
-        for (auto args : *node->v.func->arguments)
-        {
-            if (args->nested)
-            {
-                bool found1 = false;
-                for (auto args1 : *args->nested)
-                {
-                    if (!IsConstantExpression(args1->exp, false, true, true))
+                    if (!v->cls->sb->trivialCons)
                     {
-                        found1 = true;
+                        return false;
+                    }
+                }
+                if (nestedMaps.size() == 0)
+                {
+                    auto members = false;
+                    for (auto&& v : *node->v.func->sp->sb->parentClass->tp->syms)
+                    {
+                        members |= v->sb->storage_class == StorageClass::mutable_;
+                        members |= v->sb->storage_class == StorageClass::member_;
+                        if (members)
+                            break;
+                    }
+                    if (!members)
+                        return false;
+                }
+            }
+        }
+
+        auto exp = node->v.func->thisptr;
+        if (exp && exp->type == ExpressionNode::add_)
+            exp = exp->left;
+        if (exp && exp->type == ExpressionNode::l_p_)
+        {
+            int offset = 0;
+            exp = relptr(exp->left, offset);
+            if (exp && (exp->v.sp->sb->thisPtr || (!functionNestingCount && exp->v.sp->sb->retblk)))
+            {
+                return false;
+            }
+        }
+        if (exp && (exp->type == ExpressionNode::callsite_ || exp->type == ExpressionNode::thisref_))
+        {
+            auto** exp = &node->v.func->thisptr;
+            if ((*exp)->type == ExpressionNode::thisref_)
+                exp = &(*exp)->left;
+            if (!EvaluateConstexprFunction(*exp))
+                return false;
+        }
+        if (node->v.func->returnEXP)
+        {
+            int offset = 0;
+            auto exp1 = relptr(node->v.func->returnEXP, offset);
+            if (exp1)
+            {
+                if (exp1->type == ExpressionNode::global_ || (exp1->type == ExpressionNode::auto_ && !exp1->v.sp->sb->anonymous))
+                    if (!exp1->v.sp->sb->constexpression)
+                        return false;
+            }
+        }
+        if (exp && exp->type == ExpressionNode::auto_)
+        {
+            if (inLoopOrConditional)
+                return false;
+            if (!exp->v.sp->sb->constexpression && !exp->v.sp->sb->retblk)
+            {
+                return false;
+            }
+        }
+        if (exp && exp->type == ExpressionNode::global_ && !exp->v.sp->sb->constexpression)
+            return false;
+        bool found = false;
+        if (node->v.func->arguments)
+            for (auto args : *node->v.func->arguments)
+            {
+                if (args->nested)
+                {
+                    bool found1 = false;
+                    for (auto args1 : *args->nested)
+                    {
+                        if (!IsConstantExpression(args1->exp, false, true, true))
+                        {
+                            found1 = true;
+                            break;
+                        }
+                    }
+                    if (found1)
+                    {
+                        found = true;
                         break;
                     }
                 }
-                if (found1)
-                {
-                    found = true;
-                    break;
+                else {
+                    if (!IsConstantExpression(args->exp, false, true, true))
+                    {
+                        found = true;
+                        break;
+                    }
                 }
             }
-            else {
-                if (!IsConstantExpression(args->exp, false, true, true))
-                {
-                    found = true;
-                    break;
-                }
-            }
-        }
-    if (!found)
-    {
-        SYMBOL* found1 = node->v.func->sp;
-        if (found1->tp->IsFunction())
+        if (!found)
         {
-            if (!found1->sb->inlineFunc.stmt && found1->sb->deferredCompile)
+            SYMBOL* found1 = node->v.func->sp;
+            if (found1->tp->IsFunction())
             {
-                if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
+                if (!found1->sb->inlineFunc.stmt && found1->sb->deferredCompile)
                 {
-                    found1 = found1->sb->mainsym;
+                    if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
+                    {
+                        found1 = found1->sb->mainsym;
+                        if (found1)
+                        {
+                            if (found1->sb->castoperator)
+                            {
+                                found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
+                            }
+                            else
+                            {
+                                found1 = detemplate(found1, node->v.func, nullptr);
+                            }
+                        }
+                    }
                     if (found1)
                     {
-                        if (found1->sb->castoperator)
+                        enclosingDeclarations.Mark();
+                        pushContext(found1, false);
+                        if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
                         {
-                            found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
+                            found1 = TemplateFunctionInstantiate(found1, false);
+                        }
+                        CompileInline(found1, false);
+                        enclosingDeclarations.Release();
+                    }
+                }
+                if (found1 && found1->sb->inlineFunc.stmt)
+                {
+                    int i;
+                    auto its = found1->sb->inlineFunc.stmt->begin();
+                    auto itse = found1->sb->inlineFunc.stmt->end();
+                    while (its != itse && (*its)->type == StatementNode::expr_)
+                        ++its;
+                    if (its != itse && (*its)->type == StatementNode::block_ && (*its)->lower)
+                    {
+                        if (++functionNestingCount >= 1000)
+                        {
+                            diag("EvaluateConstexprFunction: recursion level too high");
                         }
                         else
                         {
-                            found1 = detemplate(found1, node->v.func, nullptr);
-                        }
-                    }
-                }
-                if (found1)
-                {
-                    enclosingDeclarations.Mark();
-                    pushContext(found1, false);
-                    if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
-                    {
-                        found1 = TemplateFunctionInstantiate(found1, false);
-                    }
-                    CompileInline(found1, false);
-                    enclosingDeclarations.Release();
-                }
-            }
-            if (found1 && found1->sb->inlineFunc.stmt)
-            {
-                int i;
-                auto its = found1->sb->inlineFunc.stmt->begin();
-                auto itse = found1->sb->inlineFunc.stmt->end();
-                while (its != itse && (*its)->type == StatementNode::expr_)
-                    ++its;
-                if (its != itse && (*its)->type == StatementNode::block_ && (*its)->lower)
-                {
-                    if (++functionNestingCount >= 1000)
-                    {
-                        diag("EvaluateConstexprFunction: recursion level too high");
-                    }
-                    else
-                    {
-                        std::unordered_map<SYMBOL*, EXPRESSION*> argmap;
-                        std::unordered_map<SYMBOL*, EXPRESSION*> tempmap;
-                        if (!nestedMaps.empty())
-                        {
-                            auto&& o = *nestedMaps.top();
-                            for (auto s : o)
+                            std::unordered_map<SYMBOL*, EXPRESSION*> argmap;
+                            std::unordered_map<SYMBOL*, EXPRESSION*> tempmap;
+                            if (!nestedMaps.empty())
                             {
-                                //      if (s.first->sb->storage_class != StorageClass::parameter_)
+                                auto&& o = *nestedMaps.top();
+                                for (auto s : o)
                                 {
-                                    argmap[s.first] = s.second;
+                                    //      if (s.first->sb->storage_class != StorageClass::parameter_)
+                                    {
+                                        argmap[s.first] = s.second;
+                                    }
                                 }
                             }
-                        }
-                        if (node->v.func->arguments)
-                        {
-                            auto it = found1->tp->BaseType()->syms->begin();
-                            auto ite = found1->tp->BaseType()->syms->end();
-                            if ((*it)->sb->thisPtr)
-                                ++it;
-                            auto arglist = node->v.func->arguments->begin();
-                            auto arglistend = node->v.func->arguments->end();
-                            while (it != ite && arglist != arglistend)
+                            if (node->v.func->arguments)
                             {
-                                auto exp = (*arglist)->exp;
-                                int offset = 0;
-                                EXPRESSION* rel = nullptr;
-                                if (exp)
-                                    rel = relptr(exp, offset);
-                                if (rel && rel->type == ExpressionNode::cvarpointer_)
+                                auto it = found1->tp->BaseType()->syms->begin();
+                                auto ite = found1->tp->BaseType()->syms->end();
+                                if ((*it)->sb->thisPtr)
+                                    ++it;
+                                auto arglist = node->v.func->arguments->begin();
+                                auto arglistend = node->v.func->arguments->end();
+                                while (it != ite && arglist != arglistend)
                                 {
-                                    // being passed from a higher constexpr function
-                                    if ((*it)->tp->IsStructured())
-                                        tempmap[*it] = exp;
-                                    else
-                                        tempmap[*it] = MakeVarPtr(1, 1, *it, exp);
-                                }
-                                else
-                                {
-                                    // entry level...
-                                    if ((*arglist)->nested)
+                                    auto exp = (*arglist)->exp;
+                                    int offset = 0;
+                                    EXPRESSION* rel = nullptr;
+                                    if (exp)
+                                        rel = relptr(exp, offset);
+                                    if (rel && rel->type == ExpressionNode::cvarpointer_)
                                     {
-                                        // an initializer list for an array or structure
-                                        pushArrayOrStruct(*it, *(*arglist)->nested, tempmap);
+                                        // being passed from a higher constexpr function
+                                        if ((*it)->tp->IsStructured())
+                                            tempmap[*it] = exp;
+                                        else
+                                            tempmap[*it] = MakeVarPtr(1, 1, *it, exp);
                                     }
-                                    else if ((*it)->tp->IsRef())
+                                    else
                                     {
-                                        if ((*it)->tp->BaseType()->btp->IsPtr())
+                                        // entry level...
+                                        if ((*arglist)->nested)
+                                        {
+                                            // an initializer list for an array or structure
+                                            pushArrayOrStruct(*it, *(*arglist)->nested, tempmap);
+                                        }
+                                        else if ((*it)->tp->IsRef())
+                                        {
+                                            if ((*it)->tp->BaseType()->btp->IsPtr())
+                                            {
+                                                // could be either a void node with an assign or initialized data...
+                                                pushArrayOrStruct(*it, exp, tempmap);
+                                            }
+                                            else
+                                            {
+                                                // this could be a void... sequence for reference or struct, or an auto with initializers 
+                                                pushStruct(*it, exp, tempmap);
+                                            }
+                                        }
+                                        else if ((*it)->tp->IsStructured())
+                                        {
+                                            // this could be a void... sequence for reference or struct, or an auto with initializers 
+                                            pushStruct(*it, exp, tempmap);
+                                        }
+                                        else if ((*it)->tp->IsPtr())
                                         {
                                             // could be either a void node with an assign or initialized data...
                                             pushArrayOrStruct(*it, exp, tempmap);
                                         }
                                         else
                                         {
-                                            // this could be a void... sequence for reference or struct, or an auto with initializers 
-                                            pushStruct(*it, exp, tempmap);
+                                            tempmap[*it] = MakeVarPtr(1, 1, (*it), exp);
                                         }
                                     }
-                                    else if ((*it)->tp->IsStructured())
-                                    {
-                                        // this could be a void... sequence for reference or struct, or an auto with initializers 
-                                        pushStruct(*it, exp, tempmap);
-                                    }
-                                    else if ((*it)->tp->IsPtr())
-                                    {
-                                        // could be either a void node with an assign or initialized data...
-                                        pushArrayOrStruct(*it, exp, tempmap);
-                                    }
-                                    else
-                                    {
-                                        tempmap[*it] = MakeVarPtr(1, 1, (*it), exp);
-                                    }
+                                    ++it;
+                                    ++arglist;
                                 }
-                                ++it;
-                                ++arglist;
                             }
-                        }
-                        for (auto s : tempmap)
-                        {
-                            argmap[s.first] = s.second;
-                            if (!nestedMaps.empty())
-                                (*nestedMaps.top())[s.first] = s.second;
-                        }
-                        nestedMaps.push(&argmap);
-                        EXPRESSION* ths = nullptr;
-                        if (found1->sb->isConstructor)
-                        {
-                            ths = ConstExprInitializeMembers(found1, node->v.func->thisptr, *node->v.func->arguments);
-                        }
-                        else if (node->v.func->thisptr)
-                        {
-                            ths = node->v.func->thisptr;
-                            if (ths->type != ExpressionNode::cvarpointer_)
+                            for (auto s : tempmap)
                             {
-                                auto ths1 = node->v.func->thisptr;
-                                while (ths1->type == ExpressionNode::comma_) ths1 = ths1->right;
-                                ths = LookupStruct(ths1);
-                                if (ths == (EXPRESSION*)-1)
-                                    return false;
-                                if (!ths)
+                                argmap[s.first] = s.second;
+                                if (!nestedMaps.empty())
+                                    (*nestedMaps.top())[s.first] = s.second;
+                            }
+                            nestedMaps.push(&argmap);
+                            EXPRESSION* ths = nullptr;
+                            if (found1->sb->isConstructor)
+                            {
+                                ths = ConstExprInitializeMembers(found1, node->v.func->thisptr, *node->v.func->arguments);
+                            }
+                            else if (node->v.func->thisptr)
+                            {
+                                ths = node->v.func->thisptr;
+                                if (ths->type != ExpressionNode::cvarpointer_)
                                 {
-                                    if (ths1->type == ExpressionNode::auto_ || ths1->type == ExpressionNode::global_)
-                                        ths = MakeVarPtr(node->v.func->thistp->BaseType()->btp->size, 1, ths1->v.sp, nullptr);
-                                    else
-                                        ths = MakeVarPtr(node->v.func->thistp->BaseType()->btp->size, 1, nullptr, nullptr);
-                                    if (!pushThis(node->v.func->thisptr, ths))
-                                        ths = nullptr;
+                                    auto ths1 = node->v.func->thisptr;
+                                    while (ths1->type == ExpressionNode::comma_) ths1 = ths1->right;
+                                    ths = LookupStruct(ths1);
+                                    if (ths == (EXPRESSION*)-1)
+                                        return false;
+                                    if (!ths)
+                                    {
+                                        if (ths1->type == ExpressionNode::auto_ || ths1->type == ExpressionNode::global_)
+                                            ths = MakeVarPtr(node->v.func->thistp->BaseType()->btp->size, 1, ths1->v.sp, nullptr);
+                                        else
+                                            ths = MakeVarPtr(node->v.func->thistp->BaseType()->btp->size, 1, nullptr, nullptr);
+                                        if (!pushThis(node->v.func->thisptr, ths))
+                                            ths = nullptr;
+                                    }
                                 }
                             }
-                        }
-                        if (node->v.func->returnEXP && node->v.func->returnEXP->type == ExpressionNode::auto_)
-                        {
-                            argmap[node->v.func->returnEXP->v.sp] = MakeVarPtr(node->v.func->returnSP->tp->size, 1, node->v.func->returnEXP->v.sp, nullptr);
-                        }
-                        EXPRESSION* newNode = nullptr;
-                        if (!ths || !structLevel)
-                        {
-                            newNode = EvaluateStatements(node, (*its)->lower, ths, nullptr);
-                            rv = !!newNode;
-                        }
-                        if (rv && functionNestingCount == 1)
-                        {
-                            newNode = EvaluateExpression(newNode, ths, nullptr, true);
-                            optimize_for_constants(&newNode);
-                            if (node->v.func->sp->sb->isConstructor)
+                            if (node->v.func->returnEXP && node->v.func->returnEXP->type == ExpressionNode::auto_)
                             {
-                                newNode = InstantiateStruct(node->v.func->thistp->BaseType()->btp, node->v.func->thisptr, newNode);
+                                argmap[node->v.func->returnEXP->v.sp] = MakeVarPtr(node->v.func->returnSP->tp->size, 1, node->v.func->returnEXP->v.sp, nullptr);
+                            }
+                            EXPRESSION* newNode = nullptr;
+                            if (!ths || !structLevel)
+                            {
+                                newNode = EvaluateStatements(node, (*its)->lower, ths, nullptr);
                                 rv = !!newNode;
                             }
-                            else if (node->v.func->returnEXP && !node->v.func->returnSP->tp->BaseType()->sp->sb->structuredAliasType)
+                            if (rv && functionNestingCount == 1)
                             {
-                                newNode = InstantiateStruct(node->v.func->returnSP->tp, node->v.func->returnEXP, newNode);
-                                rv = !!newNode;
-                            }
-                            expressionNesting = 0;
-                        }
-                        nestedMaps.pop();
-                        if (rv && nestedMaps.size() && node->v.func->sp->sb->isConstructor)
-                        {
-                            int offset = 0;
-                            auto rel = relptr(node->v.func->thisptr, offset);
-                            if (!offset && rel && rel->type == ExpressionNode::auto_)
-                            {
-                                (*nestedMaps.top())[rel->v.sp] = copy_expression(newNode);
-                            }
-                        }
-                        if (rv)
-                        {
-                            if (node->v.func->sp->sb->isConstructor)
-                            {
-                                int offset;
-                                auto node2 = relptr(node->v.func->thisptr, offset);
-                                if (node2)
+                                newNode = EvaluateExpression(newNode, ths, nullptr, true);
+                                optimize_for_constants(&newNode);
+                                if (node->v.func->sp->sb->isConstructor)
                                 {
-                                    node2->v.sp->sb->ignoreconstructor = true;
+                                    newNode = InstantiateStruct(node->v.func->thistp->BaseType()->btp, node->v.func->thisptr, newNode);
+                                    rv = !!newNode;
+                                }
+                                else if (node->v.func->returnEXP && !node->v.func->returnSP->tp->BaseType()->sp->sb->structuredAliasType)
+                                {
+                                    newNode = InstantiateStruct(node->v.func->returnSP->tp, node->v.func->returnEXP, newNode);
+                                    rv = !!newNode;
+                                }
+                                expressionNesting = 0;
+                            }
+                            nestedMaps.pop();
+                            if (rv && nestedMaps.size() && node->v.func->sp->sb->isConstructor)
+                            {
+                                int offset = 0;
+                                auto rel = relptr(node->v.func->thisptr, offset);
+                                if (!offset && rel && rel->type == ExpressionNode::auto_)
+                                {
+                                    (*nestedMaps.top())[rel->v.sp] = copy_expression(newNode);
                                 }
                             }
-                            *node = *newNode;
+                            if (rv)
+                            {
+                                if (node->v.func->sp->sb->isConstructor)
+                                {
+                                    int offset;
+                                    auto node2 = relptr(node->v.func->thisptr, offset);
+                                    if (node2)
+                                    {
+                                        node2->v.sp->sb->ignoreconstructor = true;
+                                    }
+                                }
+                                *node = *newNode;
+                            }
                         }
+                        --functionNestingCount;
                     }
-                    --functionNestingCount;
                 }
             }
         }

@@ -35,6 +35,7 @@
 #include "declare.h"
 #include "types.h"
 #include <algorithm>
+#include "initbackend.h"
 namespace Parser
 {
 
@@ -398,7 +399,19 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 for (; find != (*tsl).end(); ++find)
                 {
                     *buf++ = 't';
-                    buf = lookupName(buf, find->name);
+                    if (find->isTemplate && find->templateParams)
+                    {
+                        SYMBOL s = {};
+                        s.name = find->name;
+                        s.tp = &stdint;
+                        char* p = (char *)alloca(5000);
+                        mangleTemplate(p, &s, find->templateParams);
+                        buf = lookupName(buf, p);
+                    }
+                    else
+                    {
+                        buf = lookupName(buf, find->name);
+                    }
                     buf += strlen(buf);
                 }
                 *buf = 0;
@@ -619,7 +632,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                 else
                 {
                     buf = mangleType(buf, it->second->byNonType.tp, true);
-                    if (bySpecial || sym->sb->instantiated)
+                    if (bySpecial || sym->sb && sym->sb->instantiated)
                     {
                         EXPRESSION* exp = bySpecial && it->second->byNonType.dflt ? it->second->byNonType.dflt : it->second->byNonType.val;
                         buf = mangleExpression(buf, exp);
@@ -930,7 +943,19 @@ char* mangleType(char* in, Type* tp, bool first)
                     for (++s; s != se; ++s)
                     {
                         strcat(nm, "@");
-                        strcat(nm, s->name);
+                        if (s->isTemplate && s->templateParams)
+                        {
+                            SYMBOL s2 = {};
+                            s2.name = s->name;
+                            s2.tp = &stdint;
+                            char* p = (char*)alloca(5000);
+                            mangleTemplate(p, &s2, s->templateParams);
+                            strcpy(nm, p);
+                        }
+                        else
+                        {
+                            strcat(nm, s->name);
+                        }
                     }
                     p = nm;
                     while (isdigit(*p))

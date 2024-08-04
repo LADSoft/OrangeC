@@ -1077,6 +1077,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
     if (!found)
     {
         SYMBOL* injected = CopySymbol(bcsym);
+        if (injected->sb->decoratedName)
         injected->name = injected->sb->decoratedName;  // for nested templates
         injected->sb->mainsym = bcsym;
         injected->sb->parentClass = declsym;
@@ -1138,6 +1139,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     // in case typedef is being used as a base class specifier
                     Type* tp = bcsym->tp->BaseType();
                     tp->InstantiateDeferred();
+                    tp->InitializeDeferred();
                     if (tp->IsStructured())
                     {
                         bcsym = tp->sp;
@@ -1152,7 +1154,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         restart:
             if (bcsym && bcsym->tp->type == BasicType::templateselector_)
             {
-                if (!templateNestingCount)
+                if (!templateNestingCount && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
                     error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
                 if (MATCHKW(lex, Keyword::lt_))
                 {
@@ -1160,8 +1162,24 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     std::list<TEMPLATEPARAMPAIR>* nullLst;
                     lex = GetTemplateArguments(lex, funcsp, bcsym, &nullLst);
                     inTemplateSpecialization--;
+                    auto&& tsl = bcsym->sb->templateSelector->back();
+                    tsl.isTemplate = true;
+                    tsl.templateParams = nullLst;
                 }
-                bcsym = nullptr;
+//                bcsym = nullptr;
+                if (bcsym && (!templateNestingCount || instantiatingTemplate))
+                {
+                    auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                    if (bc)
+                        baseClasses->push_back(bc);
+                }
+                done = !MATCHKW(lex, Keyword::comma_);
+                if (!done)
+                {
+                    lex = getsym();
+                    continue;
+                }
+                goto endloop;
             }
             else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel ||
                                bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == TplType::template_))
@@ -3246,7 +3264,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     if (tp->IsStructured() || tp->BaseType()->type == BasicType::templateselector_)
                         sp->sb->typeAlias = lst;
                 }
-                else if (sp->tp->IsDeferred())
+                else if (sp->tp->IsDeferred() && (!templateNestingCount || instantiatingTemplate))
                 {
                     if (!sp->tp->BaseType()->sp->sb->templateLevel)
                          sp->tp->InstantiateDeferred();

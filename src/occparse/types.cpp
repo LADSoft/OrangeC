@@ -3026,12 +3026,17 @@ founddecltype:
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
                         if (!parsingTrailingReturnOrUsing)
                         {
-                            if (templateNestingCount && !instantiatingTemplate)
+                            if (templateNestingCount && !instantiatingTemplate && !inTemplateHeader)
                             {
                                 sp1 = GetTypeAliasSpecialization(sp, lst);
                                 if (sp1)
                                 {
-                                    sp = sp1;
+                                    auto tp1 = sp1->tp;
+                                    while (tp1->btp)tp1 = tp1->btp;
+                                    if (tp1->type != BasicType::any_)
+                                    {
+                                        sp = sp1;
+                                    }
                                 }
                                 tn = sp->tp;
                             }

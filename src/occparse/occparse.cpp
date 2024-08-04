@@ -203,7 +203,7 @@ int ccDBOpen(const char* name);
 void diag(const char* fmt, ...)
 {
     using namespace Parser;
-    if (!templateNestingCount)
+    if (!definingTemplate)
     {
         if (Optimizer::cparams.prm_diag)
         {

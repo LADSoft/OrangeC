@@ -553,7 +553,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
 
     if (size == 0)
     {
-        if (Optimizer::cparams.prm_cplusplus)
+        if (Optimizer::cparams.prm_cplusplus && (!sp->sb->templateLevel || !templateNestingCount || instantiatingTemplate))
         {
             // make it non-zero size to avoid further errors...
             size = getSize(BasicType::int_);
@@ -858,25 +858,28 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         {
             if (!templateNestingCount)
             {
-                for (auto s : *sp->tp->syms)
+                if (sp->sb->baseClasses)
                 {
-                    if (s->tp->type == BasicType::aggregate_)
+                    auto bc = Optimizer::SymbolManager::Get(sp)->baseClasses;
+                    for (auto b : *sp->sb->baseClasses)
                     {
-                        /*
-                        for (auto f : *s->tp->syms)
+                        b->cls->tp = b->cls->tp->InitializeDeferred();
+                        if (b->cls->tp->type == BasicType::templateselector_)
                         {
-                            if (!f->sb->templateLevel)
+                            auto a  = ResolveTemplateSelectors(b->cls, b->cls->tp);
+                            if (a->IsStructured())
                             {
-                                f->tp->BaseType()->btp = ResolveTemplateSelectors(f, f->tp->BaseType()->btp);
-                                for (auto a : *f->tp->BaseType()->syms)
-                                {
-                                    a->tp = ResolveTemplateSelectors(a, a->tp);
-                                }
+                                b->cls = a->sp->tp->BaseType()->sp;
+                                bc->sym = Optimizer::SymbolManager::Get(b->cls);
                             }
                         }
-                        */
+                        if (bc)
+                            bc = bc->next;
                     }
-                    else if (!istype(s))
+                }
+                for (auto s : *sp->tp->syms)
+                {
+                    if (s->tp->type != BasicType::aggregate_ && !istype(s))
                     {
                         s->tp = ResolveTemplateSelectors(s, s->tp);
                         s->tp->InstantiateDeferred();

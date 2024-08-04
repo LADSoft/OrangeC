@@ -2419,7 +2419,7 @@ int opt0(EXPRESSION** node)
             break;
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
-            if (!templateNestingCount || instantiatingTemplate)
+            if (!definingTemplate || instantiatingTemplate)
             {
                 EXPRESSION* newExpr = ep->left;
                 EXPRESSION* next = ep->right;
@@ -2510,7 +2510,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case ExpressionNode::sizeofellipse_:
-            if (!templateNestingCount || instantiatingTemplate)
+            if (!definingTemplate || instantiatingTemplate)
             {
                 int n = 0;
                 if (!(*node)->v.templateParam->second->packed)
@@ -2529,7 +2529,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateselector_:
-            if (!templateNestingCount || instantiatingTemplate)
+            if (!definingTemplate || instantiatingTemplate)
             {
                 auto tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = (*tsl)[1].sp;
@@ -2647,7 +2647,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!templateNestingCount || instantiatingTemplate) && (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
+            if ((!definingTemplate || instantiatingTemplate) && (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;

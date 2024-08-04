@@ -1281,7 +1281,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
 bool EvaluateConstexprFunction(EXPRESSION*& node)
 {
     bool rv = false;
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         if (node->v.func->sp->sb->isConstructor)
         {
@@ -1408,7 +1408,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                     {
                         enclosingDeclarations.Mark();
                         pushContext(found1, false);
-                        if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                        if (found1->sb->templateLevel && !definingTemplate && node->v.func->templateParams)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false);
                         }

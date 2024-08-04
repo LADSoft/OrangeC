@@ -595,7 +595,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
         *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, &deduceTemplate, false, true, false, false, false);
         (*tp)->InstantiateDeferred();
         (*tp)->InitializeDeferred();
-        if ((*tp)->IsStructured() && !(*tp)->size && (!templateNestingCount || !(*tp)->BaseType()->sp->sb->templateLevel))
+        if ((*tp)->IsStructured() && !(*tp)->size && (!definingTemplate || !(*tp)->BaseType()->sp->sb->templateLevel))
         {
             (*tp) = (*tp)->BaseType()->sp->tp;
             if (!(*tp)->size)
@@ -865,7 +865,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
-                        else if (!templateNestingCount || ((*tp)->IsInt() && isintconst(*exp)))
+                        else if (!definingTemplate || ((*tp)->IsInt() && isintconst(*exp)))
                         {
                             cast(*tp, exp);
                         }
@@ -1947,7 +1947,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
             {
                 if (!initializers->arguments->front()->tp->SameType(*tp) || initializers->arguments->size() > 1)
                 {
-                    if (!templateNestingCount)
+                    if (!definingTemplate)
                         error(ERR_NEED_NUMERIC_EXPRESSION);
                 }
                 else
@@ -2093,7 +2093,7 @@ LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         return lex;
     }
-    if (!templateNestingCount && (*tp)->BaseType()->btp->IsStructured())
+    if (!definingTemplate && (*tp)->BaseType()->btp->IsStructured())
     {
         (*tp)->BaseType()->btp->InstantiateDeferred();
         if ((*tp)->BaseType()->btp->BaseType()->sp->tp->size == 0)

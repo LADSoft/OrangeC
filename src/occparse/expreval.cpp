@@ -139,7 +139,7 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
         error(ERR_SIZEOF_UNFIXED_ENUMERATION);
     if (tp->IsFunction())
         error(ERR_SIZEOF_NO_FUNCTION);
-    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !templateNestingCount)
+    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !definingTemplate)
         errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */
@@ -164,7 +164,7 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
         exp = nullptr;
         if (tp->IsStructured())
         {
-            if (tp->BaseType()->size == 0 && !templateNestingCount)
+            if (tp->BaseType()->size == 0 && !definingTemplate)
                 errorsym(ERR_UNSIZED_TYPE, tp->BaseType()->sp);
             if (tp->BaseType()->syms)
             {
@@ -1676,7 +1676,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
     else if ((*resulttp)->IsVoid() || righttp->IsVoid() || (*resulttp)->type == BasicType::aggregate_)
         error(ERR_NOT_AN_ALLOWED_TYPE);
-    else if ((!templateNestingCount || instantiatingTemplate) && !(*resulttp)->IsStructured() && /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
+    else if ((!definingTemplate || instantiatingTemplate) && !(*resulttp)->IsStructured() && /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
              (*resulttp)->BaseType()->type != BasicType::memberptr_ && (*resulttp)->BaseType()->type != BasicType::templateparam_ &&
              (*resulttp)->BaseType()->type != BasicType::templateselector_ && !lvalue(*resultexp) &&
              (*resultexp)->type != ExpressionNode::msil_array_access_)

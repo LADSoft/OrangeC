@@ -218,7 +218,7 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
     if (base == derived || (base && derived && sameTemplate(derived->tp, base->tp)))
     {
 
-        if (!templateNestingCount || instantiatingTemplate)
+        if (!definingTemplate || instantiatingTemplate)
         {
             if (base->templateParams && derived->templateParams && base->templateParams->front().second->bySpecialization.types &&
                 derived->templateParams->front().second->bySpecialization.types)
@@ -303,7 +303,7 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
              (tp1->BaseType()->sp->sb->templateLevel &&
               tp2->BaseType()->sp->sb->parentTemplate != tp1->BaseType()->sp->sb->parentTemplate)))
         {
-            if (!templateNestingCount)
+            if (!definingTemplate)
             {
                 if (tp1->BaseType()->type == tp2->BaseType()->type)
                 {
@@ -867,7 +867,7 @@ static void RecalcArraySize(Type* tp)
 }
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 {
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         if (arg->sb->deferredCompile && !arg->sb->init)
         {
@@ -879,7 +879,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 initted = true;
                 oldInstantiatingTemplate = instantiatingTemplate;
                 instantiatingTemplate = 0;
-                templateNestingCount++;
+                definingTemplate++;
             }
             LexList* lex;
             Type* tp2;
@@ -929,7 +929,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             PopTemplateNamespace(tns);
             if (initted)
             {
-                templateNestingCount--;
+                definingTemplate--;
                 instantiatingTemplate = oldInstantiatingTemplate;
             }
         }
@@ -951,7 +951,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
     {
         if (sp->sb->storage_class == StorageClass::overloads_)
         {
-            if (templateNestingCount != 1 || instantiatingTemplate)
+            if (definingTemplate != 1 || instantiatingTemplate)
             {
                 for (auto sp1 : *sp->tp->syms)
                 {
@@ -1154,7 +1154,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         restart:
             if (bcsym && bcsym->tp->type == BasicType::templateselector_)
             {
-                if (!templateNestingCount && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
+                if (!definingTemplate && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
                     error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
                 if (MATCHKW(lex, Keyword::lt_))
                 {
@@ -1167,7 +1167,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     tsl.templateParams = nullLst;
                 }
 //                bcsym = nullptr;
-                if (bcsym && (!templateNestingCount || instantiatingTemplate))
+                if (bcsym && (!definingTemplate || instantiatingTemplate))
                 {
                     auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
                     if (bc)
@@ -1224,7 +1224,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                 bcsym->tp = bcsym->tp->InitializeDeferred();
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
-                            if (templateNestingCount && bcsym->tp->type == BasicType::any_)
+                            if (definingTemplate && bcsym->tp->type == BasicType::any_)
                             {
                                 currentAccess = defaultAccess;
                                 isvirtual = false;
@@ -1233,7 +1233,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                     lex = getsym();
                                 continue;
                             }
-                            else if (bcsym && (!templateNestingCount || instantiatingTemplate))
+                            else if (bcsym && (!definingTemplate || instantiatingTemplate))
                             {
                                 auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
                                 if (bc)
@@ -1261,7 +1261,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                         inTemplateSpecialization--;
                         if (MATCHKW(lex, Keyword::ellipse_))
                         {
-                            if (templateNestingCount)
+                            if (definingTemplate)
                             {
                                 bcsym = GetClassTemplate(bcsym, lst, true);
                                 if (bcsym)
@@ -1465,7 +1465,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             else
             {
-                if (!templateNestingCount)
+                if (!definingTemplate)
                     error(ERR_CLASS_TYPE_EXPECTED);
                 done = true;
             }
@@ -1714,7 +1714,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
 }
 void checkPackedExpression(EXPRESSION* exp)
 {
-    if (!hasPackedExpression(exp, true) && !templateNestingCount)
+    if (!hasPackedExpression(exp, true) && !definingTemplate)
         error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER);
 }
 void checkUnpackedExpression(EXPRESSION* exp)
@@ -2682,7 +2682,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym->tp->InstantiateDeferred();
                         if (!classOrEnumParam(sym) && (sp->tp->BaseType()->syms->size() == 1 || !classOrEnumParam((*it))))
                         {
-                            if (!templateNestingCount)
+                            if (!definingTemplate)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -2700,7 +2700,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym->tp->InstantiateDeferred();
                         if (!classOrEnumParam(sym))
                         {
-                            if (!templateNestingCount)
+                            if (!definingTemplate)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -2738,7 +2738,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         }
                         if (!test)
                         {
-                            if (!templateNestingCount)
+                            if (!definingTemplate)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -2757,7 +2757,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym->tp->InstantiateDeferred();
                         if (!classOrEnumParam(sym))
                         {
-                            if (!templateNestingCount)
+                            if (!definingTemplate)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -2879,7 +2879,7 @@ LexList* handleStaticAssert(LexList* lex)
         expr2->left = expr->type == ExpressionNode::select_ ? expr->left : expr;
         optimize_for_constants(&expr2);
         inConstantExpression--;
-        if (!isarithmeticconst(expr2) && !templateNestingCount)
+        if (!isarithmeticconst(expr2) && !definingTemplate)
             error(ERR_CONSTANT_VALUE_EXPECTED);
         v = expr2->v.i;
 
@@ -2913,7 +2913,7 @@ LexList* handleStaticAssert(LexList* lex)
             errskim(&lex, skim_closepa);
             skip(&lex, Keyword::closepa_);
         }
-        else if (!v && (!templateNestingCount))  // || instantiatingTemplate))
+        else if (!v && (!definingTemplate))  // || instantiatingTemplate))
         {
             errorstr(ERR_STATIC_ASSERT, buf);
         }
@@ -3259,12 +3259,12 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 sp->sb->access = access;
                 if (inTemplate)
                 {
-                    sp->sb->templateLevel = templateNestingCount;
+                    sp->sb->templateLevel = definingTemplate;
                     sp->templateParams = TemplateGetParams(sp);
                     if (tp->IsStructured() || tp->BaseType()->type == BasicType::templateselector_)
                         sp->sb->typeAlias = lst;
                 }
-                else if (sp->tp->IsDeferred() && (!templateNestingCount || instantiatingTemplate))
+                else if (sp->tp->IsDeferred() && (!definingTemplate || instantiatingTemplate))
                 {
                     if (!sp->tp->BaseType()->sp->sb->templateLevel)
                          sp->tp->InstantiateDeferred();
@@ -3293,7 +3293,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 sp = search(strsym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
             if (sp)
             {
-                if (!templateNestingCount)
+                if (!definingTemplate)
                 {
                     if (sp->sb->storage_class == StorageClass::overloads_)
                     {
@@ -4316,7 +4316,7 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
         if ((*tn))
         {
             optimize_for_constants(&exp);
-            if (templateNestingCount && !instantiatingTemplate)
+            if (definingTemplate && !instantiatingTemplate)
             {
                 (*tn) = Type::MakeType(BasicType::templatedecltype_);
                 (*tn)->templateDeclType = exp;
@@ -4433,7 +4433,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
 }
 void CheckIsLiteralClass(Type* tp)
 {
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         if (tp->IsRef())
             tp = tp->BaseType()->btp;

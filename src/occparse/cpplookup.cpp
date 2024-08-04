@@ -395,7 +395,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                 }
                                 if (params && params->second->byClass.val)
                                 {
-                                    if (!templateNestingCount || instantiatingTemplate)
+                                    if (!definingTemplate || instantiatingTemplate)
                                         params->second->byClass.val->InstantiateDeferred();
                                     sp = params->second->byClass.val->BaseType()->sp;
                                     dependentType = params->second->byClass.val;
@@ -495,7 +495,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             {
                 GetUsingName(buf);
 
-                if (structLevel && !templateNestingCount && strSym->sb->templateLevel &&
+                if (structLevel && !definingTemplate && strSym->sb->templateLevel &&
                     (!strSym->sb->instantiated || strSym->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
                 {
                     sp = nullptr;
@@ -706,7 +706,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                     }
                                     if (!sp)
                                     {
-                                        if (templateNestingCount)  // || noSpecializationError)
+                                        if (definingTemplate)  // || noSpecializationError)
                                         {
                                             sp = sp1;
                                         }
@@ -775,7 +775,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 else
                 {
-                    if (!templateNestingCount || !sp)
+                    if (!definingTemplate || !sp)
                     {
                         if (dependentType)
                             if (dependentType->IsStructured())
@@ -821,7 +821,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
         }
     }
-    if (!pastClassSel && typeName && !dependentType && !inTypedef && (!templateNestingCount || instantiatingTemplate))
+    if (!pastClassSel && typeName && !dependentType && !inTypedef && (!definingTemplate || instantiatingTemplate))
     {
         error(ERR_NO_TYPENAME_HERE);
     }
@@ -1662,7 +1662,7 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
 }
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress)
 {
-    return (templateNestingCount && !instantiatingTemplate) || instantiatingFunction || member->sb->accessibleTemplateArgument ||
+    return (definingTemplate && !instantiatingTemplate) || instantiatingFunction || member->sb->accessibleTemplateArgument ||
            isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, AccessLevel::public_, 0);
 }
 static SYMBOL* AccessibleClassInstance(SYMBOL* parent)
@@ -3527,7 +3527,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                     inGetUserConversion--;
                     if (flags & F_CONVERSION)
                     {
-                        if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
+                        if (found1->sb->templateLevel && !definingTemplate && found1->templateParams)
                         {
                             if (!inSearchingFunctions || inTemplateArgs)
                                 found1 = TemplateFunctionInstantiate(found1, false);
@@ -5938,7 +5938,7 @@ static bool ValidForDeduction(SYMBOL* s)
                                 }
                                 else if (!found1->sb->templateLevel && found1->sb->parentClass &&
                                          found1->sb->parentClass->templateParams &&
-                                         (!templateNestingCount || instantiatingTemplate) && !found1->sb->isDestructor)
+                                         (!definingTemplate || instantiatingTemplate) && !found1->sb->isDestructor)
                                 {
                                     auto old = found1;
                                     if (found1->sb->mainsym)
@@ -5954,7 +5954,7 @@ static bool ValidForDeduction(SYMBOL* s)
                                 {
                                     CollapseReferences(sym->tp);
                                 }
-                                if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) &&
+                                if (found1->sb->templateLevel && (!definingTemplate || instantiatingTemplate) &&
                                     found1->templateParams)
                                 {
                                     if (!inSearchingFunctions || inTemplateArgs)
@@ -6282,7 +6282,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         found2 = nullptr;
 #if !NDEBUG
                     // this block to aid in debugging unfound functions...
-                    if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !templateNestingCount)
+                    if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !definingTemplate)
                     {
 
                         n = insertFuncs(&spList[0], gather, args, atp, flags);
@@ -6415,7 +6415,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     found1 = found2 = nullptr;
                 }
             }
-            else if (found1->sb->deleted && !templateNestingCount)
+            else if (found1->sb->deleted && !definingTemplate)
             {
                 if (toErr)
                     errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
@@ -6450,7 +6450,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         inSearchingFunctions--;
                         found1->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     }
-                    else if (!found1->sb->templateLevel && found1->sb->parentClass && found1->sb->parentClass->templateParams && (!templateNestingCount || instantiatingTemplate) && !found1->sb->isDestructor)
+                    else if (!found1->sb->templateLevel && found1->sb->parentClass && found1->sb->parentClass->templateParams && (!definingTemplate || instantiatingTemplate) && !found1->sb->isDestructor)
                     {
                         auto old = found1;
                         if (found1->sb->mainsym)
@@ -6473,7 +6473,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         CollapseReferences(sym->tp);
                     }
                     CollapseReferences(found1->tp->BaseType()->btp);
-                    if (found1->sb->templateLevel && (!templateNestingCount || instantiatingTemplate) && found1->templateParams)
+                    if (found1->sb->templateLevel && (!definingTemplate || instantiatingTemplate) && found1->templateParams)
                     {
                         if (!inSearchingFunctions || inTemplateArgs)
                         {
@@ -6485,9 +6485,9 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     {
                         CompileInline(found1, false);
                     }  
-                    else if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!templateNestingCount || instantiatingTemplate)))
+                    else if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!definingTemplate || instantiatingTemplate)))
                     {
-                        if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (templateNestingCount && !instantiatingTemplate)))
+                        if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (definingTemplate && !instantiatingTemplate)))
                         {
                             if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
                                 propagateTemplateDefinition(found1);

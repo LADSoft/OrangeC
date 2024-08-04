@@ -28,7 +28,7 @@ namespace Parser
 extern int dontRegisterTemplate;
 extern int instantiatingTemplate;
 extern int inTemplateBody;
-extern int templateNestingCount;
+extern int definingTemplate;
 extern int templateHeaderCount;
 extern int inTemplateSpecialization;
 extern int inDeduceArgs;

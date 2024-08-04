@@ -769,7 +769,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
             }
             if (arg->tp && arg->tp->BaseType()->type == BasicType::templateparam_)
             {
-                doparam |= !templateNestingCount || instantiatingTemplate;
+                doparam |= !definingTemplate || instantiatingTemplate;
             }
         }
         if (doparam)
@@ -1081,7 +1081,7 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
 }
 std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp)
 {
-    if (templateNestingCount && !instantiatingTemplate)
+    if (definingTemplate && !instantiatingTemplate)
         return exp->v.func->templateParams;
     if (!exp->v.func->templateParams)
         return nullptr;
@@ -1970,7 +1970,7 @@ void PopTemplateNamespace(int n)
 }
 static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
 {
-    if (!templateNestingCount)
+    if (!definingTemplate)
     {
         SYMBOL* ts = (*tso)[1].sp;
         SYMBOL* sp = nullptr;
@@ -2296,7 +2296,7 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
                                 if (newx->type == BasicType::templateselector_)
                                 {
                                     newx = sp->tp;
-                                    if (newx->IsStructured() && !templateNestingCount && newx->BaseType()->sp->sb->templateLevel &&
+                                    if (newx->IsStructured() && !definingTemplate && newx->BaseType()->sp->sb->templateLevel &&
                                         !newx->BaseType()->sp->sb->instantiated)
                                     {
                                         SYMBOL* sp1 = newx->BaseType()->sp;
@@ -2609,7 +2609,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (!templateNestingCount)
+    if (!definingTemplate)
     {
         std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
         enclosingDeclarations.Add(args);

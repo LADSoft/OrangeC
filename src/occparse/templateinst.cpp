@@ -329,7 +329,7 @@ static std::list<TEMPLATEPARAMPAIR>** addStructParam(std::list<TEMPLATEPARAMPAIR
                 *pt = templateParamPairListFactory.CreateList();
             (*pt)->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
             *(*pt)->back().second = *search.second;
-            if (!templateNestingCount || instantiatingTemplate)
+            if (!definingTemplate || instantiatingTemplate)
                 (*pt)->back().second->byClass.dflt = SynthesizeType((*pt)->back().second->byClass.dflt, enclosing, false);
         }
         else
@@ -384,7 +384,7 @@ static Type* SynthesizeStructure(Type* tp_in, std::list<TEMPLATEPARAMPAIR>* encl
         {
             if (!allTemplateArgsSpecified(sp, sp->templateParams))
             {
-                if (!templateNestingCount && sp->templateParams)
+                if (!definingTemplate && sp->templateParams)
                 {
                     for (auto it = sp->templateParams->begin(); it != sp->templateParams->end(); ++it)
                     {
@@ -1035,7 +1035,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                     }
                     else
                     {
-                        if (!templateNestingCount && tpa->first)
+                        if (!definingTemplate && tpa->first)
                         {
                             bool found = false;
                             for (auto&& p : enclosingDeclarations)
@@ -1154,7 +1154,7 @@ static SYMBOL* SynthesizeParentClass(SYMBOL* sym)
     SYMBOL* rv = sym;
     SYMBOL* syms[500];
     int count = 0;
-    if (templateNestingCount)
+    if (definingTemplate)
         return sym;
     while (sym)
     {
@@ -1232,7 +1232,7 @@ SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
     rsv->tp = SynthesizeType(sym->tp, params, false);
     if (rsv->tp->IsFunction())
     {
-        if (!templateNestingCount || instantiatingTemplate)
+        if (!definingTemplate || instantiatingTemplate)
         {
             rsv->tp->BaseType()->btp->InstantiateDeferred();
         }
@@ -1990,7 +1990,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     noTypeNameError--;
                     itDest->second->byClass.val->InstantiateDeferred();
                     if (!itDest->second->byClass.val || itDest->second->byClass.val->type == BasicType::any_ ||
-                        (!templateNestingCount && itDest->second->byClass.val->BaseType()->type == BasicType::templateselector_))
+                        (!definingTemplate && itDest->second->byClass.val->BaseType()->type == BasicType::templateselector_))
                     {
                         parsingDefaultTemplateArgs--;
                         enclosingDeclarations.Release();
@@ -2350,7 +2350,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
 }
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern, StorageClass storage_class)
 {
-    if (templateNestingCount)
+    if (definingTemplate)
     {
         SYMBOL* sym1 = MatchSpecialization(sym, args);
         if (sym1 && (storage_class == StorageClass::parameter_ || !inTemplateBody))
@@ -3290,7 +3290,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 }
             }
         }
-        if ((!templateNestingCount || instantiatingTemplate || (inTemplateHeader && templateNestingCount == 1)) &&
+        if ((!definingTemplate || instantiatingTemplate || (inTemplateHeader && definingTemplate == 1)) &&
             (inTemplateArgs < 1 || !found))
         {
             primary = spsyms ? spsyms : nparams;
@@ -3574,7 +3574,7 @@ bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, b
         {
             if (it->second->packed)
             {
-                if ((templateNestingCount && !instantiatingTemplate &&
+                if ((definingTemplate && !instantiatingTemplate &&
                      (!it->second->byPack.pack || !it->second->byPack.pack->size())) ||
                     !allTemplateArgsSpecified(sym, it->second->byPack.pack, checkDeduced, checkDeclaring))
                     return false;
@@ -4008,7 +4008,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
                 if (spList[i])
                     count1++;
         }
-        if (count1 > 1 && templateNestingCount)
+        if (count1 > 1 && definingTemplate)
         {
             // if it is going to be ambiguous but we are gathering a template, just choose the first one
             for (i = 0; i < n; i++)
@@ -4042,7 +4042,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     {
         found1 = ValidateClassTemplate(origList[i - 1], unspecialized, args);
     }
-    if (!found1 && !templateNestingCount && spList[0])
+    if (!found1 && !definingTemplate && spList[0])
     {
         if (!noErr)
         {
@@ -4249,7 +4249,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
     for (i = 0; i < n; i++)
         if (spList[i])
             count1++;
-    if (count1 > 1 && templateNestingCount)
+    if (count1 > 1 && definingTemplate)
     {
         // if it is going to be ambiguous but we are gathering a template, just choose the first one
         for (i = 0; i < n; i++)
@@ -4540,7 +4540,7 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
             if (oldItem.isDeclType)
             {
                 first = false;
-                if (!templateNestingCount)
+                if (!definingTemplate)
                 {
                     Type* basetp = oldItem.tp;
                     (*rvs)->back().tp = SpecifyArgType(basetp->sp, basetp, nullptr, nullptr, origTemplate, origUsing);
@@ -5485,7 +5485,7 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
                 if (ittp->second->byClass.txtdflt)
                     ittp->second->byClass.val = nullptr;
             }
-            if (!templateNestingCount &&
+            if (!definingTemplate &&
                 !TemplateParseDefaultArgs(sp, nullptr, sp->templateParams, sp->templateParams, sp->templateParams))
             {
                 return false;
@@ -5587,7 +5587,7 @@ std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPAR
             }
         }
     }
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         for (auto&& temp : *args1)
         {
@@ -5728,7 +5728,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     {
         rv = CopySymbol(sp);
         rv->sb->mainsym = sp;
-        if (!templateNestingCount)
+        if (!definingTemplate)
         {
             basetp = SpecifyArgType(basetp->sp, basetp, nullptr, nullptr, args, sp->sb->typeAlias);
             rv->tp = TemplateLookupTypeFromDeclType(basetp);

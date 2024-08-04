@@ -62,7 +62,7 @@ namespace Parser
 int dontRegisterTemplate;
 int instantiatingTemplate;
 int inTemplateBody;
-int templateNestingCount = 0;
+int definingTemplate = 0;
 int templateHeaderCount;
 int inTemplateSpecialization = 0;
 int inDeduceArgs;
@@ -89,7 +89,7 @@ void templateInit(void)
 {
     inTemplateBody = false;
     inTemplateHeader = false;
-    templateNestingCount = 0;
+    definingTemplate = 0;
     templateHeaderCount = 0;
     instantiatingTemplate = 0;
     instantiatingClass = 0;
@@ -474,7 +474,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
         }
         else
         {
-            if (templateNestingCount && (!inTemplateBody || !instantiatingTemplate))
+            if (definingTemplate && (!inTemplateBody || !instantiatingTemplate))
             {
                 if (!*lst)
                     *lst = templateParamPairListFactory.CreateList();
@@ -482,7 +482,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                 (*lst)->back().second->type = TplType::typename_;
                 (*lst)->back().second->byClass.dflt = tp;
             }
-            else if (!templateNestingCount && (*tp->sp->sb->templateSelector)[1].isTemplate)
+            else if (!definingTemplate && (*tp->sp->sb->templateSelector)[1].isTemplate)
             {
                 if (!*lst)
                     *lst = templateParamPairListFactory.CreateList();
@@ -653,13 +653,13 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         tp->BaseType()->sp->sb->declaringRecursive = true;
                     }
                 }
-                if (!templateNestingCount && tp->type == BasicType::any_)
+                if (!definingTemplate && tp->type == BasicType::any_)
                 {
                     error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
                 }
                 if (MATCHKW(lex, Keyword::begin_))  // initializer list?
                 {
-                    if (templateNestingCount)
+                    if (definingTemplate)
                     {
                         exp = MakeExpression(ExpressionNode::construct_);
                         exp->v.construct.tp = tp;
@@ -680,7 +680,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         Type* tp1 = tp;
                         while (tp->IsRef())
                             tp = tp->BaseType()->btp;
-                        if (templateNestingCount && tp->type == BasicType::templateparam_)
+                        if (definingTemplate && tp->type == BasicType::templateparam_)
                         {
                             if (!*lst)
                                 *lst = templateParamPairListFactory.CreateList();
@@ -1036,7 +1036,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             // lose p
                             std::list<TEMPLATEPARAMPAIR>** tpx = lst;
                             lex = getsym();
-                            if (templateNestingCount && tp->type == BasicType::templateparam_)
+                            if (definingTemplate && tp->type == BasicType::templateparam_)
                             {
                                 if (!*lst)
                                     *lst = templateParamPairListFactory.CreateList();
@@ -1054,7 +1054,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     (*lst)->back().second->byNonType.tp = tp;
                                 }
                             }
-                            else if (templateNestingCount)
+                            else if (definingTemplate)
                             {
                                 if (!*lst)
                                     *lst = templateParamPairListFactory.CreateList();
@@ -1175,7 +1175,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             else {
                                 /*
                                 * some of the stuff in chrono is too complex for the compiler right now..
-                                if (exp && !IsConstantExpression(exp, false, false)&& (!templateNestingCount ||
+                                if (exp && !IsConstantExpression(exp, false, false)&& (!definingTemplate ||
                                 instantiatingTemplate)) error(ERR_CONSTANT_VALUE_EXPECTED);
                                 */
                                 if (itorig != iteorig && itorig->second->packed)
@@ -1913,7 +1913,7 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 arg.second->byNonType.txttype = txttype;
                 if (tp->BaseType()->type != BasicType::templateparam_ && tp->BaseType()->type != BasicType::templateselector_ && tp->BaseType()->type != BasicType::templatedeferredtype_ &&
                     tp->BaseType()->type != BasicType::enum_ && !tp->IsInt() && !tp->IsPtr() && tp->BaseType()->type != BasicType::lref_ && 
-                    (!templateNestingCount || tp->BaseType()->type != BasicType::any_))
+                    (!definingTemplate || tp->BaseType()->type != BasicType::any_))
                 {
                     if (tp->BaseType()->type == BasicType::auto_)
                         RequiresDialect::Feature(Dialect::cpp17, "auto as non-type template parameter type");
@@ -2703,9 +2703,9 @@ bool TemplateFullySpecialized(SYMBOL* sp)
 
 void propagateTemplateDefinition(SYMBOL* sym)
 {
-    int oldCount = templateNestingCount;
+    int oldCount = definingTemplate;
     struct templateListData* oldList = currents;
-    templateNestingCount = 0;
+    definingTemplate = 0;
     currents = nullptr;
     if (!sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
     {
@@ -2795,7 +2795,7 @@ void propagateTemplateDefinition(SYMBOL* sym)
         }
     }
     currents = oldList;
-    templateNestingCount = oldCount;
+    definingTemplate = oldCount;
 }
 static void MarkDllLinkage(SYMBOL* sp, Linkage linkage)
 {
@@ -3025,7 +3025,7 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
 
         currentHold.push(currents->plast);
         currents->plast = currents->ptail;
-        templateNestingCount++;
+        definingTemplate++;
         while (MATCHKW(lex, Keyword::template_))
         {
             instantiatingTemplate = 0;
@@ -3043,18 +3043,18 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
                 count++;
             }
         }
-        templateNestingCount--;
+        definingTemplate--;
         if (lex)
         {
-            templateNestingCount++;
+            definingTemplate++;
             inTemplateType = count != 0;  // checks for full specialization...
             fullySpecialized = count == 0;
             lex = declare(lex, funcsp, &tp, storage_class, Linkage::none_, emptyBlockdata, true, false, true, access);
             fullySpecialized = false;
             inTemplateType = false;
-            templateNestingCount--;
+            definingTemplate--;
             instantiatingTemplate = oldInstantiatingTemplate;
-            if (!templateNestingCount)
+            if (!definingTemplate)
             {
                 if (!tp)
                 {

@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -20,8 +20,9 @@
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
+ * 
  */
- 
+
 #include <windows.h>
 #include <stdio.h>
 int main(int argc, char **argv)

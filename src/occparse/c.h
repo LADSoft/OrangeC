@@ -1,12 +1,12 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, 
+ *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -20,7 +20,9 @@
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
+ * 
  */
+
 #include "ctypes.h"
 
 namespace Parser

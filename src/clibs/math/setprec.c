@@ -1,10 +1,11 @@
+#include <stddef.h>
 /* Null stubs for coprocessor precision settings */
 
 int
-sprec() {return 0; }
+_RTL_FUNC sprec() {return 0; }
 
 int
-dprec() {return 0; }
+_RTL_FUNC dprec() {return 0; }
 
 int
-ldprec() {return 0; }
+_RTL_FUNC ldprec() {return 0; }

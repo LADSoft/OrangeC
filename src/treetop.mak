@@ -143,8 +143,8 @@ DISTLIB=$(DISTROOT)$(PATHEXT2)lib
 export DISTLIB
 DISTSTARTUP=$(DISTROOT)$(PATHEXT2)lib$(PATHEXT2)startup
 export DISTSTARTUP
-DISTSTARTUPDOS=$(DISTROOT)$(PATHEXT2)lib$(PATHEXT2)startup$(PATHEXT2)msdos
-export DISTSTARTUPDOS
+#DISTSTARTUPDOS=$(DISTROOT)$(PATHEXT2)lib$(PATHEXT2)startup$(PATHEXT2)msdos
+#export DISTSTARTUPDOS
 DISTSTARTUPWIN=$(DISTROOT)$(PATHEXT2)lib$(PATHEXT2)startup$(PATHEXT2)win32
 export DISTSTARTUPWIN
 DISTADDON=$(DISTROOT)$(PATHEXT2)addon
@@ -174,8 +174,8 @@ export RESTUB
 RENSEG:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)renseg.exe)
 export RENSEG
 
-STUB:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)clibs$(PATHEXT2)platform$(PATHEXT2)dos32$(PATHEXT2)extender$(PATHEXT2)hx$(PATHEXT2)dpmist32.bin)
-export STUB
+#STUB:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)clibs$(PATHEXT2)platform$(PATHEXT2)dos32$(PATHEXT2)extender$(PATHEXT2)hx$(PATHEXT2)dpmist32.bin)
+#export STUB
 
 DISTMAKE := $(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dist.mak)
 export DISTMAKE
@@ -229,16 +229,16 @@ ifndef NOMAKEDIR
 	-$(DEL) $(DISTLIB) 2> $(NULLDEV)
 	-$(MKDIR) $(DISTSTARTUP) 2> $(NULLDEV)
 	-$(DEL) $(DISTSTARTUP) 2> $(NULLDEV)
-	-$(MKDIR) $(DISTSTARTUPDOS) 2> $(NULLDEV)
-	-$(DEL) $(DISTSTARTUPDOS) 2> $(NULLDEV)
+#	-$(MKDIR) $(DISTSTARTUPDOS) 2> $(NULLDEV)
+#	-$(DEL) $(DISTSTARTUPDOS) 2> $(NULLDEV)
 	-$(MKDIR) $(DISTSTARTUPWIN) 2> $(NULLDEV)
 	-$(DEL) $(DISTSTARTUPWIN) 2> $(NULLDEV)
 	-$(MKDIR) $(DISTADDON) 2> $(NULLDEV)
 	-$(DEL) $(DISTADDON) 2> $(NULLDEV)
 	-$(MKDIR) $(DISTEXAM) 2> $(NULLDEV)
 	-$(DEL) $(DISTEXAM) 2> $(NULLDEV)
-	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)msdos 2> $(NULLDEV)
-	-$(DEL) $(DISTEXAM)$(PATHEXT2)msdos 2> $(NULLDEV)
+#	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)msdos 2> $(NULLDEV)
+#	-$(DEL) $(DISTEXAM)$(PATHEXT2)msdos 2> $(NULLDEV)
 	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)system 2> $(NULLDEV)
 	-$(DEL) $(DISTEXAM)$(PATHEXT2)system 2> $(NULLDEV)
 	-$(MKDIR) $(DISTEXAM)$(PATHEXT2)c$(PATHEXT2)win32 2> $(NULLDEV)
@@ -317,8 +317,8 @@ zip:
 ifdef WITHMSDOS
 # this requires CC386 be installed since it relies on far pointer support
 # so I don't make it a part of the default install
-	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2).. -f $(realpath .$(PATHEXT2)doszip.mak)
-	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dos$(PATHEXT2)install -fmakefile.le
+#	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2).. -f $(realpath .$(PATHEXT2)doszip.mak)
+#	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dos$(PATHEXT2)install -fmakefile.le
 endif
 	@$(MAKE) -f $(realpath .$(PATHEXT2)zip.mak)
 $(CDIRS): %.dirs :

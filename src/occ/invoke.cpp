@@ -41,6 +41,7 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#define _unlink unlink
 #else
 #    include <io.h>
 #endif
@@ -340,7 +341,7 @@ int RunExternalFiles()
                 (Optimizer::cparams.prm_stackprotect & HEAP_CHECK) ? "-D__HEAP_CHECK=1" : "",
                 tempName.c_str());
         }
-        unlink(tempName.c_str());
+        _unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
             printf("Return code: %d\n", rv);
 

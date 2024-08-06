@@ -93,6 +93,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ocpp", "ocpp\ocpp.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ieeeconvert", "ieeeconvert\ieeeconvert.vcxproj", "{E5C722A9-CA55-4AE6-8813-CB01A3731CAA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dlmz", "dlmz\dlmz.vcxproj", "{EEDBFAEB-217C-439D-AD89-DA874258C60D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -349,6 +351,14 @@ Global
 		{E5C722A9-CA55-4AE6-8813-CB01A3731CAA}.Release|Win32.Build.0 = Release|Win32
 		{E5C722A9-CA55-4AE6-8813-CB01A3731CAA}.Release|x64.ActiveCfg = Release|x64
 		{E5C722A9-CA55-4AE6-8813-CB01A3731CAA}.Release|x64.Build.0 = Release|x64
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Debug|Win32.Build.0 = Debug|Win32
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Debug|x64.ActiveCfg = Debug|x64
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Debug|x64.Build.0 = Debug|x64
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Release|Win32.ActiveCfg = Release|Win32
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Release|Win32.Build.0 = Release|Win32
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Release|x64.ActiveCfg = Release|x64
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -391,6 +401,7 @@ Global
 		{7B52B07B-8F39-4099-8355-F2F88D31F1FD} = {6B4244F5-24DB-4027-8E04-239F2C47715B}
 		{95FD1874-6C55-4876-B12D-4E88F6D506AD} = {E04DFFDD-B1BA-4005-B0C8-1AE43E936924}
 		{E5C722A9-CA55-4AE6-8813-CB01A3731CAA} = {EBAD3327-43D8-4410-BBDB-96591E9E1E3C}
+		{EEDBFAEB-217C-439D-AD89-DA874258C60D} = {665F5E75-6C97-41FE-8136-3021C9E2C7E7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1CBB2B0-63DA-4E55-9678-031F3127E97E}

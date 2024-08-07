@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -2331,7 +2332,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             implicit = true;
                         }
                         if (tp1->BaseType()->sp->sb->templateLevel && tp1->BaseType()->sp->templateParams &&
-                            !tp1->BaseType()->sp->sb->instantiated && !templateNestingCount)
+                            !tp1->BaseType()->sp->sb->instantiated && !definingTemplate)
                         {
                             SYMBOL* sym = tp1->BaseType()->sp;
                             if (!allTemplateArgsSpecified(sym, sym->templateParams))
@@ -4255,7 +4256,7 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
         FreeLocalContext(emptyBlockdata, nullptr, 0);
         if (!IsConstantExpression(exp, false, false))
         {
-            if (!templateNestingCount)
+            if (!definingTemplate)
                 error(ERR_CONSTANT_VALUE_EXPECTED);
         }
         else
@@ -4278,7 +4279,7 @@ void StatementGenerator::Body()
         funcsp->sb->noExcept = true;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor++;
-    int oldNestingCount = templateNestingCount;
+    int oldNestingCount = definingTemplate;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
     bool oldfunctionHasAssembly = Optimizer::functionHasAssembly;
@@ -4323,7 +4324,7 @@ void StatementGenerator::Body()
     }
 
     if (inTemplateHeader)
-        templateNestingCount--;
+        definingTemplate--;
     CheckUndefinedStructures(funcsp);
     StatementGenerator::ParseNoExceptClause(funcsp);
     if (!inNoExceptHandler)
@@ -4345,7 +4346,7 @@ void StatementGenerator::Body()
         refreshBackendParams(funcsp);
         checkUnlabeledReferences(parent);
         checkGotoPastVLA(block->statements, true);
-        if (funcsp->tp->BaseType()->btp->IsAutoType() && !templateNestingCount)
+        if (funcsp->tp->BaseType()->btp->IsAutoType() && !definingTemplate)
             funcsp->tp->BaseType()->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
         {
@@ -4426,7 +4427,7 @@ void StatementGenerator::Body()
     matchReturnTypes = oldMatchReturnTypes;
     funcLevel--;
     funcNesting--;
-    templateNestingCount = oldNestingCount;
+    definingTemplate = oldNestingCount;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
 }

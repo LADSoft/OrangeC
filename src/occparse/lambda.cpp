@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -13,12 +13,13 @@
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -385,7 +386,7 @@ static void convertCallToTemplate(SYMBOL* func)
     if (func->templateParams->size())
         RequiresDialect::Feature(Dialect::cpp14, "Generic lambdas");
 
-    func->sb->templateLevel = templateNestingCount;
+    func->sb->templateLevel = definingTemplate;
     func->sb->parentTemplate = func;
 }
 static SYMBOL* createPtrToCaller(SYMBOL* self)
@@ -455,7 +456,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         if (lambdas.front()->functp->IsAutoType())
             func->tp->BaseType()->btp = &stdauto;  // convert return type back to auto
         cloneTemplateParams(func);
-        func->sb->templateLevel = templateNestingCount;
+        func->sb->templateLevel = definingTemplate;
         func->sb->parentTemplate = func;
         std::string val = "{return ___self->operator()(";
         for (auto sym : *lambdas.front()->func->tp->BaseType()->syms)
@@ -524,7 +525,7 @@ static void createConverter(SYMBOL* self)
         if (!f->arguments)
             f->arguments = initListListFactory.CreateList();
         func->templateParams = caller->templateParams;
-        func->sb->templateLevel = templateNestingCount;
+        func->sb->templateLevel = definingTemplate;
         func->sb->parentTemplate = func;
         func->tp->BaseType()->btp = Type::MakeType(BasicType::templatedecltype_);
         func->tp->BaseType()->btp->templateDeclType = MakeExpression(f);
@@ -560,7 +561,7 @@ static void createConverter(SYMBOL* self)
         lex1 = getsym();
         getDeferredData(lex1, &func->sb->deferredCompile, true);
         SetAlternateParse(false, "");
-        func->sb->templateLevel = templateNestingCount;
+        func->sb->templateLevel = definingTemplate;
         func->sb->parentTemplate = func;
     }
     else
@@ -595,7 +596,7 @@ static void finishClass(void)
     createConstructorsForLambda(lambdas.front()->cls);
     if (lambdas.front()->templateFunctions)
     {
-        templateNestingCount++;
+        definingTemplate++;
         dontRegisterTemplate++;
         convertCallToTemplate(lambdas.front()->func);
     }
@@ -604,7 +605,7 @@ static void finishClass(void)
     createConverter(self);
     if (lambdas.front()->templateFunctions)
     {
-        templateNestingCount--;
+        definingTemplate--;
         dontRegisterTemplate--;
     }
     if (!lambdas.front()->isMutable)

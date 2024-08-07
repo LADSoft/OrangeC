@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -20,6 +20,7 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+# 
 
 include ../pathext2.mak
 
@@ -31,6 +32,10 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=occparse occil occ ocpplib oasm occopt util objlib netlib sqlite3
 DEFINES=x64 PARSER_ONLY
 H_FILES=$(wildcard *.h)
+
+ifeq "$(COMPILER)" "MINGW64"
+LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) occparse
+endif
 
 ifneq "$(COMPILER)" "gcc-linux"
 LIB_DEPENDENCIES:= $(LIB_DEPENDENCIES) libhostfxr

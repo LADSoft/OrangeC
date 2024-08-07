@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -491,7 +492,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
             {
                 checkIncompleteArray(tp, p->sb->declfile, p->sb->declline);
             }
-            if (toerr && tp->IsStructured() && !tp->size && !templateNestingCount)
+            if (toerr && tp->IsStructured() && !tp->size && !definingTemplate)
             {
                 errorsym(ERR_STRUCT_NOT_DEFINED, p);
             }
@@ -553,7 +554,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
 
     if (size == 0)
     {
-        if (Optimizer::cparams.prm_cplusplus)
+        if (Optimizer::cparams.prm_cplusplus && (!sp->sb->templateLevel || !definingTemplate || instantiatingTemplate))
         {
             // make it non-zero size to avoid further errors...
             size = getSize(BasicType::int_);
@@ -791,7 +792,7 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
 }
 static void GetStructAliasType(SYMBOL* sym)
 {
-    if (templateNestingCount && !instantiatingTemplate)
+    if (definingTemplate && !instantiatingTemplate)
         return;
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
         return;
@@ -856,27 +857,30 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         sp->sb->declaringRecursive = false;
         if (!sp->sb->performedStructInitialization)
         {
-            if (!templateNestingCount)
+            if (!definingTemplate)
             {
-                for (auto s : *sp->tp->syms)
+                if (sp->sb->baseClasses)
                 {
-                    if (s->tp->type == BasicType::aggregate_)
+                    auto bc = Optimizer::SymbolManager::Get(sp)->baseClasses;
+                    for (auto b : *sp->sb->baseClasses)
                     {
-                        /*
-                        for (auto f : *s->tp->syms)
+                        b->cls->tp = b->cls->tp->InitializeDeferred();
+                        if (b->cls->tp->type == BasicType::templateselector_)
                         {
-                            if (!f->sb->templateLevel)
+                            auto a  = ResolveTemplateSelectors(b->cls, b->cls->tp);
+                            if (a->IsStructured())
                             {
-                                f->tp->BaseType()->btp = ResolveTemplateSelectors(f, f->tp->BaseType()->btp);
-                                for (auto a : *f->tp->BaseType()->syms)
-                                {
-                                    a->tp = ResolveTemplateSelectors(a, a->tp);
-                                }
+                                b->cls = a->sp->tp->BaseType()->sp;
+                                bc->sym = Optimizer::SymbolManager::Get(b->cls);
                             }
                         }
-                        */
+                        if (bc)
+                            bc = bc->next;
                     }
-                    else if (!istype(s))
+                }
+                for (auto s : *sp->tp->syms)
+                {
+                    if (s->tp->type != BasicType::aggregate_ && !istype(s))
                     {
                         s->tp = ResolveTemplateSelectors(s, s->tp);
                         s->tp->InstantiateDeferred();
@@ -893,7 +897,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         }
     }
     -- resolvingStructDeclarations;
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         for (i = 0; i < n; i++)
         {
@@ -912,7 +916,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             SYMBOL* sp = syms[i];
             if (!sp->sb->performedStructInitialization)
             {
-                if (/*n > 1 &&*/ !templateNestingCount)
+                if (/*n > 1 &&*/ !definingTemplate)
                 {
                     calculateStructOffsets(sp);
 
@@ -938,9 +942,9 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                     {
                         int oldInstantiatingTemplate = instantiatingTemplate;
                         instantiatingTemplate = 0;
-                        templateNestingCount++;
+                        definingTemplate++;
                         deferredInitializeStructFunctions(syms[i]);
-                        templateNestingCount--;
+                        definingTemplate--;
                         instantiatingTemplate = oldInstantiatingTemplate;
                     }
                     else
@@ -1044,7 +1048,7 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
         baseFinishDeclareStruct(funcsp);
         structLevel++;
     }
-    if (Optimizer::cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
+    if (Optimizer::cparams.prm_cplusplus && sp->tp->syms && !definingTemplate)
     {
         SYMBOL* cons = search(sp->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (!cons)
@@ -1413,12 +1417,12 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         if (!anonymous)
         {
             SetLinkerNames(sp, Linkage::cdecl_);
-            if (inTemplate && templateNestingCount)
+            if (inTemplate && definingTemplate)
             {
                 if (MATCHKW(lex, Keyword::lt_))
                     errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                 sp->templateParams = TemplateGetParams(sp);
-                sp->sb->templateLevel = templateNestingCount;
+                sp->sb->templateLevel = definingTemplate;
                 TemplateMatching(lex, nullptr, sp->templateParams, sp, MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
@@ -1462,7 +1466,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         {
             errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
         }
-        else if (inTemplate && templateNestingCount)
+        else if (inTemplate && definingTemplate)
         {
             // definition or declaration
             if (!sp->sb->templateLevel)
@@ -1673,7 +1677,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                     }
                     else
                     {
-                        if (!templateNestingCount)
+                        if (!definingTemplate)
                             error(ERR_CONSTANT_VALUE_EXPECTED);
                         errskim(&lex, skim_end);
                     }
@@ -2326,7 +2330,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                 !spo->tp->BaseType()->btp->ExactSameType(sp->tp->BaseType()->btp) &&
                 !sameTemplatePointedTo(spo->tp->BaseType()->btp, sp->tp->BaseType()->btp))
             {
-                if (!templateNestingCount || instantiatingTemplate)
+                if (!definingTemplate || instantiatingTemplate)
                     preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
             }
             else
@@ -2433,7 +2437,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                 }
             }
         }
-        else if (!templateNestingCount && spo->sb->xcMode != sp->sb->xcMode)
+        else if (!definingTemplate && spo->sb->xcMode != sp->sb->xcMode)
         {
             if (spo->sb->xcMode == xc_none && sp->sb->xcMode == xc_dynamic)
             {
@@ -3315,9 +3319,9 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         SYMBOL* ssp = nullptr;
                         SYMBOL* spi;
                         bool checkReturn = true;
-                        if (!templateNestingCount && funcsp)
+                        if (!definingTemplate && funcsp)
                             tp1 = ResolveTemplateSelectors(funcsp, tp1);
-                        if (storage_class != StorageClass::external_ && (storage_class != StorageClass::typedef_ || !structLevel) && linkage != Linkage::inline_ && !tp1->IsFunction() && ((!templateNestingCount || instantiatingTemplate) && !structLevel))
+                        if (storage_class != StorageClass::external_ && (storage_class != StorageClass::typedef_ || !structLevel) && linkage != Linkage::inline_ && !tp1->IsFunction() && ((!definingTemplate || instantiatingTemplate) && !structLevel))
                         {
                             tp1->InstantiateDeferred();
                             tp1 = tp1->InitializeDeferred();
@@ -3560,11 +3564,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 }
                                 if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
                                 {
-                                    if (templateNestingCount == 1 && sp->templateParams && sp->templateParams->size() == 1 && !sp->templateParams->front().second->bySpecialization.types)
+                                    if (definingTemplate == 1 && sp->templateParams && sp->templateParams->size() == 1 && !sp->templateParams->front().second->bySpecialization.types)
                                         instantiatingTemplate++;
                                     InitializeFunctionArguments(sp);
                                     sym = searchOverloads(sp, spi->tp->syms);
-                                    if (templateNestingCount == 1 && sp->templateParams && sp->templateParams->size() == 1 && !sp->templateParams->front().second->bySpecialization.types)
+                                    if (definingTemplate == 1 && sp->templateParams && sp->templateParams->size() == 1 && !sp->templateParams->front().second->bySpecialization.types)
                                         instantiatingTemplate--;
                                     Type* retVal;
                                     TEMPLATESELECTOR* tsl = nullptr;
@@ -3625,7 +3629,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                          !sp->tp->BaseType()->btp->ExactSameType((sym)->tp->BaseType()->btp))
                                 {
                                     if (Optimizer::cparams.prm_cplusplus && sym->tp->IsFunction() &&
-                                        (sym->sb->templateLevel || templateNestingCount))
+                                        (sym->sb->templateLevel || definingTemplate))
                                         checkReturn = false;
                                 }
                             }
@@ -3783,7 +3787,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     }
                                 }
                             }
-                            else if (spi->sb->templateLevel && !spi->sb->instantiated && !templateNestingCount)
+                            else if (spi->sb->templateLevel && !spi->sb->instantiated && !definingTemplate)
                             {
                                 if ((strSym && !strSym->sb->templateLevel) || spi->sb->templateLevel != sp->sb->templateLevel + (strSym != 0))
                                     errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
@@ -3847,7 +3851,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 {
                                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
                                 }
-                                else if (!sameQuals(sp, spi) && (!templateNestingCount || instantiatingTemplate))
+                                else if (!sameQuals(sp, spi) && (!definingTemplate || instantiatingTemplate))
                                 {
                                     errorsym(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
                                 }
@@ -4038,7 +4042,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 {
                                     TemplateValidateSpecialization(templateParams);
                                 }
-                                else if (templateNestingCount == 1)
+                                else if (definingTemplate == 1)
                                 {
                                     TemplateMatching(lex, nullptr, templateParams, sp, MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
                                 }
@@ -4058,7 +4062,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                 if (sp->sb->constexpression && sp->sb->storage_class == StorageClass::global_)
                                     sp->sb->storage_class = StorageClass::static_;
-                                if (!asFriend || !templateNestingCount || instantiatingTemplate || inTemplate)
+                                if (!asFriend || !definingTemplate || instantiatingTemplate || inTemplate)
                                 {
                                     if (sp->sb->storage_class == StorageClass::external_ ||
                                         (asFriend && !MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_)))
@@ -4072,7 +4076,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     }
                                 }
                             }
-                            if (asFriend && !sp->sb->anonymous && !sp->tp->IsFunction() && !templateNestingCount)
+                            if (asFriend && !sp->sb->anonymous && !sp->tp->IsFunction() && !definingTemplate)
                             {
                                 error(ERR_DECLARATOR_NOT_ALLOWED_HERE);
                             }
@@ -4263,7 +4267,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                 if (asFriend)
                                     sp->sb->friendContext = enclosingDeclarations.GetFirst();
-                                if (!templateNestingCount)
+                                if (!definingTemplate)
                                     sp->sb->hasBody = true;
                                 Type* tp = sp->tp;
                                 if (sp->sb->storage_class == StorageClass::member_ && storage_class_in == StorageClass::member_)
@@ -4312,16 +4316,16 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ && sp->sb->attribs.inheritable.linkage != Linkage::c_)
                                     {
                                         if (!sp->sb->parentNameSpace &&
-                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateNestingCount || (sp->templateParams && sp->templateParams->size() == 1)) &&
+                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !definingTemplate || (sp->templateParams && sp->templateParams->size() == 1)) &&
                                             strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                            if (!templateNestingCount || instantiatingTemplate || (sp->sb->specialized && sp->templateParams->size() == 1))
+                                            if (!definingTemplate || instantiatingTemplate || (sp->sb->specialized && sp->templateParams->size() == 1))
                                                 InsertInline(sp);
                                         }
                                     }
                                     if (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
-                                        templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
+                                        definingTemplate == 1 || (asFriend && definingTemplate == 2))
                                     {
                                         auto startStmt = currentLineData(emptyBlockdata, lex, 0);
                                         if (startStmt)
@@ -4330,14 +4334,14 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         Optimizer::SymbolManager::Get(sp);
                                         if (asFriend)
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                        if (sp->sb->parentClass && sp->templateParams && (!templateNestingCount || instantiatingTemplate))
+                                        if (sp->sb->parentClass && sp->templateParams && (!definingTemplate || instantiatingTemplate))
                                         {
                                             sp->sb->templateLevel = 0;
                                             sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
                                             sp = TemplateFunctionInstantiate(sp, false);
                                             sp->sb->specialized2 = true;
                                         }
-                                        if (sp->templateParams && sp->templateParams->size() == 1 && (!templateNestingCount || instantiatingTemplate))
+                                        if (sp->templateParams && sp->templateParams->size() == 1 && (!definingTemplate || instantiatingTemplate))
                                             InsertInline(sp);
                                     }
                                     else
@@ -4369,7 +4373,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     {
                                         sp->sb->deleted = true;
                                         sp->sb->constexpression = true;
-                                        if (sp->sb->redeclared && !templateNestingCount)
+                                        if (sp->sb->redeclared && !definingTemplate)
                                         {
                                             errorsym(ERR_DELETE_ON_REDECLARATION, sp);
                                         }
@@ -4487,7 +4491,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (Optimizer::cparams.prm_cplusplus && sp->tp->IsStructured())
                                 {
                                     SYMBOL* sp1 = sp->tp->BaseType()->sp;
-                                    if (!templateNestingCount && sp1->sb->templateLevel && sp1->templateParams &&
+                                    if (!definingTemplate && sp1->sb->templateLevel && sp1->templateParams &&
                                         !sp1->sb->instantiated)
                                     {
                                         auto tn = Type::MakeType(sp1, sp1->templateParams);
@@ -4675,7 +4679,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
     }
     FlushLineData(preProcessor->GetRealFile().c_str(), preProcessor->GetRealLineNo());
     if (needsemi && !asExpression)
-        if (templateNestingCount || !needkw(&lex, Keyword::semicolon_))
+        if (definingTemplate || !needkw(&lex, Keyword::semicolon_))
         {
             errskim(&lex, skim_semi_declare);
             skip(&lex, Keyword::semicolon_);

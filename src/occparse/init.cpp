@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -356,7 +357,7 @@ void insert_file_constructor(SYMBOL* sym)
 } 
 void insertDynamicInitializer(SYMBOL* sym, std::list<Initializer*>* init, bool front)
 {
-    if (!ignore_global_init && !templateNestingCount)
+    if (!ignore_global_init && !definingTemplate)
     {
         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
         {
@@ -381,7 +382,7 @@ static void insertTLSInitializer(SYMBOL* sym, std::list<Initializer*>* init)
 }
 void insertDynamicDestructor(SYMBOL* sym, std::list<Initializer*>* init)
 {
-    if (!ignore_global_init && !templateNestingCount)
+    if (!ignore_global_init && !definingTemplate)
     {
         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
         {
@@ -1413,7 +1414,7 @@ static LexList* initialize_bool_type(LexList* lex, SYMBOL* funcsp, int offset, S
         {
             error(ERR_EXPRESSION_SYNTAX);
         }
-        else if (itype->type != BasicType::templateparam_ && !templateNestingCount)
+        else if (itype->type != BasicType::templateparam_ && !definingTemplate)
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
             castToArithmetic(false, &tp, &exp, (Keyword) - 1, itype, true);
@@ -1469,7 +1470,7 @@ static LexList* initialize_arithmetic_type(LexList* lex, SYMBOL* funcsp, int off
         else
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
-            if (itype->type != BasicType::templateparam_ && tp->type != BasicType::templateselector_ && !templateNestingCount)
+            if (itype->type != BasicType::templateparam_ && tp->type != BasicType::templateselector_ && !definingTemplate)
             {
                 EXPRESSION** exp2;
                 exp2 = &exp;
@@ -1962,7 +1963,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
     else
     {
         EXPRESSION* exp1 = exp;
-        if (!templateNestingCount && (referenceTypeError(tp, exp) != exp->type || (tp->type == BasicType::rref_ && lvalue(exp))) &&
+        if (!definingTemplate && (referenceTypeError(tp, exp) != exp->type || (tp->type == BasicType::rref_ && lvalue(exp))) &&
             (!tp->BaseType()->btp->IsStructured() || exp->type != ExpressionNode::lvalue_) && (!tp->BaseType()->btp->IsPtr() || exp->type != ExpressionNode::l_p_))
         {
             if (!isarithmeticconst(exp) && exp->type != ExpressionNode::thisref_ && exp->type != ExpressionNode::callsite_ &&
@@ -3865,7 +3866,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
             tp = ts->tp->BaseType()->templateParam->second->byClass.val;
             if (!tp)
             {
-                if (templateNestingCount)
+                if (definingTemplate)
                 {
                     lex = getsym();
                     errskim(&lex, skim_closepa);
@@ -3917,7 +3918,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
     }
     if (!tp)
     {
-        if (!templateNestingCount && !(flags & _F_TEMPLATEARGEXPANSION))
+        if (!definingTemplate && !(flags & _F_TEMPLATEARGEXPANSION))
         {
             errortype(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
         }
@@ -4035,7 +4036,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
             }
             /* fallthrough */
         default:
-            if (!templateNestingCount)
+            if (!definingTemplate)
                 errortype(ERR_CANNOT_INITIALIZE, tp, nullptr);
             else if (MATCHKW(lex, Keyword::begin_))
             {
@@ -4149,7 +4150,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     int flags)
 {
     auto sp = sym->tp->BaseType()->sp;
-    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!templateNestingCount || instantiatingTemplate))
+    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!definingTemplate || instantiatingTemplate))
     {
         if (sym->tp->IsDeferred())
         {
@@ -4253,7 +4254,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     {
         if (MATCHKW(lex, Keyword::assign_))
             errskim(&lex, skim_semi);
-        if (!templateNestingCount)
+        if (!definingTemplate)
             errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any Keyword::openpa_() will be eaten by an expression parser
@@ -4558,7 +4559,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         }
         tp = tp->btp;
     }
-    if (sym->sb->constexpression && !templateNestingCount)
+    if (sym->sb->constexpression && !definingTemplate)
     {
         if (!tp->IsPtr() && !tp->IsArithmetic() && tp->BaseType()->type != BasicType::enum_ &&
             (!tp->IsStructured() /*|| !tp->BaseType()->sp->sb->trivialCons*/))
@@ -4606,7 +4607,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     }
     if (tp->IsConst())
     {
-        if (!templateNestingCount)
+        if (!definingTemplate)
         {
             if (!sym->sb->init)
             {
@@ -4672,7 +4673,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             errorsym(ERR_REF_MUST_INITIALIZE, sym);
         }
     }
-    if (!instantiatingTemplate && !structLevel && sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent && !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && !instantiatingTemplate && !structLevel && sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent && !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
         (!Optimizer::cparams.prm_cplusplus || !sym->tp->IsStructured() || sym->sb->trivialCons) && !sym->tp->IsAtomic() && sym->sb->attribs.inheritable.linkage3 == Linkage::none_)
     {
             sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;

@@ -1,25 +1,26 @@
 /* Software License Agreement
- *
- *    Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- *
- *    This file is part of the Orange C Compiler package.
- *
- *    The Orange C Compiler package is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    The Orange C Compiler package is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contact information:
- *        email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
+ * 
  */
 
 #include "compiler.h"
@@ -139,7 +140,7 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
         error(ERR_SIZEOF_UNFIXED_ENUMERATION);
     if (tp->IsFunction())
         error(ERR_SIZEOF_NO_FUNCTION);
-    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !templateNestingCount)
+    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !definingTemplate)
         errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */
@@ -164,7 +165,7 @@ EXPRESSION* nodeSizeof(Type *tp, EXPRESSION *exp, int flags)
         exp = nullptr;
         if (tp->IsStructured())
         {
-            if (tp->BaseType()->size == 0 && !templateNestingCount)
+            if (tp->BaseType()->size == 0 && !definingTemplate)
                 errorsym(ERR_UNSIZED_TYPE, tp->BaseType()->sp);
             if (tp->BaseType()->syms)
             {
@@ -1676,7 +1677,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
     else if ((*resulttp)->IsVoid() || righttp->IsVoid() || (*resulttp)->type == BasicType::aggregate_)
         error(ERR_NOT_AN_ALLOWED_TYPE);
-    else if ((!templateNestingCount || instantiatingTemplate) && !(*resulttp)->IsStructured() && /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
+    else if ((!definingTemplate || instantiatingTemplate) && !(*resulttp)->IsStructured() && /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
              (*resulttp)->BaseType()->type != BasicType::memberptr_ && (*resulttp)->BaseType()->type != BasicType::templateparam_ &&
              (*resulttp)->BaseType()->type != BasicType::templateselector_ && !lvalue(*resultexp) &&
              (*resultexp)->type != ExpressionNode::msil_array_access_)

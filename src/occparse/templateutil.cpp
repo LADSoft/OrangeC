@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -201,8 +202,14 @@ bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType)
         ++tss2;
         ++tss2;
         for (; tss1 != (*left).end() && tss2 != (*right).end(); ++tss1, ++tss2)
+        {
             if (strcmp(tss1->name, tss2->name))
                 return false;
+            if (tss1->isTemplate != tss2->isTemplate)
+                return false;
+            if (tss1->isTemplate && !exactMatchOnTemplateArgs(tss1->templateParams, tss2->templateParams))
+                return false;
+        }
         return tss1 == (*left).end() && tss2 == (*right).end();
     }
     else
@@ -763,7 +770,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
             }
             if (arg->tp && arg->tp->BaseType()->type == BasicType::templateparam_)
             {
-                doparam |= !templateNestingCount || instantiatingTemplate;
+                doparam |= !definingTemplate || instantiatingTemplate;
             }
         }
         if (doparam)
@@ -1075,7 +1082,7 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
 }
 std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp)
 {
-    if (templateNestingCount && !instantiatingTemplate)
+    if (definingTemplate && !instantiatingTemplate)
         return exp->v.func->templateParams;
     if (!exp->v.func->templateParams)
         return nullptr;
@@ -1964,7 +1971,7 @@ void PopTemplateNamespace(int n)
 }
 static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
 {
-    if (!templateNestingCount)
+    if (!definingTemplate)
     {
         SYMBOL* ts = (*tso)[1].sp;
         SYMBOL* sp = nullptr;
@@ -2290,7 +2297,7 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
                                 if (newx->type == BasicType::templateselector_)
                                 {
                                     newx = sp->tp;
-                                    if (newx->IsStructured() && !templateNestingCount && newx->BaseType()->sp->sb->templateLevel &&
+                                    if (newx->IsStructured() && !definingTemplate && newx->BaseType()->sp->sb->templateLevel &&
                                         !newx->BaseType()->sp->sb->instantiated)
                                     {
                                         SYMBOL* sp1 = newx->BaseType()->sp;
@@ -2603,7 +2610,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (!templateNestingCount)
+    if (!definingTemplate)
     {
         std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
         enclosingDeclarations.Add(args);

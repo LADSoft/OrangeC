@@ -1,25 +1,26 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
+ * 
  */
 
 #include "compiler.h"
@@ -1059,7 +1060,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             }
             else
             {
-                if (!templateNestingCount)
+                if (!definingTemplate)
                     error(ERR_IDENTIFIER_EXPECTED);
                 *exp = MakeIntExpression(ExpressionNode::c_i_, 1);
             }
@@ -1087,7 +1088,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         if (!(flags & _F_AMPERSAND))
                             deref(&stdint, exp);
                     }
-                    else if (!templateNestingCount)
+                    else if (!definingTemplate)
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                     }
@@ -1170,7 +1171,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
         if (strSym && strSym->tp->type == BasicType::templateselector_)
         {
             SYMBOL* sym = (*strSym->tp->BaseType()->sp->sb->templateSelector)[1].sp;
-            if ((!templateNestingCount || instantiatingTemplate) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
+            if ((!definingTemplate || instantiatingTemplate) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
             {
                 errorNotMember(sym, nsv ? nsv->front() : nullptr, ISID(lex) ? lex->data->value.s.a : "__unknown");
             }
@@ -1280,7 +1281,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 *tp = sym->tp;
                 deref(&stdint, exp);
                 SetLinkerNames(sym, Linkage::c_);
-                if (!nsv && (!strSym || !templateNestingCount ||
+                if (!nsv && (!strSym || !definingTemplate ||
                              (!strSym->sb->templateLevel && strSym->tp->type != BasicType::templateselector_ &&
                               strSym->tp->type != BasicType::templatedecltype_)))
                 {
@@ -1397,7 +1398,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             tp1->InstantiateDeferred();
             if (!(*tp)->ExactSameType(tp1))
             {
-                if (!templateNestingCount)
+                if (!definingTemplate)
                     error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
             }
             else if ((*tp)->IsStructured())
@@ -1425,7 +1426,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         *tp = &stdvoid;
     }
     else if (!(*tp)->IsStructured() || (points && !typein->IsPtr()) ||
-             (parsingTrailingReturnOrUsing && (*tp)->IsStructured() && templateNestingCount && !instantiatingTemplate &&
+             (parsingTrailingReturnOrUsing && (*tp)->IsStructured() && definingTemplate && !instantiatingTemplate &&
               (*tp)->BaseType()->sp->sb->templateLevel))
     {
         if (Optimizer::cparams.prm_cplusplus && ISKW(lex) && (lex->data->kw->tokenTypes & TT_BASETYPE))
@@ -1475,7 +1476,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             }
             *tp = &stdvoid;
         }
-        else if (templateNestingCount && Optimizer::cparams.prm_cplusplus)
+        else if (definingTemplate && Optimizer::cparams.prm_cplusplus)
         {
             *exp = MakeExpression(points ? ExpressionNode::pointsto_ : ExpressionNode::dot_, *exp);
             EXPRESSION** ptr = &(*exp)->right;
@@ -1544,7 +1545,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             }
             if (!sp2)
             {
-                if (!templateNestingCount || !(*tp)->BaseType()->sp->sb->templateLevel)
+                if (!definingTemplate || !(*tp)->BaseType()->sp->sb->templateLevel)
                     errorNotMember((*tp)->BaseType()->sp, nullptr, lex->data->value.s.a ? lex->data->value.s.a : "unknown");
                 lex = getsym();
                 while (ISID(lex))
@@ -1815,7 +1816,7 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
                     }
                     else
                     {
-                        if (sp->sb->templateLevel && !templateNestingCount && sp->templateParams)
+                        if (sp->sb->templateLevel && !definingTemplate && sp->templateParams)
                         {
                             sp = TemplateFunctionInstantiate(sp, false);
                         }
@@ -2065,7 +2066,7 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
             }
-            else if (!templateNestingCount || (*tp)->BaseType()->type != BasicType::templateselector_)
+            else if (!definingTemplate || (*tp)->BaseType()->type != BasicType::templateselector_)
             {
                 error(ERR_DEREF);
             }
@@ -2405,7 +2406,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
             if (!p->exp)
                 p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
             optimize_for_constants(&p->exp);
-            if ((!templateNestingCount || instantiatingTemplate) && p->tp && p->tp->type == BasicType::templateselector_)
+            if ((!definingTemplate || instantiatingTemplate) && p->tp && p->tp->type == BasicType::templateselector_)
                 p->tp = LookupTypeFromExpression(p->exp, nullptr, false);
             if (finish != Keyword::closepa_)
             {
@@ -2447,7 +2448,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                 {
                     // lose p
                     lex = getsym();
-                    if (templateNestingCount)
+                    if (definingTemplate)
                     {
                         (*lptr)->push_back(p);
                     }
@@ -3116,7 +3117,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
     if (it != itend && (*it)->sb->thisPtr)
         ++it;
     while (it != itend  && (itl != itle || (*it)->sb->init != nullptr ||
-                  ((*it)->sb->deferredCompile != nullptr && (!templateNestingCount || instantiatingTemplate))))
+                  ((*it)->sb->deferredCompile != nullptr && (!definingTemplate || instantiatingTemplate))))
     {
         SYMBOL* sym = *it;
         Argument* p;
@@ -4171,7 +4172,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             funcparams->fcall = *exp;
             *exp = MakeExpression(funcparams);
         }
-        else if (!templateNestingCount)
+        else if (!definingTemplate)
         {
             error(ERR_CALL_OF_NONFUNCTION);
         }
@@ -4202,7 +4203,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         }
     }
 
-    if (/*(!templateNestingCount || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
+    if (/*(!definingTemplate || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
 
@@ -4404,7 +4405,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             }
             else
             {
-                if (!templateNestingCount && !(flags & _F_INDECLTYPE))
+                if (!definingTemplate && !(flags & _F_INDECLTYPE))
                     errortype(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, *tp, nullptr);
             }
         }
@@ -4422,7 +4423,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         doit = !!arg->tp->templateParam->second->byPack.pack;
                 }
             }
-            if (doit && !templateNestingCount && !(flags & _F_INDECLTYPE))
+            if (doit && !definingTemplate && !(flags & _F_INDECLTYPE))
                 error(ERR_CALL_OF_NONFUNCTION);
         }
     }
@@ -4754,7 +4755,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 }
                 GetAssignDestructors(&funcparams->destructors, *exp);
             }
-            else if (templateNestingCount && !instantiatingTemplate && (*tp)->type == BasicType::aggregate_)
+            else if (definingTemplate && !instantiatingTemplate && (*tp)->type == BasicType::aggregate_)
             {
                 *exp = MakeExpression(ExpressionNode::funcret_, *exp);
                 *tp = Type::MakeType(BasicType::templatedecltype_);
@@ -6347,7 +6348,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                         {
                             // lose p
                             lex = getsym();
-                            if (!templateNestingCount && *exp && (*exp)->type != ExpressionNode::packedempty_)
+                            if (!definingTemplate && *exp && (*exp)->type != ExpressionNode::packedempty_)
                             {
                                 if (!(*tp)->IsStructured() && !(*tp)->templateParam)
                                     checkPackedExpression(*exp);
@@ -6755,7 +6756,7 @@ static LexList* expression_sizeof(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 *tp = &stdunsigned;
                 *exp = MakeIntExpression(ExpressionNode::c_i_, 1);
             }
-            else if (templateNestingCount)
+            else if (definingTemplate)
             {
                 *exp = MakeIntExpression(ExpressionNode::sizeofellipse_, 0);
                 (*exp)->v.templateParam = (*tp)->templateParam;
@@ -7113,7 +7114,7 @@ static LexList* expression_deref(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRES
         ;
         if (!(*tp)->IsPtr())
         {
-            if (!templateNestingCount || instantiatingTemplate)
+            if (!definingTemplate || instantiatingTemplate)
                 error(ERR_DEREF);
             deref(&stdpointer, exp);
         }

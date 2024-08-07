@@ -1,7 +1,6 @@
-#pragma once
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -22,6 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#pragma once
 
 #ifndef _SYMTAB_H
 #define _SYMTAB_H
@@ -146,7 +146,7 @@ inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
     {
         if (IsCompiler() || this != CompletionCompiler::ccSymbols)
         {
-            if (!structLevel || !templateNestingCount)
+            if (!structLevel || !definingTemplate)
             {
                 SYMBOL* sym = search(this, in->name);
                 if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)

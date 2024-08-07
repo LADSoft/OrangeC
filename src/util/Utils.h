@@ -1,7 +1,7 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
@@ -19,7 +19,8 @@
  *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
+ * 
  */
 
 #ifndef UTIL_H

@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -203,7 +204,7 @@ int ccDBOpen(const char* name);
 void diag(const char* fmt, ...)
 {
     using namespace Parser;
-    if (!templateNestingCount)
+    if (!definingTemplate)
     {
         if (Optimizer::cparams.prm_diag)
         {

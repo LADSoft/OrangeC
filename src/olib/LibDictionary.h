@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -20,6 +20,7 @@
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
+ * 
  */
 
 #ifndef LIBDICTIONARY_H
@@ -29,6 +30,7 @@
 #include <cstdio>
 #include <unordered_map>
 #include <vector>
+#include <climits>
 
 class ObjFile;
 class LibFiles;

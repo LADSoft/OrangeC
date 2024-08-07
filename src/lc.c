@@ -39,7 +39,7 @@ void recurse(char *path)
             sprintf(search,"%s%s",root, data.cFileName);
             if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-//                if (data.cFileName[0] != '.' && stricmp(data.cFileName, "test"))
+                if (data.cFileName[0] != '.' && stricmp(data.cFileName, "test"))
 //                    recurse(search);
             }
             else

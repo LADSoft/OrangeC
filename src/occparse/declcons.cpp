@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -246,7 +247,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
     ovl->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     ovl->sb->defaulted = true;
     ovl->sb->access = AccessLevel::public_;
-    ovl->sb->templateLevel = templateNestingCount;
+    ovl->sb->templateLevel = definingTemplate;
     if (!ovl->sb->decoratedName)
         SetLinkerNames(ovl, Linkage::cdecl_);
     if (!funcs)
@@ -1205,7 +1206,7 @@ static bool conditionallyDeleteDestructor(SYMBOL* sp)
 }
 static void SetDestructorNoexcept(SYMBOL* sp)
 {
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         if (sp->sb->deferredNoexcept && sp->sb->deferredNoexcept != (LexList*)-1)
         {
@@ -1256,7 +1257,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         ++it1;
         if (it1 != itend && ((*it1)->sb->init || (*it1)->sb->deferredCompile))
         {
-            if (sp->templateParams == nullptr || (!templateNestingCount || instantiatingTemplate))
+            if (sp->templateParams == nullptr || (!definingTemplate || instantiatingTemplate))
             {
                 // will match a default constructor but has defaulted args
                 SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
@@ -2798,7 +2799,7 @@ void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest,
     {
         EXPRESSION* thisptr;
         int oldCodeLabel = codeLabel;
-        if (templateNestingCount)
+        if (definingTemplate)
             return;
         if (defaulted)
             codeLabel = INT_MIN;
@@ -3059,7 +3060,7 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 if (!list->nested && list->tp->IsStructured())
                 {
                     SYMBOL* sp1 = list->tp->BaseType()->sp;
-                    if (!templateNestingCount && sp1->sb->templateLevel && sp1->templateParams && !sp1->sb->instantiated)
+                    if (!definingTemplate && sp1->sb->templateLevel && sp1->templateParams && !sp1->sb->instantiated)
                     {
                         if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
                             sp1 = GetClassTemplate(sp1, sp1->templateParams, false);

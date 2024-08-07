@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2023 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -19,6 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  * 
  */
 
@@ -317,7 +318,7 @@ static bool alwaysErr(int err)
             return false;
     }
 }
-static bool ignoreErrtemplateNestingCount(int err)
+static bool ignoreErrdefiningTemplate(int err)
 {
     switch (err)
     {
@@ -401,7 +402,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
-    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
+    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (definingTemplate && ignoreErrdefiningTemplate(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
@@ -2026,7 +2027,7 @@ static bool HasConstexprConstructor(Type* tp)
 }
 void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 {
-    if (!templateNestingCount || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate)
     {
         for (auto sym : *cons->tp->syms)
         {
@@ -2055,7 +2056,7 @@ void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 }
 bool MustSpecialize(const char* name)
 {
-    if (noNeedToSpecialize || (templateNestingCount && !instantiatingTemplate))
+    if (noNeedToSpecialize || (definingTemplate && !instantiatingTemplate))
         return false;
     for (auto&& sst : enclosingDeclarations)
     {

@@ -11,7 +11,7 @@ current:
 	$(B) std/algorithms
 	$(B) std/atomics
 	$(B) std/containers
-	$(B) std/depr
+#	$(B) std/depr
 	$(B) std/diagnostics
 	$(B) std/iterators
 	$(B) std/thread

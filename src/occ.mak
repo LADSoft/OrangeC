@@ -29,7 +29,7 @@ OBJ_IND_PATH := occ
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
-ASM_deps = $(notdir $(ASM_DEPENDENCIES:.asm=.o))
+ASM_deps = $(notdir $(ASM_DEPENDENCIES:.s=.o))
 TASM_deps = $(notdir $(TASM_DEPENDENCIES:.asm=.o))
 RES_deps = $(notdir $(RC_DEPENDENCIES:.rc=.res))
 
@@ -138,15 +138,15 @@ ifeq "$(VIAASSEMBLY)" ""
 
 else
 %.o: %.cpp
-	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
-	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
+	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$*.s $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.s
 %.o: %.c
-	$(CC) $(CFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
-	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
+	$(CC) $(CFLAGS) -o$(_OUTPUTDIR)/$*.s $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.s
 endif
 endif
 
-%.o: %.asm
+%.o: %.s
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.res: %.rc

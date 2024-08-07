@@ -87,17 +87,24 @@
 
 //#define x64_compiler
 #ifndef x64_compiler
+// if you compile with the runtime being a shared library/DLL other than LSCRTL.DLL
+// this block of code just isn't going to work....
+#ifndef USES_SHARED_LIBRARY
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
 // there are a lot of temporary containers created and maintained
 // and this keeps from having the full impact of new/delete any
 // time they are used
 // resulted in about a 20% speedup of the compiler on the worst files
-#define HASHBLKSIZE 128
 
+#define HASHBLKSIZE 128 * 8
+
+// this structure is similar to the one used by the occ runtime library
+// so for example we can cache things that were allocated by LSCRTL.DLL
+// just as easily
 struct __preheader
 {
-    int size;
+    unsigned size;
     __preheader* link;
 };
 __preheader* dictionary[HASHBLKSIZE];
@@ -105,8 +112,8 @@ void* operator new(size_t aa)
 {
     if (!aa)
         aa++;
-    int bb = (aa + 7) / 8;
-    if (bb < HASHBLKSIZE)
+    unsigned bb = (aa + 7) / 8;
+    if (aa < HASHBLKSIZE)
     {
         __preheader** x = dictionary + bb;
         if (*x)
@@ -122,7 +129,7 @@ void* operator new(size_t aa)
         // If malloc fails and there is a new_handler,
         // call it to try free up memory.
 
-#if __GNUC__ > 4
+#if !defined(__GNUC__) || __GNUC__ > 4
         std::new_handler nh = std::get_new_handler();
         if (nh)
             nh();
@@ -130,7 +137,7 @@ void* operator new(size_t aa)
 #endif
             throw std::bad_alloc();
     }
-    rv->size = bb;
+    rv->size = aa;
     rv->link = nullptr;
     return (void *)(rv + 1);
 }
@@ -141,16 +148,20 @@ void operator delete(void* p)
     __preheader* item = ((__preheader *)p)-1;
     if (item->size < HASHBLKSIZE)
     {
-        __preheader** x = dictionary + item->size;
+        unsigned bb = (item->size + 7) / 8;
+        __preheader** x = dictionary + bb;
         item->link = *x;
         *x = item;
     }
     else
     {
+        // this would be buggy if we used aligned allocations and LSCRTL.DLL at the same time
+        // because of the way aligned allocations are handled...
         free(item);
     }
 }
 
+#endif
 #endif
 #ifndef ORANGE_NO_MSIL
 using namespace DotNetPELib;

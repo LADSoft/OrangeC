@@ -38,7 +38,6 @@ VTune Profiler Results/
 *.ilo
 *.il
 *.user
-*.vcxproj.filters
 q
 q.*
 q1.*

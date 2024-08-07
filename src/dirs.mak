@@ -22,12 +22,13 @@
 # 
 # 
 
+# dlle dlpm 
 ifeq "$(COMPILER)" "gcc-linux"
 
-DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlmz dlpe olib olink \
        oimplib omake onm orc occparse occpr occ occil coff2ieee gccocc arocc clocc linkocc libocc ieeeconvert
 else
-DIRS := sqlite3 util objlib libhostfxr netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+DIRS := sqlite3 util objlib libhostfxr netlib occopt obrc ocpp ogrep oasm dlhex dlmz dlpe olib olink \
        oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert \
        gccocc arocc clocc linkocc libocc \
        help

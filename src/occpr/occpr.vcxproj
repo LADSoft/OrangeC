@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\oasm\AdlFunctions.cpp" />
+    <ClCompile Include="..\oasm\AsmExpr.cpp" />
+    <ClCompile Include="..\oasm\AsmFile.cpp" />
+    <ClCompile Include="..\oasm\AsmLexer.cpp" />
+    <ClCompile Include="..\oasm\Instruction.cpp" />
+    <ClCompile Include="..\oasm\Section.cpp" />
+    <ClCompile Include="..\oasm\x64Instructions.cpp" />
+    <ClCompile Include="..\occil\msilInit.cpp" />
+    <ClCompile Include="..\occil\using.cpp" />
+    <ClCompile Include="..\occopt\config.cpp" />
+    <ClCompile Include="..\occopt\configmsil.cpp" />
+    <ClCompile Include="..\occopt\configx86.cpp" />
+    <ClCompile Include="..\occopt\iblock.cpp" />
+    <ClCompile Include="..\occopt\ifloatconv.cpp" />
+    <ClCompile Include="..\occopt\ildata.cpp" />
+    <ClCompile Include="..\occopt\ilstream.cpp" />
+    <ClCompile Include="..\occopt\iout.cpp" />
+    <ClCompile Include="..\occopt\memory.cpp" />
+    <ClCompile Include="..\occopt\optmodules.cpp" />
+    <ClCompile Include="..\occopt\OptUtils.cpp" />
+    <ClCompile Include="..\occopt\output.cpp" />
+    <ClCompile Include="..\occopt\symfuncs.cpp" />
+    <ClCompile Include="..\occparse\beinterf.cpp" />
+    <ClCompile Include="..\occparse\browse.cpp" />
+    <ClCompile Include="..\occparse\ccerr.cpp" />
+    <ClCompile Include="..\occparse\constexpr.cpp" />
+    <ClCompile Include="..\occparse\constopt.cpp" />
+    <ClCompile Include="..\occparse\cppbltin.cpp" />
+    <ClCompile Include="..\occparse\cpplookup.cpp" />
+    <ClCompile Include="..\occparse\crc32.cpp" />
+    <ClCompile Include="..\occparse\debug.cpp" />
+    <ClCompile Include="..\occparse\declare.cpp" />
+    <ClCompile Include="..\occparse\declcons.cpp" />
+    <ClCompile Include="..\occparse\declcpp.cpp" />
+    <ClCompile Include="..\occparse\expr.cpp" />
+    <ClCompile Include="..\occparse\exprcpp.cpp" />
+    <ClCompile Include="..\occparse\expreval.cpp" />
+    <ClCompile Include="..\occparse\floatconv.cpp" />
+    <ClCompile Include="..\occparse\help.cpp" />
+    <ClCompile Include="..\occparse\iexpr.cpp" />
+    <ClCompile Include="..\occparse\iinline.cpp" />
+    <ClCompile Include="..\occparse\import.cpp" />
+    <ClCompile Include="..\occparse\inasm.cpp" />
+    <ClCompile Include="..\occparse\init.cpp" />
+    <ClCompile Include="..\occparse\initbackend.cpp" />
+    <ClCompile Include="..\occparse\inline.cpp" />
+    <ClCompile Include="..\occparse\istmt.cpp" />
+    <ClCompile Include="..\occparse\lambda.cpp" />
+    <ClCompile Include="..\occparse\lex.cpp" />
+    <ClCompile Include="..\occparse\libcxx.cpp" />
+    <ClCompile Include="..\occparse\ListFactory.cpp" />
+    <ClCompile Include="..\occparse\mangle.cpp" />
+    <ClCompile Include="..\occparse\occparse.cpp" />
+    <ClCompile Include="..\occparse\osutil.cpp" />
+    <ClCompile Include="..\occparse\property.cpp" />
+    <ClCompile Include="..\occparse\rtti.cpp" />
+    <ClCompile Include="..\occparse\stmt.cpp" />
+    <ClCompile Include="..\occparse\SymbolManager.cpp" />
+    <ClCompile Include="..\occparse\symtab.cpp" />
+    <ClCompile Include="..\occparse\templatedecl.cpp" />
+    <ClCompile Include="..\occparse\templatededuce.cpp" />
+    <ClCompile Include="..\occparse\templateinst.cpp" />
+    <ClCompile Include="..\occparse\templateutil.cpp" />
+    <ClCompile Include="..\occparse\types.cpp" />
+    <ClCompile Include="..\occparse\unmangle.cpp" />
+    <ClCompile Include="..\occparse\wseh.cpp" />
+    <ClCompile Include="..\occ\InstructionParser.cpp" />
+    <ClCompile Include="..\occ\x64Parser.cpp" />
+    <ClCompile Include="..\occ\x64stub.cpp" />
+    <ClCompile Include="..\ocpp\Errors.cpp" />
+    <ClCompile Include="..\ocpp\Floating.cpp" />
+    <ClCompile Include="..\ocpp\InputFile.cpp" />
+    <ClCompile Include="..\ocpp\MakeStubs.cpp" />
+    <ClCompile Include="..\ocpp\PipeArbitrator.cpp" />
+    <ClCompile Include="..\ocpp\ppCond.cpp" />
+    <ClCompile Include="..\ocpp\ppCtx.cpp" />
+    <ClCompile Include="..\ocpp\ppDefine.cpp" />
+    <ClCompile Include="..\ocpp\ppError.cpp" />
+    <ClCompile Include="..\ocpp\ppExpr.cpp" />
+    <ClCompile Include="..\ocpp\ppFile.cpp" />
+    <ClCompile Include="..\ocpp\ppInclude.cpp" />
+    <ClCompile Include="..\ocpp\ppMacro.cpp" />
+    <ClCompile Include="..\ocpp\ppPragma.cpp" />
+    <ClCompile Include="..\ocpp\PreProcessor.cpp" />
+    <ClCompile Include="..\ocpp\SymbolTable.cpp" />
+    <ClCompile Include="..\ocpp\Token.cpp" />
+    <ClCompile Include="ccif.cpp" />
+    <ClCompile Include="db.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="db.h" />
+    <ClInclude Include="parser.h" />
+    <ClInclude Include="symtypes.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">
+      <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\objlib\objlib.lib.vcxproj">
+      <Project>{22e147d5-e684-4b10-9cb4-d6cd8ef02118}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\sqlite3\sqlite3.lib.vcxproj">
+      <Project>{14d061f3-1306-4c91-a04d-f46bd01d8504}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\util\util.lib.vcxproj">
+      <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{1DBC2695-3B1E-4461-9C74-128327A37B7B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>occpr</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CONSOLE;PARSER_ONLY;ISPARSER;VSIDE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;PARSER_ONLY;ISPARSER;VSIDE;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;PARSER_ONLY;ISPARSER;VSIDE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CONSOLE;PARSER_ONLY;ISPARSER;VSIDE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

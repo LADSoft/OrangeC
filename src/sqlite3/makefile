@@ -24,7 +24,7 @@
 
 include ../pathext2.mak
 
-NAME=sqlite3
+NAME=sqlite3_lib
 MAIN_FILE=
 INCLUDES=
 C_DEPENDENCIES=sqlite3.c

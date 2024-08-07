@@ -28,7 +28,7 @@ NAME=dlpe
 MAIN_FILE=dlPeMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)sqlite3 ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=sqlite3 util objlib
+LIB_DEPENDENCIES=sqlite3_lib util objlib
 DEFINES=SQLITE_THREADSAFE=0
 H_FILES=$(wildcard *.h)
 

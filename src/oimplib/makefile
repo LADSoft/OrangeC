@@ -28,7 +28,7 @@ NAME=oimplib
 MAIN_FILE=ImpLibMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)olib ..$(PATHEXT2)olink ..$(PATHEXT2)ocpp ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=sqlite3 ocpplib olib olink objlib util
+LIB_DEPENDENCIES=sqlite3_lib ocpplib olib olink objlib util
 DEFINES=
 H_FILES=$(wildcard *.h)
 

@@ -2271,14 +2271,14 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                     BasicType refr = tr->BaseType()->type;
                     if (refl == BasicType::rref_ && refr == BasicType::lref_ && tr->BaseType()->btp->IsConst())
                     {
-                        if (refa != BasicType::lref_ || ta->BaseType()->btp->IsConst())
+                        if (refa != BasicType::lref_ || (ta->IsRef() && ta->BaseType()->btp->IsConst()))
                             return -1;
                         else
                             return 1;
                     }
                     if (refr == BasicType::rref_ && refl == BasicType::lref_ && tl->BaseType()->btp->IsConst())
                     {
-                        if (refa != BasicType::lref_ || ta->BaseType()->btp->IsConst())
+                        if (refa != BasicType::lref_ || (ta->IsRef() && ta->BaseType()->btp->IsConst()))
                             return 1;
                         else
                             return -1;
@@ -3601,7 +3601,7 @@ static void getQualConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, e_c
             seq[(*n)++] = CV_NONE;
         else if (!sameconst || !samevol)
             seq[(*n)++] = CV_QUALS;
-        else if (strconst && !tpp->IsConst())
+        else if (strconst && (!tpp || !tpp->IsConst()))
             seq[(*n)++] = CV_QUALS;
         else
             seq[(*n)++] = CV_IDENTITY;

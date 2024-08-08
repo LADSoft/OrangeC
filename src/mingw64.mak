@@ -60,7 +60,7 @@ ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix -I,$(INCLUDES))
 endif
 
-DEFINES:= TARGET_OS_WINDOWS $(DEFINES)
+DEFINES:= NDEBUG TARGET_OS_WINDOWS $(DEFINES)
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 

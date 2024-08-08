@@ -1009,7 +1009,8 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
             {
                 if (push)
                 {
-                    if (item.second->type == TplType::typename_ && !item.second->packed && (dflt ? item.second->byClass.dflt : item.second->byClass.val)->IsDeferred())
+                    auto t = (dflt ? item.second->byClass.dflt : item.second->byClass.val);
+                    if (item.second->type == TplType::typename_ && !item.second->packed && t && t->IsDeferred())
                     {
                         item.second->nopop = true;
                     }
@@ -1726,7 +1727,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::hook_: {
             Type* tl = LookupTypeFromExpression(exp->right->left, enclosing, alt);
             Type* tr = LookupTypeFromExpression(exp->right->right, enclosing, alt);
-            if (tl->IsArithmetic())
+            if (tl && tr && tl->IsArithmetic())
             {
                 return destSize(tl, tr, &exp->right->left, &exp->right->right, false, nullptr);
             }

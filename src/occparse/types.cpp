@@ -52,11 +52,12 @@
 #include "Property.h"
 #include "lambda.h"
 #include "init.h"
-
+#include "cassert"
 namespace Parser
 {
 static Type* RootType(Type* tp)
 {
+    assert(tp);
     while (tp)
     {
         switch (tp->type)
@@ -85,6 +86,7 @@ static Type* RootType(Type* tp)
 bool Type::IsAutoType()
 {
     Type* tp = this;
+    assert(tp);
     if (tp->IsRef())
         tp = tp->BaseType()->btp;
     while (tp->IsPtr())
@@ -94,147 +96,135 @@ bool Type::IsAutoType()
 bool Type::IsUnsigned()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
+    switch (tp->type)
     {
-        switch (tp->type)
-        {
-        case BasicType::bool_:
-        case BasicType::unsigned_:
-        case BasicType::unsigned_short_:
-        case BasicType::unsigned_char_:
-        case BasicType::unsigned_long_:
-        case BasicType::unsigned_long_long_:
-        case BasicType::wchar_t_:
-        case BasicType::unsigned_bitint_:
-            return true;
-        default:
-            return false;
-        }
+    case BasicType::bool_:
+    case BasicType::unsigned_:
+    case BasicType::unsigned_short_:
+    case BasicType::unsigned_char_:
+    case BasicType::unsigned_long_:
+    case BasicType::unsigned_long_long_:
+    case BasicType::wchar_t_:
+    case BasicType::unsigned_bitint_:
+        return true;
+    default:
+        return false;
     }
-    return false;
 }
 bool Type::IsBitInt()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
-    {
-        return tp->type == BasicType::bitint_ || tp->type == BasicType::unsigned_bitint_;
-    }
-    return false;
+    return tp->type == BasicType::bitint_ || tp->type == BasicType::unsigned_bitint_;
 }
 bool Type::IsInt()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
+    switch (tp->type)
     {
-        switch (tp->type)
-        {
-        case BasicType::bool_:
-        case BasicType::int_:
-        case BasicType::char8_t_:
-        case BasicType::char16_t_:
-        case BasicType::char32_t_:
-        case BasicType::unsigned_:
-        case BasicType::short_:
-        case BasicType::unsigned_short_:
-        case BasicType::char_:
-        case BasicType::unsigned_char_:
-        case BasicType::signed_char_:
-        case BasicType::long_:
-        case BasicType::unsigned_long_:
-        case BasicType::long_long_:
-        case BasicType::unsigned_long_long_:
-        case BasicType::wchar_t_:
-        case BasicType::inative_:
-        case BasicType::unative_:
-        case BasicType::bitint_:
-        case BasicType::unsigned_bitint_:
+    case BasicType::bool_:
+    case BasicType::int_:
+    case BasicType::char8_t_:
+    case BasicType::char16_t_:
+    case BasicType::char32_t_:
+    case BasicType::unsigned_:
+    case BasicType::short_:
+    case BasicType::unsigned_short_:
+    case BasicType::char_:
+    case BasicType::unsigned_char_:
+    case BasicType::signed_char_:
+    case BasicType::long_:
+    case BasicType::unsigned_long_:
+    case BasicType::long_long_:
+    case BasicType::unsigned_long_long_:
+    case BasicType::wchar_t_:
+    case BasicType::inative_:
+    case BasicType::unative_:
+    case BasicType::bitint_:
+    case BasicType::unsigned_bitint_:
+        return true;
+    case BasicType::templateparam_:
+        if (tp->templateParam->second->type == TplType::int_)
+            return tp->templateParam->second->byNonType.tp->IsInt();
+        return false;
+    default:
+        if (tp->type == BasicType::enum_ && !Optimizer::cparams.prm_cplusplus)
             return true;
-        case BasicType::templateparam_:
-            if (tp->templateParam->second->type == TplType::int_)
-                return tp->templateParam->second->byNonType.tp->IsInt();
-            return false;
-        default:
-            if (tp->type == BasicType::enum_ && !Optimizer::cparams.prm_cplusplus)
-                return true;
 
-            return false;
-        }
+        return false;
     }
-    return false;
 }
 bool Type::IsFloat()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
+    switch (tp->type)
     {
-        switch (tp->type)
-        {
-        case BasicType::float_:
-        case BasicType::double_:
-        case BasicType::long_double_:
-            return true;
-        default:
-            return false;
-        }
+    case BasicType::float_:
+    case BasicType::double_:
+    case BasicType::long_double_:
+        return true;
+    default:
+        return false;
     }
     return false;
 }
 bool Type::IsComplex()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
+    switch (tp->type)
     {
-        switch (tp->type)
-        {
-        case BasicType::float__complex_:
-        case BasicType::double__complex_:
-        case BasicType::long_double_complex_:
-            return true;
-        default:
-            return false;
-        }
+    case BasicType::float__complex_:
+    case BasicType::double__complex_:
+    case BasicType::long_double_complex_:
+        return true;
+    default:
+        return false;
     }
     return false;
 }
 bool Type::IsImaginary()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
+    switch (tp->type)
     {
-        switch (tp->type)
-        {
-        case BasicType::float__imaginary_:
-        case BasicType::double__imaginary_:
-        case BasicType::long_double_imaginary_:
-            return true;
-        default:
-            return false;
-        }
+    case BasicType::float__imaginary_:
+    case BasicType::double__imaginary_:
+    case BasicType::long_double_imaginary_:
+        return true;
+    default:
+        return false;
     }
-    return false;
 }
 bool Type::IsArithmetic()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
     return tp->IsInt() || tp->IsFloat() || tp->IsComplex() || tp->IsImaginary();
 }
 bool Type::IsMsil()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
     return tp->type == BasicType::string_ || tp->type == BasicType::object_;
+    return false;
 }
 bool Type::IsConst()
 {
     Type* tp = this;
+    assert(tp);
     bool done = false;
     bool rv = false;
     while (!done && tp)
@@ -270,6 +260,7 @@ bool Type::IsConst()
 bool Type::IsVolatile()
 {
     Type* tp = this;
+    assert(tp);
     while (tp)
     {
         switch (tp->type)
@@ -299,6 +290,7 @@ bool Type::IsVolatile()
 bool Type::IsLRefQual()
 {
     Type* tp = this;
+    assert(tp);
     while (tp)
     {
         switch (tp->type)
@@ -328,6 +320,7 @@ bool Type::IsLRefQual()
 bool Type::IsRRefQual()
 {
     Type* tp = this;
+    assert(tp);
     while (tp)
     {
         switch (tp->type)
@@ -357,6 +350,7 @@ bool Type::IsRRefQual()
 bool Type::IsRestrict()
 {
     Type* tp = this;
+    assert(tp);
     while (tp)
     {
         switch (tp->type)
@@ -386,6 +380,7 @@ bool Type::IsRestrict()
 bool Type::IsAtomic()
 {
     Type* tp = this;
+    assert(tp);
     while (tp)
     {
         switch (tp->type)
@@ -415,28 +410,28 @@ bool Type::IsAtomic()
 bool Type::IsVoid()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
-        return tp->type == BasicType::void_;
-    return false;
+    return tp->type == BasicType::void_;
 }
 bool Type::IsVoidPtr()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
     return tp->IsPtr() && tp->btp->IsVoid();
 }
 bool Type::IsArray()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
-        return tp->IsPtr() && tp->BaseType()->array;
-    return false;
+    return tp->IsPtr() && tp->BaseType()->array;
 }
 bool Type::IsDeferred(bool sym)
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
     if (tp && tp->type == BasicType::templatedeferredtype_)
         return true;
@@ -472,15 +467,16 @@ bool Type::IsDeferred(bool sym)
 bool Type::IsUnion()
 {
     Type* tp = this;
+    assert(tp);
     tp = tp->BaseType();
-    if (tp)
-        return tp->type == BasicType::union_;
+    return tp->type == BasicType::union_;
     return false;
 }
 inline bool __isref(Type* x) { return (x)->type == BasicType::lref_ || (x)->type == BasicType::rref_; }
 bool Type::IsRef()
 {
     Type* x = this;
+    assert(x);
     return (__isref(x->BaseType()) ||
         (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ && __isref((x)->templateParam->second->byNonType.tp));
 }
@@ -488,6 +484,7 @@ inline bool __ispointer(Type* x) { return ((x)->type == BasicType::pointer_ || (
 bool Type::IsPtr()
 {
     Type* x = this;
+    assert(x);
     return (__ispointer(x->BaseType()) || (x)->type == BasicType::templateparam_ && (x)->templateParam->second->type == TplType::int_ &&
         __ispointer((x)->templateParam->second->byNonType.tp));
 }
@@ -496,12 +493,14 @@ CONSTEXPR inline bool __isfunction(Type* x) { return ((x)->type == BasicType::fu
 bool Type::IsFunction() 
 { 
     Type* x = this;
+    assert(x);
     return (__isfunction(x->BaseType()));
 }
 
 bool Type::IsFunctionPtr() 
 { 
     Type* x = this;
+    assert(x);
     return (x->IsPtr() && x->BaseType()->btp && x->BaseType()->btp->IsFunction());
 }
 CONSTEXPR inline bool __isstructured(Type* x) { return ((x)->type == BasicType::class_ || (x)->type == BasicType::struct_ || (x)->type == BasicType::union_); }
@@ -509,6 +508,7 @@ CONSTEXPR inline bool __isstructured(Type* x) { return ((x)->type == BasicType::
 bool Type::IsStructured() 
 { 
     Type* x = this;
+    assert(x);
     return (__isstructured(x->BaseType()));
 }
 bool Type::IsStructuredMath(Type* tp2)
@@ -569,6 +569,7 @@ bool Type::IsLargeEnum()
 bool Type::IsTemplatedPointer()
 {
     auto tp = this;
+    assert(tp);
     Type* tpb = tp->BaseType()->btp;
     while (tp != tpb)
     {
@@ -581,6 +582,7 @@ bool Type::IsTemplatedPointer()
 void Type::UpdateRootTypes()
 {
     Type* tp = this;
+    assert(tp);
     while (tp)
     {
         Type* tp1 = RootType(tp);
@@ -636,10 +638,14 @@ bool Type::InstantiateDeferred(bool noErr)
 {
     if (!definingTemplate || instantiatingTemplate)
     {
-
         auto tp = this->BaseType();
+        assert(tp);
         while (tp && tp->type != BasicType::templatedeferredtype_)
-            tp = tp->btp->BaseType();
+        {
+            tp = tp->btp;
+            if (tp)
+                tp = tp->BaseType();
+        }
         if (tp)
         {
             bool asTypeDef = false;
@@ -692,8 +698,7 @@ bool Type::InstantiateDeferred(bool noErr)
 Type* Type::InitializeDeferred()
 {
     Type* tp = this;
-    if (!tp)
-        return &stdany;
+    assert(tp);
     Type** tpx = &tp;
     if ((*tpx)->IsRef())
         tpx = &(*tpx)->BaseType()->btp;
@@ -2061,8 +2066,8 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     ptype->sp = (*strSymX->sb->templateSelector)[1].sp;
                 else
                     ptype->sp = strSymX;
-                tp->UpdateRootTypes();
                 tp = ptype;
+                tp->UpdateRootTypes();
                 lex = getQualifiers(lex, &tp, linkage, linkage2, linkage3, nullptr);
                 if (strSym)
                     *strSym = nullptr;

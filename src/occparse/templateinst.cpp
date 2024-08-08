@@ -5331,7 +5331,8 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
                                                     ? temp->second->byPack.pack->front().second->byClass.dflt
                                                     : nullptr)
                                              : temp->second->byClass.dflt;
-            GatherPackedTypes(&count, syms, tp1->BaseType());
+            if (tp1)
+                GatherPackedTypes(&count, syms, tp1->BaseType());
         }
         else
         {
@@ -5339,7 +5340,8 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
                                                            ? temp->second->byPack.pack->front().second->byNonType.dflt
                                                            : nullptr)
                                                     : temp->second->byNonType.dflt;
-            GatherPackedVars(&count, syms, exp1);
+            if (exp1)
+                GatherPackedVars(&count, syms, exp1);
         }
         for (int i = 0; i < count; i++)
         {

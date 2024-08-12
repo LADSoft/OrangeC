@@ -86,7 +86,7 @@ Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVe
 Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop; Check: IsAdminInstallMode;
 
 Source: "C:\orangec\examples\*.*"; DestDir: "{app}\examples\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
+;Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\examples\windows examples\"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{app}\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
@@ -95,7 +95,7 @@ Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{app}\examples\windows
 Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
 
 Source: "C:\orangec\examples\*.*"; DestDir: "{app}\examples\"; Flags: IgnoreVersion; Components: main\portable
-Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\examples\msdos\"; Flags: IgnoreVersion; Components: main\portable
+;Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\examples\msdos\"; Flags: IgnoreVersion; Components: main\portable
 Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\examples\windows examples\"; Flags: IgnoreVersion; Components: main\portable
 Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{app}\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\portable
 Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\portable

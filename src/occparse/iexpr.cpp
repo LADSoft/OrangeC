@@ -4400,7 +4400,7 @@ int natural_size(EXPRESSION* node)
                 return ISZ_ADDR;
             else if (node->v.func->ascall)
             {
-                if (node->v.func->sp && node->v.func->sp->tp->BaseType()->btp->IsArray())
+                if (node->v.func->sp && node->v.func->sp->tp->IsFunction() && node->v.func->sp->tp->BaseType()->btp->IsArray())
                     return ISZ_OBJECT;
                 return sizeFromType(node->v.func->functp->BaseType()->btp);
             }

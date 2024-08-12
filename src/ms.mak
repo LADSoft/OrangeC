@@ -76,7 +76,7 @@ RCFLAGS = ./r
 ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
-DEFINES := TARGET_OS_WINDOWS $(DEFINES)
+DEFINES := NDEBUG TARGET_OS_WINDOWS $(DEFINES)
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file,$(addsuffix $(LIB_EXT),$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))

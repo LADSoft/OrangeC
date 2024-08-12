@@ -4388,7 +4388,7 @@ void CollapseReferences(Type* tp_in)
         }
         tp_in->UpdateRootTypes();
     }
-    else if (count == 1 && tp_in->BaseType()->btp->IsVoid())
+    else if (count == 1 && tp_in->BaseType()->btp && tp_in->BaseType()->btp->IsVoid())
     {
         // get rid of rrefs to void...
         *tp_in = stdvoid;

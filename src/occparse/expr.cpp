@@ -4622,7 +4622,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                     if (!(flags & _F_SIZEOF) && !(*tp)->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
                     {
                         (*tp)->BaseType()->btp->InitializeDeferred();
-                        funcparams->returnEXP = anonymousVar(StorageClass::auto_, (*tp)->BaseType()->btp->BaseType());
+                        funcparams->returnEXP = anonymousVar(StorageClass::auto_, (*tp)->BaseType()->btp->BaseType()->sp->tp);
                         funcparams->returnSP = funcparams->returnEXP->v.sp;
                         if (theCurrentFunc && theCurrentFunc->sb->constexpression)
                             funcparams->returnEXP->v.sp->sb->constexpression = true;

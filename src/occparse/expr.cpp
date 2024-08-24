@@ -815,7 +815,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         lex = prevsym(placeholder);
                         *tp = nullptr;
                         lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
-                         if (!*exp)
+                        if (!*exp)
                             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                         return lex;
                     case StorageClass::overloads_:
@@ -1683,10 +1683,6 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                     int offset = 0;
                     auto exp4 = relptr(*exp, offset);
                     // handle members of a constexpression class
-                    if (exp4 && exp4->v.sp->sb->constexpression && !inConstantExpression)
-                    {
-                        exp4->v.sp->sb->ignoreconstructor = false;
-                    }
                     if (sp2->sb->storage_class == StorageClass::constant_)
                     {
                         *exp = MakeExpression(ExpressionNode::const_, sp2);
@@ -2415,8 +2411,35 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
             else if (p->tp && p->tp->IsStructured())
             {
                 auto exp3 = p->exp;
-                while (exp3->type == ExpressionNode::comma_)
-                    exp3 = exp3->right;
+                if (exp3->type == ExpressionNode::comma_)
+                {
+                    while (exp3->type == ExpressionNode::comma_)
+                        exp3 = exp3->right;
+                    /*
+                    if ((exp3->type == ExpressionNode::auto_ || exp3->type == ExpressionNode::global_) && exp3->v.sp->sb->constexpression)
+                    {
+                        auto sym = exp3->v.sp;
+                        auto its = p->tp->BaseType()->syms->begin();
+                        exp3 = p->exp;
+                        std::list<Initializer*>* it = new std::list<Initializer*>;
+                        while (exp3->type == ExpressionNode::comma_)
+                        {
+                            if (exp3->left->type == ExpressionNode::assign_ && exp3->left->left->left->type == ExpressionNode::structadd_)
+                            {
+                                while (its != p->tp->BaseType()->syms->end() && !ismemberdata(*its)) ++its;
+                                if (its != p->tp->BaseType()->syms->end())
+                                {
+                                    int ofs = exp3->left->left->left->right->v.i;
+                                    auto exp2 = exp3->left->right;
+                                    initInsert(&it, (*its)->tp, exp2, ofs, false);
+                                }
+                            }
+                            exp3 = exp3->right;
+                        }
+                        sym->sb->init = it;
+                    }
+                    */
+                }
                 if (exp3->type == ExpressionNode::thisref_)
                 {
                     p->tp = p->tp->CopyType();
@@ -2809,7 +2832,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                 data->v.sp->sb->constexpression = true;
         }
         EXPRESSION* ildest = nullptr;
-        if (initializerListType->IsStructured())
+        if (count && initializerListType->IsStructured())
         {
             EXPRESSION* exp = data;
             EXPRESSION* elms = MakeIntExpression(ExpressionNode::c_i_, count);
@@ -3566,10 +3589,6 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         {
                             int offset = 0;
                             auto exp4 = relptr(p->exp, offset);
-                            if (exp4 && !inConstantExpression)
-                            {
-                                exp4->v.sp->sb->ignoreconstructor = false;
-                            }
                         }
                         if (p->nested)
                         {
@@ -4503,7 +4522,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 std::list<Argument*>* temp2 = &temp1;
                 if (initializerListType)
                 {
-                    if (funcparams->sp->sb->constexpression)
+                    if (funcparams->sp->sb->constexpression && argumentNesting == 0)
                     {
                         EXPRESSION* node = Allocate<EXPRESSION>();
                         node->type = ExpressionNode::callsite_;
@@ -8580,6 +8599,7 @@ LexList* expression_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                 {
                     if ((*tp)->IsStructured())
                     {
+                        lex = backupsym();
                         std::list<Initializer*>* init = nullptr;
                         SYMBOL* spinit = nullptr;
                         tp1 = *tp;

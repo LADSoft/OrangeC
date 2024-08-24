@@ -532,6 +532,16 @@ static Type* FixConsts(Type* P, Type* A)
         for (i = 0; i < pn - an; i++)
             P = P->BaseType()->btp;
     }
+    if (0 && A->IsArray())
+    {
+        while (A->IsArray())
+        {
+            *last = A->CopyType();
+            last = &(*last)->btp;
+            *last = nullptr;
+            A = A->btp;
+        }
+    }
     while (P && A)
     {
         bool constant = false;

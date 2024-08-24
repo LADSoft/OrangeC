@@ -3193,8 +3193,7 @@ int fold_const(EXPRESSION* node)
                         thisptr = nullptr;
                 }
             }
-            bool found = false;
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression && argumentNesting <= 1)
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression && argumentNesting == 0)
             {
                 if (!rv && node->v.func->thisptr)
                 {
@@ -3203,10 +3202,6 @@ int fold_const(EXPRESSION* node)
                 inConstantExpression++;
                 rv = EvaluateConstexprFunction(node);
                 inConstantExpression--;
-            }
-            if (thisptr && !inConstantExpression)
-            {
-                thisptr->v.sp->sb->ignoreconstructor = found;
             }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);

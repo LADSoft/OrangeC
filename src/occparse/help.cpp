@@ -806,6 +806,9 @@ int sizeFromType(Type* tp)
         case BasicType::object_:
             rv = ISZ_OBJECT;
             break;
+        case BasicType::any_:
+            rv = ISZ_ADDR;
+            break;
         default:
             diag("sizeFromType error");
             break;

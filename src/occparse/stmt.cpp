@@ -2241,6 +2241,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
     }
     else
     {
+        int oldInLoop = inLoopOrConditional;
+        inLoopOrConditional = 0;
         tp = funcsp->tp->BaseType()->btp;
 
         if (tp->IsAutoType())
@@ -2345,7 +2347,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     EXPRESSION* exptemp = exp1;
                     if (exptemp->type == ExpressionNode::thisref_)
                         exptemp = exptemp->left;
-                    if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
+                    if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->sb->isConstructor && 
+                        exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
                         tp->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
                         (!tp->BaseType()->sp->sb->templateLevel || sameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
                         exptemp->v.func->thisptr->type == ExpressionNode::auto_ && exptemp->v.func->thisptr->v.sp->sb->anonymous)
@@ -2376,6 +2379,15 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         maybeConversion = false;
                         implicit = false;
                     }
+                    /*
+                    else if ((tp1->ExactSameType(tp) || sameTemplate(tp, tp1)) && !tp1->rref && !tp1->lref)
+                    {
+                        returntype = tp;
+                        returnexp = exp1;
+                        maybeConversion = false;
+                        implicit = false;
+                    }
+                    */
                     else
                     {
                         bool nonconst = funcsp->sb->nonConstVariableUsed;
@@ -2423,7 +2435,6 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         tp1->BaseType()->lref = oldlref;
                         funcsp->sb->nonConstVariableUsed = nonconst;
                         returnexp = en;
-
                     }
                 }
             }
@@ -2667,6 +2678,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         }
         if (!returnexp)
             returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);  // errors
+        inLoopOrConditional = oldInLoop;
     }
     currentLineData(parent, lex, 0);
     ThunkReturnDestructors(&destexp, nullptr, localNameSpace->front()->syms);
@@ -3617,7 +3629,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             canFallThrough = false;
             bool structured = false;
 
-            if (((TypeGenerator::StartOfType(lex, &structured, false) &&
+            if (MATCHKW(lex, Keyword::typedef_) || ((TypeGenerator::StartOfType(lex, &structured, false) &&
                   ((!Optimizer::cparams.prm_cplusplus &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
                    StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
@@ -3629,7 +3641,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (((TypeGenerator::StartOfType(lex, &structured, false) &&
+                while (MATCHKW(lex, Keyword::typedef_) || ((TypeGenerator::StartOfType(lex, &structured, false) &&
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
                           StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                        MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::decltype_) ||

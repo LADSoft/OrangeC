@@ -3290,24 +3290,48 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                 {
                     if (!sym->sb->instantiated && filters.find(sym) == filters.end() && filters.find(sym->sb->mainsym) == filters.end())
                     {
-                        filters.insert(sym);
-                        if (sym->sb->mainsym)
-                            filters.insert(sym->sb->mainsym);
-                        if (sym->sb->templateLevel && sym->templateParams)
+                        bool found = !sym->sb->isConstructor;
+                        if (!found)
                         {
-                            if (sym->sb->castoperator)
+                            auto it = sym->tp->BaseType()->syms->begin();
+                            if (it != sym->tp->BaseType()->syms->end())
                             {
-                                spList[i++] = detemplate(sym, nullptr, tppp);
+                                ++it;
+                                if (it != sym->tp->BaseType()->syms->end())
+                                {
+                                    ++it;
+                                    if (it != sym->tp->BaseType()->syms->end())
+                                    {
+                                        found = (*it)->sb->defaultarg;
+                                    }
+                                    else
+                                    {
+                                        found = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (found)
+                        {
+                            filters.insert(sym);
+                            if (sym->sb->mainsym)
+                                filters.insert(sym->sb->mainsym);
+                            if (sym->sb->templateLevel && sym->templateParams)
+                            {
+                                if (sym->sb->castoperator)
+                                {
+                                    spList[i++] = detemplate(sym, nullptr, tppp);
+                                }
+                                else
+                                {
+                                    spList[i++] = detemplate(sym, &funcparams, nullptr);
+                                }
                             }
                             else
                             {
-                                spList[i++] = detemplate(sym, &funcparams, nullptr);
+                                InitializeFunctionArguments(sym);
+                                spList[i++] = sym;
                             }
-                        }
-                        else
-                        {
-                            InitializeFunctionArguments(sym);
-                            spList[i++] = sym;
                         }
                     }
                 }
@@ -6009,7 +6033,6 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 for (auto a : *args->arguments)
                     if (a->tp)
                     {
-                        a->tp->InstantiateDeferred();
 //                        a->tp = a->tp->InitializeDeferred();
                     }
             if (args->templateParams)
@@ -6026,7 +6049,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                     if (b.second->byClass.dflt)
                                     {
                                         b.second->byClass.dflt->InstantiateDeferred();
-//                                        b.second->byClass.dflt = b.second->byClass.dflt->InitializeDeferred();
+                                        b.second->byClass.dflt = ResolveTemplateSelectors(nullptr, b.second->byClass.dflt);
                                     }
                                 }
                             }
@@ -6036,7 +6059,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             if (a.second->byClass.dflt)
                             {
                                 a.second->byClass.dflt->InstantiateDeferred();
-//                                a.second->byClass.dflt = a.second->byClass.dflt->InitializeDeferred();
+//                                a.second->byClass.dflt = ResolveTemplateSelectors(nullptr, a.second->byClass.dflt);
                             }
                         }
                     }
@@ -6462,67 +6485,77 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         found1->sb->parentClass->sb->mainsym = old->sb->parentClass;
                         found1->sb->parentClass->templateParams = copyParams(found1->sb->parentClass->templateParams, true);
                     }
-                    if (found1->tp->BaseType()->btp->IsStructured())
+                    if (found1->tp->IsFunction())
                     {
-                        Type** tp1 = &found1->tp->BaseType()->btp;
-                        while ((*tp1)->rootType != *tp1)
-                            tp1 = &(*tp1)->btp;
-                        *tp1 = (*tp1)->sp->tp;
-                    }
-                    for (auto sym : *found1->tp->BaseType()->syms)
-                    {
-                        CollapseReferences(sym->tp);
-                    }
-                    CollapseReferences(found1->tp->BaseType()->btp);
-                    if (found1->sb->templateLevel && (!definingTemplate || instantiatingTemplate) && found1->templateParams)
-                    {
-                        if (!inSearchingFunctions || inTemplateArgs)
+                        if (found1->tp->BaseType()->btp->IsStructured())
                         {
-                            found1 = TemplateFunctionInstantiate(found1, false);
+                            Type** tp1 = &found1->tp->BaseType()->btp;
+                            while ((*tp1)->rootType != *tp1)
+                                tp1 = &(*tp1)->btp;
+                            *tp1 = (*tp1)->sp->tp;
                         }
-                    }
-                      
-                    if (found1->tp->BaseType()->btp->IsAutoType() && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs || (flags & _F_INDECLTYPE)))
-                    {
-                        CompileInline(found1, false);
-                    }  
-                    else if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!definingTemplate || instantiatingTemplate)))
-                    {
-                        if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (definingTemplate && !instantiatingTemplate)))
+                        for (auto sym : *found1->tp->BaseType()->syms)
                         {
-                            if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
-                                propagateTemplateDefinition(found1);
-                            if (found1->templateParams)
-                            {
-                                enclosingDeclarations.Add(found1->templateParams);
-                            }
-                            StatementGenerator::ParseNoExceptClause(found1);
-                            if (found1->templateParams)
-                            {
-                                enclosingDeclarations.Drop();
-                            }
+                            CollapseReferences(sym->tp);
                         }
-                        else if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
+                        CollapseReferences(found1->tp->BaseType()->btp);
+                        if (found1->sb->templateLevel && (!definingTemplate || instantiatingTemplate) && found1->templateParams)
                         {
                             if (!inSearchingFunctions || inTemplateArgs)
                             {
-                                CompileInline(found1, false);
+                                found1 = TemplateFunctionInstantiate(found1, false);
                             }
                         }
+
+                        if (found1->tp->BaseType()->btp->IsAutoType() && found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs || (flags & _F_INDECLTYPE)))
+                        {
+                            CompileInline(found1, false);
+                        }
+                        else if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!definingTemplate || instantiatingTemplate)))
+                        {
+                            if (found1->sb->deferredNoexcept && (!found1->sb->constexpression || (definingTemplate && !instantiatingTemplate)))
+                            {
+                                if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
+                                    propagateTemplateDefinition(found1);
+                                if (found1->templateParams)
+                                {
+                                    enclosingDeclarations.Add(found1->templateParams);
+                                }
+                                StatementGenerator::ParseNoExceptClause(found1);
+                                if (found1->templateParams)
+                                {
+                                    enclosingDeclarations.Drop();
+                                }
+                            }
+                            else if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
+                            {
+                                if (!inSearchingFunctions || inTemplateArgs)
+                                {
+                                    CompileInline(found1, false);
+                                }
+                            }
+                        }
+                        if (found1->sb->inlineFunc.stmt)
+                        {
+                            noExcept &= found1->sb->noExcept;
+                        }
                     }
-                    if (found1->sb->inlineFunc.stmt)
+                    else
                     {
-                        noExcept &= found1->sb->noExcept;
+                        found1 = nullptr;
                     }
                 }
                 else
                 {
                     CollapseReferences(found1->tp->BaseType()->btp);
                 }
-                if (found1->templateParams)
-                    SetLinkerNames(found1, Linkage::cdecl_);
-                if (found1->tp->BaseType()->btp->IsAutoType())
-                    errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
+                if (found1)
+                {
+                    if (found1->templateParams)
+                        SetLinkerNames(found1, Linkage::cdecl_);
+                    if (found1->tp->BaseType()->btp->IsAutoType())
+                        errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
+                }
                 if (flags & _F_IS_NOTHROW)
                     inNothrowHandler--;
             }

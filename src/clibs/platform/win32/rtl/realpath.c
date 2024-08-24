@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <io.h>
 
-const char* realpath(const char* path, char* resolved_path)
+char* realpath(const char* path, char* resolved_path)
 {
     if (path == NULL)
     {
@@ -59,4 +59,4 @@ const char* realpath(const char* path, char* resolved_path)
     return resolved_path;
 }
 
-const char* canonicalize_file_name(const char* path) { return realpath(path, NULL); }
+char* canonicalize_file_name(const char* path) { return realpath(path, NULL); }

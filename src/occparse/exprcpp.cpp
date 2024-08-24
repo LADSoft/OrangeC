@@ -697,11 +697,10 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     lex = getsym();
                     if (!MATCHKW(lex, Keyword::openpa_))
                     {
-                        lex = backupsym();
-                        lex = backupsym();
                         bcall = nullptr;
                     }
-
+                    lex = backupsym();
+                    lex = backupsym();
                 }
                 else
                 {
@@ -709,17 +708,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     bcall = nullptr;
                 }
             }
-            if (bcall)
-            {
-                exp1 = anonymousVar(StorageClass::auto_, ctype->BaseType()->sp->tp);
-                funcparams->ascall = true;
-                funcparams->thisptr = exp1;
-                funcparams->thistp = Type::MakeType(BasicType::pointer_, ctype->BaseType()->sp->tp);
-                *exp = MakeExpression(funcparams);
-                *tp = bcall->tp;
-                lex = expression_arguments(lex, funcsp, tp, exp, 0);
-            }
-            else if (deduceTemplate && (Optimizer::architecture != ARCHITECTURE_MSIL))
+            if (!bcall && deduceTemplate && (Optimizer::architecture != ARCHITECTURE_MSIL))
             {
                 RequiresDialect::Feature(Dialect::cpp17, "Class template argument deduction");
                 lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
@@ -808,6 +797,19 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     *exp = exp1;
                 if (unboxed)
                     *tp = unboxed;
+                if (bcall)
+                {
+                    auto tp1 = *tp;
+                    while (tp1->type == BasicType::typedef_) tp1 = tp1->btp;
+                    tp1 = tp1->MakeType(BasicType::pointer_, tp1);
+                    funcparams = Allocate<CallSite>();
+                    funcparams->ascall = true;
+                    funcparams->thisptr = *exp;
+                    funcparams->thistp = tp1;
+                    *exp = MakeExpression(funcparams);
+                    *tp = bcall->tp;
+                    lex = expression_arguments(lex, funcsp, tp, exp, 0);
+                }
             }
         }
         else if (Optimizer::architecture == ARCHITECTURE_MSIL)

@@ -23,8 +23,7 @@
 
 CPP_DEPENDENCIES = $(wildcard *.cpp)
 H_FILES=$(wildcard *.h)
-EXCLUDE= debug.o
+DEFINES= /DNOMINMAX
 
 all: $(DEPENDENCIES)
-	$(MAKE) -CSUPPORT
 $(eval $(FORMATTER))

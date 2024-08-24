@@ -285,8 +285,8 @@ extern unsigned char _RTL_DATA _osminor;
     unsigned long long _RTL_FUNC _IMPORT _bswap64(unsigned long long);
 
     const char* ZSTR _RTL_FUNC getexecname(void);
-    const char* ZSTR _RTL_FUNC realpath(const char* ZSTR path, char* ZSTR resolved_path);
-    const char* ZSTR _RTL_FUNC canonicalize_file_name(const char* ZSTR path);
+    char* ZSTR _RTL_FUNC realpath(const char* ZSTR path, char* ZSTR resolved_path);
+    char* ZSTR _RTL_FUNC canonicalize_file_name(const char* ZSTR path);
 
 #if defined(__MSIL__)
     int* _RTL_FUNC _IMPORT _errno(void);

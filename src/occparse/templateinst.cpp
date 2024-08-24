@@ -15,7 +15,7 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/elicenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
@@ -183,7 +183,7 @@ void SynthesizeQuals(Type*** last, Type** qual, Type*** lastQual)
     {
         Type* p = **last;
         Type* v = *qual;
-        int sz = (**last)->BaseType()->size;
+        int sz =  (**last) ? (**last)->BaseType()->size : 0;
         while (p && p->type == BasicType::derivedfromtemplate_)
         {
             **last = p->CopyType();
@@ -208,7 +208,10 @@ void SynthesizeQuals(Type*** last, Type** qual, Type*** lastQual)
             v = v->btp;
         }
         **last = nullptr;
-        **last = p->CopyType(true);
+        if (p)
+        {
+            **last = p->CopyType(true);
+        }
         *lastQual = qual;
         *qual = nullptr;
     }
@@ -496,6 +499,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
         switch (tp->type)
         {
             case BasicType::typedef_:
+
                 if (tp->sp->sb->typeAlias)
                 {
                     auto sp = GetTypeAliasSpecialization(tp->sp, tp->sp->templateParams);
@@ -2258,6 +2262,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             int oldDontRegister = dontRegisterTemplate;
             bool oldFullySpecialized = fullySpecialized;
             int oldInTemplateBody = inTemplateBody;
+            int oldInLoop = inLoopOrConditional;
+            inLoopOrConditional = 0;
             inTemplateBody = 0;
             fullySpecialized = false;
             dontRegisterTemplate = 0;
@@ -2319,6 +2325,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
             instantiatingClass--;
+            inLoopOrConditional = oldInLoop;
             inTemplateBody = oldInTemplateBody;
             fullySpecialized = oldFullySpecialized;
             dontRegisterTemplate = oldDontRegister;
@@ -2625,6 +2632,11 @@ static bool TemplateConstMatchingInternal(std::list<TEMPLATEPARAMPAIR>* P)
                             td = td->BaseType()->btp;
                         if (tv->type == BasicType::memberptr_)
                             tv = tv->BaseType()->btp;
+                        bool matches = false;
+                        while (0 && tv->IsArray())
+                        {
+                            tv = tv->BaseType()->btp;
+                        }
                         if ((td->IsConst() != tv->IsConst()) || ((td->IsVolatile() != tv->IsVolatile())) ||
                             !CheckConstCorrectness(td, tv, true))
                         {
@@ -3002,6 +3014,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
             itInitial = initial->begin();
             iteInitial = initial->end();
         }
+        auto itnParams = nparams->begin();
+        ++itnParams;
         auto itParams = params->begin();
         std::list<TEMPLATEPARAMPAIR>::iterator itmax;
         if (max)
@@ -3032,7 +3046,11 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 auto it = itParams;
                 ++it;
                 if (itInitial == iteInitial && itParams->second->packed && it != params->end())
+                {
                     ++itParams;
+                    if (itnParams != nparams->end())
+                        ++itnParams;
+                }
             }
             if (itInitial != iteInitial && itParams != params->end())
             {
@@ -3087,6 +3105,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                     if (it1 != params->end())
                     {
                         ++itParams;
+                        if (itnParams != nparams->end())
+                            ++itnParams;
                     }
                     if (itInitial != iteInitial && tis.size())
                     {
@@ -3111,6 +3131,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
 
                             itParams->second->initialized = true;
                             ++itParams;
+                            if (itnParams != nparams->end())
+                                ++itnParams;
                             ++itPrimary;
                             ++itInitial;
                             if (itmax != max->end())
@@ -3133,6 +3155,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             itParams->second->byClass.val = ((SYMBOL*)dflt)->tp;
                             itParams->second->initialized = true;
                             ++itParams;
+                            if (itnParams != nparams->end())
+                                ++itnParams;
                             ++itPrimary;
                             ++itInitial;
                             if (itmax != max->end())
@@ -3307,6 +3331,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                         if (!itParams->second->byPack.pack)
                         {
                             ++itParams;
+                            if (itnParams != nparams->end())
+                                ++itnParams;
                             continue;
                         }
                         else
@@ -3322,12 +3348,17 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                         switch (itParams->second->type)
                         {
                             case TplType::typename_:
-                                if (itParams->second->byClass.dflt->type != BasicType::templateparam_ &&
-                                    itParams->second->byClass.dflt->type != BasicType::templateselector_ &&
-                                    itParams->second->byClass.dflt->type != BasicType::templatedecltype_ &&
+                            {
+                                auto tpx = itParams->second->byClass.dflt;
+                                while (tpx && tpx->IsPtr()) tpx = tpx->BaseType()->btp;
+                                tpx = tpx->BaseType();
+                                if (tpx->type != BasicType::templateparam_ &&
+                                    tpx->type != BasicType::templateselector_ &&
+                                    tpx->type != BasicType::templatedecltype_ &&
                                     !templateCompareTypes(itParams->second->byClass.val, itParams->second->byClass.dflt, true))
                                     rv = nullptr;
                                 break;
+                            }
                             case TplType::int_: {
                                 EXPRESSION* exp = copy_expression(itParams->second->byNonType.val);
                                 optimize_for_constants(&exp);
@@ -3340,7 +3371,14 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                                 break;
                         }
                     }
+                    if (rv && itnParams != nparams->end())
+                    {
+                        std::list<TEMPLATEPARAMPAIR> a{ *itParams }, b(itnParams, nparams->end());
+                        TransferClassTemplates(&a, &a, &b);
+                    }
                     ++itParams;
+                    if (itnParams != nparams->end())
+                        ++itnParams;
                     if (itParams == iteParams && !tis.empty())
                     {
                         iteParams = tis.top();
@@ -3348,6 +3386,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                         itParams = tis.top();
                         tis.pop();
                         ++itParams;
+                        if (itnParams != nparams->end())
+                            ++itnParams;
                     }
                 }
             }
@@ -3368,6 +3408,11 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
             for (; itParams != iteParams && itPrimary != primary->end(); ++itParams, ++itPrimary)
             {
                 if (!itPrimary->second->byClass.val && !itPrimary->second->packed)
+                {
+                    rv = nullptr;
+                    break;
+                }
+                if ((!definingTemplate ||instantiatingTemplate) && itPrimary->second->type == TplType::typename_ && itPrimary->second->byClass.val && itPrimary->second->byClass.val->type == BasicType::templateselector_)
                 {
                     rv = nullptr;
                     break;
@@ -3917,7 +3962,6 @@ static void ChooseMoreSpecialized(SYMBOL** list, int n)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
-
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;

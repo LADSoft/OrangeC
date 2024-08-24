@@ -3099,6 +3099,8 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             if (!cons1->tp->BaseType()->btp->IsRef())
             {
                 optimize_for_constants(exp);
+                if ((*exp)->type == ExpressionNode::auto_)
+                    (*exp)->v.sp->sb->stackblock = false; // demote it to a normal variable if it is being used as a return value
                 oparams->returnEXP = *exp;
                 oparams->returnSP = sp;
             }
@@ -3243,7 +3245,7 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 e1 = MakeExpression(params);
             }
         }
-        if (params->sp->sb->constexpression)
+        if (params->sp->sb->constexpression && argumentNesting == 0)
         {
             EXPRESSION* node = MakeExpression(params);
             if (EvaluateConstexprFunction(node))

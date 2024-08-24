@@ -140,7 +140,7 @@ public:
       //cdata.__write_time_ = get_write_time(__data_);
       __entry_.__assign_iter_entry(
           __root_ / __data_.cFileName,
-          directory_entry::__create_iter_result(detail::get_file_type(__data)));
+          directory_entry::__create_iter_result(detail::get_file_type(__data_)));
       return true;
     }
     ec = error_code(::GetLastError(), generic_category());

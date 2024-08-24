@@ -382,6 +382,10 @@ using fs_time = time_util<file_time_type, time_t, TimeSpec>;
 #if defined(__APPLE__)
 TimeSpec extract_mtime(StatT const& st) { return st.st_mtimespec; }
 TimeSpec extract_atime(StatT const& st) { return st.st_atimespec; }
+#elif defined(__ORANGEC__)
+TimeSpec extract_mtime(StatT const& st) { return { st.st_mtime, 0}; }
+TimeSpec extract_atime(StatT const& st) { return { st.st_atime, 0}; }
+
 #else
 TimeSpec extract_mtime(StatT const& st) { return st.st_mtim; }
 TimeSpec extract_atime(StatT const& st) { return st.st_atim; }

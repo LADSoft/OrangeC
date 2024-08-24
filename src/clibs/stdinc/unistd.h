@@ -32,6 +32,9 @@
 
 #define _SC_PAGESIZE 30
 
+#  define PATH_MAX 260
+#  define _PC_PATH_MAX 260
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -49,6 +52,8 @@ extern "C"
 
     unsigned _RTL_FUNC _IMPORT alarm(unsigned sec);
     ssize_t _RTL_FUNC readlink(const char *path, char *buf, size_t bufsiz);
+
+    char* ZSTR _RTL_FUNC _IMPORT getcwd(char* ZSTR, int);
 
 #endif
 

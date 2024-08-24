@@ -101,6 +101,7 @@ extern int parsingTrailingReturnOrUsing;
 extern int inTypedef;
 extern int resolvingStructDeclarations;
 extern std::map<int, SYMBOL*> localAnonymousUnions;
+extern int declaringInitialType;
 
 // declare.cpp
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);

@@ -389,7 +389,8 @@ typedef std::pair<struct sym*, struct _templateParam*> TEMPLATEPARAMPAIR;
 struct ConstExprArgArray
 {
     unsigned short size;
-    unsigned short multiplier;
+    unsigned short multiplier : 15;
+    unsigned short ref : 1;
     struct expr** data;
 };
 
@@ -662,7 +663,6 @@ typedef struct sym
         unsigned allocaUsed : 1;
         unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
         unsigned constexpression : 1;  /* declared with constexpression */
-        unsigned ignoreconstructor : 1; /* don't generate code for constexpression constructor */
         unsigned addressTaken : 1;     /* address taken */
         unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
         unsigned usingTypedef : 1;     /* typedef defined as a 'using' statement */

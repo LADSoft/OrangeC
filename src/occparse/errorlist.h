@@ -625,6 +625,7 @@ ERRLIST(ERR_CANNOT_CAPTURE_BY_VALUE, 547, "Cannot explicitly capture '&%s' when 
 ERRLIST(ERR_CANNOT_CAPTURE_BY_REFERENCE, 548, "Cannot explicitly capture '%s' when default capture mode is by-value (=)", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_THIS_BY_VALUE, 549, "Cannot explicitly capture 'this' default capture mode is by-value (=)", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE, 550, "Cannot explicitly capture '*this' when default capture mode is by-reference (&)", CE_ERROR)
+ERRLIST(ERR_TYPE_OR_VARIABLE_EXPECTED, 551, "Type or variable expected in using statement", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

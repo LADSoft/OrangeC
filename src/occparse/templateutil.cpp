@@ -2001,46 +2001,53 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
                 {
                     if ((*tso)[1].templateParams)
                     {
-                        std::list<TEMPLATEPARAMPAIR>* currentx = (*tso)[1].templateParams;
-                        std::deque<Type*> types;
-                        std::deque<EXPRESSION*> expressions;
-                        for (auto&& current : *currentx)
+                        if (!(*tso)[1].sp->sb->instantiated || (*tso)[1].sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
                         {
-                            if (current.second->type == TplType::typename_)
+                            std::list<TEMPLATEPARAMPAIR>* currentx = (*tso)[1].templateParams;
+                            std::deque<Type*> types;
+                            std::deque<EXPRESSION*> expressions;
+                            for (auto&& current : *currentx)
                             {
-                                types.push_back(current.second->byClass.dflt);
-                                if (current.second->byClass.val)
-                                    current.second->byClass.dflt = current.second->byClass.val;
+                                if (current.second->type == TplType::typename_)
+                                {
+                                    types.push_back(current.second->byClass.dflt);
+                                    if (current.second->byClass.val)
+                                        current.second->byClass.dflt = current.second->byClass.val;
+                                }
+                                else if (current.second->type == TplType::int_)
+                                {
+                                    expressions.push_back(current.second->byNonType.dflt);
+                                    if (current.second->byNonType.val)
+                                        current.second->byNonType.dflt = current.second->byNonType.val;
+                                }
                             }
-                            else if (current.second->type == TplType::int_)
+                            sp = GetClassTemplate(ts, (*tso)[1].templateParams, false);
+                            tp = nullptr;
+                            if (sp)
+                                sp = TemplateClassInstantiateInternal(sp, (*tso)[1].templateParams, false);
+                            for (auto&& current : *currentx)
                             {
-                                expressions.push_back(current.second->byNonType.dflt);
-                                if (current.second->byNonType.val)
-                                    current.second->byNonType.dflt = current.second->byNonType.val;
+                                if (current.second->type == TplType::typename_)
+                                {
+                                    if (types.size())
+                                    {
+                                        current.second->byClass.dflt = types.front();
+                                        types.pop_front();
+                                    }
+                                }
+                                else if (current.second->type == TplType::int_)
+                                {
+                                    if (expressions.size())
+                                    {
+                                        current.second->byNonType.dflt = expressions.front();
+                                        expressions.pop_front();
+                                    }
+                                }
                             }
                         }
-                        sp = GetClassTemplate(ts, (*tso)[1].templateParams, false);
-                        tp = nullptr;
-                        if (sp)
-                            sp = TemplateClassInstantiateInternal(sp, (*tso)[1].templateParams, false);
-                        for (auto&& current : *currentx)
+                        else
                         {
-                            if (current.second->type == TplType::typename_)
-                            {
-                                if (types.size())
-                                {
-                                    current.second->byClass.dflt = types.front();
-                                    types.pop_front();
-                                }
-                            }
-                            else if (current.second->type == TplType::int_)
-                            {
-                                if (expressions.size())
-                                {
-                                    current.second->byNonType.dflt = expressions.front();
-                                    expressions.pop_front();
-                                }
-                            }
+                            sp = (*tso)[1].sp;
                         }
                     }
                     else

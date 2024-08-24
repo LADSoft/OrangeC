@@ -105,6 +105,27 @@ typedef long off_t;
 typedef long pid_t;
 #endif
 
+#ifndef __blkcnt_t_defined
+#define __blkcnt_t
+typedef long blkcnt_t;
+#endif
+
+#ifndef __blksize_t_defined
+#define __blksize_t
+typedef long blksize_t;
+#endif
+
+#ifndef __fsblkcnt_t_defined
+#define __fsblkcnt_t
+typedef long fsblkcnt_t;
+#endif
+
+#ifndef __fsfilcnt_t_defined
+#define __fsfilcnt_t
+typedef long fsfilcnt_t;
+#endif
+
+
 typedef long pthread_t;
 typedef long pthread_attr_t;
 

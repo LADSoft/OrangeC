@@ -1016,6 +1016,10 @@ void deferredInitializeStructMembers(SYMBOL* cur)
             sp->sb->deferredCompile = nullptr;
             lex = initialize(lex, theCurrentFunc, sp, StorageClass::member_, false, false, 0);
             SetAlternateLex(nullptr);
+            if (sp->sb->constexpression)
+            {
+                optimize_for_constants(&sp->sb->init->front()->exp);
+            }
         }
     }
     dontRegisterTemplate--;
@@ -2867,13 +2871,16 @@ LexList* handleStaticAssert(LexList* lex)
     else
     {
         lex = getsym(); // past '('
+
         bool v = true;
         char buf[5000];
         Type* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
         inConstantExpression++;
         anonymousNotAlloc++;
+        argumentNesting++;
         lex = expression_assign(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
+        argumentNesting--;
         anonymousNotAlloc--;
         expr2 = Allocate<EXPRESSION>();
         expr2->type = ExpressionNode::x_bool_;
@@ -3286,21 +3293,116 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             }
             basisAttribs = oldAttribs;
         }
-        SYMBOL* strsym = nullptr;
-        lex = nestedSearch(lex, &sp, &strsym, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
-        if (sp)
+        // if we get here we suppose it is classing using, e.g. import the type or variable from another context...
+        SYMBOL* sp = nullptr, * strSym = nullptr;
+        std::list<NAMESPACEVALUEDATA*>* nssym = globalNameSpace;
+        enum Mode { parseFirst, parseClass, parseNamespace } mode = parseFirst;
+        if (MATCHKW(lex, Keyword::classsel_))
         {
-            if (sp->sb->mainsym && sp->sb->mainsym == strsym)
-                sp = search(strsym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
+            nssym = rootNameSpace;
+            mode = parseNamespace;
+            lex = getsym();
+        }
+        while (true)
+        {
+            if (!ISID(lex) && !MATCHKW(lex, Keyword::operator_))
+            {
+                error(ERR_IDENTIFIER_EXPECTED);
+                errskim(&lex, skim_semi, false);
+                break;
+            }
+            char buf[512];
+            int ov;
+            Type* castType;
+            lex = getIdName(lex, theCurrentFunc, buf, &ov, &castType);
+            lex = getsym();
+            if (sp && sp->tp->type == BasicType::templateparam_)
+                if (!sp->tp->templateParam->second->byClass.val)
+                    sp = nullptr;
+            strSym = sp;
+            switch (mode)
+            {
+                case parseFirst:
+                    sp = namespacesearch(buf, localNameSpace, false, false);
+                    if (!sp)
+                        sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
+                    if (!sp)
+                        sp = namespacesearch(buf, globalNameSpace, false, false);
+                    break;
+                case parseNamespace:
+                    sp = namespacesearch(buf, nssym, true, false);
+                    break;
+                case parseClass:
+                {
+                    enclosingDeclarations.Add(strSym);
+                    sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
+                    enclosingDeclarations.Drop();
+                    if (!sp)
+                        sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
+                }
+                    break;
+                      
+            }
+            if (sp)
+            {
+                sp->tp->InstantiateDeferred();
+                if (sp->sb && (sp->sb->storage_class == StorageClass::namespace_ || sp->sb->storage_class == StorageClass::namespace_alias_))
+                {
+                    nssym = sp->sb->nameSpaceValues;
+                    mode = parseNamespace;
+                }
+                else if (sp->tp->IsStructured())
+                {
+                    if (MATCHKW(lex, Keyword::lt_))
+                    {
+                        std::list<TEMPLATEPARAMPAIR> *lst = nullptr;
+                        lex = GetTemplateArguments(lex, theCurrentFunc, sp, &lst);
+                        SYMBOL* sp1;
+                        sp1 = GetClassTemplate(sp, lst, false);
+                        if (sp1)
+                        {
+                            sp1 = TemplateClassInstantiate(sp1, lst, false, StorageClass::global_);
+                            if (sp1)
+                            {
+                                sp = sp1;
+                                sp->tp = sp->tp->InitializeDeferred();
+                            }
+                        }
+                    }
+                    mode = parseClass;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (!MATCHKW(lex, Keyword::classsel_))
+            {
+                break;
+            }
+            lex = getsym();
+        }
+        if (!sp || sp->tp->type == BasicType::templateparam_ || (!ismemberdata(sp) && !istype(sp) && sp->sb->storage_class != StorageClass::overloads_  && sp->sb->storage_class != StorageClass::global_ &&
+            sp->sb->storage_class != StorageClass::external_ && sp->sb->storage_class != StorageClass::static_ && 
+            sp->sb->storage_class != StorageClass::localstatic_ && sp->sb->storage_class != StorageClass::constant_))
+        {
+            if (!definingTemplate || instantiatingTemplate)
+                error(ERR_TYPE_OR_VARIABLE_EXPECTED);
+            errskim(&lex, skim_semi, false);
+        }
+        else
+        {
+            if (sp == strSym || sp->sb->mainsym && sp->sb->mainsym == strSym)
+                sp = search(strSym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
             if (sp)
             {
                 if (!definingTemplate)
                 {
                     if (sp->sb->storage_class == StorageClass::overloads_)
                     {
-                        for (auto sp2 : * sp->tp->syms)
+                        for (auto sp2 : *sp->tp->syms)
                         {
-                            SYMBOL *ssp = enclosingDeclarations.GetFirst(), *ssp1;
+                            SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
                             SYMBOL* sp1 = CopySymbol(sp2);
                             sp1->sb->wasUsing = true;
                             ssp1 = sp1->sb->parentClass;
@@ -3311,12 +3413,10 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                             InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
                             sp1->sb->parentClass = ssp1;
                         }
-                        if (isTypename)
-                            error(ERR_TYPE_NAME_EXPECTED);
                     }
                     else
                     {
-                        SYMBOL *ssp = enclosingDeclarations.GetFirst(), *ssp1;
+                        SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
                         SYMBOL* sp1 = CopySymbol(sp);
                         sp1->sb->wasUsing = true;
                         sp1->sb->mainsym = sp;
@@ -3324,7 +3424,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                         ssp1 = sp1->sb->parentClass;
                         if (ssp && ismember(sp1))
                             sp1->sb->parentClass = ssp;
-                        if (isTypename && !istype(sp))
+                        if (isTypename && !istype(sp) && sp->tp->type != BasicType::templateselector_)
                             error(ERR_TYPE_NAME_EXPECTED);
                         if (istype(sp))
                             InsertTag(sp1, storage_class, true);
@@ -3334,7 +3434,6 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     }
                 }
             }
-            lex = getsym();
         }
     }
     return lex;

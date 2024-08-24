@@ -1582,8 +1582,6 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
             // unallocated var for destructor
             int offset;
             auto exp2 = relptr(rightexp, offset);
-            if (exp2 && !inConstantExpression)
-                exp2->v.sp->sb->ignoreconstructor = false;
             if (!inAssignRHS)
             {
                 GetAssignDestructors(&(*resultexp)->v.func->destructors, *resultexp);

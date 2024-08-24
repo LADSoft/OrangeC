@@ -4199,14 +4199,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             rv = ap1;
             break;
         case ExpressionNode::constexprconstructor_:
-            if (!node->v.sp->sb->ignoreconstructor)
-            {
-                ap1 = gen_expr(funcsp, node->left, flags, size);
-            }
-            else
-            {
-                ap1 = Optimizer::make_immed(size, 0);
-            }
+            ap1 = gen_expr(funcsp, node->left, flags, size);
             rv = ap1;
             break;
         case ExpressionNode::thisref_:
@@ -4309,6 +4302,12 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             ap1 = gen_expr(funcsp, node->v.sp->sb->init->front()->exp, 0, 0);
             rv = ap1;
             break;
+        case ExpressionNode::cvarpointer_:
+            // the front end generates constexpr structures which may have these in it
+            // untile we look into that a little more closely just make sure the code gen doesn't crash
+            rv = Optimizer::make_immed(ISZ_UINT, 0);
+            break;
+
         default:
             /* explicitly uncoded */
             diag("uncoded node in gen_expr.");
@@ -4637,6 +4636,8 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::templateparam_:  // may get this during the initial parsing of the template
         case ExpressionNode::templateselector_:
             return -ISZ_UINT;
+        case ExpressionNode::cvarpointer_:
+            return ISZ_UINT;
         default:
             diag("natural size error.");
             break;

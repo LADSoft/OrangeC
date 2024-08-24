@@ -2505,6 +2505,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
     bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
     bool constexpression)
 {
+    int oldDeclaringInitialType = declaringInitialType;
     BasicType type = BasicType::none_;
     Type* tn = nullptr;
     Type* quals = nullptr;
@@ -2879,12 +2880,16 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
             inTemplateType = false;
             if (foundsigned || foundunsigned || type != BasicType::none_)
                 flagerror = true;
+            declaringInitialType = 0;
             lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, *linkage2_in, access, defd, constexpression);
+            declaringInitialType = oldDeclaringInitialType;
             goto exit;
         case Keyword::enum_:
             if (foundsigned || foundunsigned || type != BasicType::none_)
                 flagerror = true;
+            declaringInitialType = 0;
             lex = declenum(lex, funcsp, &tn, storage_class, access, false, defd);
+            declaringInitialType = oldDeclaringInitialType;
             goto exit;
         case Keyword::void_:
             if (type != BasicType::none_)
@@ -3029,10 +3034,12 @@ founddecltype:
                         // throwaway
                         std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                         SYMBOL* sp1;
+                        declaringInitialType = 0;
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
+                        declaringInitialType = oldDeclaringInitialType;
                         if (!parsingTrailingReturnOrUsing)
                         {
-                            if (definingTemplate && !instantiatingTemplate && !inTemplateHeader)
+                            if (definingTemplate && !instantiatingTemplate && !inTemplateHeader && !declaringInitialType)
                             {
                                 sp1 = GetTypeAliasSpecialization(sp, lst);
                                 if (sp1)
@@ -3433,12 +3440,29 @@ founddecltype:
             }
             else if (isTypedef)
             {
-                if (!definingTemplate && !typeName)
-                {
-                    error(ERR_TYPE_NAME_EXPECTED);
-                }
-                tn = Type::MakeType(BasicType::any_);
                 lex = getsym();
+                if (sp && sp->tp->type == BasicType::templateselector_)
+                {
+                    tn = sp->tp;
+                    // discard template params, they've already been gathered..
+                    TEMPLATESELECTOR* l = &(*tn->sp->sb->templateSelector)[1];
+                    if (l->isTemplate)
+                    {
+                        if (MATCHKW(lex, Keyword::lt_))
+                        {
+                            std::list<TEMPLATEPARAMPAIR>* current = nullptr;
+                            lex = GetTemplateArguments(lex, nullptr, nullptr, &current);
+                        }
+                    }
+                }
+                else
+                {
+                    if (!definingTemplate && !typeName)
+                    {
+                        error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    tn = Type::MakeType(BasicType::any_);
+                }
                 foundsomething = true;
             }
             else if (Optimizer::cparams.prm_cplusplus)

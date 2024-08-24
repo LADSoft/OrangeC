@@ -3123,6 +3123,13 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                                 funcparams->arguments->push_back(p);
                             }
                         }
+                        else
+                        {
+                            auto p = Allocate<Argument>();
+                            p->nested = initListListFactory.CreateList();
+                            funcparams->arguments = initListListFactory.CreateList();
+                            funcparams->arguments->push_back(p);
+                        }
                         maybeConversion = false;
                     }
                     else
@@ -3165,8 +3172,6 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                         arg->exp = exp1;
                         int offset = 0;
                         auto exp2 = relptr(exp1, offset);
-                        if (exp2 && !inConstantExpression)
-                            exp2->v.sp->sb->ignoreconstructor = false;
                         if (exp1->type == ExpressionNode::thisref_ && itype->SameType(tp1) && !exp1->left->v.func->returnEXP)
                             tryelide = true;
                     }
@@ -3466,7 +3471,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                 tp1->InstantiateDeferred();
                 if (!tp1)
                     error(ERR_EXPRESSION_SYNTAX);
-                else if (!itype->ExactSameType(tp1))
+                else if (!itype->ExactSameType(tp1) && !sameTemplate(itype, tp1))
                 {
                     bool toErr = true;
                     if (tp1->IsStructured())
@@ -4595,6 +4600,10 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 sym->sb->init->front()->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);
             }
+            int oldLevel = structLevel;
+            structLevel = 0;
+            optimize_for_constants(&sym->sb->init->front()->exp);
+            structLevel = oldLevel;
         }
         else
         {

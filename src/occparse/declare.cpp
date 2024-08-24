@@ -76,6 +76,7 @@ int parsingTrailingReturnOrUsing;
 int inTypedef;
 int resolvingStructDeclarations;
 std::map<int, SYMBOL*> localAnonymousUnions;
+int declaringInitialType;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -100,6 +101,7 @@ void declare_init(void)
     inConstantExpression = 0;
     parsingUsing = 0;
     structureStaticAsserts.clear();
+    declaringInitialType = 0;
 }
 void EnclosingDeclarations::Add(SYMBOL* symbol)
 {
@@ -265,7 +267,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                         if (!strcmp(sp->sb->decoratedName, (sp1)->sb->decoratedName))
                         {
                             n++;
-                            if (sp->tp->BaseType()->btp->ExactSameType((sp1)->tp->BaseType()->btp) && sameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
+                            if (sp->tp->BaseType()->btp->ExactSameType((sp1)->tp->BaseType()->btp) || sameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
                             {
                                 found = true;
                                 break;
@@ -280,7 +282,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                     else if (strchr(sp->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
                     {
                         // it has a deferred argument, try again...
-                        InitializeFunctionArguments(sp);
+//                        InitializeFunctionArguments(sp);
                         if (table->AddOverloadName(sp))
                         {
                             found = false;
@@ -290,8 +292,8 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                                 if (!strcmp(sp->sb->decoratedName, (sp1)->sb->decoratedName))
                                 {
                                     n++;
-                                    sp->tp->BaseType()->btp->InstantiateDeferred();
-                                    sp1->tp->BaseType()->btp->InstantiateDeferred();
+//                                    sp->tp->BaseType()->btp->InstantiateDeferred();
+//                                    sp1->tp->BaseType()->btp->InstantiateDeferred();
                                     if (sp->tp->BaseType()->btp->ExactSameType((sp1)->tp->BaseType()->btp) && sameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
                                     {
                                         found = true;
@@ -904,8 +906,8 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             SYMBOL* sp = syms[i];
             for (auto sym : *sp->tp->syms)
             {
-                if (sym->sb->storage_class == StorageClass::global_ && sym->tp->IsConst() && sym->tp->IsInt() && sym->sb->init &&
-                    sym->sb->init->front()->exp->type == ExpressionNode::templateselector_)
+                if (sym->sb->storage_class == StorageClass::global_ && sym->tp->IsInt() && sym->sb->init &&
+                    sym->tp->IsConst() && sym->sb->init->front()->exp->type == ExpressionNode::templateselector_)
                 {
                     optimize_for_constants(&sym->sb->init->front()->exp);
                 }
@@ -3043,9 +3045,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             bool templateArg = false;
             bool asFriend = false;
             int consdest = CT_NONE;
+            declaringInitialType++;
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);
+            declaringInitialType--;
             bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::openbr_);
             if (bindingcandidate)
             {
@@ -3200,7 +3204,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     if (asFriend && tp1->IsPtr())
                         error(ERR_POINTER_ARRAY_NOT_FRIENDS);
 
-                    if (storage_class_in != StorageClass::parameter_ && tp1->type == BasicType::templateparam_ && tp1->templateParam->second->packed)
+                    if (storage_class_in != StorageClass::parameter_ && tp1->type == BasicType::templateparam_ && tp1->templateParam->second->packed && tp1->templateParam->second->byPack.pack && tp1->templateParam->second->byPack.pack->size() > 1)
                         error(ERR_PACKED_TEMPLATE_PARAMETER_NOT_ALLOWED_HERE);
                     if (!sp)
                     {
@@ -4430,7 +4434,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         else
                         {
-                            if ((sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_) && (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && !sp->tp->IsStructured() && !sp->tp->IsArray() && !sp->tp->IsRef()) 
+                            if ((sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_) && (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && !sp->tp->IsStructured() && !sp->tp->IsArray() && !sp->tp->IsRef())
                             {
                                  sp->sb->runtimeSym = anonymousVar(StorageClass::auto_, &stdpointer)->v.sp;
                             }
@@ -4473,12 +4477,12 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if ((MATCHKW(lex, Keyword::assign_) || MATCHKW(lex, Keyword::begin_)) && storage_class_in == StorageClass::member_ &&
                                     (sp->sb->storage_class == StorageClass::static_ || sp->sb->storage_class == StorageClass::external_))
                                 {
-                                    if (sp->tp->IsConst() || sp->sb->constexpression)
+                                    if (sp->tp->IsConst())
                                     {
                                         if (sp->tp->IsInt())
                                             goto doInitialize;
                                     }
-                                    else
+                                    else if (!sp->sb->constexpression)
                                     {
                                         errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }

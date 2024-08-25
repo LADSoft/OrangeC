@@ -56,6 +56,7 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
     {
         return 0;
     }
+    ReplaceIncludeExpressions(line);
     if (fromConditional && expressionHandler)
         return expressionHandler(line);
     floatWarned = false;
@@ -72,7 +73,41 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
     tokenizer.release();
     return rv;
 }
+void ppExpr::ReplaceIncludeExpressions(std::string& line)
+{
+    auto inc = line.find("__has_include(");
+    auto incnext = line.find("__has_include_next(");
+    while (inc != std::string::npos || incnext != std::string::npos)
+    {
+        bool next = inc == std::string::npos;
+        auto b = next ? incnext : inc;
+        auto n = line.find(")", b);
+        if (n != std::string::npos)
+        {
+            std::string line2 = line.substr(b, n);
+            auto i = line2.find("(");
+            if (i == std::string::npos)
+            {
+                Errors::Error("Expected '('");
 
+            }
+            else
+            {
+                std::string arg = line2.substr(i+1, line2.size()-i-2);
+                define->Process(arg);
+                bool rv;
+                if (next)
+                    rv = include->has_include_next(arg);
+                else
+                    rv = include->has_include(arg);
+                line.erase(b, n);
+                line.insert(b, rv ? "1 " : "0 ");
+            }
+            inc = line.find("__has_include(");
+            incnext = line.find("__has_include_next(");
+        }
+    }
+}
 PPINT ppExpr::primary(std::string& line, bool& isunsigned)
 {
     PPINT rv = 0;
@@ -126,64 +161,6 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                             }
                         }
                     }
-                }
-            }
-        }
-        else if (token->GetId() == "__has_include")
-        {
-            token = tokenizer->Next();
-            if (!token->IsEnd())
-            {
-                if (token->GetKeyword() == kw::openpa)
-                {
-                    std::string line = tokenizer->GetString();
-                    int n = line.find(")");
-                    if (n == std::string::npos)
-                    {
-                        Errors::Error("Expected ')'");
-                    }
-                    else
-                    {
-                        std::string arg = line.substr(0, n);
-                        define->Process(arg);
-
-                        rv = include->has_include(arg);
-                        tokenizer->SetString(line.substr(n + 1));
-                        token = tokenizer->Next();
-                    }
-                }
-                else
-                {
-                    Errors::Error("Expected '('");
-                }
-            }
-        }
-        else if (token->GetId() == "__has_include_next")
-        {
-            token = tokenizer->Next();
-            if (!token->IsEnd())
-            {
-                if (token->GetKeyword() == kw::openpa)
-                {
-                    std::string line = tokenizer->GetString();
-                    int n = line.find(")");
-                    if (n == std::string::npos)
-                    {
-                        Errors::Error("Expected ')'");
-                    }
-                    else
-                    {
-                        std::string arg = line.substr(0, n);
-                        define->Process(arg);
-
-                        rv = include->has_include_next(arg);
-                        tokenizer->SetString(line.substr(n + 1));
-                        token = tokenizer->Next();
-                    }
-                }
-                else
-                {
-                    Errors::Error("Expected '('");
                 }
             }
         }

@@ -138,7 +138,7 @@ class ppInclude
     bool popFile();
     std::string ParseName(const std::string& args, bool& specifiedAsSystem);
     // Put a throwaway value in dirs_skipped here unless you need to use it for #include_next shenanigans with pushFile
-    std::string FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped, bool& foundAsSystem);
+    std::string FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped, bool& foundAsSystem, bool & found);
     std::string SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipUntilDepth,
                          int& filesSkipped);
     const char* RetrievePath(char* buf, const char* path);

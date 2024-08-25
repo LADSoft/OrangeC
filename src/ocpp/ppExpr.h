@@ -54,6 +54,7 @@ class ppExpr
     static void SetExpressionHandler(CompilerExpression* handler) { expressionHandler = handler; }
 
   protected:
+    void ReplaceIncludeExpressions(std::string& line);
     PPINT primary(std::string& line, bool& isunsigned);
     PPINT unary(std::string& line, bool& isunsigned);
     PPINT multiply(std::string& line, bool& isunsigned);

@@ -45,6 +45,7 @@
 #include "occparse.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "exprcpp.h"
 
 namespace Parser
 {
@@ -73,6 +74,12 @@ static bool is_trivially_destructible(LexList** lex, SYMBOL* funcsp, SYMBOL* sym
 static bool is_trivially_copyable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
 static bool is_union(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
 static bool is_literal_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_same(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_aggregate(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool is_member_pointer(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool has_unique_object_representations(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+static bool has_virtual_destructor(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
 
 static struct _ihash
 {
@@ -80,7 +87,11 @@ static struct _ihash
     INTRINS_FUNC* func;
 
 } defaults[] = {
+    {"__has_unique_object_representations", has_unique_object_representations},
+    {"__has_virtual_destructor", has_virtual_destructor},
     {"__is_abstract", is_abstract},
+    {"__is_aggregate", is_aggregate},
+    {"__is_assignable", is_assignable},
     {"__is_base_of", is_base_of},
     {"__is_class", is_class},
     {"__is_constructible", is_constructible},
@@ -89,10 +100,13 @@ static struct _ihash
     {"__is_enum", is_enum},
     {"__is_final", is_final},
     {"__is_literal", is_literal},
+    {"__is_literal_type", is_literal_type},
+    {"__is_member_pointer", is_member_pointer},
     {"__is_nothrow_constructible", is_nothrow_constructible},
     {"__is_nothrow_assignable", is_nothrow_assignable},
     {"__is_pod", is_pod},
     {"__is_polymorphic", is_polymorphic},
+    {"__is_same", is_same},
     {"__is_standard_layout", is_standard_layout},
     {"__is_trivial", is_trivial},
     {"__is_trivially_assignable", is_trivially_assignable},
@@ -100,19 +114,17 @@ static struct _ihash
     {"__is_trivially_destructible", is_trivially_destructible},
     {"__is_trivially_copyable", is_trivially_copyable},
     {"__is_union", is_union},
-    {"__is_literal_type", is_literal_type},
 };
-static SymbolTable<_ihash> intrinsicHash;
-
+static std::unordered_map<std::string, INTRINS_FUNC*> intrinsicHash;
 static std::unordered_map<std::string, std::unordered_map<unsigned, SYMBOL*>, StringHash> integerSequences;
 
 void libcxx_init(void)
 {
-    intrinsicHash = SymbolTable<_ihash>();
+    intrinsicHash.clear();
     int i;
     integerSequences.clear();
     for (int i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
-        intrinsicHash.Add(&defaults[i]);
+        intrinsicHash[defaults[i].name] = defaults[i].func;
 }
 void libcxx_builtins(void)
 {
@@ -148,7 +160,7 @@ void libcxx_builtins(void)
         preProcessor->Define("__has_nothrow_copy", "0");
         preProcessor->Define("__has_trivial_constructor", "0");
         preProcessor->Define("__has_trivial_destructor", "0");
-        preProcessor->Define("__has_virtual_destructor_xx", "0");
+        preProcessor->Define("__has_virtual_destructor", "1");
         preProcessor->Define("__has_is_base_of", "1");
         preProcessor->Define("__has_is_class", "1");
         preProcessor->Define("__has_is_constructible", "1");
@@ -168,12 +180,14 @@ void libcxx_builtins(void)
         preProcessor->Define("__has_is_trivially_copyable", "1");
         preProcessor->Define("__has_is_union", "1");
         preProcessor->Define("__has___reference_binds_to_temporary", "0");
+        preProcessor->Define("__has__is_member_pointer", "1");
         preProcessor->Define("__has___is_trivially_destructible", "1");
+        preProcessor->Define("__has__is_trivially_destructible", "1");
         preProcessor->Define("__has___is_nothrow_constructible", "1");
         preProcessor->Define("__has___is_nothrow_assignable", "1");
         preProcessor->Define("__has___nullptr", "0");
         preProcessor->Define("__has__Atomic", "1");
-        preProcessor->Define("__has___is_aggregate", "0");
+        preProcessor->Define("__has___is_aggregate", "1");
         preProcessor->Define("__has__builtin_isnan", "0");
         preProcessor->Define("__has__builtin_isinf", "0");
         preProcessor->Define("__has__builtin_isfinite", "0");
@@ -200,15 +214,17 @@ void libcxx_builtins(void)
         preProcessor->Define("__has__fallthrough", "0");
         preProcessor->Define("__has____nodebug__", "0");
         preProcessor->Define("__has__no_thread_safety_analysis", "0");
+        preProcessor->Define("__has____using_if_exists__", "0");
+        preProcessor->Define("__has__decay", "1");
     }
 }
 
 bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
-    _ihash* p = intrinsicHash.Lookup(sym->name);
-    if (p)
+    auto it = intrinsicHash.find(sym->name);
+    if (it != intrinsicHash.end())
     {
-        return p->func(lex, funcsp, sym, tp, exp);
+        return (it->second)(lex, funcsp, sym, tp, exp);
     }
     return false;
 }
@@ -1406,8 +1422,7 @@ bool is_literal_type(Type* tp)
 static bool is_literal_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    CallSite funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    CallSite funcparams = { };
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments->size() == 1)
     {
@@ -1416,6 +1431,320 @@ static bool is_literal_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** t
     *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     *tp = &stdint;
     return true;
+}
+static bool is_same(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    CallSite funcparams = { };
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments->size() == 2)
+    {
+        auto left = first(funcparams.arguments)->tp;
+        auto right = second(funcparams.arguments)->tp;
+        if (left->IsConst() == right->IsConst() && left->IsVolatile() == right->IsVolatile())
+        {
+            left = left->BaseType();
+            right = right->BaseType();
+            if (left->IsRef() && right->IsRef() && left->BaseType()->type == right->BaseType()->type)
+            {
+                left = left->BaseType()->btp;
+                right = right->BaseType()->btp;
+            }
+            while (left->IsPtr() && right->IsPtr() && left->IsArray() == right->IsArray() && left->IsConst() == right->IsConst() && left->IsVolatile() == right->IsVolatile())
+            {
+                left = left->BaseType()->btp;
+                right = right->BaseType()->btp;
+            }
+            if (!left->IsPtr() && !right->IsPtr() && !left->IsRef() && !right->IsRef())
+            {
+                if (left->IsArithmetic())
+                {
+                    rv = left->type == right->type;   
+                }
+                else if (left->IsStructured() || left->IsDeferred())
+                {
+                    left->InstantiateDeferred();
+                    right->InstantiateDeferred();
+                    rv = left->ExactSameType(right);
+                    if (!rv)
+                    {
+                        rv = sameTemplate(left, right);
+                    }
+                }
+                else
+                {
+                    rv = left->ExactSameType(right);
+                }
+            }
+        }
+    }
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+    *tp = &stdint;
+    return true;
+}
+static bool is_assignable(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    CallSite funcparams = { };
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments->size() == 2)
+    {
+        auto left = first(funcparams.arguments)->tp;
+        auto right = second(funcparams.arguments)->tp;
+        if (!left->IsConst() && (!left->IsRef() || (!left->BaseType()->btp->IsConst() && !(right->IsRef() ? right->BaseType()->btp->IsConst() : right->IsConst() ))))
+        {
+            left->InstantiateDeferred();
+            right->InstantiateDeferred();
+
+            rv = left->ExactSameType(right);
+            if (!rv)
+            {
+                rv = sameTemplate(left, right);
+            }
+            if (!rv)
+            {
+                EXPRESSION* exp = nullptr;
+                if (left->IsStructured())
+                {
+                    if (left->IsRef())
+                        left = left->BaseType()->btp->BaseType();
+                    Type* ctype = left;
+                    exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                    CallSite funcparams = { };
+                    funcparams.thisptr = exp;
+                    funcparams.arguments = initListListFactory.CreateList();
+                    Argument* arg = Allocate<Argument>();
+                    funcparams.arguments->push_back(arg);
+                    arg->exp = anonymousVar(StorageClass::auto_, right);
+                    arg->tp = right;
+                    rv = callConstructor(&ctype, &exp, &funcparams, true, nullptr, true, true, false, false, false, true, false);
+                }
+                if (!rv)
+                {
+                    if (right->IsRef())
+                    {
+                        right = right->BaseType()->btp;
+                    }
+                    if (right->IsStructured())
+                    {
+                        if (!exp)
+                            exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        if (left->IsPtr())
+                        {
+                            rv = castToPointer(&right, &exp, (Keyword)-1, left);
+                        }
+                        else
+                        {
+                            rv = castToArithmeticInternal(false, &right, &exp, (Keyword)-1, left, false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+    *tp = &stdint;
+    return true;
+
+}
+static bool is_aggregate(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    CallSite funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments->size() == 1)
+    {
+
+        auto tp = first(funcparams.arguments)->tp;
+        while (tp->IsRef()) tp = tp->BaseType()->btp;
+        rv = tp->IsArray();
+        while (tp->IsArray()) tp = tp->BaseType()->btp;
+        tp->InstantiateDeferred();
+        if (tp->IsStructured() && tp->BaseType()->syms && !tp->BaseType()->sp->sb->hasUserCons)
+        {
+            tp = tp->BaseType();
+            if (!tp->sp->sb->baseClasses || tp->sp->sb->baseClasses->empty())
+            {
+                rv = true;
+                for (auto s : *tp->syms)
+                {
+                    if (ismemberdata(s))
+                    {
+                        if (s->sb->access != AccessLevel::public_ || s->tp->IsRef() || (s->tp->IsStructured() && !s->tp->BaseType()->sp->sb->trivialCons))
+                        {
+                            rv = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+    *tp = &stdint;
+    return true;
+}
+static bool is_member_pointer(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    CallSite funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments->size() == 1)
+    {
+        auto tp = first(funcparams.arguments)->tp;
+	rv = tp->BaseType()->type == BasicType::memberptr_;
+    }
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+    *tp = &stdint;
+    return true;
+}
+static bool hasUniqueRepresentation(Type* tp)
+{
+    while (tp->IsRef()) tp = tp->BaseType()->btp; // we want the object type not the representation of the ref
+    while (tp->IsArray()) tp = tp->BaseType()->btp; // we want the base type for arrays
+    if (tp->IsStructured())
+    {
+        tp->InstantiateDeferred();
+        tp = tp->BaseType();
+        if (tp->syms == nullptr || !triviallyCopyable(tp))
+            return false;
+        // if it is structed it may have padding, and if it does then there is no unique representation
+        if (tp->type == BasicType::union_)
+        {
+            // for a union go through each element in turn and make sure none of them don't have unique representations
+            for (auto s : *tp->syms)
+                if (ismemberdata(s))
+                    if (!hasUniqueRepresentation(s->tp))
+                        return false;
+        }
+        else
+        {
+            // for a structures we check for padding...
+            // start by checking the base classes
+            if (tp->sp->sb->baseClasses)
+            {
+                for (auto b : *tp->sp->sb->baseClasses)
+                    if (!hasUniqueRepresentation(b->cls->tp))
+                        return false;
+            }
+            bool first = true;
+            int last = 0;
+            int lastsz = 0;
+            int laststart = 0;
+            int lastbits = 0;
+            for (auto s : *tp->syms)
+            {
+                if (ismemberdata(s))
+                {
+                    if (first)
+                    {
+                        if (s->sb->offset != 0 && s->sb->offset != getSize(BasicType::pointer_))
+                        {
+                            return false;
+                        }
+                        first = false;
+                        last = s->sb->offset;
+                        lastsz =  s->tp->size;
+                        laststart = s->tp->startbit;
+                        lastbits = s->tp->bits;
+                        if (lastbits && !strncmp(s->name, "Unnamed++", 9))
+                            return false;
+                    }
+                    else
+                    {
+                        if (s->sb->offset == last)
+                        {
+                            //bits
+                            if (laststart + lastbits != s->tp->startbit)
+                                return false;
+                            laststart = s->tp->startbit;
+                            lastbits = s->tp->bits;
+                            if (!strncmp(s->name, "Unnamed++", 9))
+                                return false;
+                        }
+                        else
+                        {
+                            if (last + lastsz != s->sb->offset)
+                                return false;
+                            if (lastbits && ((lastbits + laststart)/CHAR_BIT != lastsz))
+                				return false;
+                            last = s->sb->offset;
+                            lastsz =  s->tp->size;
+                            laststart = s->tp->startbit;
+                            lastbits = s->tp->bits;
+                            if (lastbits && !strncmp(s->name, "Unnamed++", 9))
+                                return false;
+                        }
+                    }
+                }
+            }
+            if (last + lastsz != tp->size)
+                return false;
+            if (lastbits && ((lastbits + laststart) / CHAR_BIT != lastsz))
+                return false;
+        }
+    }
+    // integers, enums, memberpointers, etc all have a deterministic layout
+    return true;
+}
+static bool has_unique_object_representations(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    CallSite funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments->size() == 1)
+    {
+        rv = hasUniqueRepresentation(first(funcparams.arguments)->tp);
+    }
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+    *tp = &stdint;
+    return true;
+}
+static bool has_virtual_destructor(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+{
+    bool rv = false;
+    CallSite funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments->size() == 1)
+    {
+        auto tp = first(funcparams.arguments)->tp;
+        while (tp->IsRef()) tp = tp->BaseType()->btp;
+        tp->InstantiateDeferred();
+        if (tp->IsStructured())
+        {
+            if (tp->BaseType()->syms)
+            {
+                SYMBOL* dest = search(tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
+                if (dest)
+                {
+                    rv = dest->tp->syms->front()->sb->storage_class == StorageClass::virtual_;
+                }
+            }
+        }
+    }
+    *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+    *tp = &stdint;
+    return true;
+}
+Type* decay(Type *tp)
+{
+    if (tp->IsFunction())
+    {
+        tp = Type::MakeType(BasicType::pointer_, tp);
+    }            
+    else if (tp->IsArray())
+    {
+        tp = tp->BaseType()->btp;
+        tp = Type::MakeType(BasicType::pointer_, tp);
+    }
+    return tp;
 }
 bool underlying_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {

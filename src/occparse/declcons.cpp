@@ -1280,7 +1280,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 params->functp = match->tp;
                 params->sp = match;
                 params->ascall = true;
-                params->arguments = initListListFactory.CreateList();
+                params->arguments = argumentListFactory.CreateList();
                 AdjustParams(match, match->tp->BaseType()->syms->begin(), match->tp->BaseType()->syms->end(), &params->arguments, false, true);
                 if (sp->sb->vbaseEntries)
                 {
@@ -1629,7 +1629,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             {
                 CallSite* funcparams = Allocate<CallSite>();
                 if (!funcparams->arguments)
-                    funcparams->arguments = initListListFactory.CreateList();
+                    funcparams->arguments = argumentListFactory.CreateList();
                 if (mix->init)
                 {
                     for (auto init : *mix->init)
@@ -2576,7 +2576,7 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
         tp->lref = true;
         tp->rref = false;
     }
-    params->arguments = initListListFactory.CreateList();
+    params->arguments = argumentListFactory.CreateList();
     auto arg = Allocate<Argument>();
     arg->tp = tp;
     arg->exp = right;
@@ -2886,7 +2886,7 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     Argument* arg3 = Allocate<Argument>();  // size
     Argument* arg4 = Allocate<Argument>();  // count
     SYMBOL* ovl = namespacesearch("__arrCall", globalNameSpace, false, false);
-    params->arguments = initListListFactory.CreateList();
+    params->arguments = argumentListFactory.CreateList();
     params->arguments->push_back(arg0);
     params->arguments->push_back(arg1);
     params->arguments->push_back(arg2);
@@ -3001,7 +3001,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
                 x->tp = Type::MakeType(BasicType::int_);
                 x->exp = MakeIntExpression(ExpressionNode::c_i_, top);
                 if (!params->arguments)
-                    params->arguments = initListListFactory.CreateList();
+                    params->arguments = argumentListFactory.CreateList();
                 params->arguments->push_back(x);
                 params->sp->sb->noinline = true;
             }
@@ -3238,7 +3238,7 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                     x->tp = Type::MakeType(BasicType::int_);
                     x->exp = MakeIntExpression(ExpressionNode::c_i_, top);
                     if (!params->arguments)
-                        params->arguments = initListListFactory.CreateList();
+                        params->arguments = argumentListFactory.CreateList();
                     params->arguments->push_back(x);
                     params->sp->sb->noinline = true;
                 }
@@ -3282,7 +3282,7 @@ bool callConstructorParam(Type** tp, EXPRESSION** exp, Type* paramTP, EXPRESSION
     CallSite* params = Allocate<CallSite>();
     if (paramTP && paramExp)
     {
-        params->arguments = initListListFactory.CreateList();
+        params->arguments = argumentListFactory.CreateList();
         params->arguments->push_back(Allocate<Argument>());
         params->arguments->front()->tp = paramTP;
         params->arguments->front()->exp = paramExp;

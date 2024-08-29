@@ -42,7 +42,7 @@ namespace Parser
     ListFactory<struct _vtabEntry*> vtabEntryListFactory;
     ListFactory<struct _vbaseEntry*> vbaseEntryListFactory;
     ListFactory<struct _structSym*> structsymListFactory;
-    ListFactory<Argument*> initListListFactory;
+    ListFactory<Argument*> argumentListFactory;
     ListFactory<struct _errl*> errlListFactory;
     ListFactory<StringData*> stringListFactory;
     ListFactory<struct Optimizer::_linedata*> lineDataListFactory;
@@ -65,7 +65,7 @@ namespace Parser
         vtabEntryListFactory.Reset();
         vbaseEntryListFactory.Reset();
         structsymListFactory.Reset();
-        initListListFactory.Reset();
+        argumentListFactory.Reset();
         errlListFactory.Reset();
         stringListFactory.Reset();
         lineDataListFactory.Reset();

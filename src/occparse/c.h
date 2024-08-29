@@ -250,7 +250,7 @@ typedef struct
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
         construct_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
-        type_, pointsto_, dot_, select_, constexprconstructor_,
+        type_, pointsto_, dot_, select_, constexprconstructor_, cppintrinsic_,
         // stuff that can only appear temporarily in constexpr expressions
         cvarpointer_, paramsubstitute_
     };
@@ -409,6 +409,11 @@ typedef struct expr
             long long i;
             FPF* f;
             _COMPLEX_S* c;
+            struct
+            {
+                const char* cppintrinsicName;
+                std::list<Argument*>* cppintrinsicArgs;
+            };
             struct
             {
                 struct sym* sp; /* sym will be defined later */

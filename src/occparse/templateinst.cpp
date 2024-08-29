@@ -4724,7 +4724,7 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
                 }
                 if (oldItem.asCall && oldItem.arguments && oldItem.arguments->size())
                 {
-                    (*rvs)->back().arguments = initListListFactory.CreateList();
+                    (*rvs)->back().arguments = argumentListFactory.CreateList();
                     for (auto ilx : *oldItem.arguments)
                     {
                         auto arg = Allocate<Argument>();
@@ -4763,14 +4763,14 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
         {
             TEMPLATEPARAMPAIR* rv;
             if (exp->type == ExpressionNode::templateparam_)
-                rv = TypeAliasSearch(exp->v.sp->tp->templateParam->first->name, false);
+                rv = TypeAliasSearch(exp->v.sp->tp->BaseType()->templateParam->first->name, false);
             else
                 rv = TypeAliasSearch(exp->v.sp->name, false);
             if (rv)
             {
                 if (rv->second->type == TplType::int_)
                 {
-                    if (packIndex >= 0 && rv->second->packed && !exp->v.sp->tp->templateParam->second->ellipsis)
+                    if (packIndex >= 0 && rv->second->packed && !exp->v.sp->tp->BaseType()->templateParam->second->ellipsis)
                     {
                         if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
                         {
@@ -4793,7 +4793,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                     if (rv->second->byClass.dflt)
                     {
                         Type* dflt = rv->second->byClass.dflt;
-                        if (packIndex >= 0 && rv->second->packed && !exp->v.sp->tp->templateParam->second->ellipsis)
+                        if (packIndex >= 0 && rv->second->packed && !exp->v.sp->tp->BaseType()->templateParam->second->ellipsis)
                         {
                             if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
                             {
@@ -4927,7 +4927,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
             if ((*last)->v.func->arguments)
             {
                 auto old = (*last)->v.func->arguments;
-                (*last)->v.func->arguments = initListListFactory.CreateList();
+                (*last)->v.func->arguments = argumentListFactory.CreateList();
                 for (auto arg : *old)
                 {
                     auto arg1 = Allocate<Argument>();

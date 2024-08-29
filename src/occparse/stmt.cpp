@@ -309,7 +309,7 @@ void StatementGenerator::ThunkCatchCleanup(Statement* st, std::list<FunctionBloc
                 funcparams->sp = sym;
                 funcparams->functp = sym->tp;
                 funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
-                funcparams->arguments = initListListFactory.CreateList();
+                funcparams->arguments = argumentListFactory.CreateList();
                 funcparams->arguments->push_back(arg1);
                 arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
                 arg1->tp = &stdpointer;
@@ -1195,13 +1195,13 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 memset(&args, 0, sizeof(args));
                                 args.tp = rangeSP->tp->btp;
                                 args.exp = rangeExp;
-                                fcb.arguments = initListListFactory.CreateList();
+                                fcb.arguments = argumentListFactory.CreateList();
                                 fcb.arguments->push_back(&args);
                                 fcb.ascall = true;
                                 ctp = rangeSP->tp;
                                 beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, nullptr, false, false, 0);
                                 memset(&fce, 0, sizeof(fce));
-                                fce.arguments = initListListFactory.CreateList();
+                                fce.arguments = argumentListFactory.CreateList();
                                 fce.arguments->push_back(&args);
                                 fce.ascall = true;
                                 ctp = rangeSP->tp;
@@ -1245,7 +1245,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         fc->sp = beginFunc;
                                         fc->functp = beginFunc->tp;
                                         fc->ascall = true;
-                                        fc->arguments = initListListFactory.CreateList();
+                                        fc->arguments = argumentListFactory.CreateList();
                                         for (auto i : *fcb.arguments)
                                             fc->arguments->push_back(i);
                                         if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
@@ -1256,7 +1256,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                             CallSite* funcparams = Allocate<CallSite>();
                                             Type* ctype = rangeSP->tp->BaseType()->btp;
                                             esp->sb->stackblock = true;
-                                            funcparams->arguments = initListListFactory.CreateList();
+                                            funcparams->arguments = argumentListFactory.CreateList();
                                             for (auto i : *fc->arguments)
                                                 funcparams->arguments->push_back(i);
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
@@ -1273,7 +1273,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         fc->sp = endFunc;
                                         fc->functp = endFunc->tp;
                                         fc->ascall = true;
-                                        fc->arguments = initListListFactory.CreateList();
+                                        fc->arguments = argumentListFactory.CreateList();
                                         for (auto i : *fce.arguments)
                                             fc->arguments->push_back(i);
                                         if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
@@ -1284,7 +1284,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                             CallSite* funcparams = Allocate<CallSite>();
                                             Type* ctype = rangeSP->tp->BaseType()->btp;
                                             esp->sb->stackblock = true;
-                                            funcparams->arguments = initListListFactory.CreateList();
+                                            funcparams->arguments = argumentListFactory.CreateList();
                                             for (auto i : *fc->arguments)
                                                 funcparams->arguments->push_back(i);
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
@@ -1410,7 +1410,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 Type* ctype = declSP->tp;
                                 CallSite* funcparams = Allocate<CallSite>();
                                 Argument* args = Allocate<Argument>();
-                                funcparams->arguments = initListListFactory.CreateList();
+                                funcparams->arguments = argumentListFactory.CreateList();
                                 funcparams->arguments->push_back(Allocate<Argument>());
                                 funcparams->arguments->front()->tp = declSP->tp;
                                 funcparams->arguments->front()->exp = eBegin;
@@ -1461,7 +1461,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     Type* ctype = declSP->tp;
                                     CallSite* funcparams = Allocate<CallSite>();
                                     Argument* args = Allocate<Argument>();
-                                    funcparams->arguments = initListListFactory.CreateList();
+                                    funcparams->arguments = argumentListFactory.CreateList();
                                     funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = eBegin;
@@ -1511,7 +1511,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     Type* ctype = declSP->tp;
                                     CallSite* funcparams = Allocate<CallSite>();
                                     Argument* args = Allocate<Argument>();
-                                    funcparams->arguments = initListListFactory.CreateList();
+                                    funcparams->arguments = argumentListFactory.CreateList();
                                     funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = st->select;
@@ -2391,7 +2391,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     else
                     {
                         bool nonconst = funcsp->sb->nonConstVariableUsed;
-                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments = argumentListFactory.CreateList();
                         funcparams->arguments->push_back(Allocate<Argument>());
                         funcparams->arguments->front()->tp = tp1;
                         funcparams->arguments->front()->exp = exp1;
@@ -4011,7 +4011,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
             funcparams->sp = sym;
             funcparams->functp = sym->tp;
             funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
-            funcparams->arguments = initListListFactory.CreateList();
+            funcparams->arguments = argumentListFactory.CreateList();
             funcparams->arguments->push_back(arg1);
             arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;

@@ -2564,7 +2564,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             epx->fcall = MakeExpression(ExpressionNode::pc_, al);
             epx->sp = al;
             epx->functp = al->tp;
-            epx->arguments = initListListFactory.CreateList();
+            epx->arguments = argumentListFactory.CreateList();
             auto arg = Allocate<Argument>();
             epx->arguments->push_back(arg);
             arg->tp = &stdint;
@@ -2576,7 +2576,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             ld->sp = fr;
             ld->functp = fr->tp;
             arg = Allocate<Argument>();
-            ld->arguments = initListListFactory.CreateList();
+            ld->arguments = argumentListFactory.CreateList();
             ld->arguments->push_back(arg);
             arg->tp = &stdpointer;
             arg->exp = ep1;

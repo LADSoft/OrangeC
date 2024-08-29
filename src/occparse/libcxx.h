@@ -29,7 +29,7 @@ extern int inNoExceptHandler;
 void libcxx_init(void);
 void libcxx_builtins(void);
 bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
-bool underlying_type(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+bool underlying_type(LexList** lex, SYMBOL* funcsp, Type** tp);
 bool is_literal_type(Type* tp);
 SYMBOL* MakeIntegerSeq(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
 SYMBOL* TypePackElementCls(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);

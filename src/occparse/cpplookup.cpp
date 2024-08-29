@@ -6634,7 +6634,7 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
             if (il->tp->IsRef())
                 il->tp = il->tp->BaseType()->btp;
             if (!fpargs.arguments)
-                fpargs.arguments = initListListFactory.CreateList();
+                fpargs.arguments = argumentListFactory.CreateList();
             fpargs.arguments->push_back(il);
             ++itp;
         }

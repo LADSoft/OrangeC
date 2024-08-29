@@ -2978,7 +2978,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
             break;
         case Keyword::underlying_type_: {
             lex = getsym();
-            underlying_type(&lex, funcsp, nullptr, &tn, nullptr);
+            underlying_type(&lex, funcsp, &tn);
             lex = backupsym();
         }
                                       break;

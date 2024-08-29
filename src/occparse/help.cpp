@@ -1560,7 +1560,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
             guardexp->v.func->functp = guardfunc->tp;
             guardexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, guardfunc);
             guardexp->v.func->ascall = true;
-            guardexp->v.func->arguments = initListListFactory.CreateList();
+            guardexp->v.func->arguments = argumentListFactory.CreateList();
             auto arg = Allocate<Argument>();
             arg->tp = &stdpointer;
             arg->exp = guard->left;

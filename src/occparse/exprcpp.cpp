@@ -928,7 +928,7 @@ bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* func
                         arg3->tp = &stdpointer;
                         arg4->exp = newrtti ? MakeExpression(ExpressionNode::global_, newrtti) : MakeIntExpression(ExpressionNode::c_i_, 0);
                         arg4->tp = &stdpointer;
-                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments = argumentListFactory.CreateList();
                         funcparams->arguments->push_back(arg1);
                         funcparams->arguments->push_back(arg2);
                         funcparams->arguments->push_back(arg3);
@@ -1370,7 +1370,7 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
                 val->sb->allocate = true;
                 localNameSpace->front()->syms->Add(val);
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
-                funcparams->arguments = initListListFactory.CreateList();
+                funcparams->arguments = argumentListFactory.CreateList();
                 funcparams->arguments->push_back(arg);
                 funcparams->arguments->push_back(arg2);
                 funcparams->sp = sym;
@@ -1651,7 +1651,7 @@ bool insertOperatorFunc(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESS
         }
         if (one || two)
         {
-            funcparams->arguments = initListListFactory.CreateList();
+            funcparams->arguments = argumentListFactory.CreateList();
             if (one)
                 funcparams->arguments->push_back(one);
             if (two)
@@ -1872,7 +1872,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
         sza->exp = sz;
         sza->tp = &stdint;
         if (!placement->arguments)
-            placement->arguments = initListListFactory.CreateList();
+            placement->arguments = argumentListFactory.CreateList();
         placement->arguments->push_front(sza);
     }
     else
@@ -2129,7 +2129,7 @@ LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
     one = Allocate<Argument>();
     one->exp = exp1;
     one->tp = &stdpointer;
-    funcparams->arguments = initListListFactory.CreateList();
+    funcparams->arguments = argumentListFactory.CreateList();
     funcparams->arguments->push_back(one);
     funcparams->ascall = true;
     s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, nullptr, true, false, flags);

@@ -2494,7 +2494,7 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
             SYMBOL* instance;
             auto hr = tp->BaseType()->syms->begin();
             auto hre = tp->BaseType()->syms->end();
-            funcparams->arguments = initListListFactory.CreateList();
+            funcparams->arguments = argumentListFactory.CreateList();
             funcparams->templateParams = templateParams->front().second->bySpecialization.types;
             funcparams->ascall = true;
             if (templateParams->front().second->bySpecialization.types)

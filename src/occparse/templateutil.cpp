@@ -798,7 +798,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                                     if (arg->tp->IsVolatile())
                                         tp = Type::MakeType(BasicType::volatile_, tp);
                                     if (!rv)
-                                        rv = initListListFactory.CreateList();
+                                        rv = argumentListFactory.CreateList();
                                     auto arg1 = Allocate<Argument>();
                                     arg1->tp = tp;
                                     arg1->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
@@ -821,7 +821,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                             arg1->tp = tp;
                         }
                         if (!rv)
-                            rv = initListListFactory.CreateList();
+                            rv = argumentListFactory.CreateList();
                         rv->push_back(arg1);
                     }
                 }
@@ -830,7 +830,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                     auto arg1 = Allocate<Argument>();
                     *arg1 = *arg;
                     if (!rv)
-                        rv = initListListFactory.CreateList();
+                        rv = argumentListFactory.CreateList();
                     rv->push_back(arg1);
                 }
             }
@@ -861,7 +861,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                             auto arg1 = Allocate<Argument>();
                             *arg1 = *arg;
                             if (!rv)
-                                rv = initListListFactory.CreateList();
+                                rv = argumentListFactory.CreateList();
                             rv->push_back(arg1);
                             if (arg1->exp->type == ExpressionNode::callsite_)
                             {
@@ -952,7 +952,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                         if (arg1->tp == nullptr)
                             arg1->tp = &stdany;
                         if (!rv)
-                            rv = initListListFactory.CreateList();
+                            rv = argumentListFactory.CreateList();
                         rv->push_back(arg1);
                     }
                 }
@@ -961,7 +961,7 @@ static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
                     auto arg1 = Allocate<Argument>();
                     *arg1 = *arg;
                     if (!rv)
-                        rv = initListListFactory.CreateList();
+                        rv = argumentListFactory.CreateList();
                     rv->push_back(arg1);
                 }
             }

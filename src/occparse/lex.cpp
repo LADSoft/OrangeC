@@ -200,6 +200,7 @@ KeywordData keywords[] = {
     {"__asm", 5, Keyword::asm_, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"__atomic_flag_test_set", 22, Keyword::atomic_flag_test_set_, 0, TT_VAR},
     {"__atomic_flag_clear", 19, Keyword::atomic_flag_clear_, 0, TT_VAR},
+    {"__builtin_constexpr", 19, Keyword::builtin_constexpr_, 0, (unsigned long)TT_DECLARE},
     {"__c11_atomic_init", 17, Keyword::c11_atomic_init_, 0, TT_VAR},
     {"__c11_atomic_thread_fence", 25, Keyword::c11_atomic_thread_fence_, 0, TT_VAR},
     {"__c11_atomic_signal_fence", 25, Keyword::c11_atomic_signal_fence_, 0, TT_VAR},

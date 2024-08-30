@@ -581,7 +581,7 @@ bool constructedInt(LexList* lex, SYMBOL* funcsp)
     if (cont)
     {
         tp = TypeGenerator::UnadornedType(lex, funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, false,
-                           false, false, false);
+                           false, nullptr, false);
         lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
         if (tp->IsInt())
         {
@@ -699,7 +699,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     (*lst)->back().second->lref = false;
                                 }
                             }
-                            if (inTemplateSpecialization && !tp->templateParam->second->packed)
+                            if (inTemplateSpecialization && !tp->templateParam->second->packed && (!definingTemplate || instantiatingTemplate))
                                 error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
                         }
                         else if (tp->type == BasicType::templateparam_)
@@ -790,7 +790,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                 }
                 else if (itorig != iteorig && itorig->second->packed)
                 {
-                    if (first)
+                    if (first || (*lst && ((*lst)->empty() || !(*lst)->back().second->packed)))
                     {
                         if (!*lst)
                             *lst = templateParamPairListFactory.CreateList();
@@ -1681,11 +1681,19 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 lex = nestedPath(lex, &strsym, &nsv, nullptr, false, StorageClass::global_, false, 0);
                 if (strsym)
                 {
+                    Linkage linkage, linkage2, linkage3;
                     if (strsym->tp->type == BasicType::templateselector_)
                     {
                         sp = sym = templateParamId(strsym->tp, strsym->sb->templateSelector->back().name, 0);
                         lex = getsym();
                         tp = strsym->tp;
+                        lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
+                        // get type qualifiers
+                        if (!ISID(lex) && !MATCHKW(lex, Keyword::ellipse_))
+                        {
+                            tp = TypeGenerator::BeforeName(lex, funcsp, tp, &sp, nullptr, nullptr, false, StorageClass::cast_, &linkage, &linkage2, &linkage3,
+                                nullptr, false, false, true, false); /* fixme at file scope init */
+                        }
                         goto non_type_join;
                     }
                     else if (ISID(lex))
@@ -1706,6 +1714,13 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                         last->push_back(TEMPLATESELECTOR{});
                         last->back().name = litlate(lex->data->value.s.a);
                         lex = getsym();
+                        lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
+                        // get type qualifiers
+                        if (!ISID(lex) && !MATCHKW(lex, Keyword::ellipse_))
+                        {
+                            tp = TypeGenerator::BeforeName(lex, funcsp, tp, &sp, nullptr, nullptr, false, StorageClass::cast_, &linkage, &linkage2, &linkage3,
+                                nullptr, false, false, true, false); /* fixme at file scope init */
+                        }
                         goto non_type_join;
                     }
                     else
@@ -1795,6 +1810,7 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                 {
                     error(ERR_CANNOT_USE_DEFAULT_WITH_PACKED_TEMPLATE_PARAMETER);
                 }
+                lex = getsym();
                 arg.second->byTemplate.txtdflt = TemplateArgGetDefault(&lex, false);
                 if (!arg.second->byTemplate.txtdflt)
                 {
@@ -1823,7 +1839,7 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             noTypeNameError++;
             tp = TypeGenerator::UnadornedType(lex, funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true,
-                               false, false, false);
+                               false, nullptr, false);
             noTypeNameError--;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             // get type qualifiers
@@ -2884,6 +2900,9 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
         sym = sp;
         sym->sb->parentClass = strSym;
         SetLinkerNames(sym, Linkage::cdecl_);
+        if (tp->BaseType()->sp)
+            InitializeFunctionArguments(tp->BaseType()->sp);
+        tp->BaseType()->btp->InstantiateDeferred();
         if (!sp->tp->BaseType()->btp->ExactSameType(tp->BaseType()->btp))
         {
             errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
@@ -2927,7 +2946,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
                     break;
                 else
                     tmpl = tmpl->sb->parentClass;
-            if ((tmpl && spi->sb->storage_class == StorageClass::static_) || spi->sb->storage_class == StorageClass::external_)
+            if ((tmpl && spi->sb->storage_class == StorageClass::static_ || spi->sb->storage_class == StorageClass::constant_) || spi->sb->storage_class == StorageClass::external_)
             {
                 TemplateDataInstantiate(spi, true, isExtern);
                 spi->sb->dontinstantiate = isExtern;
@@ -3181,7 +3200,7 @@ LexList* TemplateDeclaration(LexList* lex, SYMBOL* funcsp, AccessLevel access, S
             int consdest = 0;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             tp = TypeGenerator::UnadornedType(lex, funcsp, tp, &strSym, true, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, nullptr, false, true,
-                               false, false, false);
+                               false, nullptr, false);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             tp = TypeGenerator::BeforeName(lex, funcsp, tp, &sym, &strSym, &nsv, true, StorageClass::cast_, &linkage, &linkage2, &linkage3, nullptr,
                                 false, consdest, false, false);

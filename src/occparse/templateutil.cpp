@@ -440,39 +440,6 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
     }
     return rv;
 }
-static void checkTemplateDefaults(std::list<TEMPLATEPARAMPAIR>* args)
-{
-    SYMBOL* last = nullptr;
-    if (args)
-    {
-        for (auto&& arg : *args)
-        {
-            void* txtdflt = nullptr;
-            switch (arg.second->type)
-            {
-                case TplType::template_:
-                    checkTemplateDefaults(arg.second->byTemplate.args);
-                    txtdflt = arg.second->byTemplate.txtdflt;
-                    break;
-                case TplType::typename_:
-                    txtdflt = arg.second->byClass.txtdflt;
-                    break;
-                case TplType::int_:
-                    txtdflt = arg.second->byNonType.txtdflt;
-                    break;
-                default:
-                    break;
-            }
-            if (last && !txtdflt)
-            {
-                errorsym(ERR_MISSING_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, last);
-                break;
-            }
-            if (txtdflt)
-                last = arg.first;
-        }
-    }
-}
 bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, std::list<TEMPLATEPARAMPAIR>* special, SYMBOL* sp)
 {
     if (param && special)
@@ -492,7 +459,7 @@ bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, st
             }
             else if (itp->second->type == TplType::template_)
             {
-                if (!exactMatchOnTemplateParams(itp->second->byTemplate.args, its->second->byTemplate.dflt->templateParams))
+                if (!exactMatchOnTemplateParams(itp->second->byTemplate.args, its->second->byTemplate.args))
                     errorsym(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
             }
             else if (itp->second->type == TplType::int_)
@@ -595,7 +562,6 @@ std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEP
             else
             {
                 rv = mergeTemplateDefaults(old, sym, definition);
-                checkTemplateDefaults(rv);
             }
         }
         else
@@ -606,7 +572,6 @@ std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEP
     else
     {
         rv = sym;
-        checkTemplateDefaults(sym);
     }
     checkMultipleArgs(sym);
     return rv;
@@ -1210,6 +1175,10 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
 {
     EXPRESSION* funcList[100];
     int count = 0;
+    if (definingTemplate && !instantiatingTemplate)
+    {
+        return nullptr;
+    }
     switch (exp->type)
     {
         case ExpressionNode::dot_:

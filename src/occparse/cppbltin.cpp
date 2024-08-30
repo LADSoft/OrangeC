@@ -75,6 +75,10 @@ void ParseBuiltins(void)
         "__make_integer_seq_cls::type; "
         "class __type_pack_element_cls; "
         "template <size_t _Idx, class ..._Types> using __type_pack_element = __type_pack_element_cls::type; "
+        "class __decay_cls; "
+        "template <class _T> using __decay = __decay_cls::type; "
+        "class __remove_reference_cls; "
+        "template <class _T> using __remove_reference_t = __remove_reference_cls::type; "
         "extern \"C\" {"
         "[[noreturn]] void __rtllinkage __builtin_unreachable(); "
         "constexpr int __rtllinkage __builtin_ctz(unsigned x);"
@@ -98,7 +102,7 @@ void ParseBuiltins(void)
         // this next is for libcpp version c++17...   we are simplifying and assuming that on all architectures,
         // an int and everything below it is always lock free.    Since this does the comparison based on type size
         // it will also catch longs on those architectures where sizeof(long) == sizeof(int)
-        "constexpr bool __atomic_always_lock_free(int x, int y) { return x <= " +
+        "constexpr bool __atomic_always_lock_free(int x, int y) { (void)y; return x <= " +
         std::to_string(getSize(BasicType::unsigned_)) +
         "; };"
         "}";

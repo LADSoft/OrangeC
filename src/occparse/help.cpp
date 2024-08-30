@@ -1080,6 +1080,8 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
 EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest)
 {
+    if (!init)
+        return MakeIntExpression(ExpressionNode::c_i_, 0);
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
     EXPRESSION *exp = nullptr, **expp;

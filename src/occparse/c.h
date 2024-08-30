@@ -188,7 +188,7 @@ private:
         va_list_, va_typeof_, unmanaged_, uuid_, uuidof_,
         string_, object_, native_, cpblk_, initblk_, property_, entrypoint_,
         seh_try_, seh_catch_, seh_finally_, seh_fault_, declspec_, rtllinkage_, attribute_,
-        offsetof_, underlying_type_, volatile__,
+        offsetof_, underlying_type_, volatile__, builtin_constexpr_, 
         /* These next are generic register names */
         D0_, D1_, D2_, D3_, D4_, D5_, D6_, D7_, D8_, D9_, DA_,
         DB_, DC_, DD_, DE_, DF_, A0_, A1_, A2_, A3_, A4_,
@@ -668,6 +668,7 @@ typedef struct sym
         unsigned allocaUsed : 1;
         unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
         unsigned constexpression : 1;  /* declared with constexpression */
+        unsigned builtin_constexpression : 1;  /* builtin declared with constexpression */
         unsigned addressTaken : 1;     /* address taken */
         unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
         unsigned usingTypedef : 1;     /* typedef defined as a 'using' statement */

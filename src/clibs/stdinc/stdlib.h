@@ -373,6 +373,19 @@ extern _CRTIMP size_t __cdecl _msize(void *);
 #endif
 
 #ifdef __cplusplus
+    long double _RTL_FUNC _IMPORTMM fabsl(long double __x);
+    long _RTL_CONSTEXPR __builtin_labs(long __x) { return labs(__x); }
+    long long _RTL_CONSTEXPR __builtin_llabs(long long __x) { return llabs(__x); }
+#ifndef _FABS_
+#define _FABS_
+    float _RTL_FUNC _IMPORTMM fabsf(float __x);
+    double _RTL_FUNC _IMPORTMM fabs(double __x);
+    inline float _RTL_CONSTEXPR __builtin_fabsf(float __x) { return fabsf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_fabs(double __x) { return fabs( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_fabsl(long double __x) { return fabsl( __x); }
+#endif
+#endif
+#ifdef __cplusplus
 };
 #endif
 

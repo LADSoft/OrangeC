@@ -697,9 +697,35 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                     SYMBOL* sp1 = sp;
                                     if (sp->sb->storage_class == StorageClass::typedef_)
                                     {
-                                        sp = GetTypeAliasSpecialization(sp, current);
-                                        if (sp->tp->IsStructured())
-                                            sp = sp->tp->BaseType()->sp;
+                                        if (sp->tp->type == BasicType::templatedecltype_)
+                                        {
+                                            auto tp = LookupTypeFromExpression(sp->tp->templateDeclType,nullptr, false);
+                                            if (!tp)
+                                            {
+                                                sp = nullptr;
+                                            }
+                                            else 
+                                            {
+                                                tp->InstantiateDeferred();
+                                                if (tp->IsStructured())
+                                                {
+                                                    sp = tp->BaseType()->sp;
+                                                }
+                                                else
+                                                {
+                                                    sp1 = CopySymbol(sp);
+                                                    sp1->sb->mainsym = sp;
+                                                    sp1->tp = tp;
+                                                    sp = sp1;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            sp = GetTypeAliasSpecialization(sp, current);
+                                            if (sp->tp->IsStructured())
+                                                sp = sp->tp->BaseType()->sp;
+                                        }
                                     }
                                     else
                                     {
@@ -3217,7 +3243,7 @@ void InitializeFunctionArguments(SYMBOL* sym, bool initialize)
             a->tp = a->tp->InitializeDeferred();
         }
     }
-    if (strchr(sym->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
+    if (!sym->sb->decoratedName || strchr(sym->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
         SetLinkerNames(sym, Linkage::cpp_);
 
 }
@@ -3734,7 +3760,7 @@ bool sameTemplateSelector(Type* tnew, Type* told)
         ++tsn;
         ++tso;
         // this is kinda loose, ideally we ought to go through template parameters/decltype expressions
-        // looking for equality...  
+        // looking for equality...
         if (tsn->isTemplate || tso->isTemplate)
             return false;
         if (tsn->isDeclType || tso->isDeclType)
@@ -4874,7 +4900,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
     if (f)
     {
         if (f->arguments)
-            a = *f->arguments;
+            a = std::list<Argument*>(*f->arguments);
     }
     else
         itt = atp->syms->begin();
@@ -6069,7 +6095,13 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         {
             SYMBOL* spt = args->thistp->BaseType()->btp->BaseType()->sp;
             if (spt->templateParams)
+            {
                 enclosingDeclarations.Add(spt->templateParams);
+            }
+        }
+        if (args->templateParams)
+        {
+            enclosingDeclarations.Add(args->templateParams);
         }
     }
     if (!sp || sp->sb->storage_class == StorageClass::overloads_)

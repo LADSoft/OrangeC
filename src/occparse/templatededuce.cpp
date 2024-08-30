@@ -730,6 +730,11 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
         Type* Pb = P->BaseType();
         if (Ab->IsRef())
             Ab = Ab->btp->BaseType();
+        if (P->type == BasicType::typedef_ && P->sp->templateParams && P->sp->templateParams->size() == 2)
+        {
+            if (P->sp->templateParams->back().second->type == TplType::typename_)
+                return DeduceTemplateParam(&P->sp->templateParams->back(), P, A, exp, change);
+        }
         if (Pb->IsStructured() && Pb->sp->sb->templateLevel && Pb->sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
             Ab->IsStructured())
         {
@@ -1121,6 +1126,8 @@ void ScrubTemplateValues(SYMBOL* func)
         Type* tp = sym->tp;
         while (tp->IsRef() || tp->IsPtr())
             tp = tp->BaseType()->btp;
+        if (tp->type == BasicType::typedef_ && tp->sp->templateParams)
+            ClearArgValues(tp->sp->templateParams, tp->sp->sb->specialized);
         if (tp->IsStructured() && tp->BaseType()->sp->templateParams && !tp->BaseType()->sp->sb->instantiated &&
             !tp->BaseType()->sp->sb->declaring)
         {

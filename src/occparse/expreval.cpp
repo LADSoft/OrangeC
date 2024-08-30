@@ -1259,7 +1259,7 @@ bool eval_binary_inequality(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resul
         else if ((*resulttp)->IsComplex())
             error(ERR_ILL_USE_OF_COMPLEX);
     }
-    else if ((*resulttp)->IsInt() && righttp->IsInt())
+    else if ((*resulttp)->IsInt() && righttp->IsInt() && (!definingTemplate || instantiatingTemplate))
     {
         if (((*resulttp)->IsUnsigned() && !righttp->IsUnsigned()) || (righttp->IsUnsigned() && !(*resulttp)->IsUnsigned()))
             errorstr(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);

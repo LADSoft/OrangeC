@@ -2753,7 +2753,7 @@ static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
 }
 LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
                                   StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
-                                  bool* isExplicit, bool* constexpression, Type** tp, Linkage* linkage, Linkage* linkage2,
+                                  bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage, Linkage* linkage2,
                                   Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
                                   bool* asFriend)
 {
@@ -2761,7 +2761,7 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
     bool first = true;
     bool flaggedTypedef = false;
     *blocked = false;
-    *constexpression = false;
+    *constexpression = *builtin_constexpr =  false;
 
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
            (!foundType && TypeGenerator::StartOfType(lex, nullptr, assumeType)) || MATCHKW(lex, Keyword::complx_) ||
@@ -2776,6 +2776,11 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
             if (MATCHKW(lex, Keyword::constexpr_))
             {
                 *constexpression = true;
+            }
+            if (MATCHKW(lex, Keyword::builtin_constexpr_))
+            {
+                *constexpression = true;
+                *builtin_constexpr = true;
             }
             lex = getsym();
         }   
@@ -2798,8 +2803,7 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
                 foundType = true;
                 *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
                                    notype, defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true,
-                                   false,
-                                   asFriend ? *asFriend : false, *constexpression);
+                                   false, asFriend, *constexpression);
             }
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
                 *storage_class = StorageClass::static_;
@@ -2813,8 +2817,7 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
             foundType = true;
             *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
                                defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true, false,
-                               asFriend ? *asFriend : false,
-                               *constexpression);
+                               asFriend, *constexpression);
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
                 *storage_class = StorageClass::static_;
         }
@@ -3038,7 +3041,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
         else
         {
             bool blocked;
-            bool constexpression;
+            bool constexpression, builtin_constexpression;
             bool defd = false;
             bool notype = false;
             bool isExplicit = false;
@@ -3047,7 +3050,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             int consdest = CT_NONE;
             declaringInitialType++;
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
-                                    &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
+                                    &isExplicit, &constexpression, &builtin_constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);
             declaringInitialType--;
             bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::openbr_);
@@ -3399,6 +3402,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             }
                         }
                         sp->sb->constexpression = constexpression;
+                        sp->sb->builtin_constexpression = builtin_constexpression;
                         sp->sb->access = access;
                         sp->sb->isExplicit = isExplicit;
                         sp->sb->storage_class = storage_class;
@@ -3539,7 +3543,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 else
                                 {
                                     ssp = enclosingDeclarations.GetFirst();
-                                    if (ssp && /*!ssp->tp->syms &&*/ ssp->sb->templateLevel)
+                                    if (ssp && ssp->sb->templateLevel)
                                     {
                                         SYMBOL* ssp2 = FindSpecialization(ssp, ssp->templateParams);
                                         if (ssp2)
@@ -4355,7 +4359,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         sg.BodyGen();
                                     }
                                 }
-                                if (sp->sb->constexpression)
+                                if (sp->sb->constexpression && !sp->sb->builtin_constexpression)
                                 {
                                     sp->sb->attribs.inheritable.isInline = true;
                                     if (sp->sb->nonConstVariableUsed)

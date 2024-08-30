@@ -598,6 +598,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         sym = sp1;
                         *tp = sym->tp;
                     }
+                    else if (definingTemplate && !instantiatingTemplate)
+                        *tp = &stdint;
                     else
                         errorsym(ERR_NO_TEMPLATE_MATCHES, sym);
                 }
@@ -1110,6 +1112,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 auto exp4 = relptr(*exp, offset);
                 if ((*tp)->IsRef())
                 {
+                    auto type = (*tp)->BaseType()->type;
                     Type* tp1 = *tp;
                     deref(*tp, exp);
                     while (tp1->IsRef())
@@ -1388,7 +1391,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         bool notype = false;
         Type* tp1 = nullptr;
         lex = getsym();
-        tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false, false);
+        tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1436,7 +1439,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             bool defd = false;
             bool notype = false;
             Type* tp1 = nullptr;
-            tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false, false);
+            tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1460,7 +1463,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 {
                     lex = getsym();
                     tp1 = nullptr;
-                    tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false,
+                    tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr,
                                        false);
                     if (!tp1)
                     {
@@ -2369,11 +2372,17 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                 ++it;
         }
     if (noproto)
+    {
         errorsym(ERR_CALL_FUNCTION_NO_PROTO, params->sp);
+    }
     else if (toolong)
+    {
         errorsym(ERR_PARAMETER_LIST_TOO_LONG, params->sp);
+    }
     else if (tooshort)
+    {
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
+    }
 }
 static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting, bool allowPack,
                                 bool toErr, int flags)
@@ -4859,6 +4868,27 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
             }
             if (sym && sym->tp->IsStructured())
             {
+                if (MATCHKW(lex, Keyword::lt_))
+                {
+                    std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                    lex = GetTemplateArguments(lex, funcsp, sym, &lst);
+                    if (sym->sb->storage_class == StorageClass::typedef_)
+                    {
+                        auto sp1 = GetTypeAliasSpecialization(sym, lst);
+                        if (sp1)
+                            sym = sp1;
+                        if (sym->tp->IsStructured())
+                            sym = sym->tp->BaseType()->sp;
+                    }
+                    else
+                    {
+                        auto sp1 = GetClassTemplate(sym, lst, false);
+                        if (sp1)
+                            sym = sp1;
+                    }
+                    sym->tp->InitializeDeferred();
+
+                }
                 if (needkw(&lex, Keyword::comma_))
                 {
                     *tp = sym->tp;
@@ -7947,7 +7977,7 @@ void GetLogicalDestructors(std::list<struct expr*>** rv, EXPRESSION* cur)
                 (*rv)->push_front(sym->sb->dest->front()->exp);
             }
         }
-        else if (cur->v.func->sp->sb->isConstructor)
+        else if (cur->v.func->sp && cur->v.func->sp->sb->isConstructor)
         {
             // it is going to be a local symbol if we get here...
             EXPRESSION* exp = cur->v.func->thisptr;

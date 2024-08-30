@@ -3431,10 +3431,15 @@ bool StatementGenerator::ResolvesToDeclaration(LexList* lex, bool structured)
     if (MATCHKW(lex, Keyword::openpa_))
     {
         bool hasStar = false;
+        bool hasThis = false;
         int level = 1;
         lex = getsym();
         while (level && lex != nullptr && !MATCHKW(lex, Keyword::semicolon_))
         {
+            if (hasStar && MATCHKW(lex, Keyword::this_))
+            {
+                hasThis = true;
+            }
             if (MATCHKW(lex, Keyword::openpa_))
             {
                 level++;
@@ -3449,7 +3454,7 @@ bool StatementGenerator::ResolvesToDeclaration(LexList* lex, bool structured)
             }
             lex = getsym();
         }
-        if (MATCHKW(lex, Keyword::assign_) || ((hasStar || !structured) && MATCHKW(lex, Keyword::openpa_)) || MATCHKW(lex, Keyword::openbr_))
+        if (MATCHKW(lex, Keyword::assign_) || ((hasStar || !structured) && !hasThis && MATCHKW(lex, Keyword::openpa_)) || MATCHKW(lex, Keyword::openbr_))
         {
             prevsym(placeholder);
             return true;

@@ -293,6 +293,8 @@ int classRefCount(SYMBOL* base, SYMBOL* derived)
 static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
 {
     bool rv = false;
+    if (oldFunc->sb->isDestructor && newFunc->sb->isDestructor)
+        return true;
     InitializeFunctionArguments(oldFunc);
     InitializeFunctionArguments(newFunc);
     rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp, false);
@@ -626,7 +628,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
                             sym->sb->vtabEntries->front()->virtuals->push_back(cur1);
                         }
                     }
-                    if (cur1->sb->isoverride && !found && !isfirst)
+                    if (cur1->sb->isoverride && !found && !isfirst && (!definingTemplate || instantiatingTemplate))
                     {
                         errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur1);
                     }
@@ -1159,8 +1161,8 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         restart:
             if (bcsym && bcsym->tp->type == BasicType::templateselector_)
             {
-                if (!definingTemplate && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
-                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+//                if (!definingTemplate && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
+//                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
                 if (MATCHKW(lex, Keyword::lt_))
                 {
                     inTemplateSpecialization++;
@@ -3281,7 +3283,43 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     sp->sb->parentClass = enclosingDeclarations.GetFirst();
                 sp->sb->usingTypedef = true;
                 SetLinkerNames(sp, Linkage::cdecl_);
-                InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
+                // note that we can redeclare a using statement...
+                // so look it up and if it exists make sure the types match...
+                SYMBOL* spi;
+                if (storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_)
+                {
+                    spi = localNameSpace->front()->syms->Lookup(sp->name);
+                }
+                else
+                {
+                    auto ssp = enclosingDeclarations.GetFirst();
+                    if (ssp && ssp->sb->templateLevel)
+                    {
+                        SYMBOL* ssp2 = FindSpecialization(ssp, ssp->templateParams);
+                        if (ssp2)
+                            ssp = ssp2;
+                    }
+                    if (ssp && ssp->tp->syms)
+                    {
+                        spi = ssp->tp->syms->Lookup(sp->name);
+                    }
+                    else
+                    {
+                        spi = globalNameSpace->front()->syms->Lookup(sp->name);
+                    }
+                }
+                if (spi)
+                {
+                    if (!spi->tp->ExactSameType(sp->tp) && !sameTemplate(spi->tp, sp->tp))
+                    {
+                        errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
+                    }
+                    sp = spi;
+                }
+                else
+                {
+                    InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
+                }
                 if (sp_out)
                     *sp_out = sp;
                 basisAttribs = oldAttribs;

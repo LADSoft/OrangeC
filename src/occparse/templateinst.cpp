@@ -488,7 +488,7 @@ static Type* SynthesizeStructure(Type* tp_in, std::list<TEMPLATEPARAMPAIR>* encl
     }
     return nullptr;
 }
-Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt)
+Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt, bool arg)
 {
     auto oldnoExcept = noExcept;
     Type *rv = &stdany, **last = &rv;
@@ -507,6 +507,53 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                         tp = sp->tp;
                     else
                         tp = tp->btp;  // safety
+                }
+                else if (arg && tp->sp->templateParams  && (!definingTemplate || instantiatingTemplate))
+                {
+                    std::list<Type*> lst;
+                    for (auto&& tpl : *tp->sp->templateParams)
+                    {
+                        if (tpl.second->packed)
+                        {
+                            if (tpl.second->byPack.pack)
+                                for (auto&& t : *tpl.second->byPack.pack)
+                                {
+                                    lst.push_back(t.second->byClass.dflt);
+                                    t.second->byClass.dflt = t.second->byClass.val;
+                                }
+                        }
+                        else
+                        {
+                            lst.push_back(tpl.second->byClass.dflt);
+                            tpl.second->byClass.dflt = tpl.second->byClass.val;
+                        }
+                    }
+                    auto sp1 = ParseLibcxxAliases(tp->sp, tp->sp->templateParams);
+                    for (auto&& tpl : *tp->sp->templateParams)
+                    {
+                        if (tpl.second->packed)
+                        {
+                            if (tpl.second->byPack.pack)
+                                for (auto&& t : *tpl.second->byPack.pack)
+                                {
+                                    t.second->byClass.dflt = lst.front();
+                                    lst.pop_front();
+                                }
+                        }
+                        else
+                        {
+                            tpl.second->byClass.dflt = lst.front();
+                            lst.pop_front();;
+                        }
+                    }
+                    if (sp1 && sp1 != tp->sp)
+                    {
+                        tp = sp1->tp;
+                    }
+                    else
+                    {
+                        tp = tp->btp;
+                    }
                 }
                 else
                 {
@@ -635,6 +682,8 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                                     // this assumes there will only be one pack...
                                     if (args->size() && args->back().second->packed)
                                     {
+                                        if (!args->back().second->byPack.pack)
+                                            args->back().second->byPack.pack = templateParamPairListFactory.CreateList();
                                         args->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR(nullptr, current->second));
                                     }
                                     else
@@ -949,7 +998,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                                 {
                                     SYMBOL* clone = CopySymbol(sp);
                                     Type* tp1;
-                                    clone->tp = SynthesizeType(tpx.second->byClass.val, enclosing, alt);
+                                    clone->tp = SynthesizeType(tpx.second->byClass.val, enclosing, alt, true);
                                     if (!first)
                                     {
                                         clone->name = clone->sb->decoratedName = AnonymousName();
@@ -983,7 +1032,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                             else
                             {
                                 SYMBOL* clone = CopySymbol(sp);
-                                clone->tp = SynthesizeType(&stdany, enclosing, alt);
+                                clone->tp = SynthesizeType(&stdany, enclosing, alt, true);
                                 clone->tp->templateParam = sp->tp->templateParam;
                                 func->syms->Add(clone);
                             }
@@ -995,7 +1044,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                         Type* tp1;
                         func->syms->Add(clone);
                         auto xx = clone->tp;
-                        clone->tp = SynthesizeType(clone->tp, enclosing, alt);
+                        clone->tp = SynthesizeType(clone->tp, enclosing, alt, true);
                         if (clone->tp->type != BasicType::void_ && clone->tp->type != BasicType::any_)
                         {
                             clone->tp = Type::MakeType(BasicType::derivedfromtemplate_, clone->tp);
@@ -3238,7 +3287,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             }
                             else if (itParams->second->type == TplType::template_)
                             {
-                                if (itParams->second->byClass.dflt->type == BasicType::templateparam_)
+                                if (itParams->second->byClass.dflt && itParams->second->byClass.dflt->type == BasicType::templateparam_)
                                 {
                                     if (!DeduceTemplateParam(itParams->second->byClass.dflt->templateParam, nullptr,
                                                              itParams->second->byTemplate.dflt->tp, nullptr, true))
@@ -3434,29 +3483,33 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
             itParams = params->begin();
             if (itParams->second->type == TplType::new_)
                 ++itParams;
-            auto itArgs = args->begin();
-            for (; itParams != params->end() && itArgs != args->end(); ++itParams, ++itArgs)
+            decltype(args->begin()) itArgs;
+            if (args)
             {
-                if (itParams->second->packed)
-                    packed = true;
-                switch (itParams->second->type)
+                itArgs = args->begin();
+                for (; itParams != params->end() && itArgs != args->end(); ++itParams, ++itArgs)
                 {
+                    if (itParams->second->packed)
+                        packed = true;
+                    switch (itParams->second->type)
+                    {
                     case TplType::typename_:
                         if (itParams->second->byClass.dflt && !itParams->second->packed &&
                             itParams->second->byClass.dflt->type != BasicType::templateparam_ &&
                             (!itArgs->second->byClass.dflt ||
-                             !templateCompareTypes(itParams->second->byClass.dflt, itArgs->second->byClass.dflt, true)))
+                                !templateCompareTypes(itParams->second->byClass.dflt, itArgs->second->byClass.dflt, true)))
                             rv = nullptr;
                         break;
                     case TplType::int_: {
                         if (itParams->second->byNonType.dflt &&
                             (!itArgs->second->byNonType.dflt ||
-                             !templateCompareTypes(itParams->second->byNonType.tp, itArgs->second->byNonType.tp, true)))
+                                !templateCompareTypes(itParams->second->byNonType.tp, itArgs->second->byNonType.tp, true)))
                             rv = nullptr;
                     }
-                    break;
+                                      break;
                     default:
                         break;
+                    }
                 }
             }
             if (itParams != params->end())
@@ -3548,6 +3601,10 @@ static bool checkArgType(Type* tp, bool checkDeduced, bool checkDeclaring)
             return false;
         if (!checkArgType(tp->BaseType()->btp, checkDeduced, checkDeclaring))
             return false;
+    }
+    else if (tp->type == BasicType::typedef_ && tp->sp->templateParams)
+    {
+        return allTemplateArgsSpecified(tp->sp, tp->sp->templateParams, checkDeduced, checkDeclaring);
     }
     return true;
 }
@@ -4242,6 +4299,11 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
     origList = Allocate<SYMBOL*>(n);
     origList[0] = sp;
     spList[0] = ValidateClassTemplate(sp, unspecialized, args);
+    if (!spList[0])
+    {
+        diag("splist[0] == 0");
+        return nullptr;
+    }
     tpi = &spList[0]->tp;
     while ((*tpi)->IsRef() || (*tpi)->IsPtr())
         tpi = &(*tpi)->BaseType()->btp;
@@ -4763,9 +4825,16 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
         {
             TEMPLATEPARAMPAIR* rv;
             if (exp->type == ExpressionNode::templateparam_)
-                rv = TypeAliasSearch(exp->v.sp->tp->BaseType()->templateParam->first->name, false);
+            {
+                if (exp->v.sp->tp->BaseType()->templateParam)
+                    rv = TypeAliasSearch(exp->v.sp->tp->BaseType()->templateParam->first->name, false);
+                else
+                    rv = nullptr;
+            }
             else
+            {
                 rv = TypeAliasSearch(exp->v.sp->name, false);
+            }
             if (rv)
             {
                 if (rv->second->type == TplType::int_)
@@ -5084,7 +5153,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
         auto ittps = tps->begin();
         for (auto&& tpl : *temp)
         {
-            tpr->push_back(TEMPLATEPARAMPAIR{tpl.first, Allocate<TEMPLATEPARAM>()});
+            tpr->push_back(TEMPLATEPARAMPAIR{ tpl.first, Allocate<TEMPLATEPARAM>() });
             *tpr->back().second = *tpl.second;
             if (tpr->back().second->packed)
             {
@@ -5719,6 +5788,33 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
     }
     return args;
 }
+SYMBOL* ParseLibcxxAliases(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
+{
+    if (sp->name[0] == '_' && sp->name[1] == '_')
+    {
+        if (sp->name[2] == 't' && strcmp(sp->name, "__type_pack_element") == 0)
+        {
+            return TypePackElement(sp, args);
+        }
+        if (sp->name[2] == 'm' && strcmp(sp->name, "__make_integer_seq") == 0)
+        {
+            return MakeIntegerSeq(sp, args);
+        }
+        if (sp->name[2] == 'd' && (strcmp(sp->name, "__decay") == 0 || strcmp(sp->name, "__decay_t") == 0))
+        {
+            return Decay(sp, args);
+        }
+        if (sp->name[2] == 'r' && strcmp(sp->name, "__remove_reference_t") == 0)
+        {
+            return RemoveReference(sp, args);
+        }
+        if (sp->name[2] == 'l' && strcmp(sp->name, "__libcpp_remove_reference_t") == 0)
+        {
+            return RemoveReference(sp, args);
+        }
+    }
+    return nullptr;
+}
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
     bool checked = false;
@@ -5732,7 +5828,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     {
         checked = true;
         old = args->front();
-        args->pop_front();
     }
     sp->tp->InstantiateDeferred();
     TemplateArgInstantiateDeferred(args);
@@ -5747,20 +5842,18 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     {
         enclosingDeclarations.Add(sp->sb->parentClass->templateParams);
     }
-    if (sp->name[0] == '_' && sp->name[1] == '_')
+    if (checked)
+        args->push_front(old);
+    auto sp1 = ParseLibcxxAliases(sp, args);
+    if (checked)
+        args->pop_front();
+    if (sp1)
     {
-        if (sp->name[2] == 't' && !strcmp(sp->name, "__type_pack_element"))
+        if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
         {
-            if (checked)
-                args->push_front(old);
-            return TypePackElement(sp, args);
+            enclosingDeclarations.Drop();
         }
-        if (sp->name[2] == 'm' && !strcmp(sp->name, "__make_integer_seq"))
-        {
-            if (checked)
-                args->push_front(old);
-            return MakeIntegerSeq(sp, args);
-        }
+        return sp1;
     }
     enclosingDeclarations.Add(args);
     Type* basetp = sp->tp->btp;
@@ -5841,21 +5934,58 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     }
     else if (basetp->type == BasicType::typedef_ || (basetp->IsStructured() && basetp->BaseType()->sp->sb->templateLevel))
     {
-        std::list<TEMPLATEPARAMPAIR>* newParams = GetTypeAliasArgs(sp, args, sp->templateParams, sp->sb->typeAlias);
-        if (basetp->type == BasicType::typedef_)
+        if (sp->sb->typeAlias)
         {
-            rv = GetTypeAliasSpecialization(basetp->sp, newParams);
+            std::list<TEMPLATEPARAMPAIR>* newParams = GetTypeAliasArgs(sp, args, sp->templateParams, sp->sb->typeAlias);
+            if (basetp->type == BasicType::typedef_)
+            {
+                rv = GetTypeAliasSpecialization(basetp->sp, newParams);
+            }
+            else
+            {
+                rv = GetClassTemplate(basetp->BaseType()->sp, newParams, false);
+            }
         }
         else
         {
-            rv = GetClassTemplate(basetp->BaseType()->sp, newParams, false);
+            rv = CopySymbol(sp);
+            rv->sb->mainsym = sp;
+            rv->tp = sp->tp->BaseType();
         }
     }
     else
     {
+        auto newval = sp->tp->btp;
+        // if we get here we don't have any args for an alias template
+        // so check to make sure at least that we can evaluate them...
+        for (auto t : *args)
+            if (t.second->packed)
+            {
+                if (t.second->byPack.pack)
+                {
+                    for (auto t1 : *t.second->byPack.pack)
+                    {
+                        if (!t1.second->byClass.dflt)
+                        {
+                            newval = &stdany;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    newval = &stdany;
+                    break;
+                }
+            }
+            else if (!t.second->byClass.dflt)
+            {
+                newval = &stdany;
+                break;
+            }
         rv = CopySymbol(sp);
         rv->sb->mainsym = sp;
-        rv->tp = rv->tp->btp;
+        rv->tp = newval;
         Type** tp = &rv->tp;
         while ((*tp)->IsPtr() || (*tp)->IsRef())
         {

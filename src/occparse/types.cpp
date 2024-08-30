@@ -638,7 +638,9 @@ bool Type::InstantiateDeferred(bool noErr)
 {
     if (!definingTemplate || instantiatingTemplate)
     {
-        auto tp = this->BaseType();
+        auto tp = this;
+        assert(tp);
+        tp = tp->BaseType();
         assert(tp);
         while (tp && tp->type != BasicType::templatedeferredtype_)
         {
@@ -947,6 +949,16 @@ bool Type::CompareTypes(Type* typ1, Type* typ2, int exact)
         if (s2->sb && s2->sb->mainsym)
             s2 = s2->sb->mainsym;
         return s1 == s2;
+    }
+    if (typ1->type == typ2->type && typ1->IsDeferred())
+    {
+        SYMBOL* s1 = typ1->sp;
+        SYMBOL* s2 = typ2->sp;
+        if (s1->sb && s1->sb->mainsym)
+            s1 = s1->sb->mainsym;
+        if (s2->sb && s2->sb->mainsym)
+            s2 = s2->sb->mainsym;
+        return s1 == s2 && exactMatchOnTemplateArgs(typ2->templateArgs, typ1->templateArgs);
     }
     if (typ1->type == typ2->type || (!exact && typ2->IsArithmetic() && typ1->IsArithmetic()))
         return typ1->bitintbits == typ2->bitintbits;
@@ -1452,7 +1464,7 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
 }
 void Type::ToString(char* buf, Type* typ)
 {
-    if (typ->IsFunction() || typ->IsFunctionPtr())
+    if (typ && (typ->IsFunction() || typ->IsFunctionPtr()))
     {
         while (typ->IsPtr())
             typ = typ->BaseType()->btp;
@@ -2502,7 +2514,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
 }
 Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
     Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
-    bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
+    bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool* asfriend,
     bool constexpression)
 {
     int oldDeclaringInitialType = declaringInitialType;
@@ -2881,7 +2893,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
             if (foundsigned || foundunsigned || type != BasicType::none_)
                 flagerror = true;
             declaringInitialType = 0;
-            lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend, storage_class, *linkage2_in, access, defd, constexpression);
+            lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend && *asfriend, storage_class, *linkage2_in, access, defd, constexpression);
             declaringInitialType = oldDeclaringInitialType;
             goto exit;
         case Keyword::enum_:
@@ -2980,14 +2992,14 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
             lex = getsym();
             underlying_type(&lex, funcsp, &tn);
             lex = backupsym();
+            break;
         }
-                                      break;
         default:
             break;
         }
         foundsomething = true;
         lex = getsym();
-        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3, nullptr);
+        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3, asfriend);
         if (linkage != Linkage::none_)
         {
             *linkage_in = linkage;
@@ -3039,7 +3051,7 @@ founddecltype:
                         declaringInitialType = oldDeclaringInitialType;
                         if (!parsingTrailingReturnOrUsing)
                         {
-                            if (definingTemplate && !instantiatingTemplate && !inTemplateHeader && !declaringInitialType)
+                            if (definingTemplate && !instantiatingTemplate && !inTemplateHeader && !declaringInitialType && !inTemplateArgs)
                             {
                                 sp1 = GetTypeAliasSpecialization(sp, lst);
                                 if (sp1)
@@ -3051,7 +3063,10 @@ founddecltype:
                                         sp = sp1;
                                     }
                                 }
-                                tn = sp->tp;
+                                if (sp == sp1)
+                                    tn = sp->tp;
+                                else
+                                    tn = Type::MakeType(sp, lst);
                             }
                             else
                             {
@@ -3072,6 +3087,10 @@ founddecltype:
                             tn = Type::MakeType(sp, templateParams);
                         }
                         foundsomething = true;
+                    }
+                    else if (sp->tp->IsDeferred())
+                    {
+                        tn = sp->tp;
                     }
                     else
                     {
@@ -3301,7 +3320,7 @@ founddecltype:
                                     sp = GetClassTemplate(sp, lst, !templateErr);
                                     if (sp)
                                     {
-                                        if (sp && (!definingTemplate || inTemplateBody))
+                                        if (sp && (!definingTemplate || inTemplateBody ))
                                             sp->tp = sp->tp->InitializeDeferred();
                                     }
                                 }
@@ -3730,7 +3749,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
 
                 noTypeNameError++;
                 lex = getStorageAndType(lex, funcsp, nullptr, false, true, &storage_class, &storage_class, &address, &blocked,
-                    nullptr, &constexpression, &tp1, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
+                    nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
                     nullptr, nullptr, nullptr);
                 noTypeNameError--;
                 if (!tp1->BaseType())
@@ -4031,7 +4050,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 bool notype = false;
                 tp1 = nullptr;
                 lex = getStorageAndType(lex, funcsp, nullptr, false, false, &storage_class, &storage_class, &address, &blocked,
-                    nullptr, &constexpression, &tp1, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
+                    nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
                     nullptr, nullptr, nullptr);
 
                 while (1)
@@ -4215,7 +4234,7 @@ Type* TypeGenerator::TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_
 
     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
     tp = TypeGenerator::UnadornedType(lex, funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage, &linkage2, &linkage3, AccessLevel::public_,
-                       &notype, &defd, nullptr, nullptr, nullptr, false, false, inUsing, false, false);
+                       &notype, &defd, nullptr, nullptr, nullptr, false, false, inUsing, nullptr, false);
     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
     tp = TypeGenerator::BeforeName(lex, funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3, &notype, false,
                         false, beforeOnly, false); /* fixme at file scope init */

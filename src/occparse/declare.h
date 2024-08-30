@@ -129,7 +129,7 @@ void checkIncompleteArray(Type* tp, const char* errorfile, int errorline);
 LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces);
 LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
     StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
-    bool* isExplicit, bool* constexpression, Type** tp, Linkage* linkage, Linkage* linkage2,
+    bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage, Linkage* linkage2,
     Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
     bool* asFriend);
 

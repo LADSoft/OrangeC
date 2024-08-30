@@ -58,6 +58,7 @@ static bool is_base_of(EXPRESSION* exp);
 static bool is_class(EXPRESSION* exp);
 static bool is_constructible(EXPRESSION* exp);
 static bool is_convertible_to(EXPRESSION* exp);
+static bool is_destructible(EXPRESSION* exp);
 static bool is_empty(EXPRESSION* exp);
 static bool is_enum(EXPRESSION* exp);
 static bool is_final(EXPRESSION* exp);
@@ -91,6 +92,7 @@ static std::unordered_map<std::string, INTRINS_FUNC*> intrinsicHash {
     {"__is_class", is_class},
     {"__is_constructible", is_constructible},
     {"__is_convertible_to", is_convertible_to},
+    {"__is_destructible", is_destructible},
     {"__is_empty", is_empty},
     {"__is_enum", is_enum},
     {"__is_final", is_final},
@@ -151,11 +153,12 @@ void libcxx_builtins(void)
         preProcessor->Define("__has_nothrow_copy", "0");
         preProcessor->Define("__has_trivial_constructor", "0");
         preProcessor->Define("__has_trivial_destructor", "0");
-        preProcessor->Define("__has_virtual_destructor", "1");
+        preProcessor->Define("__has___virtual_destructor", "1");
         preProcessor->Define("__has_is_base_of", "1");
         preProcessor->Define("__has_is_class", "1");
         preProcessor->Define("__has_is_constructible", "1");
         preProcessor->Define("__has_is_convertible_to", "1");
+        preProcessor->Define("__has__is_destructible", "1");
         preProcessor->Define("__has_is_empty", "1");
         preProcessor->Define("__has_is_enum", "1");
         preProcessor->Define("__has_is_final", "1");
@@ -207,6 +210,7 @@ void libcxx_builtins(void)
         preProcessor->Define("__has__no_thread_safety_analysis", "0");
         preProcessor->Define("__has____using_if_exists__", "0");
         preProcessor->Define("__has__decay", "1");
+        preProcessor->Define("__has__remove_reference_t", "1");
     }
 }
 static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool initialize = false);
@@ -218,29 +222,24 @@ bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type**
     auto it = intrinsicHash.find(sym->name);
     if (it != intrinsicHash.end())
     {
-        auto exp1 = MakeExpression(ExpressionNode::cppintrinsic_);
-        exp1->v.cppintrinsicName = it->first.c_str();
-        *lex = GetTypeList(*lex, funcsp, &(exp1)->v.cppintrinsicArgs);
+        (*exp) = MakeExpression(ExpressionNode::cppintrinsic_);
+        (*exp)->v.cppintrinsicName = it->first.c_str();
+        *lex = GetTypeList(*lex, funcsp, &(*exp)->v.cppintrinsicArgs);
         *tp = &stdint;
-        EvaluateLibcxxConstant(&exp1);
-        if (exp1->type == ExpressionNode::c_i_)
-            *exp = exp1;
-        else
-            *exp = MakeIntExpression(ExpressionNode::c_i_, false);
         return true;
     }
     return false;
 }
+	
 void EvaluateLibcxxConstant(EXPRESSION** exp)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    auto it = intrinsicHash.find((*exp)->v.cppintrinsicName);
+    if (it != intrinsicHash.end())
     {
-        auto it = intrinsicHash.find((*exp)->v.cppintrinsicName);
-        if (it != intrinsicHash.end())
-        {
-            auto rv = (it->second)(*exp);
-            *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
-        }
+        auto rv = (it->second)(*exp);
+        (**exp).type = ExpressionNode::c_i_;
+        (**exp).v.i = rv;
+//        *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     }
 }
 static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool initialize)
@@ -253,18 +252,18 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         {
             arg->tp = arg->tp->BaseType();
             TEMPLATEPARAMPAIR* tpl = TypeAliasSearch(arg->tp->BaseType()->templateParam->first->name, false);
-            if (tpl && tpl->second->packed || tpl->second->byClass.val)
+            if (tpl && (tpl->second->packed || tpl->second->byClass.dflt))
             {
                 if (tpl->second->packed)
                 {
                     if (tpl->second->byPack.pack)
                         for (auto&& arg2 : *tpl->second->byPack.pack)
                         {
-                            if (arg2.second->byClass.val)
+                            if (arg2.second->byClass.dflt)
                             {
                                 auto arg1 = Allocate<Argument>();
                                 (*arguments)->push_back(arg1);
-                                arg1->tp = arg2.second->byClass.val->CopyType();
+                                arg1->tp = arg2.second->byClass.dflt->CopyType();
                                 if (initialize)
                                 {
                                     arg1->tp->InstantiateDeferred();
@@ -277,7 +276,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
                 {
                     auto arg1 = Allocate<Argument>();
                     (*arguments)->push_back(arg1);
-                    arg1->tp = arg->tp->templateParam->second->byClass.val->CopyType();
+                    arg1->tp = tpl->second->byClass.dflt->CopyType();
                     if (initialize)
                     {
                         arg1->tp->InstantiateDeferred();
@@ -1051,6 +1050,26 @@ static bool is_convertible_to(EXPRESSION* exp)
     }
     return rv;
 }
+static bool is_destructible(EXPRESSION* exp)
+{
+    bool rv = false;
+    std::list<Argument*>* arguments = nullptr;
+    GetTypeList(exp, &arguments, true);
+    if (arguments->size() == 1)
+    {
+        Type* tp = first(arguments)->tp->BaseType();
+        if (tp->IsStructured())
+        {
+            auto sym = search(tp->syms, overloadNameTab[CI_DESTRUCTOR]);
+            rv = sym && !sym->sb->deleted && sym->sb->access == AccessLevel::public_;
+        }
+        else
+        {
+            rv = true;
+        }
+    }
+    return rv;
+}
 static bool is_empty(EXPRESSION* exp)
 {
     bool rv = false;
@@ -1286,6 +1305,8 @@ static bool is_trivially_copyable(EXPRESSION* exp)
     {
         if (first(arguments)->tp->IsStructured())
             rv = triviallyCopyable(first(arguments)->tp);
+        else
+            rv = true;
     }
     return rv;
 }
@@ -1658,18 +1679,55 @@ static bool has_virtual_destructor(EXPRESSION* exp)
     }
     return rv;
 }
-Type* decay(Type *tp)
+static Type* DecayType(std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (tp->IsFunction())
+    Type* tp = args->back().second->byClass.dflt;
+    if (tp)
     {
-        tp = Type::MakeType(BasicType::pointer_, tp);
-    }            
-    else if (tp->IsArray())
-    {
-        tp = tp->BaseType()->btp;
-        tp = Type::MakeType(BasicType::pointer_, tp);
+        if (tp->IsFunction())
+        {
+            tp = Type::MakeType(BasicType::pointer_, tp);
+        }
+        else if (tp->IsArray())
+        {
+            tp = tp->BaseType()->btp;
+            tp = Type::MakeType(BasicType::pointer_, tp);
+        }
     }
     return tp;
+}
+SYMBOL* Decay(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
+{
+    auto rs = DecayType(args);
+    if (rs)
+    {
+        SYMBOL* rv = CopySymbol(sym);
+        rv->sb->mainsym = sym;
+        rv->tp = rs;
+        return rv;
+    }
+    return sym;
+}
+static Type* RemoveReferenceType(std::list<TEMPLATEPARAMPAIR>* args)
+{
+    Type* tp = args->back().second->byClass.dflt;
+    if (tp && tp->IsRef())
+    {
+        tp = tp->BaseType()->btp;
+    }
+    return tp;
+}
+SYMBOL* RemoveReference(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
+{
+    auto rs = RemoveReferenceType(args);
+    if (rs)
+    {
+        SYMBOL* rv = CopySymbol(sym);
+        rv->sb->mainsym = sym;
+        rv->tp = rs;
+        return rv;
+    }
+    return sym;
 }
 bool underlying_type(LexList** lex, SYMBOL* funcsp, Type** tp)
 {

@@ -101,4 +101,9 @@
 #        define __restrict restrict
 #    endif
 
+#ifdef __cplusplus
+#    define _RTL_CONSTEXPR __builtin_constexpr
+#else
+#    define _RTL_CONSTEXPR
+#endif
 #endif

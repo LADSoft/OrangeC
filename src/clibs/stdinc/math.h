@@ -251,7 +251,7 @@ extern "C"
     float _RTL_FUNC _IMPORTMM ldexpf(float __x, int __exponent);
     float _RTL_FUNC _IMPORTMM log10f(float __x);
     float _RTL_FUNC _IMPORTMM logf(float __x);
-    float _RTL_FUNC _IMPORTMM modff(float __x, float* __y);
+    float _RTL_FUNC _IMPORTMM modff(float __x, float	* __y);
     float _RTL_FUNC _IMPORTMM powf(float __x, float __y);
     float _RTL_FUNC _IMPORTMM sinhf(float __x);
     float _RTL_FUNC _IMPORTMM sinf(float __x);
@@ -451,6 +451,183 @@ extern "C"
     int _matherrl(struct _exceptionl* __e);
 
     long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
+#endif
+
+#ifdef __cplusplus
+    inline float _RTL_CONSTEXPR __builtin_acosf(float __x) { return acosf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_acos(double __x) { return acos( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_acosl(long double __x) { return acosl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_asinf(float __x) { return asinf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_asin(double __x) { return asin( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_asinl(long double __x) { return asinl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_atan2f(float __y, float __x) { return atan2f( __y,  __x); }
+    inline double _RTL_CONSTEXPR __builtin_atan2(double __y, double __x) { return atan2( __y,  __x); }
+    inline long double _RTL_CONSTEXPR __builtin_atan2l(long double __y, long double __x) { return atan2l( __y,  __x); }
+    inline float _RTL_CONSTEXPR __builtin_atanf(float __x) { return atanf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_atan(double __x) { return atan( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_atanl(long double __x) { return atanl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_ceilf(float __x) { return ceilf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_ceil(double __x) { return ceil( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_ceill(long double __x) { return ceill( __x); }
+    inline float _RTL_CONSTEXPR __builtin_cosf(float __x) { return cosf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_cos(double __x) { return cos( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_cosl(long double __x) { return cosl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_coshf(float __x) { return coshf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_cosh(double __x) { return cosh( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_coshl(long double __x) { return coshl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_expf(float __x) { return expf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_exp(double __x) { return exp( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_expl(long double __x) { return expl( __x); }
+#ifndef _FABS_
+#define _FABS_
+    inline float _RTL_CONSTEXPR __builtin_fabsf(float __x) { return fabsf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_fabs(double __x) { return fabs( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_fabsl(long double __x) { return fabsl( __x); }
+#endif
+    inline float _RTL_CONSTEXPR __builtin_floorf(float __x) { return floorf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_floor(double __x) { return floor( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_floorl(long double __x) { return floorl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_fmodf(float __x, float __y) { return fmodf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_fmod(double __x, double __y) { return fmod( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_fmodl(long double __x, long double __y) { return fmodl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_frexpf(float __x, int* __exponent) { return frexpf( __x, __exponent); }
+    inline double _RTL_CONSTEXPR __builtin_frexp(double __x, int* __exponent) { return frexp( __x, __exponent); }
+    inline long double _RTL_CONSTEXPR __builtin_frexpl(long double __x, int* __exponent) { return frexpl( __x, __exponent); }
+    inline float _RTL_CONSTEXPR __builtin_ldexpf(float __x, int __exponent) { return ldexpf( __x, __exponent); }
+    inline double _RTL_CONSTEXPR __builtin_ldexp(double __x, int __exponent) { return ldexp( __x, __exponent); }
+    inline long double _RTL_CONSTEXPR __builtin_ldexpl(long double __x, int __exponent) { return ldexpl( __x, __exponent); }
+    inline float _RTL_CONSTEXPR __builtin_logf(float __x) { return logf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_log(double __x) { return log( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_logl(long double __x) { return logl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_log10f(float __x) { return log10f( __x); }
+    inline double _RTL_CONSTEXPR __builtin_log10(double __x) { return log10( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_log10l(long double __x) { return log10l( __x); }
+    inline float _RTL_CONSTEXPR __builtin_modff(float __x, float*  __ipart) { return modff( __x, __ipart); }
+    inline double _RTL_CONSTEXPR __builtin_modf(double __x, double* __ipart) { return modf( __x, __ipart); }
+    inline long double _RTL_CONSTEXPR __builtin_modfl(long double __x, long double* __ipart) { return modfl( __x, __ipart); }
+    inline float _RTL_CONSTEXPR __builtin_powf(float __x, float __y) { return powf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_pow(double __x, double __y) { return pow( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_powl(long double __x, long double __y) { return powl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_sinf(float __x) { return sinf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_sin(double __x) { return sin( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_sinl(long double __x) { return sinl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_sinhf(float __x) { return sinhf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_sinh(double __x) { return sinh( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_sinhl(long double __x) { return sinhl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_sqrtf(float __x) { return sqrtf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_sqrt(double __x) { return sqrt( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_sqrtl(long double __x) { return sqrtl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_tanf(float __x) { return tanf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_tan(double __x) { return tan( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_tanl(long double __x) { return tanl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_tanhf(float __x) { return tanhf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_tanh(double __x) { return tanh( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_tanhl(long double __x) { return tanhl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_acoshf(float __x) { return acoshf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_acosh(double __x) { return acosh( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_acoshl(long double __x) { return acoshl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_asinhf(float __x) { return asinhf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_asinh(double __x) { return asinh( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_asinhl(long double __x) { return asinhl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_atanhf(float __x) { return atanhf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_atanh(double __x) { return atanh( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_atanhl(long double __x) { return atanhl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_cbrtf(float __x) { return cbrtf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_cbrt(double __x) { return cbrt( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_cbrtl(long double __x) { return cbrtl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_copysignf(float __x, float __y) { return copysignf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_copysign(double __x, double __y) { return copysign( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_copysignl(long double __x, long double __y) { return copysignl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_erff(float __x) { return erff( __x); }
+    inline double _RTL_CONSTEXPR __builtin_erf(double __x) { return erf( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_erfl(long double __x) { return erfl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_erfcf(float __x) { return erfcf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_erfc(double __x) { return erfc( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_erfcl(long double __x) { return erfcl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_exp2f(float __x) { return exp2f( __x); }
+    inline double _RTL_CONSTEXPR __builtin_exp2(double __x) { return exp2( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_exp2l(long double __x) { return exp2l( __x); }
+    inline float _RTL_CONSTEXPR __builtin_expm1f(float __x) { return expm1f( __x); }
+    inline double _RTL_CONSTEXPR __builtin_expm1(double __x) { return expm1( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_expm1l(long double __x) { return expm1l( __x); }
+    inline float _RTL_CONSTEXPR __builtin_fdimf(float __x, float __y) { return fdimf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_fdim(double __x, double __y) { return fdim( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_fdiml(long double __x, long double __y) { return fdiml( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_fmaf(float __x, float __y, float __z) { return fmaf( __x,  __y,  __z); }
+    inline double _RTL_CONSTEXPR __builtin_fma(double __x, double __y, double __z) { return fma( __x,  __y,  __z); }
+    inline long double _RTL_CONSTEXPR __builtin_fmal(long double __x, long double __y, long double __z) { return fmal( __x,  __y,  __z); }
+    inline float _RTL_CONSTEXPR __builtin_fmaxf(float __x, float __y) { return fmaxf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_fmax(double __x, double __y) { return fmax( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_fmaxl(long double __x, long double __y) { return fmaxl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_fminf(float __x, float __y) { return fminf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_fmin(double __x, double __y) { return fmin( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_fminl(long double __x, long double __y) { return fminl( __x,  __y); }
+    inline int _RTL_CONSTEXPR __builtin_ilogbf(float __x) { return ilogbf( __x); }
+    inline int _RTL_CONSTEXPR __builtin_ilogb(double __x) { return ilogb( __x); }
+    inline int _RTL_CONSTEXPR __builtin_ilogbl(long double __x) { return ilogbl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_lgammaf(float __x) { return lgammaf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_lgamma(double __x) { return lgamma( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_lgammal(long double __x) { return lgammal( __x); }
+    inline long _RTL_CONSTEXPR __builtin_lrintf(float __x) { return lrintf( __x); }
+    inline long _RTL_CONSTEXPR __builtin_lrint(double __x) { return lrint( __x); }
+    inline long _RTL_CONSTEXPR __builtin_lrintl(long double __x) { return lrintl( __x); }
+    inline long long _RTL_CONSTEXPR __builtin_llrintf(float __x) { return llrintf( __x); }
+    inline long long _RTL_CONSTEXPR __builtin_llrint(double __x) { return llrint( __x); }
+    inline long long _RTL_CONSTEXPR __builtin_llrintl(long double __x) { return llrintl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_logbf(float __x) { return logbf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_logb(double __x) { return logb( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_logbl(long double __x) { return logbl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_log1pf(float __x) { return log1pf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_log1p(double __x) { return log1p( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_log1pl(long double __x) { return log1pl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_log2f(float __x) { return log2f( __x); }
+    inline double _RTL_CONSTEXPR __builtin_log2(double __x) { return log2( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_log2l(long double __x) { return log2l( __x); }
+    inline long _RTL_CONSTEXPR __builtin_lroundf(float __x) { return lroundf( __x); }
+    inline long _RTL_CONSTEXPR __builtin_lround(double __x) { return lround( __x); }
+    inline long _RTL_CONSTEXPR __builtin_lroundl(long double __x) { return lroundl( __x); }
+    inline long long _RTL_CONSTEXPR __builtin_llroundf(float __x) { return llroundf( __x); }
+    inline long long _RTL_CONSTEXPR __builtin_llround(double __x) { return llround( __x); }
+    inline long long _RTL_CONSTEXPR __builtin_llroundl(long double __x) { return llroundl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_nearbyintf(float __x) { return nearbyintf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_nearbyint(double __x) { return nearbyint( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_nearbyintl(long double __x) { return nearbyintl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_nextafterf(float __x, float __y) { return nextafterf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_nextafter(double __x, double __y) { return nextafter( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_nextafterl(long double __x, long double __y) { return nextafterl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_nexttowardf(float __x, long double __y) { return nexttowardf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_nexttoward(double __x, long double __y) { return nexttoward( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_nexttowardl(long double __x, long double __y) { return nexttowardl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_remainderf(float __x, float __y) { return remainderf( __x,  __y); }
+    inline double _RTL_CONSTEXPR __builtin_remainder(double __x, double __y) { return remainder( __x,  __y); }
+    inline long double _RTL_CONSTEXPR __builtin_remainderl(long double __x, long double __y) { return remainderl( __x,  __y); }
+    inline float _RTL_CONSTEXPR __builtin_remquof(float __x, float __y, int* quo) { return remquof( __x,  __y, quo); }
+    inline double _RTL_CONSTEXPR __builtin_remquo(double __x, double __y, int* quo) { return remquo( __x,  __y, quo); }
+    inline long double _RTL_CONSTEXPR __builtin_remquol(long double __x, long double __y, int* quo) { return remquol( __x,  __y, quo); }
+    inline float _RTL_CONSTEXPR __builtin_rintf(float __x) { return rintf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_rint(double __x) { return rint( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_rintl(long double __x) { return rintl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_roundf(float __x) { return roundf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_round(double __x) { return round( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_roundl(long double __x) { return roundl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_scalbnf(float __x, int __y) { return scalbnf( __x, __y); }
+    inline double _RTL_CONSTEXPR __builtin_scalbn(double __x, int __y) { return scalbn( __x, __y); }
+    inline long double _RTL_CONSTEXPR __builtin_scalbnl(long double __x, int __y) { return scalbnl( __x, __y); }
+    inline float _RTL_CONSTEXPR __builtin_scalblnf(float __x, long int __y) { return scalblnf( __x, __y); }
+    inline double _RTL_CONSTEXPR __builtin_scalbln(double __x, long int __y) { return scalbln( __x, __y); }
+    inline long double _RTL_CONSTEXPR __builtin_scalblnl(long double __x, long int __y) { return scalblnl( __x, __y); }
+    inline float _RTL_CONSTEXPR __builtin_significandf(float __x) { return significandf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_significand(double __x) { return significand( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_significandl(long double __x) { return significandl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_tgammaf(float __x) { return tgammaf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_tgamma(double __x) { return tgamma( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_tgammal(long double __x) { return tgammal( __x); }
+    inline float _RTL_CONSTEXPR __builtin_truncf(float __x) { return truncf( __x); }
+    inline double _RTL_CONSTEXPR __builtin_trunc(double __x) { return trunc( __x); }
+    inline long double _RTL_CONSTEXPR __builtin_truncl(long double __x) { return truncl( __x); }
+    inline float _RTL_CONSTEXPR __builtin_hypotf(float __x, float __y) { return hypotf(__x, __y); }
+    inline double _RTL_CONSTEXPR __builtin_hypot(double __x, double __y) { return hypot(__x, __y); }
+    inline long double _RTL_CONSTEXPR __builtin_hypotl(long double __x, long double __y) { return hypotl(__x, __y); }
 #endif
 #ifdef __cplusplus
 };

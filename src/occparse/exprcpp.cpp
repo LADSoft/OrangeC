@@ -593,7 +593,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
     if (!(flags & _F_NOEVAL))
     {
         *tp = nullptr;
-        *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, &deduceTemplate, false, true, false, false, false);
+        *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, &deduceTemplate, false, true, false, nullptr, false);
         (*tp)->InstantiateDeferred();
         (*tp)->InitializeDeferred();
         if ((*tp)->IsStructured() && !(*tp)->size && (!definingTemplate || !(*tp)->BaseType()->sp->sb->templateLevel))

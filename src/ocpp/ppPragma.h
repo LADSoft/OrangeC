@@ -438,6 +438,7 @@ class ppPragma
         Aliases::Instance()->Clear();
         Startups::Instance()->Clear();
         Once::Instance()->SetInclude(Include);
+        include = Include;
         define = Define;
     }
     bool Check(kw token, const std::string& args);
@@ -479,9 +480,11 @@ class ppPragma
     void HandleIgnoreGlobalInit(Tokenizer& tk);
     void HandlePushPopMacro(Tokenizer& tk, bool push);
     void HandleComment(Tokenizer& tk);
+    void HandleGcc(Tokenizer& tk);
 
-  private:
+private:
     ppDefine* define;
+    ppInclude* include;
     int cppprio;
     bool ignoreGlobalInit;
     std::function<void(const std::string&, const std::string&)> catchAll;

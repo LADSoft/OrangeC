@@ -2,7 +2,7 @@
 #define _MCX_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows MCX API definitions */

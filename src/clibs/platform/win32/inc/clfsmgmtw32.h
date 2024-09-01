@@ -2,7 +2,7 @@
 #define _CLFSMGMTW32_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #undef CLFS_KERNEL_MODE

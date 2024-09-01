@@ -2,7 +2,7 @@
 #define _KTMW32_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Kernel Transaction Manager definitions */

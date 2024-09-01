@@ -22,26 +22,17 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __WCHAR_H
 #define __WCHAR_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __STDARG_H
 #    include <stdarg.h>
-#endif
-
-#ifndef __STDIO_H
 #    include <stdio.h>
-#endif
-
-#ifndef __TCHAR_H
 #    include <tchar.h>
-#endif
 
 /* we use UTF-8 for multibyte encoding
  * wide characters are written in network order (big endian)

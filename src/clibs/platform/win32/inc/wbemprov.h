@@ -22,7 +22,7 @@
 #define _WBEMPROV_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IWbemPropertyProvider_FWD_DEFINED__

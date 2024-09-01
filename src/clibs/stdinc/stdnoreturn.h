@@ -22,12 +22,13 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __STDNORETURN_H
 #define __STDNORETURN_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
+
 #ifndef __cplusplus
 #    define noreturn _Noreturn
 #endif

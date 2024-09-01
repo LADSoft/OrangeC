@@ -2,7 +2,7 @@
 #define _USERENV_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* User Environment API definitions (profiles, environment variables and group policies) */

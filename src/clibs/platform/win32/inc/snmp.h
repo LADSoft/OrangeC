@@ -2,7 +2,7 @@
 #define _SNMP_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* SNMP definitions */

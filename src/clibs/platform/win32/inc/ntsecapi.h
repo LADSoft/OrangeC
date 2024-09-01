@@ -444,7 +444,7 @@ DEFINE_GUID(Audit_AccountLogon, 0x69979850, 0x797a, 0x11d9, 0xbe, 0xd3, 0x50, 0x
 #define _NTSECAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Local Security Authority API definitions */

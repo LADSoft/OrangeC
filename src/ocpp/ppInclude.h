@@ -28,6 +28,7 @@
 
 #include <list>
 #include <string>
+#include <unordered_set>
 #include "ppExpr.h"
 #include "ppFile.h"
 #include "PipeArbitrator.h"
@@ -126,6 +127,7 @@ class ppInclude
     void ForceEOF() { forcedEOF = true; }
     std::set<std::string>& GetUserIncludes() { return userIncludes; }
     std::set<std::string>& GetSysIncludes() { return sysIncludes; }
+    void EnterGccSystemHeader();
 
     static void SetCommentChar(char ch) { commentChar = ch; }
 
@@ -143,9 +145,9 @@ class ppInclude
                          int& filesSkipped);
     const char* RetrievePath(char* buf, const char* path);
     void AddName(char* buf, const std::string& name);
-
   private:
     static bool system;
+    std::unordered_set<std::string> gccSystemHeaders;
     std::list<std::unique_ptr<ppFile>> files;
     std::set<std::string> userIncludes;
     std::set<std::string> sysIncludes;

@@ -2,7 +2,7 @@
 #define _WINDOT11_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Native 802.11 miniport driver definitions */

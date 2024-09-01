@@ -2,7 +2,7 @@
 #define _LMSERVER_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetServer API definitions */

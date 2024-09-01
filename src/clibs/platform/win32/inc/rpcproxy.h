@@ -2,7 +2,7 @@
 #define __RPCPROXY_H_VERSION__  (475)
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 #endif
 

@@ -28,12 +28,12 @@
 
 */
 
+#pragma GCC system_header
+
 #if !defined(__LOCKING_H)
 #    define __LOCKING_H
 
-#    ifndef __DEFS_H__
-#        include <_defs.h>
-#    endif
+#    include <_defs.h>
 
 #    define LK_UNLCK 0  /* unlock file region */
 #    define LK_LOCK 1   /* lock file region, try for 10 seconds */

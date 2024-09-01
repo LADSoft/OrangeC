@@ -2,7 +2,7 @@
 #define _HEAPAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-core-heap-l1 */

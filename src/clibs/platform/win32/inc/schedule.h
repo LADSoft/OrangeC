@@ -2,7 +2,7 @@
 #define _SCHEDULE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows NT common schedule structure definitions */

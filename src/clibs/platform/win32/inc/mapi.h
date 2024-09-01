@@ -2,7 +2,7 @@
 #define _MAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Messaging Applications Programming Interface (MAPI) definitions */

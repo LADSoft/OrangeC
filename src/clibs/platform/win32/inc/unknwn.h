@@ -23,7 +23,7 @@
 
 #ifdef __ORANGEC__ 
 #define _FORCENAMELESSUNION
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Forward Declarations */

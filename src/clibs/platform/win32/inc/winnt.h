@@ -2,7 +2,7 @@
 #define _WINNT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define __forceinline inline

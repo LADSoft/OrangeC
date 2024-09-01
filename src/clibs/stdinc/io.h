@@ -28,18 +28,15 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __IO_H
 #define __IO_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __TIME_H
 #    include <time.h>
-#endif
 
 #define _NFILE_ 40 /* SHOULD BE SAME AS IN STDIO.H */
 

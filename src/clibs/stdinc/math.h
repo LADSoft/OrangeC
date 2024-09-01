@@ -28,6 +28,8 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __MATH_H
 #define __MATH_H
 
@@ -35,9 +37,7 @@
 #pragma STDC FENV_ACCESS OFF
 #pragma STDC FP_CONTRACT ON
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifdef __cplusplus
 #include <limits>

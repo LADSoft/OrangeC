@@ -1,5 +1,5 @@
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #if ((NTDDI_VERSION >= NTDDI_WINXPSP2 && NTDDI_VERSION < NTDDI_WS03) || (NTDDI_VERSION >= NTDDI_WINLH))

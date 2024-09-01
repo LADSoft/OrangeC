@@ -2,7 +2,7 @@
 #define _SECURITY_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Security aware components definitions (toplevel) */

@@ -2,7 +2,7 @@
 #define _PATCHAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Interface for creating and applying patches to files */

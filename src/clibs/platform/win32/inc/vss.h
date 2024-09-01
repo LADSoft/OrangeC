@@ -22,7 +22,7 @@
 #define _VSS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IVssEnumObject_FWD_DEFINED__

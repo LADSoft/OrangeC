@@ -22,7 +22,7 @@
 #define __windowssideshowapi_h__
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __ISideShowSession_FWD_DEFINED__

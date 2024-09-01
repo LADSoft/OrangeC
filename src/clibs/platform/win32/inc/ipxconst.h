@@ -2,7 +2,7 @@
 #define _IPXCONST_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* IPX Routing Protocol constant and macro definitions */

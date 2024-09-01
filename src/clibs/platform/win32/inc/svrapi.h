@@ -2,7 +2,7 @@
 #define _SVRAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetAccess, NetConnection, NetFile, NetServer, NetSession, NetShare and NetSecurity API definitions */

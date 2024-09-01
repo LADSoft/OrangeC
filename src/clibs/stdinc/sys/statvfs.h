@@ -27,18 +27,15 @@
     Definitions used for file status functions
 */
 
+#pragma GCC system_header
+
 #if !defined(__STATVFS_H)
 #    define __STATVFS_H
 
 #    pragma pack(1)
 
-#    ifndef __DEFS_H__
-#        include <_defs.h>
-#    endif
-
-#    if !defined(__TYPES_H)
-#        include <sys/types.h>
-#    endif
+#    include <_defs.h>
+#    include <sys/types.h>
 
 #define ST_RDONLY 1
 #define ST_NOSUID 2

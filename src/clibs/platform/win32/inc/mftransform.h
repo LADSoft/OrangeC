@@ -22,7 +22,7 @@
 #define _MFTRANSFORM_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IMFTransform_FWD_DEFINED__

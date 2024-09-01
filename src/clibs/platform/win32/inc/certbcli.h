@@ -2,7 +2,7 @@
 #define _CERTBCLI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Certificate Server backup clipent API definitions */

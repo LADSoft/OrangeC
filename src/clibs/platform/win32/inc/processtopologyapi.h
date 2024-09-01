@@ -2,7 +2,7 @@
 #define _PROCESSTOPOLOGYAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-core-processtopology-l1 */

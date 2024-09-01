@@ -2,7 +2,7 @@
 #define _MAPIFORM_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* MAPI definitions (MS crap) */

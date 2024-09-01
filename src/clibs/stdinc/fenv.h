@@ -22,14 +22,14 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __FENV_H
 #define __FENV_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifdef __cplusplus
 extern "C"

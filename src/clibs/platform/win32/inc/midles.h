@@ -2,7 +2,7 @@
 #define _MIDLES_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Encoding/decoding support definitions (serializing/deserializing a.k.a. pickling) */

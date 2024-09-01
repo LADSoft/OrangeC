@@ -21,15 +21,14 @@
  *          email: TouchStone222@runbox.com <David Lindauer>
  *  
  */
+#pragma GCC system_header
 
 #if !defined(__CONIO_H)
 #    define __CONIO_H
 
 #    pragma pack(1)
 
-#    ifndef __STDDEF_H
-#        include <stddef.h>
-#    endif
+#    include <stddef.h>
 
 #    define _NOCURSOR 0
 #    define _SOLIDCURSOR 1

@@ -2,7 +2,7 @@
 #define _WPWIZMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define WPWIZ_ERROR_FIRST  0x40042000L

@@ -20,6 +20,8 @@
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
  *  
+
+#pragma GCC system_header
  */
 
 #pragma pack(1)

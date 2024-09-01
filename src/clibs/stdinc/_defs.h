@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __DEFS_H__
 #    define __DEFS_H__
 

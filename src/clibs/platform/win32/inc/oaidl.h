@@ -22,7 +22,7 @@
 #define _OAIDL_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __ICreateTypeInfo_FWD_DEFINED__

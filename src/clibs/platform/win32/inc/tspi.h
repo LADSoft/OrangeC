@@ -2,7 +2,7 @@
 #define _TSPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Telephony Service Provider Interface (TSPI) definitions */

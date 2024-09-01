@@ -4,7 +4,7 @@
 /* Background file copier error code definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define BG_E_NOT_FOUND  0x80200001L

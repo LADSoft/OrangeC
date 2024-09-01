@@ -2,7 +2,7 @@
 #define _MGM_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* MGM API definitions */

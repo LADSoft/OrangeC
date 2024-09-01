@@ -28,13 +28,12 @@
     See DOS function 3Dh for definition.
 
 */
+#pragma GCC system_header
 
 #if !defined(__SHARE_H)
 #    define __SHARE_H
 
-#    ifndef __STDDEF_H
 #        include <stddef.h>
-#    endif
 
 #    define SH_COMPAT 0x00 /* compatibility mode */
 #    define SH_DENYRW 0x10 /* deny read/write mode */

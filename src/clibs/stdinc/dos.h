@@ -22,14 +22,14 @@
  *  
  */
 
+#pragma GCC system_header
+
 #if !defined(__DOS_H)
 #    define __DOS_H
 
 #    pragma pack(1)
 
-#    ifndef __STDDEF_H
 #        include <stddef.h>
-#    endif
 
 #    define FA_NORMAL 0x00 /* Normal file, no attributes */
 #    define FA_RDONLY 0x01 /* Read only attribute */

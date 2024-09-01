@@ -28,16 +28,13 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __FCNTL_H
 #define __FCNTL_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __TYPES_H
 #    include <sys/types.h>
-#endif
 
 #if defined(__cplusplus)
 extern "C"

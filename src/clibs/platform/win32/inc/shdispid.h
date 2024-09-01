@@ -2,7 +2,7 @@
 #define _SHDISPID_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define DISPID_SELECTIONCHANGED  200

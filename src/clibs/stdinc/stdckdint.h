@@ -22,12 +22,12 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __STDNORETURN_H
 #define __STDNORETURN_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #if __STDC_VERSION__ >= 202311L
 #define ckd_add(result, a, b) __ckdadd(result, a, b)

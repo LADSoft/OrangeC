@@ -2,7 +2,7 @@
 #define _SQLUCODE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ODBC Core functions Unicode definitions */

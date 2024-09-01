@@ -28,12 +28,12 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __STDDEF_H
 #define __STDDEF_H
 
-#ifndef __DEFS_H__
 #    include <_defs.h>
-#endif
 
 #if defined(__cplusplus) || __STDC_VERSION__ >= 201112L
 typedef long double max_align_t;

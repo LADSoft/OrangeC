@@ -2,7 +2,7 @@
 #define _WPAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft Web Publishing API definitions */

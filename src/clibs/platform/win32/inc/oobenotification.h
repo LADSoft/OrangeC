@@ -2,7 +2,7 @@
 #define _OOBENOTIFICATION_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* API Set api-ms-win-oobe-notification-l1 */

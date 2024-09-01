@@ -2,7 +2,7 @@
 #define _CRYPTUIAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Cryptographic UI API definitions */

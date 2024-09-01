@@ -22,7 +22,7 @@
 #define _CERTPOL_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __ICertPolicy_FWD_DEFINED__

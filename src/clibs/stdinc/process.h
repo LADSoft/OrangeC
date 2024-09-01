@@ -21,17 +21,13 @@
  *          email: TouchStone222@runbox.com <David Lindauer>
  *  
  */
+#pragma GCC system_header
 
 #ifndef __PROCESS_H
 #define __PROCESS_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __STDINT_H
 #    include <stdint.h>
-#endif
 
 #define P_WAIT 0
 #define P_NOWAIT 1

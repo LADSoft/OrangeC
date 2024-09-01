@@ -2,7 +2,7 @@
 #define _CLFSW32_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Common log file API definitions */

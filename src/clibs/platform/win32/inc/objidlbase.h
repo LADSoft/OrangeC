@@ -22,7 +22,7 @@
 #define _OBJIDLBASE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Forward Declarations */ 

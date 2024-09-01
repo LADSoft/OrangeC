@@ -2,7 +2,7 @@
 #define _NTDSBMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NT Directory Service Backup Client API error codes */

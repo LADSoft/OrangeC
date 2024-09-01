@@ -2,7 +2,7 @@
 #define _SHFOLDER_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Shell special folder definitions */

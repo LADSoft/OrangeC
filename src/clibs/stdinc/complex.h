@@ -22,12 +22,12 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __COMPLEX_H
 #define __COMPLEX_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 /* this is the default even when this file isn't included */
 #pragma STDC CX_LIMITED_RANGE OFF

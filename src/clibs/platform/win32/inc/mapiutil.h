@@ -2,7 +2,7 @@
 #define _MAPIUTIL_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /*  MAPI utility function definitions */

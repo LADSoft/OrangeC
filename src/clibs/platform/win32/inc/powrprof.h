@@ -4,7 +4,7 @@
 /* Power Policy Applicator definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #include <powerbase.h>

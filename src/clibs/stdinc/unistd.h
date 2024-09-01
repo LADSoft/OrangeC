@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef _UNISTD_H
 #define _UNISTD_H
 

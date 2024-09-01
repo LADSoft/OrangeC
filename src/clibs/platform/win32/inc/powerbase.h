@@ -2,7 +2,7 @@
 #define _POWERBASE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-power-base-l1-1-0 */

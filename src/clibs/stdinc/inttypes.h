@@ -22,12 +22,12 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __INTTYPES_H
 #define __INTTYPES_H
 
-#ifndef __STDINT_H
 #    include <stdint.h>
-#endif
 
 #    define PRId8 "hhd"
 #    define PRIi8 "hhi"

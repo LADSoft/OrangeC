@@ -2,7 +2,7 @@
 #define _ROUTPROT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Routing Protocol interface definitions */

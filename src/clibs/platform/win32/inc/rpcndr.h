@@ -6,7 +6,7 @@
 #define _RPCNDR_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows RPC Network Data Representation definitions */

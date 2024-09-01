@@ -2,7 +2,7 @@
 #define _RPCDCE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows DCE RPC runtime API definitions */

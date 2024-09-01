@@ -22,14 +22,14 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef _UCHAR_H_
 #define _UCHAR_H_
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifndef RC_INVOKED
 #ifdef __cplusplus

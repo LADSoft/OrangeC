@@ -28,14 +28,14 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __TIME_H
 #define __TIME_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifdef __cplusplus
 extern "C"

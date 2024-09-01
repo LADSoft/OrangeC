@@ -2,7 +2,7 @@
 #define _WPFTPMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define FTPWPP_ERROR_FIRST  0x40042300L

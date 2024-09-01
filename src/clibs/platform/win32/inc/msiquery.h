@@ -2,7 +2,7 @@
 #define _MSIQUERY_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Installer Service custom actions and tools definitions */

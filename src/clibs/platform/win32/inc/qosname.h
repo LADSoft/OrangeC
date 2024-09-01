@@ -2,7 +2,7 @@
 #define _QOSNAME_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Winsock Quality of Service name management definitions */

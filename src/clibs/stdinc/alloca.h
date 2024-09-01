@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef _ALLOCA_H
 #define _ALLOCA_H
 

@@ -2,7 +2,7 @@
 #define _PERFLIB_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* PERFLIB provider and consumer APIs */

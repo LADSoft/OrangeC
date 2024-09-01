@@ -28,14 +28,14 @@
 
 */
 
+#pragma GCC system_header
+
 #if !defined(__TIMEB_H)
 #    define __TIMEB_H
 
 #    pragma pack(1)
 
-#    ifndef __DEFS_H__
-#        include <_defs.h>
-#    endif
+#    include <_defs.h>
 
 #    ifdef __cplusplus
 extern "C"

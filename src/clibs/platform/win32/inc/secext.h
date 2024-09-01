@@ -2,7 +2,7 @@
 #define _SECEXT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Security definitions not part of the SSPI interface */

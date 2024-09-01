@@ -22,7 +22,7 @@
 #define _CERTCLI_H
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* forward declarations */ 

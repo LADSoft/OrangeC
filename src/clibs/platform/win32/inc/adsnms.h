@@ -2,7 +2,7 @@
 #define _ADSNMS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Active Directory Service object class names and schema definitions */

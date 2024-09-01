@@ -22,12 +22,12 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __STDBIT_H
 #    define __STDBIT_H
 
-#    ifndef __DEFS_H__
-#        include <_defs.h>
-#    endif
+#    include <_defs.h>
 
 #ifdef __cplusplus
 extern "C"

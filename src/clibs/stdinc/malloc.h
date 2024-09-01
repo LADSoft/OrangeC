@@ -27,13 +27,12 @@
     memory management functions and variables.
 
 */
+#pragma GCC system_header
 
 #ifndef __MALLOC_H
 #define __MALLOC_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #define _HEAPEMPTY 1
 #define _HEAPOK 2

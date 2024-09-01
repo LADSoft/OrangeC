@@ -2,7 +2,7 @@
 #define _WINNLS32_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows NT 3.x compatible FarEast IMM component definitions */

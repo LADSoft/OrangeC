@@ -27,13 +27,12 @@
     Memory manipulation functions
 
 */
+#pragma GCC system_header
 
 #if !defined(__MEM_H)
 #    define __MEM_H
 
-#    ifndef __STDDEF_H
 #        include <stddef.h>
-#    endif
 
 #ifndef RC_INVOKED
 #    ifdef __cplusplus

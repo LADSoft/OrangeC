@@ -22,12 +22,12 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __STDARG_H
 #define __STDARG_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifdef __cplusplus
 extern "C"

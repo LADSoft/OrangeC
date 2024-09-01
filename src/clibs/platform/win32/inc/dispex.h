@@ -22,7 +22,7 @@
 #define _DISPEX_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IDispatchEx_FWD_DEFINED__

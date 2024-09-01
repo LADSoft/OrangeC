@@ -2,7 +2,7 @@
 #define _NTSECPKG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Authentication or security package API definitions */

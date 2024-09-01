@@ -28,14 +28,14 @@
  *		routines.
  *
  */
+#pragma GCC system_header
+
 #ifndef _I86_H_INCLUDED
 #define _I86_H_INCLUDED
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifdef __cplusplus
 extern "C"

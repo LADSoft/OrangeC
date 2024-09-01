@@ -4,7 +4,7 @@
 /* Network Provider API prototypes and manifests */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define WNGETCON_CONNECTED  0x00000000

@@ -2,7 +2,7 @@
 #define _QOSSP_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NDIS components QoS definitions */

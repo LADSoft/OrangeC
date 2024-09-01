@@ -4,7 +4,7 @@
 #if (NTDDI_VERSION >= NTDDI_WIN2K)
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows File Encryption definitions */

@@ -2,7 +2,7 @@
 #define _IFMIB_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Non-TCP/IP-specific parts of MIB-II definitions */

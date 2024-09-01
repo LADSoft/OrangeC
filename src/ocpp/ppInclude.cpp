@@ -66,6 +66,15 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
                                  // need to actually keep track tho cuz they don't actually include
         bool foundAsSystem = false, found;
         name = FindFile(specifiedAsSystem, name, false, dirs_traversed, foundAsSystem, found);
+#ifdef TARGET_OS_WINDOWS
+        auto name1 = name;
+        std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
+        if (gccSystemHeaders.find(name1) != gccSystemHeaders.end())
+            return true;
+#else
+        if (gccSystemHeaders.find(name) != gccSystemHeaders.end())
+            return true;
+#endif
         pushFile(name, line1, false, foundAsSystem, dirs_traversed);
         return true;
     }
@@ -104,6 +113,14 @@ bool ppInclude::has_include(const std::string& args)
     bool foundAsSystem = false, found;
     name = FindFile(specifiedAsSystem, name, false, throwaway, foundAsSystem, found);
     return found;
+}
+void ppInclude::EnterGccSystemHeader()
+{
+    std::string name = current->GetName();
+#ifdef TARGET_OS_WINDOWS
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+#endif
+    gccSystemHeaders.insert(name);
 }
 bool ppInclude::CheckLine(kw token, const std::string& args)
 {

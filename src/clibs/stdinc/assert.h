@@ -26,12 +26,12 @@
     assert.h
 */
 
+#pragma GCC system_header
+
 #ifndef __ASSERT_H__
 #    define __ASSERT_H__
 
-#    ifndef __STDDEF_H
-#        include <stddef.h>
-#    endif
+#    include <stddef.h>
 
 #    ifdef __cplusplus
 extern "C"

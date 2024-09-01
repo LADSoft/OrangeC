@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef _UTIME_H_
 #define _UTIME_H_
 
@@ -32,9 +34,7 @@ extern "C"
 {
 #endif
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifndef RC_INVOKED
     struct _utimbuf

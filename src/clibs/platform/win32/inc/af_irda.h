@@ -2,7 +2,7 @@
 #define _AF_IRDA_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Winsock 1.1; IrDA 1.1 */

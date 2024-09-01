@@ -2,7 +2,7 @@
 #define _RASSHOST_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Remote Access Server and third party security DLL definitions */

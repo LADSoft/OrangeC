@@ -4,7 +4,7 @@
 /* WinSock2 Extension for TCP/IP protocols */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #include <winsock2.h>

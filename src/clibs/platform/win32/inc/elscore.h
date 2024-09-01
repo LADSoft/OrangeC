@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 struct _MAPPING_PROPERTY_BAG;

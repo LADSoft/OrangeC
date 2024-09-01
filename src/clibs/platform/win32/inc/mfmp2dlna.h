@@ -22,7 +22,7 @@
 #define _MFMP2DLNA_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IMFDLNASinkInit_FWD_DEFINED__

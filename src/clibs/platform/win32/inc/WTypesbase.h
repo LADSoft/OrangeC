@@ -17,7 +17,7 @@
 #define _WTYPESBASE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Forward Declarations */ 

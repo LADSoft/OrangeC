@@ -2,7 +2,7 @@
 #define _OLE2VER_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows OLE 2 Version Number Info */

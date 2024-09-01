@@ -22,14 +22,14 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __DIR_H
 #define __DIR_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #define WILDCARDS 0x01
 #define EXTENSION 0x02

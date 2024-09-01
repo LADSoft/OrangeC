@@ -2,7 +2,7 @@
 #define _SECURITYAPPCONTAINER_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-security-appcontainer-l1 */

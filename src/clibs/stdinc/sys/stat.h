@@ -27,18 +27,15 @@
     Definitions used for file status functions
 */
 
+#pragma GCC system_header
+
 #if !defined(__STAT_H)
 #    define __STAT_H
 
 #    pragma pack(1)
 
-#    ifndef __DEFS_H__
-#        include <_defs.h>
-#    endif
-
-#    if !defined(__TYPES_H)
-#        include <sys/types.h>
-#    endif
+#    include <_defs.h>
+#    include <sys/types.h>
 
 #    ifndef __cplusplus
 #        ifndef _WCHAR_T_DEFINED

@@ -38,7 +38,7 @@ typedef struct _GUID {
 #ifndef _GUIDDEF_H
 #define _GUIDDEF_H
 
-/* #pragma once */
+/* #pragma GCC system_header */
 
 #ifndef __LPGUID_DEFINED__
 #define __LPGUID_DEFINED__

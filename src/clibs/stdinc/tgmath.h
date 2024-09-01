@@ -22,15 +22,13 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __TGMATH_H
 #define __TGMATH_H
-#ifndef __MATH_H
-#    include <math.h>
-#endif
 
-#ifndef __COMPLEX_H
+#    include <math.h>
 #    include <complex.h>
-#endif
 
 #define acos(arg)                                               \
     ((__typeid(arg) == 22)                                      \

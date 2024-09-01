@@ -22,12 +22,12 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __SYS_TIME_H
 #define __SYS_TIME_H
 
-#ifndef __DEFS_H__
 #    include <_defs.h>
-#endif
 
 #ifndef RC_INVOKED
 #ifndef _TIMEVAL_DEFINED

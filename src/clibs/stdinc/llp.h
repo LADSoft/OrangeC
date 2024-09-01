@@ -22,18 +22,15 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#ifndef __DPMI_H
 #    include <dpmi.h>
-#endif
-
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
     void _RTL_FUNC _IMPORT __clearxcept(void);
     int _RTL_FUNC _IMPORT __setxcept(int num, void* routine);

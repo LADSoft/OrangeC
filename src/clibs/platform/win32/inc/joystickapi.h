@@ -2,7 +2,7 @@
 #define _JOYSTICKAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-mm-joystick-l1-1-0 */

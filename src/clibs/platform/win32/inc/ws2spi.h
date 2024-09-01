@@ -2,7 +2,7 @@
 #define _WS2SPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Winsock service provider definitions */

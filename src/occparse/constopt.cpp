@@ -3208,12 +3208,14 @@ int fold_const(EXPRESSION* node)
                 rv |= fold_const(node->v.func->fcall);
         }
             break;
+#ifdef LIBCXX17
         case ExpressionNode::cppintrinsic_:
             if (!definingTemplate || instantiatingTemplate)
             {
                 EvaluateLibcxxConstant(&node);
             }
             break;
+#endif
         case ExpressionNode::mp_as_bool_:
             if (node->left->type == ExpressionNode::memberptr_)
             {

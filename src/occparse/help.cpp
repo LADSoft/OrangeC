@@ -1080,8 +1080,6 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
 EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest)
 {
-    if (!init)
-        return MakeIntExpression(ExpressionNode::c_i_, 0);
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
     EXPRESSION *exp = nullptr, **expp;
@@ -1197,55 +1195,191 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
     {
         noClear = true;
     }
-    for (auto it = init->begin(); it != init->end(); ++it)
+    if (init)
     {
-        auto initItem = *it;
-        exp = nullptr;
-        if (initItem->basetp)
+        for (auto it = init->begin(); it != init->end(); ++it)
         {
-            if (initItem->noassign && initItem->exp)
+            auto initItem = *it;
+            exp = nullptr;
+            if (initItem->basetp)
             {
-                exp = initItem->exp;
-                if (exp->type == ExpressionNode::thisref_)
-                    exp = exp->left;
-                if (thisptr && exp->type == ExpressionNode::callsite_)
+                if (initItem->noassign && initItem->exp)
                 {
-                    EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
-                        ? MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset))
-                        : copy_expression(expsym);
-                    exp->v.func->thisptr = exp1;
-                    /*
-                    if (tp->IsArray())
+                    exp = initItem->exp;
+                    if (exp->type == ExpressionNode::thisref_)
+                        exp = exp->left;
+                    if (thisptr && exp->type == ExpressionNode::callsite_)
                     {
-                        exp->v.func->arguments->front()->exp = exp1;
+                        EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
+                            ? MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset))
+                            : copy_expression(expsym);
+                        exp->v.func->thisptr = exp1;
+                        /*
+                        if (tp->IsArray())
+                        {
+                            exp->v.func->arguments->front()->exp = exp1;
+                        }
+                        else
+                        {
+                            exp->v.func->thisptr = exp1;
+                        }
+                        */
+                        GetAssignDestructors(&exp->v.func->destructors, exp);
+                        exp = initItem->exp;
                     }
                     else
                     {
-                        exp->v.func->thisptr = exp1;
+                        if (exp->type == ExpressionNode::callsite_)
+                            GetAssignDestructors(&exp->v.func->destructors, exp);
+                        exp = initItem->exp;
                     }
-                    */
-                    GetAssignDestructors(&exp->v.func->destructors, exp);
-                    exp = initItem->exp;
                 }
-                else
+                else if (!initItem->exp)
                 {
-                    if (exp->type == ExpressionNode::callsite_)
-                        GetAssignDestructors(&exp->v.func->destructors, exp);
-                    exp = initItem->exp;
+                    // usually empty braces, coudl be an error though
+                    exp = MakeExpression(ExpressionNode::blockclear_, copy_expression(expsym));
+                    exp->size = Type::MakeType(BasicType::struct_);
+                    exp->size->size = initItem->offset;
                 }
-            }
-            else if (!initItem->exp)
-            {
-                // usually empty braces, coudl be an error though
-                exp = MakeExpression(ExpressionNode::blockclear_, copy_expression(expsym));
-                exp->size = Type::MakeType(BasicType::struct_);
-                exp->size->size = initItem->offset;                
-            }
-            else if (initItem->basetp->IsStructured() || initItem->basetp->IsArray())
-            {
-                if (initItem->basetp->IsStructured())
+                else if (initItem->basetp->IsStructured() || initItem->basetp->IsArray())
+                {
+                    if (initItem->basetp->IsStructured())
+                    {
+                        EXPRESSION* exp2 = initItem->exp;
+                        while (exp2->type == ExpressionNode::not__lvalue_)
+                            exp2 = exp2->left;
+                        if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
+                        {
+                            exp2->v.func->returnSP->sb->allocate = false;
+                            exp2->v.func->returnEXP = copy_expression(expsym);
+                            exp = exp2;
+                            noClear = true;
+                        }
+                        else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
+                        {
+                            exp2->left->v.func->returnSP->sb->allocate = false;
+                            exp2->left->v.func->returnEXP = copy_expression(expsym);
+                            exp = exp2;
+                            noClear = true;
+                        }
+                        else if ((Optimizer::cparams.prm_cplusplus) && !initItem->basetp->BaseType()->sp->sb->trivialCons)
+                        {
+                            Type* ctype = initItem->basetp;
+                            callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
+                            exp = expsym;
+                        }
+                        else
+                        {
+                            exp = copy_expression(expsym);
+                            if (initItem->offset)
+                                exp = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                            exp = MakeExpression(ExpressionNode::blockassign_, exp, exp2);
+                            exp->size = initItem->basetp;
+                            exp->altdata = (void*)(initItem->basetp);
+                            noClear = initItem->basetp->ExactSameType(tp);
+                        }
+                    }
+                    else
+                    {
+                        Type* btp = initItem->basetp;
+                        while (btp->IsArray())
+                            btp = btp->BaseType()->btp;
+                        btp = btp->BaseType();
+                        bool found = false;
+                        for (auto elm : *init)
+                        {
+                            if (elm->exp)
+                                if (!isarithmeticconst(elm->exp) && !isconstaddress(elm->exp))
+                                {
+                                    found = true;
+                                    break;
+                                }
+                        }
+                        if (found)
+                        {
+                            /* some members are non-constant expressions */
+                            if (!Optimizer::cparams.prm_cplusplus)
+                                RequiresDialect::Feature(Dialect::c99, "Field initialization with non-constant");
+                            if (!sym)
+                            {
+                                expsym = anonymousVar(StorageClass::auto_, initItem->basetp);
+                                sym = expsym->v.sp;
+                            }
+                            if (!btp->IsStructured() || btp->sp->sb->trivialCons)
+                            {
+                                exp = MakeExpression(ExpressionNode::blockclear_, copy_expression(expsym));
+                                exp->size = initItem->basetp;
+                                exp = MakeExpression(ExpressionNode::comma_, exp);
+                                expp = &exp->right;
+                            }
+                            else
+                            {
+                                expp = &exp;
+                            }
+                            {
+                                EXPRESSION* right = initItem->exp;
+                                if (!btp->IsStructured())
+                                {
+                                    EXPRESSION* asn;
+                                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                                    {
+                                        int n = initItem->offset / btp->size;
+                                        asn = MakeExpression(ExpressionNode::sizeof_, MakeExpression(btp));
+                                        EXPRESSION* exp4 = MakeIntExpression(ExpressionNode::c_i_, n);
+                                        asn = MakeExpression(ExpressionNode::umul_, exp4, asn);
+                                    }
+                                    else
+                                    {
+                                        asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                    }
+                                    deref(initItem->basetp, &asn);
+                                    cast(initItem->basetp, &right);
+                                    right = MakeExpression(ExpressionNode::assign_, asn, right);
+                                }
+                                if (*expp)
+                                    *expp = MakeExpression(ExpressionNode::comma_, *expp, right);
+                                else
+                                    *expp = right;
+                                expp = &(*expp)->right;
+                            }
+                        }
+                        else
+                        {
+                            /* constant expression */
+                            SYMBOL* spc;
+                            exp = anonymousVar(StorageClass::localstatic_, initItem->basetp);
+                            spc = exp->v.sp;
+                            if (!spc->sb->init)
+                                spc->sb->init = initListFactory.CreateList();
+                            else
+                                spc->sb->init->clear();
+                            spc->sb->init->push_back(initItem);
+                            insertInitSym(spc);
+                            localNameSpace->front()->syms->Add(spc);
+                            spc->sb->label = Optimizer::nextLabel++;
+                            if (expsym)
+                            {
+                                if (Optimizer::cparams.prm_cplusplus && initItem->basetp->IsStructured() &&
+                                    !initItem->basetp->sp->sb->trivialCons)
+                                {
+                                    Type* ctype = initItem->basetp;
+                                    callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false, true);
+                                    exp = expsym;
+                                }
+                                else
+                                {
+                                    exp = MakeExpression(ExpressionNode::blockassign_, copy_expression(expsym), exp);
+                                    exp->size = initItem->basetp;
+                                    exp->altdata = (void*)(initItem->basetp);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (initItem->basetp->BaseType()->type == BasicType::memberptr_)
                 {
                     EXPRESSION* exp2 = initItem->exp;
+                    ;
                     while (exp2->type == ExpressionNode::not__lvalue_)
                         exp2 = exp2->left;
                     if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
@@ -1253,278 +1387,145 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         exp2->v.func->returnSP->sb->allocate = false;
                         exp2->v.func->returnEXP = copy_expression(expsym);
                         exp = exp2;
-                        noClear = true;
-                    }
-                    else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
-                    {
-                        exp2->left->v.func->returnSP->sb->allocate = false;
-                        exp2->left->v.func->returnEXP = copy_expression(expsym);
-                        exp = exp2;
-                        noClear = true;
-                    }
-                    else if ((Optimizer::cparams.prm_cplusplus) && !initItem->basetp->BaseType()->sp->sb->trivialCons)
-                    {
-                        Type* ctype = initItem->basetp;
-                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
-                        exp = expsym;
                     }
                     else
                     {
-                        exp = copy_expression(expsym);
-                        if (initItem->offset)
-                            exp = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
-                        exp = MakeExpression(ExpressionNode::blockassign_, exp, exp2);
+                        if (exp2->type == ExpressionNode::memberptr_)
+                        {
+                            int lab = dumpMemberPtr(exp2->v.sp, initItem->basetp, true);
+                            exp2 = MakeIntExpression(ExpressionNode::labcon_, lab);
+                        }
+                        exp = MakeExpression(ExpressionNode::blockassign_, copy_expression(expsym), exp2);
                         exp->size = initItem->basetp;
                         exp->altdata = (void*)(initItem->basetp);
-                        noClear = initItem->basetp->ExactSameType(tp);
                     }
                 }
                 else
                 {
-                    Type* btp = initItem->basetp;
-                    while (btp->IsArray())
-                        btp = btp->BaseType()->btp;
-                    btp = btp->BaseType();
-                    bool found = false;
-                    for (auto elm : *init)
+                    exp = initItem->exp;
+                    EXPRESSION* exps = copy_expression(expsym);
+                    exps->init = true;
+                    if (tp->IsArray() && tp->msil)
                     {
-                        if (elm->exp)
-                            if (!isarithmeticconst(elm->exp) && !isconstaddress(elm->exp))
-                            {
-                                found = true;
-                                break;
-                            }
+                        Type* btp = tp;
+                        exps = MakeExpression(ExpressionNode::msil_array_access_);
+                        int count = 0, i;
+                        int q = initItem->offset;
+                        while (btp->IsArray() && btp->msil)
+                        {
+                            count++;
+                            btp = btp->btp;
+                        }
+                        exps->v.msilArray = (MSIL_ARRAY*)Alloc(sizeof(MSIL_ARRAY) + count * sizeof(EXPRESSION*));
+                        exps->v.msilArray->max = count;
+                        exps->v.msilArray->count = count;
+                        exps->v.msilArray->base = copy_expression(expsym);
+                        exps->v.msilArray->tp = tp;
+                        btp = tp->btp;
+                        for (i = 0; i < count; i++)
+                        {
+                            int n = q / btp->size;
+                            exps->v.msilArray->indices[i] = MakeIntExpression(ExpressionNode::c_i_, n);
+                            q = q - n * btp->size;
+
+                            btp = btp->btp;
+                        }
                     }
-                    if (found)
+                    else if ((Optimizer::architecture == ARCHITECTURE_MSIL) && initItem->fieldsp)
                     {
-                        /* some members are non-constant expressions */
-                        if (!Optimizer::cparams.prm_cplusplus)
-                            RequiresDialect::Feature(Dialect::c99, "Field initialization with non-constant");
-                        if (!sym)
+                        if (initItem->fieldoffs)
                         {
-                            expsym = anonymousVar(StorageClass::auto_, initItem->basetp);
-                            sym = expsym->v.sp;
+                            exps = MakeExpression(ExpressionNode::add_, exps, initItem->fieldoffs);
                         }
-                        if (!btp->IsStructured() || btp->sp->sb->trivialCons)
+                        exps = msilThunkSubStructs(exps, expsym, initItem->fieldsp, initItem->offset);
+                        exps = MakeExpression(ExpressionNode::structadd_, exps, MakeExpression(ExpressionNode::structelem_, initItem->fieldsp));
+                    }
+                    else
+                    {
+                        if (initItem->basetp->bits)
                         {
-                            exp = MakeExpression(ExpressionNode::blockclear_, copy_expression(expsym));
-                            exp->size = initItem->basetp;
-                            exp = MakeExpression(ExpressionNode::comma_, exp);
-                            expp = &exp->right;
-                        }
-                        else
-                        {
-                            expp = &exp;
-                        }
-                        {
-                            EXPRESSION* right = initItem->exp;
-                            if (!btp->IsStructured())
+                            auto it1 = it;
+                            exp = MakeExpression(ExpressionNode::and_, exp, MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it)->basetp->bits)));
+                            if ((*it)->basetp->startbit)
+                                exp = MakeExpression(ExpressionNode::lsh_, exp, MakeIntExpression(ExpressionNode::c_i_, (*it)->basetp->startbit));
+                            while (true)
                             {
-                                EXPRESSION* asn;
-                                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                                ++it1;
+                                if (it1 == init->end() || !(*it1)->exp || !(*it1)->basetp || !(*it1)->basetp->bits || (*it1)->offset != initItem->offset)
                                 {
-                                    int n = initItem->offset / btp->size;
-                                    asn = MakeExpression(ExpressionNode::sizeof_, MakeExpression(btp));
-                                    EXPRESSION* exp4 = MakeIntExpression(ExpressionNode::c_i_, n);
-                                    asn = MakeExpression(ExpressionNode::umul_, exp4, asn);
+                                    break;
                                 }
-                                else
-                                {
-                                    asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
-                                }
-                                deref(initItem->basetp, &asn);
-                                cast(initItem->basetp, &right);
-                                right = MakeExpression(ExpressionNode::assign_, asn, right);
+                                auto exp1 = (*it1)->exp;
+                                exp1 = MakeExpression(ExpressionNode::and_, exp1, MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it1)->basetp->bits)));
+                                if ((*it1)->basetp->startbit)
+                                    exp1 = MakeExpression(ExpressionNode::lsh_, exp1, MakeIntExpression(ExpressionNode::c_i_, (*it1)->basetp->startbit));
+                                exp = MakeExpression(ExpressionNode::or_, exp, exp1);
+                                ++it;
                             }
-                            if (*expp)
-                                *expp = MakeExpression(ExpressionNode::comma_, *expp, right);
-                            else
-                                *expp = right;
-                            expp = &(*expp)->right;
+                        }
+                        if (initItem->offset || initItem != init->back())
+                        {
+                            std::list<Initializer*>::iterator last;
+                            for (auto itx = init->end(); itx != init->begin();)
+                            {
+                                --itx;
+                                last = itx;
+                                if (*itx == initItem)
+                                    break;
+                            }
+                            if (initItem->offset ||
+                                (last != init->end() && (*last)->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
+                            {
+                                exps = MakeExpression(ExpressionNode::add_, exps, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                exps->init = true;
+                            }
+                        }
+                    }
+                    if (exps->type != ExpressionNode::msil_array_access_)
+                        deref(initItem->basetp, &exps);
+                    optimize_for_constants(&exps);
+                    if (exp->type == ExpressionNode::comma_)
+                    {
+                        cast(initItem->basetp, &exp->right);
+                        if (expsym)
+                        {
+                            exp->right = MakeExpression(ExpressionNode::assign_, exps, exp->right);
+                            // unallocated var for destructor
+                            GetAssignDestructors(&exp->right->v.logicaldestructors.left, exp->right);
                         }
                     }
                     else
                     {
-                        /* constant expression */
-                        SYMBOL* spc;
-                        exp = anonymousVar(StorageClass::localstatic_, initItem->basetp);
-                        spc = exp->v.sp;
-                        if (!spc->sb->init)
-                            spc->sb->init = initListFactory.CreateList();
-                        else
-                            spc->sb->init->clear();
-                        spc->sb->init->push_back(initItem);
-                        insertInitSym(spc);
-                        localNameSpace->front()->syms->Add(spc);
-                        spc->sb->label = Optimizer::nextLabel++;
-                        if (expsym)
+                        if ((initItem->basetp->IsArithmetic() || initItem->basetp->IsPtr())
+                            && !initItem->basetp->IsBitInt())
+                            cast(initItem->basetp, &exp);
+                        if (exps)
                         {
-                            if (Optimizer::cparams.prm_cplusplus && initItem->basetp->IsStructured() &&
-                                !initItem->basetp->sp->sb->trivialCons)
-                            {
-                                Type* ctype = initItem->basetp;
-                                callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false, true);
-                                exp = expsym;
-                            }
-                            else
-                            {
-                                exp = MakeExpression(ExpressionNode::blockassign_, copy_expression(expsym), exp);
-                                exp->size = initItem->basetp;
-                                exp->altdata = (void*)(initItem->basetp);
-                            }
+                            exp = MakeExpression(ExpressionNode::assign_, exps, exp);
+                            // unallocated var for destructor
+                            GetAssignDestructors(&exp->v.logicaldestructors.left, exp);
                         }
                     }
                 }
-            }
-            else if (initItem->basetp->BaseType()->type == BasicType::memberptr_)
-            {
-                EXPRESSION* exp2 = initItem->exp;
-                ;
-                while (exp2->type == ExpressionNode::not__lvalue_)
-                    exp2 = exp2->left;
-                if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
+                if (sym && sym->sb->init && initItem->basetp->IsAtomic() && needsAtomicLockFromType(initItem->basetp))
                 {
-                    exp2->v.func->returnSP->sb->allocate = false;
-                    exp2->v.func->returnEXP = copy_expression(expsym);
-                    exp = exp2;
+                    EXPRESSION* p1 = MakeExpression(ExpressionNode::add_, expsym->left, MakeIntExpression(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
+                    deref(&stdint, &p1);
+                    p1 = MakeExpression(ExpressionNode::assign_, p1, MakeIntExpression(ExpressionNode::c_i_, 0));
+                    exp = MakeExpression(ExpressionNode::comma_, exp, p1);
+                }
+            }
+            if (exp)
+            {
+                if (*pos)
+                {
+                    *pos = MakeExpression(ExpressionNode::comma_, *pos, exp);
+                    pos = &(*pos)->right;
                 }
                 else
                 {
-                    if (exp2->type == ExpressionNode::memberptr_)
-                    {
-                        int lab = dumpMemberPtr(exp2->v.sp, initItem->basetp, true);
-                        exp2 = MakeIntExpression(ExpressionNode::labcon_, lab);
-                    }
-                    exp = MakeExpression(ExpressionNode::blockassign_, copy_expression(expsym), exp2);
-                    exp->size = initItem->basetp;
-                    exp->altdata = (void*)(initItem->basetp);
+                    *pos = exp;
                 }
-            }
-            else
-            {
-                exp = initItem->exp;
-                EXPRESSION* exps = copy_expression(expsym);
-                exps->init = true;
-                if (tp->IsArray() && tp->msil)
-                {
-                    Type* btp = tp;
-                    exps = MakeExpression(ExpressionNode::msil_array_access_);
-                    int count = 0, i;
-                    int q = initItem->offset;
-                    while (btp->IsArray() && btp->msil)
-                    {
-                        count++;
-                        btp = btp->btp;
-                    }
-                    exps->v.msilArray = (MSIL_ARRAY*)Alloc(sizeof(MSIL_ARRAY) + count * sizeof(EXPRESSION*));
-                    exps->v.msilArray->max = count;
-                    exps->v.msilArray->count = count;
-                    exps->v.msilArray->base = copy_expression(expsym);
-                    exps->v.msilArray->tp = tp;
-                    btp = tp->btp;
-                    for (i = 0; i < count; i++)
-                    {
-                        int n = q / btp->size;
-                        exps->v.msilArray->indices[i] = MakeIntExpression(ExpressionNode::c_i_, n);
-                        q = q - n * btp->size;
-
-                        btp = btp->btp;
-                    }
-                }
-                else if ((Optimizer::architecture == ARCHITECTURE_MSIL) && initItem->fieldsp)
-                {
-                    if (initItem->fieldoffs)
-                    {
-                        exps = MakeExpression(ExpressionNode::add_, exps, initItem->fieldoffs);
-                    }
-                    exps = msilThunkSubStructs(exps, expsym, initItem->fieldsp, initItem->offset);
-                    exps = MakeExpression(ExpressionNode::structadd_, exps, MakeExpression(ExpressionNode::structelem_, initItem->fieldsp));
-                }
-                else
-                {
-                    if (initItem->basetp->bits)
-                    {
-                        auto it1 = it;
-                        exp = MakeExpression(ExpressionNode::and_, exp, MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it)->basetp->bits)));
-                        if ((*it)->basetp->startbit)
-                            exp = MakeExpression(ExpressionNode::lsh_, exp, MakeIntExpression(ExpressionNode::c_i_, (*it)->basetp->startbit));
-                        while (true)
-                        {
-                            ++it1;
-                            if (it1 == init->end() || !(*it1)->exp || !(*it1)->basetp || !(*it1)->basetp->bits || (*it1)->offset != initItem->offset)
-                            {
-                                break;
-                            }
-			    auto exp1 = (*it1)->exp;
-                            exp1 = MakeExpression(ExpressionNode::and_, exp1, MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it1)->basetp->bits)));
-                            if ((*it1)->basetp->startbit)
-                                exp1 = MakeExpression(ExpressionNode::lsh_, exp1, MakeIntExpression(ExpressionNode::c_i_, (*it1)->basetp->startbit));
-                            exp = MakeExpression(ExpressionNode::or_, exp, exp1);
-                            ++it;                            
-                        }
-                    }
-                    if (initItem->offset || initItem != init->back())
-                    {
-                        std::list<Initializer*>::iterator last;
-                        for (auto itx = init->end(); itx != init->begin();)
-                        {
-                            --itx;
-                            last = itx;
-                            if (*itx == initItem)
-                                break;
-                        }
-                        if (initItem->offset ||
-                            (last != init->end() && (*last)->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
-                        {
-                            exps = MakeExpression(ExpressionNode::add_, exps, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
-                            exps->init = true;
-                        }
-                    }
-                }
-                if (exps->type != ExpressionNode::msil_array_access_)
-                    deref(initItem->basetp, &exps);
-                optimize_for_constants(&exps);
-                if (exp->type == ExpressionNode::comma_)
-                {
-                    cast(initItem->basetp, &exp->right);
-                    if (expsym)
-                    {
-                        exp->right = MakeExpression(ExpressionNode::assign_, exps, exp->right);
-                        // unallocated var for destructor
-                        GetAssignDestructors(&exp->right->v.logicaldestructors.left, exp->right);
-                    }
-                }
-                else
-                {
-                    if ((initItem->basetp->IsArithmetic() || initItem->basetp->IsPtr())
-                        && !initItem->basetp->IsBitInt())
-                        cast(initItem->basetp, &exp);
-                    if (exps)
-                    {
-                        exp = MakeExpression(ExpressionNode::assign_, exps, exp);
-                        // unallocated var for destructor
-                        GetAssignDestructors(&exp->v.logicaldestructors.left, exp);
-                    }
-                }
-            }
-            if (sym && sym->sb->init && initItem->basetp->IsAtomic() && needsAtomicLockFromType(initItem->basetp))
-            {
-                EXPRESSION* p1 = MakeExpression(ExpressionNode::add_, expsym->left, MakeIntExpression(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
-                deref(&stdint, &p1);
-                p1 = MakeExpression(ExpressionNode::assign_, p1, MakeIntExpression(ExpressionNode::c_i_, 0));
-                exp = MakeExpression(ExpressionNode::comma_, exp, p1);
-            }
-        }
-        if (exp)
-        {
-            if (*pos)
-            {
-                *pos = MakeExpression(ExpressionNode::comma_, *pos, exp);
-                pos = &(*pos)->right;
-            }
-            else
-            {
-                *pos = exp;
             }
         }
     }

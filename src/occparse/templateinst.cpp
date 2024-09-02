@@ -5800,6 +5800,7 @@ SYMBOL* ParseLibcxxAliases(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
         {
             return MakeIntegerSeq(sp, args);
         }
+#ifdef LIBCXX17
         if (sp->name[2] == 'd' && (strcmp(sp->name, "__decay") == 0 || strcmp(sp->name, "__decay_t") == 0))
         {
             return Decay(sp, args);
@@ -5812,6 +5813,7 @@ SYMBOL* ParseLibcxxAliases(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
         {
             return RemoveReference(sp, args);
         }
+#endif
     }
     return nullptr;
 }
@@ -5971,11 +5973,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
                             break;
                         }
                     }
-                }
-                else
-                {
-                    newval = &stdany;
-                    break;
                 }
             }
             else if (!t.second->byClass.dflt)

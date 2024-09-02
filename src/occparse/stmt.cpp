@@ -1116,20 +1116,25 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         fcb.returnEXP->v.sp->sb->anonymous = false;
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
-                                        dest = nullptr;
-                                        callDestructor(fcb.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
-                                        initInsert(&dest, iteratorType, exp, 0, true);
-                                        fcb.returnSP->sb->dest = dest;
-
+                                        if (!iteratorType->BaseType()->sp->sb->pureDest)
+                                        {
+                                            dest = nullptr;
+                                            callDestructor(fcb.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
+                                            initInsert(&dest, iteratorType, exp, 0, true);
+                                            fcb.returnSP->sb->dest = dest;
+                                        }
                                         dest = nullptr;
                                         fce.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
                                         fce.returnEXP->v.sp->sb->anonymous = false;
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
-                                        dest = nullptr;
-                                        callDestructor(fce.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
-                                        initInsert(&dest, iteratorType, exp, 0, true);
-                                        fce.returnSP->sb->dest = dest;
+                                        if (!iteratorType->BaseType()->sp->sb->pureDest)
+                                        {
+                                            dest = nullptr;
+                                            callDestructor(fce.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
+                                            initInsert(&dest, iteratorType, exp, 0, true);
+                                            fce.returnSP->sb->dest = dest;
+                                        }
                                     }
                                     fc = Allocate<CallSite>();
                                     *fc = fcb;
@@ -1226,19 +1231,24 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                             fcb.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
-                                            dest = nullptr;
-                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
-                                            initInsert(&dest, iteratorType, exp, 0, true);
-                                            fcb.returnSP->sb->dest = dest;
-
+                                            if (!iteratorType->BaseType()->sp->sb->pureDest)
+                                            {
+                                                dest = nullptr;
+                                                callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
+                                                initInsert(&dest, iteratorType, exp, 0, true);
+                                                fcb.returnSP->sb->dest = dest;
+                                            }
                                             dest = nullptr;
                                             fce.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
-                                            dest = nullptr;
-                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
-                                            initInsert(&dest, iteratorType, exp, 0, true);
-                                            fce.returnSP->sb->dest = dest;
+                                            if (!iteratorType->BaseType()->sp->sb->pureDest)
+                                            {
+                                                dest = nullptr;
+                                                callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
+                                                initInsert(&dest, iteratorType, exp, 0, true);
+                                                fce.returnSP->sb->dest = dest;
+                                            }
                                         }
                                         fc = Allocate<CallSite>();
                                         *fc = fcb;
@@ -1568,11 +1578,14 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 {
                                     st->select->v.func->returnEXP = anonymousVar(StorageClass::auto_, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
-                                    declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false,
-                                                   true);
-                                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-                                    st->select = declDest;
+                                    if (!ppType->BaseType()->sp->sb->pureDest)
+                                    {
+                                        auto dest = st->select->v.func->returnEXP;
+                                        callDestructor(st->select->v.func->returnSP->tp->BaseType()->sp, nullptr, &dest, nullptr, true, true, false,
+                                                       true);
+                                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                        st->select = dest;
+                                    }
                                 }
                             }
                         }

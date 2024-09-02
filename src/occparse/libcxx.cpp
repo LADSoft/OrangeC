@@ -123,6 +123,7 @@ void libcxx_builtins(void)
 {
     if (Optimizer::cparams.prm_cplusplus)
     {
+#if XXXX
         preProcessor->Define("address_sanitizer", "0");
         preProcessor->Define("__has_cxx_access_control_sfinae", "0");
         preProcessor->Define("__has_cxx_alias_templates", "1");
@@ -153,12 +154,99 @@ void libcxx_builtins(void)
         preProcessor->Define("__has_nothrow_copy", "0");
         preProcessor->Define("__has_trivial_constructor", "0");
         preProcessor->Define("__has_trivial_destructor", "0");
-        preProcessor->Define("__has___virtual_destructor", "1");
+        preProcessor->Define("__has_virtual_destructor_xx", "0");
         preProcessor->Define("__has_is_base_of", "1");
         preProcessor->Define("__has_is_class", "1");
         preProcessor->Define("__has_is_constructible", "1");
         preProcessor->Define("__has_is_convertible_to", "1");
+        preProcessor->Define("__has_is_empty", "1");
+        preProcessor->Define("__has_is_enum", "1");
+        preProcessor->Define("__has_is_final", "1");
+        preProcessor->Define("__has_is_literal", "1");
+        preProcessor->Define("__has_is_nothrow_constructible", "1");
+        preProcessor->Define("__has_is_nothrow_assignable", "1");
+        preProcessor->Define("__has_is_pod", "1");
+        preProcessor->Define("__has_is_polymorphic", "1");
+        preProcessor->Define("__has_is_standard_layout", "1");
+        preProcessor->Define("__has_is_trivial", "1");
+        preProcessor->Define("__has_is_trivially_assignable", "1");
+        preProcessor->Define("__has_is_trivially_constructible", "1");
+        preProcessor->Define("__has_is_trivially_copyable", "1");
+        preProcessor->Define("__has_is_union", "1");
+        preProcessor->Define("__has___reference_binds_to_temporary", "0");
+        preProcessor->Define("__has___is_trivially_destructible", "1");
+        preProcessor->Define("__has___is_nothrow_constructible", "1");
+        preProcessor->Define("__has___is_nothrow_assignable", "1");
+        preProcessor->Define("__has___nullptr", "0");
+        preProcessor->Define("__has__Atomic", "1");
+        preProcessor->Define("__has___is_aggregate", "0");
+        preProcessor->Define("__has__builtin_isnan", "0");
+        preProcessor->Define("__has__builtin_isinf", "0");
+        preProcessor->Define("__has__builtin_isfinite", "0");
+        preProcessor->Define("__has__atomic_load_n", "1");
+        preProcessor->Define("__has__atomic_add_fetch", "1");
+        preProcessor->Define("__has__atomic_exchange_n", "1");
+        preProcessor->Define("__has__atomic_compare_exchange_n", "1");
+        preProcessor->Define("__has__builtin_operator_new", "0");
+        preProcessor->Define("__has__builtin_operator_delete", "0");
+        preProcessor->Define("__has__make_integer_seq", "1");
+        preProcessor->Define("__has__type_pack_element", "1");
+        preProcessor->Define("__has__builtin_launder", "0");
+        preProcessor->Define("__has__builtin_addressof", "0");
+        preProcessor->Define("__has____no_sanitize__", "0");
+        preProcessor->Define("__has____type_visibility__", "0");
+        preProcessor->Define("__has__internal_linkage", "1");
+        preProcessor->Define("__has__exclude_from_explicit_instantiation", "1");
+        preProcessor->Define("__has____enable_if__", "0");
+        preProcessor->Define("__has__deprecated", "1");
+        preProcessor->Define("__has__no_destroy", "0");
+        preProcessor->Define("__has__aquire_capability", "0");
+        preProcessor->Define("__has__require_constant_initialization", "0");
+        preProcessor->Define("__has__diagnose_if", "0");
+        preProcessor->Define("__has__fallthrough", "0");
+        preProcessor->Define("__has____nodebug__", "0");
+        preProcessor->Define("__has__no_thread_safety_analysis", "0");
+#endif
+        preProcessor->Define("address_sanitizer", "0");
+        preProcessor->Define("__has_cxx_access_control_sfinae", "0");
+        preProcessor->Define("__has_cxx_alias_templates", "1");
+        preProcessor->Define("__has_cxx_alignas", "1");
+        preProcessor->Define("__has_cxx_atomic", "1");
+        preProcessor->Define("__has_cxx_attributes", "1");
+        preProcessor->Define("__has_cxx_auto_type", "1");
+        preProcessor->Define("__has_cxx_constexpr", "1");
+        preProcessor->Define("__has_cxx_decltype", "1");
+        preProcessor->Define("__has_cxx_defaulted_functions", "1");
+        preProcessor->Define("__has_cxx_deleted_functions", "1");
+        preProcessor->Define("__has_cxx_exceptions", "1");
+        preProcessor->Define("__has_cxx_explicit_conversions", "1");
+        preProcessor->Define("__has_cxx_generalized_initializers", "1");
+        preProcessor->Define("__has_cxx_lambdas", "1");
+        preProcessor->Define("__has_cxx_noexcept", "1");
+        preProcessor->Define("__has_cxx_nullptr", "1");
+        preProcessor->Define("__has_cxx_reference_qualified_functions", "1");
+        preProcessor->Define("__has_cxx_relaxed_constexpr", "1");
+        preProcessor->Define("__has_cxx_rtti", "1");
+        preProcessor->Define("__has_cxx_rvalue_references", "1");
+        preProcessor->Define("__has_cxx_static_assert", "1");
+        preProcessor->Define("__has_cxx_strong_enums", "1");
+        preProcessor->Define("__has_cxx_trailing_return", "1");
+        preProcessor->Define("__has_cxx_variadic_templates", "1");
+        preProcessor->Define("__has_nothrow_assign", "1");
+        preProcessor->Define("__has_nothrow_constructor", "0");
+        preProcessor->Define("__has_nothrow_copy", "0");
+        preProcessor->Define("__has_trivial_constructor", "0");
+        preProcessor->Define("__has_trivial_destructor", "0");
+#ifdef LIBCXX17
+        preProcessor->Define("__has___virtual_destructor", "1");
+#endif
+        preProcessor->Define("__has_is_base_of", "1");
+        preProcessor->Define("__has_is_class", "1");
+        preProcessor->Define("__has_is_constructible", "1");
+        preProcessor->Define("__has_is_convertible_to", "1");
+#ifdef LIBCXX17
         preProcessor->Define("__has__is_destructible", "1");
+#endif
         preProcessor->Define("__has_is_empty", "1");
         preProcessor->Define("__has_is_enum", "1");
         preProcessor->Define("__has_is_final", "1");
@@ -176,12 +264,16 @@ void libcxx_builtins(void)
         preProcessor->Define("__has___reference_binds_to_temporary", "0");
         preProcessor->Define("__has__is_member_pointer", "1");
         preProcessor->Define("__has___is_trivially_destructible", "1");
+#ifdef LIBCXX17
         preProcessor->Define("__has__is_trivially_destructible", "1");
+#endif
         preProcessor->Define("__has___is_nothrow_constructible", "1");
         preProcessor->Define("__has___is_nothrow_assignable", "1");
         preProcessor->Define("__has___nullptr", "0");
         preProcessor->Define("__has__Atomic", "1");
+#ifdef LIBCXX17
         preProcessor->Define("__has___is_aggregate", "1");
+#endif
         preProcessor->Define("__has__builtin_isnan", "0");
         preProcessor->Define("__has__builtin_isinf", "0");
         preProcessor->Define("__has__builtin_isfinite", "0");
@@ -209,8 +301,10 @@ void libcxx_builtins(void)
         preProcessor->Define("__has____nodebug__", "0");
         preProcessor->Define("__has__no_thread_safety_analysis", "0");
         preProcessor->Define("__has____using_if_exists__", "0");
+#ifdef LIBCXX17
         preProcessor->Define("__has__decay", "1");
         preProcessor->Define("__has__remove_reference_t", "1");
+#endif
     }
 }
 static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool initialize = false);
@@ -225,6 +319,9 @@ bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type**
         (*exp) = MakeExpression(ExpressionNode::cppintrinsic_);
         (*exp)->v.cppintrinsicName = it->first.c_str();
         *lex = GetTypeList(*lex, funcsp, &(*exp)->v.cppintrinsicArgs);
+#ifndef LIBCXX17
+        EvaluateLibcxxConstant(exp);
+#endif
         *tp = &stdint;
         return true;
     }
@@ -252,18 +349,18 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         {
             arg->tp = arg->tp->BaseType();
             TEMPLATEPARAMPAIR* tpl = TypeAliasSearch(arg->tp->BaseType()->templateParam->first->name, false);
-            if (tpl && (tpl->second->packed || tpl->second->byClass.dflt))
+            if (tpl && (tpl->second->packed || tpl->second->byClass.val))
             {
                 if (tpl->second->packed)
                 {
                     if (tpl->second->byPack.pack)
                         for (auto&& arg2 : *tpl->second->byPack.pack)
                         {
-                            if (arg2.second->byClass.dflt)
+                            if (arg2.second->byClass.val)
                             {
                                 auto arg1 = Allocate<Argument>();
                                 (*arguments)->push_back(arg1);
-                                arg1->tp = arg2.second->byClass.dflt->CopyType();
+                                arg1->tp = arg2.second->byClass.val->CopyType();
                                 if (initialize)
                                 {
                                     arg1->tp->InstantiateDeferred();
@@ -276,7 +373,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
                 {
                     auto arg1 = Allocate<Argument>();
                     (*arguments)->push_back(arg1);
-                    arg1->tp = tpl->second->byClass.dflt->CopyType();
+                    arg1->tp = tpl->second->byClass.val->CopyType();
                     if (initialize)
                     {
                         arg1->tp->InstantiateDeferred();

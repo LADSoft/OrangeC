@@ -28,8 +28,11 @@
 #include <fcntl.h>
 #include <locale.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <wchar.h>
 #include "libp.h"
+
+extern char __uinames[HANDLE_MAX][256];
 
 int _RTL_FUNC _futime(int __handle, struct utimbuf* times)
 {
@@ -92,3 +95,19 @@ int _RTL_FUNC _wutime(const wchar_t* path, struct _utimbuf* times)
 }
 int _RTL_FUNC utime(const char* path, struct utimbuf* times) { return _utime(path, times); }
 int _RTL_FUNC _utime32(const char* path, struct utimbuf* times) { return _utime(path, times); }
+
+// resolution is nearest second
+int _RTL_FUNC utimes(const char* path, struct timeval times[2]) 
+{
+    __ll_enter_critical();
+    int __handle = __uiohandle(__handle);
+    if (__handle == -1)
+    {
+        __ll_exit_critical();
+        return -1;
+    }
+    struct utimbuf utimex[2] = { times[0].tv_sec, times[1].tv_sec };
+    int rv = _utime(path, utimex); 
+    __ll_exit_critical;
+    return rv;
+}

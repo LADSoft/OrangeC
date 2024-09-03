@@ -3404,6 +3404,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                                 if (tpx->type != BasicType::templateparam_ &&
                                     tpx->type != BasicType::templateselector_ &&
                                     tpx->type != BasicType::templatedecltype_ &&
+                                    tpx->type != BasicType::templatedeferredtype_ &&
                                     !templateCompareTypes(itParams->second->byClass.val, itParams->second->byClass.dflt, true))
                                     rv = nullptr;
                                 break;

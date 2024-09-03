@@ -54,6 +54,13 @@
 #endif
 #endif
 
+#if defined (__ORANGEC__)
+// not supporting links or sockets
+#define lstat stat
+#define S_ISLNK(m) 0
+#define S_ISSOCK(m) 0
+#endif
+
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
 namespace {
@@ -942,10 +949,10 @@ bool __equivalent(const path& p1, const path& p2, error_code* ec) {
 
   error_code ec1, ec2;
   StatT st1 = {}, st2 = {};
-  auto s1 = detail::posix_stat(p1.native(), st1, &ec1);
+  auto s1 = detail::posix_stat(p1/*.native() DAL*/, st1, &ec1);
   if (!exists(s1))
     return err.report(errc::not_supported);
-  auto s2 = detail::posix_stat(p2.native(), st2, &ec2);
+  auto s2 = detail::posix_stat(p2/*.native() DAL*/, st2, &ec2);
   if (!exists(s2))
     return err.report(errc::not_supported);
 

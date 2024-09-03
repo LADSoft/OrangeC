@@ -30,6 +30,7 @@
 #include <locale.h>
 #include "libp.h"
 #include <dos.h>
+#include <fcntl.h>
 
 int _RTL_FUNC chsize(int __handle, long __size)
 {
@@ -54,3 +55,14 @@ int _RTL_FUNC chsize(int __handle, long __size)
     return -1;
 }
 int _RTL_FUNC _chsize(int __handle, long __size) { return chsize(__handle, __size); }
+int _RTL_FUNC truncate(const char * __filename, long __size)
+{
+    int handle = open(__filename, O_RDWR);
+    if (handle != -1)
+    {
+        int rv = _chsize(handle, __size);
+        close(handle);
+        return rv;
+    }
+    return -1;
+}

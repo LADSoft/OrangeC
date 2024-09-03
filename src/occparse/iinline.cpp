@@ -613,6 +613,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
     }
+    if (f->returnEXP && f->returnEXP->type == ExpressionNode::auto_ && f->returnEXP->v.sp->sb->stackblock)
+    {
+        return nullptr;
+    }
     if (currentFunction != argCurrentFunction)
     {
         argTable.clear();

@@ -329,6 +329,7 @@ int _RTL_FUNC _wstat64(
     int _RTL_FUNC _IMPORT _stat(const char* __path, struct _stat* __statbuf);
     int _RTL_FUNC _IMPORT stat(const char* __path, struct stat* __statbuf);
     int _RTL_FUNC _IMPORT chmod(const char* ZSTR __path, int __amode);
+    int _RTL_FUNC _IMPORT fchmod(int __handle, int __amode);
     int _RTL_FUNC _IMPORT mkdir(const char* ZSTR __path, int __amode);
 #endif
 

@@ -723,7 +723,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                         else
                                         {
                                             sp = GetTypeAliasSpecialization(sp, current);
-                                            if (sp->tp->IsStructured())
+                                            if (sp && sp->tp->IsStructured())
                                                 sp = sp->tp->BaseType()->sp;
                                         }
                                     }
@@ -6048,19 +6048,11 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             if (args->thistp)
             {
                 args->thistp->InstantiateDeferred();
-//                args->thistp = args->thistp->InitializeDeferred();
             }
             if (args->returnSP)
             {
                 args->returnSP->tp->InstantiateDeferred();
-//                args->returnSP->tp = args->returnSP->tp->InitializeDeferred();
             }
-            if (args->arguments)
-                for (auto a : *args->arguments)
-                    if (a->tp)
-                    {
-//                        a->tp = a->tp->InitializeDeferred();
-                    }
             if (args->templateParams)
                 for (auto&& a : *args->templateParams)
                 {

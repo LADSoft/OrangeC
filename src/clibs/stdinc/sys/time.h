@@ -51,6 +51,7 @@ extern "C"
 #endif
 
     int _RTL_FUNC _IMPORT gettimeofday(struct timeval* tv, struct timezone* tz);
+    int _RTL_FUNC utimes(const char *filename, const struct timeval times[2]);
 
 #ifdef __cplusplus
 }

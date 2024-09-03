@@ -56,6 +56,7 @@ extern "C"
     ssize_t _RTL_FUNC readlink(const char *path, char *buf, size_t bufsiz);
 
     char* ZSTR _RTL_FUNC _IMPORT getcwd(char* ZSTR, int);
+    int _RTL_FUNC _IMPORT truncate(const char * __filename, long __size);
 
 #endif
 

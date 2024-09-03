@@ -31,6 +31,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
+extern char __uinames[HANDLE_MAX][256];
 
 int _RTL_FUNC _wchmod(const wchar_t* __path, int __amode)
 {
@@ -55,3 +56,15 @@ int _RTL_FUNC chmod(const char* __path, int __amode)
 }
 
 int _RTL_FUNC _chmod(const char* __path, int __amode) { return chmod(__path, __amode); }
+
+int _RTL_FUNC fchmod(int __handle, int __amode)
+{
+    __ll_enter_critical();
+    __handle = __uiohandle(__handle);
+    if (__handle == -1)
+    {
+        __ll_exit_critical();
+        return -1;
+    }
+    return chmod(__uinames[__handle], __amode);
+}

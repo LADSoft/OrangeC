@@ -2336,9 +2336,14 @@ static int gen_parm(Argument* a, SYMBOL* funcsp)
         }
         else
         {
+            // could be a cast operator
+            auto ret = a->exp->left->type == ExpressionNode::callsite_ ? a->exp->left->v.func->returnEXP : nullptr;
             Optimizer::IMODE* ap = gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
-            Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
-            Optimizer::intermed_tail->valist = a->valist ? (a->exp && a->exp->type == ExpressionNode::l_p_) : 0;
+            if (!ret || ret->type != ExpressionNode::auto_ || !ret->v.sp->sb->stackblock)
+            {
+                Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
+                Optimizer::intermed_tail->valist = a->valist ? (a->exp && a->exp->type == ExpressionNode::l_p_) : 0;
+            }
             rv = a->tp->size;
         }
     }
@@ -2801,6 +2806,16 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         else
         {
+            if (f->returnEXP && f->returnEXP->type == ExpressionNode::auto_ && f->returnEXP->v.sp->sb->stackblock)
+            {
+                // cast operator creating a structure on the stack....
+                auto rv = f->returnEXP->v.sp->tp->size;
+                if (rv % Optimizer::chosenAssembler->arch->stackalign)
+                    rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
+                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv),
+                    nullptr);
+                Optimizer::SymbolManager::Get(f->returnEXP->v.sp)->imvalue = ap;
+            }
             genCdeclArgs(f->arguments, funcsp);
             if (f->thisptr)
             {

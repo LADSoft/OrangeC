@@ -461,7 +461,8 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
         deref(&stdpointer, &varptr);
         rv = MakeExpression(ExpressionNode::assign_, varptr, thisptr);
 
-        for (auto sp : *ths->v.sp->sb->parentClass->tp->syms)
+//        for (auto sp : *ths->v.sp->sb->parentClass->tp->syms)
+        for (auto sp : *tp->BaseType()->syms)
         {
             if (ismemberdata(sp))
             {
@@ -568,7 +569,7 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
                         auto expx = argmap[rel->v.sp];
                         if (offset)
                             expx = MakeExpression(ExpressionNode::add_, expx, MakeIntExpression(ExpressionNode::c_i_, offset));
-                        if (arg->tp->IsRef())
+                        if (arg->tp->IsRef() && !arg->tp->BaseType()->btp->IsArray())
                             argmap[arg] = MakeVarPtr(true, 1, 1, rel->v.sp, MakeVarPtr(false, 1, 1, rel->v.sp, expx));
                         else
                             argmap[arg] = MakeVarPtr(false, 1, 1, rel->v.sp, expx);
@@ -581,7 +582,7 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
                         auto target = expx->v.constexprData.data;
                         if (offset)
                             expx = MakeExpression(ExpressionNode::add_, expx, MakeIntExpression(ExpressionNode::c_i_, offset));
-                        if (arg->tp->IsRef())
+                        if (arg->tp->IsRef() && !arg->tp->BaseType()->btp->IsArray())
                             argmap[arg] = MakeVarPtr(true, 1, 1, rel->v.sp, MakeVarPtr(false, 1, 1, rel->v.sp, expx));
                         else
                             argmap[arg] = MakeVarPtr(false, 1, 1, rel->v.sp, expx);

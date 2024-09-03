@@ -404,6 +404,11 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                     {
                         return false;
                     }
+                    else if (tpn->type == BasicType::void_ || tps->type == BasicType::void_)
+                    {
+                        if (tpn->type != BasicType::templateselector_)
+                            return false;
+                    }
                     else if (tpn->type == BasicType::templateselector_)
                     {
                         if (tps->type == BasicType::templateselector_)
@@ -488,6 +493,17 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                     else if (told->BaseType()->sp->sb->castoperator)
                     {
                         return false;
+                    }
+                    else if (tpn->IsStructured() || tps->IsStructured())
+                    {
+                        if (tpn->IsArithmetic() || tps->IsArithmetic())
+                        {
+                            return false;
+                        }
+                        if (tpn->IsStructured() && tps->IsStructured() && !sameTemplate(tpn, tps))
+                        {
+                            return false;
+                        }
                     }
                     return true;
                 }

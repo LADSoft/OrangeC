@@ -536,22 +536,22 @@ struct __can_convert_char<const _Tp> : public __can_convert_char<_Tp> {};
 template <>
 struct __can_convert_char<char> {
   static const bool value = true;
-  using __char_type = char;
+  using char_type = char;
 };
 template <>
 struct __can_convert_char<wchar_t> {
   static const bool value = true;
-  using __char_type = wchar_t;
+  using char_type = wchar_t;
 };
 template <>
 struct __can_convert_char<char16_t> {
   static const bool value = true;
-  using __char_type = char16_t;
+  using char_type = char16_t;
 };
 template <>
 struct __can_convert_char<char32_t> {
   static const bool value = true;
-  using __char_type = char32_t;
+  using char_type = char32_t;
 };
 
 template <class _ECharT>
@@ -571,7 +571,7 @@ struct __is_pathable_string : public false_type {};
 template <class _ECharT, class _Traits, class _Alloc>
 struct __is_pathable_string<
     basic_string<_ECharT, _Traits, _Alloc>,
-    _Void<typename __can_convert_char<_ECharT>::__char_type> >
+    _Void<typename __can_convert_char<_ECharT>::char_type> >
     : public __can_convert_char<_ECharT> {
   using _Str = basic_string<_ECharT, _Traits, _Alloc>;
   using _Base = __can_convert_char<_ECharT>;
@@ -587,7 +587,7 @@ struct __is_pathable_string<
 template <class _ECharT, class _Traits>
 struct __is_pathable_string<
     basic_string_view<_ECharT, _Traits>,
-    _Void<typename __can_convert_char<_ECharT>::__char_type> >
+    _Void<typename __can_convert_char<_ECharT>::char_type> >
     : public __can_convert_char<_ECharT> {
   using _Str = basic_string_view<_ECharT, _Traits>;
   using _Base = __can_convert_char<_ECharT>;
@@ -633,7 +633,7 @@ template <class _Iter>
 struct __is_pathable_iter<
     _Iter, true,
     _Void<typename __can_convert_char<
-        typename iterator_traits<_Iter>::value_type>::__char_type> >
+        typename iterator_traits<_Iter>::value_type>::char_type> >
     : __can_convert_char<typename iterator_traits<_Iter>::value_type> {
   using _ECharT = typename iterator_traits<_Iter>::value_type;
   using _Base = __can_convert_char<_ECharT>;
@@ -741,7 +741,7 @@ class _LIBCPP_TYPE_VIS path {
       typename enable_if<__is_pathable<_SourceOrIter>::value, _Tp>::type;
 
   template <class _Tp>
-  using _SourceChar = typename __is_pathable<_Tp>::__char_type;
+  using _SourceChar = typename __is_pathable<_Tp>::char_type;
 
   template <class _Tp>
   using _SourceCVT = _PathCVT<_SourceChar<_Tp> >;
@@ -1198,7 +1198,7 @@ _LIBCPP_INLINE_VISIBILITY
     typename enable_if<__is_pathable<_Source>::value, path>::type
     u8path(const _Source& __s) {
   static_assert(
-      is_same<typename __is_pathable<_Source>::__char_type, char>::value,
+      is_same<typename __is_pathable<_Source>::char_type, char>::value,
       "u8path(Source const&) requires Source have a character type of type "
       "'char'");
   return path(__s);
@@ -1209,7 +1209,7 @@ _LIBCPP_INLINE_VISIBILITY
     typename enable_if<__is_pathable<_InputIt>::value, path>::type
     u8path(_InputIt __f, _InputIt __l) {
   static_assert(
-      is_same<typename __is_pathable<_InputIt>::__char_type, char>::value,
+      is_same<typename __is_pathable<_InputIt>::char_type, char>::value,
       "u8path(Iter, Iter) requires Iter have a value_type of type 'char'");
   return path(__f, __l);
 }

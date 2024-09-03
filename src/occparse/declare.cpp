@@ -4323,12 +4323,12 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         storage_class_in != StorageClass::member_ &&
                                         sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ && sp->sb->attribs.inheritable.linkage != Linkage::c_)
                                     {
-                                        if (!sp->sb->parentNameSpace &&
-                                            (!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !definingTemplate || (sp->templateParams && sp->templateParams->size() == 1)) &&
+                                        if ((!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !definingTemplate || (sp->templateParams && sp->templateParams->size() == 1)) &&
                                             strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
-                                            sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                            if (!definingTemplate || instantiatingTemplate || (sp->sb->specialized && sp->templateParams->size() == 1))
+                                            if (!sp->sb->parentNameSpace || (sp->sb->specialized && sp->templateParams->size() == 1) || sp->sb->isDestructor)
+                                                sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                                            if ((!sp->sb->parentNameSpace && (!definingTemplate || instantiatingTemplate)) || (sp->sb->specialized && sp->templateParams->size() == 1) || sp->sb->isDestructor)
                                                 InsertInline(sp);
                                         }
                                     }

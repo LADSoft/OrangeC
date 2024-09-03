@@ -27,4 +27,6 @@ EXCLUDE= debug.o
 
 all: $(DEPENDENCIES)
 	$(MAKE) -CSUPPORT
+	$(MAKE) -Cfilesystem
+
 $(eval $(FORMATTER))

@@ -23,7 +23,6 @@
 
 CPP_DEPENDENCIES = $(wildcard *.cpp)
 H_FILES=$(wildcard *.h)
-DEFINES= /DNOMINMAX
 
 all: $(DEPENDENCIES)
 $(eval $(FORMATTER))

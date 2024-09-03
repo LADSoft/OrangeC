@@ -2117,6 +2117,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     {
                         strcpy(buf, overloadNameTab[CI_DESTRUCTOR]);
                         consdest = CT_DEST;
+                        tp = &stdvoid;
                     }
                 }
                 else

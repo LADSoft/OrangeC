@@ -2479,6 +2479,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         consfunc->sb->inlineFunc.syms = consfunc->tp->BaseType()->syms;
         consfunc->sb->retcount = 1;
         consfunc->sb->attribs.inheritable.isInline = true;
+        consfunc->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
         //    consfunc->sb->inlineFunc.stmt->blockTail = b.tail;
         defaultRecursionMap.clear();
         if (noExcept)
@@ -2857,6 +2858,7 @@ void createDestructor(SYMBOL* sp)
         dest->sb->inlineFunc.syms = dest->tp->BaseType()->syms;
         dest->sb->retcount = 1;
         dest->sb->attribs.inheritable.isInline = dest->sb->attribs.inheritable.linkage2 != Linkage::export_;
+        dest->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     }
     if (noExcept)
     {
@@ -3099,8 +3101,6 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             if (!cons1->tp->BaseType()->btp->IsRef())
             {
                 optimize_for_constants(exp);
-                if ((*exp)->type == ExpressionNode::auto_)
-                    (*exp)->v.sp->sb->stackblock = false; // demote it to a normal variable if it is being used as a return value
                 oparams->returnEXP = *exp;
                 oparams->returnSP = sp;
             }

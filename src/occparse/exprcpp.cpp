@@ -630,7 +630,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             else
             {
                 *exp = convertInitToExpression(*tp, sym, nullptr, funcsp, init, nullptr, false);
-                if (sym)
+                if (sym && (*tp)->IsStructured())
                 {
                     EXPRESSION** e1 = exp;
                     if (*e1)

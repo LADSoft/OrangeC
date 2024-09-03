@@ -972,9 +972,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         /* derefereance parameters which are declared as arrays */
                         {
                             Type* tpa = sym->tp->BaseType();
-                            if (tpa->IsRef())
-                                tpa = tpa->btp->BaseType();
-                            if (tpa->array)
+                            if (!tpa->IsRef() && tpa->IsArray())
                                 deref(&stdpointer, exp);
                         }
                         sym->sb->anyTry |= tryLevel != 0;
@@ -3711,7 +3709,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 exp = exp->left;
                             if (exp->type != ExpressionNode::l_ref_)
                             {
-                                if (!sym->tp->IsRef() || !sym->tp->BaseType()->btp->IsFunction())
+                                if (!sym->tp->IsRef() || (!sym->tp->BaseType()->btp->IsFunction() && !sym->tp->BaseType()->btp->IsArray()))
                                 {
                                     if (!lvalue(exp))
                                     {

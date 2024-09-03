@@ -2,7 +2,7 @@
 #define _STIREG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Still Image API registry entries */

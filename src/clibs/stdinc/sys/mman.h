@@ -45,13 +45,13 @@
  * [TYM]	posix_typed_mem_open()
  */
 
+#pragma GCC system_header
+
 #ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_
 
-#include <sys/types.h>
-#ifndef __DEFS_H__
 #    include <_defs.h>
-#endif
+#    include <sys/types.h>
 
 /*
  * Protections are chosen from these bits, or-ed together

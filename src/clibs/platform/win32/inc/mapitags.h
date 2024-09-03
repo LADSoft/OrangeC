@@ -2,7 +2,7 @@
 #define _MAPITAGS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* MAPI Standard property tag definitions */

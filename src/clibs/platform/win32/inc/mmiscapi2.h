@@ -2,7 +2,7 @@
 #define _MMISCAPI2_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-mm-misc-l2-1-0 */

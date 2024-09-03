@@ -61,6 +61,9 @@ class InputFile
     }
     virtual ~InputFile();
     virtual bool Open();
+    const std::string& GetName() {
+        return *name;
+    }
     bool IsOpen() const { return streamid >= 0; }
     int GetLineNo() { return lineno; }
     int GetErrorLine() { return errlineno; }

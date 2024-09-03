@@ -2,7 +2,7 @@
 #define _WPCRSMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define CRSWPP_ERROR_FIRST  0x40042200L

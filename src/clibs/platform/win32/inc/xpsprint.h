@@ -18,7 +18,7 @@
 #define _XPSPRINT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IXpsPrintJobStream_FWD_DEFINED__

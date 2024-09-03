@@ -2,7 +2,7 @@
 #define _RASEAPIF_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Remote Access Service PPP engine and third party authentication module interface definitions */

@@ -2,7 +2,7 @@
 #define _AVRT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Multimedia class scheduler API definitions */

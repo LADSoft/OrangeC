@@ -2,7 +2,7 @@
 #define _MSWSOCK_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft extensions to Windows Sockets API */

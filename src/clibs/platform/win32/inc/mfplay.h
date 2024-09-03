@@ -22,7 +22,7 @@
 #define _MFPLAY_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IMFPMediaPlayer_FWD_DEFINED__

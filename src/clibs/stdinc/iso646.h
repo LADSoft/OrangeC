@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __ISO646_H
 #    define __ISO646_H
 #    ifndef __cplusplus

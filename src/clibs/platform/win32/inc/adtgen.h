@@ -2,7 +2,7 @@
 #define _ADTGEN_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Generic audits generating definitions */

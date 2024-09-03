@@ -2,7 +2,7 @@
 #define _LMAUDIT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetAudit API definitions */

@@ -61,6 +61,7 @@
 #include "symtab.h"
 #include "types.h"
 #include "stmt.h"
+#include "libcxx.h"
 
 namespace Parser
 {
@@ -3193,7 +3194,7 @@ int fold_const(EXPRESSION* node)
                         thisptr = nullptr;
                 }
             }
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression && argumentNesting == 0)
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression && argumentNesting == 0)
             {
                 if (!rv && node->v.func->thisptr)
                 {
@@ -3207,6 +3208,14 @@ int fold_const(EXPRESSION* node)
                 rv |= fold_const(node->v.func->fcall);
         }
             break;
+#ifdef LIBCXX17
+        case ExpressionNode::cppintrinsic_:
+            if (!definingTemplate || instantiatingTemplate)
+            {
+                EvaluateLibcxxConstant(&node);
+            }
+            break;
+#endif
         case ExpressionNode::mp_as_bool_:
             if (node->left->type == ExpressionNode::memberptr_)
             {

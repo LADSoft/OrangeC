@@ -2,7 +2,7 @@
 #define _DLCAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Data Link Control (DLC) definitions */

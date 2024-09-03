@@ -2,7 +2,7 @@
 #define _LMJOIN_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetSetup API definitions */

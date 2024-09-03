@@ -2,7 +2,7 @@
 #define _LMSHARE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetShare, NetSession, NetFile and NetConnection API definitions */

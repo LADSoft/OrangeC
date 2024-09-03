@@ -2,7 +2,7 @@
 #define _HANDLEAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-core-handle-l1-1-0 */

@@ -2,7 +2,7 @@
 #define _WPAPIMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define WEBPOST_ERROR_FIRST  0x40042100L

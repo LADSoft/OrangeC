@@ -8,7 +8,7 @@
 #if (NTDDI_VERSION >= NTDDI_WIN8)
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifdef __cplusplus

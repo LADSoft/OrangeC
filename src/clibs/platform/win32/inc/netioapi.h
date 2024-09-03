@@ -2,7 +2,7 @@
 #define _NETIOAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Version agnostic IP helper API definitions */

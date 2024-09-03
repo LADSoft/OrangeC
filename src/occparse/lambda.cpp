@@ -413,7 +413,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     st->select = MakeExpression(ExpressionNode::thisref_, st->select);
 
     if (!params->arguments)
-        params->arguments = initListListFactory.CreateList();
+        params->arguments = argumentListFactory.CreateList();
     for (auto sym : *args->syms)
     {
         if (sym->tp->type == BasicType::void_)
@@ -523,7 +523,7 @@ static void createConverter(SYMBOL* self)
         LexList* lex1;
         CallSite* f = Allocate<CallSite>();
         if (!f->arguments)
-            f->arguments = initListListFactory.CreateList();
+            f->arguments = argumentListFactory.CreateList();
         func->templateParams = caller->templateParams;
         func->sb->templateLevel = definingTemplate;
         func->sb->parentTemplate = func;

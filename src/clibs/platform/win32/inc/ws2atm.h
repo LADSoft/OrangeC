@@ -2,7 +2,7 @@
 #define _WS2ATM_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Winsock 2 ATM Annex definitions */

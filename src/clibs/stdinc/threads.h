@@ -22,12 +22,14 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __THREADS_H
 #define __THREADS_H
-#ifndef __STDDEF_H
+
 #    include <stddef.h>
-#endif
-#include <time.h>
+#    include <time.h>
+
 #ifdef __cplusplus
 extern "C"
 {

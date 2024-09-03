@@ -2,7 +2,7 @@
 #define _HTMLGUID_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* HTML Viewer object GUID definitions */

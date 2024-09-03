@@ -2,7 +2,7 @@
 #define _VCR_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* VCR-MCI Command Table definitions */

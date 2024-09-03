@@ -2,7 +2,7 @@
 #define _IPHLPAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Interaction with the IP Stack for MIB-II definitions */

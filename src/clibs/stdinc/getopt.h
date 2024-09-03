@@ -29,6 +29,8 @@
 #ifndef INCLUDED_GETOPT_PORT_H
 #define INCLUDED_GETOPT_PORT_H
 
+#pragma GCC system_header
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

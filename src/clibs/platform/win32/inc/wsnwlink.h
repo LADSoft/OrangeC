@@ -2,7 +2,7 @@
 #define _WSNWLINK_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* MS extensions to Windows NT IPX/SPX Windows Sockets interface */

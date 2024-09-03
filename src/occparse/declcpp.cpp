@@ -101,7 +101,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 Type* tp = nullptr;
                                 EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                                 SYMBOL* sp = func->sb->overloadName;
-                                fcall.arguments = initListListFactory.CreateList();
+                                fcall.arguments = argumentListFactory.CreateList();
                                 for (auto sym : *func->tp->BaseType()->syms)
                                 {
                                     if (sym->sb->thisPtr)
@@ -293,6 +293,8 @@ int classRefCount(SYMBOL* base, SYMBOL* derived)
 static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
 {
     bool rv = false;
+    if (oldFunc->sb->isDestructor && newFunc->sb->isDestructor)
+        return true;
     InitializeFunctionArguments(oldFunc);
     InitializeFunctionArguments(newFunc);
     rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp, false);
@@ -626,7 +628,7 @@ void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos
                             sym->sb->vtabEntries->front()->virtuals->push_back(cur1);
                         }
                     }
-                    if (cur1->sb->isoverride && !found && !isfirst)
+                    if (cur1->sb->isoverride && !found && !isfirst && (!definingTemplate || instantiatingTemplate))
                     {
                         errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur1);
                     }
@@ -1159,8 +1161,8 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         restart:
             if (bcsym && bcsym->tp->type == BasicType::templateselector_)
             {
-                if (!definingTemplate && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
-                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+//                if (!definingTemplate && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
+//                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
                 if (MATCHKW(lex, Keyword::lt_))
                 {
                     inTemplateSpecialization++;
@@ -2038,7 +2040,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
             if (packedExp->v.sp->tp->templateParam->second->byPack.pack)
             {
                 if (!*lptr)
-                    *lptr = initListListFactory.CreateList();
+                    *lptr = argumentListFactory.CreateList();
                 for (auto&& t : *packedExp->v.sp->tp->templateParam->second->byPack.pack)
                 {
                     auto il = Allocate<Argument>();
@@ -2061,7 +2063,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
             if (arg[0]->sb && arg[0]->packed && arg[0]->sb->parent)
             {
                 if (!*lptr)
-                    *lptr = initListListFactory.CreateList();
+                    *lptr = argumentListFactory.CreateList();
                 auto it = arg[0]->sb->parent->tp->BaseType()->syms->begin();
                 auto itend = arg[0]->sb->parent->tp->BaseType()->syms->end();
                 for (; it != itend && (*it) != arg[0]; ++it);
@@ -2092,7 +2094,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                 if (n > 1 || !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() || packedExp->v.func->arguments->front()->tp->type != BasicType::void_)
                 {
                     if (!*lptr)
-                        *lptr = initListListFactory.CreateList();
+                        *lptr = argumentListFactory.CreateList();
 
                     for (i = 0; i < n; i++)
                     {
@@ -3281,7 +3283,43 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     sp->sb->parentClass = enclosingDeclarations.GetFirst();
                 sp->sb->usingTypedef = true;
                 SetLinkerNames(sp, Linkage::cdecl_);
-                InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
+                // note that we can redeclare a using statement...
+                // so look it up and if it exists make sure the types match...
+                SYMBOL* spi;
+                if (storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_)
+                {
+                    spi = localNameSpace->front()->syms->Lookup(sp->name);
+                }
+                else
+                {
+                    auto ssp = enclosingDeclarations.GetFirst();
+                    if (ssp && ssp->sb->templateLevel)
+                    {
+                        SYMBOL* ssp2 = FindSpecialization(ssp, ssp->templateParams);
+                        if (ssp2)
+                            ssp = ssp2;
+                    }
+                    if (ssp && ssp->tp->syms)
+                    {
+                        spi = ssp->tp->syms->Lookup(sp->name);
+                    }
+                    else
+                    {
+                        spi = globalNameSpace->front()->syms->Lookup(sp->name);
+                    }
+                }
+                if (spi)
+                {
+                    if (!spi->tp->ExactSameType(sp->tp) && !sameTemplate(spi->tp, sp->tp))
+                    {
+                        errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
+                    }
+                    sp = spi;
+                }
+                else
+                {
+                    InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
+                }
                 if (sp_out)
                     *sp_out = sp;
                 basisAttribs = oldAttribs;
@@ -3501,7 +3539,7 @@ Type* AttributeFinish(SYMBOL* sym, Type* tp)
     if (sym->sb->attribs.inheritable.cleanup && sym->sb->storage_class == StorageClass::auto_)
     {
         CallSite* fc = Allocate<CallSite>();
-        fc->arguments = initListListFactory.CreateList();
+        fc->arguments = argumentListFactory.CreateList();
         auto arg = Allocate<Argument>();
         arg->tp = &stdpointer;
         arg->exp = MakeExpression(ExpressionNode::auto_, sym);
@@ -4521,7 +4559,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
             callexp->v.func->functp = atexitfunc->tp;
             callexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, atexitfunc);
             callexp->v.func->ascall = true;
-            callexp->v.func->arguments = initListListFactory.CreateList();
+            callexp->v.func->arguments = argumentListFactory.CreateList();
             auto arg = Allocate<Argument>();
             callexp->v.func->arguments->push_back(arg);
             arg->tp = &stdpointer;

@@ -2,7 +2,7 @@
 #define _MQ_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Message Queue API definitions */

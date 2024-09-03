@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef _SYS_PARAM_H
 #define _SYS_PARAM_H
 

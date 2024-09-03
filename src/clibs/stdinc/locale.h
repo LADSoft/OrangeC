@@ -25,18 +25,16 @@
 /*  locale.h
 
 */
+
+#pragma GCC system_header
+
 #ifndef __LOCALE_H
 #define __LOCALE_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __STDLIB_H
 #    include <stdlib.h>
-#endif
 
 #define LC_ALL 0
 #define LC_COLLATE 1

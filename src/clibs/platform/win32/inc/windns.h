@@ -2,7 +2,7 @@
 #define _WINDNS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Domain Name System (DNS) API definitions */

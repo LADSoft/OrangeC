@@ -2,7 +2,7 @@
 #define _SOFTPUB_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft Internet Security Authenticode Policy Provider definitions */

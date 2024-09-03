@@ -2,7 +2,7 @@
 #define _AVIFMT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows AVI file definitions */

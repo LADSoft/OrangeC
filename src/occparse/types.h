@@ -143,7 +143,7 @@ struct TypeGenerator
         bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
     static Type* UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
         Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
-        bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool asfriend,
+        bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool* asfriend,
         bool constexpression);
     static Type* TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
     static bool StartOfType(LexList*& lex, bool* structured, bool assumeType);

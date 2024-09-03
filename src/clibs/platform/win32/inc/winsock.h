@@ -2,7 +2,7 @@
 #define _WINSOCK_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Sockets specification 1.1 */

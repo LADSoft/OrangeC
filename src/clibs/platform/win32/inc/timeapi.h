@@ -2,7 +2,7 @@
 #define _TIMEAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet api-ms-win-mm-time-l1-1-0 */

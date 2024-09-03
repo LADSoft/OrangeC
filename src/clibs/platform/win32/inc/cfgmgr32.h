@@ -4,7 +4,7 @@
 /* Configuration Manager API definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #include <cfg.h>

@@ -2,7 +2,7 @@
 #define _NTMSAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NTMS API definitions */

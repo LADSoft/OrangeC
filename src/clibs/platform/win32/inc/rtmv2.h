@@ -2,7 +2,7 @@
 #define _RTMV2_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Routing Table Manager v2 DLL definitions */

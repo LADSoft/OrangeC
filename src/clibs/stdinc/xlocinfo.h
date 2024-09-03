@@ -3,24 +3,17 @@
  * This file _is part of the mingw-w64 runtime package.
  * No warranty _is given; refer to the file DISCLAIMER.PD within this package.
  */
+
+#pragma GCC system_header
+
 #ifndef _XLOCINFO
 #define _XLOCINFO
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-#ifndef CTYPE_H
-#include <ctype.h>
-#endif
-#ifndef LOCALE_H
-#include <locale.h>
-#endif
-#ifndef STDLIB_H 
-#include <stdlib.h>
-#endif
-#ifndef WCHAR_H
-#include <wchar.h>
-#endif
+#    include <ctype.h>
+#    include <locale.h>
+#    include <stdlib.h>
+#    include <wchar.h>
 
 #pragma pack(push,1)
 

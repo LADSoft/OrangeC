@@ -2,7 +2,7 @@
 #define _RASERROR_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* RAS error code definitions */

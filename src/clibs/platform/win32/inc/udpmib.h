@@ -2,7 +2,7 @@
 #define _UDPMIB_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* UDP-specific parts of MIB-II definitions */

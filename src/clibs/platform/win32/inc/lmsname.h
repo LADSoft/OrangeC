@@ -2,7 +2,7 @@
 #define _LMSNAME_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Standard LAN Manager service names */

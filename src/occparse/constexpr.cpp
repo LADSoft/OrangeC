@@ -1030,7 +1030,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
             *func = *exp->v.func;
             temp1->v.func = func;
             std::list<Argument*>* argslst = func->arguments;
-            func->arguments = initListListFactory.CreateList();
+            func->arguments = argumentListFactory.CreateList();
             bool failed = false;
             if (argslst)
                 for (auto args : *argslst)

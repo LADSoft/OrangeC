@@ -200,7 +200,7 @@ EXPRESSION* ConvertToMSILString(EXPRESSION* val)
     fp->functp = var->tp;
     fp->sp = var;
     fp->fcall = MakeExpression(ExpressionNode::global_, var);
-    fp->arguments = initListListFactory.CreateList();
+    fp->arguments = argumentListFactory.CreateList();
     auto arg = Allocate<Argument>();
     arg->exp = val;
     arg->tp = &std__string;
@@ -418,7 +418,7 @@ void ValidateMSILFuncPtr(Type* dest, Type* src, EXPRESSION** exp)
                 functionCall->sp = sym;
                 functionCall->functp = sym->tp;
                 functionCall->fcall = MakeExpression(ExpressionNode::pc_, sym);
-                functionCall->arguments = initListListFactory.CreateList();
+                functionCall->arguments = argumentListFactory.CreateList();
                 auto arg = Allocate<Argument>();
                 arg->tp = &stdpointer;
                 arg->exp = *exp;
@@ -445,7 +445,7 @@ void ValidateMSILFuncPtr(Type* dest, Type* src, EXPRESSION** exp)
                 functionCall->sp = sym;
                 functionCall->functp = sym->tp;
                 functionCall->fcall = MakeExpression(ExpressionNode::pc_, sym);
-                functionCall->arguments = initListListFactory.CreateList();
+                functionCall->arguments = argumentListFactory.CreateList();
                 auto arg = Allocate<Argument>();
                 arg->tp = &stdpointer;
                 arg->exp = *exp;
@@ -598,6 +598,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         sym = sp1;
                         *tp = sym->tp;
                     }
+                    else if (definingTemplate && !instantiatingTemplate)
+                        *tp = &stdint;
                     else
                         errorsym(ERR_NO_TEMPLATE_MATCHES, sym);
                 }
@@ -1110,6 +1112,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 auto exp4 = relptr(*exp, offset);
                 if ((*tp)->IsRef())
                 {
+                    auto type = (*tp)->BaseType()->type;
                     Type* tp1 = *tp;
                     deref(*tp, exp);
                     while (tp1->IsRef())
@@ -1388,7 +1391,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         bool notype = false;
         Type* tp1 = nullptr;
         lex = getsym();
-        tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false, false);
+        tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1436,7 +1439,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             bool defd = false;
             bool notype = false;
             Type* tp1 = nullptr;
-            tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false, false);
+            tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1460,7 +1463,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 {
                     lex = getsym();
                     tp1 = nullptr;
-                    tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, false,
+                    tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr,
                                        false);
                     if (!tp1)
                     {
@@ -2369,16 +2372,22 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                 ++it;
         }
     if (noproto)
+    {
         errorsym(ERR_CALL_FUNCTION_NO_PROTO, params->sp);
+    }
     else if (toolong)
+    {
         errorsym(ERR_PARAMETER_LIST_TOO_LONG, params->sp);
+    }
     else if (tooshort)
+    {
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
+    }
 }
 static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting, bool allowPack,
                                 bool toErr, int flags)
 {
-    *lptr = initListListFactory.CreateList();
+    *lptr = argumentListFactory.CreateList();
     lex = getsym(); /* past ( */
     while (!MATCHKW(lex, finish))
     {
@@ -2715,7 +2724,7 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
             {
                 if (found)
                 {
-                    std::list<Argument*>* newList = initListListFactory.CreateList();
+                    std::list<Argument*>* newList = argumentListFactory.CreateList();
                     for (auto arg : *(*expr)->v.func->arguments)
                     {
                         Argument* newval = Allocate<Argument>();
@@ -2910,7 +2919,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         params->thisptr = pos;
                         Argument* next = Allocate<Argument>();
                         *next = **ita;
-                        params->arguments = initListListFactory.CreateList();
+                        params->arguments = argumentListFactory.CreateList();
                         params->arguments->push_back(next);
                         callConstructor(&ctype, &pos, params, false, nullptr, true, false, false, false, _F_INITLIST, false, true);
                         if (node)
@@ -2949,7 +2958,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                             Type* ctype = initializerListType;
                             EXPRESSION* cdest = dest;
                             CallSite* params = Allocate<CallSite>();
-                            params->arguments = initListListFactory.CreateList();
+                            params->arguments = argumentListFactory.CreateList();
                             params->arguments->push_back(*itl);
 
                             callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false,
@@ -2963,7 +2972,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         Type* ctype = initializerListType;
                         EXPRESSION* cdest = dest;
                         CallSite* params = Allocate<CallSite>();
-                        params->arguments = initListListFactory.CreateList();
+                        params->arguments = argumentListFactory.CreateList();
                         params->arguments->push_back(*itl);
 
                         callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false,
@@ -2982,7 +2991,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     }
                     else
                     {
-                        params->arguments = initListListFactory.CreateList();
+                        params->arguments = argumentListFactory.CreateList();
                         params->arguments->push_back(*itl);
                     }
 
@@ -3071,7 +3080,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         {
             rv = dest;
         }
-        initial = (*lptr) = initListListFactory.CreateList();
+        initial = (*lptr) = argumentListFactory.CreateList();
         initial->push_back(Allocate<Argument>());
         if (asref)
         {
@@ -3149,7 +3158,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
         {
             if (!*lptr)
             {
-                *lptr = initListListFactory.CreateList();
+                *lptr = argumentListFactory.CreateList();
                 itl = (*lptr)->begin();
                 itle = (*lptr)->end();
             }
@@ -3279,7 +3288,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         auto itx = itpinit;
                         if (itpinit != itpinite)
                             ++itx;
-                        params->arguments = initListListFactory.CreateList();
+                        params->arguments = argumentListFactory.CreateList();
                         if ((itpinit != itpinite && itx != itpinite) || (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
                         {
                             Type* tp;
@@ -3476,7 +3485,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             }
                             else
                             {
-                                params->arguments = initListListFactory.CreateList();
+                                params->arguments = argumentListFactory.CreateList();
                                 params->arguments->push_back(p);
                             }
                             callConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
@@ -3601,7 +3610,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             }
                             else
                             {
-                                params->arguments = initListListFactory.CreateList();
+                                params->arguments = argumentListFactory.CreateList();
                                 params->arguments->push_back(p);
                             }
                             Type* ctype = sym->tp->BaseType()->btp;
@@ -4460,7 +4469,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                     al->exp = funcparams->thisptr;
                     al->tp = funcparams->thistp;
                     if (!funcparams->arguments)
-                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments = argumentListFactory.CreateList();
                     funcparams->arguments->push_front(al);
                 }
                 funcparams->thisptr = nullptr;
@@ -4592,7 +4601,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                     for (auto i = 0; i < n; i++)
                         ++itt;
                     if (!funcparams->arguments)
-                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments = argumentListFactory.CreateList();
                     for (; itt != itte; ++itt)
                     {
                         funcparams->arguments->push_back(*itt);
@@ -4859,6 +4868,27 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
             }
             if (sym && sym->tp->IsStructured())
             {
+                if (MATCHKW(lex, Keyword::lt_))
+                {
+                    std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                    lex = GetTemplateArguments(lex, funcsp, sym, &lst);
+                    if (sym->sb->storage_class == StorageClass::typedef_)
+                    {
+                        auto sp1 = GetTypeAliasSpecialization(sym, lst);
+                        if (sp1)
+                            sym = sp1;
+                        if (sym->tp->IsStructured())
+                            sym = sym->tp->BaseType()->sp;
+                    }
+                    else
+                    {
+                        auto sp1 = GetClassTemplate(sym, lst, false);
+                        if (sp1)
+                            sym = sp1;
+                    }
+                    sym->tp->InitializeDeferred();
+
+                }
                 if (needkw(&lex, Keyword::comma_))
                 {
                     *tp = sym->tp;
@@ -5034,7 +5064,7 @@ static LexList* expression_string(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 f->sp = sym1;
                 f->functp = sym1->tp;
                 f->fcall = MakeExpression(ExpressionNode::pc_, sym1);
-                f->arguments = initListListFactory.CreateList();
+                f->arguments = argumentListFactory.CreateList();
                 auto arg = Allocate<Argument>();
                 arg->tp = sym2->tp;
                 arg->exp = *exp;
@@ -5260,7 +5290,7 @@ static bool getSuffixedChar(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION*
             f->sp = sym1;
             f->functp = sym1->tp;
             f->fcall = MakeExpression(ExpressionNode::pc_, sym1);
-            f->arguments = initListListFactory.CreateList();
+            f->arguments = argumentListFactory.CreateList();
             auto arg = Allocate<Argument>();
             f->arguments->push_back(arg);
             arg->tp = *tp;
@@ -5306,7 +5336,7 @@ static bool getSuffixedNumber(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             f->sp = sym1;
             f->functp = sym1->tp;
             f->fcall = MakeExpression(ExpressionNode::pc_, sym1);
-            f->arguments = initListListFactory.CreateList();
+            f->arguments = argumentListFactory.CreateList();
             auto arg = Allocate<Argument>();
             f->arguments->push_back(arg);
             if (lex->data->type == LexType::ull_)
@@ -5354,7 +5384,7 @@ static bool getSuffixedNumber(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 f->sp = sym1;
                 f->functp = sym1->tp;
                 f->fcall = MakeExpression(ExpressionNode::pc_, sym1);
-                f->arguments = initListListFactory.CreateList();
+                f->arguments = argumentListFactory.CreateList();
                 auto arg = Allocate<Argument>();
                 f->arguments->push_back(arg);
                 arg->tp = &stdcharptr;
@@ -7947,7 +7977,7 @@ void GetLogicalDestructors(std::list<struct expr*>** rv, EXPRESSION* cur)
                 (*rv)->push_front(sym->sb->dest->front()->exp);
             }
         }
-        else if (cur->v.func->sp->sb->isConstructor)
+        else if (cur->v.func->sp && cur->v.func->sp->sb->isConstructor)
         {
             // it is going to be a local symbol if we get here...
             EXPRESSION* exp = cur->v.func->thisptr;
@@ -8503,7 +8533,7 @@ LexList* expression_throw(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** 
             }
             arg5->exp = rtti ? MakeExpression(ExpressionNode::global_, rtti) : MakeIntExpression(ExpressionNode::c_i_, 0);
             arg5->tp = &stdpointer;
-            params->arguments = initListListFactory.CreateList();
+            params->arguments = argumentListFactory.CreateList();
             params->arguments->push_back(arg1);
             params->arguments->push_back(arg2);
             params->arguments->push_back(arg3);
@@ -8530,7 +8560,7 @@ LexList* expression_throw(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** 
             parms->sp = sym;
             parms->functp = sym->tp;
             parms->fcall = MakeExpression(ExpressionNode::pc_, sym);
-            parms->arguments = initListListFactory.CreateList();
+            parms->arguments = argumentListFactory.CreateList();
             parms->arguments->push_back(arg1);
             arg1->exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;

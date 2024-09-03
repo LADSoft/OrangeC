@@ -4,7 +4,7 @@
 /* Shell API specific error code definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #include <winerror.h>

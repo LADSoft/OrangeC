@@ -2,7 +2,7 @@
 #define _NMEVENT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft Network Monitor Events definitions */

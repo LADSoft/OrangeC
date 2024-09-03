@@ -2,7 +2,7 @@
 #define _CLFSMGMT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifdef __cplusplus

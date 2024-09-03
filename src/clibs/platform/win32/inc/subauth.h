@@ -2,7 +2,7 @@
 #define _SUBAUTH_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Subauthentication Packages definitions */

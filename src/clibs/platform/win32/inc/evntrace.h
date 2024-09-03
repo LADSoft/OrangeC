@@ -6,7 +6,7 @@
 /* Windows NT Event tracing definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #if defined(_WINNT_H) || defined(WINNT)

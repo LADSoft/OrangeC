@@ -2,7 +2,7 @@
 #define _OLE2_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Linking and Embedding API definitions */

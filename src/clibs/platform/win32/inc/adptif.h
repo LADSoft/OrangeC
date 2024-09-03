@@ -2,7 +2,7 @@
 #define _ADPTIF_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Router interface with IPX stack */

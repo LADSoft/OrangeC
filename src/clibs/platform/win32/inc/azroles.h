@@ -22,7 +22,7 @@
 #define _AZROLES_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IAzAuthorizationStore_FWD_DEFINED__

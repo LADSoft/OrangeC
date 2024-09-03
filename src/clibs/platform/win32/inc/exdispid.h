@@ -2,7 +2,7 @@
 #define _EXDISPID_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Dispatch IDs for really boring stuff */

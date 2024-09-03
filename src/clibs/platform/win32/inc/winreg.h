@@ -4,7 +4,7 @@
 /* Windows Registry API definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* API Set api-ms-win-core-registry-l1 */

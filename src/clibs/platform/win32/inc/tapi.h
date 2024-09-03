@@ -2,7 +2,7 @@
 #define _TAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Telephony Application Programming Interface (TAPI) definitions */

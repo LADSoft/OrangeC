@@ -29,14 +29,14 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __FLOAT_H
 #define __FLOAT_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #define FLT_RADIX 2
 #define __FLT_RADIX__ FLT_RADIX

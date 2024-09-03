@@ -2,7 +2,7 @@
 #define _LMDFS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetDfs API definitions */

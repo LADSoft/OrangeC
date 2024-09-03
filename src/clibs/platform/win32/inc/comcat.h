@@ -22,7 +22,7 @@
 #define _COMCAT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IEnumGUID_FWD_DEFINED__

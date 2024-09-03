@@ -2,7 +2,7 @@
 #define _MGMTAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* SNMP Management API definitions */

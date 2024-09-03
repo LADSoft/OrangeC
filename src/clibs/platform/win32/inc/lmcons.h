@@ -2,7 +2,7 @@
 #define _LMCONS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* LAN Manager API constants */

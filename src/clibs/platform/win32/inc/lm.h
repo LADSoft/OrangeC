@@ -2,7 +2,7 @@
 #define _LM_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Lan Manager definitions */

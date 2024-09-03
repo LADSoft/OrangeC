@@ -3082,7 +3082,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                             sym = getUserConversion(F_CONVERSION | F_WITHCONS, itype, tp1, nullptr, nullptr, nullptr, nullptr, nullptr, false);
                         if (sym && !sym->sb->isExplicit)
                         {
-                            funcparams->arguments = initListListFactory.CreateList();
+                            funcparams->arguments = argumentListFactory.CreateList();
                             auto arg = Allocate<Argument>();
                             funcparams->arguments->push_back(arg);
                             arg->tp = tp1;
@@ -3119,15 +3119,15 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                             {
                                 auto p = Allocate<Argument>();
                                 p->nested = funcparams->arguments;
-                                funcparams->arguments = initListListFactory.CreateList();
+                                funcparams->arguments = argumentListFactory.CreateList();
                                 funcparams->arguments->push_back(p);
                             }
                         }
                         else
                         {
                             auto p = Allocate<Argument>();
-                            p->nested = initListListFactory.CreateList();
-                            funcparams->arguments = initListListFactory.CreateList();
+                            p->nested = argumentListFactory.CreateList();
+                            funcparams->arguments = argumentListFactory.CreateList();
                             funcparams->arguments->push_back(p);
                         }
                         maybeConversion = false;
@@ -3165,7 +3165,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                                                   }
                                                   return exp1;
                                               }, base);
-                        funcparams->arguments = initListListFactory.CreateList();
+                        funcparams->arguments = argumentListFactory.CreateList();
                         auto arg = Allocate<Argument>();
                         funcparams->arguments->push_back(arg);
                         arg->tp = tp1;
@@ -3197,7 +3197,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                 EXPRESSION* exp1 = nullptr;
                 Type* tp1 = nullptr;
                 lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, itype, false, base);
-                funcparams->arguments = initListListFactory.CreateList();
+                funcparams->arguments = argumentListFactory.CreateList();
                 auto arg = Allocate<Argument>();
                 funcparams->arguments->push_back(arg);
                 arg->tp = tp1;

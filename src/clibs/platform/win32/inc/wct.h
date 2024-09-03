@@ -4,7 +4,7 @@
 /* Interfaces for thread wait chain traversal */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define WCT_MAX_NODE_COUNT 16

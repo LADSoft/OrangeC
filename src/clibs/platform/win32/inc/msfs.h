@@ -2,7 +2,7 @@
 #define _MSFS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft Mail transport, address book and shared folder service provider definitions */

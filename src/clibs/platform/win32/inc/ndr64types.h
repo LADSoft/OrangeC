@@ -2,7 +2,7 @@
 #define _NDR64TYPES_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NDR64 format string definitions */

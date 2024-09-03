@@ -2,7 +2,7 @@
 #define _LMWKSTA_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetWorkstation and NetWkstaTransport API definitions */

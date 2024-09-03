@@ -2,7 +2,7 @@
 #define _PRNASNOT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Print API definitions */

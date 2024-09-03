@@ -22,7 +22,7 @@
 #define _CERTIF_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __ICertServerPolicy_FWD_DEFINED__

@@ -2,7 +2,7 @@
 #define _WS2DEF_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows WinSock 2 core definitions */

@@ -2,7 +2,7 @@
 #define _LMACCESS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* NetUser, NetUserModals, NetGroup, NetAccess, and NetLogon API definitions */

@@ -27,13 +27,12 @@
     Definitions for mode parameter of locking() function.
 
 */
+#pragma GCC system_header
 
 #if !defined(__LOCKING_H)
 #    define __LOCKING_H
 
-#    ifndef __DEFS_H__
 #        include <_defs.h>
-#    endif
 
 #    define LK_UNLCK 0  /* unlock file region */
 #    define LK_LOCK 1   /* lock file region, try for 10 seconds */

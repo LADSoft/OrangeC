@@ -12,6 +12,8 @@
 
 #define MB_CUR_MAX_L(a) MB_CUR_MAX
 
+#pragma GCC system_header
+
 #ifndef RC_INVOKED
 #ifdef __cplusplus
 extern "C"

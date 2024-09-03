@@ -2,7 +2,7 @@
 #define _LOADPERF_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Performance Monitor counter string definitions */

@@ -22,7 +22,7 @@
 #define _TASKSCHD_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __ITaskFolderCollection_FWD_DEFINED__

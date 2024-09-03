@@ -2,7 +2,7 @@
 #define _CRYPTXML_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Cryptographic XML digital signature API (Windows 7) */

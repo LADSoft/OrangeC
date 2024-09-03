@@ -2,7 +2,7 @@
 #define _RASDLG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Remote Access Common Dialog API definitions */

@@ -22,7 +22,7 @@
 #define _MSHTMLC_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IHTMLFiltersCollection_FWD_DEFINED__

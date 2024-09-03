@@ -22,7 +22,7 @@
 #define _MEDIAOBJ_H
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IMediaBuffer_FWD_DEFINED__

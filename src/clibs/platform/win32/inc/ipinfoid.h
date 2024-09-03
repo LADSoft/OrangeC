@@ -2,7 +2,7 @@
 #define _IPINFOID_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Router manager information ID's */

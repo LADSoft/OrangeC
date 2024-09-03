@@ -4,7 +4,7 @@
 /* 32-bit Windows Base API definitions */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifdef __cplusplus

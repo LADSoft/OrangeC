@@ -2,7 +2,7 @@
 #define _DDE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Dynamic Data Exchange definitions */

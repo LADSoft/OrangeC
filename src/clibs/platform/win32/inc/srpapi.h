@@ -2,7 +2,7 @@
 #define _SRPAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* ApiSet ext-ms-win-security-srp-l1 */

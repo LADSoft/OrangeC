@@ -3,7 +3,7 @@
 #define _WINSOCK_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #if (!defined(_WIN64) && !defined(WIN32))

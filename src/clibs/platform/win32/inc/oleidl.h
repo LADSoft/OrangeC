@@ -22,7 +22,7 @@
 #define _OLEIDL_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IOleAdviseHolder_FWD_DEFINED__

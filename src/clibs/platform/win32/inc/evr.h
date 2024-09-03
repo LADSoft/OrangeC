@@ -22,7 +22,7 @@
 #define _EVR_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IMFVideoPositionMapper_FWD_DEFINED__

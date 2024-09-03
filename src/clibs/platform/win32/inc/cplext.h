@@ -2,7 +2,7 @@
 #define _CPLEXT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Control panel property sheet extension definitions */

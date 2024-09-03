@@ -22,6 +22,8 @@
  *  
  */
 
+#pragma GCC system_header
+
 #ifndef __STDATOMIC_H
 #define __STDATOMIC_H
 
@@ -31,17 +33,9 @@
         "This header uses C11 and greater constructs at this time, this error is to inform you of this so you understand why it breaks instantly"
 #endif
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __STDBOOL_H
 #    include <stdbool.h>
-#endif
-
-#ifndef __STDINT_H
 #    include <stdint.h>
-#endif
 
 #ifndef RC_INVOKED
 typedef enum memory_order

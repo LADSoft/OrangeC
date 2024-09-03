@@ -2,7 +2,7 @@
 #define _PRSHT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Property Sheet definitions */

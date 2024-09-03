@@ -2,7 +2,7 @@
 #define _IPXRIP_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* IPX Routing Protocol RIP definitions */

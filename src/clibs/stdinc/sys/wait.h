@@ -28,16 +28,13 @@
 
 */
 
+#pragma GCC system_header
+
 #if !defined(__WAIT_H)
 #    define __WAIT_H
 
-#    ifndef __DEFS_H__
 #        include <_defs.h>
-#    endif
-
-#    ifndef __TYPES_H
 #        include <sys/types.h>
-#    endif
 
 #    ifdef __cplusplus
 extern "C"

@@ -28,13 +28,12 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __LIMITS_H
 #define __LIMITS_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
 
 #define CHAR_BIT 8    /* number of bits in a char */
 #define MB_LEN_MAX 18 /* max. # bytes in multibyte char */

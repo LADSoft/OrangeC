@@ -28,12 +28,12 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __STRING_H
 #define __STRING_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifdef __cplusplus
 extern "C"

@@ -21,5 +21,5 @@ int mod = 0;
 
 main()
 {
-	assert("divide == 1 && mod == 1");
+	assert(divide == 1 && mod == 1);
 }

@@ -2,7 +2,7 @@
 #define _WFEXT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows File Manager Extensions definitions */

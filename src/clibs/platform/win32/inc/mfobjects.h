@@ -22,7 +22,7 @@
 #define _MFOBJECTS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IMFAttributes_FWD_DEFINED__

@@ -105,6 +105,8 @@ void ppPragma::ParsePragma(const std::string& args)
             HandlePushPopMacro(tk, false);
         else if (str == "COMMENT")
             HandleComment(tk);
+        else if (str == "GCC")
+            HandleGcc(tk);
         else if (catchAll)
             catchAll(str, tk.GetString());
         // unmatched is not an error
@@ -584,4 +586,13 @@ int ppPragma::StdPragmas()
     if (FPContract::Instance()->Get())
         rv |= STD_PRAGMA_FCONTRACT;
     return rv;
+}
+
+void ppPragma::HandleGcc(Tokenizer& tk)
+{
+    const Token* name = tk.Next();
+    if (name->IsIdentifier() && name->GetId() == "system_header")
+    {
+        include->EnterGccSystemHeader();
+    }
 }

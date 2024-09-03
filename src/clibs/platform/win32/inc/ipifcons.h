@@ -2,7 +2,7 @@
 #define _IPIFCONS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* TCP/IP definitions */

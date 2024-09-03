@@ -28,18 +28,15 @@
 
 */
 
+#pragma GCC system_header
+
 #ifndef __STDIO_H
 #define __STDIO_H
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
-
-#ifndef __STDARG_H
 #    include <stdarg.h>
-#endif
 
 #ifndef RC_INVOKED
 #pragma pack(4)

@@ -28,6 +28,8 @@
 
 */
 
+#pragma GCC system_header
+
 #if !defined(__TYPES_H)
 #    define __TYPES_H
 

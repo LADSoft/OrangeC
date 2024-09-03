@@ -2,7 +2,7 @@
 #define _RPCDCEP_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Private RPC runtime API definition */

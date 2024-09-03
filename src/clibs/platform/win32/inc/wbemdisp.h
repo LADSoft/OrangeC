@@ -22,7 +22,7 @@
 #define _WBEMDISH_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __ISWbemServices_FWD_DEFINED__

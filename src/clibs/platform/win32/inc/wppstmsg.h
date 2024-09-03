@@ -2,7 +2,7 @@
 #define _WPPSTMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #define WPP_ERROR_FIRST  0x40042380L

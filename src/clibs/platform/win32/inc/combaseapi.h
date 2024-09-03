@@ -26,7 +26,7 @@
 #define _COMBASEAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Base Component Object Model defintions */

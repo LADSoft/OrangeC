@@ -2,7 +2,7 @@
 #define _WININET_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft Windows Internet Extension definitions */

@@ -725,8 +725,23 @@ char* mangleType(char* in, Type* tp, bool first)
     }
     while (tp)
     {
-        while (tp->type == BasicType::typedef_)
+        while (tp->type == BasicType::typedef_ && !tp->sp->templateParams)
             tp = tp->btp;
+        if (tp->type == BasicType::typedef_)
+        {
+            {
+                if (tp->IsConst())
+                    *in++ = 'x';
+                if (tp->IsVolatile())
+                    *in++ = 'y';
+                if (tp->IsLRefQual())
+                    *in++ = 'r';
+                if (tp->IsRRefQual())
+                    *in++ = 'R';
+            }
+            in = mangleTemplate(in, tp->sp, tp->sp->templateParams);
+            return in;
+        }
         if (tp->IsStructured() && tp->BaseType()->sp->sb && tp->BaseType()->sp->sb->templateLevel)
         {
             {

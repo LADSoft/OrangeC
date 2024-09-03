@@ -22,7 +22,7 @@
 #define _WBEMTRAN_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #ifndef __IWbemTransport_FWD_DEFINED__

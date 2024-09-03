@@ -362,6 +362,20 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
             {
                 Type* tps = told->BaseType()->btp;
                 Type* tpn = tnew->BaseType()->btp;
+                if (tps->IsDeferred() == tpn->IsDeferred())
+                {
+                    if (tps->IsDeferred())
+                    {
+                        if (!sameTemplate(tps->sp->tp, tpn->sp->tp))
+                            return false;
+                        if (!exactMatchOnTemplateArgs(tps->templateArgs, tpn->templateArgs))
+                            return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
                 if ((!templateCompareTypes(tpn, tps, true) ||
                      ((tps->type == BasicType::templateselector_ || tpn->type == BasicType::templateselector_) && tpn->type != tps->type)) &&
                     !sameTemplate(tpn, tps))

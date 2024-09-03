@@ -4,7 +4,7 @@
 /* Windows SDK/DDK versioning master-disaster */
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* _WIN32_WINNT version constants */

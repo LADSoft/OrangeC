@@ -14,7 +14,7 @@ DEFINE_GUID(BATTERY_TAG_CHANGE_WMI_GUID,0x5e1f6e19,0x8786,0x4d23,0x94,0xfc,0x9e,
 #define _BATCLASS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Battery class driver interfaces */

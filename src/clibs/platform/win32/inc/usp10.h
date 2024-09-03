@@ -2,7 +2,7 @@
 #define _USP10_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Unicode Complex Script processor (USP) definitions */

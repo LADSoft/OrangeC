@@ -64,8 +64,17 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
         const char* breakpoint = name.c_str();
         int dirs_traversed = 0;  // this is needed to get #include_next working correctly, the __has_include versions of this don't
                                  // need to actually keep track tho cuz they don't actually include
-        bool foundAsSystem = false;
-        name = FindFile(specifiedAsSystem, name, false, dirs_traversed, foundAsSystem);
+        bool foundAsSystem = false, found;
+        name = FindFile(specifiedAsSystem, name, false, dirs_traversed, foundAsSystem, found);
+#ifdef TARGET_OS_WINDOWS
+        auto name1 = name;
+        std::transform(name1.begin(), name1.end(), name1.begin(), ::tolower);
+        if (gccSystemHeaders.find(name1) != gccSystemHeaders.end())
+            return true;
+#else
+        if (gccSystemHeaders.find(name) != gccSystemHeaders.end())
+            return true;
+#endif
         pushFile(name, line1, false, foundAsSystem, dirs_traversed);
         return true;
     }
@@ -78,8 +87,8 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
         bool specifiedAsSystem = false;
         std::string name = ParseName(line1, specifiedAsSystem);
         int dirs_skipped = 0;
-        bool foundAsSystem = false;
-        name = FindFile(false, name, true, dirs_skipped, foundAsSystem);
+        bool foundAsSystem = false, found;
+        name = FindFile(false, name, true, dirs_skipped, foundAsSystem, found);
         pushFile(name, line1, true, foundAsSystem, dirs_skipped);
         return true;
     }
@@ -91,9 +100,9 @@ bool ppInclude::has_include_next(const std::string& args)
     bool specifiedAsSystem = false;
     std::string name = ParseName(line1, specifiedAsSystem);
     int throwaway = 0;
-    bool foundAsSystem = false;
-    name = FindFile(specifiedAsSystem, name, true, throwaway, foundAsSystem);
-    return !name.empty();
+    bool foundAsSystem = false, found;
+    name = FindFile(false, name, true, throwaway, foundAsSystem, found);
+    return found;
 }
 bool ppInclude::has_include(const std::string& args)
 {
@@ -101,9 +110,17 @@ bool ppInclude::has_include(const std::string& args)
     bool specifiedAsSystem = false;
     std::string name = ParseName(line1, specifiedAsSystem);
     int throwaway = 0;
-    bool foundAsSystem = false;
-    name = FindFile(specifiedAsSystem, name, false, throwaway, foundAsSystem);
-    return !name.empty();
+    bool foundAsSystem = false, found;
+    name = FindFile(specifiedAsSystem, name, false, throwaway, foundAsSystem, found);
+    return found;
+}
+void ppInclude::EnterGccSystemHeader()
+{
+    std::string name = current->GetName();
+#ifdef TARGET_OS_WINDOWS
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+#endif
+    gccSystemHeaders.insert(name);
 }
 bool ppInclude::CheckLine(kw token, const std::string& args)
 {
@@ -253,8 +270,9 @@ std::string ppInclude::ParseName(const std::string& args, bool& specifiedAsSyste
 // search the user include path next
 // if didn't already search system path do it now
 std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped,
-                                bool& foundAsSystem)
+                                bool& foundAsSystem, bool &found)
 {
+    found = false;
     std::string rv;
     int include_files_skipped = 0;
     // search in system search path first, if they specified it with <>
@@ -267,6 +285,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
             dirs_skipped = std::count(srchPath.cbegin(), srchPath.cend(), ';') +
                            1;  // This counts the number of search directories we have using the same logic we use to split it up,
                                // semicolons, there are always n semicolon + 1 dirs
+            found = true;
             return rv;
         }
         else
@@ -331,10 +350,12 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
             dirs_skipped = std::count(srchPath.cbegin(), srchPath.cend(), ';') +
                            1;  // This counts the number of search directories we have using the same logic we use to split it up,
                                // semicolons, there are always n semicolon + 1 dirs
+            found = true;
             return rv;
         }
     }
     dirs_skipped = include_files_skipped;
+    found = !rv.empty();
     return rv.empty() ? name : rv;
 }
 

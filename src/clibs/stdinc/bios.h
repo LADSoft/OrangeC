@@ -22,14 +22,14 @@
  *  
  */
 
+#pragma GCC system_header
+
 #if !defined(__BIOS_H)
 #    define __BIOS_H
 
 #    pragma pack(1)
 
-#    ifndef __STDDEF_H
-#        include <stddef.h>
-#    endif
+#    include <stddef.h>
 
 #    ifdef __cplusplus
 extern "C"

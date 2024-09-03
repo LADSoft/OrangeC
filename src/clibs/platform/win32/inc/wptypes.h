@@ -2,7 +2,7 @@
 #define _WPTYPES_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Microsoft Web Publishing API data type definitions */

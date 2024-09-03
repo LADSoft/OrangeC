@@ -2,7 +2,7 @@
 #define _STRSAFE_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* "Safer" string function definitions */

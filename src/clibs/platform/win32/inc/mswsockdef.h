@@ -2,7 +2,7 @@
 #define _MSWSOCKDEF_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 #if (_WIN32_WINNT >= 0x0600)

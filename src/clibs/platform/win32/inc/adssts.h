@@ -2,7 +2,7 @@
 #define _ADSSTS_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Status codes for Active Directory Service objects */

@@ -33,12 +33,11 @@
  * C functions which don't depend on the above mechanisms are self-contained
  * and should work generically
  */
+#pragma GCC system_header
 
 #pragma pack(1)
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #include <signal.h>
 #ifdef __cplusplus

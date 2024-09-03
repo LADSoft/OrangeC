@@ -67,7 +67,7 @@ extern ListFactory<struct _baseClass*> baseClassListFactory;
 extern ListFactory<struct _vtabEntry*> vtabEntryListFactory;
 extern ListFactory<struct _vbaseEntry*> vbaseEntryListFactory;
 extern ListFactory<struct _structSym*> structsymListFactory;
-extern ListFactory<Argument*> initListListFactory;
+extern ListFactory<Argument*> argumentListFactory;
 extern ListFactory<struct _errl*> errlListFactory;
 extern ListFactory<StringData*> stringListFactory;
 extern ListFactory<struct Optimizer::_linedata*> lineDataListFactory;

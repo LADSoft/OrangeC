@@ -2,7 +2,7 @@
 #define _CUSTCNTL_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Custom Control Library definitions */

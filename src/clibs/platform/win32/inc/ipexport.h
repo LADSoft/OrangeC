@@ -2,7 +2,7 @@
 #define _IPEXPORT_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Internet protocol helper definitions */

@@ -2,7 +2,7 @@
 #define _PDHMSG_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* EXTERN_C __declspec(selectany) const GUID S_PDH = {0x04d66358, 0xc4a1, 0x419b, {0x80, 0x23, 0x23, 0xb7, 0x39, 0x02, 0xde, 0x2c}}; */

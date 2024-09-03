@@ -21,13 +21,12 @@
  *          email: TouchStone222@runbox.com <David Lindauer>
  *  
  */
+#pragma GCC system_header
 
 #ifndef __DIRECT_H
 #define __DIRECT_H
 
-#ifndef __STDDEF_H
 #    include <stddef.h>
-#endif
 
 #ifndef __STAT_H
 #    include <sys/stat.h>

@@ -352,6 +352,8 @@ static bool ignoreErrdefiningTemplate(int err)
         case ERR_NO_APPROPRIATE_CONSTRUCTOR:
         case ERR_ILL_STRUCTURE_ASSIGNMENT:
         case ERR_ILL_STRUCTURE_OPERATION:
+        case ERR_CALL_FUNCTION_NO_PROTO:
+        case ERR_IMPROPER_USE_OF_TYPE:
             return true;
     }
     return false;
@@ -402,7 +404,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
-    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (definingTemplate && ignoreErrdefiningTemplate(err)))
+    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (definingTemplate && !instantiatingTemplate && ignoreErrdefiningTemplate(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
@@ -2078,32 +2080,35 @@ void SpecializationError(SYMBOL* sym)
 }
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
 {
-    for (auto cur : *sym->tp->syms)
+    if (!definingTemplate || instantiatingTemplate)
     {
-        if (cur->sb->storage_class == StorageClass::static_ && (cur->tp->hasbits || localClassWarnings))
-            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
-        if (sym != cur && !strcmp(sym->name, cur->name))
+        for (auto cur : *sym->tp->syms)
         {
-            if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
-                cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
+            if (cur->sb->storage_class == StorageClass::static_ && (cur->tp->hasbits || localClassWarnings))
+                errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+            if (sym != cur && !strcmp(sym->name, cur->name))
             {
-                errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
-                break;
-            }
-        }
-        if (cur->sb->storage_class == StorageClass::overloads_)
-        {
-            for (auto cur1 : *cur->tp->syms)
-            {
-                if (localClassWarnings)
+                if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
+                    cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
                 {
-                    if (cur1->tp->IsFunction())
-                        if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt && !cur1->tp->BaseType()->sp->sb->deferredCompile)
-                            errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
+                    errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
+                    break;
                 }
-                if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
-                    if (cur1->sb->storage_class != StorageClass::virtual_)
-                        error(ERR_SPECIFIER_VIRTUAL_FUNC);
+            }
+            if (cur->sb->storage_class == StorageClass::overloads_)
+            {
+                for (auto cur1 : *cur->tp->syms)
+                {
+                    if (localClassWarnings)
+                    {
+                        if (cur1->tp->IsFunction())
+                            if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt && !cur1->tp->BaseType()->sp->sb->deferredCompile)
+                                errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
+                    }
+                    if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
+                        if (cur1->sb->storage_class != StorageClass::virtual_)
+                            error(ERR_SPECIFIER_VIRTUAL_FUNC);
+                }
             }
         }
     }

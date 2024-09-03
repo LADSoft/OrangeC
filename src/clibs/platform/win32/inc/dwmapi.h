@@ -2,7 +2,7 @@
 #define _DWMAPI_H
 
 #ifdef __ORANGEC__ 
-#pragma once
+#pragma GCC system_header
 #endif
 
 /* Windows Desktop Window Manager API definitions (Vista) */

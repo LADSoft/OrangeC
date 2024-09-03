@@ -1,3 +1,4 @@
+#define _SILENCE_CXX17_STRSTREAM_DEPRECATION_WARNING 1
 #include "forwarddecls.h"
 #include "ppEmbed.h"
 #include "Utils.h"
@@ -30,7 +31,7 @@ static void push_back_values(std::vector<embeder_type>& embed_vec,
                              const std::unordered_map<std::string, std::vector<embed_token_type>>& args,
                              const std::string& map_vals_string)
 {
-    auto& prefix_val = args.find(map_vals_string);
+    auto prefix_val = args.find(map_vals_string);
     if (prefix_val != args.end())
     {
         for (auto&& val : prefix_val->second)
@@ -68,7 +69,8 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
     }
     bool found_system = false;
     int discard = 0;
-    std::string fil = includer.FindFile(info.is_system, info.filename, false, discard, found_system);
+    bool found = false;
+    std::string fil = includer.FindFile(info.is_system, info.filename, false, discard, found_system, found);
     if (!Utils::FileExists(fil))
     {
         return {builder, EmbedReturnValue::EMBED_NOT_FOUND};
@@ -129,14 +131,15 @@ EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
     bool is_system = info.is_system;
     auto& file = info.filename;
     bool found_system = false;
-    std::string fil = includer.FindFile(is_system, file, false, discard, found_system);
+    bool found = false;
+    std::string fil = includer.FindFile(is_system, file, false, discard, found_system, found);
     bool FoundInvalid = false;
     std::strstream string_stream;
     if (throw_error)
     {
         for (auto&& value : info.mapped_values)
         {
-            auto& val = std::find(ourKnownValues.begin(), ourKnownValues.end(), value.first);
+            auto val = std::find(ourKnownValues.begin(), ourKnownValues.end(), value.first);
             if (val == ourKnownValues.end())
             {
                 // std::format C++23 my god, better than a strstream here

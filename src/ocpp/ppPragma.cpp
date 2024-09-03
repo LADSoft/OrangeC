@@ -588,7 +588,7 @@ int ppPragma::StdPragmas()
     return rv;
 }
 
-void ppPragma::HandleGcc(Tokenizer& tk)
+void ppPragma::HandleGcc(Tokenizer<kw>& tk)
 {
     const Token* name = tk.Next();
     if (name->IsIdentifier() && name->GetId() == "system_header")

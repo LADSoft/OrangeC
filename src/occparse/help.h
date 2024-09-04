@@ -93,15 +93,16 @@ bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);
 bool iscomplexconst(EXPRESSION* exp);
 void undoAnonymousVar(SYMBOL* sp);
-EXPRESSION* anonymousVar(StorageClass storage_class, Type* tp);
+EXPRESSION* AnonymousVar(StorageClass storage_class, Type* tp);
 EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits);
-void deref(Type* tp, EXPRESSION** exp);
-int sizeFromType(Type* tp);
+void Dereference(Type* tp, EXPRESSION** exp);
+bool TakeAddress(EXPRESSION** exp);
+int SizeFromType(Type* tp);
 void cast(Type* tp, EXPRESSION** exp);
-bool castvalue(EXPRESSION* exp);
+bool IsCastValue(EXPRESSION* exp);
 bool xvalue(EXPRESSION* exp);
-bool lvalue(EXPRESSION* exp);
-EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
+bool IsLValue(EXPRESSION* exp);
+EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest);
 bool assignDiscardsConst(Type* dest, Type* source);
 bool isconstzero(Type* tp, EXPRESSION* exp);

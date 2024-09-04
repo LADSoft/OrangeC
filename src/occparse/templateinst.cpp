@@ -1732,7 +1732,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         while (it1 != ite && ita != itae)
         {
             if ((*ita)->tp && (*ita)->tp->IsStructured() && (*ita)->tp->BaseType()->sp->sb->templateLevel &&
-                sameTemplate(func->sb->parentClass->tp, (*ita)->tp, true))
+                SameTemplate(func->sb->parentClass->tp, (*ita)->tp, true))
                 return nullptr;
             ++it1;
             ++ita;
@@ -3242,7 +3242,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                                 if (!templateCompareTypes(itParams->second->byClass.val, (Type*)dflt, true) ||
                                     (itParams->second->byClass.val->IsStructured() &&
                                      itParams->second->byClass.val->BaseType()->sp->sb->templateLevel &&
-                                     !sameTemplate(itParams->second->byClass.val, (Type*)dflt, true)))
+                                     !SameTemplate(itParams->second->byClass.val, (Type*)dflt, true)))
                                     rv = nullptr;
                                 break;
                             case TplType::int_: {
@@ -3627,7 +3627,7 @@ static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool ch
                         working.push(exp->left);
                     if (exp->right)
                         working.push(exp->right);
-                    while (castvalue(exp) || lvalue(exp))
+                    while (IsCastValue(exp) || IsLValue(exp))
                         exp = exp->left;
                     if (!isarithmeticconst(exp))
                     {
@@ -3692,7 +3692,7 @@ bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, b
                         Type* tp = it->second->byClass.val;
                         if (tp && tp->BaseType()->type == BasicType::any_)
                             return false;
-                        if (sameTemplate(tp, sym->tp))
+                        if (SameTemplate(tp, sym->tp))
                             return false;
                     }
                 }
@@ -4882,19 +4882,19 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                             // typename, allocate space for a type...
                             if (dflt->IsStructured())
                             {
-                                exp = anonymousVar(StorageClass::auto_, dflt);
+                                exp = AnonymousVar(StorageClass::auto_, dflt);
                             }
                             else
                             {
-                                exp = anonymousVar(StorageClass::auto_, dflt);
+                                exp = AnonymousVar(StorageClass::auto_, dflt);
                                 if (dflt->IsRef())
                                 {
                                     Type* tp1 = dflt->BaseType()->btp;
-                                    deref(tp1, &exp);
+                                    Dereference(tp1, &exp);
                                 }
                                 else
                                 {
-                                    deref(dflt, &exp);
+                                    Dereference(dflt, &exp);
                                 }
                             }
                         }

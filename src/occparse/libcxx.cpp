@@ -469,7 +469,7 @@ static bool isStandardLayout(Type* tp, SYMBOL** result)
             {
                 if (found->sb->baseClasses)
                     for (auto bc : *found->sb->baseClasses)
-                        if (bc->cls->tp->ExactSameType(first->tp))
+                        if (bc->cls->tp->CompatibleType(first->tp))
                             return false;
             }
         }
@@ -694,7 +694,7 @@ static bool __is_nothrow(Type* tp, std::list<Argument*>* arguments, SYMBOL* ovl)
                             sp2 = sp2->sb->mainsym;
                         if (spy->sb->mainsym)
                             spy = spy->sb->mainsym;
-                        return sp2 == spy || sameTemplate(sp2->tp, spy->tp);
+                        return sp2 == spy || SameTemplate(sp2->tp, spy->tp);
                     }
                     return true;
                 }
@@ -860,7 +860,7 @@ static bool is_constructible(EXPRESSION* exp)
                                 sp2 = sp2->sb->mainsym;
                             if (spy->sb->mainsym)
                                 spy = spy->sb->mainsym;
-                            rv = sp2 == spy || sameTemplate(sp2->tp, spy->tp);
+                            rv = sp2 == spy || SameTemplate(sp2->tp, spy->tp);
                         }
                         return rv;
                     }
@@ -875,7 +875,7 @@ static bool is_constructible(EXPRESSION* exp)
                     {
                         if (tpy->IsRef())
                             tpy = tpy->BaseType()->btp;
-                        rv = tp2->ExactSameType(tpy);
+                        rv = tp2->CompatibleType(tpy);
                     }
                 }
             }
@@ -888,7 +888,7 @@ static bool is_constructible(EXPRESSION* exp)
                         tp3 = tp3->BaseType()->btp->BaseType();
                     if (tp3->IsFunction())
                     {
-                        rv = tp2->BaseType()->btp->ExactSameType(tp3);
+                        rv = tp2->BaseType()->btp->CompatibleType(tp3);
                     }
                     else if (tp3->IsStructured())
                     {
@@ -921,7 +921,7 @@ static bool is_constructible(EXPRESSION* exp)
                     else
                     {
                         // compare two function pointers...
-                        rv = tp2->ExactSameType(tp3);
+                        rv = tp2->CompatibleType(tp3);
                     }
                 }
                 else
@@ -945,9 +945,9 @@ static bool is_constructible(EXPRESSION* exp)
                             s1 = s1->sb->mainsym;
                         if (s2->sb->mainsym)
                             s2 = s2->sb->mainsym;
-                        if (s1 == s2 || sameTemplate(s1->tp, s2->tp))
+                        if (s1 == s2 || SameTemplate(s1->tp, s2->tp))
                         {
-                            rv = tp2->btp->ExactSameType(tp3->btp);
+                            rv = tp2->btp->CompatibleType(tp3->btp);
                         }
                     }
                     else if (tp3->IsFunction())
@@ -964,9 +964,9 @@ static bool is_constructible(EXPRESSION* exp)
                                     s1 = s1->sb->mainsym;
                                 if (s2->sb->mainsym)
                                     s2 = s2->sb->mainsym;
-                                if (s1 == s2 || sameTemplate(s1->tp, s2->tp))
+                                if (s1 == s2 || SameTemplate(s1->tp, s2->tp))
                                 {
-                                    rv = tp2->btp->ExactSameType(tp3);
+                                    rv = tp2->btp->CompatibleType(tp3);
                                 }
                             }
                         }
@@ -998,7 +998,7 @@ static bool is_constructible(EXPRESSION* exp)
                 }
 #if 0
                 if (tp3 && tp3->IsStructured() &&
-                    (tp2->ExactSameType(tp3) || sameTemplate(tp2, tp3)))
+                    (tp2->CompatibleType(tp3) || SameTemplate(tp2, tp3)))
                 {
                     rv = true;
                 }
@@ -1244,7 +1244,7 @@ static bool is_nothrow_constructible(EXPRESSION* exp)
             }
             else if (arguments->size() > 1)
             {
-                rv = tp2->ExactSameType(second(arguments)->tp);
+                rv = tp2->CompatibleType(second(arguments)->tp);
             }
             else
             {
@@ -1253,7 +1253,7 @@ static bool is_nothrow_constructible(EXPRESSION* exp)
         }
         else if (arguments->size()  > 1)
         {
-            rv = tp2->ExactSameType(second(arguments)->tp);
+            rv = tp2->CompatibleType(second(arguments)->tp);
         }
         else
         {
@@ -1289,7 +1289,7 @@ static bool is_nothrow_assignable(EXPRESSION* exp)
         }
         else if (arguments->size()  > 1)
         {
-            rv = tp2->ExactSameType(second(arguments)->tp);
+            rv = tp2->CompatibleType(second(arguments)->tp);
         }
         else
         {
@@ -1356,7 +1356,7 @@ static bool is_trivially_assignable(EXPRESSION* exp)
            Type* tp1 = second(arguments)->tp;
            if (tp1->IsRef())
                tp1 = tp1->BaseType()->btp;
-           if (tp1->ExactSameType(first(arguments)->tp) || sameTemplate(tp1, first(arguments)->tp))
+           if (tp1->CompatibleType(first(arguments)->tp) || SameTemplate(tp1, first(arguments)->tp))
               rv = trivialAssignable(first(arguments)->tp, second(arguments)->tp->BaseType()->type== BasicType::rref_);
         }
     }
@@ -1376,7 +1376,7 @@ static bool is_trivially_constructible(EXPRESSION* exp)
            Type* tp1 = second(arguments)->tp;
            if (tp1->IsRef())
                tp1 = tp1->BaseType()->btp;
-           if (tp1->ExactSameType(first(arguments)->tp) || sameTemplate(tp1, first(arguments)->tp))
+           if (tp1->CompatibleType(first(arguments)->tp) || SameTemplate(tp1, first(arguments)->tp))
               rv = trivialCopyConstructible(first(arguments)->tp, second(arguments)->tp->BaseType()->type== BasicType::rref_);
         }
     }
@@ -1527,15 +1527,15 @@ static bool is_same(EXPRESSION* exp)
                 {
                     left->InstantiateDeferred();
                     right->InstantiateDeferred();
-                    rv = left->ExactSameType(right);
+                    rv = left->CompatibleType(right);
                     if (!rv)
                     {
-                        rv = sameTemplate(left, right);
+                        rv = SameTemplate(left, right);
                     }
                 }
                 else
                 {
-                    rv = left->ExactSameType(right);
+                    rv = left->CompatibleType(right);
                 }
             }
         }
@@ -1556,10 +1556,10 @@ static bool is_assignable(EXPRESSION* exp)
             left->InstantiateDeferred();
             right->InstantiateDeferred();
 
-            rv = left->ExactSameType(right);
+            rv = left->CompatibleType(right);
             if (!rv)
             {
-                rv = sameTemplate(left, right);
+                rv = SameTemplate(left, right);
             }
             if (!rv)
             {
@@ -1575,9 +1575,9 @@ static bool is_assignable(EXPRESSION* exp)
                     funcparams.arguments = argumentListFactory.CreateList();
                     Argument* arg = Allocate<Argument>();
                     funcparams.arguments->push_back(arg);
-                    arg->exp = anonymousVar(StorageClass::auto_, right);
+                    arg->exp = AnonymousVar(StorageClass::auto_, right);
                     arg->tp = right;
-                    rv = callConstructor(&ctype, &exp, &funcparams, true, nullptr, true, true, false, false, false, true, false);
+                    rv = CallConstructor(&ctype, &exp, &funcparams, true, nullptr, true, true, false, false, false, true, false);
                 }
                 if (!rv)
                 {

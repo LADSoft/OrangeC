@@ -433,7 +433,7 @@ void StatementGenerator::DestructorsForArguments(std::list<Argument*>* il)
                                 auto xexp = relptr(iexp, offs);
                                 if (xexp)
                                     xexp->v.sp->sb->destructed = true;
-                                if (callDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
+                                if (CallDestructor(sp, nullptr, &iexp, nullptr, true, false, false, true))
                                 {
                                     if (!first->destructors)
                                         first->destructors = exprListFactory.CreateList();
@@ -465,7 +465,7 @@ void StatementGenerator::DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBO
                 if (sp->tp->IsStructured())
                 {
                     EXPRESSION* iexp = getThisNode(sp);
-                    if (callDestructor(sp->tp->BaseType()->sp, nullptr, &iexp, nullptr, true, false, false, true))
+                    if (CallDestructor(sp->tp->BaseType()->sp, nullptr, &iexp, nullptr, true, false, false, true))
                     {
                         optimize_for_constants(&iexp);
                         if (*exp)
@@ -935,7 +935,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         valueList->array = true;
                         valueList->size = n * matchtp->size;
 
-                        EXPRESSION* val = anonymousVar(StorageClass::auto_, valueList);
+                        EXPRESSION* val = AnonymousVar(StorageClass::auto_, valueList);
 
                         int sz = lst->front()->tp->size;
 
@@ -946,7 +946,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             offset += sz;
                             if (ittp->IsRef())
                                 ittp = ittp->BaseType()->btp;
-                            if (!matchtp->ExactSameType(ittp))
+                            if (!matchtp->CompatibleType(ittp))
                             {
                                 if (!matchtp->IsStructured())
                                 {
@@ -965,7 +965,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                         st->select = newExp;
                                         newExp = base;
-                                        callDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true,
+                                        CallDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true,
                                                        false, true);
                                     }
                                 }
@@ -996,16 +996,16 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             else
                             {
                                 st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
-                                deref(matchtp, &base);
+                                Dereference(matchtp, &base);
                                 st->select = MakeExpression(ExpressionNode::assign_, base, lstitem->exp);
                             }
                         }
                         if (matchtp->IsStructured())
                         {
                             auto newExp = val;
-                            callDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true, false,
+                            CallDestructor(matchtp->sp, matchtp->sp, &newExp, MakeIntExpression(ExpressionNode::c_i_, offset / sz), true, true, false,
                                            true);
-                            initInsert(&val->v.sp->sb->dest, matchtp, newExp, 0, false);
+                            InsertInitializer(&val->v.sp->sb->dest, matchtp, newExp, 0, false);
                         }
 
                         begin = val;
@@ -1013,19 +1013,19 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     }
                     else
                     {
-                        select = anonymousVar(StorageClass::auto_, &stdint);
+                        select = AnonymousVar(StorageClass::auto_, &stdint);
                         begin = select;
                         size = MakeIntExpression(ExpressionNode::c_i_, 0);
                     }
                     selectTP = matchtp->InitializerListType();
                     std::list<Initializer*>* init = nullptr;
-                    initInsert(&init, &stdpointer, begin, 0, false);
-                    initInsert(&init, &stdpointer, size, stdpointer.size, false);
+                    InsertInitializer(&init, &stdpointer, begin, 0, false);
+                    InsertInitializer(&init, &stdpointer, size, stdpointer.size, false);
                     Type* tp2 = Type::MakeType(BasicType::pointer_, &stdpointer);
                     tp2->size = 2 * stdpointer.size;
                     tp2->array = true;
-                    EXPRESSION* val = anonymousVar(StorageClass::auto_, tp2);
-                    select = convertInitToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
+                    EXPRESSION* val = AnonymousVar(StorageClass::auto_, tp2);
+                    select = ConverInitializersToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
                     st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                     st->select = select;
                     select = val;
@@ -1045,15 +1045,15 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     SYMBOL *sbegin = nullptr, *send = nullptr;
                     Type* iteratorType = nullptr;
                     Type* tpref = Type::MakeType(BasicType::rref_, selectTP);
-                    EXPRESSION* rangeExp = anonymousVar(StorageClass::auto_, tpref);
+                    EXPRESSION* rangeExp = AnonymousVar(StorageClass::auto_, tpref);
                     SYMBOL* rangeSP = rangeExp->v.sp;
                     if (selectTP->IsStructured())
                         selectTP = selectTP->BaseType()->sp->tp;
-                    deref(&stdpointer, &rangeExp);
+                    Dereference(&stdpointer, &rangeExp);
                     needkw(&lex, Keyword::closepa_);
-                    while (castvalue(select))
+                    while (IsCastValue(select))
                         select = select->left;
-                    if (lvalue(select) && select->type != ExpressionNode::l_ref_ && !selectTP->IsStructured())
+                    if (IsLValue(select) && select->type != ExpressionNode::l_ref_ && !selectTP->IsStructured())
                         select = select->left;
 //                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
 //                    st->select = MakeExpression(ExpressionNode::assign_, rangeExp, select);
@@ -1100,7 +1100,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, nullptr, false, false, 0);
                             if (beginFunc && endFunc)
                             {
-                                if (!beginFunc->tp->BaseType()->btp->ExactSameType(endFunc->tp->BaseType()->btp))
+                                if (!beginFunc->tp->BaseType()->btp->CompatibleType(endFunc->tp->BaseType()->btp))
                                 {
                                     error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
                                 }
@@ -1112,27 +1112,27 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     {
                                         std::list<Initializer*>* dest = nullptr;
                                         EXPRESSION* exp;
-                                        fcb.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
+                                        fcb.returnEXP = AnonymousVar(StorageClass::auto_, iteratorType);
                                         fcb.returnEXP->v.sp->sb->anonymous = false;
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         if (!iteratorType->BaseType()->sp->sb->pureDest)
                                         {
                                             dest = nullptr;
-                                            callDestructor(fcb.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
-                                            initInsert(&dest, iteratorType, exp, 0, true);
+                                            CallDestructor(fcb.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
+                                            InsertInitializer(&dest, iteratorType, exp, 0, true);
                                             fcb.returnSP->sb->dest = dest;
                                         }
                                         dest = nullptr;
-                                        fce.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
+                                        fce.returnEXP = AnonymousVar(StorageClass::auto_, iteratorType);
                                         fce.returnEXP->v.sp->sb->anonymous = false;
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         if (!iteratorType->BaseType()->sp->sb->pureDest)
                                         {
                                             dest = nullptr;
-                                            callDestructor(fce.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
-                                            initInsert(&dest, iteratorType, exp, 0, true);
+                                            CallDestructor(fce.returnSP->tp->BaseType()->sp, nullptr, &exp, nullptr, true, true, false, true);
+                                            InsertInitializer(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->sb->dest = dest;
                                         }
                                     }
@@ -1150,7 +1150,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     if (fc->thisptr)
                                     {
                                         auto expx = fc->thisptr;
-                                        while(lvalue(expx) || castvalue(expx)) expx = expx->left;
+                                        while(IsLValue(expx) || IsCastValue(expx)) expx = expx->left;
                                         if (expx->type == ExpressionNode::thisref_)
                                             expx = expx->left;
                                         if (expx->type == ExpressionNode::callsite_)
@@ -1217,7 +1217,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     it2 = iteratorType = beginFunc->tp->BaseType()->btp;
                                     if (it2->IsRef())
                                         it2 = it2->btp;
-                                    if (!beginFunc->tp->BaseType()->btp->ExactSameType(endFunc->tp->BaseType()->btp))
+                                    if (!beginFunc->tp->BaseType()->btp->CompatibleType(endFunc->tp->BaseType()->btp))
                                     {
                                         error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
                                     }
@@ -1228,25 +1228,25 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         {
                                             std::list<Initializer*>* dest = nullptr;
                                             EXPRESSION* exp;
-                                            fcb.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
+                                            fcb.returnEXP = AnonymousVar(StorageClass::auto_, iteratorType);
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             if (!iteratorType->BaseType()->sp->sb->pureDest)
                                             {
                                                 dest = nullptr;
-                                                callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
-                                                initInsert(&dest, iteratorType, exp, 0, true);
+                                                CallDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, true, false, true);
+                                                InsertInitializer(&dest, iteratorType, exp, 0, true);
                                                 fcb.returnSP->sb->dest = dest;
                                             }
                                             dest = nullptr;
-                                            fce.returnEXP = anonymousVar(StorageClass::auto_, iteratorType);
+                                            fce.returnEXP = AnonymousVar(StorageClass::auto_, iteratorType);
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             if (!iteratorType->BaseType()->sp->sb->pureDest)
                                             {
                                                 dest = nullptr;
-                                                callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
-                                                initInsert(&dest, iteratorType, exp, 0, true);
+                                                CallDestructor(fce.returnSP, nullptr, &exp, nullptr, true, true, false, true);
+                                                InsertInitializer(&dest, iteratorType, exp, 0, true);
                                                 fce.returnSP->sb->dest = dest;
                                             }
                                         }
@@ -1261,7 +1261,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
                                         {
                                             EXPRESSION* consexp =
-                                                anonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                                                AnonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                             SYMBOL* esp = consexp->v.sp;
                                             CallSite* funcparams = Allocate<CallSite>();
                                             Type* ctype = rangeSP->tp->BaseType()->btp;
@@ -1269,7 +1269,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                             funcparams->arguments = argumentListFactory.CreateList();
                                             for (auto i : *fc->arguments)
                                                 funcparams->arguments->push_back(i);
-                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
+                                            CallConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
                                                             false, false, true);
                                             fc->arguments->front()->exp = consexp;
                                         }
@@ -1289,7 +1289,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
                                         {
                                             EXPRESSION* consexp =
-                                                anonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                                                AnonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                             SYMBOL* esp = consexp->v.sp;
                                             CallSite* funcparams = Allocate<CallSite>();
                                             Type* ctype = rangeSP->tp->BaseType()->btp;
@@ -1297,7 +1297,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                             funcparams->arguments = argumentListFactory.CreateList();
                                             for (auto i : *fc->arguments)
                                                 funcparams->arguments->push_back(i);
-                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
+                                            CallConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
                                                             false, false, true);
                                             fc->arguments->front()->exp = consexp;
                                         }
@@ -1328,8 +1328,8 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             eEnd = iend->v.func->returnEXP;
                             if (iteratorType->BaseType()->sp->sb->structuredAliasType)
                             {
-                                deref(iteratorType->BaseType()->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
-                                deref(iteratorType->BaseType()->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
+                                Dereference(iteratorType->BaseType()->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
+                                Dereference(iteratorType->BaseType()->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
                                 st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                 st->select = MakeExpression(ExpressionNode::assign_, ibegin->v.func->returnEXP, ibegin);
                                 ibegin->v.func->returnEXP = nullptr;
@@ -1351,10 +1351,10 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         else
                         {
                             Type* tpx = Type::MakeType(BasicType::pointer_, iteratorType);
-                            eBegin = anonymousVar(StorageClass::auto_, tpx);
-                            eEnd = anonymousVar(StorageClass::auto_, tpx);
-                            deref(&stdpointer, &eBegin);
-                            deref(&stdpointer, &eEnd);
+                            eBegin = AnonymousVar(StorageClass::auto_, tpx);
+                            eEnd = AnonymousVar(StorageClass::auto_, tpx);
+                            Dereference(&stdpointer, &eBegin);
+                            Dereference(&stdpointer, &eEnd);
                             st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                             st->select = MakeExpression(ExpressionNode::assign_, eBegin, ibegin);
                             st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
@@ -1371,7 +1371,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             iteratorType = iteratorType->BaseType();
                             Type* eqType = iteratorType;
                             compare = eBegin;
-                            if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::eq_, funcsp, &eqType, &compare, iteratorType, eEnd, nullptr,
+                            if (!FindOperatorFunction(ovcl_unary_prefix, Keyword::eq_, funcsp, &eqType, &compare, iteratorType, eEnd, nullptr,
                                                     0))
                             {
                                 error(ERR_MISSING_OPERATOR_EQ_FORRANGE_ITERATOR);
@@ -1404,12 +1404,12 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 if (tp->IsRef())
                                 {
                                     tp = tp->BaseType()->btp;
-                                    if (!tp->btp->ExactSameType(selectTP->BaseType()->btp))
+                                    if (!tp->btp->CompatibleType(selectTP->BaseType()->btp))
                                     {
                                         error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                     }
                                 }
-                                else if (!tp->ExactSameType(selectTP->BaseType()->btp))
+                                else if (!tp->CompatibleType(selectTP->BaseType()->btp))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
@@ -1424,17 +1424,17 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 funcparams->arguments->push_back(Allocate<Argument>());
                                 funcparams->arguments->front()->tp = declSP->tp;
                                 funcparams->arguments->front()->exp = eBegin;
-                                callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
+                                CallConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false, true);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
+                                CallDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
                             }
                             else if (selectTP->IsArray())
                             {
                                 EXPRESSION* decl = declExp;
-                                deref(declSP->tp, &decl);
+                                Dereference(declSP->tp, &decl);
                                 st->select = eBegin;
-                                deref(selectTP->BaseType()->btp, &st->select);
+                                Dereference(selectTP->BaseType()->btp, &st->select);
                                 st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 if (declSP->tp->IsRef())
                                 {
@@ -1452,17 +1452,17 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             {
                                 DeduceAuto(&declSP->tp, iteratorType->BaseType()->btp, declExp);
                                 declSP->tp->UpdateRootTypes();
-                                if (!declSP->tp->ExactSameType(iteratorType->BaseType()->btp))
+                                if (!declSP->tp->CompatibleType(iteratorType->BaseType()->btp))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
                                 else if (!declSP->tp->IsStructured())
                                 {
                                     EXPRESSION* decl = declExp;
-                                    deref(declSP->tp, &decl);
+                                    Dereference(declSP->tp, &decl);
                                     st->select = eBegin;
                                     if (!declSP->tp->IsRef())
-                                        deref(iteratorType->BaseType()->btp, &st->select);
+                                        Dereference(iteratorType->BaseType()->btp, &st->select);
                                     st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 }
                                 else
@@ -1475,14 +1475,14 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = eBegin;
-                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
+                                    CallConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
+                                    CallDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
-                            else if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::star_, funcsp, &starType, &st->select, nullptr, nullptr,
+                            else if (!FindOperatorFunction(ovcl_unary_prefix, Keyword::star_, funcsp, &starType, &st->select, nullptr, nullptr,
                                                          nullptr, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_STAR_FORRANGE_ITERATOR);
@@ -1496,7 +1496,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 }
                                 DeduceAuto(&declSP->tp, starType, declExp);
                                 declSP->tp->UpdateRootTypes();
-                                if (!declSP->tp->ExactSameType(starType) &&
+                                if (!declSP->tp->CompatibleType(starType) &&
                                     (!declSP->tp->IsArithmetic() || !starType->IsArithmetic()))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1506,12 +1506,12 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     EXPRESSION* decl = declExp;
                                     if (ref && (starType->lref || starType->rref))
                                     {
-                                        while (castvalue(st->select))
+                                        while (IsCastValue(st->select))
                                             st->select = st->select->left;
-                                        if (lvalue(st->select))
+                                        if (IsLValue(st->select))
                                             st->select = st->select->left;
                                     }
-                                    deref(declSP->tp, &decl);
+                                    Dereference(declSP->tp, &decl);
 
                                     st->select = MakeExpression(ExpressionNode::assign_, decl, st->select);
                                 }
@@ -1525,11 +1525,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = st->select;
-                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
+                                    CallConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
+                                    CallDestructor(declSP->tp->BaseType()->sp, nullptr, &declDest, nullptr, true, true, false, true);
                                 }
                             }
                         }
@@ -1567,7 +1567,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     ExpressionNode::assign_, eBegin,
                                     MakeExpression(ExpressionNode::add_, eBegin, MakeIntExpression(ExpressionNode::c_i_, iteratorType->BaseType()->btp->BaseType()->size)));
                             }
-                            else if (!insertOperatorFunc(ovcl_unary_prefix, Keyword::autoinc_, funcsp, &ppType, &st->select, nullptr, nullptr,
+                            else if (!FindOperatorFunction(ovcl_unary_prefix, Keyword::autoinc_, funcsp, &ppType, &st->select, nullptr, nullptr,
                                                          nullptr, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_PLUSPLUS_FORRANGE_ITERATOR);
@@ -1576,12 +1576,12 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             {
                                 if (ppType->IsStructured())
                                 {
-                                    st->select->v.func->returnEXP = anonymousVar(StorageClass::auto_, ppType);
+                                    st->select->v.func->returnEXP = AnonymousVar(StorageClass::auto_, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     if (!ppType->BaseType()->sp->sb->pureDest)
                                     {
                                         auto dest = st->select->v.func->returnEXP;
-                                        callDestructor(st->select->v.func->returnSP->tp->BaseType()->sp, nullptr, &dest, nullptr, true, true, false,
+                                        CallDestructor(st->select->v.func->returnSP->tp->BaseType()->sp, nullptr, &dest, nullptr, true, true, false,
                                                        true);
                                         st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                                         st->select = dest;
@@ -2113,10 +2113,10 @@ void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
 }
 EXPRESSION* StatementGenerator::ConvertReturnToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
 {
-    if (lvalue(exp))
+    if (IsLValue(exp))
     {
         EXPRESSION* exp2;
-        while (castvalue(exp))
+        while (IsCastValue(exp))
             exp = exp->left;
         exp2 = exp;
         if (!tp->BaseType()->btp->IsStructured())
@@ -2213,7 +2213,7 @@ void StatementGenerator::MatchReturnTypes(Type* tp1, Type* tp2)
             tp2 = tp2->BaseType();
             if (tp1->IsStructured() && tp2->IsStructured())
             {
-                if (!tp1->ExactSameType(tp2) && classRefCount(tp1->sp, tp2->sp) != 1)
+                if (!tp1->CompatibleType(tp2) && classRefCount(tp1->sp, tp2->sp) != 1)
                     err = true;
             }
             else if (tp1->type != tp2->type)
@@ -2283,7 +2283,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         }
         if (tp->IsStructured() || tp->IsBitInt() || tp->BaseType()->type == BasicType::memberptr_)
         {
-            EXPRESSION* en = anonymousVar(StorageClass::parameter_, &stdpointer);
+            EXPRESSION* en = AnonymousVar(StorageClass::parameter_, &stdpointer);
             SYMBOL* sp = en->v.sp;
             bool maybeConversion = true;
             sp->sb->allocate = false;  // static var
@@ -2295,7 +2295,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             if ((funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_) && funcsp->tp->BaseType()->syms->size() &&
                 ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->tp->type != BasicType::void_)
                 sp->sb->offset = funcsp->sb->paramsize;
-            deref(&stdpointer, &en);
+            Dereference(&stdpointer, &en);
             if (Optimizer::cparams.prm_cplusplus && tp->IsStructured() && (!tp->BaseType()->sp->sb->trivialCons || MATCHKW(lex, Keyword::begin_)))
             {
                 bool implicit = false;
@@ -2312,9 +2312,9 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     implicit = true;
                     std::list<Initializer*>* init = nullptr, *dest = nullptr;
                     SYMBOL* sym = nullptr;
-                    sym = anonymousVar(StorageClass::localstatic_, tp)->v.sp;
+                    sym = AnonymousVar(StorageClass::localstatic_, tp)->v.sp;
                     lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, 0);
-                    returnexp = convertInitToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
+                    returnexp = ConverInitializersToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
                     returntype = tp;
                     if (sym)
                         sym->sb->dest = dest;
@@ -2337,12 +2337,12 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     }
                     if (tp1 && tp1->IsStructured())
                     {
-                        if (sameTemplate(tp, tp1))
+                        if (SameTemplate(tp, tp1))
                         {
                             ctype = tp = tp1;
                             funcsp->tp->BaseType()->btp = tp1;
                         }
-                        else if (tp->ExactSameType(tp1))
+                        else if (tp->CompatibleType(tp1))
                         {
                             implicit = true;
                         }
@@ -2363,7 +2363,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->sb->isConstructor && 
                         exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
                         tp->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
-                        (!tp->BaseType()->sp->sb->templateLevel || sameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
+                        (!tp->BaseType()->sp->sb->templateLevel || SameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
                         exptemp->v.func->thisptr->type == ExpressionNode::auto_ && exptemp->v.func->thisptr->v.sp->sb->anonymous)
                     {
                         exptemp->v.func->thisptr->v.sp->sb->destructed = true;
@@ -2382,8 +2382,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         {
                             exptemp->v.sp->sb->destructed = true;
                         }
-                        auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
-                        deref(&stdpointer, &targetPointer);
+                        auto targetPointer = AnonymousVar(StorageClass::auto_, &stdpointer);
+                        Dereference(&stdpointer, &targetPointer);
                         auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
                         ReplaceVarRef(&exp1, exptemp->v.sp, targetPointer);
                         exp1 = MakeExpression(ExpressionNode::comma_, targetExpr, exp1);
@@ -2393,7 +2393,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         implicit = false;
                     }
                     /*
-                    else if ((tp1->ExactSameType(tp) || sameTemplate(tp, tp1)) && !tp1->rref && !tp1->lref)
+                    else if ((tp1->CompatibleType(tp) || SameTemplate(tp, tp1)) && !tp1->rref && !tp1->lref)
                     {
                         returntype = tp;
                         returnexp = exp1;
@@ -2418,7 +2418,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         maybeConversion = false;
                         returntype = tp;
                         // try the rref constructor first
-                        if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
+                        if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
                             false, false))
                         {
                             if (funcparams->sp && matchesCopy(funcparams->sp, true))
@@ -2441,7 +2441,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             ctype = tp;
                             tp1->BaseType()->rref = false;
                             tp1->BaseType()->lref = true;
-                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
+                            CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
                                 false, true);
                         }
                         tp1->BaseType()->rref = oldrref;
@@ -2462,7 +2462,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 }
                 else
                     MatchReturnTypes(tp, tp1);
-                if (!tp->ExactSameType(tp1) &&
+                if (!tp->CompatibleType(tp1) &&
                     (!tp->IsBitInt() || !tp1->IsBitInt()) &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !tp->IsStructured() || !isconstzero(&stdint, returnexp)))
                 {
@@ -2528,8 +2528,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 {
                                     exptemp->v.sp->sb->destructed = true;
                                 }
-                                auto targetPointer = anonymousVar(StorageClass::auto_, &stdpointer);
-                                deref(&stdpointer, &targetPointer);
+                                auto targetPointer = AnonymousVar(StorageClass::auto_, &stdpointer);
+                                Dereference(&stdpointer, &targetPointer);
                                 auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
                                 ReplaceVarRef(&returnexp, exptemp->v.sp, targetPointer);
                                 returnexp = MakeExpression(ExpressionNode::comma_, targetExpr, returnexp);
@@ -2550,7 +2550,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                     expx = &(*expx)->right;
                                 expx = &(*expx)->right;
                             }
-                            deref(tp->BaseType()->sp->sb->structuredAliasType, expx);
+                            Dereference(tp->BaseType()->sp->sb->structuredAliasType, expx);
                         }
                     }
                     returntype = tp;
@@ -2582,7 +2582,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     returnexp = MakeExpression(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
-            else if (!tp->ExactSameType(tp1))
+            else if (!tp->CompatibleType(tp1))
             {
                 bool err = false;
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2718,7 +2718,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             }
             else if (returntype->IsStructured() || tp->IsStructured())
             {
-                if (!returntype->SameType(tp) && !sameTemplate(returntype, tp))
+                if (!returntype->SameType(tp) && !SameTemplate(returntype, tp))
                     error(ERR_RETMISMATCH);
             }
             else if (returntype->BaseType()->type == BasicType::memberptr_ || tp->BaseType()->type == BasicType::memberptr_)
@@ -2735,7 +2735,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         int lbl = dumpMemberPtr(st->select->v.sp, returntype, true);
                         st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
                     }
-                    if (!returntype->ExactSameType(tp))
+                    if (!returntype->CompatibleType(tp))
                         error(ERR_RETMISMATCH);
                 }
             }
@@ -2764,7 +2764,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     }
                     else if (tp->IsPtr())
                     {
-                        if (!returntype->ExactSameType(tp))
+                        if (!returntype->CompatibleType(tp))
                         {
                             if (!returntype->IsVoidPtr() && !tp->IsVoidPtr())
                             {
@@ -2782,7 +2782,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     else if (tp->IsFunction())
                     {
                         if (!returntype->IsVoidPtr() &&
-                            (!returntype->BaseType()->btp->IsFunction() || !returntype->ExactSameType(tp)))
+                            (!returntype->BaseType()->btp->IsFunction() || !returntype->CompatibleType(tp)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else
@@ -3006,7 +3006,7 @@ bool StatementGenerator::NoSideEffect(EXPRESSION* exp)
 {
     if (exp->noexprerr)
         return false;
-    while (castvalue(exp) || lvalue(exp))
+    while (IsCastValue(exp) || IsLValue(exp))
         exp = exp->left;
     switch (exp->type)
     {
@@ -3071,8 +3071,8 @@ void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
             {
                 std::list<Initializer*>* init = nullptr;
                 EXPRESSION* exp = select->v.func->returnEXP;
-                callDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
-                initInsert(&init, sym->tp, exp, 0, false);
+                CallDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
+                InsertInitializer(&init, sym->tp, exp, 0, false);
                 sym->sb->dest = init;
             }
         }
@@ -4302,7 +4302,7 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
         dontRegisterTemplate--;
     }
 }
-void StatementGenerator::Body()
+void StatementGenerator::FunctionBody()
 {
     int oldNoexcept = funcsp->sb->noExcept;
     if (bodyIsDestructor)

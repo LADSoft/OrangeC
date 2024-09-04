@@ -423,14 +423,14 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         auto arg = Allocate<Argument>();
         if (sym->tp->IsStructured() && !sym->tp->IsRef())
         {
-            SYMBOL* sym2 = anonymousVar(StorageClass::auto_, sym->tp)->v.sp;
+            SYMBOL* sym2 = AnonymousVar(StorageClass::auto_, sym->tp)->v.sp;
             sym2->sb->stackblock = true;
             arg->exp = MakeExpression(ExpressionNode::auto_, sym2);  // DAL MODIFIED
         }
         else
         {
             arg->exp = MakeExpression(ExpressionNode::auto_, sym);
-            deref(sym->tp, &arg->exp);
+            Dereference(sym->tp, &arg->exp);
         }
         arg->tp = sym->tp;
     }
@@ -439,7 +439,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     params->fcall = MakeExpression(ExpressionNode::pc_, lambdas.front()->func);
     params->functp = func->tp;
     params->thisptr = MakeExpression(ExpressionNode::global_, self);
-    deref(&stdpointer, &params->thisptr);
+    Dereference(&stdpointer, &params->thisptr);
     params->thistp = self->tp;
     st = Statement::MakeStatement(NULL, block1, StatementNode::block_);
     st->lower = block2.front()->statements;
@@ -504,9 +504,9 @@ static void createConverter(SYMBOL* self)
     // Keyword::assign_ ___self = this
     st = Statement::MakeStatement(NULL, block2, StatementNode::expr_);
     st->select = MakeExpression(ExpressionNode::auto_, (SYMBOL*)func->tp->BaseType()->syms->front());
-    deref(&stdpointer, &st->select);
+    Dereference(&stdpointer, &st->select);
     st->select = MakeExpression(ExpressionNode::assign_, MakeExpression(ExpressionNode::global_, self), st->select);
-    deref(&stdpointer, &st->select->left);
+    Dereference(&stdpointer, &st->select->left);
     // return pointer to ptrtocaller
     st = Statement::MakeStatement(NULL, block2, StatementNode::return_);
     st->select = MakeExpression(ExpressionNode::pc_, caller);
@@ -643,8 +643,8 @@ static EXPRESSION* createLambda(bool noinline)
         if (!init)
             init = initListFactory.CreateList();
         EXPRESSION* exp = clsThs;
-        callDestructor(cls->tp->BaseType()->sp, NULL, &exp, NULL, true, false, false, true);
-        initInsert(&init, cls->tp, exp, 0, true);
+        CallDestructor(cls->tp->BaseType()->sp, NULL, &exp, NULL, true, false, false, true);
+        InsertInitializer(&init, cls->tp, exp, 0, true);
         if (cls->sb->storage_class != StorageClass::auto_)
         {
             insertDynamicDestructor(cls, init);
@@ -667,9 +667,9 @@ static EXPRESSION* createLambda(bool noinline)
             if (!parentThs)
                 continue;
             en1 = parentThs;  // get parent from function call
-            deref(&stdpointer, &en1);
+            Dereference(&stdpointer, &en1);
             en = MakeExpression(ExpressionNode::add_, clsThs, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
-            deref(&stdpointer, &en);
+            Dereference(&stdpointer, &en);
             en = MakeExpression(ExpressionNode::assign_, en, en1);
         }
         else if (!strcmp(sp->name, "$this"))
@@ -685,12 +685,12 @@ static EXPRESSION* createLambda(bool noinline)
                 SYMBOL* parent = search(lambdas.front()->cls->tp->syms, "$parent");
                 en1 = MakeExpression(ExpressionNode::auto_, cls);
                 if (!thisByVal)
-                    deref(&stdpointer, &en1);
+                    Dereference(&stdpointer, &en1);
                 en1 = MakeExpression(ExpressionNode::add_, en1, MakeIntExpression(ExpressionNode::c_i_, parent->sb->offset));
             }
-            deref(&stdpointer, &en1);
+            Dereference(&stdpointer, &en1);
             en = MakeExpression(ExpressionNode::add_, clsThs, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
-            deref(&stdpointer, &en);
+            Dereference(&stdpointer, &en);
             en = MakeExpression(ExpressionNode::assign_, en, en1);
         }
         else if (!strcmp(sp->name, "*this"))
@@ -705,10 +705,10 @@ static EXPRESSION* createLambda(bool noinline)
             {
                 SYMBOL* parent = search(lambdas.front()->cls->tp->syms, "$parent");
                 en1 = MakeExpression(ExpressionNode::auto_, cls);
-                deref(&stdpointer, &en1);
+                Dereference(&stdpointer, &en1);
                 en1 = MakeExpression(ExpressionNode::add_, en1, MakeIntExpression(ExpressionNode::c_i_, parent->sb->offset));
             }
-            deref(&stdpointer, &en1);
+            Dereference(&stdpointer, &en1);
             en = MakeExpression(ExpressionNode::add_, clsThs, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
             Type* ctp = sp->tp;
             if (!callConstructorParam(&ctp, &en, sp->tp, en1, true, false, true, false, true))
@@ -732,18 +732,18 @@ static EXPRESSION* createLambda(bool noinline)
                     }
                     else
                     {
-                        deref(ctp, &en1);
+                        Dereference(ctp, &en1);
                         en = MakeExpression(ExpressionNode::assign_, en1, sp->sb->init->front()->exp);
                     }
                 }
                 else if (sp->sb->lambdaMode == cmRef)
                 {
                     SYMBOL* capture = lsp->parent;
-                    deref(&stdpointer, &en1);
+                    Dereference(&stdpointer, &en1);
                     if (capture->sb->lambdaMode)
                     {
                         en = parentThs;
-                        deref(&stdpointer, &en);
+                        Dereference(&stdpointer, &en);
                         en = MakeExpression(ExpressionNode::add_, en, MakeIntExpression(ExpressionNode::c_i_, capture->sb->offset));
                     }
                     else  // must be an StorageClass::auto_
@@ -752,7 +752,7 @@ static EXPRESSION* createLambda(bool noinline)
                     }
                     if (capture->tp->IsRef())
                     {
-                        deref(&stdpointer, &en);
+                        Dereference(&stdpointer, &en);
                     }
                     en = MakeExpression(ExpressionNode::assign_, en1, en);
                 }
@@ -763,7 +763,7 @@ static EXPRESSION* createLambda(bool noinline)
                     if (capture->sb->lambdaMode)
                     {
                         en = parentThs;
-                        deref(&stdpointer, &en);
+                        Dereference(&stdpointer, &en);
                         en = MakeExpression(ExpressionNode::add_, en, MakeIntExpression(ExpressionNode::c_i_, capture->sb->offset));
                     }
                     else  // must be an StorageClass::auto_
@@ -773,7 +773,7 @@ static EXPRESSION* createLambda(bool noinline)
                     if (ctp->IsRef())
                     {
                         ctp = ctp->BaseType()->btp;
-                        deref(&stdpointer, &en);
+                        Dereference(&stdpointer, &en);
                     }
                     if (ctp->IsStructured())
                     {
@@ -783,8 +783,8 @@ static EXPRESSION* createLambda(bool noinline)
                     }
                     else
                     {
-                        deref(ctp, &en1);
-                        deref(ctp, &en);
+                        Dereference(ctp, &en1);
+                        Dereference(ctp, &en);
                         en = MakeExpression(ExpressionNode::assign_, en1, en);
                     }
                 }
@@ -962,7 +962,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                         else
                         {
                             SYMBOL* sp = makeID(StorageClass::auto_, tp, NULL, idlex->data->value.s.a);
-                            initInsert(&sp->sb->init, tp, exp, 0, true);
+                            InsertInitializer(&sp->sb->init, tp, exp, 0, true);
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
                             {
@@ -1133,7 +1133,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
             LexList* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
             SetLinkerNames(self->func, Linkage::cdecl_);
             StatementGenerator sg(lex1, self->func);
-            sg.Body();
+            sg.FunctionBody();
             sg.BodyGen();
             lex1 = self->func->sb->deferredCompile;
             while (lex1)

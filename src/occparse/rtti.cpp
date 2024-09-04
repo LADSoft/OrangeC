@@ -268,7 +268,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
                 else
                 {
                     EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    callDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, true, true);
+                    CallDestructor(tp->BaseType()->sp, nullptr, &exp, nullptr, true, false, true, true);
                     if (exp && exp->left)
                     {
                         sym = exp->left->v.func->sp;

@@ -889,7 +889,7 @@ bool Type::CompareTypes(Type* typ1, Type* typ2, int exact)
             }
             if (exact == 1 && ((typ2->IsConst() && !typ1->IsConst()) || (typ2->IsVolatile() && !typ1->IsVolatile())))
                 return false;
-            return typ1->ExactSameType(typ2);
+            return typ1->CompatibleType(typ2);
         }
 
         else
@@ -3392,7 +3392,7 @@ founddecltype:
                         // DAL
                         if (Optimizer::cparams.prm_cplusplus && sp && MATCHKW(lex, Keyword::openpa_) &&
                             ((strSym && ((strSym->sb->mainsym && strSym->sb->mainsym == sp->sb->mainsym) ||
-                                strSym == sp->sb->mainsym || sameTemplate(strSym->tp, sp->tp))) ||
+                                strSym == sp->sb->mainsym || SameTemplate(strSym->tp, sp->tp))) ||
                                 (!strSym && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) && ssp &&
                                     (ssp == sp || ssp == sp->sb->mainsym))))
                         {
@@ -3896,7 +3896,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             {
                                 SYMBOL* sym;
                                 anonymousNotAlloc++;
-                                sym = anonymousVar(StorageClass::auto_, tp2)->v.sp;
+                                sym = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                                 anonymousNotAlloc--;
                                 sym->sb->stackblock = !spi->tp->IsRef();
                                 lex = initialize(lex, funcsp, sym, StorageClass::auto_, true, false, 0); /* also reserves space */
@@ -3919,7 +3919,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             inDefaultParam--;
                         }
                         spi->sb->defaultarg = true;
-                        if (spi->tp->IsFunctionPtr() && spi->sb->init && lvalue(spi->sb->init->front()->exp))
+                        if (spi->tp->IsFunctionPtr() && spi->sb->init && IsLValue(spi->sb->init->front()->exp))
                             error(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT);
                         if (sp->sb->storage_class == StorageClass::typedef_)
                             error(ERR_NO_DEFAULT_ARGUMENT_IN_TYPEDEF);
@@ -3995,7 +3995,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 spo = spo->tp->syms->front();
             if (spo && spo->tp->IsFunction() && spo->sb->hasproto)
             {
-                if (!spo->tp->btp->ExactSameType(sp->tp->btp))
+                if (!spo->tp->btp->CompatibleType(sp->tp->btp))
                 {
                     preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
                 }

@@ -369,7 +369,7 @@ static bool hasConstFunc(SYMBOL* sp, int type, bool move)
                     {
                         if (arg->tp->BaseType()->btp->IsStructured())
                         {
-                            if (arg->tp->BaseType()->btp->BaseType()->sp == sp || sameTemplate(arg->tp->BaseType()->btp->BaseType(), sp->tp))
+                            if (arg->tp->BaseType()->btp->BaseType()->sp == sp || SameTemplate(arg->tp->BaseType()->btp->BaseType(), sp->tp))
                             {
                                 if ((arg->tp->BaseType()->type == BasicType::lref_ && !move) || (arg->tp->BaseType()->type == BasicType::rref_ && move))
                                 {
@@ -493,7 +493,7 @@ bool matchesCopy(SYMBOL* sp, bool move)
                     tp->InstantiateDeferred();
                     if (tp->IsStructured())
                         if (tp->BaseType()->sp == sp->sb->parentClass || tp->BaseType()->sp == sp->sb->parentClass->sb->mainsym ||
-                            tp->BaseType()->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
+                            tp->BaseType()->sp->sb->mainsym == sp->sb->parentClass || SameTemplate(tp, sp->sb->parentClass->tp))
                             return true;
                 }
             }
@@ -601,7 +601,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
                         {
                             continue;
                         }
-                        if (tp->sp == base->tp->sp || tp->sp == base->tp->sp->sb->mainsym || sameTemplate(tp, base->tp))
+                        if (tp->sp == base->tp->sp || tp->sp == base->tp->sp->sb->mainsym || SameTemplate(tp, base->tp))
                         {
                             return sym2;
                         }
@@ -644,7 +644,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
                     tp = tp->btp->BaseType();
                     if (tp->IsStructured())
                     {
-                        if (tp->ExactSameType(base->tp) || sameTemplate(tp, base->tp))
+                        if (tp->CompatibleType(base->tp) || SameTemplate(tp, base->tp))
                         {
                             return sym2;
                         }
@@ -1270,7 +1270,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 EXPRESSION* e1;
                 CallSite* params = Allocate<CallSite>();
                 (*it)->sb->offset = Optimizer::chosenAssembler->arch->retblocksize;
-                deref(&stdpointer, &thisptr);
+                Dereference(&stdpointer, &thisptr);
                 bd.type = Keyword::begin_;
                 syms = localNameSpace->front()->syms;
                 localNameSpace->front()->syms = consfunc->tp->BaseType()->syms;
@@ -1511,8 +1511,8 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
         {
             Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
             EXPRESSION* exp;
-            deref(member->tp, &thisptr);
-            deref(member->tp, &otherptr);
+            Dereference(member->tp, &thisptr);
+            Dereference(member->tp, &otherptr);
             exp = MakeExpression(ExpressionNode::assign_, thisptr, otherptr);
             optimize_for_constants(&exp);
             st->select = exp;
@@ -1522,7 +1522,7 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
     {
         EXPRESSION* exp;
         Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
-        exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
+        exp = ConverInitializersToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
         optimize_for_constants(&exp);
         st->select = exp;
     }
@@ -1537,7 +1537,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
         EXPRESSION* exp;
         if (member->sb->init->front()->exp)
         {
-            exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
+            exp = ConverInitializersToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
             if (mi && mi->size() && mi->front()->valueInit)
             {
                 auto ths = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, member->sb->offset));
@@ -1564,7 +1564,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
         {
             if (useDefault)
             {
-                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
+                if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
@@ -1589,7 +1589,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
         {
             if (useDefault)
             {
-                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
+                if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
@@ -1618,7 +1618,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                 {
                     mi2->sp->tp->InstantiateDeferred();
                     if (mi2->sp && mi2->sp->tp->IsStructured() &&
-                        (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate || sameTemplate(mi2->sp->tp, member->tp)))
+                        (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate || SameTemplate(mi2->sp->tp, member->tp)))
                     {
                         mix = mi2;
                         break;
@@ -1642,7 +1642,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                         funcparams->arguments->push_back(arg);
                     }
                 }
-                if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
+                if (!CallConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
                 if (mix->sp && !mix->init)
                 {
@@ -1650,14 +1650,14 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                     clr->size = mix->sp->tp;
                     exp = MakeExpression(ExpressionNode::comma_, clr, exp);
                 }
-                // previously, callConstructor can return false here, meaning that funcparams->sp is null
+                // previously, CallConstructor can return false here, meaning that funcparams->sp is null
                 // This used to create a nullptr dereference in PromoteConstructorArgs
                 // Why this is only being found NOW is somewhat dumb, but it is.
                 PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             else
             {
-                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
+                if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
         }
@@ -1677,7 +1677,7 @@ static void virtualBaseThunks(std::list<FunctionBlock*>& b, SYMBOL* sp, EXPRESSI
             EXPRESSION* left = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, entry->pointerOffset));
             EXPRESSION* right = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, entry->structOffset));
             EXPRESSION* asn;
-            deref(&stdpointer, &left);
+            Dereference(&stdpointer, &left);
             asn = MakeExpression(ExpressionNode::assign_, left, right);
             if (!*pos)
             {
@@ -1708,7 +1708,7 @@ static void HandleEntries(EXPRESSION** pos, std::list<VTABENTRY*>* entries, EXPR
             EXPRESSION* right =
                 MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::add_, vtabBase, MakeIntExpression(ExpressionNode::c_i_, entry->vtabOffset)), MakeIntExpression(ExpressionNode::c_i_, VTAB_XT_OFFS));
             EXPRESSION* asn;
-            deref(&stdpointer, &left);
+            Dereference(&stdpointer, &left);
             asn = MakeExpression(ExpressionNode::assign_, left, right);
             if (!*pos)
             {
@@ -1735,7 +1735,7 @@ static void dovtabThunks(std::list<FunctionBlock*>& b, SYMBOL* sym, EXPRESSION* 
     localsp = sym->sb->vtabsp;
     EXPRESSION* vtabBase = MakeExpression(ExpressionNode::global_, localsp);
     if (localsp->sb->attribs.inheritable.linkage2 == Linkage::import_)
-        deref(&stdpointer, &vtabBase);
+        Dereference(&stdpointer, &vtabBase);
     HandleEntries(&first, entries, thisptr, vtabBase, isvirtual);
     if (first)
     {
@@ -1985,7 +1985,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             {
                                 lex = getsym();
                                 init->init = nullptr;
-                                initInsert(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0, false);
+                                InsertInitializer(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0, false);
                                 done = true;
                             }
                             else
@@ -2202,7 +2202,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         if (cls->sb->baseClasses)
                             for (auto bc : *cls->sb->baseClasses)
                             {
-                                if (!bc->cls->tp->ExactSameType(init->sp->tp) || sameTemplate(bc->cls->tp, init->sp->tp))
+                                if (!bc->cls->tp->CompatibleType(init->sp->tp) || SameTemplate(bc->cls->tp, init->sp->tp))
                                 {
                                     found = true;
                                     break;
@@ -2331,8 +2331,8 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
     ++it;
     if (it != syms->end())
         otherptr = MakeExpression(ExpressionNode::auto_, *it);
-    deref(&stdpointer, &thisptr);
-    deref(&stdpointer, &otherptr);
+    Dereference(&stdpointer, &thisptr);
+    Dereference(&stdpointer, &otherptr);
     if (parseInitializers)
         allocInitializers(sym, cons, thisptr);
     if (cons->sb->memberInitializers && cons->sb->memberInitializers->size() && cons->sb->memberInitializers->front()->delegating)
@@ -2378,7 +2378,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                 sp->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + cons->sb->paramsize;
                 localNameSpace->front()->syms->Add(sp);
 
-                deref(&stdint, &val);
+                Dereference(&stdint, &val);
                 st = Statement::MakeStatement(nullptr, b, StatementNode::notselect_);
                 optimize_for_constants(&val);
                 st->select = val;
@@ -2539,8 +2539,8 @@ static void genAsnData(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* member
     }
     else
     {
-        deref(member->tp, &left);
-        deref(member->tp, &right);
+        Dereference(member->tp, &left);
+        Dereference(member->tp, &right);
         left = MakeExpression(ExpressionNode::assign_, left, right);
     }
     st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
@@ -2627,8 +2627,8 @@ static EXPRESSION* thunkAssignments(std::list<FunctionBlock*>& b, SYMBOL* sym, S
     ++it;
     if (it != syms->end())  // this had better be true
         other = MakeExpression(ExpressionNode::auto_, *it);
-    deref(&stdpointer, &thisptr);
-    deref(&stdpointer, &other);
+    Dereference(&stdpointer, &thisptr);
+    Dereference(&stdpointer, &other);
     if (sym->tp->type == BasicType::union_)
     {
         genAsnData(b, sym, sym, 0, thisptr, other);
@@ -2733,14 +2733,14 @@ static void genDestructorCall(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* 
     if (!dest)  // error handling
         return;
     exp = base;
-    deref(&stdpointer, &exp);
+    Dereference(&stdpointer, &exp);
     exp = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, offset));
     dest = (SYMBOL*)dest->tp->BaseType()->syms->front();
     if (dest->sb->defaulted && !dest->sb->inlineFunc.stmt)
     {
         createDestructor(sp);
     }
-    callDestructor(sp, against, &exp, arrayElms, top, true, false, true);
+    CallDestructor(sp, against, &exp, arrayElms, top, true, false, true);
     st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
     optimize_for_constants(&exp);
     st->select = exp;
@@ -2818,7 +2818,7 @@ void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest,
             sp1->sb->decoratedName = sp1->name;
             sp1->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + getSize(BasicType::pointer_);
             Optimizer::SymbolManager::Get(sp1)->offset = sp1->sb->offset;
-            deref(&stdint, &val);
+            Dereference(&stdint, &val);
             st = Statement::MakeStatement(nullptr, b, StatementNode::notselect_);
             optimize_for_constants(&val);
             st->select = val;
@@ -2929,7 +2929,7 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         *exp = MakeExpression(params);
     }
 }
-bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess,
+bool CallDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess,
                     bool novtab)
 {
     if (!sp)
@@ -2951,7 +2951,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     sym = sp->tp->BaseType()->sp;
     if (!*exp)
     {
-        diag("callDestructor: no this pointer");
+        diag("CallDestructor: no this pointer");
     }
     params->thisptr = *exp;
     params->thistp = Type::MakeType(BasicType::pointer_, sp->tp);
@@ -2963,9 +2963,9 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         if (!novtab && dest1 && dest1->sb->storage_class == StorageClass::virtual_)
         {
             auto exp_in = params->thisptr;
-            deref(&stdpointer, &exp_in);
+            Dereference(&stdpointer, &exp_in);
             exp_in = MakeExpression(ExpressionNode::add_, exp_in, MakeIntExpression(ExpressionNode::c_i_, dest1->sb->vtaboffset));
-            deref(&stdpointer, &exp_in);
+            Dereference(&stdpointer, &exp_in);
             params->fcall = exp_in;
         }
         if (dest1)
@@ -3022,7 +3022,7 @@ bool callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     }
     return true;
 }
-bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
+bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
                      bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign, bool toErr)
 {
     (void)checkcopy;
@@ -3211,7 +3211,7 @@ bool callConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 CallSite* params = Allocate<CallSite>();
                 if (!*exp)
                 {
-                    diag("callDestructor: no this pointer");
+                    diag("CallDestructor: no this pointer");
                 }
                 params->thisptr = *exp;
                 params->thistp = Type::MakeType(BasicType::pointer_, sp->tp);
@@ -3287,7 +3287,7 @@ bool callConstructorParam(Type** tp, EXPRESSION** exp, Type* paramTP, EXPRESSION
         params->arguments->front()->tp = paramTP;
         params->arguments->front()->exp = paramExp;
     }
-    return callConstructor(tp, exp, params, false, nullptr, top, maybeConversion, implicit, pointer, false, false, toErr);
+    return CallConstructor(tp, exp, params, false, nullptr, top, maybeConversion, implicit, pointer, false, false, toErr);
 }
 
 }  // namespace Parser

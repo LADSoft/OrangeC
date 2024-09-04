@@ -907,7 +907,7 @@ SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, b
         rv = search(cls->tp->BaseType()->tags, name);
     if (rv)
     {
-        if (!last || ((last == rv || sameTemplate(last->tp, rv->tp) || (rv->sb->mainsym && rv->sb->mainsym == last->sb->mainsym)) &&
+        if (!last || ((last == rv || SameTemplate(last->tp, rv->tp) || (rv->sb->mainsym && rv->sb->mainsym == last->sb->mainsym)) &&
                       (((isvirtual && isvirtual == last->sb->temp) || ismember(rv)) ||
                        (((last->sb->storage_class == StorageClass::type_ && rv->sb->storage_class == StorageClass::type_) ||
                          (last->sb->storage_class == StorageClass::typedef_ && rv->sb->storage_class == StorageClass::typedef_)) &&
@@ -2337,8 +2337,8 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                 ta = ta->BaseType();
                 tl = tl->BaseType();
                 tr = tr->BaseType();
-                int cmpl = tl->ExactSameType(ta) && sameTemplate(tl, ta);
-                int cmpr = tr->ExactSameType(ta) && sameTemplate(tr, ta);
+                int cmpl = tl->CompatibleType(ta) && SameTemplate(tl, ta);
+                int cmpr = tr->CompatibleType(ta) && SameTemplate(tr, ta);
                 if (fromUser)
                 {
                     if (cmpr || cmpl)
@@ -2468,7 +2468,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
         rankr = !!rtype->IsConst() + !!rtype->IsVolatile() * 2;
         if (rankl != rankr)
         {
-            if (ltype->BaseType()->ExactSameType(rtype->BaseType()))
+            if (ltype->BaseType()->CompatibleType(rtype->BaseType()))
             {
                 int n1 = rankl ^ rankr;
                 if ((n1 & rankl) && !(n1 & rankr))
@@ -2479,12 +2479,12 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
         }
         if (atype && rtype->IsRef() && ltype->IsRef())
         {
-            // rvalue matches an rvalue reference better than an lvalue reference
+            // rvalue matches an rvalue reference better than an IsLValue reference
 
             if (rtype->IsRef() && ltype->IsRef() && ltype->BaseType()->type != rtype->BaseType()->type)
             {
-                int lref = expa && lvalue(expa);
-                int rref = expa && (!lvalue(expa) && (!rtype->IsStructured() || !ismem(expa)));
+                int lref = expa && IsLValue(expa);
+                int rref = expa && (!IsLValue(expa) && (!rtype->IsStructured() || !ismem(expa)));
                 if (expa && expa->type == ExpressionNode::callsite_)
                 {
                     Type* tp = expa->v.func->sp->tp->BaseType()->btp;
@@ -2517,7 +2517,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
             rankr = !!rtype->BaseType()->btp->IsConst() + !!rtype->BaseType()->btp->IsVolatile() * 2;
             if (rankl != rankr)
             {
-                if (ltype->BaseType()->btp->BaseType()->ExactSameType(rtype->BaseType()->btp->BaseType()))
+                if (ltype->BaseType()->btp->BaseType()->CompatibleType(rtype->BaseType()->btp->BaseType()))
                 {
                     int n1 = rankl ^ rankr;
                     if ((n1 & rankl) && !(n1 & rankr))
@@ -2594,7 +2594,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                     return -1;
                 }
             }
-            if (!ltype->ExactSameType(rtype))
+            if (!ltype->CompatibleType(rtype))
                 return 0;
         }
         if (seql[l] == CV_USER && seqr[r] == CV_USER && funcl && funcr)
@@ -3463,7 +3463,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                                         }
                                     }
                                 }
-                                else if (!candidate->tp->BaseType()->btp->ExactSameType(tpa) && !sameTemplate(candidate->tp->BaseType()->btp, tpa))
+                                else if (!candidate->tp->BaseType()->btp->CompatibleType(tpa) && !SameTemplate(candidate->tp->BaseType()->btp, tpa))
                                 {
                                     if (tppp->IsVoidPtr())
                                     {
@@ -3599,7 +3599,7 @@ static void getQualConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, e_c
     bool hasconst = true, hasvol = true;
     bool sameconst = true, samevol = true;
     bool first = true;
-    while (exp && castvalue(exp))
+    while (exp && IsCastValue(exp))
         exp = exp->left;
     bool strconst = false;
     while (tpa && tpp)  // && tpa->IsPtr() && tpp->IsPtr())
@@ -3694,7 +3694,7 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
             SYMBOL* base = tpp->BaseType()->btp->BaseType()->sp;
             SYMBOL* derived = tpa->BaseType()->btp->BaseType()->sp;
 
-            if (base != derived && !base->tp->ExactSameType(derived->tp) && !sameTemplate(base->tp, derived->tp))
+            if (base != derived && !base->tp->CompatibleType(derived->tp) && !SameTemplate(base->tp, derived->tp))
             {
                 int v = classRefCount(base, derived);
                 if (v != 1)
@@ -3731,7 +3731,7 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
                         seq[(*n)++] = CV_NONE;
                 }
             }
-            else if (!t1->ExactSameType(t2))
+            else if (!t1->CompatibleType(t2))
             {
                 seq[(*n)++] = CV_NONE;
             }
@@ -3739,7 +3739,7 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
         getQualConversion(tpp, tpa, exp, n, seq);
     }
 }
-bool sameTemplateSelector(Type* tnew, Type* told)
+bool SameTemplateSelector(Type* tnew, Type* told)
 {
     while (tnew->IsRef() && told->IsRef())
     {
@@ -3802,11 +3802,11 @@ bool sameTemplateSelector(Type* tnew, Type* told)
             }
             tp = sp->tp;
         }
-        return tp->ExactSameType(y) || sameTemplate(tp, y);
+        return tp->CompatibleType(y) || SameTemplate(tp, y);
     }
     return false;
 }
-bool sameTemplatePointedTo(Type* tnew, Type* told, bool quals)
+bool SameTemplatePointedTo(Type* tnew, Type* told, bool quals)
 {
     if (tnew->IsConst() != told->IsConst() || tnew->IsVolatile() != told->IsVolatile())
         return false;
@@ -3817,9 +3817,9 @@ bool sameTemplatePointedTo(Type* tnew, Type* told, bool quals)
         if (tnew->IsConst() != told->IsConst() || tnew->IsVolatile() != told->IsVolatile())
             return false;
     }
-    return sameTemplate(tnew, told, quals);
+    return SameTemplate(tnew, told, quals);
 }
-bool sameTemplate(Type* P, Type* A, bool quals)
+bool SameTemplate(Type* P, Type* A, bool quals)
 {
     bool PLd, PAd;
     std::list<TEMPLATEPARAMPAIR>::iterator PL, PLE, PA, PAE;
@@ -4009,7 +4009,7 @@ void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref)
                 rref = true;
                 return;
             }
-            else if (classRefCount(tpp1->BaseType()->sp, tpa1->BaseType()->sp) != 1 && !tpp1->ExactSameType(tpa1) && !sameTemplate(tpp1, tpa1))
+            else if (classRefCount(tpp1->BaseType()->sp, tpa1->BaseType()->sp) != 1 && !tpp1->CompatibleType(tpa1) && !SameTemplate(tpp1, tpa1))
             {
                 lref = false;
                 rref = true;
@@ -4045,10 +4045,10 @@ void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 		func2 = false;
         }
     }
-    lref = (tpa->BaseType()->type == BasicType::lref_ || tpa->lref || (tpa->IsStructured() && !notlval && !func) || (expa && lvalue(expa))) &&
+    lref = (tpa->BaseType()->type == BasicType::lref_ || tpa->lref || (tpa->IsStructured() && !notlval && !func) || (expa && IsLValue(expa))) &&
            !tpa->rref;
     rref = (tpa->BaseType()->type == BasicType::rref_ || tpa->rref || notlval || func || func2 ||
-            (expa && (isarithmeticconst(expa) || !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa)))) &&
+            (expa && (isarithmeticconst(expa) || !IsLValue(expa) && !ismem(expa) && !ismath(expa) && !IsCastValue(expa)))) &&
            !lref && !tpa->lref;
 }
 void getSingleConversionWrapped(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate,
@@ -4233,7 +4233,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         if (tpp->type == BasicType::rref_ && lref && !tpa->IsFunction() && !tpa->IsFunctionPtr() && !tpa->IsPtr() &&
             (expa && !isarithmeticconst(expa)))
         {
-            // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
+            // IsLValue to rvalue ref not allowed unless the IsLValue is nonvolatile and const
             if (!isDerivedFromTemplate(tppx) && (!tpax->IsConst() || tpax->IsVolatile()))
             {
                 seq[(*n)++] = CV_NONE;
@@ -4241,7 +4241,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         }
         else if (tpp->type == BasicType::lref_ && rref && !lref)
         {
-            // rvalue to lvalue reference not allowed unless the lvalue is a function or const
+            // rvalue to IsLValue reference not allowed unless the IsLValue is a function or const
             if (!tpp->BaseType()->btp->IsFunction() && tpp->BaseType()->btp->type != BasicType::aggregate_)
             {
                 if (!tppp->IsConst())
@@ -4261,7 +4261,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     s1 = s1->sb->mainsym;
                 if (s2->sb->mainsym)
                     s2 = s2->sb->mainsym;
-                if (s1 != s2 && !sameTemplate(tppp, tpa))
+                if (s1 != s2 && !SameTemplate(tppp, tpa))
                 {
                     if (classRefCount(s2, s1) == 1)
                     {
@@ -4304,7 +4304,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
             tpp = tppp->BaseType()->btp;
             if (tpa->IsFunctionPtr())
                 tpa = tpa->BaseType()->btp;
-            if (tpp->ExactSameType(tpa))
+            if (tpp->CompatibleType(tpa))
             {
                 seq[(*n)++] = CV_IDENTITY;
             }
@@ -4362,7 +4362,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         {
             if (tpp->IsStructured())
             {
-                if (tpa->BaseType()->sp == tpp->BaseType()->sp || sameTemplate(tpp, tpa))
+                if (tpa->BaseType()->sp == tpp->BaseType()->sp || SameTemplate(tpp, tpa))
                 {
                     seq[(*n)++] = CV_IDENTITY;
                 }
@@ -4427,7 +4427,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                 if (rv->type == BasicType::auto_)
                     tpp->BaseType()->btp = tpa->BaseType()->btp;
             }
-            if (tpp->ExactSameType(tpa))
+            if (tpp->CompatibleType(tpa))
             {
                 seq[(*n)++] = CV_IDENTITY;
             }
@@ -4491,7 +4491,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         {
             if (tpa->BaseType()->type == BasicType::memberptr_)
             {
-                if (tpp->BaseType()->btp->ExactSameType(tpa->BaseType()->btp))
+                if (tpp->BaseType()->btp->CompatibleType(tpa->BaseType()->btp))
                 {
                     if (tpa->BaseType()->sp != tpp->BaseType()->sp)
                     {
@@ -4527,7 +4527,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
             }
             else if (tpa->IsFunction())
             {
-                if (!tpp->BaseType()->btp->ExactSameType(tpa))
+                if (!tpp->BaseType()->btp->CompatibleType(tpa))
                     seq[(*n)++] = CV_NONE;
 
                 else if (tpa->BaseType()->sp->sb->parentClass != tpp->BaseType()->sp &&
@@ -4558,7 +4558,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         }
         else if (tpa->IsFunction())
         {
-            if (tpp->IsFunction() && tpp->ExactSameType(tpa))
+            if (tpp->IsFunction() && tpp->CompatibleType(tpa))
             {
                 seq[(*n)++] = CV_IDENTITY;
             }
@@ -4777,7 +4777,7 @@ static void getInitListConversion(Type* tp, std::list<Argument*>* list, Type* tp
                 {
                     while (it != ite)
                     {
-                        if ((*it)->tp->SameType(tp) || sameTemplate((*it)->tp, tp))
+                        if ((*it)->tp->SameType(tp) || SameTemplate((*it)->tp, tp))
                         {
                            getSingleConversion(tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
                            ++it;
@@ -5002,7 +5002,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                         auto thisptr = f->thistp ? f->thisptr : f->arguments->size() ? f->arguments->front()->exp : nullptr;
                         if (thisptr)
                         {
-                            bool lref = lvalue(thisptr);
+                            bool lref = IsLValue(thisptr);
                             auto strtype = tpthis->BaseType()->btp;
                             if (strtype->IsStructured() && thisptr->type != ExpressionNode::not__lvalue_)
                             {
@@ -5221,8 +5221,8 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                         ++ita1;
                         if ((*ita)->nested->front()->nested || (*ita)->initializer_list || ita1 != itae ||
                             (tp1->IsStructured() &&
-                             (!sym->sb->isConstructor || (!tp1->BaseType()->ExactSameType(sym->sb->parentClass->tp) &&
-                                                          !sameTemplate(tp1->BaseType(), sym->sb->parentClass->tp)))))
+                             (!sym->sb->isConstructor || (!tp1->BaseType()->CompatibleType(sym->sb->parentClass->tp) &&
+                                                          !SameTemplate(tp1->BaseType(), sym->sb->parentClass->tp)))))
                         {
                             initializerListType = tp1->BaseType();
                             if (!sym->sb->parentClass || (!matchesCopy(sym, false) && !matchesCopy(sym, true)))
@@ -5522,7 +5522,7 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, CallSite* args)
             found1 = spList[i];
             for (j = i + 1; j < n && found1 && !found2; j++)
             {
-                if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
+                if (spList[j] && found1 != spList[j] && !SameTemplate(found1->tp, spList[j]->tp))
                 {
                     found2 = spList[j];
                 }
@@ -5665,7 +5665,7 @@ static bool IsMove(SYMBOL* sp)
                 auto tp2 = thisPtr->tp->BaseType()->btp->BaseType();
                 if (tp1->IsStructured() && tp2->IsStructured())
                 {
-                    rv = tp2->ExactSameType(tp1) || sameTemplate(tp2, tp1);
+                    rv = tp2->CompatibleType(tp1) || SameTemplate(tp2, tp1);
                 }
             }
         }
@@ -5866,7 +5866,7 @@ static bool ValidForDeduction(SYMBOL* s)
                         found1 = spList[i];
                     for (j = i; j < n && found1; j++)
                     {
-                        if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
+                        if (spList[j] && found1 != spList[j] && !SameTemplate(found1->tp, spList[j]->tp))
                         {
                             found2 = spList[j];
                         }
@@ -5900,7 +5900,7 @@ static bool ValidForDeduction(SYMBOL* s)
                             found1 = spList[i];
                         for (j = i; j < n && found1 && !found2; j++)
                         {
-                            if (spList[j] && found1 != spList[j] && !sameTemplate(found1->tp, spList[j]->tp))
+                            if (spList[j] && found1 != spList[j] && !SameTemplate(found1->tp, spList[j]->tp))
                             {
                                 found2 = spList[j];
                             }
@@ -6272,7 +6272,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             found1 = spList[i];
                         for (j = i; j < n && found1; j++)
                         {
-                            if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator && !sameTemplate(found1->tp, spList[j]->tp))
+                            if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator && !SameTemplate(found1->tp, spList[j]->tp))
                             {
                                 found2 = spList[j];
                             }
@@ -6312,7 +6312,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 found1 = spList[i];
                             for (j = i; j < n && found1 && !found2; j++)
                             {
-                            if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator && !sameTemplate(found1->tp, spList[j]->tp))
+                            if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator && !SameTemplate(found1->tp, spList[j]->tp))
                                 {
                                     found2 = spList[j];
                                 }
@@ -6633,7 +6633,7 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
             }
         }
     }
-    while (castvalue(exp2))
+    while (IsCastValue(exp2))
         exp2 = exp2->left;
 
     memset(&fpargs, 0, sizeof(fpargs));

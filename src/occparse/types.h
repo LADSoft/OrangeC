@@ -111,8 +111,8 @@ struct Type
     bool SameExceptionType(Type* typ);
     bool SameCharType(Type* tp);
     bool SameType(Type* other) { return CompareTypes(this, other, 0); }
-    bool ExactSameType(Type* other) { return CompareTypes(this, other, 1); }
-    bool ExactSameTypeNoQualifiers(Type* other) { return CompareTypes(this, other, 2); }
+    bool CompatibleType(Type* other) { return CompareTypes(this, other, 1); }
+    bool CompatibleTypeNoQualifiers(Type* other) { return CompareTypes(this, other, 2); }
     inline void BasicTypeToString(char* buf) { BasicTypeToString(buf, this); }
     Type* CopyType(bool deep = false, std::function<void(Type*&, Type*&)> callback = nullptr);
     bool IsConstWithArr();

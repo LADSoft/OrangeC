@@ -82,7 +82,7 @@ namespace Parser
 
         bool ParseAsm(std::list<FunctionBlock*>& parent);
         void Compound(std::list<FunctionBlock*>& parent, bool first);
-        void Body();
+        void FunctionBody();
         void BodyGen();
 
         static int GetLabelValue(LexList* lex, std::list<FunctionBlock*>* parent, Statement* st);

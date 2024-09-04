@@ -97,7 +97,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
     if (exp)
     {
 
-        if (lvalue(exp) && exp->left->type == ExpressionNode::auto_ && exp->left->v.sp->sb->thisPtr)
+        if (IsLValue(exp) && exp->left->type == ExpressionNode::auto_ && exp->left->v.sp->sb->thisPtr)
         {
             return inlineSymThisPtr.back();
         }
@@ -136,7 +136,7 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                     simpleSym->inAllocTable = true;
                     Optimizer::temporarySymbols.push_back(simpleSym);
                     dest = MakeExpression(ExpressionNode::auto_, sym);
-                    deref(sym->tp, &dest);
+                    Dereference(sym->tp, &dest);
                     rv = dest;
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                     src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
@@ -161,16 +161,16 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                     // special case the -> operator, as it always must return a pointer
                     if (func->name[0] != '.' || func->name[2] !=  'a' || strcmp(func->name, overloadNameTab[CI_POINTSTO]) != 0)
                     if (!(flags & F_RETURNSTRUCTBYADDRESS) && (func->sb->isConstructor || func->sb->isDestructor ||
-                        (!func->tp->BaseType()->btp->IsStructured() && !sym->tp->ExactSameType(func->tp->BaseType()->btp) &&
-                         !sameTemplatePointedTo(sym->tp, func->tp->BaseType()->btp))))
+                        (!func->tp->BaseType()->btp->IsStructured() && !sym->tp->CompatibleType(func->tp->BaseType()->btp) &&
+                         !SameTemplatePointedTo(sym->tp, func->tp->BaseType()->btp))))
                         tr = sym->tp->BaseType()->btp->BaseType();
                     if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != ExpressionNode::l_p_ || thisptr->left->type != ExpressionNode::auto_ || !thisptr->left->v.sp->sb->thisPtr || thisptr->left->v.sp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType) && !expressionHasSideEffects(thisptr))
                     {
                         auto val = thisptr;
-                        deref(tr->sp->sb->structuredAliasType, &val); 
+                        Dereference(tr->sp->sb->structuredAliasType, &val); 
                         src = gen_expr(funcsp, val, F_STORE, natural_size(val));
                         dest = makeParamSubs(thisptr, src);
-                        deref(&stdpointer, &dest);
+                        Dereference(&stdpointer, &dest);
                     }
                     else
                     {
@@ -196,7 +196,7 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                             src->offset->sp->pushedtotemp = true;
                         }
                         dest = makeParamSubs(nullptr, Optimizer::tempreg(ISZ_ADDR, 0));
-                        deref(&stdpointer, &dest);
+                        Dereference(&stdpointer, &dest);
                         idest = dest->left->v.imode;
                         gen_icode(Optimizer::i_assn, idest, src, nullptr);
                     }
@@ -219,19 +219,19 @@ static void ArgDeref(Type* desttp, Type* srctp, EXPRESSION **dest)
     }
     else if (desttp->type == BasicType::templateselector_)
     {
-        deref(&stdpointer, dest);
+        Dereference(&stdpointer, dest);
     }
     else if (desttp->type == BasicType::ellipse_)
     {
-        deref(srctp, dest);
+        Dereference(srctp, dest);
     }
     else if (desttp->IsStructured())
     {
-        deref(desttp->BaseType()->sp->sb->structuredAliasType, dest);
+        Dereference(desttp->BaseType()->sp->sb->structuredAliasType, dest);
     }
     else
     {
-        deref(desttp, dest);
+        Dereference(desttp, dest);
     }
 }
 static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list<Argument*>* args)
@@ -264,7 +264,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                 if (sym->tp->type == BasicType::ellipse_)
                     n = m;
                 else
-                    n = sizeFromType(sym->tp->IsStructured() ? sym->tp->BaseType()->sp->sb->structuredAliasType : sym->tp);
+                    n = SizeFromType(sym->tp->IsStructured() ? sym->tp->BaseType()->sp->sb->structuredAliasType : sym->tp);
                 Type *tpr = nullptr;
                 if (sym->tp->IsRef())
                     tpr = sym->tp->BaseType()->btp;
@@ -279,7 +279,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                         ext = ext->left;
                     if (ext->type != ExpressionNode::callsite_ || ext->v.func->sp->tp->BaseType()->btp->IsRef())
                     {
-                        deref(tpr->BaseType()->sp->sb->structuredAliasType, &val);
+                        Dereference(tpr->BaseType()->sp->sb->structuredAliasType, &val);
                     }
                     if (sym->sb->addressTaken && (ext->type == ExpressionNode::callsite_ && !ext->v.func->sp->tp->BaseType()->btp->IsRef()))   
                     {
@@ -315,7 +315,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                             val = val->left;
                             if (val->type != ExpressionNode::callsite_ && val->type != ExpressionNode::thisref_)
                             {
-                                deref(sym->tp->BaseType()->sp->sb->structuredAliasType, &val);
+                                Dereference(sym->tp->BaseType()->sp->sb->structuredAliasType, &val);
                             }
                         }
                         else if (val->type == ExpressionNode::comma_)
@@ -324,7 +324,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                             while ((*val1)->type == ExpressionNode::comma_ && (*val1)->right)
                                 val1 = &(*val1)->right;
                             if ((*val1)->isStructAddress)
-                                deref(sym->tp->BaseType()->sp->sb->structuredAliasType, val1);
+                                Dereference(sym->tp->BaseType()->sp->sb->structuredAliasType, val1);
                         }
                     }
                     src = gen_expr(funcsp, val, F_RETURNSTRUCTBYADDRESS, natural_size(val));
@@ -572,7 +572,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
         auto ex = f->thisptr;
-        if (lvalue(ex))
+        if (IsLValue(ex))
             ex = ex->left;
         if (ex->type == ExpressionNode::comma_)
         {
@@ -634,7 +634,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (f->sp->tp->BaseType()->btp->IsStructured())
     {
         EXPRESSION* exp = f->returnEXP;
-        if (exp && inlineSymStructPtr.size() && lvalue(exp) && exp->left->type == ExpressionNode::auto_ && exp->left->v.sp->sb->retblk)
+        if (exp && inlineSymStructPtr.size() && IsLValue(exp) && exp->left->type == ExpressionNode::auto_ && exp->left->v.sp->sb->retblk)
         {
             exp = inlineSymStructPtr.back();
         }
@@ -646,11 +646,11 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 auto val = exp ? exp : tempVar(spr->sb->structuredAliasType);
                 if (exp)
                 {
-                    deref(spr->sb->structuredAliasType, &val);
+                    Dereference(spr->sb->structuredAliasType, &val);
                 }
                 auto src = gen_expr(funcsp, val, F_STORE, natural_size(val));
                 exp = makeParamSubs(val->left, src);
-                deref(&stdpointer, &exp);
+                Dereference(&stdpointer, &exp);
             }
         }
         inlineSymStructPtr.push_back(exp);

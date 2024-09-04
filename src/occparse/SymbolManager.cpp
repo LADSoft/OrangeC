@@ -333,7 +333,7 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(Parser::Type* tp)
         }
         rv->size = tp->size;
         if (!tp->IsStructured() && !tp->IsFunction() && tp->type != BasicType::ellipse_ && tp->BaseType()->type != BasicType::any_)
-            rv->sizeFromType = sizeFromType(tp);
+            rv->sizeFromType = SizeFromType(tp);
         else
             rv->sizeFromType = ISZ_ADDR;
         rv->bits = tp->bits;
@@ -438,7 +438,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     Add(sym, rv);
     rv->storage_class = Get(sym->sb->storage_class);
     if (!sym->tp->IsStructured() && !sym->tp->IsFunction() && sym->tp->type != BasicType::ellipse_ && sym->tp->BaseType()->type != BasicType::any_ && !sym->tp->IsDeferred())
-        rv->sizeFromType = sizeFromType(sym->tp);
+        rv->sizeFromType = SizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;
     rv->offset = sym->sb->offset;

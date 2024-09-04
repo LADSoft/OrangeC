@@ -240,7 +240,7 @@ EXPRESSION* tempVar(Type* tp, bool global)
 {
     if (global)
         anonymousNotAlloc++;
-    auto val = anonymousVar(global ? StorageClass::global_ : StorageClass::auto_, tp);
+    auto val = AnonymousVar(global ? StorageClass::global_ : StorageClass::auto_, tp);
     if (global)
     {
         insertInitSym(val->v.sp);
@@ -250,7 +250,7 @@ EXPRESSION* tempVar(Type* tp, bool global)
     Optimizer::cacheTempSymbol(expx->sp);
     expx->sp->anonymous = false;
     expx->sp->allocate = false;
-    deref(tp, &val);
+    Dereference(tp, &val);
     return val;
 }
 EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
@@ -341,7 +341,7 @@ void genxswitch(Statement* stmt, SYMBOL* funcsp)
     }
     if (Optimizer::chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {
-        EXPRESSION* en = anonymousVar(StorageClass::auto_, &stdint);
+        EXPRESSION* en = AnonymousVar(StorageClass::auto_, &stdint);
         en->v.sp->sb->anonymous = false;
         Optimizer::cacheTempSymbol(Optimizer::SymbolManager::Get(en->v.sp));
         if (ap->size != -ISZ_UINT)
@@ -506,7 +506,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
                 EXPRESSION* exp = stmt->select;
-                while (castvalue(exp))
+                while (IsCastValue(exp))
                     exp = exp->left;
                 if (isconstzero(&stdint, exp))
                     ap = Optimizer::make_immed(ISZ_OBJECT, 0);  // LDNULL
@@ -525,11 +525,11 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     if (!(flags & F_RETURNSTRUCTBYVALUE) && inlineSymStructPtr.size() &&
                         funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
                     {
-                        if (lvalue(exp))
+                        if (IsLValue(exp))
                         {
                             exp = exp->left;
                             auto exp1 = exp;
-                            while (castvalue(exp1))
+                            while (IsCastValue(exp1))
                                 exp1 = exp1->left;
                             if (exp1->type == ExpressionNode::thisref_)
                                 exp1 = exp1->left;
@@ -565,7 +565,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 }
                 else
                 {
-                    EXPRESSION* en = anonymousVar(StorageClass::parameter_, &stdpointer);
+                    EXPRESSION* en = AnonymousVar(StorageClass::parameter_, &stdpointer);
                     SYMBOL* sym = en->v.sp;
                     ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
                     DumpIncDec(funcsp);
@@ -582,7 +582,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     Optimizer::SimpleSymbol* ssym = Optimizer::SymbolManager::Get(sym);
                     ssym->offset = sym->sb->offset;
                     ssym->allocate = false;
-                    deref(&stdpointer, &en);
+                    Dereference(&stdpointer, &en);
                     ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
                     size = ISZ_ADDR;
                 }
@@ -605,7 +605,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             }
             if (tpr && tpr->IsInt() && tpr->size <= Optimizer::chosenAssembler->arch->word_size)
             {
-                size = sizeFromType(tpr);
+                size = SizeFromType(tpr);
                 EXPRESSION* exp = stmt->select;
                 ap3 = gen_expr(funcsp, exp, F_RETURNREFBYVALUE, size);
                 DumpIncDec(funcsp);
@@ -616,7 +616,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 }
                 if (!ap3->returnRefByVal)
                 {
-                    ap = indnode(ap, sizeFromType(tpr));
+                    ap = indnode(ap, SizeFromType(tpr));
                 }
                 refbyval = true;
                 if (abs(size) < ISZ_UINT)
@@ -635,7 +635,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     if ((flags & F_RETURNSTRUCTBYVALUE) && inlineSymThisPtr.size() && funcsp->sb->isConstructor && funcsp->sb->parentClass->sb->structuredAliasType)
                     {
                         exp = MakeExpression(ExpressionNode::structadd_, exp, MakeIntExpression(ExpressionNode::c_i_, 0));
-                        deref(funcsp->sb->parentClass->sb->structuredAliasType, &exp);
+                        Dereference(funcsp->sb->parentClass->sb->structuredAliasType, &exp);
                     }
                     ap3 = gen_expr(funcsp, exp, flags & F_RETURNSTRUCTBYVALUE, size);
                 }
@@ -1072,7 +1072,7 @@ static void SetReturnSym(SYMBOL* funcsp)
 {
     if (Optimizer::architecture == ARCHITECTURE_MSIL && !funcsp->tp->BaseType()->btp->IsVoid())
     {
-        auto exp = anonymousVar(StorageClass::auto_, funcsp->tp->BaseType()->btp);
+        auto exp = AnonymousVar(StorageClass::auto_, funcsp->tp->BaseType()->btp);
         auto sym = exp->v.sp;
         sym->sb->anonymous = false;
         Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
@@ -1119,7 +1119,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
             auto val = tempVar(spr);
             auto src = gen_expr(funcsp, val, F_STORE, natural_size(val));
             val = makeParamSubs(val->left, src);
-            deref(&stdpointer, &val);
+            Dereference(&stdpointer, &val);
             inlineSymStructPtr.push_back(val);
         }
     }
@@ -1213,7 +1213,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     if (funcsp->sb->allocaUsed && (Optimizer::architecture != ARCHITECTURE_MSIL))
     {
-        EXPRESSION* allocaExp = anonymousVar(StorageClass::auto_, &stdpointer);
+        EXPRESSION* allocaExp = AnonymousVar(StorageClass::auto_, &stdpointer);
         allocaAP = gen_expr(funcsp, allocaExp, 0, ISZ_ADDR);
         Optimizer::gen_icode(Optimizer::i_savestack, 0, allocaAP, 0);
     }

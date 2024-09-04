@@ -151,7 +151,7 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
             break;
         }
         default:
-            if (castvalue(node))
+            if (IsCastValue(node))
             {
                 return relptr(node->left, offset, add);
             }
@@ -228,15 +228,15 @@ EXPRESSION* createTemporary(Type* tp, EXPRESSION* val)
 {
     EXPRESSION* rv;
     tp = tp->BaseType()->btp;
-    if (tp->type == BasicType::pointer_) // to get around arrays not doing a deref...
+    if (tp->type == BasicType::pointer_) // to get around arrays not doing a Dereference...
         tp = &stdpointer;
-    rv = anonymousVar(StorageClass::auto_, tp);
+    rv = AnonymousVar(StorageClass::auto_, tp);
     if (val)
     {
         if (IsConstantExpression(val, true, true))
             rv->v.sp->sb->constexpression = true;
         EXPRESSION* rv1 = copy_expression(rv);
-        deref(tp, &rv);
+        Dereference(tp, &rv);
         cast(tp, &val);
         rv = MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, val), rv1);
     }
@@ -245,11 +245,11 @@ EXPRESSION* createTemporary(Type* tp, EXPRESSION* val)
 }
 EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val)
 {
-    EXPRESSION* rv = anonymousVar(StorageClass::auto_, tp);
+    EXPRESSION* rv = AnonymousVar(StorageClass::auto_, tp);
     if (val)
     {
         EXPRESSION* rv1 = copy_expression(rv);
-        deref(tp, &rv);
+        Dereference(tp, &rv);
         cast(tp, &val);
         rv = MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, val), rv1);
     }
@@ -512,7 +512,7 @@ void undoAnonymousVar(SYMBOL* sp)
         localNameSpace->front()->syms->remove(sp);
     }
 }
-EXPRESSION* anonymousVar(StorageClass storage_class, Type* tp)
+EXPRESSION* AnonymousVar(StorageClass storage_class, Type* tp)
 {
     static int anonct = 1;
     char buf[256];
@@ -544,9 +544,9 @@ EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
     tp->size *= Optimizer::chosenAssembler->arch->bitintunderlying;
     tp->size /= CHAR_BIT;
     tp->bitintbits = bits;
-    return anonymousVar(storageClass, tp);
+    return AnonymousVar(storageClass, tp);
 }
-void deref(Type* tp, EXPRESSION** exp)
+void Dereference(Type* tp, EXPRESSION** exp)
     {
     ExpressionNode en = ExpressionNode::l_i_;
     tp = tp->BaseType();
@@ -675,7 +675,7 @@ void deref(Type* tp, EXPRESSION** exp)
         case BasicType::aggregate_:
             return;
         default:
-            diag("deref error");
+            diag("Dereference error");
             break;
     }
     *exp = MakeExpression(en, *exp);
@@ -684,7 +684,40 @@ void deref(Type* tp, EXPRESSION** exp)
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
-int sizeFromType(Type* tp)
+bool TakeAddress(EXPRESSION** exp)
+{
+    auto temp = *exp, * last = &temp;
+    while (IsCastValue(*last))
+    {
+        *last = (*last)->left;
+    }
+    if (IsLValue(*last))
+    {
+        *last = (*last)->left;
+        *exp = temp;
+        return true;
+    }
+    else if (((*last)->type == ExpressionNode::comma_))
+    {
+        while ((*last)->type == ExpressionNode::comma_)
+        {
+            (*last) = MakeExpression(ExpressionNode::comma_, (*last)->left, (*last)->right);
+            last = &(*last)->right;
+        }
+        while (IsCastValue(*last))
+        {
+            *last = (*last)->left;
+        }
+        if (IsLValue(*last))
+        {
+            *last = (*last)->left;
+            *exp = temp;
+            return true;
+        }
+    }
+    return false;
+}
+int SizeFromType(Type* tp)
 {
     int rv = -ISZ_UINT;
     tp = tp->BaseType();
@@ -810,7 +843,7 @@ int sizeFromType(Type* tp)
             rv = ISZ_ADDR;
             break;
         default:
-            diag("sizeFromType error");
+            diag("SizeFromType error");
             break;
     }
     return rv;
@@ -943,7 +976,7 @@ void cast(Type* tp, EXPRESSION** exp)
     *exp = MakeExpression(en, *exp);
     (*exp)->v.b.bits = tp->bitintbits;
 }
-bool castvalue(EXPRESSION* exp)
+bool IsCastValue(EXPRESSION* exp)
 {
     switch (exp->type)
     {
@@ -988,10 +1021,10 @@ bool xvalue(EXPRESSION* exp)
     // fixme...
     return false;
 }
-bool lvalue(EXPRESSION* exp)
+bool IsLValue(EXPRESSION* exp)
 {
     if (!Optimizer::cparams.prm_ansi)
-        while (castvalue(exp))
+        while (IsCastValue(exp))
             exp = exp->left;
     switch (exp->type)
     {
@@ -1077,7 +1110,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
     }
     return exps;
 }
-EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
+EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                     EXPRESSION* thisptr, bool isdest)
 {
     bool local = false;
@@ -1090,7 +1123,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
 
     if (tp->IsStructured() || tp->IsArray())
     {
-        initInsert(&init, nullptr, nullptr, tp->size, false);
+        InsertInitializer(&init, nullptr, nullptr, tp->size, false);
     }
     if (!expsym)
     {
@@ -1105,7 +1138,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (sym && sym->sb->thisPtr)
                     expsym = MakeExpression(ExpressionNode::auto_, sym);  // this ptr
                 else
-                    expsym = anonymousVar(StorageClass::auto_, tp);
+                    expsym = AnonymousVar(StorageClass::auto_, tp);
             }
             else  // global initialization, make a temporary variable
             {
@@ -1161,7 +1194,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 else
                 {
                     expsym = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    diag("convertInitToExpression: no this ptr");
+                    diag("ConverInitializersToExpression: no this ptr");
                 }
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     expsym = MakeExpression(ExpressionNode::structadd_, expsym, MakeExpression(ExpressionNode::structelem_, sym));
@@ -1176,7 +1209,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
             case StorageClass::constant_:
                 return nullptr;
             default:
-                diag("convertInitToExpression: unknown sym type");
+                diag("ConverInitializersToExpression: unknown sym type");
                 expsym = MakeIntExpression(ExpressionNode::c_i_, 0);
                 break;
             }
@@ -1276,7 +1309,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             exp = MakeExpression(ExpressionNode::blockassign_, exp, exp2);
                             exp->size = initItem->basetp;
                             exp->altdata = (void*)(initItem->basetp);
-                            noClear = initItem->basetp->ExactSameType(tp);
+                            noClear = initItem->basetp->CompatibleType(tp);
                         }
                     }
                     else
@@ -1302,7 +1335,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 RequiresDialect::Feature(Dialect::c99, "Field initialization with non-constant");
                             if (!sym)
                             {
-                                expsym = anonymousVar(StorageClass::auto_, initItem->basetp);
+                                expsym = AnonymousVar(StorageClass::auto_, initItem->basetp);
                                 sym = expsym->v.sp;
                             }
                             if (!btp->IsStructured() || btp->sp->sb->trivialCons)
@@ -1332,7 +1365,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                     {
                                         asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                                     }
-                                    deref(initItem->basetp, &asn);
+                                    Dereference(initItem->basetp, &asn);
                                     cast(initItem->basetp, &right);
                                     right = MakeExpression(ExpressionNode::assign_, asn, right);
                                 }
@@ -1347,7 +1380,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         {
                             /* constant expression */
                             SYMBOL* spc;
-                            exp = anonymousVar(StorageClass::localstatic_, initItem->basetp);
+                            exp = AnonymousVar(StorageClass::localstatic_, initItem->basetp);
                             spc = exp->v.sp;
                             if (!spc->sb->init)
                                 spc->sb->init = initListFactory.CreateList();
@@ -1482,7 +1515,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                         }
                     }
                     if (exps->type != ExpressionNode::msil_array_access_)
-                        deref(initItem->basetp, &exps);
+                        Dereference(initItem->basetp, &exps);
                     optimize_for_constants(&exps);
                     if (exp->type == ExpressionNode::comma_)
                     {
@@ -1510,7 +1543,7 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 if (sym && sym->sb->init && initItem->basetp->IsAtomic() && needsAtomicLockFromType(initItem->basetp))
                 {
                     EXPRESSION* p1 = MakeExpression(ExpressionNode::add_, expsym->left, MakeIntExpression(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
-                    deref(&stdint, &p1);
+                    Dereference(&stdint, &p1);
                     p1 = MakeExpression(ExpressionNode::assign_, p1, MakeIntExpression(ExpressionNode::c_i_, 0));
                     exp = MakeExpression(ExpressionNode::comma_, exp, p1);
                 }
@@ -1552,9 +1585,9 @@ EXPRESSION* convertInitToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, S
         if (guardfunc)
         {
             guardfunc = guardfunc->tp->syms->front();
-            EXPRESSION* guard = anonymousVar(StorageClass::localstatic_, &stdint);
+            EXPRESSION* guard = AnonymousVar(StorageClass::localstatic_, &stdint);
             insertInitSym(guard->v.sp);
-            deref(&stdpointer, &guard);
+            Dereference(&stdpointer, &guard);
             optimize_for_constants(&rv);
             rv = StatementGenerator::DestructorsForExpression(rv);
             rv = addLocalDestructor(rv, sym);
@@ -2036,7 +2069,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
 EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
 {
     EXPRESSION* result = nullptr;
-    if (!tp->BaseType()->hasbits && !castvalue(exp) && lvalue(exp))
+    if (!tp->BaseType()->hasbits && !IsCastValue(exp) && IsLValue(exp))
     {
         bool doit = false;
         std::stack<EXPRESSION*> stk;
@@ -2058,8 +2091,8 @@ EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
         if (doit)
         {
             auto exp2 = exp->left;
-            result = anonymousVar(StorageClass::auto_, &stdpointer);
-            deref(&stdpointer, &result);
+            result = AnonymousVar(StorageClass::auto_, &stdpointer);
+            Dereference(&stdpointer, &result);
             exp2 = MakeExpression(ExpressionNode::assign_, result, exp2);
             exp2 = MakeExpression(exp->type, exp2);
             result = MakeExpression(exp->type, result);

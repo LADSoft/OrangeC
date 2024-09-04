@@ -628,12 +628,12 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::auto_:
             if (temp->v.sp->sb->inlineFunc.stmt)
             {
-                // guaranteed to be an lvalue at this point
+                // guaranteed to be an IsLValue at this point
                 temp = ((EXPRESSION*)(temp->v.sp->sb->inlineFunc.stmt));
                 temp = inlineexpr(temp, fromlval);
                 if (fromlval)
                     *fromlval = true;
-                else if (lvalue(temp))
+                else if (IsLValue(temp))
                     temp = temp->left;
             }
             else if (temp->v.sp->sb->structuredReturn)
@@ -972,8 +972,8 @@ static EXPRESSION* newReturn(Type* tp)
     EXPRESSION* exp;
     if (!tp->IsStructured() && !tp->IsVoid())
     {
-        exp = anonymousVar(StorageClass::auto_, tp);
-        deref(tp, &exp);
+        exp = AnonymousVar(StorageClass::auto_, tp);
+        Dereference(tp, &exp);
     }
     else
         exp = MakeIntExpression(ExpressionNode::c_i_, 0);
@@ -1055,7 +1055,7 @@ static EXPRESSION* scanReturn(std::list<Statement*>* blocks, Type* rettp)
                 if (!rettp->IsStructured())
                 {
                     if (rettp->IsRef())
-                        deref(&stdpointer, &rv);
+                        Dereference(&stdpointer, &rv);
                     else
                         cast(rettp, &rv);
                 }
@@ -1317,8 +1317,8 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<Statement*> **stp)
     }
     else
     {
-        EXPRESSION* tnode = anonymousVar(StorageClass::auto_, sx->tp);
-        deref(sx->tp, &tnode);
+        EXPRESSION* tnode = AnonymousVar(StorageClass::auto_, sx->tp);
+        Dereference(sx->tp, &tnode);
         sx->sb->inlineFunc.stmt = (std::list<Statement*>*)tnode;
         tnode = MakeExpression(ExpressionNode::assign_, tnode, exp);
         auto stmt = Allocate<Statement>();
@@ -1367,8 +1367,8 @@ void SetupVariables(SYMBOL* sym)
         {
             if (sx->sb->storage_class == StorageClass::auto_)
             {
-                EXPRESSION* ev = anonymousVar(StorageClass::auto_, sx->tp);
-                deref(sx->tp, &ev);
+                EXPRESSION* ev = AnonymousVar(StorageClass::auto_, sx->tp);
+                Dereference(sx->tp, &ev);
                 sx->sb->inlineFunc.stmt = (std::list<Statement*>*)ev;
             }
         }

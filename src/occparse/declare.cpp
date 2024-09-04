@@ -267,7 +267,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                         if (!strcmp(sp->sb->decoratedName, (sp1)->sb->decoratedName))
                         {
                             n++;
-                            if (sp->tp->BaseType()->btp->ExactSameType((sp1)->tp->BaseType()->btp) || sameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
+                            if (sp->tp->BaseType()->btp->CompatibleType((sp1)->tp->BaseType()->btp) || SameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
                             {
                                 found = true;
                                 break;
@@ -294,7 +294,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                                     n++;
 //                                    sp->tp->BaseType()->btp->InstantiateDeferred();
 //                                    sp1->tp->BaseType()->btp->InstantiateDeferred();
-                                    if (sp->tp->BaseType()->btp->ExactSameType((sp1)->tp->BaseType()->btp) && sameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
+                                    if (sp->tp->BaseType()->btp->CompatibleType((sp1)->tp->BaseType()->btp) && SameTemplate(sp->tp->BaseType()->btp, (sp1)->tp->BaseType()->btp))
                                     {
                                         found = true;
                                         break;
@@ -749,7 +749,7 @@ static bool usesTemplate(SYMBOL* internal, std::list<TEMPLATEPARAMPAIR>* params)
             {
                 sp = working.front();
                 working.pop_front();
-                if (internal->tp->ExactSameType(sp->tp) || sameTemplate(internal->tp, sp->tp))
+                if (internal->tp->CompatibleType(sp->tp) || SameTemplate(internal->tp, sp->tp))
                     return true;
             } while (working.size() && !sp->templateParams);
             if (sp->templateParams)
@@ -776,7 +776,7 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
             {
                 while (tp->IsArray())
                     tp = tp->BaseType()->btp;
-                if (internal->tp->ExactSameType(tp) || sameTemplate(internal->tp, tp))
+                if (internal->tp->CompatibleType(tp) || SameTemplate(internal->tp, tp))
                     return true;
                 if (tp->IsStructured())
                 {
@@ -844,7 +844,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     n = syms.size();
     for (i = 0; i < n; i++)
         for (j = i + 1; j < n; j++)
-            if ((syms[i] != syms[j] && !sameTemplate(syms[i]->tp, syms[j]->tp) && classRefCount(syms[j], syms[i])) ||
+            if ((syms[i] != syms[j] && !SameTemplate(syms[i]->tp, syms[j]->tp) && classRefCount(syms[j], syms[i])) ||
                 usesClass(syms[i], syms[j]))
             {
                 SYMBOL* x = syms[j];
@@ -1654,7 +1654,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                             {
                                 if (tp->type != BasicType::bool_)
                                 {
-                                    if (!tp->ExactSameType(unfixedType))
+                                    if (!tp->CompatibleType(unfixedType))
                                         fixed = false;
                                     unfixedType = tp;
                                     sp->tp->type = tp->type;
@@ -2329,8 +2329,8 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
             if (checkReturn)
                 spo->tp->BaseType()->btp->InstantiateDeferred();
             if (checkReturn && !spo->sb->isConstructor && !spo->sb->isDestructor &&
-                !spo->tp->BaseType()->btp->ExactSameType(sp->tp->BaseType()->btp) &&
-                !sameTemplatePointedTo(spo->tp->BaseType()->btp, sp->tp->BaseType()->btp))
+                !spo->tp->BaseType()->btp->CompatibleType(sp->tp->BaseType()->btp) &&
+                !SameTemplatePointedTo(spo->tp->BaseType()->btp, sp->tp->BaseType()->btp))
             {
                 if (!definingTemplate || instantiatingTemplate)
                     preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
@@ -2349,7 +2349,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                     {
                         SYMBOL* spo1 = *ito1;
                         SYMBOL* sp1 = *it1;
-                        if (!spo1->tp->ExactSameType(sp1->tp) && !sameTemplatePointedTo(spo1->tp, sp1->tp) && !sameTemplateSelector(sp1->tp, spo1->tp))
+                        if (!spo1->tp->CompatibleType(sp1->tp) && !SameTemplatePointedTo(spo1->tp, sp1->tp) && !SameTemplateSelector(sp1->tp, spo1->tp))
                         {
                             break;
                         }
@@ -2425,7 +2425,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                     Optimizer::LIST* li = sp->sb->xc->xcDynamic;
                     while (li)
                     {
-                        if (((Type*)lo->data)->ExactSameType((Type*)li->data) && ((Type*)lo->data)->SameIntegerType((Type*)li->data))
+                        if (((Type*)lo->data)->CompatibleType((Type*)li->data) && ((Type*)lo->data)->SameIntegerType((Type*)li->data))
                         {
                             break;
                         }
@@ -2591,14 +2591,14 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
     }
     else
     {
-        EXPRESSION* var = anonymousVar(StorageClass::auto_, &stdpointer);
+        EXPRESSION* var = AnonymousVar(StorageClass::auto_, &stdpointer);
         loader = MakeExpression(ExpressionNode::savestack_, var);
         unloader = MakeExpression(ExpressionNode::loadstack_, var);
         ep1 = MakeExpression(ExpressionNode::assign_, ep1, MakeExpression(ExpressionNode::alloca_, ep2));
         ep1 = MakeExpression(ExpressionNode::comma_, loader, ep1);
     }
 
-    initInsert(&sp->sb->dest, sp->tp, unloader, 0, false);
+    InsertInitializer(&sp->sb->dest, sp->tp, unloader, 0, false);
     return ep1;
 }
 static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* btp, SYMBOL* sp, int* index, int* vlaindex, int sou)
@@ -2626,7 +2626,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* bt
         *mul1 = *mul;
     }
     store = MakeExpression(ExpressionNode::add_, vlanode, MakeIntExpression(ExpressionNode::c_i_, *index));
-    deref(&stdint, &store);
+    Dereference(&stdint, &store);
     store = MakeExpression(ExpressionNode::assign_, store, mul1);
     **rptr = MakeExpression(ExpressionNode::comma_, store);
     *rptr = &(**rptr)->right;
@@ -2683,7 +2683,7 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
         vlaSetSizes(&rptr, vlanode, btp, vlasp, &index, &vlaindex, sou);
 
         ep = MakeExpression(ExpressionNode::add_, vlanode, MakeIntExpression(ExpressionNode::c_i_, soa));
-        deref(&stdint, &ep);
+        Dereference(&stdint, &ep);
         ep = MakeExpression(ExpressionNode::assign_, ep, MakeIntExpression(ExpressionNode::c_i_, count));
         *rptr = MakeExpression(ExpressionNode::comma_, ep);
         rptr = &(*rptr)->right;
@@ -2699,8 +2699,8 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
         {
             EXPRESSION* ep1 = MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::auto_, sp), MakeIntExpression(ExpressionNode::c_i_, 0));
             EXPRESSION* ep2 = MakeExpression(ExpressionNode::add_, MakeExpression(ExpressionNode::auto_, sp), MakeIntExpression(ExpressionNode::c_i_, soa + sou * (count + 1)));
-            deref(&stdpointer, &ep1);
-            deref(&stdint, &ep2);
+            Dereference(&stdpointer, &ep1);
+            Dereference(&stdint, &ep2);
             ep1 = llallocateVLA(sp, ep1, ep2);
             *rptr = (Optimizer::architecture == ARCHITECTURE_MSIL) ? ep1 : MakeExpression(ExpressionNode::comma_, ep1);
             sp->sb->assigned = true;
@@ -3634,7 +3634,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->sb->declfile, spi->sb->declline);
                                 }
                                 else if (sym && !sym->sb->isConstructor && !sym->sb->isDestructor &&
-                                         !sp->tp->BaseType()->btp->ExactSameType((sym)->tp->BaseType()->btp))
+                                         !sp->tp->BaseType()->btp->CompatibleType((sym)->tp->BaseType()->btp))
                                 {
                                     if (Optimizer::cparams.prm_cplusplus && sym->tp->IsFunction() &&
                                         (sym->sb->templateLevel || definingTemplate))
@@ -3828,7 +3828,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 spi->sb->constexpression = true;
                             if (istype(spi))
                             {
-                                if (Optimizer::cparams.prm_ansi || !sp->tp->ExactSameType((spi)->tp) || !istype(sp))
+                                if (Optimizer::cparams.prm_ansi || !sp->tp->CompatibleType((spi)->tp) || !istype(sp))
                                     preverrorsym(ERR_REDEFINITION_OF_TYPE, sp, spi->sb->declfile, spi->sb->declline);
                             }
                             else
@@ -3854,7 +3854,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 {
                                     errorsym(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
                                 }
-                                else if ((!sp->tp->IsFunction() && !spi->tp->IsFunction() && !sp->tp->ExactSameType((spi)->tp)) ||
+                                else if ((!sp->tp->IsFunction() && !spi->tp->IsFunction() && !sp->tp->CompatibleType((spi)->tp)) ||
                                          istype(sp))
                                 {
                                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
@@ -4355,7 +4355,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     else
                                     {
                                         StatementGenerator sg(lex, sp);
-                                        sg.Body();
+                                        sg.FunctionBody();
                                         sg.BodyGen();
                                     }
                                 }
@@ -4440,7 +4440,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         {
                             if ((sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_) && (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && !sp->tp->IsStructured() && !sp->tp->IsArray() && !sp->tp->IsRef())
                             {
-                                 sp->sb->runtimeSym = anonymousVar(StorageClass::auto_, &stdpointer)->v.sp;
+                                 sp->sb->runtimeSym = AnonymousVar(StorageClass::auto_, &stdpointer)->v.sp;
                             }
                             LexList* hold = lex;
                             bool structuredArray = false;
@@ -4562,7 +4562,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             if (!sp->tp->IsStructured() || !sp->tp->BaseType()->sp->sb->islambda)
                                             {
                                                 st->select =
-                                                    convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                                    ConverInitializersToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
                                             }
                                             else
                                             {
@@ -4583,7 +4583,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             currentLineData(block, hold, 0);
                                             st = Statement::MakeStatement(hold, block, StatementNode::expr_);
                                             st->select = MakeExpression(ExpressionNode::constexprconstructor_, sp);
-                                            st->select->left = convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                            st->select->left = ConverInitializersToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
                                         }
                                     }
                                     else if ((sp->tp->IsArray() || sp->tp->IsStructured()) &&

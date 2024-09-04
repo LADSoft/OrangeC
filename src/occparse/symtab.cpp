@@ -202,8 +202,8 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
         told->InstantiateDeferred();
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
-            if ((told->type != tnew->type || (!told->ExactSameType(tnew) && !sameTemplatePointedTo(told, tnew, true))) &&
-                !sameTemplateSelector(told, tnew))
+            if ((told->type != tnew->type || (!told->CompatibleType(tnew) && !SameTemplatePointedTo(told, tnew, true))) &&
+                !SameTemplateSelector(told, tnew))
                 break;
             else
             {
@@ -366,7 +366,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                 {
                     if (tps->IsDeferred())
                     {
-                        if (!sameTemplate(tps->sp->tp, tpn->sp->tp))
+                        if (!SameTemplate(tps->sp->tp, tpn->sp->tp))
                             return false;
                         if (!exactMatchOnTemplateArgs(tps->templateArgs, tpn->templateArgs))
                             return false;
@@ -378,7 +378,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                 }
                 if ((!templateCompareTypes(tpn, tps, true) ||
                      ((tps->type == BasicType::templateselector_ || tpn->type == BasicType::templateselector_) && tpn->type != tps->type)) &&
-                    !sameTemplate(tpn, tps))
+                    !SameTemplate(tpn, tps))
                 {
                     if (tps->IsRef())
                         tps = tps->BaseType()->btp;
@@ -396,7 +396,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                             return false;
                     tpn = tpn->BaseType();
                     tps = tps->BaseType();
-                    if (tpn->ExactSameType(tps) || (tpn->type == BasicType::templateparam_ && tps->type == BasicType::templateparam_))
+                    if (tpn->CompatibleType(tps) || (tpn->type == BasicType::templateparam_ && tps->type == BasicType::templateparam_))
                     {
                         return true;
                     }
@@ -481,7 +481,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                                 }
                                 sym = fsp;
                             }
-                            if (find != finde || !sym || (!sym->tp->ExactSameType(tps) && !sameTemplate(sym->tp, tps)))
+                            if (find != finde || !sym || (!sym->tp->CompatibleType(tps) && !SameTemplate(sym->tp, tps)))
                                 return false;
                         }
                         return true;
@@ -500,7 +500,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                         {
                             return false;
                         }
-                        if (tpn->IsStructured() && tps->IsStructured() && !sameTemplate(tpn, tps))
+                        if (tpn->IsStructured() && tps->IsStructured() && !SameTemplate(tpn, tps))
                         {
                             return false;
                         }
@@ -535,7 +535,7 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
             {
                 Type* tps = told->BaseType()->btp;
                 Type* tpn = tnew->BaseType()->btp;
-                if (!templateCompareTypes(tpn, tps, true) && !sameTemplate(tpn, tps))
+                if (!templateCompareTypes(tpn, tps, true) && !SameTemplate(tpn, tps))
                     return false;
             }
             return true;

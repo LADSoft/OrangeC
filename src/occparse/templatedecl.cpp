@@ -1261,7 +1261,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
     noTypeNameError = oldnoTn;
     return lex;
 }
-static bool sameTemplateSpecialization(Type* P, Type* A)
+static bool SameTemplateSpecialization(Type* P, Type* A)
 {
     if (!P || !A)
         return false;
@@ -1344,7 +1344,7 @@ bool exactMatchOnTemplateSpecialization(std::list<TEMPLATEPARAMPAIR>* old, std::
             switch (itold->second->type)
             {
                 case TplType::typename_:
-                    if (!sameTemplateSpecialization(itold->second->byClass.dflt, itsym->second->byClass.val))
+                    if (!SameTemplateSpecialization(itold->second->byClass.dflt, itsym->second->byClass.val))
                     {
                         if (!templateCompareTypes(itold->second->byClass.dflt, itsym->second->byClass.val, true))
                             return false;
@@ -2177,7 +2177,7 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                                     tsym = tsym->templateParam->second->byClass.val;
                                 if ((!templateCompareTypes(torig, tsym, true, false) ||
                                      !templateCompareTypes(tsym, torig, true, false)) &&
-                                    !sameTemplate(torig, tsym, true))
+                                    !SameTemplate(torig, tsym, true))
                                     break;
                                 if (torig->IsRef())
                                     torig = torig->BaseType()->btp;
@@ -2211,7 +2211,7 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                         if ((btorig->type == BasicType::enum_) != (btsym->type == BasicType::enum_))
                             return false;
                         if ((!templateCompareTypes(torig, tsym, true, false) || !templateCompareTypes(tsym, torig, true, false)) &&
-                            !sameTemplate(torig, tsym, true))
+                            !SameTemplate(torig, tsym, true))
                             return false;
                         if (!comparePointerTypes(torig, tsym))
                             return false;
@@ -2680,7 +2680,7 @@ static bool IsFullySpecialized(TEMPLATEPARAMPAIR* tpx)
                 EXPRESSION* exp = tpx->second->byNonType.dflt;
                 if (exp && tpx->second->byNonType.tp->type != BasicType::templateparam_)
                 {
-                    while (castvalue(exp) || lvalue(exp))
+                    while (IsCastValue(exp) || IsLValue(exp))
                         exp = exp->left;
                     switch (exp->type)
                     {
@@ -2903,7 +2903,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
         if (tp->BaseType()->sp)
             InitializeFunctionArguments(tp->BaseType()->sp);
         tp->BaseType()->btp->InstantiateDeferred();
-        if (!sp->tp->BaseType()->btp->ExactSameType(tp->BaseType()->btp))
+        if (!sp->tp->BaseType()->btp->CompatibleType(tp->BaseType()->btp))
         {
             errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
         }
@@ -2951,7 +2951,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
                 TemplateDataInstantiate(spi, true, isExtern);
                 spi->sb->dontinstantiate = isExtern;
                 spi->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                if (!sym->tp->ExactSameType(spi->tp))
+                if (!sym->tp->CompatibleType(spi->tp))
                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, spi, sym->sb->declfile, sym->sb->declline);
             }
             else

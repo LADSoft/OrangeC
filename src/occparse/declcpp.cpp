@@ -216,7 +216,7 @@ void dumpVTab(SYMBOL* sym)
 void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccount, bool isVirtual)
 {
     bool ok = false;
-    if (base == derived || (base && derived && sameTemplate(derived->tp, base->tp)))
+    if (base == derived || (base && derived && SameTemplate(derived->tp, base->tp)))
     {
 
         if (!definingTemplate || instantiatingTemplate)
@@ -260,7 +260,7 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
                     {
                         sym = sym->tp->BaseType()->sp;
                     }
-                    if (sym == base || sameTemplate(sym->tp, base->tp))
+                    if (sym == base || SameTemplate(sym->tp, base->tp))
                     {
                         if (isVirtual || lst->isvirtual)
                             (*vcount)++;
@@ -301,7 +301,7 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
     if (rv && !oldFunc->sb->isDestructor)
     {
         Type *tp1 = oldFunc->tp->BaseType()->btp, *tp2 = newFunc->tp->BaseType()->btp;
-        if (!tp1->ExactSameType(tp2) && !sameTemplate(tp1, tp2) &&
+        if (!tp1->CompatibleType(tp2) && !SameTemplate(tp1, tp2) &&
             (!tp1->IsStructured() || !tp2->IsStructured() ||
              (tp1->BaseType()->sp->sb->templateLevel &&
               tp2->BaseType()->sp->sb->parentTemplate != tp1->BaseType()->sp->sb->parentTemplate)))
@@ -331,7 +331,7 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
                                         bool bad = tp1->sp->sb->maintemplate && tp1->sp->sb->maintemplate != tp2->sp->sb->maintemplate;
                                         if (!bad)
                                         {
-                                            bad = !tp1->ExactSameType(tp2) && !sameTemplate(tp1, tp2);
+                                            bad = !tp1->CompatibleType(tp2) && !SameTemplate(tp1, tp2);
                                         }
                                         if (bad)
                                         {
@@ -489,7 +489,7 @@ static void checkXT(SYMBOL* sym1, SYMBOL* sym2, bool func)
             Optimizer::LIST* l2 = sym2->sb->xc->xcDynamic;
             while (l2)
             {
-                if (((Type*)l2->data)->ExactSameType((Type*)l1->data) && ((Type*)l2->data)->SameIntegerType((Type*)l1->data))
+                if (((Type*)l2->data)->CompatibleType((Type*)l1->data) && ((Type*)l2->data)->SameIntegerType((Type*)l1->data))
                     break;
                 l2 = l2->next;
             }
@@ -851,7 +851,7 @@ void deferredCompileOne(SYMBOL* cur)
         openStructs = nullptr;
         cur->sb->deferredCompile = nullptr;
         StatementGenerator sg(lex, cur);
-        sg.Body();
+        sg.FunctionBody();
         SetAlternateLex(nullptr);
         dontRegisterTemplate--;
         lambdas = oldLambdas;
@@ -910,7 +910,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             {
                 SYMBOL* sym2;
                 anonymousNotAlloc++;
-                sym2 = anonymousVar(StorageClass::auto_, tp2)->v.sp;
+                sym2 = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                 anonymousNotAlloc--;
                 sym2->sb->stackblock = !arg->tp->IsRef();
                 lex = initialize(lex, theCurrentFunc, sym2, StorageClass::auto_, false, false, 0); /* also reserves space */
@@ -2081,7 +2081,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                             p->tp = p->tp->BaseType()->btp;
                         }
                         if (!p->tp->IsStructured())
-                            deref(p->tp, &p->exp);
+                            Dereference(p->tp, &p->exp);
                         (*lptr)->push_back(p);
                         ++it;
                     }
@@ -2307,7 +2307,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                         {
                             lex = getsym();
                             added->init = nullptr;
-                            initInsert(&added->init, nullptr, nullptr, added->sp->sb->offset, false);
+                            InsertInitializer(&added->init, nullptr, nullptr, added->sp->sb->offset, false);
                             done = true;
                         }
                         else
@@ -2423,7 +2423,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
                     {
                         lex = getsym();
                         mi->init = nullptr;
-                        initInsert(&mi->init, nullptr, nullptr, mi->sp->sb->offset, false);
+                        InsertInitializer(&mi->init, nullptr, nullptr, mi->sp->sb->offset, false);
                         done = true;
                     }
                     else
@@ -3310,7 +3310,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 }
                 if (spi)
                 {
-                    if (!spi->tp->ExactSameType(sp->tp) && !sameTemplate(spi->tp, sp->tp))
+                    if (!spi->tp->CompatibleType(sp->tp) && !SameTemplate(spi->tp, sp->tp))
                     {
                         errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
                     }
@@ -3549,7 +3549,7 @@ Type* AttributeFinish(SYMBOL* sym, Type* tp)
         fc->fcall = MakeExpression(ExpressionNode::pc_, sym->sb->attribs.inheritable.cleanup);
         fc->sp = sym->sb->attribs.inheritable.cleanup;
         EXPRESSION* expl = MakeExpression(fc);
-        initInsert(&sym->sb->dest, sym->tp, expl, 0, true);
+        InsertInitializer(&sym->sb->dest, sym->tp, expl, 0, true);
     }
     return tp;
 }
@@ -4475,7 +4475,7 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
         {
             (*tn) = Type::MakeType(BasicType::rref_, *tn);
         }
-        if (extended && lvalue(exp) && exp->left->type == ExpressionNode::auto_)
+        if (extended && IsLValue(exp) && exp->left->type == ExpressionNode::auto_)
         {
             if (!lambdas.size() && xvalue(exp))
             {
@@ -4483,7 +4483,7 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
                     (*tn) = (*tn)->BaseType()->btp;
                 (*tn) = Type::MakeType(BasicType::rref_, *tn);
             }
-            else if (lvalue(exp))
+            else if (IsLValue(exp))
             {
                 if ((*tn)->IsRef())
                     (*tn) = (*tn)->BaseType()->btp;
@@ -4657,7 +4657,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                 }
                 else
                 {
-                    auto copy = anonymousVar(storage_class, btp);
+                    auto copy = AnonymousVar(storage_class, btp);
                     if (btp->IsStructured())
                     {
                         std::list<Initializer*>* constructors = nullptr;
@@ -4673,7 +4673,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                                 storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
                                 storage_class != StorageClass::mutable_)
                             {
-                                initInsert(&constructors, tp, expx, i * btp->size, true);
+                                InsertInitializer(&constructors, tp, expx, i * btp->size, true);
                             }
                             else
                             {
@@ -4689,8 +4689,8 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                             sz = MakeIntExpression(ExpressionNode::c_i_, identifiers.size());
                         }
                         auto expy = copy;
-                        callDestructor(btp->sp, nullptr, &expy, sz, true, false, false, true);
-                        initInsert(&destructors, tp, expy, 0, true);
+                        CallDestructor(btp->sp, nullptr, &expy, sz, true, false, false, true);
+                        InsertInitializer(&destructors, tp, expy, 0, true);
                         if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
                             storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
                             storage_class != StorageClass::mutable_)
@@ -4713,7 +4713,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                             storage_class != StorageClass::mutable_)
                         {
                             std::list<Initializer*>* constructors = initListFactory.CreateList();
-                            initInsert(&constructors, tp, epc, 0, false);
+                            InsertInitializer(&constructors, tp, epc, 0, false);
                             insertDynamicInitializer(copy->v.sp, constructors);
                         }
                         else
@@ -4727,7 +4727,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                     {
                         auto sym = makeID(StorageClass::alias_, btp, nullptr, litlate(id.c_str()));
                         InsertSymbol(sym, storage_class, linkage, false);
-                        initInsert(&sym->sb->init, btp, copy, (i++) * btp->size, true);
+                        InsertInitializer(&sym->sb->init, btp, copy, (i++) * btp->size, true);
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
                         {
                             Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
@@ -4803,7 +4803,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                                 }
                          }
                     }
-                    auto copy = anonymousVar(storage_class, tp);
+                    auto copy = AnonymousVar(storage_class, tp);
                     std::list<Initializer*>* constructors = nullptr;
                     std::list<Initializer*>* destructors = nullptr;
 
@@ -4817,7 +4817,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
                         storage_class != StorageClass::mutable_)
                     {
-                        initInsert(&constructors, tp, expx, 0, true);
+                        InsertInitializer(&constructors, tp, expx, 0, true);
                     }
                     else
                     {
@@ -4825,8 +4825,8 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         st->select = expx;
                     }
                     expx = dest;
-                    callDestructor(tp->sp, nullptr, &expx, nullptr, true, false, false, true);
-                    initInsert(&destructors, tp, expx, 0, true);
+                    CallDestructor(tp->sp, nullptr, &expx, nullptr, true, false, false, true);
+                    InsertInitializer(&destructors, tp, expx, 0, true);
                     if (storage_class != StorageClass::auto_ && storage_class != StorageClass::localstatic_ &&
                         storage_class != StorageClass::parameter_ && storage_class != StorageClass::member_ &&
                         storage_class != StorageClass::mutable_)
@@ -4847,7 +4847,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         auto sym = makeID(StorageClass::alias_, (*it)->tp, nullptr, litlate(id.c_str()));
                         SetLinkerNames(sym, Linkage::cdecl_);
                         InsertSymbol(sym, storage_class, linkage, false);
-                        initInsert(&sym->sb->init, (*it)->tp, copy, (*it)->sb->offset + offset, true);
+                        InsertInitializer(&sym->sb->init, (*it)->tp, copy, (*it)->sb->offset + offset, true);
                         if (storage_class == StorageClass::auto_ || storage_class == StorageClass::localstatic_)
                         {
                             Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);

@@ -28,18 +28,17 @@ export SHELL
 
 all: alldirs
 
-
 lscrtl_objs:
 	$(MAKE) -Crtl --eval="$(BUILDING_DLL)"
 rtl_objs: lscrtl_objs
 
-alldirs: rtl_objs
-ifdef FINAL
+final:
 	$(MAKE) -Clsdbghelper
 ifeq "$(WITHOUT_OCCIL)" ""
 	$(MAKE) -Coccil
 endif
-else
+
+alldirs: rtl_objs
 	$(MAKE) -Cpe
 	$(MAKE) -Cdef
 	$(MAKE) -Cmsvcrdm
@@ -47,7 +46,6 @@ else
 	$(MAKE) -Cdelayimp
 	$(MAKE) -Clscrtl
 	$(MAKE) -Cpels
-endif
 
 format:
 	$(MAKE) -Clsdbghelper format

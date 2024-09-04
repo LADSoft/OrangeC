@@ -134,7 +134,7 @@ endif
 mkapps:
 	$(MAKE) copyfiles
 	$(MAKE) mklibs
-	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" --eval="FINAL=1"
+	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" final
 
 test:
 	$(MAKE) -Ccpp\libcxx\test current

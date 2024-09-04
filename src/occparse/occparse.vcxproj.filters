@@ -284,9 +284,6 @@
     <ClCompile Include="SymbolManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ocpp\ppEmbed.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="symtab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -435,6 +432,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\oasm\AsmFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ocpp\ppEmbed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ocpp\TokenSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

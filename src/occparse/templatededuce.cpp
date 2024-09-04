@@ -1087,9 +1087,9 @@ static bool TemplateDeduceArgList(SymbolTable<SYMBOL>::iterator funcArgs, Symbol
                     ++funcArgs;
             }
         }
-        else if (((*its)->nested || (!(*its)->tp && !(*its)->exp)) && funcArgs != funcArgsEnd)
+        else if ((((*its)->nested && (*its)->nested->size()) || (!(*its)->tp && !(*its)->exp)) && funcArgs != funcArgsEnd)
         {
-            if ((*its)->nested && sp->tp->IsStructured() && sp->tp->BaseType()->sp->sb->templateLevel &&
+            if (((*its)->nested && (*its)->nested->size()) && sp->tp->IsStructured() && sp->tp->BaseType()->sp->sb->templateLevel &&
                 sp->tp->BaseType()->sp->sb->initializer_list)
             {
                 if (sp->tp->BaseType()->sp->templateParams->size() > 1)

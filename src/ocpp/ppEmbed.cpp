@@ -65,7 +65,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
     EmbedReturnValue ret_val = has_embed(info, true);
     if (ret_val == EmbedReturnValue::EMBED_NOT_FOUND)
     {
-        return {builder, EmbedReturnValue::EMBED_NOT_FOUND};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, EmbedReturnValue::EMBED_NOT_FOUND};
     }
     bool found_system = false;
     int discard = 0;
@@ -107,7 +107,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return {builder, has_embed(info)};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, has_embed(info)};
     }
     else if (fil != "" && (info.limit == 0 || size == 0))
     {
@@ -120,9 +120,9 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return {builder, has_embed(info)};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, has_embed(info)};
     }
-    return {builder, has_embed(info)};
+    return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, has_embed(info)};
 }
 
 EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)

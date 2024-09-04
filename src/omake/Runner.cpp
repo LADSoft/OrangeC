@@ -155,7 +155,7 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
             else
             {
                 std::cout << std::endl;
-                Eval::error("commands returned error code " + b, depend->GetRule()->GetCommands()->GetFile(),
+                Eval::error("commands returned error code " + b + " command: " + sp.last_ran(), depend->GetRule()->GetCommands()->GetFile(),
                     depend->GetRule()->GetCommands()->GetLine());
             }
         }

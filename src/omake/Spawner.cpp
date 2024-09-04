@@ -161,6 +161,7 @@ int Spawner::InternalRun()
         }
         else
         {
+            last_ran_cmd = cmd;
             int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
             if (stopAll)
                 break;
@@ -184,6 +185,7 @@ int Spawner::InternalRun()
     }
     if (oneShell && !stopAll)
     {
+        last_ran_cmd = longstr;
         rv = Run(longstr, ignoreErrors, silent, dontRun, false);
         if (rv)
             MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv, ruleList->GetTarget().c_str(), commands->GetLine(),

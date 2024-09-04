@@ -39,6 +39,9 @@
 #include <cctype>
 #include <iostream>
 #include <algorithm>
+
+#define EXTRACT_CHAR '\xa0'
+
 int main(int argc, char** argv)
 {
     ImpLibMain librarian;
@@ -109,7 +112,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
             p++;
         }
     }
-    else if (p[0] == '*')
+    else if (p[0] == EXTRACT_CHAR)
     {
         mode = EXTRACT;
         p++;
@@ -405,6 +408,9 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, CmdFiles& files)
 }
 int ImpLibMain::Run(int argc, char** argv)
 {
+    for (int i=0; i < argc; i++)
+        if (!strcmp(argv[i], "*"))
+            argv[i][0] = EXTRACT_CHAR;
     bool quiet = false;
     for (int i=0; i < argc; i++)
         if (!strcmp(argv[i], "-!") || !strcmp(argv[i], "/!") || !strcmp(argv[i], "--nologo"))

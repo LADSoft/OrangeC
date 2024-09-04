@@ -35,6 +35,8 @@
 #include "LibMain.h"
 #include <iostream>
 
+#define EXTRACT_CHAR '\xa0'
+
 int main(int argc, char** argv)
 {
     LibMain librarian;
@@ -101,7 +103,7 @@ void LibMain::AddFile(LibManager& librarian, const char* arg)
             p++;
         }
     }
-    else if (p[0] == '*')
+    else if (p[0] == EXTRACT_CHAR)
     {
         mode = EXTRACT;
         p++;
@@ -133,6 +135,9 @@ void LibMain::AddFile(LibManager& librarian, const char* arg)
 }
 int LibMain::Run(int argc, char** argv)
 {
+    for (int i=0; i < argc; i++)
+        if (!strcmp(argv[i], "*"))
+            argv[i][0] = EXTRACT_CHAR;
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
     if (files.size() < 3)
         ToolChain::Usage(usageText);

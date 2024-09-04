@@ -35,7 +35,7 @@ bool DictCompare::caseSensitive;
 ObjInt DictCompare::casecmp(const std::string& str1, const std::string& str2, int n) const
 {
     int v;
-    if (caseSensitive)
+    if (!caseSensitive)
         v = !Utils::iequal(str1, str2, n);
     else
         v = strncmp(str1.c_str(), str2.c_str(), n);

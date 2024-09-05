@@ -684,7 +684,7 @@ void Dereference(Type* tp, EXPRESSION** exp)
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
-bool TakeAddress(EXPRESSION** exp)
+bool TakeAddress(EXPRESSION** exp, bool withComma)
 {
     auto temp = *exp, * last = &temp;
     while (IsCastValue(*last))
@@ -697,7 +697,7 @@ bool TakeAddress(EXPRESSION** exp)
         *exp = temp;
         return true;
     }
-    else if (((*last)->type == ExpressionNode::comma_))
+    else if (withComma && ((*last)->type == ExpressionNode::comma_))
     {
         while ((*last)->type == ExpressionNode::comma_)
         {

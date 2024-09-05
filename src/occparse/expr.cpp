@@ -500,9 +500,8 @@ static bool inreg(EXPRESSION* exp, bool first)
 {
     while (IsCastValue(exp))
         exp = exp->left;
-    if (first && IsLValue(exp))
+    if (first && TakeAddress(&exp))
     {
-        exp = exp->left;
         first = false;
     }
     if (exp->type == ExpressionNode::auto_)
@@ -2157,8 +2156,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                             {
                                 exp = (*itp)->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                             }
-                            if (IsLValue(exp))
-                                exp = exp->left;
+                            TakeAddress(&exp);
                             switch (exp->type)
                             {
                                 case ExpressionNode::global_:
@@ -3758,9 +3756,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         Type* etp = sym->tp->BaseType()->btp;
                         if (cppCast(p->tp, &etp, &p->exp))
                             p->tp = etp;
-                        if (IsLValue(p->exp))
-                            p->exp = p->exp->left;
-                        else
+                        if (!TakeAddress(&p->exp))
                             p->exp = createTemporary(sym->tp, p->exp);
                     }
                     else
@@ -3895,14 +3891,10 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         {
                             if (!sym->tp->IsRef() || !sym->tp->BaseType()->btp->IsFunction())
                             {
-                                if (!IsLValue(exp))
+                                if (!TakeAddress(&exp))
                                 {
                                     // make numeric temp and perform cast
                                     exp = createTemporary(sym->tp, exp);
-                                }
-                                else
-                                {
-                                    exp = exp->left;  // take address
                                 }
                             }
                             p->exp = exp;
@@ -4893,8 +4885,7 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
                     do
                     {
                         lex = expression_member(lex, funcsp, tp, exp, ismutable, flags | _F_AMPERSAND);
-                        if (IsLValue(*exp))
-                            *exp = (*exp)->left;
+                        TakeAddress(exp);
                     } while (MATCHKW(lex, Keyword::dot_));
                 }
             }
@@ -5939,8 +5930,7 @@ static std::list<Argument*>* checked_arguments(std::list<Argument*>* args)
         arr[i]->tp = Type::MakeType(BasicType::pointer_, arr[i]->tp);
         auto exp = arr[i]->exp;
         while (IsCastValue(exp)) exp = exp->left;
-        if (IsLValue(exp)) // should always be true
-            exp = exp->left;
+        TakeAddress(&exp);
         arr[i]->exp = exp;
     }
     args->clear();
@@ -7365,8 +7355,7 @@ static LexList* expression_postfix(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                     }
                     if (exp3)
                         *exp = MakeExpression(ExpressionNode::comma_, exp3, *exp);
-                    while (IsLValue(exp1))
-                        exp1 = exp1->left;
+                    while (TakeAddress(&exp1));
                     if (exp1->type == ExpressionNode::auto_)
                         exp1->v.sp->sb->altered = true;
                 }
@@ -7610,8 +7599,7 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                                             cast(*tp, &exp1);
                                             *exp = MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::auto_inc_ : ExpressionNode::auto_dec_, *exp, exp1);
                                         }
-                                        while (IsLValue(exp1))
-                                            exp1 = exp1->left;
+                                        while (TakeAddress(&exp1));
                                         if (exp1->type == ExpressionNode::auto_)
                                             exp1->v.sp->sb->altered = true;
                                     }

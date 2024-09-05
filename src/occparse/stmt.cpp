@@ -1506,10 +1506,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     EXPRESSION* decl = declExp;
                                     if (ref && (starType->lref || starType->rref))
                                     {
-                                        while (IsCastValue(st->select))
-                                            st->select = st->select->left;
-                                        if (IsLValue(st->select))
-                                            st->select = st->select->left;
+                                        TakeAddress(&st->select);
                                     }
                                     Dereference(declSP->tp, &decl);
 

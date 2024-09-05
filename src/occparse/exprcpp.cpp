@@ -2450,9 +2450,8 @@ void ResolveTemplateVariable(Type** ttype, EXPRESSION** texpr, Type* rtype, Type
 {
     EXPRESSION* exp = *texpr;
     bool lval = false;
-    if (IsLValue(exp))
+    if (TakeAddress(&exp))
     {
-        exp = exp->left;
         lval = true;
     }
     if (exp->type == ExpressionNode::templateparam_)

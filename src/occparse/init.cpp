@@ -1972,10 +1972,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
             if (sc != StorageClass::parameter_ && !boundTP->rref && !boundTP->lref)
                 exp = createTemporary(tp, exp);
         }
-        while (IsCastValue(exp))
-            exp = exp->left;
-        if (IsLValue(exp))
-            exp = exp->left;
+        TakeAddress(&exp);
     }
     return exp;
 }

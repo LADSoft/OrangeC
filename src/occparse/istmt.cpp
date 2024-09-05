@@ -525,9 +525,8 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                     if (!(flags & F_RETURNSTRUCTBYVALUE) && inlineSymStructPtr.size() &&
                         funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
                     {
-                        if (IsLValue(exp))
+                        if (TakeAddress(&exp))
                         {
-                            exp = exp->left;
                             auto exp1 = exp;
                             while (IsCastValue(exp1))
                                 exp1 = exp1->left;

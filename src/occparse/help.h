@@ -96,7 +96,7 @@ void undoAnonymousVar(SYMBOL* sp);
 EXPRESSION* AnonymousVar(StorageClass storage_class, Type* tp);
 EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits);
 void Dereference(Type* tp, EXPRESSION** exp);
-bool TakeAddress(EXPRESSION** exp);
+bool TakeAddress(EXPRESSION** exp, bool withComma = false);
 int SizeFromType(Type* tp);
 void cast(Type* tp, EXPRESSION** exp);
 bool IsCastValue(EXPRESSION* exp);

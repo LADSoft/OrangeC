@@ -633,8 +633,8 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                 temp = inlineexpr(temp, fromlval);
                 if (fromlval)
                     *fromlval = true;
-                else if (IsLValue(temp))
-                    temp = temp->left;
+                else
+                    TakeAddress(&temp);
             }
             else if (temp->v.sp->sb->structuredReturn)
             {

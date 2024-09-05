@@ -572,8 +572,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
         auto ex = f->thisptr;
-        if (IsLValue(ex))
-            ex = ex->left;
+        TakeAddress(&ex);
         if (ex->type == ExpressionNode::comma_)
         {
             return nullptr;

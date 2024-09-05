@@ -2078,8 +2078,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
              ((*resultexp)->type == ExpressionNode::callsite_ && (!(*resultexp)->v.func->ascall || (*resultexp)->v.func->returnSP)) ||
              ((*resultexp)->type == ExpressionNode::comma_) && !(flags & _F_SIZEOF)))
             error(ERR_LVALUE);
-        if (IsLValue(exp2))
-            exp2 = exp2->left;
+        TakeAddress(&exp2);
         if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
         {
             exp2->v.func->returnSP->sb->allocate = false;

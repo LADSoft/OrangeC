@@ -259,9 +259,10 @@ bool isConstexprConstructor(SYMBOL* sym)
 bool ResolveConstExprLval(EXPRESSION** node)
 {
     bool rv = false;
-    if (IsLValue(*node))
+
+    auto node1 = *node;
+    if (TakeAddress(&node1))
     {
-        auto node1 = (*node)->left;
         while (IsCastValue(node1))
             node1 = node1->left;
         if (node1->type == ExpressionNode::structadd_ || node1->type == ExpressionNode::add_ || node1->type == ExpressionNode::sub_ ||  node1->type == ExpressionNode::auto_ || node1->type == ExpressionNode::cvarpointer_)
@@ -355,8 +356,7 @@ static EXPRESSION* LookupStruct(EXPRESSION* exp)
         return nullptr;
     while (exp->type == ExpressionNode::comma_)
         exp = exp->right;
-    while (IsLValue(exp))
-        exp = exp->left;
+    while (TakeAddress(&exp));
     if (exp->type == ExpressionNode::auto_ && !nestedMaps.empty())
     {
         auto it = (*nestedMaps.top()).find(exp->v.sp);
@@ -745,8 +745,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
                             else
                             {
                                 auto node1 = node->left->left;
-                                while (IsLValue(node1))
-                                    node1 = node1->left;
+                                while (TakeAddress(&node1));
                                 if (node1->type == ExpressionNode::auto_)
                                 {
                                     m = node->left->right->v.i;
@@ -785,8 +784,7 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
                         else
                         {
                             auto node1 = node->left->left;
-                            while (IsLValue(node1))
-                                node1 = node1->left;
+                            while (TakeAddress(&node1));
                             if (node1->type == ExpressionNode::auto_)
                             {
                                 m = node->left->right->v.i;
@@ -874,9 +872,8 @@ static bool pushThis(EXPRESSION* thisptr, EXPRESSION* ths)
         while (thisptr && thisptr->type == ExpressionNode::comma_ && thisptr->left->type == ExpressionNode::assign_)
         {
             auto exp1 = thisptr->left->left;
-            if (IsLValue(exp1))
+            if (TakeAddress(&exp1))
             {
-                exp1 = exp1->left;
                 if (exp1->type == ExpressionNode::structadd_)
                 {
                     ths->v.constexprData.data[exp1->right->v.i] = EvaluateExpression(thisptr->left->right, nullptr, nullptr);
@@ -914,9 +911,9 @@ static bool HandleAssign(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
     }
     else if (exp->type == ExpressionNode::assign_)
     {
-        if (IsLValue(exp->left))
+        auto node1 = exp->left;
+        if (TakeAddress(&node1))
         {
-            auto node1 = exp->left->left;
             auto assn = EvaluateExpression(node1, ths, retblk, true);
             if (assn->type == ExpressionNode::auto_ && !nestedMaps.empty())
             {
@@ -1210,8 +1207,7 @@ static EXPRESSION* ParseRetBlock(EXPRESSION* funcNode, EXPRESSION* retNode)
                 while (retNode->type == ExpressionNode::comma_ && retNode->left->type == ExpressionNode::assign_)
                 {
                     auto lhs = retNode->left->left;
-                    while (IsLValue(lhs))
-                        lhs = lhs->left;
+                    while (TakeAddress(&lhs));
                     if (lhs->type != ExpressionNode::structadd_ || lhs->left->type != ExpressionNode::l_p_ || lhs->left->left->type != ExpressionNode::auto_ || !lhs->left->left->v.sp->sb->retblk)
                     {
                         break;

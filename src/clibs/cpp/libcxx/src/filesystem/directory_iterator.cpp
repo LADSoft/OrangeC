@@ -110,7 +110,8 @@ public:
 
   __dir_stream(const path& root, directory_options opts, error_code& ec)
       : __stream_(INVALID_HANDLE_VALUE), __root_(root) {
-    __stream_ = ::FindFirstFile(root.c_str(), &__data_);
+    path temp = root / "*.*"; // DAL
+    __stream_ = ::FindFirstFile(temp.c_str(), &__data_);
     if (__stream_ == INVALID_HANDLE_VALUE) {
       ec = error_code(::GetLastError(), generic_category());
       const bool ignore_permission_denied =
@@ -119,6 +120,7 @@ public:
         ec.clear();
       return;
     }
+    advance(ec);
   }
 
   ~__dir_stream() noexcept {
@@ -131,7 +133,7 @@ public:
 
   bool advance(error_code& ec) {
     while (::FindNextFile(__stream_, &__data_)) {
-      if (!strcmp(__data_.cFileName, ".") || strcmp(__data_.cFileName, ".."))
+      if (!strcmp(__data_.cFileName, ".") || !strcmp(__data_.cFileName, ".."))
         continue;
       // FIXME: Cache more of this
       //directory_entry::__cached_data cdata;
@@ -143,7 +145,10 @@ public:
           directory_entry::__create_iter_result(detail::get_file_type(__data_)));
       return true;
     }
-    ec = error_code(::GetLastError(), generic_category());
+    if (GetLastError() != ERROR_NO_MORE_FILES)
+    {
+       ec = error_code(::GetLastError(), generic_category());       
+    }
     close();
     return false;
   }

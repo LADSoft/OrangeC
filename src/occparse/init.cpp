@@ -1962,8 +1962,15 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
     }
     else
     {
-        EXPRESSION* exp1 = exp;
-        if (!definingTemplate && (referenceTypeError(tp, exp) != exp->type || (tp->type == BasicType::rref_ && IsLValue(exp))) &&
+        auto exp2 = exp;
+        while (IsCastValue(exp2)) exp2 = exp2->left;
+        while (exp2->type == ExpressionNode::comma_ && exp2->right) exp2 = exp2->right;
+        if (exp2->type == ExpressionNode::assign_)
+        {
+            exp2 = exp2->left;
+            while (IsCastValue(exp2)) exp2 = exp2->left;
+        }
+        if (!definingTemplate && (referenceTypeError(tp, exp2) != exp2->type || (tp->type == BasicType::rref_ && IsLValue(exp))) &&
             (!tp->BaseType()->btp->IsStructured() || exp->type != ExpressionNode::lvalue_) && (!tp->BaseType()->btp->IsPtr() || exp->type != ExpressionNode::l_p_))
         {
             if (!isarithmeticconst(exp) && exp->type != ExpressionNode::thisref_ && exp->type != ExpressionNode::callsite_ &&
@@ -1972,7 +1979,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
             if (sc != StorageClass::parameter_ && !boundTP->rref && !boundTP->lref)
                 exp = createTemporary(tp, exp);
         }
-        TakeAddress(&exp);
+        TakeAddress(&exp, tp);
     }
     return exp;
 }

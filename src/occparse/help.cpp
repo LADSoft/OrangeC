@@ -684,26 +684,12 @@ void Dereference(Type* tp, EXPRESSION** exp)
     if (en == ExpressionNode::l_object_)
         (*exp)->v.tp = tp;
 }
-bool TakeAddress(EXPRESSION** exp, bool withComma)
+bool TakeAddress(EXPRESSION** exp, Type* extended)
 {
+    bool rv = false;
     auto temp = *exp, * last = &temp;
-    while (IsCastValue(*last))
+    if (!extended)
     {
-        *last = (*last)->left;
-    }
-    if (IsLValue(*last))
-    {
-        *last = (*last)->left;
-        *exp = temp;
-        return true;
-    }
-    else if (withComma && ((*last)->type == ExpressionNode::comma_))
-    {
-        while ((*last)->type == ExpressionNode::comma_)
-        {
-            (*last) = MakeExpression(ExpressionNode::comma_, (*last)->left, (*last)->right);
-            last = &(*last)->right;
-        }
         while (IsCastValue(*last))
         {
             *last = (*last)->left;
@@ -711,11 +697,67 @@ bool TakeAddress(EXPRESSION** exp, bool withComma)
         if (IsLValue(*last))
         {
             *last = (*last)->left;
-            *exp = temp;
-            return true;
+            rv = true;
         }
     }
-    return false;
+    else
+    {
+        if (extended->IsRef())
+            extended = extended->BaseType()->btp;
+        EXPRESSION* assignmentNode = nullptr;
+        while ( (*last)->right && (*last)->type == ExpressionNode::comma_)
+        {
+            (*last) = MakeExpression(ExpressionNode::comma_, (*last)->left, (*last)->right);
+            last = &(*last)->right;
+        }
+        if ((*last)->type == ExpressionNode::comma_)
+        {
+            (*last) = (*last)->left;
+        }
+        while (IsCastValue(*last))
+        {
+            *last = (*last)->left;
+        }
+        if ((*last)->type == ExpressionNode::assign_)
+        {
+            assignmentNode = *last;
+            *last = (*last)->left;
+            while (IsCastValue(*last))
+            {
+                *last = (*last)->left;
+            }
+        }
+        if (IsLValue(*last))
+        {
+            if (!extended->IsStructured() && (*last)->type != ExpressionNode::l_ref_)
+                *last = (*last)->left;
+            rv = true;
+        }
+        if (assignmentNode && extended->BaseType()->type != BasicType::memberptr_)
+        {
+            (*last) = MakeExpression(ExpressionNode::comma_, assignmentNode, *last);
+        }
+    }
+    if (rv)
+    {
+        switch ((*last)->type)
+        {
+        case ExpressionNode::auto_:
+            SetRuntimeData(currentLex, *last, (*last)->v.sp);
+            (*last)->v.sp->sb->addressTaken = true;
+            break;
+        case ExpressionNode::pc_:
+        case ExpressionNode::global_:
+        case ExpressionNode::absolute_:
+        case ExpressionNode::threadlocal_:
+            (*last)->v.sp->sb->addressTaken = true;
+            break;
+        default:
+            break;
+        }
+        *exp = temp;
+    }
+    return rv;
 }
 int SizeFromType(Type* tp)
 {

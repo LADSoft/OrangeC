@@ -1215,6 +1215,9 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 {
                                     Type* it2;
                                     it2 = iteratorType = beginFunc->tp->BaseType()->btp;
+                                    if (iteratorType->IsStructured())
+                                        if (!strcmp(iteratorType->BaseType()->sp->name, "directory_iterator"))
+                                            printf("hi");
                                     if (it2->IsRef())
                                         it2 = it2->btp;
                                     if (!beginFunc->tp->BaseType()->btp->CompatibleType(endFunc->tp->BaseType()->btp))
@@ -1256,19 +1259,21 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         fc->functp = beginFunc->tp;
                                         fc->ascall = true;
                                         fc->arguments = argumentListFactory.CreateList();
-                                        for (auto i : *fcb.arguments)
-                                            fc->arguments->push_back(i);
-                                        if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
+                                        auto arg = Allocate<Argument>();
+                                        *arg = *fcb.arguments->front();
+                                        fc->arguments->push_back(arg);
+                                        if (it2->IsStructured() && ((SYMBOL*)(fc->sp->tp->BaseType()->syms->front()))->tp->IsStructured())
                                         {
                                             EXPRESSION* consexp =
                                                 AnonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                             SYMBOL* esp = consexp->v.sp;
-                                            CallSite* funcparams = Allocate<CallSite>();
-                                            Type* ctype = rangeSP->tp->BaseType()->btp;
                                             esp->sb->stackblock = true;
+                                            CallSite* funcparams = Allocate<CallSite>();
+                                            Type* ctype = it2;
                                             funcparams->arguments = argumentListFactory.CreateList();
-                                            for (auto i : *fc->arguments)
-                                                funcparams->arguments->push_back(i);
+                                            auto arg = Allocate<Argument>();
+                                            *arg = *fc->arguments->front();
+                                            funcparams->arguments->push_back(arg);
                                             CallConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
                                                             false, false, true);
                                             fc->arguments->front()->exp = consexp;
@@ -1284,19 +1289,21 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         fc->functp = endFunc->tp;
                                         fc->ascall = true;
                                         fc->arguments = argumentListFactory.CreateList();
-                                        for (auto i : *fce.arguments)
-                                            fc->arguments->push_back(i);
-                                        if (it2->IsStructured() && ((SYMBOL*)(it2->syms->front()))->tp->IsStructured())
+                                        arg = Allocate<Argument>();
+                                        *arg = *fce.arguments->front();
+                                        fc->arguments->push_back(arg);
+                                        if (it2->IsStructured() && ((SYMBOL*)(fc->sp->tp->BaseType()->syms->front()))->tp->IsStructured())
                                         {
                                             EXPRESSION* consexp =
                                                 AnonymousVar(StorageClass::auto_, rangeSP->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                             SYMBOL* esp = consexp->v.sp;
-                                            CallSite* funcparams = Allocate<CallSite>();
-                                            Type* ctype = rangeSP->tp->BaseType()->btp;
                                             esp->sb->stackblock = true;
+                                            CallSite* funcparams = Allocate<CallSite>();
+                                            Type* ctype = it2;
                                             funcparams->arguments = argumentListFactory.CreateList();
-                                            for (auto i : *fc->arguments)
-                                                funcparams->arguments->push_back(i);
+                                            auto arg = Allocate<Argument>();
+                                            *arg = *fc->arguments->front();
+                                            funcparams->arguments->push_back(arg);
                                             CallConstructor(&ctype, &consexp, funcparams, false, 0, true, false, false, false,
                                                             false, false, true);
                                             fc->arguments->front()->exp = consexp;
@@ -1571,7 +1578,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             }
                             else
                             {
-                                if (ppType->IsStructured())
+                                if (st->select->v.func->sp->tp->btp->IsStructured())
                                 {
                                     st->select->v.func->returnEXP = AnonymousVar(StorageClass::auto_, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
@@ -2110,82 +2117,46 @@ void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
 }
 EXPRESSION* StatementGenerator::ConvertReturnToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
 {
-    if (IsLValue(exp))
+    auto exp2 = exp;
+    if (exp->type == ExpressionNode::hook_)
     {
-        EXPRESSION* exp2;
-        while (IsCastValue(exp))
-            exp = exp->left;
-        exp2 = exp;
-        if (!tp->BaseType()->btp->IsStructured())
+        exp->right->left = ConvertReturnToRef(exp->right->left, tp, boundTP);
+        exp->right->right = ConvertReturnToRef(exp->right->right, tp, boundTP);
+    }
+    else if (!tp->BaseType()->btp->IsStructured() && !boundTP->IsRef())
+    {
+        error(ERR_LVALUE);
+    }
+    else if (isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) || iscomplexconst(exp))
+    {
+        error(ERR_REF_RETURN_TEMPORARY);
+    }
+    else
+    {   
+        if (TakeAddress(&exp, tp))
         {
-            if (tp->BaseType()->btp->IsRef())
+            while (IsCastValue(exp2)) exp2 = exp2->left;
+            while (exp2->type == ExpressionNode::comma_ && exp2->right) exp2 = exp2->right;
+            if (exp2->type == ExpressionNode::assign_)
             {
-                if (!tp->BaseType()->btp->BaseType()->btp->IsStructured())
-                {
-                    if (exp->left->type != ExpressionNode::auto_ || exp->left->v.sp->sb->storage_class != StorageClass::parameter_)
-                        exp = exp->left;
-                    if (exp->type == ExpressionNode::l_ref_)
-                        if (exp->left->type != ExpressionNode::auto_ || exp->left->v.sp->sb->storage_class != StorageClass::parameter_)
-                            exp = exp->left;
-                }
-                else
-                {
-                    exp = exp->left;
-                }
+                exp2 = exp2->left;
+                while (IsCastValue(exp2)) exp2 = exp2->left;
             }
-            else
-            {
-                if (exp->left->type != ExpressionNode::auto_ || exp->left->v.sp->sb->storage_class != StorageClass::parameter_)
-                    exp = exp->left;
-            }
-        }
-        else if (tp->BaseType()->btp->type == BasicType::aggregate_)
-        {
-            if (!boundTP->BaseType()->btp->IsFunction())
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
-        }
-        else if (tp->BaseType()->btp->IsFunction())
-        {
-            if (!boundTP->BaseType()->btp->IsFunction())
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
-        }
-        else if (exp->type == ExpressionNode::auto_)
-        {
-            if (exp->v.sp->sb->storage_class == StorageClass::auto_)
-            {
-                error(ERR_REF_RETURN_LOCAL);
-            }
-            else if (exp->v.sp->sb->storage_class == StorageClass::parameter_)
-            {
-                exp = exp2;
-            }
-        }
-        else
-        {
-            if (referenceTypeError(tp, exp2) != exp2->type && (!tp->BaseType()->btp->IsStructured() || exp2->type != ExpressionNode::lvalue_))
+            if (exp2->type != ExpressionNode::l_ref_ && referenceTypeError(tp, exp2) != exp2->type && (!tp->BaseType()->btp->IsStructured() || exp2->type != ExpressionNode::lvalue_))
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
         }
     }
-    else
+    exp2 = exp;
+    while (IsCastValue(exp2)) exp2 = exp2->left;
+    while (exp2->type == ExpressionNode::comma_ && exp2->right) exp2 = exp2->right;
+    if (exp2->type == ExpressionNode::assign_)
     {
-        if (exp->type == ExpressionNode::hook_)
-        {
-            exp->right->left = ConvertReturnToRef(exp->right->left, tp, boundTP);
-            exp->right->right = ConvertReturnToRef(exp->right->right, tp, boundTP);
-        }
-        else if (!tp->BaseType()->btp->IsStructured() && !boundTP->IsRef())
-        {
-            error(ERR_LVALUE);
-        }
-        else if (exp->type == ExpressionNode::auto_ && exp->v.sp->sb->storage_class == StorageClass::auto_)
-        {
-            error(ERR_REF_RETURN_LOCAL);
-        }
-        else if (isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) || iscomplexconst(exp))
-        {
-            error(ERR_REF_RETURN_TEMPORARY);
-        }
-        // this probably needs a little more work, I think if the two structures don't match types it will give an error...
+        exp2 = exp2->left;
+        while (IsCastValue(exp2)) exp2 = exp2->left;
+    }
+    if (exp2->type == ExpressionNode::auto_)
+    {
+        error(ERR_REF_RETURN_LOCAL);
     }
     return exp;
 }
@@ -2357,7 +2328,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     EXPRESSION* exptemp = exp1;
                     if (exptemp->type == ExpressionNode::thisref_)
                         exptemp = exptemp->left;
-                    if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->sb->isConstructor && 
+                    if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->sb->isConstructor &&
                         exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
                         tp->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
                         (!tp->BaseType()->sp->sb->templateLevel || SameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
@@ -2370,81 +2341,99 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         maybeConversion = false;
                         implicit = false;
                     }
-                    else if (exptemp->type == ExpressionNode::comma_)
-                    {
-                        // a list of initializers into a temp var...   we don't want to do a constructor here because we just constructe it...
-                        // so replace the expression
-                        while (exptemp->type == ExpressionNode::comma_) exptemp = exptemp->right;
-                        if (exptemp->type == ExpressionNode::auto_)
-                        {
-                            exptemp->v.sp->sb->destructed = true;
-                        }
-                        auto targetPointer = AnonymousVar(StorageClass::auto_, &stdpointer);
-                        Dereference(&stdpointer, &targetPointer);
-                        auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
-                        ReplaceVarRef(&exp1, exptemp->v.sp, targetPointer);
-                        exp1 = MakeExpression(ExpressionNode::comma_, targetExpr, exp1);
-                        returntype = tp;
-                        returnexp = exp1;
-                        maybeConversion = false;
-                        implicit = false;
-                    }
-                    /*
-                    else if ((tp1->CompatibleType(tp) || SameTemplate(tp, tp1)) && !tp1->rref && !tp1->lref)
-                    {
-                        returntype = tp;
-                        returnexp = exp1;
-                        maybeConversion = false;
-                        implicit = false;
-                    }
-                    */
                     else
                     {
-                        bool nonconst = funcsp->sb->nonConstVariableUsed;
-                        funcparams->arguments = argumentListFactory.CreateList();
-                        funcparams->arguments->push_back(Allocate<Argument>());
-                        funcparams->arguments->front()->tp = tp1;
-                        funcparams->arguments->front()->exp = exp1;
-                        oldrref = tp1->BaseType()->rref;
-                        oldlref = tp1->BaseType()->lref;
-                        tp1->BaseType()->rref = exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
-                        if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
-                            exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
-                            tp1->BaseType()->rref = true;
-                        tp1->BaseType()->lref = !tp1->BaseType()->rref;
-                        maybeConversion = false;
-                        returntype = tp;
-                        // try the rref constructor first
-                        if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
-                            false, false))
+                        EXPRESSION** test, *test2 = nullptr;
+                        if (exptemp->type == ExpressionNode::comma_)
                         {
-                            if (funcparams->sp && matchesCopy(funcparams->sp, true))
+                            // a list of initializers into a temp var...   we don't want to do a constructor here because we just constructe it...
+                            // so replace the expression
+                            test = &exptemp;
+                            while ((*test)->type == ExpressionNode::comma_) test = &(*test)->right;
+                            if ((*test)->type == ExpressionNode::thisref_)
                             {
-                                switch (exp1->type)
+                                test2 = (*test)->left;
+                                if (test2->type == ExpressionNode::callsite_)
                                 {
-                                case ExpressionNode::global_:
-                                case ExpressionNode::auto_:
-                                case ExpressionNode::threadlocal_:
-                                    exp1->v.sp->sb->dest = nullptr;
-                                    break;
-                                default:
-                                    break;
+                                    test2 = test2->v.func->thisptr;
+                                    (*test) = MakeExpression(ExpressionNode::comma_, *test, test2);
                                 }
                             }
+                            else
+                            {
+                                test2 = *test;
+                            }
                         }
+                        if (test2)
+                        {
+                            test2->v.sp->sb->destructed = true;
+//                            auto targetPointer = AnonymousVar(StorageClass::auto_, &stdpointer);
+//                            Dereference(&stdpointer, &targetPointer);
+//                            auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
+                            ReplaceVarRef(&exp1, test2->v.sp, en);
+//                            exp1 = MakeExpression(ExpressionNode::comma_, targetExpr, exp1);
+                            returntype = tp;
+                            returnexp = exp1;
+                            maybeConversion = false;
+                            implicit = false;
+                        }
+                        /*
+                        else if ((tp1->CompatibleType(tp) || SameTemplate(tp, tp1)) && !tp1->rref && !tp1->lref)
+                        {
+                            returntype = tp;
+                            returnexp = exp1;
+                            maybeConversion = false;
+                            implicit = false;
+                        }
+                        */
                         else
                         {
-                            // not there try an lref version of the constructor
-                            ctype = tp;
-                            tp1->BaseType()->rref = false;
-                            tp1->BaseType()->lref = true;
-                            CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
-                                false, true);
+                            bool nonconst = funcsp->sb->nonConstVariableUsed;
+                            funcparams->arguments = argumentListFactory.CreateList();
+                            funcparams->arguments->push_back(Allocate<Argument>());
+                            funcparams->arguments->front()->tp = tp1;
+                            funcparams->arguments->front()->exp = exp1;
+                            oldrref = tp1->BaseType()->rref;
+                            oldlref = tp1->BaseType()->lref;
+                            tp1->BaseType()->rref = exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
+                            if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
+                                exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
+                                tp1->BaseType()->rref = true;
+                            tp1->BaseType()->lref = !tp1->BaseType()->rref;
+                            maybeConversion = false;
+                            returntype = tp;
+                            // try the rref constructor first
+                            if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
+                                false, false))
+                            {
+                                if (funcparams->sp && matchesCopy(funcparams->sp, true))
+                                {
+                                    switch (exp1->type)
+                                    {
+                                    case ExpressionNode::global_:
+                                    case ExpressionNode::auto_:
+                                    case ExpressionNode::threadlocal_:
+                                        exp1->v.sp->sb->dest = nullptr;
+                                        break;
+                                    default:
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // not there try an lref version of the constructor
+                                ctype = tp;
+                                tp1->BaseType()->rref = false;
+                                tp1->BaseType()->lref = true;
+                                CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
+                                    false, true);
+                            }
+                            tp1->BaseType()->rref = oldrref;
+                            tp1->BaseType()->lref = oldlref;
+                            funcsp->sb->nonConstVariableUsed = nonconst;
+                            returnexp = en;
                         }
-                        tp1->BaseType()->rref = oldrref;
-                        tp1->BaseType()->lref = oldlref;
-                        funcsp->sb->nonConstVariableUsed = nonconst;
-                        returnexp = en;
                     }
                 }
             }

@@ -3129,6 +3129,32 @@ void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params)
         ++args;
     }
 }
+EXPRESSION* convertArgToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
+{
+    if (exp->type == ExpressionNode::hook_)
+    {
+        exp->right->left = convertArgToRef(exp->right->left, tp, boundTP);
+        exp->right->right = convertArgToRef(exp->right->right, tp, boundTP);
+    }
+    else if (!TakeAddress(&exp, tp))
+    {
+        Type* tp1 = tp->BaseType()->btp;
+        // make numeric temp and perform cast
+        if (tp1->IsArray())
+        {
+            Type tp2 = {};
+            Type::MakeType(tp2, BasicType::lref_, &stdpointer);
+            exp = createTemporary(&tp2, exp);
+        }
+        else if (!tp->IsRef() || exp->type != ExpressionNode::callsite_ || (boundTP->type == BasicType::aggregate_ || (exp->v.func->sp->tp->IsFunction() && !exp->v.func->sp->tp->BaseType()->btp->IsRef())))
+        {
+            exp = createTemporary(tp, exp);
+        }
+        TakeAddress(&exp, tp);
+    }
+
+    return exp;
+}
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr, bool operands, bool implicit)
 {
     std::list<Argument*>::iterator itl, itle;
@@ -3641,17 +3667,26 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             EXPRESSION* paramexp = p->exp;
                             p->exp = consexp;
                             callConstructorParam(&ctype, &p->exp, p->tp->BaseType(), paramexp, true, true, false, false, true);
+                            bool dodest = true;
                             if (p->exp->type == ExpressionNode::thisref_)
                             {
                                 Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
                                 if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
                                 {
                                     p->tp = tpx->btp;
+                                    dodest = !p->tp->IsRef();
                                 }
                             }
-                            EXPRESSION* dexp = consexp;
-                            CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
-                            InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
+                            if (dodest)
+                            {
+                                EXPRESSION* dexp = consexp;
+                                CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                                InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
+                            }
+                            else
+                            {
+                                esp->sb->allocate = false;
+                            }
                         }
                         else
                         {
@@ -3709,32 +3744,13 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             {
                                 if (!sym->tp->IsRef() || (!sym->tp->BaseType()->btp->IsFunction() && !sym->tp->BaseType()->btp->IsArray()))
                                 {
-                                    if (!IsLValue(exp))
-                                    {
-                                        Type* tp1 = sym->tp->BaseType()->btp;
-                                        // make numeric temp and perform cast
-                                        if (tp1->IsArray())
-                                        {
-                                            Type tp2 = {};
-                                            Type::MakeType(tp2, BasicType::lref_, &stdpointer);
-                                            exp = createTemporary(&tp2, exp);
-                                        }
-                                        else if (!sym->tp->IsRef() || exp->type != ExpressionNode::callsite_ || (p1->tp->type == BasicType::aggregate_ || (exp->v.func->sp->tp->IsFunction() && !exp->v.func->sp->tp->BaseType()->btp->IsRef())))
-                                        {
-                                            exp = createTemporary(sym->tp, exp);
-                                        }
-                                    }
-                                    else if (exp->type == ExpressionNode::lvalue_)
+                                    if (exp->type == ExpressionNode::lvalue_)
                                     {
                                         exp = createTemporary(sym->tp, exp);
                                     }
                                     else
                                     {
-                                        exp = exp->left;  // take address
-                                        if (exp->type == ExpressionNode::auto_)
-                                        {
-                                            exp->v.sp->sb->addressTaken = true;
-                                        }
+                                        exp = convertArgToRef(exp, sym->tp, p1->tp);
                                     }
                                 }
                                 p->exp = exp;
@@ -7080,51 +7096,15 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
         }
         else if (!(*tp)->IsFunction() && (*tp)->type != BasicType::aggregate_)
         {
-            EXPRESSION *expasn = nullptr, **exp2;
-            while (IsCastValue(exp1))
-                exp1 = (exp1)->left;
-            if (exp1->type == ExpressionNode::assign_)
-            {
-                expasn = exp1;
-                exp1 = exp1->left;
-                while (IsCastValue(exp1))
-                    exp1 = (exp1)->left;
-            }
-            if (!IsLValue(exp1))
+            if (!TakeAddress(exp, btp))
             {
                 if (!btp->array && !btp->vla && !btp->IsStructured() && btp->BaseType()->type != BasicType::memberptr_ &&
                     btp->BaseType()->type != BasicType::templateparam_)
                     error(ERR_LVALUE);
             }
-            else if (!btp->IsStructured() && exp1->type != ExpressionNode::l_ref_)
-                exp1 = (exp1)->left;
-            if (exp1->type == ExpressionNode::auto_)
-                SetRuntimeData(lex, exp1, exp1->v.sp);
-
-            switch ((exp1)->type)
-            {
-                case ExpressionNode::pc_:
-                case ExpressionNode::auto_:
-                case ExpressionNode::global_:
-                case ExpressionNode::absolute_:
-                case ExpressionNode::threadlocal_:
-                    (exp1)->v.sp->sb->addressTaken = true;
-                    break;
-                default:
-                    break;
-            }
-            exp2 = exp;
-            while ((*exp2)->type == ExpressionNode::comma_ && (*exp2)->right)
-                exp2 = &(*exp2)->right;
-            if ((*exp2)->type == ExpressionNode::comma_)
-                exp2 = &(*exp2)->left;
-            if (btp->BaseType()->type != BasicType::memberptr_)
+            if (btp->type != BasicType::memberptr_)
             {
                 *tp = Type::MakeType(BasicType::pointer_, *tp);
-                if (expasn)
-                    *exp2 = MakeExpression(ExpressionNode::comma_, expasn, exp1);
-                else
-                    *exp2 = exp1;
             }
         }
     }

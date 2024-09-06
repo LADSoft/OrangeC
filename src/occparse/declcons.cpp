@@ -2337,7 +2337,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
         allocInitializers(sym, cons, thisptr);
     if (cons->sb->memberInitializers && cons->sb->memberInitializers->size() && cons->sb->memberInitializers->front()->delegating)
     {
-        genConstructorCall(b, sym, cons->sb->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy,
+        genConstructorCall(b, sym, cons->sb->memberInitializers, sym, 0, true, thisptr, otherptr, cons, true, doCopy,
                            !cons->sb->defaulted);
     }
     else

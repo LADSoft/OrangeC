@@ -119,7 +119,7 @@ typedef long blksize_t;
 
 #ifndef __fsblkcnt_t_defined
 #define __fsblkcnt_t
-typedef long fsblkcnt_t;
+typedef unsigned long long fsblkcnt_t;
 #endif
 
 #ifndef __fsfilcnt_t_defined

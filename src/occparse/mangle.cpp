@@ -161,7 +161,7 @@ static char* mangleClasses(char* in, SYMBOL* sym)
 }
 static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
 {
-    while (castvalue(exp))
+    while (IsCastValue(exp))
         exp = exp->left;
     if (isintconst(exp))
     {
@@ -179,7 +179,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
     else
     {
         bool nonpointer = false;
-        while (lvalue(exp))
+        while (IsLValue(exp))
         {
             nonpointer = true;
             exp = exp->left;

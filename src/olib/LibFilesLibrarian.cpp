@@ -123,6 +123,7 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
             }
             return;
         }
+        count++;
     }
     std::cout << "Warning: Module '" << Name << "' not in library and could not be extracted" << std::endl;
 }

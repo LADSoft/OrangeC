@@ -31,6 +31,9 @@ ifneq "$(ORANGEC_ONLY)" "YES"
 endif
 	$(MAKE) -CCIL32
 
+final:
+	$(MAKE) -CWIN32 --eval="OBJECT=$(WINOBJECT)" final
+
 format:
 	$(MAKE) -CCOMMON format
 	$(MAKE) -CWIN32 format

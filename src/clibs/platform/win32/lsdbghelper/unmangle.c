@@ -1006,6 +1006,21 @@ const char* unmang1(char* buf, const char* name, const char* last, int tof)
             case 'C':
                 strcpy(buf, tn_wchar_t);
                 break;
+            case 'A':
+                buf = buf + strlen(buf);
+                if (*name == '#')
+                {
+                    name = unmangTemplate(buf, name, last);
+                }
+                else
+                {
+                    name = unmang1(buf, name, last, FALSE);
+                }
+                buf = buf + strlen(buf);
+                *buf++ = '[';
+                *buf++ = ']';
+                *buf = 0;
+                break;
             case 'p':
             case 'P':
                 if (*name == 'q' || *name == 'Q')

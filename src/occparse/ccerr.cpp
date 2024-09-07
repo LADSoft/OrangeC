@@ -1454,11 +1454,11 @@ static SYMBOL* getAssignSP(EXPRESSION* exp)
 }
 static void assignmentAssign(EXPRESSION* left, bool assign)
 {
-    while (castvalue(left))
+    while (IsCastValue(left))
     {
         left = left->left;
     }
-    if (lvalue(left))
+    if (IsLValue(left))
     {
         SYMBOL* sp;
         sp = getAssignSP(left->left);

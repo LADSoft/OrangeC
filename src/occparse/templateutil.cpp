@@ -126,7 +126,7 @@ bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2)
         case ExpressionNode::pc_:
         case ExpressionNode::const_:
         case ExpressionNode::threadlocal_:
-            return exp1->v.sp->tp->ExactSameType(exp2->v.sp->tp) || sameTemplate(exp1->v.sp->tp, exp1->v.sp->tp);
+            return exp1->v.sp->tp->CompatibleType(exp2->v.sp->tp) || SameTemplate(exp1->v.sp->tp, exp1->v.sp->tp);
         case ExpressionNode::callsite_: {
             Type* tp1 = exp1->v.sp->tp->BaseType();
             Type* tp2 = exp2->v.sp->tp->BaseType();
@@ -146,7 +146,7 @@ bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2)
             if ((tp1->BaseType()->type == BasicType::templateparam_ && tp2->type == BasicType::int_) ||
                 (tp2->BaseType()->type == BasicType::templateparam_ && tp1->type == BasicType::int_))  // undefined
                 return true;
-            return tp1->SameType(tp2) || sameTemplate(tp1, tp2);
+            return tp1->SameType(tp2) || SameTemplate(tp1, tp2);
         }
         case ExpressionNode::templateselector_:
             return templateselectorcompare(exp1->v.templateSelector, exp2->v.templateSelector);
@@ -219,7 +219,7 @@ bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType)
     }
     if (sameType && (tp1->IsRef() != tp2->IsRef() || (tp1->IsRef() && tp1->BaseType()->type != tp2->BaseType()->type)))
         return false;
-    if (!Type::CompareTypes(tp1, tp2, exact) && (!sameType || !sameTemplate(tp1, tp2)))
+    if (!Type::CompareTypes(tp1, tp2, exact) && (!sameType || !SameTemplate(tp1, tp2)))
         return false;
     if (tp1->IsInt() && tp1->BaseType()->btp && tp1->BaseType()->btp->type == BasicType::enum_)
         tp1 = tp1->BaseType()->btp;
@@ -316,7 +316,7 @@ bool exactMatchOnTemplateArgs(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPL
             switch (ito->second->type)
             {
                 case TplType::typename_:
-                    if (sameTemplate(ito->second->byClass.dflt, its->second->byClass.dflt))
+                    if (SameTemplate(ito->second->byClass.dflt, its->second->byClass.dflt))
                     {
                         auto to = ito->second->byClass.dflt;
                         auto ts = its->second->byClass.dflt;
@@ -1101,7 +1101,7 @@ static Type* LookupUnaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::lis
         tp1 = tp1->BaseType()->btp;
     auto exp1 = exp->left;
     ResolveTemplateVariable(&tp1, &exp1, nullptr, nullptr);
-    if (!insertOperatorFunc(ovcl_binary_numericptr, kw, nullptr, &tp1, &exp1, nullptr, nullptr, nullptr, _F_SIZEOF))
+    if (!FindOperatorFunction(ovcl_binary_numericptr, kw, nullptr, &tp1, &exp1, nullptr, nullptr, nullptr, _F_SIZEOF))
     {
         castToArithmetic(false, &tp1, &exp1, kw, nullptr, true);
         if (tp1->IsStructured())
@@ -1127,7 +1127,7 @@ static Type* LookupBinaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::li
     auto exp2 = exp->right;
     ResolveTemplateVariable(&tp1, &exp1, tp2, nullptr);
     ResolveTemplateVariable(&tp2, &exp2, tp1, nullptr);
-    if (!insertOperatorFunc(ovcl_binary_numericptr, kw, nullptr, &tp1, &exp1, tp2, exp2, nullptr, _F_SIZEOF))
+    if (!FindOperatorFunction(ovcl_binary_numericptr, kw, nullptr, &tp1, &exp1, tp2, exp2, nullptr, _F_SIZEOF))
     {
         if (kw == Keyword::leftshift_ || kw == Keyword::rightshift_)
         {

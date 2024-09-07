@@ -62,7 +62,7 @@ int dumpInit(SYMBOL* sym, Initializer* init);
 void dumpInitGroup(SYMBOL* sym, Type* tp);
 void dumpInitializers(void);
 void insertInitSym(SYMBOL* sym);
-Initializer* initInsert(std::list<Initializer*>** pos, Type* tp, EXPRESSION* exp, int offset, bool noassign);
+Initializer* InsertInitializer(std::list<Initializer*>** pos, Type* tp, EXPRESSION* exp, int offset, bool noassign);
 ExpressionNode referenceTypeError(Type* tp, EXPRESSION* exp);
 EXPRESSION* getThisNode(SYMBOL* sym);
 void RecalculateVariableTemplateInitializers(std::list<Initializer*>::iterator& ilbegin, std::list<Initializer*>::iterator& ilend, std::list<Initializer*>** out, Type* tp, int offset);

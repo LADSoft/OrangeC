@@ -135,8 +135,8 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     EXPRESSION* right = MakeExpression(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
-    deref(sym->tp, &left);
-    deref(sym->tp, &right);
+    Dereference(sym->tp, &left);
+    Dereference(sym->tp, &right);
     st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
     st->select = MakeExpression(ExpressionNode::assign_, left, right);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
@@ -155,7 +155,7 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     memset(&b, 0, sizeof(b));
     st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
     st->select = MakeExpression(ExpressionNode::global_, backing);
-    deref(sym->tp, &st->select);
+    Dereference(sym->tp, &st->select);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
     p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
@@ -217,7 +217,7 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
                 else
                 {
                     StatementGenerator sg(lex, prototype);
-                    sg.Body();
+                    sg.FunctionBody();
                     sg.BodyGen();
                     insertfunc(prototype, globalNameSpace->front()->syms);
                 }

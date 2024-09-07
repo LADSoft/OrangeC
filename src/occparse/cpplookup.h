@@ -74,9 +74,9 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
 void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref);
 void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser, bool ref = false);
-bool sameTemplateSelector(Type* tnew, Type* told);
-bool sameTemplatePointedTo(Type* tnew, Type* told, bool quals = false);
-bool sameTemplate(Type* P, Type* A, bool quals = false);
+bool SameTemplateSelector(Type* tnew, Type* told);
+bool SameTemplatePointedTo(Type* tnew, Type* told, bool quals = false);
+bool SameTemplate(Type* P, Type* A, bool quals = false);
 SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp);
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, CallSite* args);
 void weedgathering(Optimizer::LIST** gather);

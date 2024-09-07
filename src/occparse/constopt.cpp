@@ -2435,7 +2435,7 @@ int opt0(EXPRESSION** node)
                         if (!tp->IsPtr())
                             break;
                         tp = tp->btp->BaseType();
-                        deref(&stdpointer, &newExpr);
+                        Dereference(&stdpointer, &newExpr);
                     }
                     if (!tp->IsStructured())
                         break;
@@ -2486,7 +2486,7 @@ int opt0(EXPRESSION** node)
                         }
                         newExpr = MakeExpression(ExpressionNode::structadd_, newExpr, temp);
                         if (!sym->tp->IsStructured())
-                            deref(sym->tp, &newExpr);
+                            Dereference(sym->tp, &newExpr);
                         tp = sym->tp;
                     }
                     enclosingDeclarations.Drop();
@@ -3174,7 +3174,7 @@ int fold_const(EXPRESSION* node)
             }
             else
             {
-                EXPRESSION* exp = anonymousVar(StorageClass::auto_, node->v.construct.tp);
+                EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
                 lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
                                exp->v.sp, false, 0);
             }
@@ -3833,7 +3833,7 @@ bool msilConstant(EXPRESSION* exp)
 {
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
     {
-        while (castvalue(exp))
+        while (IsCastValue(exp))
             exp = exp->left;
         if (exp->type == ExpressionNode::sizeof_)
             return true;

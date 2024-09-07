@@ -236,6 +236,7 @@ void __ll_uioinit(void);
 int __ll_uio_flags(int);
 void __uio_rundown(void);
 int __ll_chmod(const wchar_t* path, int amode);
+int __ll_fchmod(int handle, int amode);
 int __ll_chsize(int handle, int size);
 int __ll_dup(int handle);
 int __ll_setftime(int handle, void* ftimep);

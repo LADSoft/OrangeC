@@ -760,7 +760,7 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
                 {
                     tp = tp->btp;
                 }
-                return tp && Pb->ExactSameType(tp);
+                return tp && Pb->CompatibleType(tp);
             }
             if (Ab->IsInt())  // && Ab->enumConst)
                 return true;
@@ -888,7 +888,7 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
                             {
                                 auto it = sp->tp->syms->begin();
                                 ++it;
-                                if ((*it)->tp->ExactSameType(Ab) || sameTemplate((*it)->tp, Ab))
+                                if ((*it)->tp->CompatibleType(Ab) || SameTemplate((*it)->tp, Ab))
                                     return true;
                             }
                         }
@@ -914,7 +914,7 @@ static Type* GetForwardType(Type* P, Type* A, EXPRESSION* exp)
     }
     else if (lref)
     {
-        // lvalue to rref, result is lvalue&...
+        // IsLValue to rref, result is IsLValue&...
         if (A->BaseType()->type != BasicType::lref_)
         {
             A = Type::MakeType(BasicType::lref_, A);
@@ -996,7 +996,7 @@ static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool a
                 {
                     if (sp1->tp->BaseType()->syms->size() == 2)
                     {
-                        if (sp1->tp->BaseType()->syms->back()->tp->ExactSameType(A))
+                        if (sp1->tp->BaseType()->syms->back()->tp->CompatibleType(A))
                             return true;
                     }
                     else if (sp1->tp->BaseType()->syms->size() > 2)
@@ -1007,7 +1007,7 @@ static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool a
                         if ((*it)->sb->defaulted)
                         {
                             --it;
-                            if ((*it)->tp->ExactSameType(A))
+                            if ((*it)->tp->CompatibleType(A))
                                 return true;
                         }
                     }

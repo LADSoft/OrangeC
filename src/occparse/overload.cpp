@@ -70,7 +70,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL* >& gather, CallSite* a
 
 static const int rank[] = {0, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 4, 4, 4, 5, 5, 6, 7, 8, 8, 9};
 static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* parent, e_cvsrn arr[], int* sizes, int count,
-                               SYMBOL** userFunc, bool usesInitList);
+                               SYMBOL** userFunc, bool usesInitList, bool deduceTemplate);
 static void WeedTemplates(SYMBOL** table, int count, CallSite* args, Type* atp);
 
 /* SYMBOL tab Keyword::hash_ function */
@@ -600,7 +600,7 @@ static void weedToFunctions(std::list<SYMBOL*>& lst)
     }
 }
 static void GatherConversions(SYMBOL* sym, SYMBOL** spList, int n, CallSite* args, Type* atp, e_cvsrn** icsList,
-                              int** lenList, int argCount, SYMBOL*** funcList, bool usesInitList)
+                              int** lenList, int argCount, SYMBOL*** funcList, bool usesInitList, bool deduceTemplate)
 {
     int i;
     for (i = 0; i < n; i++)
@@ -618,7 +618,7 @@ static void GatherConversions(SYMBOL* sym, SYMBOL** spList, int n, CallSite* arg
                     spList[j] = 0;
             memset(funcs, 0, sizeof(funcs));
             t = getFuncConversions(spList[i], args, atp, sym->sb->parentClass, (e_cvsrn*)arr, counts, argCount, funcs,
-                                   usesInitList);
+                                   usesInitList, deduceTemplate);
             if (!t)
             {
                 spList[i] = nullptr;
@@ -3321,7 +3321,7 @@ static void getInitListConversion(Type* tp, std::list<Argument*>* list, Type* tp
     }
 }
 static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* parent, e_cvsrn arr[], int* sizes, int count,
-                               SYMBOL** userFunc, bool usesInitList)
+                               SYMBOL** userFunc, bool usesInitList, bool deduceTemplate)
 {
     (void)usesInitList;
     int pos = 0;
@@ -3405,6 +3405,10 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                 {
                     arr[n++] = CV_NONE;
                     return false;
+                }
+                else if (deduceTemplate)
+                {
+                    ++it;
                 }
                 else
                 {
@@ -3952,7 +3956,7 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, CallSite* args)
     {
         if (args->ascall)
         {
-            GatherConversions(sp, &spList[0], n, args, nullptr, &icsList[0], &lenList[0], argCount, &funcList[0], 0);
+            GatherConversions(sp, &spList[0], n, args, nullptr, &icsList[0], &lenList[0], argCount, &funcList[0], 0, false);
             SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
         }
         WeedTemplates(&spList[0], n, args, nullptr);
@@ -4136,7 +4140,7 @@ static bool ValidForDeduction(SYMBOL* s)
     }
     return true;
 }
-SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, int flags)
+SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, int flags)
 {
     std::vector<SYMBOL*> spList;
     SYMBOL* deduced = nullptr;
@@ -4281,7 +4285,7 @@ SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
 
                 std::unordered_map<int, SYMBOL*> storage;
                 GatherConversions(sp, &spList[0], n, args, nullptr, &icsList[0], &lenList[0], args->arguments->size(), &funcList[0],
-                                  0);
+                                  0, true);
                 for (int i = 0; i < n; i++)
                 {
                     if (spList[i])
@@ -4686,7 +4690,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     std::unordered_map<int, SYMBOL*> storage;
                     if (atp || args->ascall)
                         GatherConversions(sp, &spList[0], n, args, atp, &icsList[0], &lenList[0], argCount, &funcList[0],
-                                          flags & _F_INITLIST);
+                                          flags & _F_INITLIST, false);
                     for (int i = 0; i < n; i++)
                     {
                         storage[i] = spList[i];
@@ -4777,7 +4781,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         if (atp || args->ascall)
                         {
                             GatherConversions(sp, &spList[0], n, args, atp, &icsList[0], &lenList[0], argCount, &funcList[0],
-                                              flags & _F_INITLIST);
+                                              flags & _F_INITLIST, false);
                             SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
                         }
                         WeedTemplates(&spList[0], n, args, atp);

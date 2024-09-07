@@ -7510,7 +7510,7 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                             sym = makeID(StorageClass::auto_, *tp, nullptr, AnonymousName());
                             localNameSpace->front()->syms->Add(sym);
                         }
-                        lex = initType(lex, funcsp, 0, StorageClass::auto_, &temp, nullptr, *tp, sym, false, flags);
+                        lex = initType(lex, funcsp, 0, StorageClass::auto_, &temp, nullptr, *tp, sym, false, false, flags);
                         *exp = ConverInitializersToExpression(*tp, nullptr, nullptr, funcsp, temp, *exp, false);
                         while (!done && lex)
                         {
@@ -8604,7 +8604,7 @@ LexList* expression_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                         spinit = AnonymousVar(StorageClass::localstatic_, tp1)->v.sp;
                         localNameSpace->front()->syms->Add(spinit);
                         lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, spinit, false,
-                                       flags | _F_ASSIGNINIT);
+                            false, flags | _F_ASSIGNINIT);
                         EXPRESSION* exp2 = nullptr;
                         if (init && init->front()->exp->type == ExpressionNode::thisref_)
                         {

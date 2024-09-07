@@ -58,7 +58,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
 SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp);
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, CallSite* args);
 void weedgathering(Optimizer::LIST** gather);
-SYMBOL* DeduceOverloadedClass(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, int flags);
+SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, int flags);
 SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, Type* atp, int toErr,
                               bool maybeConversion, int flags);
 SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** exp, int flags);

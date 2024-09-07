@@ -78,7 +78,7 @@ static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static std::list<SYMBOL*> file_level_constructors;
 LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init, std::list<Initializer*>** dest, Type* itype,
-                  SYMBOL* sym, bool arrayMember, int flags);
+                  SYMBOL* sym, bool arrayMember, bool deduceTemplate, int flags);
 void init_init(void)
 {
     symListHead = nullptr;
@@ -2760,7 +2760,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
 }
 
 auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int offset, SYMBOL* funcsp, StorageClass sc, SYMBOL* base,
-                               std::list<Initializer*>** dest, int flags)
+                               std::list<Initializer*>** dest, bool templateLevel, bool deduceTemplate, int flags)
 {
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
@@ -2855,7 +2855,7 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
             SYMBOL* fieldsp;
             int size = data ? data->size() : 0;
             lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base, itype->IsArray(),
-                           flags | _F_NESTEDINIT);
+                templateLevel, flags | _F_NESTEDINIT);
             int size1 = data->size();
             if (desc->it != desc->ite && size != size1)
             {
@@ -2899,7 +2899,7 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
                             SYMBOL* fieldsp;
                             int size = data->size();
                             lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base,
-                                           itype->IsArray(), flags);
+                                           itype->IsArray(), deduceTemplate, flags);
                             int size1 = data->size();
                             if (desc->it != desc->ite && size != size1)
                             {
@@ -2968,7 +2968,7 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
     return data;
 }
 static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL * base, int offset, StorageClass sc, Type* itype,
-                                          std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember, int flags)
+                                          std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember, bool deduceTemplate, int flags)
 {
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
@@ -3083,23 +3083,40 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                         tp1 = itype;
                     if (!tp1 || !tp1->BaseType()->CompatibleType(itype->BaseType()))
                     {
-                        SYMBOL* sym = nullptr;
-                        if (itype->IsStructured())
-                            sym = getUserConversion(F_CONVERSION | F_WITHCONS, itype, tp1, nullptr, nullptr, nullptr, nullptr, nullptr, false);
-                        if (sym && !sym->sb->isExplicit)
+                        if (deduceTemplate)
                         {
-                            funcparams->arguments = argumentListFactory.CreateList();
-                            auto arg = Allocate<Argument>();
-                            funcparams->arguments->push_back(arg);
-                            arg->tp = tp1;
-                            arg->exp = exp1;
-
+                                auto spx = tp1->BaseType()->sp, spy = itype->BaseType()->sp;
+                            if (spx->sb->maintemplate)
+                                spx = spx->tp->sp->sb->maintemplate;
+                            if (spy->sb->maintemplate)
+                                spy = spy->tp->sp->sb->maintemplate;
+                            if (spx != spy)
+                            {
+                                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, spy->name);
+                            }
+                            exp = exp1;
+                            itype = base->tp = tp1;
                         }
                         else
                         {
-                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                            errskim(&lex, skim_semi);
-                            return lex;
+                            SYMBOL* sym = nullptr;
+                            if (itype->IsStructured())
+                                sym = getUserConversion(F_CONVERSION | F_WITHCONS, itype, tp1, nullptr, nullptr, nullptr, nullptr, nullptr, false);
+                            if (sym && !sym->sb->isExplicit)
+                            {
+                                funcparams->arguments = argumentListFactory.CreateList();
+                                auto arg = Allocate<Argument>();
+                                funcparams->arguments->push_back(arg);
+                                arg->tp = tp1;
+                                arg->exp = exp1;
+
+                            }
+                            else
+                            {
+                                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                                errskim(&lex, skim_semi);
+                                return lex;
+                            }
                         }
                     }
                     else
@@ -3196,22 +3213,35 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                         for (auto a : *funcparams->arguments)
                             a->initializer_list = true;
                 }
+                if (deduceTemplate)
+                {
+                    CTADLookup(funcsp, &exp, &itype, funcparams, 0);
+                    base->tp = itype;
+                    constructed = true;
+                }
             }
-            else if (flags & _F_NESTEDINIT)
-            {
-                // shortcut for conversion from single expression
-                EXPRESSION* exp1 = nullptr;
-                Type* tp1 = nullptr;
-                lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, itype, false, base);
-                funcparams->arguments = argumentListFactory.CreateList();
-                auto arg = Allocate<Argument>();
-                funcparams->arguments->push_back(arg);
-                arg->tp = tp1;
-                arg->exp = exp1;
-            }
-            else
-            {
-                // default constructor without param list
+            else {
+                if (deduceTemplate)
+                {
+                    SpecializationError(itype->BaseType()->sp);
+                }
+
+                if (flags & _F_NESTEDINIT)
+                {
+                    // shortcut for conversion from single expression
+                    EXPRESSION* exp1 = nullptr;
+                    Type* tp1 = nullptr;
+                    lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, itype, false, base);
+                    funcparams->arguments = argumentListFactory.CreateList();
+                    auto arg = Allocate<Argument>();
+                    funcparams->arguments->push_back(arg);
+                    arg->tp = tp1;
+                    arg->exp = exp1;
+                }
+                else
+                {
+                    // default constructor without param list
+                }
             }
             
             if (!constructed)
@@ -3421,7 +3451,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                 {
                     // construction of trivial structure via initializer-list...
                     needend = true;
-                    it = InitializeSimpleAggregate(lex, itype, needend, offset, funcsp, sc, base, dest, flags);
+                    it = InitializeSimpleAggregate(lex, itype, needend, offset, funcsp, sc, base, dest, false, deduceTemplate, flags);
                     if (!needkw(&lex, Keyword::closepa_))
                         errskim(&lex, skim_closepa);
                 }
@@ -3563,7 +3593,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
     else
     {
         // if we get here, initialize a simple aggregate...
-        *init = InitializeSimpleAggregate(lex, itype, needend, offset, funcsp, sc, base, dest, flags);
+        *init = InitializeSimpleAggregate(lex, itype, needend, offset, funcsp, sc, base, dest, false, deduceTemplate, flags);
     }
     // have to fill in unused array elements with C++ constructors
     // this doesn't play well with the designator stuff but doesn't matter in C++
@@ -3836,7 +3866,7 @@ static LexList* initialize_auto(LexList * lex, SYMBOL * funcsp, int offset, Stor
  * for the aggregate and any sub-aggregates with a single call of the function
  */
 LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init, std::list<Initializer*>** dest, Type* itype,
-                  SYMBOL* sym, bool arrayMember, int flags)
+                  SYMBOL* sym, bool arrayMember, bool deduceTemplate, int flags)
 {
     Type* tp;
     tp = itype->BaseType();
@@ -3935,6 +3965,10 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
         }
         return lex;
     }
+    if (deduceTemplate && tp->type == BasicType::templatedeferredtype_)
+    {
+        tp = tp->sp->tp;
+    }
     switch (tp->type)
     {
         case BasicType::aggregate_:
@@ -4006,7 +4040,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
                 }
                 else
                 {
-                    return initialize_aggregate_type(lex, funcsp, sym, offset, sc, tp, init, dest, arrayMember, flags);
+                    return initialize_aggregate_type(lex, funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate, flags);
                 }
             }
             else
@@ -4033,7 +4067,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
                     lex = getsym();
                     if (MATCHKW(lex, Keyword::begin_))
                     {
-                        return initialize_aggregate_type(lex, funcsp, sym, offset, sc, tp, init, dest, arrayMember, flags);
+                        return initialize_aggregate_type(lex, funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate, flags);
                     }
                     else
                     {
@@ -4042,7 +4076,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
                 }
                 else
                 {
-                    return initialize_aggregate_type(lex, funcsp, sym, offset, sc, tp, init, dest, arrayMember, flags);
+                    return initialize_aggregate_type(lex, funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate, flags);
                 }
             }
             /* fallthrough */
@@ -4158,7 +4192,7 @@ void RecalculateVariableTemplateInitializers(std::list<Initializer*>::iterator& 
     }
 }
 LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
-                    int flags)
+                    bool deduceTemplate, int flags)
 {
     auto sp = sym->tp->BaseType()->sp;
     if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!definingTemplate || instantiatingTemplate))
@@ -4343,12 +4377,12 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     t = sym->tp;
                 if (MATCHKW(lex, Keyword::assign_))
                 {
-                    if (!t->IsStructured() && !t->IsArray())
+                    if (!t->IsStructured() && !t->IsArray() && !t->IsDeferred())
                         lex = getsym(); /* past = */
                     else
                         assigned = true;
                 }
-                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, flags | _F_EXPLICIT);
+                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, deduceTemplate, flags | _F_EXPLICIT);
                 /* set up an Keyword::end_ tag */
                 if (sym->sb->init || assigned)
                 {
@@ -4384,7 +4418,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             if (!tp->BaseType()->sp->sb->trivialCons)
             {
                 // default constructor without (), or array of structures without an initialization list
-                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, flags | _F_EXPLICIT);
+                lex = initType(lex, funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, deduceTemplate, flags | _F_EXPLICIT);
                 /* set up an Keyword::end_ tag */
                 if (sym->sb->init)
                 {

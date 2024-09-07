@@ -1811,7 +1811,7 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
                 dontRegisterTemplate += templateDeclarationLevel != 0;
                 lex = SetAlternateLex(sp->sb->deferredCompile);
                 sp->sb->init = nullptr;
-                lex = initialize(lex, func, sp, StorageClass::parameter_, true, false, _F_TEMPLATEARGEXPANSION);
+                lex = initialize(lex, func, sp, StorageClass::parameter_, true, false, false, _F_TEMPLATEARGEXPANSION);
                 SetAlternateLex(nullptr);
                 dontRegisterTemplate -= templateDeclarationLevel != 0;
                 if (sp->sb->init && sp->sb->init->front()->exp && !ValidExp(&sp->sb->init->front()->exp))

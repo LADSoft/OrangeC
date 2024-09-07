@@ -3751,7 +3751,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 tp1 = nullptr;
 
                 noTypeNameError++;
-                lex = getStorageAndType(lex, funcsp, nullptr, false, true, &storage_class, &storage_class, &address, &blocked,
+                lex = getStorageAndType(lex, funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address, &blocked,
                     nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
                     nullptr, nullptr, nullptr);
                 noTypeNameError--;
@@ -3901,7 +3901,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                                 sym = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                                 anonymousNotAlloc--;
                                 sym->sb->stackblock = !spi->tp->IsRef();
-                                lex = initialize(lex, funcsp, sym, StorageClass::auto_, true, false, 0); /* also reserves space */
+                                lex = initialize(lex, funcsp, sym, StorageClass::auto_, true, false, false, 0); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
                                 if (spi->sb->init->front()->exp && spi->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                 {
@@ -3912,7 +3912,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             }
                             else
                             {
-                                lex = initialize(lex, funcsp, spi, StorageClass::auto_, true, false, 0); /* also reserves space */
+                                lex = initialize(lex, funcsp, spi, StorageClass::auto_, true, false, false, 0); /* also reserves space */
                             }
                             if (spi->sb->init)
                             {
@@ -4052,7 +4052,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 bool defd = false;
                 bool notype = false;
                 tp1 = nullptr;
-                lex = getStorageAndType(lex, funcsp, nullptr, false, false, &storage_class, &storage_class, &address, &blocked,
+                lex = getStorageAndType(lex, funcsp, nullptr, false, false, nullptr, &storage_class, &storage_class, &address, &blocked,
                     nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd,
                     nullptr, nullptr, nullptr);
 

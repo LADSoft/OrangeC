@@ -2753,7 +2753,7 @@ static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
     }
     return true;
 }
-LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
+LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
                                   StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                                   bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage, Linkage* linkage2,
                                   Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
@@ -2804,7 +2804,7 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
             {
                 foundType = true;
                 *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
-                                   notype, defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true,
+                                   notype, defd, consdest, templateArg, Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? deduceTemplate : nullptr, *storage_class == StorageClass::typedef_, true,
                                    false, asFriend, *constexpression);
             }
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
@@ -2818,7 +2818,7 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
         {
             foundType = true;
             *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
-                               defd, consdest, templateArg, nullptr, *storage_class == StorageClass::typedef_, true, false,
+                               defd, consdest, templateArg, Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? deduceTemplate : nullptr, *storage_class == StorageClass::typedef_, true, false,
                                asFriend, *constexpression);
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
                 *storage_class = StorageClass::static_;
@@ -3049,9 +3049,10 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             bool isExplicit = false;
             bool templateArg = false;
             bool asFriend = false;
+            bool deduceTemplate = false;
             int consdest = CT_NONE;
             declaringInitialType++;
-            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
+            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &deduceTemplate, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &builtin_constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);
             declaringInitialType--;
@@ -4509,7 +4510,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         sp->tp = tn;
                                     }
                                 }
-                                lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, inTemplate,
+                                lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, inTemplate, deduceTemplate,
                                                  0); /* also reserves space */
                                 if (sp->sb->parentClass && sp->sb->storage_class == StorageClass::global_)
                                 {

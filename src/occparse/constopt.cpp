@@ -3169,7 +3169,7 @@ int fold_const(EXPRESSION* node)
             {
 
                 std::list<Initializer*> *init = nullptr, *dest = nullptr;
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, 0);
+                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
                 if (init)
                     *node = *init->front()->exp;
             }
@@ -3177,7 +3177,7 @@ int fold_const(EXPRESSION* node)
             {
                 EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
                 lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
-                               exp->v.sp, false, 0);
+                               exp->v.sp, false, false, 0);
             }
             SetAlternateLex(nullptr);
         }

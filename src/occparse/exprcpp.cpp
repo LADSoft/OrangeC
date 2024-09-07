@@ -595,13 +595,14 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
     if (!(flags & _F_NOEVAL))
     {
         *tp = nullptr;
-        *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, &deduceTemplate, false, true, false, nullptr, false);
+        *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, &consdest, nullptr, 
+            Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? &deduceTemplate : nullptr, false, true, false, nullptr, false);
         (*tp)->InstantiateDeferred();
         (*tp)->InitializeDeferred();
         if ((*tp)->IsStructured() && !(*tp)->size && (!definingTemplate || !(*tp)->BaseType()->sp->sb->templateLevel))
         {
             (*tp) = (*tp)->BaseType()->sp->tp;
-            if (!(*tp)->size)
+            if (!(*tp)->size && !deduceTemplate)
                 errorsym(ERR_STRUCT_NOT_DEFINED, (*tp)->BaseType()->sp);
         }
         if ((*tp)->IsStructured() && deduceTemplate && !MATCHKW(lex, Keyword::openpa_))
@@ -618,7 +619,7 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             SYMBOL* sym = nullptr;
             sym = AnonymousVar(StorageClass::auto_, *tp)->v.sp;
 
-            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, *tp, sym, false, flags | _F_EXPLICIT);
+            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, *tp, sym, false, false, flags | _F_EXPLICIT);
             (*tp)->InstantiateDeferred();
             if (init && init->size() == 1 && init->front()->exp->type == ExpressionNode::thisref_)
             {
@@ -712,52 +713,17 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             }
             if (!bcall && deduceTemplate && (Optimizer::architecture != ARCHITECTURE_MSIL))
             {
+                *exp = nullptr;
                 RequiresDialect::Feature(Dialect::cpp17, "Class template argument deduction");
                 lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
-                if (funcparams->arguments)
+                CTADLookup(funcsp, exp, tp, funcparams, flags);
+                int offset = 0;
+                auto exp2 = relptr((*exp)->left->v.func->thisptr, offset);
+                if (!(flags & _F_SIZEOF) && exp2 && exp2->type != ExpressionNode::thisref_)
                 {
-                    bool toconst = (*tp)->IsConst(), tovol = (*tp)->IsConst();
-                    Type* thstp = Type::MakeType(BasicType::pointer_, (*tp)->BaseType());
-                    if (toconst)
-                        thstp = Type::MakeType(BasicType::const_, thstp);
-                    if (tovol)
-                        thstp = Type::MakeType(BasicType::volatile_, thstp);
-                    funcparams->thistp = thstp;
-                    funcparams->ascall = true;
-                    Type* tp2 = *tp;
-                    SYMBOL* sym = DeduceOverloadedClass(&tp2, exp, (*tp)->BaseType()->sp, funcparams, flags);
-                    if (sym)
-                    {
-                        EXPRESSION* exp2 = AnonymousVar(StorageClass::auto_, sym->tp);
-                        funcparams->thisptr = exp2;
-                        funcparams->sp = (*exp)->v.sp;
-                        funcparams->functp = (*exp)->v.sp->tp;
-                        funcparams->fcall = *exp;
-                        sym = exp2->v.sp;
-
-                        *exp = MakeExpression(funcparams);
-                        *exp = MakeExpression(ExpressionNode::thisref_, *exp);
-                        sym->sb->constexpression = true;
-                        optimize_for_constants(exp);
-                        if ((*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
-                            sym->sb->constexpression = false;
-                        PromoteConstructorArgs(funcparams->sp, funcparams);
-                        CallDestructor((*tp)->BaseType()->sp, nullptr, &exp2, nullptr, true, false, false, true);
-                        InsertInitializer(&sym->sb->dest, *tp, exp2, 0, true);
-                        // can't default destruct while deducing a template
-                    }
-                    else
-                    {
-                        errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, (*tp)->BaseType()->sp->name);
-                        EXPRESSION* exp2 = AnonymousVar(StorageClass::auto_, (*tp)->BaseType());
-                        *exp = exp2;
-                    }
-                }
-                else
-                {
-                    errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, (*tp)->BaseType()->sp->name);
-                    EXPRESSION* exp2 = AnonymousVar(StorageClass::auto_, (*tp)->BaseType());
-                    *exp = exp2;
+                    auto exp3 = exp2;
+                    CallDestructor((*tp)->BaseType()->sp, nullptr, &exp2, nullptr, true, false, false, true);
+                    InsertInitializer(&exp3->v.sp->sb->dest, (*tp), exp2, 0, true);
                 }
             }
             else
@@ -2005,7 +1971,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
                 tp1->array = 1;
                 tp1->esize = arrSize;
             }
-            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, sym, false, 0);
+            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, sym, false, false, 0);
             if (!(*tp)->IsStructured() && !arrSize)
             {
                 if (init->size() != 1 || (init->front()->basetp && init->front()->basetp->IsStructured()))

@@ -915,7 +915,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 sym2 = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                 anonymousNotAlloc--;
                 sym2->sb->stackblock = !arg->tp->IsRef();
-                lex = initialize(lex, theCurrentFunc, sym2, StorageClass::auto_, false, false, 0); /* also reserves space */
+                lex = initialize(lex, theCurrentFunc, sym2, StorageClass::auto_, false, false, false, 0); /* also reserves space */
                 arg->sb->init = sym2->sb->init;
                 if (arg->sb->init->front()->exp && arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
                 {
@@ -926,7 +926,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             }
             else
             {
-                lex = initialize(lex, theCurrentFunc, arg, StorageClass::member_, false, false, 0);
+                lex = initialize(lex, theCurrentFunc, arg, StorageClass::member_, false, false, false, 0);
             }
             SetAlternateLex(nullptr);
             arg->sb->deferredCompile = nullptr;
@@ -976,7 +976,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                         tp2 = tp2->BaseType()->btp;
                                     if (!tp2->IsStructured())
                                     {
-                                        lex = initialize(lex, theCurrentFunc, sp2, StorageClass::member_, false, false, 0);
+                                        lex = initialize(lex, theCurrentFunc, sp2, StorageClass::member_, false, false, false, 0);
                                         sp2->sb->deferredCompile = nullptr;
                                     }
                                     SetAlternateLex(nullptr);
@@ -1018,7 +1018,7 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         {
             lex = SetAlternateLex(sp->sb->deferredCompile);
             sp->sb->deferredCompile = nullptr;
-            lex = initialize(lex, theCurrentFunc, sp, StorageClass::member_, false, false, 0);
+            lex = initialize(lex, theCurrentFunc, sp, StorageClass::member_, false, false, false, 0);
             SetAlternateLex(nullptr);
             if (sp->sb->constexpression)
             {

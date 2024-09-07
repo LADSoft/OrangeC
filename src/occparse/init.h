@@ -70,8 +70,8 @@ void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, SYMBOL* newName);
 void ReplaceVarRef(EXPRESSION** exp, SYMBOL* name, EXPRESSION* newName);
 
 LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init, std::list<Initializer*>** dest, Type* itype,
-    SYMBOL* sym, bool arrayMember, int flags);
+    SYMBOL* sym, bool arrayMember, bool deduceTemplate, int flags);
 
-LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
+LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate, bool deduceTemplate,
                     int flags);
 }  // namespace Parser

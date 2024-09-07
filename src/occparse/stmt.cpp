@@ -339,9 +339,21 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
 
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
+        *exp = MakeExpression(ExpressionNode::select_, *exp);
     }
-    *exp = MakeExpression(ExpressionNode::select_, *exp);
-    GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
+    else
+    {
+        *exp = MakeExpression(ExpressionNode::select_, *exp);
+        if ((*exp)->left->type == ExpressionNode::comma_)
+        {
+            // an initializer
+            GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, (*exp)->left->right);
+        }
+        else
+        {
+            GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
+        }
+    }
 }
 FunctionBlock* StatementGenerator::GetCommonParent(std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest)
 {
@@ -1715,7 +1727,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         {
                             if (declSP->tp->IsStructured() && !declSP->tp->BaseType()->sp->sb->trivialCons)
                             {
-                                lex = initialize(lex, funcsp, declSP, StorageClass::auto_, false, false, 0);
+                                lex = initialize(lex, funcsp, declSP, StorageClass::auto_, false, false, false, 0);
                             }
                             else
                             {
@@ -2354,7 +2366,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     std::list<Initializer*>* init = nullptr, *dest = nullptr;
                     SYMBOL* sym = nullptr;
                     sym = AnonymousVar(StorageClass::localstatic_, tp)->v.sp;
-                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, 0);
+                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, false, 0);
                     returnexp = ConverInitializersToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
                     returntype = tp;
                     if (sym)

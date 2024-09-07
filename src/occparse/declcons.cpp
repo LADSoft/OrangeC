@@ -2000,7 +2000,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             needkw(&lex, bypa ? Keyword::openpa_ : Keyword::begin_);
                             init->init = nullptr;
                             argumentNesting++;
-                            lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
+                            lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, false, 0);
                             argumentNesting--;
                             done = true;
                             needkw(&lex, bypa ? Keyword::closepa_ : Keyword::end_);
@@ -2020,7 +2020,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         {
                             init->init = nullptr;
                             argumentNesting++;
-                            lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
+                            lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, false, 0);
                             argumentNesting--;
                             done = true;
                             if (init->packed || MATCHKW(lex, Keyword::ellipse_))
@@ -2029,7 +2029,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         else
                         {
                             init->init = nullptr;
-                            lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, 0);
+                            lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, false, 0);
                             if (init->packed)
                                 error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                         }

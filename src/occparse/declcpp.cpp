@@ -42,7 +42,6 @@
 #include "help.h"
 #include "stmt.h"
 #include "expr.h"
-#include "cpplookup.h"
 #include "rtti.h"
 #include "constopt.h"
 #include "OptUtils.h"
@@ -61,9 +60,12 @@
 #include "iblock.h"
 #include "istmt.h"
 #include "iinline.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "inline.h"
+#include "overload.h"
+#include "class.h"
 
 namespace CompletionCompiler
 {
@@ -2929,195 +2931,6 @@ LexList* handleStaticAssert(LexList* lex)
         }
     }
     return lex;
-}
-LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked)
-{
-    bool anon = false;
-    char buf[256], *p;
-    SYMBOL* sym;
-    Optimizer::LIST* list;
-    *linked = false;
-    if (ISID(lex))
-    {
-        strcpy(buf, lex->data->value.s.a);
-        lex = getsym();
-        if (MATCHKW(lex, Keyword::assign_))
-        {
-            lex = getsym();
-            if (ISID(lex))
-            {
-                char buf1[512];
-                strcpy(buf1, lex->data->value.s.a);
-                lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
-                if (sym)
-                {
-                    if (sym->sb->storage_class != StorageClass::namespace_)
-                    {
-                        errorsym(ERR_NOT_A_NAMESPACE, sym);
-                    }
-                    else
-                    {
-                        SYMBOL* src = sym;
-                        SYMBOL* sym = nullptr;
-                        Type* tp;
-                        SYMLIST** p;
-                        if (storage_class == StorageClass::auto_)
-                            sym = localNameSpace->front()->syms->Lookup(buf);
-                        else
-                            sym = globalNameSpace->front()->syms->Lookup(buf);
-                        if (sym)
-                        {
-                            // already exists, bug check it
-                            if (sym->sb->storage_class == StorageClass::namespace_alias_ && sym->sb->nameSpaceValues->front()->origname == src)
-                            {
-                                if (linkage == Linkage::inline_)
-                                {
-                                    error(ERR_INLINE_NOT_ALLOWED);
-                                }
-                                lex = getsym();
-                                return lex;
-                            }
-                        }
-                        tp = Type::MakeType(BasicType::void_);
-                        sym = makeID(StorageClass::namespace_alias_, tp, nullptr, litlate(buf));
-                        if (nameSpaceList.size())
-                        {
-                            sym->sb->parentNameSpace = nameSpaceList.front();
-                        }
-                        SetLinkerNames(sym, Linkage::none_);
-                        if (storage_class == StorageClass::auto_)
-                        {
-                            localNameSpace->front()->syms->Add(sym);
-                            localNameSpace->front()->tags->Add(sym);
-                        }
-                        else
-                        {
-                            globalNameSpace->front()->syms->Add(sym);
-                            globalNameSpace->front()->tags->Add(sym);
-                        }
-                        sym->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
-                        *sym->sb->nameSpaceValues = *src->sb->nameSpaceValues;
-                        *sym->sb->nameSpaceValues->begin() = Allocate<NAMESPACEVALUEDATA>();
-                        **sym->sb->nameSpaceValues->begin() = **src->sb->nameSpaceValues->begin();
-                        sym->sb->nameSpaceValues->front()->name = sym;  // this is to rename it with the alias e.g. for errors
-                    }
-                }
-                if (linkage == Linkage::inline_)
-                {
-                    error(ERR_INLINE_NOT_ALLOWED);
-                }
-                lex = getsym();
-            }
-            else
-            {
-                error(ERR_EXPECTED_NAMESPACE_NAME);
-            }
-            return lex;
-        }
-    }
-    else
-    {
-        anon = true;
-        if (!anonymousNameSpaceName[0])
-        {
-            p = (char*)strrchr(infile, '\\');
-            if (!p)
-            {
-                p = (char*)strrchr(infile, '/');
-                if (!p)
-                    p = infile;
-                else
-                    p++;
-            }
-            else
-                p++;
-
-            sprintf(anonymousNameSpaceName, "__%s__%08x", p, Utils::CRC32((unsigned char*)infile, strlen(infile)));
-            while ((p = (char*)strchr(anonymousNameSpaceName, '.')) != 0)
-                *p = '_';
-        }
-        strcpy(buf, anonymousNameSpaceName);
-    }
-    if (storage_class != StorageClass::global_)
-    {
-        error(ERR_NO_NAMESPACE_IN_FUNCTION);
-    }
-    SYMBOL *sp = globalNameSpace->front()->syms->Lookup(buf);
-    if (!sp)
-    {
-        sym = makeID(StorageClass::namespace_, Type::MakeType(BasicType::void_), nullptr, litlate(buf));
-        sym->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
-        *sym->sb->nameSpaceValues = *globalNameSpace;
-        sym->sb->nameSpaceValues->push_front(Allocate<NAMESPACEVALUEDATA>());
-        sym->sb->nameSpaceValues->front()->syms = symbols.CreateSymbolTable();
-        sym->sb->nameSpaceValues->front()->tags = symbols.CreateSymbolTable();
-        sym->sb->nameSpaceValues->front()->origname = sym;
-        sym->sb->nameSpaceValues->front()->name = sym;
-        sym->sb->parentNameSpace = globalNameSpace->front()->name;
-        sym->sb->attribs.inheritable.linkage = linkage;
-        if (nameSpaceList.size())
-        {
-            sym->sb->parentNameSpace = nameSpaceList.front();
-        }
-        SetLinkerNames(sym, Linkage::none_);
-        globalNameSpace->front()->syms->Add(sym);
-        globalNameSpace->front()->tags->Add(sym);
-        if (anon || linkage == Linkage::inline_)
-        {
-            // plop in a using directive for the anonymous namespace we are declaring
-            if (linkage == Linkage::inline_)
-            {
-                if (!globalNameSpace->front()->inlineDirectives)
-                    globalNameSpace->front()->inlineDirectives = symListFactory.CreateList();
-                globalNameSpace->front()->inlineDirectives->push_front(sym);
-            }
-            else
-            {
-                if (!globalNameSpace->front()->usingDirectives)
-                    globalNameSpace->front()->usingDirectives = symListFactory.CreateList();
-                globalNameSpace->front()->usingDirectives->push_front(sym);
-            }
-        }
-    }
-    else
-    {
-        sym = sp;
-        if (sym->sb->storage_class != StorageClass::namespace_)
-        {
-            errorsym(ERR_NOT_A_NAMESPACE, sym);
-            return lex;
-        }
-        if (linkage == Linkage::inline_)
-            if (sym->sb->attribs.inheritable.linkage != Linkage::inline_)
-                errorsym(ERR_NAMESPACE_NOT_INLINE, sym);
-    }
-    sym->sb->value.i++;
-
-    nameSpaceList.push_front(sym);
-
-    globalNameSpace->push_front(sym->sb->nameSpaceValues->front());
-
-    *linked = true;
-    return lex;
-}
-void unvisitUsingDirectives(NAMESPACEVALUEDATA* v)
-{
-    if (v->usingDirectives)
-    {
-        for (auto sym : *v->usingDirectives)
-        {
-            sym->sb->visited = false;
-            unvisitUsingDirectives(sym->sb->nameSpaceValues->front());
-        }
-    }
-    if (v->inlineDirectives)
-    {
-        for (auto sym : *v->inlineDirectives)
-        {
-            sym->sb->visited = false;
-            unvisitUsingDirectives(sym->sb->nameSpaceValues->front());
-        }
-    }
 }
 static void InsertTag(SYMBOL* sym, StorageClass storage_class, bool allowDups)
 {

@@ -27,7 +27,6 @@
 #include <stack>
 #include "mangle.h"
 #include "initbackend.h"
-#include "cpplookup.h"
 #include "templatedecl.h"
 #include "templateutil.h"
 #include "templateinst.h"
@@ -43,9 +42,11 @@
 #include "types.h"
 #include "memory.h"
 #include "occparse.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "exprcpp.h"
+#include "overload.h"
 
 namespace Parser
 {
@@ -1976,7 +1977,7 @@ SYMBOL* TypePackElementCls(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
     SYMBOL* rv = CopySymbol(sym);
     rv->sb->mainsym = sym;
     rv->tp = sym->tp->CopyType();
-    rv->tp->syms = symbols.CreateSymbolTable();
+    rv->tp->syms = symbols->CreateSymbolTable();
     rv->tp->syms->Add(CopySymbol(rv));
     auto tp1 = Type::MakeType(BasicType::typedef_, TypePackElementType(sym, args));
     auto sym1 = makeID(StorageClass::typedef_, tp1, nullptr, "type");

@@ -37,7 +37,6 @@
 #include "templateutil.h"
 #include "templateinst.h"
 #include "templatededuce.h"
-#include "cpplookup.h"
 #include "constopt.h"
 #include "declare.h"
 #include "declcpp.h"
@@ -51,11 +50,13 @@
 #include "beinterf.h"
 #include "iexpr.h"
 #include "floatconv.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "inline.h"
 #include "mangle.h"
 #include "types.h"
+#include "overload.h"
 
 namespace Parser
 {

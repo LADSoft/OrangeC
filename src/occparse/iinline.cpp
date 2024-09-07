@@ -46,8 +46,8 @@
 #include "templateutil.h"
 #include "templateinst.h"
 #include "templatededuce.h"
+#include "namespace.h"
 #include "symtab.h"
-#include "cpplookup.h"
 #include "types.h"
 #include "constopt.h"
 #include <unordered_set>
@@ -628,7 +628,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     returnImode = nullptr;
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
-    AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
+    StatementGenerator::AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     bool found = false;
     if (f->sp->tp->BaseType()->btp->IsStructured())
     {
@@ -691,7 +691,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         inlineSymStructPtr.pop_back();
     }
-    FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
+    StatementGenerator::FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     returnImode = oldReturnImode;
     retlab = oldretlab;
     startlab = oldstartlab;

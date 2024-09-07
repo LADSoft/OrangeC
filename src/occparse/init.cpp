@@ -44,7 +44,6 @@
 #include "lex.h"
 #include "help.h"
 #include "OptUtils.h"
-#include "cpplookup.h"
 #include "exprcpp.h"
 #include "constopt.h"
 #include "declcons.h"
@@ -57,9 +56,12 @@
 #include "types.h"
 #include "browse.h"
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "inline.h"
 #include "ListFactory.h"
+#include "overload.h"
+#include "class.h"
 
  /* initializers, local... can do w/out c99 */
 #define CPP_BASE_PRIO 99 // this is low prio, high prio is 98 
@@ -413,7 +415,7 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
                 Utils::StrCpy(fullName, name);
             SYMBOL* funcsp;
             Type* tp = Type::MakeType(BasicType::ifunc_, Type::MakeType(BasicType::void_));
-            tp->syms = symbols.CreateSymbolTable();
+            tp->syms = symbols->CreateSymbolTable();
             if (index == -1)
                 funcsp =
                     makeID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp,
@@ -460,7 +462,7 @@ static void dumpDynamicInitializers(void)
 {
     if (IsCompiler() && dynamicInitializers.size())
     {
-        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         int index = 0;
         int counter = 0;
         std::list<Statement*> st;
@@ -514,7 +516,7 @@ static void dumpDynamicInitializers(void)
             }
         }
         callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, &st);
-        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
 }
 static void dumpTLSInitializers(void)
@@ -523,11 +525,11 @@ static void dumpTLSInitializers(void)
     {
         if (TLSInitializers.size())
         {
-            AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);            
+            StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
             std::list<Statement*> st;
             SYMBOL* funcsp;
             Type* tp = Type::MakeType(BasicType::ifunc_, Type::MakeType(BasicType::void_));
-            tp->syms = symbols.CreateSymbolTable();
+            tp->syms = symbols->CreateSymbolTable();
             funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp, nullptr,
                                   "__TLS_DYNAMIC_STARTUP__");
             tp->sp = funcsp;
@@ -552,7 +554,7 @@ static void dumpTLSInitializers(void)
             startlab = retlab = 0;
             Optimizer::tlsstartupseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
-            FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+            StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         }
     }
 }
@@ -560,7 +562,7 @@ static void dumpDynamicDestructors(void)
 {
     if (IsCompiler() && dynamicDestructors.size())
     {
-        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         int index = 0;
         int counter = 0;
         std::list<Statement*> st;
@@ -580,7 +582,7 @@ static void dumpDynamicDestructors(void)
             }
         }
         callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, &st);
-        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
 }
 static void dumpTLSDestructors(void)
@@ -589,11 +591,11 @@ static void dumpTLSDestructors(void)
     {
         if (TLSDestructors.size())
         {
-            AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+            StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
             std::list<Statement*> st;
             SYMBOL* funcsp;
             Type* tp = Type::MakeType(BasicType::ifunc_, Type::MakeType(BasicType::void_));
-            tp->syms = symbols.CreateSymbolTable();
+            tp->syms = symbols->CreateSymbolTable();
             funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp, nullptr,
                                   "__TLS_DYNAMIC_RUNDOWN__");
             tp->sp = funcsp;
@@ -618,7 +620,7 @@ static void dumpTLSDestructors(void)
             startlab = retlab = 0;
             Optimizer::tlsrundownseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
-            FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+            StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         }
     }
 }
@@ -758,7 +760,7 @@ void CreateInlineConstructor(SYMBOL* sym)
 {
     if (IsCompiler())
     {
-        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         EXPRESSION *exp = nullptr;
         std::list<Statement*> st;
         exp = ConverInitializersToExpression(sym->sb->init->front()->basetp,
@@ -771,14 +773,14 @@ void CreateInlineConstructor(SYMBOL* sym)
         while (isdigit(q[-1])) q--;
         sprintf(buf, "initializer@%s_%s", sym->name, q);
         callDynamic(buf, STARTUP_TYPE_STARTUP, -1, &st, true);
-        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
 }
 void CreateInlineDestructor(SYMBOL* sym)
 {
     if (IsCompiler())
     {
-        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
         std::list<Statement*> st;
         EXPRESSION* exp = ConverInitializersToExpression(sym->sb->dest->front()->basetp, sym, nullptr,
                                                     nullptr, sym->sb->dest, nullptr, true);
@@ -791,7 +793,7 @@ void CreateInlineDestructor(SYMBOL* sym)
         while (isdigit(q[-1])) q--;
         sprintf(buf, "destructor@%s_%s", sym->name, sym->sb->decoratedName);
         callDynamic(buf, STARTUP_TYPE_RUNDOWN, -1, &st, true);
-        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
 }
 int dumpInit(SYMBOL* sym, Initializer* init)

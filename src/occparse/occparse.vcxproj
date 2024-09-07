@@ -23,11 +23,11 @@
     <ClInclude Include="browse.h" />
     <ClInclude Include="c.h" />
     <ClInclude Include="ccerr.h" />
+    <ClInclude Include="class.h" />
     <ClInclude Include="compiler.h" />
     <ClInclude Include="constexpr.h" />
     <ClInclude Include="constopt.h" />
     <ClInclude Include="cppbltin.h" />
-    <ClInclude Include="cpplookup.h" />
     <ClInclude Include="crc32.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="declare.h" />
@@ -53,8 +53,10 @@
     <ClInclude Include="libcxx.h" />
     <ClInclude Include="ListFactory.h" />
     <ClInclude Include="mangle.h" />
+    <ClInclude Include="namespace.h" />
     <ClInclude Include="occparse.h" />
     <ClInclude Include="osutil.h" />
+    <ClInclude Include="overload.h" />
     <ClInclude Include="peheader.h" />
     <ClInclude Include="Property.h" />
     <ClInclude Include="rtti.h" />
@@ -117,10 +119,10 @@
     <ClCompile Include="beinterf.cpp" />
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
+    <ClCompile Include="class.cpp" />
     <ClCompile Include="constexpr.cpp" />
     <ClCompile Include="constopt.cpp" />
     <ClCompile Include="cppbltin.cpp" />
-    <ClCompile Include="cpplookup.cpp" />
     <ClCompile Include="crc32.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="declare.cpp" />
@@ -144,9 +146,11 @@
     <ClCompile Include="libcxx.cpp" />
     <ClCompile Include="ListFactory.cpp" />
     <ClCompile Include="mangle.cpp" />
+    <ClCompile Include="namespace.cpp" />
     <ClCompile Include="occparse.cpp" />
     <ClCompile Include="occprstub.cpp" />
     <ClCompile Include="osutil.cpp" />
+    <ClCompile Include="overload.cpp" />
     <ClCompile Include="property.cpp" />
     <ClCompile Include="rtti.cpp" />
     <ClCompile Include="stmt.cpp" />

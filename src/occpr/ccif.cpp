@@ -39,6 +39,7 @@
 #include "mangle.h"
 #include "lex.h"
 #include "help.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "types.h"
 

@@ -45,7 +45,6 @@
 #include "stmt.h"
 #include "help.h"
 #include "memory.h"
-#include "cpplookup.h"
 #include "OptUtils.h"
 #include "constopt.h"
 #include "declcons.h"
@@ -58,8 +57,11 @@
 #include "ildata.h"
 #include "libcxx.h"
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "class.h"
+#include "overload.h"
 
 namespace Parser
 {
@@ -246,7 +248,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
                 tp->sp = funcs;
                 SetLinkerNames(funcs, linkage);
                 table->Add(funcs);
-                table = funcs->tp->syms = symbols.CreateSymbolTable();
+                table = funcs->tp->syms = symbols->CreateSymbolTable();
                 table->Add(sp);
                 sp->sb->overloadName = funcs;
             }
@@ -1159,10 +1161,10 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
                 preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
            }
         }
-        sp->tp->syms = symbols.CreateSymbolTable();
+        sp->tp->syms = symbols->CreateSymbolTable();
         if (Optimizer::cparams.prm_cplusplus)
         {
-            sp->tp->tags = symbols.CreateSymbolTable();
+            sp->tp->tags = symbols->CreateSymbolTable();
             injected = CopySymbol(sp);
             injected->sb->mainsym = sp;      // for constructor/destructor matching
             sp->tp->tags->Add(injected);  // inject self
@@ -1589,7 +1591,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
     {
         preverrorsym(ERR_ENUM_CONSTANTS_DEFINED, spi, spi->sb->declfile, spi->sb->declline);
     }
-    spi->tp->syms = symbols.CreateSymbolTable(); /* holds a list of all the values, e.g. for debug info */
+    spi->tp->syms = symbols->CreateSymbolTable(); /* holds a list of all the values, e.g. for debug info */
     if (!MATCHKW(lex, Keyword::end_))
     {
         while (lex)

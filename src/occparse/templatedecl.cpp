@@ -38,7 +38,6 @@
 #include "occparse.h"
 #include "lex.h"
 #include "help.h"
-#include "cpplookup.h"
 #include "mangle.h"
 #include "constopt.h"
 #include "memory.h"
@@ -55,8 +54,12 @@
 #include "templatededuce.h"
 #include "libcxx.h"
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "class.h"
+#include "overload.h"
+
 namespace Parser
 {
 

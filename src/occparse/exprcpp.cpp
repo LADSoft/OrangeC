@@ -44,7 +44,6 @@
 #include "declcons.h"
 #include "declcpp.h"
 #include "constopt.h"
-#include "cpplookup.h"
 #include "init.h"
 #include "OptUtils.h"
 #include "beinterf.h"
@@ -52,8 +51,11 @@
 #include "memory.h"
 #include "exprcpp.h"
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "overload.h"
+#include "class.h"
 namespace Parser
 {
 
@@ -1440,7 +1442,7 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
     s3 = makeID(StorageClass::overloads_, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, Linkage::c_);
-    tpx->syms = symbols.CreateSymbolTable();
+    tpx->syms = symbols->CreateSymbolTable();
     auto itd = tpx->syms->begin();
     if (s2)
     {
@@ -1589,7 +1591,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
     s3 = makeID(StorageClass::overloads_, tpx, nullptr, name);
     tpx->sp = s3;
     SetLinkerNames(s3, Linkage::c_);
-    tpx->syms = symbols.CreateSymbolTable();
+    tpx->syms = symbols->CreateSymbolTable();
     auto itd = tpx->syms->begin();
     if (s1)
     {

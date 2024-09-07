@@ -42,7 +42,6 @@
 #include "lex.h"
 #include "help.h"
 #include "expr.h"
-#include "cpplookup.h"
 #include "occparse.h"
 #include "memory.h"
 #include "init.h"
@@ -62,10 +61,13 @@
 #ifndef ORANGE_NO_INASM
 #include "AsmLexer.h"
 #endif
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "inline.h"
 #include "expreval.h"
+#include "overload.h"
+#include "class.h"
 
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.

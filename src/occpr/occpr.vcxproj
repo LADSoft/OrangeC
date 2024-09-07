@@ -44,10 +44,10 @@
     <ClCompile Include="..\occparse\beinterf.cpp" />
     <ClCompile Include="..\occparse\browse.cpp" />
     <ClCompile Include="..\occparse\ccerr.cpp" />
+    <ClCompile Include="..\occparse\class.cpp" />
     <ClCompile Include="..\occparse\constexpr.cpp" />
     <ClCompile Include="..\occparse\constopt.cpp" />
     <ClCompile Include="..\occparse\cppbltin.cpp" />
-    <ClCompile Include="..\occparse\cpplookup.cpp" />
     <ClCompile Include="..\occparse\crc32.cpp" />
     <ClCompile Include="..\occparse\debug.cpp" />
     <ClCompile Include="..\occparse\declare.cpp" />
@@ -71,8 +71,10 @@
     <ClCompile Include="..\occparse\libcxx.cpp" />
     <ClCompile Include="..\occparse\ListFactory.cpp" />
     <ClCompile Include="..\occparse\mangle.cpp" />
+    <ClCompile Include="..\occparse\namespace.cpp" />
     <ClCompile Include="..\occparse\occparse.cpp" />
     <ClCompile Include="..\occparse\osutil.cpp" />
+    <ClCompile Include="..\occparse\overload.cpp" />
     <ClCompile Include="..\occparse\property.cpp" />
     <ClCompile Include="..\occparse\rtti.cpp" />
     <ClCompile Include="..\occparse\stmt.cpp" />
@@ -109,6 +111,9 @@
     <ClCompile Include="db.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\occparse\class.h" />
+    <ClInclude Include="..\occparse\namespace.h" />
+    <ClInclude Include="..\occparse\overload.h" />
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="symtypes.h" />

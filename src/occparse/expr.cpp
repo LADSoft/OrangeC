@@ -42,7 +42,6 @@
 #include "lex.h"
 #include "help.h"
 #include "expr.h"
-#include "cpplookup.h"
 #include "occparse.h"
 #include "memory.h"
 #include "init.h"
@@ -62,10 +61,13 @@
 #ifndef ORANGE_NO_INASM
 #include "AsmLexer.h"
 #endif
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "inline.h"
 #include "expreval.h"
+#include "class.h"
+#include "overload.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -1220,7 +1222,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 sym->sb->storage_class = StorageClass::external_;
                 sym->sb->attribs.inheritable.linkage = Linkage::c_;
                 sym->tp = Type::MakeType(BasicType::func_, stdint.CopyType());
-                sym->tp->syms = symbols.CreateSymbolTable();
+                sym->tp->syms = symbols->CreateSymbolTable();
                 sym->tp->sp = sym;
                 sym->sb->oldstyle = true;
                 SetLinkerNames(sym, Linkage::c_);
@@ -1235,7 +1237,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             else
             {
                 sym->tp = Type::MakeType(BasicType::func_, Type::MakeType(BasicType::int_));
-                sym->tp->syms = symbols.CreateSymbolTable();
+                sym->tp->syms = symbols->CreateSymbolTable();
                 sym->tp->sp = sym;
                 sym->sb->oldstyle = true;
                 sym->sb->externShim = !!(flags & _F_INDECLTYPE);

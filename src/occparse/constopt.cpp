@@ -51,18 +51,19 @@
 #include "constopt.h"
 #include "OptUtils.h"
 #include "declcpp.h"
-#include "cpplookup.h"
 #include "beinterf.h"
 #include "exprcpp.h"
 #include "dsw.h"
 #include "constexpr.h"
 #include "ccerr.h"
 #include "rtti.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "types.h"
 #include "stmt.h"
 #include "libcxx.h"
-
+#include "overload.h"
+#include "class.h"
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);

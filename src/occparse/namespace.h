@@ -20,46 +20,23 @@
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
- * 
  */
+#pragma once
 
-#include "compiler.h"
-#include "PreProcessor.h"
-#include "ccerr.h"
-#include "config.h"
-#include "declare.h"
-#include "templatedecl.h"
-#include "templateutil.h"
-#include "templateinst.h"
-#include "templatededuce.h"
-#include "initbackend.h"
-#include "occparse.h"
-#include "memory.h"
-#include "stmt.h"
-#include "mangle.h"
-#include "lex.h"
-#include "help.h"
-#include "declcons.h"
-#include "types.h"
-#include "namespace.h"
-#include "symtab.h"
-#include "ListFactory.h"
-namespace CompletionCompiler
-{
-extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;
-void ccSetSymbol(Parser::SYMBOL* s);
-}  // namespace CompletionCompiler
 namespace Parser
 {
+extern std::list<NAMESPACEVALUEDATA*>* globalNameSpace, * localNameSpace, * rootNameSpace;
+extern SymbolTable<SYMBOL>* labelSyms;
 
-SymbolTableFactory<SYMBOL>* symbols;
-
-
-void syminit(void)
-{
-    if (symbols)
-        symbols->Reset();
-    else
-        symbols = new SymbolTableFactory<SYMBOL>();
-}
+void namespaceinit();
+void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
+SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
+std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing = false);
+SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly);
+LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
+                    bool isType, int flags);
+void searchNS(SYMBOL* sym, SYMBOL* nssp, std::list<SYMBOL*>& gather);
+SYMBOL* gsearch(const char* name);
+SYMBOL* tsearch(const char* name);
+LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked);
 }  // namespace Parser

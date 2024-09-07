@@ -37,12 +37,12 @@
 #include "ccerr.h"
 #include "declare.h"
 #include "declcpp.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "stmt.h"
 #include "declare.h"
 #include "beinterf.h"
 #include "memory.h"
-#include "cpplookup.h"
 #include "mangle.h"
 #include "constopt.h"
 #include "expr.h"
@@ -52,7 +52,9 @@
 #include "Property.h"
 #include "lambda.h"
 #include "init.h"
-#include "cassert"
+#include "overload.h"
+#include "class.h"
+#include <cassert>
 namespace Parser
 {
 static Type* RootType(Type* tp)
@@ -3684,7 +3686,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
     bool hasellipse = false;
     LexList* placeholder = lex;
     NAMESPACEVALUEDATA internalNS = {};
-    SymbolTable<SYMBOL>* symbolTable = symbols.CreateSymbolTable();
+    SymbolTable<SYMBOL>* symbolTable = symbols->CreateSymbolTable();
     lex = getsym();
     if (tp == nullptr)
         tp = &stdint;

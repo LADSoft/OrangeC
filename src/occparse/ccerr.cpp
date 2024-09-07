@@ -47,14 +47,16 @@
 #include "types.h"
 #include "help.h"
 #include "libcxx.h"
-#include "cpplookup.h"
 #include "declcons.h"
 #include "FNV_hash.h"
 #include <cstdio>
+#include "namespace.h"
 #include "symtab.h"
 #include "osutil.h"
 #include "declcpp.h"
 #include "beinterf.h"
+#include "overload.h"
+
 namespace Parser
 {
 

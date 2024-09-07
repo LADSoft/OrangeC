@@ -49,6 +49,7 @@
 #include "inline.h"
 #include "ioptimizer.h"
 #include "libcxx.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "rtti.h"
@@ -57,7 +58,7 @@
 #include "iinline.h"
 #include "types.h"
 #include "mangle.h"
-#include "cpplookup.h"
+#include "overload.h"
 
 namespace Parser
 {
@@ -86,7 +87,7 @@ void inlineinit(void)
     inlineVTabs.clear();
     inlineData.clear();
     inlineRttis.clear();
-    vc1Thunks = symbols.CreateSymbolTable();
+    vc1Thunks = symbols->CreateSymbolTable();
     didInlines.clear();
     enteredInlines.clear();
     contextMap.clear();
@@ -1415,7 +1416,7 @@ EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
     if (!localNameSpace->front()->syms)
     {
         allocated = true;
-        AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::AllocateLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
     std::list<Statement*>* stmt = stmtListFactory.CreateList();
     auto stmt1 = SetupArguments1(params);
@@ -1450,7 +1451,7 @@ EXPRESSION* doinline(CallSite* params, SYMBOL* funcsp)
     optimize_for_constants(&newExpression->left);
     if (allocated)
     {
-        FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
+        StatementGenerator::FreeLocalContext(emptyBlockdata, nullptr, Optimizer::nextLabel++);
     }
     function_listcount--;
     if (newExpression->type == ExpressionNode::stmt_)

@@ -44,9 +44,11 @@
 #include "templateutil.h"
 #include "templateinst.h"
 #include "templatededuce.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
+
 namespace Parser
 {
 void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3)
@@ -68,7 +70,7 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     rv->sb->access = AccessLevel::public_;
     rv->tp = Type::MakeType(BasicType::func_, &stdvoid);
     rv->tp->sp = rv;
-    rv->tp->syms = symbols.CreateSymbolTable();
+    rv->tp->syms = symbols->CreateSymbolTable();
     SetLinkerNames(value, Linkage::cdecl_);
     rv->tp->syms->Add(value);
     SetLinkerNames(rv, Linkage::cdecl_);
@@ -84,7 +86,7 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     rv->sb->access = AccessLevel::public_;
     rv->tp = Type::MakeType(BasicType::func_, sym->tp);
     rv->tp->sp = rv;
-    rv->tp->syms = symbols.CreateSymbolTable();
+    rv->tp->syms = symbols->CreateSymbolTable();
     SetLinkerNames(nullparam, Linkage::cdecl_);
     rv->tp->syms->Add(nullparam);
     SetLinkerNames(rv, Linkage::cdecl_);
@@ -101,7 +103,7 @@ static void insertfunc(SYMBOL* in, SymbolTable<SYMBOL>* syms)
         tp->sp = funcs;
         SetLinkerNames(funcs, Linkage::cdecl_);
         syms->Add(funcs);
-        funcs->tp->syms = symbols.CreateSymbolTable();
+        funcs->tp->syms = symbols->CreateSymbolTable();
         funcs->tp->syms->Add(in);
         in->sb->overloadName = funcs;
     }

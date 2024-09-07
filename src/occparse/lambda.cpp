@@ -44,6 +44,7 @@
 #include "init.h"
 #include "declcons.h"
 #include "beinterf.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
@@ -325,7 +326,7 @@ static Type* cloneFuncType(SYMBOL* funcin)
         tp = &(*tp)->btp;
     }
     func->tp->UpdateRootTypes();
-    func->tp->BaseType()->syms = symbols.CreateSymbolTable();
+    func->tp->BaseType()->syms = symbols->CreateSymbolTable();
     auto dest = func->tp->BaseType()->syms;
     for (auto sym : *funcin->tp->BaseType()->syms)
     {
@@ -490,13 +491,13 @@ static void createConverter(SYMBOL* self)
     Statement* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(StorageClass::parameter_, &stdvoid, NULL, AnonymousName());
-    func->tp->syms = symbols.CreateSymbolTable();
+    func->tp->syms = symbols->CreateSymbolTable();
     func->sb->parentClass = lambdas.front()->cls;
     func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = StorageClass::member_;
     func->sb->castoperator = true;
-    func->tp->syms = symbols.CreateSymbolTable();
+    func->tp->syms = symbols->CreateSymbolTable();
     func->tp->syms->Add(sym);
     injectThisPtr(func, func->tp->syms);
     func->sb->parentClass = lambdas.front()->cls;
@@ -517,7 +518,7 @@ static void createConverter(SYMBOL* self)
     func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(NULL, emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
-    func->sb->inlineFunc.syms = symbols.CreateSymbolTable();
+    func->sb->inlineFunc.syms = symbols->CreateSymbolTable();
     if (lambdas.front()->templateFunctions)
     {
         LexList* lex1;
@@ -814,8 +815,8 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
         funcsp->sb->noinline = true;
     self = Allocate<LAMBDA>();
     ltp = Type::MakeType(BasicType::struct_);
-    ltp->syms = symbols.CreateSymbolTable();
-    ltp->tags = symbols.CreateSymbolTable();
+    ltp->syms = symbols->CreateSymbolTable();
+    ltp->tags = symbols->CreateSymbolTable();
     ltp->size = 0;
     self->captured = lambdaFactory.CreateSymbolTable();
     self->oldSyms = localNameSpace->front()->syms;
@@ -835,8 +836,8 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     self->enclosingFunc = theCurrentFunc;
     lambdas.push_front(self);
 
-    localNameSpace->front()->syms = symbols.CreateSymbolTable();
-    localNameSpace->front()->tags = symbols.CreateSymbolTable();
+    localNameSpace->front()->syms = symbols->CreateSymbolTable();
+    localNameSpace->front()->tags = symbols->CreateSymbolTable();
     if (lambdas.size() > 1)
     {
         auto itx = lambdas.begin();

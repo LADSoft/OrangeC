@@ -50,6 +50,7 @@
 #include "declare.h"
 #include "mangle.h"
 #include "beinterf.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
@@ -246,8 +247,8 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
         sp->sb->nameSpaceValues = namespaceValueDataListFactory.CreateList();
         auto nsv = Allocate<NAMESPACEVALUEDATA>();
         sp->sb->nameSpaceValues->push_front(nsv);
-        nsv->syms = symbols.CreateSymbolTable();
-        nsv->tags = symbols.CreateSymbolTable();
+        nsv->syms = symbols->CreateSymbolTable();
+        nsv->tags = symbols->CreateSymbolTable();
         nsv->origname = sp;
         nsv->name = sp;
         sp->sb->parentNameSpace = globalNameSpace->front()->name;
@@ -323,7 +324,7 @@ bool Importer::EnterClass(const Class* cls)
             }
             if (structures_.size())
                 sp->sb->parentClass = structures_.back();
-            sp->tp->syms = symbols.CreateSymbolTable();
+            sp->tp->syms = symbols->CreateSymbolTable();
             sp->tp->rootType = sp->tp;
             sp->tp->sp = sp;
             sp->sb->declfile = sp->sb->origdeclfile = "[import]";
@@ -512,7 +513,7 @@ bool Importer::EnterMethod(const Method* method)
             sp->sb->parentClass = structures_.back();
             sp->sb->declfile = sp->sb->origdeclfile = "[import]";
             sp->sb->access = AccessLevel::public_;
-            sp->tp->syms = symbols.CreateSymbolTable();
+            sp->tp->syms = symbols->CreateSymbolTable();
             sp->sb->isConstructor = ctor;
             if (!args.size())
             {
@@ -571,7 +572,7 @@ bool Importer::EnterMethod(const Method* method)
                 else
                     structures_.back()->tp->syms->Add(funcs);
                 funcs->sb->parent = sp;
-                funcs->tp->syms = symbols.CreateSymbolTable();
+                funcs->tp->syms = symbols->CreateSymbolTable();
                 funcs->tp->syms->Add(sp);
                 sp->sb->overloadName = funcs;
             }

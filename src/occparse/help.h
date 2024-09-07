@@ -74,6 +74,8 @@ class NestedStack
 };
 
 extern int anonymousNotAlloc;
+extern SYMBOL* argFriend;
+
 bool ismemberdata(SYMBOL* sym);
 bool ismember(SYMBOL* sym);
 void helpinit(void);

@@ -39,7 +39,6 @@
 #include "expr.h"
 #include "lex.h"
 #include "help.h"
-#include "cpplookup.h"
 #include "declcpp.h"
 #include "declare.h"
 #include "constopt.h"
@@ -51,10 +50,13 @@
 #include "lex.h"
 #include "declcons.h"
 #include "libcxx.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "constexpr.h"
-
+#include "overload.h"
+#include "class.h"
+#include "stmt.h"
 namespace Parser
 {
 std::set<SYMBOL*> defaultRecursionMap;
@@ -259,7 +261,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         SetLinkerNames(funcs, Linkage::cdecl_);
         sp->tp->BaseType()->syms->Add(funcs);
         funcs->sb->parent = sp;
-        funcs->tp->syms = symbols.CreateSymbolTable();
+        funcs->tp->syms = symbols->CreateSymbolTable();
         funcs->tp->syms->Add(ovl);
         ovl->sb->overloadName = funcs;
     }
@@ -300,7 +302,7 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
     func->sb->xcMode = xc_none;
     func->sb->noExcept = true;
     //    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
-    tp->syms = symbols.CreateSymbolTable();
+    tp->syms = symbols->CreateSymbolTable();
     sp1 = makeID(StorageClass::parameter_, tp->btp, nullptr, AnonymousName());
     tp->syms->Add(sp1);
     if (sp->sb->vbaseEntries)
@@ -408,7 +410,7 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     func->sb->isConstructor = true;
     //    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(StorageClass::parameter_, nullptr, nullptr, AnonymousName());
-    tp->syms = symbols.CreateSymbolTable();
+    tp->syms = symbols->CreateSymbolTable();
     tp->syms->Add(sp1);
     if (deflt)
     {
@@ -453,7 +455,7 @@ static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
     tp->UpdateRootTypes();
     func = makeID(StorageClass::member_, tp, nullptr, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
     sp1 = makeID(StorageClass::parameter_, nullptr, nullptr, AnonymousName());
-    tp->syms = symbols.CreateSymbolTable();
+    tp->syms = symbols->CreateSymbolTable();
     tp->syms->Add(sp1);
     sp1->tp = Type::MakeType(move ? BasicType::rref_ : BasicType::lref_, sp->tp->BaseType());
     if (constAssignmentOp(sp, move))
@@ -2344,7 +2346,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
     {
         if (sym->tp->type == BasicType::union_)
         {
-            AllocateLocalContext(emptyBlockdata, cons, codeLabel++);
+            StatementGenerator::AllocateLocalContext(emptyBlockdata, cons, codeLabel++);
             for (auto sp : *sym->tp->BaseType()->syms)
             {
                 if ((sp->sb->storage_class == StorageClass::member_ || sp->sb->storage_class == StorageClass::mutable_) && sp->tp->type != BasicType::aggregate_)
@@ -2363,7 +2365,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     }
                 }
             }
-            FreeLocalContext(emptyBlockdata, cons, codeLabel++);
+            StatementGenerator::FreeLocalContext(emptyBlockdata, cons, codeLabel++);
         }
         else
         {
@@ -2390,7 +2392,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                 st = Statement::MakeStatement(nullptr, b, StatementNode::label_);
                 st->label = lbl;
             }
-            AllocateLocalContext(emptyBlockdata, cons, codeLabel++);
+            StatementGenerator::AllocateLocalContext(emptyBlockdata, cons, codeLabel++);
             if (sym->sb->baseClasses)
                 for (auto bc : *sym->sb->baseClasses)
                     if (!bc->isvirtual)
@@ -2414,7 +2416,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     }
                 }
             }
-            FreeLocalContext(emptyBlockdata, cons, codeLabel++);
+            StatementGenerator::FreeLocalContext(emptyBlockdata, cons, codeLabel++);
         }
     }
     if (parseInitializers)

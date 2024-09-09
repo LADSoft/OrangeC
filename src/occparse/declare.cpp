@@ -3063,6 +3063,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                 bindingcandidate = ISID(lex);
                 lex = backupsym();
             }
+            auto ssp = enclosingDeclarations.GetFirst();
             if (blocked)
             {
                 if (tp != nullptr)
@@ -3075,6 +3076,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             {
                 RequiresDialect::Feature(Dialect::cpp17, "Structured binding declarations");
                 lex = GetStructuredBinding(lex, funcsp, storage_class, linkage, block);
+            }
+            else if (Optimizer::cparams.cpp_dialect >= Dialect::cpp17 && !strSym && inTemplate && tp && (!ssp || (ssp->tp != tp  && !SameTemplate(ssp->tp, tp))) && tp->IsStructured() && tp == tp->BaseType() && tp->sp->sb->templateLevel && MATCHKW(lex, Keyword::openpa_))
+            {
+                *tprv = tp;
+                lex = GetDeductionGuide(lex, funcsp, storage_class, linkage, tprv);
             }
             else
             {

@@ -4145,10 +4145,11 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
     std::vector<SYMBOL*> spList;
     SYMBOL* deduced = nullptr;
     SYMBOL* cons = search(sp->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
+    SYMBOL* deduce = search(sp->tp->BaseType()->syms, DG_NAME);
+    int i = 0, firstDeduce= 0;
+    sp->utilityIndex = 0;
     if (cons)
     {
-        int i = 0;
-        sp->utilityIndex = 0;
         for (auto c : *cons->tp->syms)
         {
             c->utilityIndex = i++;
@@ -4158,144 +4159,196 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                     spList.push_back(c);
             }
         }
-        if (sp->sb->specializations)
+    }
+    if (sp->sb->specializations)
+    {
+        int j = 1;
+        for (auto s : *sp->sb->specializations)
         {
-            int j = 1;
-            for (auto s : *sp->sb->specializations)
+            s->utilityIndex = j++;
+            cons = search(s->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
+            i = 0;
+            for (auto c : *cons->tp->syms)
             {
-                s->utilityIndex = j++;
-                cons = search(s->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
-                i = 0;
-                for (auto c : *cons->tp->syms)
+                c->utilityIndex = i++;
+                if (c->tp->syms->size() == args->arguments->size() + 1)
                 {
-                    c->utilityIndex = i++;
-                    if (c->tp->syms->size() == args->arguments->size() + 1)
-                    {
-                        if (ValidForDeduction(c))
-                            spList.push_back(c);
-                    }
+                    if (ValidForDeduction(c))
+                        spList.push_back(c);
                 }
             }
         }
-        if (spList.size())
+    }
+    firstDeduce = i;
+    if (deduce)
+    {
+        for (auto c : *deduce->tp->syms)
         {
-            std::list<std::list<TEMPLATEPARAMPAIR>*> toFree;
-            std::vector<std::list<TEMPLATEPARAMPAIR>*> hold;
-            for (auto c : spList)
+            c->utilityIndex = i++;
+            if (c->tp->syms->size() == args->arguments->size() + 1)
+            {
+                 spList.push_back(c);
+            }
+        }
+
+    }
+    if (spList.size())
+    {
+        std::list<std::list<TEMPLATEPARAMPAIR>*> toFree;
+        std::list<std::pair<SYMBOL*, std::list<TEMPLATEPARAMPAIR>*>> hold;
+        std::stack<std::list<TEMPLATEPARAMPAIR>*> stk;
+        for (auto c : spList)
+        {
+            auto sp1 = c->sb->parentClass;
+            hold.push_back(std::pair<SYMBOL*, std::list<TEMPLATEPARAMPAIR>*>(c, c->templateParams));
+            std::list<TEMPLATEPARAMPAIR>* tpl = new std::list<TEMPLATEPARAMPAIR>();
+            bool special_s =sp1->templateParams && sp1->templateParams->front().second->bySpecialization.types;
+            bool special_c = c->templateParams && c->templateParams->front().second->bySpecialization.types;
+            tpl->push_back(TEMPLATEPARAMPAIR(nullptr, Allocate<TEMPLATEPARAM>()));
+            tpl->back().second->type = TplType::new_;
+            toFree.push_back(tpl);
+            if (c->templateParams)
+                stk.push(c->templateParams);
+            if (!c->sb->deductionGuide)
             {
                 auto sp1 = c->sb->parentClass;
-                hold.push_back(c->templateParams);
-                std::list<TEMPLATEPARAMPAIR>* tpl = new std::list<TEMPLATEPARAMPAIR>();
-                bool special_s =sp1->templateParams && sp1->templateParams->front().second->bySpecialization.types;
-                bool special_c = c->templateParams && c->templateParams->front().second->bySpecialization.types;
-                tpl->push_back(TEMPLATEPARAMPAIR(nullptr, Allocate<TEMPLATEPARAM>()));
-                tpl->back().second->type = TplType::new_;
-                toFree.push_back(tpl);
-                if (sp1->templateParams)
+                while (sp1)
                 {
-                    for (auto t : *sp1->templateParams)
+                    if (sp1->templateParams)
                     {
-                        if (t.second->type == TplType::new_)
+                        stk.push(sp1->templateParams);
+                        hold.push_back(std::pair<SYMBOL*, std::list<TEMPLATEPARAMPAIR>*>(sp1, sp1->templateParams));
+                    }
+                    sp1 = sp1->sb->parentClass;
+                }
+            }
+            while (!stk.empty())
+            {
+                auto top = stk.top();
+                stk.pop();
+                for (auto t : *top)
+                {
+                    if (t.second->type == TplType::new_)
+                    {
+                        if (top == c->templateParams && t.second->bySpecialization.types)
                         {
-                            std::list<TEMPLATEPARAMPAIR>* x = nullptr;
-                            if (special_c || special_s)
+                            auto x = tpl->front().second->bySpecialization.types;
+                            if (!x)
+                                x = tpl->front().second->bySpecialization.types = templateParamPairListFactory.CreateList();
+                            for (auto s : *t.second->bySpecialization.types)
                             {
-                                x = tpl->front().second->bySpecialization.types = new std::list<TEMPLATEPARAMPAIR>();
-                                toFree.push_back(x);
+                                x->push_back(TEMPLATEPARAMPAIR{s.first, Allocate<TEMPLATEPARAM>()});
+                                *x->back().second = *s.second;
+                                x->back().second->flag = 0;
                             }
-                            if (special_s)
-                            {
-                                for (auto s : *sp1->templateParams->front().second->bySpecialization.types)
-                                {
-                                    x->push_back(TEMPLATEPARAMPAIR{s.first, Allocate<TEMPLATEPARAM>()});
-                                    *x->back().second = *s.second;
-                                    x->back().second->flag = 0;
-                                }
-                            }
+
+                        }
+                    }
+                    else
+                    {
+                        if (top == c->templateParams)
+                        {
+                            tpl->push_back(TEMPLATEPARAMPAIR{ t.first, t.second });
+                            tpl->back().second->flag = 1;
+
                         }
                         else
                         {
-                            tpl->push_back(TEMPLATEPARAMPAIR{t.first,Allocate<TEMPLATEPARAM>()});
+                            tpl->push_back(TEMPLATEPARAMPAIR{ t.first,Allocate<TEMPLATEPARAM>() });
                             *tpl->back().second = *t.second;
                             tpl->back().second->flag = 0;
-                            if (special_c && !special_s && t.second->type != TplType::new_)
-                            {
-                                auto x = tpl->front().second->bySpecialization.types;
-                                x->push_back(TEMPLATEPARAMPAIR{t.first, t.second});
-                                t.second->flag = 1;
-                            }
                         }
                     }
                 }
-                if (c->templateParams)
-                {
-                    for (auto t : *c->templateParams)
-                    {
-                        if (t.second->type == TplType::new_)
-                        {
-                            std::list<TEMPLATEPARAMPAIR>* x = tpl->front().second->bySpecialization.types;
-                            if ((special_c || special_s) && !x)
-                            {
-                                x = tpl->front().second->bySpecialization.types = new std::list<TEMPLATEPARAMPAIR>();
-                                toFree.push_back(x);
-                            }
-                            if (special_c)
-                            {
-                                for (auto s : *c->templateParams->front().second->bySpecialization.types)
-                                {
-                                    x->push_back(TEMPLATEPARAMPAIR{s.first, s.second});
-                                    s.second->flag = 1;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            tpl->push_back(TEMPLATEPARAMPAIR{t.first, t.second});
-                            t.second->flag = 1;
-                            if (special_s && !special_c && t.second->type != TplType::new_)
-                            {
-                                auto x = tpl->front().second->bySpecialization.types;
-                                x->push_back(TEMPLATEPARAMPAIR{t.first, t.second});
-                                t.second->flag = 1;
-                            }
-                        }
-                    }
-                }
-                if (tpl->front().second->bySpecialization.types)
-                    ClearArgValues(tpl->front().second->bySpecialization.types, false);
-                c->templateParams = tpl;
             }
-            std::vector<SYMBOL*> spList2 = spList;
-            std::vector<e_cvsrn*> icsList;
-            std::vector<int*> lenList;
-            std::vector<SYMBOL**> funcList;
-            int n = spList.size();
-            icsList.resize(n);
-            lenList.resize(n);
-            funcList.resize(n);
+            if (tpl->front().second->bySpecialization.types)
+                ClearArgValues(tpl->front().second->bySpecialization.types, false);
+            c->templateParams = tpl;
+        }
+        std::vector<e_cvsrn*> icsList;
+        std::vector<int*> lenList;
+        std::vector<SYMBOL**> funcList;
+        int n = spList.size();
+        icsList.resize(n);
+        lenList.resize(n);
+        funcList.resize(n);
 
-            for (auto&& s : spList)
+        std::list<std::list<TEMPLATEPARAMPAIR>*> stk2;
+        for (auto&& s : spList)
+        {
+            auto sp1 = s->sb->parentClass;
+            while (sp1)
             {
-                s = detemplate(s, args, nullptr);
+                stk2.push_back(sp1->templateParams ? sp1->templateParams->front().second->bySpecialization.types : nullptr);
+                sp1 = sp1->sb->parentClass;
             }
-            SYMBOL* found1 = nullptr, *found2 = nullptr;
-            if (n != 1)
+            auto s1 = detemplate(s, args, nullptr);
+            sp1 = s->sb->parentClass;
+            for (auto tpl : stk2)
             {
-                bool hasDest = false;
+                if (tpl)
+                    sp1->templateParams->front().second->bySpecialization.types = tpl;
+                sp1 = sp1->sb->parentClass;
+            }
+            stk2.clear();
+            s = s1;
+        }
+        SYMBOL* found1 = nullptr, *found2 = nullptr;
+        if (n != 1)
+        {
+            bool hasDest = false;
 
-                std::unordered_map<int, SYMBOL*> storage;
-                GatherConversions(sp, &spList[0], n, args, nullptr, &icsList[0], &lenList[0], args->arguments->size(), &funcList[0],
-                                  0, true);
-                for (int i = 0; i < n; i++)
+            std::unordered_map<int, SYMBOL*> storage;
+            GatherConversions(sp, &spList[0], n, args, nullptr, &icsList[0], &lenList[0], args->arguments->size(), &funcList[0],
+                                0, true);
+            for (int i = 0; i < n; i++)
+            {
+                if (spList[i])
                 {
-                    if (spList[i])
+                    if (!allTemplateArgsSpecified(spList[i], spList[i]->templateParams, false))
+                        spList[i] = nullptr;
+                    else
+                        hasDest |= spList[i]->sb->deleted;
+                }
+            }
+            SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, args->arguments->size(), n, &funcList[0]);
+            WeedTemplates(&spList[0], n, args, nullptr);
+            for (int i = 0; i < n && !found1; i++)
+            {
+                if (spList[i] && !spList[i]->sb->deleted)
+                    found1 = spList[i];
+            }
+            for (int i = 0; i < n; i++)
+            {
+                int j;
+                if (!found1)
+                    found1 = spList[i];
+                for (j = i; j < n && found1; j++)
+                {
+                    if (spList[j] && found1 != spList[j] && !SameTemplate(found1->tp, spList[j]->tp))
                     {
-                        if (!allTemplateArgsSpecified(spList[i], spList[i]->templateParams, false))
-                            spList[i] = nullptr;
+                        // prefer an explicit guide...
+                        if (spList[j]->utilityIndex >= firstDeduce && found1->utilityIndex < firstDeduce)
+                            found1 = spList[j];
                         else
-                            hasDest |= spList[i]->sb->deleted;
+                            found2 = spList[j];
                     }
                 }
+                if (found1)
+                    break;
+            }
+            if ((!found1 || (!IsMove(found1) && found1->sb->deleted)) && hasDest)
+            {
+                auto found3 = found1;
+                auto found4 = found2;
+                // there were no matches.   But there are deleted functions
+                // see if we can find a match among them...
+                found1 = found2 = 0;
+                for (auto v : storage)
+                    if (!v.second || !v.second->sb->deleted)
+                        spList[v.first] = v.second;
+                    else
+                        spList[v.first] = nullptr;
                 SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, args->arguments->size(), n, &funcList[0]);
                 WeedTemplates(&spList[0], n, args, nullptr);
                 for (int i = 0; i < n && !found1; i++)
@@ -4308,7 +4361,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                     int j;
                     if (!found1)
                         found1 = spList[i];
-                    for (j = i; j < n && found1; j++)
+                    for (j = i; j < n && found1 && !found2; j++)
                     {
                         if (spList[j] && found1 != spList[j] && !SameTemplate(found1->tp, spList[j]->tp))
                         {
@@ -4318,161 +4371,83 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                     if (found1)
                         break;
                 }
-                if ((!found1 || (!IsMove(found1) && found1->sb->deleted)) && hasDest)
+                if (!found1)
                 {
-                    auto found3 = found1;
-                    auto found4 = found2;
-                    // there were no matches.   But there are deleted functions
-                    // see if we can find a match among them...
-                    found1 = found2 = 0;
-                    for (auto v : storage)
-                        if (!v.second || !v.second->sb->deleted)
-                            spList[v.first] = v.second;
-                        else
-                            spList[v.first] = nullptr;
-                    SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, args->arguments->size(), n, &funcList[0]);
-                    WeedTemplates(&spList[0], n, args, nullptr);
-                    for (int i = 0; i < n && !found1; i++)
-                    {
-                        if (spList[i] && !spList[i]->sb->deleted)
-                            found1 = spList[i];
-                    }
-                    for (int i = 0; i < n; i++)
-                    {
-                        int j;
-                        if (!found1)
-                            found1 = spList[i];
-                        for (j = i; j < n && found1 && !found2; j++)
-                        {
-                            if (spList[j] && found1 != spList[j] && !SameTemplate(found1->tp, spList[j]->tp))
-                            {
-                                found2 = spList[j];
-                            }
-                        }
-                        if (found1)
-                            break;
-                    }
-                    if (!found1)
-                    {
-                        found1 = found3;
-                        found2 = found4;
-                    }
+                    found1 = found3;
+                    found2 = found4;
                 }
-                if (found1 && found2 && !found1->sb->deleted && found2->sb->deleted)
-                    found2 = nullptr;
+            }
+            if (found1 && found2 && !found1->sb->deleted && found2->sb->deleted)
+                found2 = nullptr;
+        }
+        else
+        {
+            found1 = spList[0];
+        }
+        if (found1)
+        {
+            if (found1->sb->deleted)
+            {
+                errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
             }
             else
             {
-                found1 = spList[0];
-            }
-            if (found1)
-            {
-                if (found1->sb->deleted)
+                if (found1->sb->deductionGuide)
                 {
-                    errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
+                    deduced = found1->sb->deductionGuide->sp;
                 }
                 else
                 {
-                    std::list<TEMPLATEPARAMPAIR> spair, cpair;
-                    decltype(spair)::iterator it, ite;
-                    if (found1->templateParams->front().second->bySpecialization.types)
+                    deduced = found1->sb->parentClass;
+                }
+                auto itparams = found1->templateParams->begin();
+                auto iteparams = found1->templateParams->end();
+                auto itspecial =
+                    itparams->second->bySpecialization.types ? itparams->second->bySpecialization.types->begin() : itparams;
+                auto itespecial =
+                    itparams->second->bySpecialization.types ? itparams->second->bySpecialization.types->end() : iteparams;
+                for (; itspecial != itespecial; ++itspecial)
+                {
+                    if (itspecial->second->type != TplType::new_)
                     {
-                        it = found1->templateParams->front().second->bySpecialization.types->begin();
-                        ite = found1->templateParams->front().second->bySpecialization.types->end();
+                        std::list<TEMPLATEPARAMPAIR> a(itspecial, itespecial);
+                        TransferClassTemplates(deduced->templateParams, deduced->templateParams, &a);
+                    }
+                }
+                deduced = GetClassTemplate(deduced, deduced->templateParams, true);
+                if (deduced)
+                {
+                    deduced->tp->InitializeDeferred();
+                    auto ctype = deduced->tp;
+                    auto overloads = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
+                    auto thstp = Type::MakeType(BasicType::pointer_, deduced->tp);
+                    if (args->thistp->IsConst())
+                        thstp = Type::MakeType(BasicType::const_, thstp);
+                    if (args->thistp->IsVolatile())
+                        thstp = Type::MakeType(BasicType::volatile_, thstp);
+                    args->thistp = thstp;
+                    if (overloads)
+                    {
+                        *exp = nullptr;
+                        SYMBOL* s = GetOverloadedFunction(&ctype, exp, overloads, args, nullptr, false, false, 0);
+                        if (!*exp)
+                            deduced = nullptr;
                     }
                     else
                     {
-                        it = found1->templateParams->begin();
-                        ite = found1->templateParams->end();
-                        ++it;
-                    }
-                    for ( ; it != ite; ++it)
-                    {
-                        if (it->second->flag)
-                        {
-                            cpair.push_back(*it);
-                        }
-                        else
-                        {
-                            spair.push_back(*it);
-                        }
-                    }
-                    deduced = GetClassTemplate(sp, &spair, true);
-                    if (deduced && deduced->utilityIndex != found1->sb->parentClass->utilityIndex)
-                    {
                         deduced = nullptr;
-                    }
-                    if (deduced)
-                    {
-                        deduced = TemplateClassInstantiate(deduced, &spair, false, StorageClass::global_);
-                        if (deduced)
-                        {
-                            deduced->tp->InitializeDeferred();
-                            cons = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
-                            auto it1 = cons->tp->syms->begin();
-                            for (int i = 0; i < found1->utilityIndex; i++, ++it1)
-                                ;
-                            found1 = *it1;
-                            *tp = deduced->tp;
-                            std::list<SYMBOL*> temp;
-                            if (!(flags & _F_SIZEOF))
-                            {
-                                if (theCurrentFunc && !found1->sb->constexpression)
-                                {
-                                    theCurrentFunc->sb->nonConstVariableUsed = true;
-                                }
-                                if (found1->sb->templateLevel && found1->templateParams)
-                                {
-                                    if (found1->sb->mainsym)
-                                        found1 = found1->sb->mainsym;
-                                    inSearchingFunctions++;
-                                    args->thistp->BaseType()->btp = found1->sb->parentClass->tp;
-                                    found1 = detemplate(found1, args, nullptr);
-                                    inSearchingFunctions--;
-                                    found1->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                }
-                                else if (!found1->sb->templateLevel && found1->sb->parentClass &&
-                                         found1->sb->parentClass->templateParams &&
-                                         (!definingTemplate || instantiatingTemplate) && !found1->sb->isDestructor)
-                                {
-                                    auto old = found1;
-                                    if (found1->sb->mainsym)
-                                        found1 = found1->sb->mainsym;
-                                    found1 = CopySymbol(found1);
-                                    found1->sb->mainsym = old;
-                                    found1->sb->parentClass = CopySymbol(found1->sb->parentClass);
-                                    found1->sb->parentClass->sb->mainsym = old->sb->parentClass;
-                                    found1->sb->parentClass->templateParams =
-                                        copyParams(found1->sb->parentClass->templateParams, true);
-                                }
-                                for (auto sym : *found1->tp->BaseType()->syms)
-                                {
-                                    CollapseReferences(sym->tp);
-                                }
-                                if (found1->sb->templateLevel && (!definingTemplate || instantiatingTemplate) &&
-                                    found1->templateParams)
-                                {
-                                    if (!inSearchingFunctions || inTemplateArgs)
-                                    {
-                                        found1 = TemplateFunctionInstantiate(found1, false);
-                                    }
-                                }
-                            }
-                            *exp = MakeExpression(ExpressionNode::pc_, found1);
-                        }
                     }
                 }
             }
+        }
 
-            i = 0;
-            for (auto x : toFree)
-            {
-                delete x;
-            }
-            for (auto s : spList2)
-            {
-                s->templateParams = hold[i++];
-            }
+        for (auto x : toFree)
+        {
+            delete x;
+        }
+        for (auto&& t : hold)
+        {
+            t.first->templateParams = t.second;
         }
     }
     return deduced;

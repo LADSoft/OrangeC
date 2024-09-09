@@ -3723,7 +3723,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
                    StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                 MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::constexpr_) || MATCHKW(lex, Keyword::decltype_) ||
-                MATCHKW(lex, Keyword::static_assert_))
+                MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::template_))
             {
                 RequiresDialect::Feature(Dialect::c99, "Intermingled declarations");
                 if (viacontrol)
@@ -3734,7 +3734,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
                           StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                        MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::decltype_) ||
-                       MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_))
+                       MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_) || MATCHKW(lex, Keyword::template_))
                 {
                     std::list<Statement*>* prev = before->statements;
                     before->statements = nullptr;

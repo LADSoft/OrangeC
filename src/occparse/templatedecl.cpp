@@ -2417,6 +2417,56 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
         }
     }
 }
+LexList* GetDeductionGuide(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, Type** tp)
+{
+    if (funcsp || storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || (*tp)->sp->sb->parentClass)
+    {
+        errorsym(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, (*tp)->sp);
+    }
+    SYMBOL* sp = makeID(StorageClass::member_, &stdint, nullptr, DG_NAME);
+    sp->sb->templateLevel = 1;
+    Type* functp = TypeGenerator::FunctionParams(lex, funcsp, &sp, &stdint, true, storage_class, false);
+    if (needkw(&lex, Keyword::pointsto_))
+    {
+        sp->templateParams = TemplateGetParams(sp);
+        Linkage linkage2, linkage3;
+        bool notype, defd;
+        int consdest;
+        Type* deductionGuide = TypeGenerator::UnadornedType(lex, funcsp, nullptr, nullptr, true, storage_class, &linkage, &linkage2, &linkage3, (*tp)->sp->sb->access, &notype, &defd, &consdest, nullptr, nullptr, false, false, false, nullptr, false);
+        auto sp1 = (*tp)->sp, sp2 = deductionGuide && deductionGuide->IsStructured() && deductionGuide == deductionGuide->BaseType() ? deductionGuide->sp : nullptr;
+        if (sp2)
+        {
+            if (sp1->sb->maintemplate)
+                sp1 = sp1->sb->maintemplate;
+            if (sp2->sb->maintemplate)
+                sp2 = sp2->sb->maintemplate;
+            if (sp1->sb->parentTemplate)
+                sp1 = sp1->sb->parentTemplate;
+            if (sp2->sb->parentTemplate)
+                sp2 = sp2->sb->parentTemplate;
+        }
+        if (!deductionGuide || !sp2 || sp1 != sp2)
+        {
+            errorsym(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, (*tp)->sp);
+        }
+        if (sp2)
+        {
+            auto enclosing = search(sp1->tp->syms, DG_NAME);
+            SYMBOL* deductionSym = nullptr;
+            if (enclosing)
+                deductionSym = searchOverloads(sp, sp1->tp->syms);
+            if (!deductionSym)
+                deductionSym = insertFunc(sp1, sp);
+            deductionSym->sb->deductionGuide = deductionGuide;
+        }
+        *tp = sp->tp;
+    }
+    else
+    {
+        errskim(&lex, skim_semi, true);
+    }
+    return lex;
+}
 static bool ValidSpecialization(std::list<TEMPLATEPARAMPAIR>* special, std::list<TEMPLATEPARAMPAIR>* args, bool templateMatch)
 {
     if (special && args)

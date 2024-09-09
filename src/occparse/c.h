@@ -42,6 +42,8 @@ namespace Parser
 #define CI_DELETEA ((int)Keyword::complx_ + 2 + 3)
 #define CI_LIT ((int)Keyword::complx_ + 3 + 3)
 
+#define DG_NAME ".deduct"
+
 #ifndef imax
 #    define imax(x, y) ((x) > (y) ? (x) : (y))
 #    define imin(x, y) ((x) < (y) ? (x) : (y))
@@ -777,6 +779,7 @@ typedef struct sym
         std::list<TEMPLATEPARAMPAIR>* typeAlias;
         std::list<struct sym*>* specializations;
         std::list<struct sym*>* instantiations;
+        struct Type* deductionGuide;
         const char* msil;                            // MSIL path
         std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
                                                      // parameter sym following elements are the list of pointers to names

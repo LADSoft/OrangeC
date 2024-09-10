@@ -40,11 +40,11 @@
 /*
 ** DEFINES
 */
-#define u8f unsigned char
-#define u16f unsigned short
-#define u32f unsigned long
-#define uchar unsigned char
-#define ulong unsigned long
+typedef unsigned char u8f;
+typedef unsigned short u16f;
+typedef unsigned long u32f;
+typedef unsigned char uchar;
+typedef unsigned long ulong;
 
 #define MAX_EXP SHRT_MAX
 #define MIN_EXP SHRT_MIN

@@ -222,7 +222,7 @@ int ppMain::Run(int argc, char* argv[])
 
         if (cplusplus)
         {
-            pp.Define("__cplusplus", "201402");
+            pp.Define("__cplusplus", "201703");
         }
 
         int n = defines.GetCount();

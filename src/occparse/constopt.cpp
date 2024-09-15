@@ -3282,9 +3282,12 @@ int typedconsts(EXPRESSION* node1)
             rv = true;
             break;
         case ExpressionNode::const_:
-            optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
-            *node1 = *node1->v.sp->sb->init->front()->exp;
-            rv = true;
+            if (!node1->v.sp->templateParams || allTemplateArgsSpecified(node1->v.sp, node1->v.sp->templateParams))
+            {
+                optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
+                *node1 = *node1->v.sp->sb->init->front()->exp;
+                rv = true;
+            }
             break;
         default:
             break;

@@ -1168,10 +1168,10 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 if (MATCHKW(lex, Keyword::lt_))
                 {
                     inTemplateSpecialization++;
-                    std::list<TEMPLATEPARAMPAIR>* nullLst;
+                    std::list<TEMPLATEPARAMPAIR>* nullLst = nullptr;
                     lex = GetTemplateArguments(lex, funcsp, bcsym, &nullLst);
                     inTemplateSpecialization--;
-                    auto&& tsl = bcsym->sb->templateSelector->back();
+                    auto&& tsl = bcsym->tp->sp->sb->templateSelector->back();
                     tsl.isTemplate = true;
                     tsl.templateParams = nullLst;
                 }
@@ -1697,6 +1697,13 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
                 continue;
             }
         }
+        if (exp1->type == ExpressionNode::global_ || exp1->type == ExpressionNode::const_)
+        {
+            if (exp1->v.sp->templateParams)
+                for (auto&&tpl : *exp1->v.sp->templateParams)
+                    if (tpl.second->packed)
+                        return true;
+        }
         if (exp1->type == ExpressionNode::callsite_)
         {
             if (useAuto)
@@ -1717,6 +1724,21 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
         {
             if (exp1->v.sp->tp->BaseType()->templateParam->second->packed)
                 return true;
+        }
+        if (exp1->type == ExpressionNode::templateselector_)
+        {
+            if (useAuto)
+            {
+                for (auto&& i : *exp1->v.templateSelector)
+                {
+                    if (i.isTemplate && i.templateParams)
+                    {
+                        for (auto&& tpl : *i.templateParams)
+                            if (tpl.second->packed)
+                                return true;
+                    }
+                }
+            }
         }
     }
     return false;
@@ -1810,6 +1832,10 @@ void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp)
                 GatherTemplateParams(count, arg, tp->BaseType()->sp->templateParams);
             }
         }
+        else if (tp->IsDeferred())
+        {
+            GatherTemplateParams(count, arg, tp->BaseType()->templateArgs);
+        }
     }
 }
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
@@ -1829,7 +1855,6 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
         SYMBOL* spx = packedExp->v.sp->sb->parentClass;
         while (spx)
         {
-            std::list<TEMPLATEPARAMPAIR>* tpl = spx->templateParams;
             GatherTemplateParams(count, arg, spx->templateParams);
             spx = spx->sb->parentClass;
         }
@@ -1860,6 +1885,14 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
     else if (packedExp->type == ExpressionNode::construct_)
     {
         GatherPackedTypes(count, arg, packedExp->v.construct.tp);
+    }
+    else if (packedExp->type == ExpressionNode::global_ || packedExp->type == ExpressionNode::const_)
+    {
+        if (packedExp->v.sp->templateParams)
+        {
+            GatherTemplateParams(count, arg, packedExp->v.sp->templateParams);
+        }
+
     }
 }
 EXPRESSION* ReplicatePackedVars(int count, SYMBOL** arg, EXPRESSION* packedExp, int index);
@@ -2104,6 +2137,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                         LexList* lex = SetAlternateLex(start);
                         packIndex = i;
                         expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                        optimize_for_constants(&p->exp);
                         SetAlternateLex(nullptr);
                         if (p->tp->type != BasicType::void_)
                             if (p->tp)
@@ -3144,8 +3178,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             }
             basisAttribs = oldAttribs;
         }
-        // if we get here we suppose it is classing using, e.g. import the type or variable from another context...
-        SYMBOL* sp = nullptr, * strSym = nullptr;
+        // if we get here we suppose it is classic using, e.g. import the type or variable from another context...
         std::list<NAMESPACEVALUEDATA*>* nssym = globalNameSpace;
         enum Mode { parseFirst, parseClass, parseNamespace } mode = parseFirst;
         if (MATCHKW(lex, Keyword::classsel_))
@@ -3154,6 +3187,10 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             mode = parseNamespace;
             lex = getsym();
         }
+        // there is an extension to C++17 that allows packed variables to be used as part of the pack,
+        // then the using is applied to all elements of the path.   So we have to gather the path independently of 
+        // evaluating it...
+        std::list<std::pair<std::string, LexList*>> path;
         while (true)
         {
             if (!ISID(lex) && !MATCHKW(lex, Keyword::operator_))
@@ -3167,12 +3204,47 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             Type* castType;
             lex = getIdName(lex, theCurrentFunc, buf, &ov, &castType);
             lex = getsym();
-            if (sp && sp->tp->type == BasicType::templateparam_)
-                if (!sp->tp->templateParam->second->byClass.val)
-                    sp = nullptr;
-            strSym = sp;
-            switch (mode)
+            LexList* start = nullptr;
+            if (MATCHKW(lex, Keyword::lt_))
             {
+                start = lex;
+                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                lex = GetTemplateArguments(lex, theCurrentFunc, nullptr, &lst);
+            }
+            path.push_back(std::pair<std::string, LexList*>(buf, start));
+            if (!MATCHKW(lex, Keyword::classsel_))
+            {
+                break;
+            }
+            lex = getsym();
+        }
+        bool ellipsis = false;
+        if (MATCHKW(lex, Keyword::ellipse_))
+        {
+            ellipsis = true;
+            lex = getsym();
+            RequiresDialect::Feature(Dialect::cpp17, "Packed Using Extension");
+        }
+        SYMBOL* sp = nullptr, * strSym = nullptr;
+        bool done = false;
+        bool absorbedPack = false;
+        std::stack<std::tuple<decltype(path)::iterator, int, int, const char*, SYMBOL*, Mode>> stk;
+        const char* lastName = nullptr;
+        auto it = path.begin();
+        while (!done)
+        {
+            done = true;
+            bool skipProcess = false;
+            for (; it != path.end();)
+            {
+                const char* buf = it->first.c_str();
+                if (lastName && !strcmp(lastName, buf))
+                {
+                    buf = overloadNameTab[CI_CONSTRUCTOR];
+                }
+                strSym = sp;
+                switch (mode)
+                {
                 case parseFirst:
                     sp = namespacesearch(buf, localNameSpace, false, false);
                     if (!sp)
@@ -3191,100 +3263,205 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     if (!sp)
                         sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
                 }
-                    break;
-                      
-            }
-            if (sp)
-            {
-                sp->tp->InstantiateDeferred();
-                if (sp->sb && (sp->sb->storage_class == StorageClass::namespace_ || sp->sb->storage_class == StorageClass::namespace_alias_))
-                {
-                    nssym = sp->sb->nameSpaceValues;
-                    mode = parseNamespace;
+                break;
+
                 }
-                else if (sp->tp->IsStructured())
+                if (sp)
                 {
-                    if (MATCHKW(lex, Keyword::lt_))
+                    auto spin = sp;
+                    if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed && sp->tp->templateParam->second->type == TplType::typename_
+                        && !stk.empty() && std::get<0>(stk.top())->first == sp->name)
                     {
-                        std::list<TEMPLATEPARAMPAIR> *lst = nullptr;
-                        lex = GetTemplateArguments(lex, theCurrentFunc, sp, &lst);
-                        SYMBOL* sp1;
-                        sp1 = GetClassTemplate(sp, lst, false);
-                        if (sp1)
+                        int n = std::get<1>(stk.top());
+                        auto it1 = sp->tp->templateParam->second->byPack.pack->begin();
+                        for (; it1 != sp->tp->templateParam->second->byPack.pack->end() && n--; ++it1);
+                        if (it1 == sp->tp->templateParam->second->byPack.pack->end())
                         {
-                            sp1 = TemplateClassInstantiate(sp1, lst, false, StorageClass::global_);
-                            if (sp1)
+                            // kind of a hokey error but this *should* never happen
+                            error(ERR_PACKED_TEMPLATE_TYPE_MISMATCH);
+                            return lex;
+                        }
+                        else
+                        {
+                            auto tp1 = (*it1).second->byClass.val;
+                            if (!tp1->IsStructured())
                             {
-                                sp = sp1;
-                                sp->tp = sp->tp->InitializeDeferred();
+                                error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
+                                return lex;
+                            }
+                            auto sp1 = tp1->BaseType()->sp;
+                            switch (mode)
+                            {
+                            case parseFirst:
+                                sp = namespacesearch(sp1->name, localNameSpace, false, false);
+                                if (!sp)
+                                    sp = classsearch(sp1->name, false, MATCHKW(lex, Keyword::classsel_), false);
+                                if (!sp)
+                                    sp = namespacesearch(sp1->name, globalNameSpace, false, false);
+                                break;
+                            case parseNamespace:
+                                sp = namespacesearch(sp1->name, nssym, true, false);
+                                break;
+                            case parseClass:
+                            {
+                                enclosingDeclarations.Add(strSym);
+                                sp = classsearch(sp1->name, false, MATCHKW(lex, Keyword::classsel_), false);
+                                enclosingDeclarations.Drop();
+                                if (!sp)
+                                    sp = classsearch(sp1->name, false, MATCHKW(lex, Keyword::classsel_), false);
+                            }
+                            break;
+
+                            }
+                            if (!sp || strcmp(sp->name, sp1->name) != 0)
+                            {
+                                error(ERR_TYPE_NAME_EXPECTED);
+                                return lex;
                             }
                         }
                     }
-                    mode = parseClass;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (!MATCHKW(lex, Keyword::classsel_))
-            {
-                break;
-            }
-            lex = getsym();
-        }
-        if (!sp || sp->tp->type == BasicType::templateparam_ || (!ismemberdata(sp) && !istype(sp) && sp->sb->storage_class != StorageClass::overloads_  && sp->sb->storage_class != StorageClass::global_ &&
-            sp->sb->storage_class != StorageClass::external_ && sp->sb->storage_class != StorageClass::static_ && 
-            sp->sb->storage_class != StorageClass::localstatic_ && sp->sb->storage_class != StorageClass::constant_))
-        {
-            if (!definingTemplate || instantiatingTemplate)
-                error(ERR_TYPE_OR_VARIABLE_EXPECTED);
-            errskim(&lex, skim_semi, false);
-        }
-        else
-        {
-            if (sp == strSym || sp->sb->mainsym && sp->sb->mainsym == strSym)
-                sp = search(strSym->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
-            if (sp)
-            {
-                if (!definingTemplate)
-                {
-                    if (sp->sb->storage_class == StorageClass::overloads_)
+                    sp->tp->InstantiateDeferred();
+                    sp->tp->InitializeDeferred();
+                    if (sp->sb && (sp->sb->storage_class == StorageClass::namespace_ || sp->sb->storage_class == StorageClass::namespace_alias_))
                     {
-                        for (auto sp2 : *sp->tp->syms)
+                        nssym = sp->sb->nameSpaceValues;
+                        mode = parseNamespace;
+                    }
+                    else if (sp->tp->templateParam && sp->tp->templateParam->second->packed && sp->tp->templateParam->second->type == TplType::typename_)
+                    {
+                        if (!ellipsis)
                         {
-                            SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
-                            SYMBOL* sp1 = CopySymbol(sp2);
-                            sp1->sb->wasUsing = true;
-                            ssp1 = sp1->sb->parentClass;
-                            if (ssp && ismember(sp1))
-                                sp1->sb->parentClass = ssp;
-                            sp1->sb->mainsym = sp2;
-                            sp1->sb->access = access;
-                            InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
-                            sp1->sb->parentClass = ssp1;
+                            // not unpacking
+                            error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                            return lex;
                         }
+                        else if (!sp->tp->templateParam->second->byPack.pack || !sp->tp->templateParam->second->byPack.pack->size())
+                        {
+                            // pack is empty, do nothing....
+                            return lex;
+                        }
+                        else
+                        {
+                            absorbedPack = true;
+                            stk.push(std::tuple<decltype(path)::iterator, int, int, const char*, SYMBOL*, Mode>(it, -1, (int)sp->tp->templateParam->second->byPack.pack->size(), lastName, strSym, mode));
+                            skipProcess = true;
+                            break;
+                        }
+                    }
+                    else if (sp->tp->IsStructured())
+                    {
+                        if (it->second)
+                        {
+                            auto lex1 = SetAlternateLex(it->second);
+                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                            lex1 = GetTemplateArguments(lex1, theCurrentFunc, sp, &lst);
+                            SetAlternateLex(nullptr);
+                            SYMBOL* sp1;
+                            sp1 = GetClassTemplate(sp, lst, false);
+                            if (sp1)
+                            {
+                                sp1 = TemplateClassInstantiate(sp1, lst, false, StorageClass::global_);
+                                if (sp1)
+                                {
+                                    sp = sp1;
+                                    sp->tp = sp->tp->InitializeDeferred();
+                                }
+                            }
+                        }
+                        mode = parseClass;
                     }
                     else
                     {
-                        SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
-                        SYMBOL* sp1 = CopySymbol(sp);
-                        sp1->sb->wasUsing = true;
-                        sp1->sb->mainsym = sp;
-                        sp1->sb->access = access;
-                        ssp1 = sp1->sb->parentClass;
-                        if (ssp && ismember(sp1))
-                            sp1->sb->parentClass = ssp;
-                        if (isTypename && !istype(sp) && sp->tp->type != BasicType::templateselector_)
-                            error(ERR_TYPE_NAME_EXPECTED);
-                        if (istype(sp))
-                            InsertTag(sp1, storage_class, true);
-                        else
-                            InsertSymbol(sp1, storage_class, Linkage::cdecl_, true);
-                        sp1->sb->parentClass = ssp1;
+                        break;
+                    }
+                }
+                lastName = buf;
+                ++it;
+            }
+            if (!skipProcess)
+            {
+                if (!sp || sp->tp->type == BasicType::templateparam_ || (!ismemberdata(sp) && !istype(sp) && sp->sb->storage_class != StorageClass::overloads_ && sp->sb->storage_class != StorageClass::global_ &&
+                    sp->sb->storage_class != StorageClass::external_ && sp->sb->storage_class != StorageClass::static_ &&
+                    sp->sb->storage_class != StorageClass::localstatic_ && sp->sb->storage_class != StorageClass::constant_))
+                {
+                    if (!definingTemplate || instantiatingTemplate)
+                        error(ERR_TYPE_OR_VARIABLE_EXPECTED);
+                    errskim(&lex, skim_semi, false);
+                }
+                else
+                {
+                    if (sp)
+                    {
+                        if (!definingTemplate)
+                        {
+                            if (sp->sb->storage_class == StorageClass::overloads_)
+                            {
+                                for (auto sp2 : *sp->tp->syms)
+                                {
+                                    SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
+                                    SYMBOL* sp1 = CopySymbol(sp2);
+                                    sp1->sb->wasUsing = true;
+                                    ssp1 = sp1->sb->parentClass;
+                                    if (ssp && ismember(sp1))
+                                        sp1->sb->parentClass = ssp;
+                                    sp1->sb->mainsym = sp2;
+                                    sp1->sb->access = access;
+                                    InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
+                                    sp1->sb->parentClass = ssp1;
+                                }
+                            }
+                            else
+                            {
+                                SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
+                                SYMBOL* sp1 = CopySymbol(sp);
+                                sp1->sb->wasUsing = true;
+                                sp1->sb->mainsym = sp;
+                                sp1->sb->access = access;
+                                ssp1 = sp1->sb->parentClass;
+                                if (ssp && ismember(sp1))
+                                    sp1->sb->parentClass = ssp;
+                                if (isTypename && !istype(sp) && sp->tp->type != BasicType::templateselector_)
+                                    error(ERR_TYPE_NAME_EXPECTED);
+                                if (istype(sp))
+                                    InsertTag(sp1, storage_class, true);
+                                else
+                                    InsertSymbol(sp1, storage_class, Linkage::cdecl_, true);
+                                sp1->sb->parentClass = ssp1;
+                            }
+                        }
                     }
                 }
             }
+            if (!stk.empty())
+            {
+                bool done2 = false;
+                while (!done2)
+                {
+                    auto&& top = stk.top();
+                    int start = std::get<1>(top);
+                    ++start;
+                    std::get<1>(top) = start;
+                    it = std::get<0>(top);
+                    lastName = std::get<3>(top);
+                    sp = std::get<4>(top);
+                    mode = std::get<5>(top);
+                    if (start >= std::get<2>(top))
+                    { 
+                        stk.pop();
+                        done2 = stk.empty();
+                    }
+                    else
+                    {
+                        done2 = true;
+                    }
+                }
+                // if we get here we used up all the tokens so exit...
+                done = stk.empty();
+            }
+        }
+        if (!absorbedPack && ellipsis)
+        {
+            error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
         }
     }
     return lex;

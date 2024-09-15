@@ -474,7 +474,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         disabledNote = true;    
         if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
-        if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))
+        if (Warning::Instance()->IsSet(err, Warning::OnlyOnce)) 
             if (Warning::Instance()->IsSet(err, Warning::Emitted))
                 return false;
         disabledNote = false;
@@ -686,7 +686,13 @@ void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 }
 void error(int err) { printerr(err, nullptr, 0); }
 void errorint(int err, int val) { printerr(err, nullptr, 0, val); }
-void errorstr(int err, const char* val) { printerr(err, nullptr, 0, (char*)val); }
+void errorstr(int err, const char* val) 
+{
+    const char* t = LookupIntrinsicName(val);
+    if (t)
+        val = t;
+    printerr(err, nullptr, 0, (char*)val); 
+}
 void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
 void errorsym(int err, SYMBOL* sym)
 {

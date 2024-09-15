@@ -1409,6 +1409,11 @@ void createDefaultConstructors(SYMBOL* sp)
             sp->sb->trivialCons = trivialCons;
             sp->sb->trivialDest = trivialDest;
         }
+        else
+        {
+            sp->sb->trivialCons = false;
+            sp->sb->trivialDest = false;
+        }
         for (auto s : *cons->tp->syms)
         {
             if (s->sb->constexpression | s->sb->defaulted)
@@ -2451,8 +2456,11 @@ static bool DefaultConstructorConstExpression(SYMBOL* sp)
 
     if (sp->sb->baseClasses)
         for (auto base : *sp->sb->baseClasses)
-            if (!DefaultConstructorConstExpression(base->cls))
+        {
+            base->cls->tp->InitializeDeferred();
+            if (base->cls->tp->size && !DefaultConstructorConstExpression(base->cls))
                 return false;
+        }
     sp->sb->constexpression = true;
     return true;
 }

@@ -3320,11 +3320,17 @@ founddecltype:
                                 lex = GetTemplateArguments(lex, funcsp, sp, &lst);
                                 if (definingTemplate && !instantiatingTemplate)
                                 {
-                                    sp = GetClassTemplate(sp, lst, !templateErr);
-                                    if (sp)
+                                    auto sp1 = GetClassTemplate(sp, lst, !templateErr);
+                                    if (sp1)
                                     {
+                                        sp = sp1;
                                         if (sp && (!definingTemplate || inTemplateBody ))
                                             sp->tp = sp->tp->InitializeDeferred();
+                                    }
+                                    else
+                                    {
+                                        tn = Type::MakeType(sp, lst);
+                                        sp = nullptr;
                                     }
                                 }
                                 else

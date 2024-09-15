@@ -662,14 +662,18 @@ static void pushArrayOrStruct(SYMBOL* arg, std::list<Argument*>& il, std::unorde
         int n = il.size();
         argmap[arg] = MakeVarPtr(false, getSize(BasicType::pointer_) + getSize(BasicType::int_), 1, arg, nullptr);
         auto& listDeclarator = argmap[arg]->v.constexprData;
-        listDeclarator.data[0] = MakeVarPtr(false, n, il.front()->tp->size, arg, nullptr);
+        listDeclarator.data[0] = MakeVarPtr(false, n, n == 0 ? 1 : il.front()->tp->size, arg, nullptr);
         listDeclarator.data[getSize(BasicType::pointer_)] = MakeIntExpression(ExpressionNode::c_i_, n);
-        auto target = listDeclarator.data[0]->v.constexprData.data;
 
-        n = 0;
-        for (auto&& xil : il)
+        if (n > 0)
         {
-            target[n++] = xil->exp;
+            auto target = listDeclarator.data[0]->v.constexprData.data;
+
+            n = 0;
+            for (auto&& xil : il)
+            {
+                target[n++] = xil->exp;
+            }
         }
     }
 }
@@ -1277,8 +1281,6 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
                 return nullptr;
             case StatementNode::select_:
             case StatementNode::notselect_: {
-                if (Optimizer::cparams.prm_debug)
-                    return nullptr;
                 auto node1 = stmt->select;
                 node1 = EvaluateExpression(node1, ths, retblk, true);
                 optimize_for_constants(&node1);
@@ -1297,15 +1299,11 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
             }
             case StatementNode::goto_:
             case StatementNode::loopgoto_:
-                if (Optimizer::cparams.prm_debug)
-                    return nullptr;
                 if (stmt->explicitGoto || stmt->indirectGoto)
                     return nullptr;
                 it = labels[stmt->label];
                 break;
             case StatementNode::switch_: {
-                if (Optimizer::cparams.prm_debug)
-                    return nullptr;
                 auto node1 = stmt->select;
                 node1 = EvaluateExpression(node1, ths, retblk, true);
                 optimize_for_constants(&node1);
@@ -1336,8 +1334,6 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
             case StatementNode::expr_:
                 if (stmt->select)
                 {
-                    if (Optimizer::cparams.prm_debug)
-                        return nullptr;
                     auto node1 = copy_expression(stmt->select);
                     node1 = EvaluateExpression(node1, ths, retblk, true);
                     optimize_for_constants(&node1);

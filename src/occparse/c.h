@@ -527,6 +527,7 @@ struct Initializer
 {
     int offset;
     Type* basetp;
+    Type* realtp;
     struct sym* fieldsp;
     EXPRESSION* fieldoffs;
     EXPRESSION* exp;

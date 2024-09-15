@@ -58,6 +58,7 @@ extern const char* tn_char32_t;
 extern const char* cpp_funcname_tab[];
 extern const char* xlate_tab[];
 
+const char* LookupIntrinsicName(const char* mangled);
 const char* unmang_intrins(char* buf, const char* name, const char* last);
 char* unmangleExpression(char* dest, const char** name);
 const char* unmang1(char* buf, const char* name, const char* last, bool tof);

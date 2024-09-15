@@ -1315,7 +1315,7 @@ Initializer* InsertInitializer(std::list<Initializer*>** pos, std::list<Initiali
         *pos = initListFactory.CreateList();
     Initializer* pos1 = Allocate<Initializer>();
 
-    pos1->basetp = tp;
+    pos1->basetp = pos1->realtp = tp;
     pos1->exp = exp;
     pos1->offset = offset;
     pos1->tag = inittag++;
@@ -1445,6 +1445,108 @@ static LexList* initialize_bool_type(LexList* lex, SYMBOL* funcsp, int offset, S
     }
     return lex;
 }
+void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
+{
+    
+    if (Optimizer::cparams.prm_cplusplus && dest->IsArithmetic() && source->IsArithmetic() && dest->BaseType()->type != source->BaseType()->type)
+    {
+        bool err = false;
+        if (isintconst(exp) || isfloatconst(exp))
+        {
+            long long val;
+            if (isfloatconst(exp))
+            {
+                if (dest->IsInt())
+                {
+                    val = (long long)exp->v.f;
+                    if (dest->IsUnsigned())
+                    {
+                        unsigned long long val2 = (unsigned long long)val;
+                        err = val2 < 0 || val2 > ULLONG_MAX;
+                    }
+                    else
+                    {
+                        err = val < LLONG_MIN || val > LLONG_MAX;
+                    }
+
+                }
+                else
+                {
+                    double aa;
+                    exp->v.f->ToDouble((uchar*)&aa);
+                    val = aa;
+                    switch (dest->type)
+                    {
+                    case BasicType::float_:
+                        err = aa < FLT_MIN || aa > FLT_MAX;
+                        break;
+                    case BasicType::double_:
+                        err = aa < DBL_MIN || aa > DBL_MAX;
+                        break;
+                    default:
+                        if (dest->IsUnsigned())
+                        {
+                            err = aa < 0 || aa > ULLONG_MAX;
+                        }
+                        else
+                        {
+                            err = aa < LLONG_MIN || aa > LLONG_MAX;
+                        }
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                val = exp->v.i;
+            }
+            if (dest->IsInt())
+            {
+
+                switch (dest->BaseType()->type)
+                {
+                case BasicType::char_:
+                    err = val < CHAR_MIN || val > CHAR_MAX;
+                    break;
+                case BasicType::unsigned_char_:
+                    err = val < 0 || val > UCHAR_MAX;
+                    break;
+                case BasicType::short_:
+                    err = val < SHRT_MIN || val > SHRT_MAX;
+                    break;
+                case BasicType::unsigned_short_:
+                    err = val < 0 || val > USHRT_MAX;
+                    break;
+                case BasicType::int_:
+                case BasicType::long_:
+                    err = val < INT_MIN || val > INT_MAX;
+                    break;
+                case BasicType::unsigned_:
+                case BasicType::unsigned_long_:
+                    err = val < 0 || val > UINT_MAX;
+                    break;
+                case BasicType::long_long_:
+                    err = val < LLONG_MIN || val > LLONG_MAX;
+                    break;
+                case BasicType::unsigned_long_long_:
+                    err = val < 0 || val > ULLONG_MAX;
+                    break;
+
+                }
+            }
+        }
+        else if (dest->IsFloat())
+        {
+            err = source->IsInt() || source->type > dest->type;
+        }
+        else
+        {
+            err = source->IsFloat() || source->type > dest->type || source->IsUnsigned() != dest->IsUnsigned();
+        }
+        if (err)
+            errortype(ERR_INIT_NARROWING, source, dest);
+    }
+}
 static LexList* initialize_arithmetic_type(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
                                            SYMBOL* sym)
 {
@@ -1507,43 +1609,10 @@ static LexList* initialize_arithmetic_type(LexList* lex, SYMBOL* funcsp, int off
                         checkscope(tp, itype);
                 else
                     checkscope(tp, itype);
-                if (!itype->CompatibleType(tp))
+                if (tp->BaseType()->type != itype->BaseType()->type);
                 {
-                    if (Optimizer::cparams.prm_cplusplus && needend)
-                        if (itype->BaseType()->type < tp->BaseType()->type)
-                        {
-                            if (isintconst(exp))
-                            {
-
-                                int val = exp->v.i;
-                                switch (itype->BaseType()->type)
-                                {
-                                    case BasicType::char_:
-                                        if (val < CHAR_MIN || val > CHAR_MAX)
-                                            error(ERR_INIT_NARROWING);
-                                        break;
-                                    case BasicType::unsigned_char_:
-                                        if (val < 0 || val > UCHAR_MAX)
-                                            error(ERR_INIT_NARROWING);
-                                        break;
-                                    case BasicType::short_:
-                                        if (val < SHRT_MIN || val > SHRT_MAX)
-                                            error(ERR_INIT_NARROWING);
-                                        break;
-                                    case BasicType::unsigned_short_:
-                                        if (val < 0 || val > USHRT_MAX)
-                                            error(ERR_INIT_NARROWING);
-                                        break;
-                                    default:
-                                        error(ERR_INIT_NARROWING);
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                error(ERR_INIT_NARROWING);
-                            }
-                        }
+                    if (needend)
+                        CheckNarrowing(itype, tp, exp);
                     cast(itype, &exp);
                     optimize_for_constants(&exp);
                 }
@@ -1551,6 +1620,7 @@ static LexList* initialize_arithmetic_type(LexList* lex, SYMBOL* funcsp, int off
         }
     }
     InsertInitializer(init, itype, exp, offset, false);
+    (*init)->back()->realtp = tp;
     if (needend)
     {
         if (!needkw(&lex, Keyword::end_))
@@ -2854,8 +2924,10 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
         {
             SYMBOL* fieldsp;
             int size = data ? data->size() : 0;
-            lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, nexttp(desc), base, itype->IsArray(),
+            auto tp1 = nexttp(desc);
+            lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, tp1, base, itype->IsArray(),
                 templateLevel, flags | _F_NESTEDINIT);
+            CheckNarrowing(tp1, data->back()->realtp, data->back()->exp);
             int size1 = data->size();
             if (desc->it != desc->ite && size != size1)
             {
@@ -3278,6 +3350,7 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                     // constexpr support...
                     auto exp1 = exp;
                     auto its = itype->BaseType()->syms->begin();
+                    bool written = false;
                     while (exp1->type == ExpressionNode::comma_)
                     {
                         if (exp1->left->type == ExpressionNode::assign_ && exp1->left->left->left->type == ExpressionNode::structadd_)
@@ -3288,9 +3361,14 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                                 int ofs = exp1->left->left->left->right->v.i;
                                 auto exp2 = exp1->left->right;
                                 InsertInitializer(&it, (*its)->tp, exp2, ofs, false);
+                                written = true;
                             }
                         }
                         exp1 = exp1->right;
+                    }
+                    if (!written)
+                    {
+                        InsertInitializer(&it, itype, exp, offset, true);
                     }
                 }
                 else if (exp->type == ExpressionNode::cvarpointer_)

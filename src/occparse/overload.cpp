@@ -3030,7 +3030,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         {
             if (tpp->BaseType()->type == BasicType::enum_)
             {
-                if (tpa->BaseType()->sp != tpp->BaseType()->sp)
+                if (tpa->BaseType()->sp != tpp->BaseType()->sp && !SameTemplate(tpp,tpa))
                 {
                     seq[(*n)++] = CV_NONE;
                 }
@@ -3566,6 +3566,23 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                         auto it = sym1->templateParams->begin();
                         ++it;
                         initializerListType = it->second->byClass.val;
+                    }
+                }
+                else if (tp1->IsArray() && (ita != itae) && (!(*ita)->tp || !(*ita)->tp->IsArray()) )
+                {
+                    auto tp2 = tp1;
+                    while (tp2->IsArray()) tp2 = tp2->BaseType()->btp;
+                    auto tp3 = (*ita)->tp;
+                    if (tp3 && tp3->IsPtr())
+                    {
+                        tp3 = tp3->BaseType()->btp;
+                        if (tp2->BaseType()->type != tp3->BaseType()->type || !tp2->CompatibleType(tp3))
+                            initializerListType = tp2;
+
+                    }
+                    else
+                    {
+                        initializerListType = tp2;
                     }
                 }
                 if (initializerListType)

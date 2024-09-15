@@ -1085,18 +1085,9 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                 expandingParams++;
                                 if (count)
                                 {
+                                    auto list = templateParamPairListFactory.CreateList();
                                     int i;
                                     int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-                                    /*
-                                    for (i = 1; i < count; i++)
-                                    {
-                                        if (CountPacks(arg[i]->tp->templateParam->second->byPack.pack) != n)
-                                        {
-                                            error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                                            break;
-                                        }
-                                    }
-                                    */
                                     for (i = 0; i < n; i++)
                                     {
                                         LexList* lex = SetAlternateLex(start);
@@ -1111,16 +1102,20 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                         SetAlternateLex(nullptr);
                                         if (tp)
                                         {
-                                            if (!*lst)
-                                                *lst = templateParamPairListFactory.CreateList();
-                                            (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                            (*lst)->back().second->type = TplType::int_;
-                                            (*lst)->back().second->byNonType.dflt = exp;
-                                            (*lst)->back().second->byNonType.tp = tp;
-                                            if (itorig != iteorig)
-                                                (*lst)->back().first = itorig->first;
+                                            list->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
+                                            list->back().second->type = TplType::int_;
+                                            list->back().second->byNonType.dflt = exp;
+                                            list->back().second->byNonType.tp = tp;
                                         }
                                     }
+                                    if (!*lst)
+                                        *lst = templateParamPairListFactory.CreateList();
+                                    (*lst)->push_back(TEMPLATEPARAMPAIR{ name, Allocate<TEMPLATEPARAM>() });
+                                    (*lst)->back().second->type = TplType::int_;
+                                    (*lst)->back().second->packed = true;
+                                    (*lst)->back().second->byPack.pack = list;
+                                    if (itorig != iteorig)
+                                        (*lst)->back().first = itorig->first;
                                 }
                                 expandingParams--;
                                 packIndex = oldPack;

@@ -1,0 +1,20 @@
+Error(366)    narrowing.cpp(10):  Conversion from 'double' to 'float' would require narrowing
+Error(366)    narrowing.cpp(11):  Conversion from 'double' to 'float' would require narrowing
+Error(366)    narrowing.cpp(14):  Conversion from 'int' to 'unsigned long long' would require narrowing
+Error(366)    narrowing.cpp(19):  Conversion from 'int' to 'unsigned int' would require narrowing
+Error(366)    narrowing.cpp(21):  Conversion from 'unsigned long long' to 'unsigned int' would require narrowing
+Error(366)    narrowing.cpp(22):  Conversion from 'unsigned long long' to 'unsigned int' would require narrowing
+Error(366)    narrowing.cpp(27):  Conversion from 'unsigned int' to 'int' would require narrowing
+Error(366)    narrowing.cpp(31):  Conversion from 'int' to 'short ' would require narrowing
+Error(366)    narrowing.cpp(32):  Conversion from 'int' to 'short ' would require narrowing
+Error(366)    narrowing.cpp(35):  Conversion from 'int' to 'unsigned char' would require narrowing
+Error(366)    narrowing.cpp(37):  Conversion from 'short ' to 'unsigned char' would require narrowing
+Error(366)    narrowing.cpp(41):  Conversion from 'int' to 'char' would require narrowing
+Error(366)    narrowing.cpp(42):  Conversion from 'int' to 'char' would require narrowing
+Error(366)    narrowing.cpp(43):  Conversion from 'short ' to 'char' would require narrowing
+Error(366)    narrowing.cpp(44):  Conversion from 'unsigned char' to 'char' would require narrowing
+Error(366)    narrowing.cpp(46):  Conversion from 'char' to 'unsigned int' would require narrowing
+Error(366)    narrowing.cpp(62):  Conversion from 'unsigned long long' to 'int' would require narrowing
+Error(366)    narrowing.cpp(68):  Conversion from 'int' to 'char' would require narrowing
+Error(366)    narrowing.cpp(75):  Conversion from 'double' to 'float' would require narrowing
+19 Errors

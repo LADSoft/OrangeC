@@ -529,7 +529,7 @@ static void tagNonConst(SYMBOL* sym, Type* tp)
 static EXPRESSION* GetConstMakeExpression(SYMBOL* sym)
 {
     if (sym->sb->constexpression && sym->sb->init && !sym->sb->init->empty() && sym->sb->init->front()->exp)
-        if (sym->tp->IsArithmetic())
+        if (sym->tp->IsArithmetic() || sym->tp->BaseType()->type == BasicType::enum_)
             return MakeExpression(ExpressionNode::const_, sym);
     return nullptr;
 }
@@ -586,14 +586,20 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             if (MATCHKW(lex, Keyword::lt_))
             {
                 lex = getsym();
-                if (TypeGenerator::StartOfType(lex, nullptr, false))
-                {
-                    std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                    SYMBOL* sp1 = sym;
-                    lex = backupsym();
-                    lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
-                    sp1 = GetVariableTemplate(sp1, lst);
+                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                SYMBOL* sp1 = sym;
+                lex = backupsym();
+                lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
 
+                bool deferred = false;
+                for (auto&& tpl : *lst)
+                {
+                    if (tpl.second->packed)
+                        deferred = true;
+                }
+                if (!deferred || packIndex >= 0)
+                {   
+                    sp1 = GetVariableTemplate(sp1, lst);
                     if (sp1)
                     {
                         sym = sp1;
@@ -606,7 +612,10 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 }
                 else
                 {
-                    lex = backupsym();
+                    // set up for unpacking... 
+                    sp1 = CopySymbolfalse(sym);
+                    sp1->templateParams = lst;
+                    sym = sp1;
                 }
             }
             else
@@ -1125,7 +1134,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 {
                     if (!(*tp)->IsStructured() && (*tp)->BaseType()->type != BasicType::memberptr_ && !(*tp)->IsFunction() &&
                         sym->sb->storage_class != StorageClass::constant_ && sym->sb->storage_class != StorageClass::enumconstant_ &&
-                        sym->tp->type != BasicType::void_)
+                        sym->tp->type != BasicType::void_ && (*exp)->type != ExpressionNode::const_)
                     {
                         if (!(*tp)->array || (*tp)->vla || (!(*tp)->msil && sym->sb->storage_class == StorageClass::parameter_))
                             if ((*tp)->vla)
@@ -2394,7 +2403,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
             p->initializer_list = true;
         if (MATCHKW(lex, Keyword::begin_))
         {
-            lex = getInitInternal(lex, funcsp, &p->nested, Keyword::end_, true, false, false, flags);
+            lex = getInitInternal(lex, funcsp, &p->nested, Keyword::end_, true, allowPack, false, flags);
             (*lptr)->push_back(p);
             if (!allowNesting)
                 error(ERR_CANNOT_USE_INIT_LIST);
@@ -2830,7 +2839,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         {
             bool found = false;
             for (auto l : *(*itl)->nested)
-                if (!IsConstantExpression(l->exp, false, false))
+                if (!IsConstantExpression(l->exp, false, true))
                 {
                     found = true;
                     break;
@@ -3695,6 +3704,112 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             if (!sym->tp->CompatibleType(tpx))
                                 p->exp = DerivedToBase(sym->tp, tpx, p->exp, 0);
                         }
+                    }
+                    else if (sym->tp->BaseType()->btp->IsArray() && p->nested)
+                    {
+                        Type* sourceType = p->nested->front()->tp;
+                        Type* arrtype = sym->tp->BaseType()->btp;
+                        Type* basetype = sym->tp->BaseType()->btp;
+                        while (basetype->IsArray()) basetype = basetype->BaseType()->btp;
+                        int elemsize = basetype->size;
+                        int elems = arrtype->size / basetype->size;
+                        EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                        auto it = p->nested->begin();
+                        auto ite = p->nested->end();
+                        EXPRESSION* rv = nullptr, ** last = &rv;
+                        if (!basetype->IsStructured())
+                        {
+                            // this is broken right now, arraysize is number of elements instead of total size...
+                            *last = MakeExpression(ExpressionNode::blockclear_, copy_expression(consexp));
+                            (*last)->size = Type::MakeType(BasicType::struct_);
+                            (*last)->size->size = arrtype->size;
+                        }
+                        if (sourceType->IsArray())
+                        {
+                            error(ERR_ARRAY_TYPE_NOT_EXPECTED);
+                        }
+                        else
+                        {
+                            auto it = p->nested->begin();
+                            auto ite = p->nested->end();
+                            for (int i = 0; i < elems; i++)
+                            {
+                                bool skip = false;
+                                EXPRESSION* baseAddress = MakeExpression(ExpressionNode::arrayadd_, consexp, MakeIntExpression(ExpressionNode::c_i_, i * elemsize));
+                                EXPRESSION* next = nullptr;
+                                if (basetype->IsStructured())
+                                {
+                                    Type* ctype = basetype;
+                                    EXPRESSION* paramexp = it == ite ? nullptr : (*it)->exp;
+                                    Type* paramtp = it == ite ? nullptr : (*it)->tp;
+                                    p->exp = baseAddress;
+                                    callConstructorParam(&ctype, &p->exp, paramtp, paramexp, true, true, false, false, true);
+                                }
+                                else if (it != ite)
+                                {
+                                    if (sourceType->IsStructured())
+                                    {
+                                        if (basetype->IsPtr())
+                                        {
+                                            auto ctype = basetype;
+                                            p->exp = (*it)->exp;
+                                            castToPointer(&ctype, &p->exp, (Keyword)-1, sourceType);
+
+                                        }
+                                        else
+                                        {
+                                            auto ctype = basetype;
+                                            p->exp = (*it)->exp;
+                                            castToArithmetic(basetype->IsInt(), &ctype, &p->exp, (Keyword)-1, sourceType, true);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // both arithmetic
+                                        p->exp = (*it)->exp;
+                                        CheckNarrowing(basetype, sourceType, p->exp);
+                                        if (basetype->BaseType()->type != sourceType->BaseType()->type)
+                                        {
+                                            cast(basetype, &p->exp);
+                                        }
+                                        auto left = baseAddress;
+                                        Dereference(basetype, &left);
+                                        p->exp = MakeExpression(ExpressionNode::assign_, left, p->exp);
+                                    }
+                                }
+                                else
+                                {
+                                    skip = true;
+                                }
+                                if (!skip)
+                                {
+                                    optimize_for_constants(&p->exp);
+                                    if (*last)
+                                    {
+                                        *last = MakeExpression(ExpressionNode::comma_, *last, p->exp);
+                                        last = &(*last)->right;
+                                    }
+                                    else
+                                    {
+                                        *last = p->exp;
+                                    }
+                                    if (it != ite)
+                                    {
+                                        ++it;
+                                    }
+                                }
+                            }
+                            if (*last)
+                            {
+                                *last = MakeExpression(ExpressionNode::comma_, p->exp, consexp);
+                                last = &(*last)->right;
+                            }
+                            else
+                            {
+                                *last = consexp;
+                            }
+                        }
+                        p->exp = rv;
                     }
                     else if (sym->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
                     {
@@ -6447,7 +6562,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                 packIndex = oldPack;
                             }
                         }
-                        else
+                        else if (!inTemplateArgs)
                         {
                             if (argumentNesting <= 1)
                                 checkUnpackedExpression(*exp);

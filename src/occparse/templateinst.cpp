@@ -1843,7 +1843,35 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         if (args && check != checke)
             ++check;
     }
-    func->tp->BaseType()->btp->InstantiateDeferred();
+    if (func->tp->BaseType()->btp->IsDeferred())
+    {
+        auto args = func->tp->BaseType()->btp->BaseType()->templateArgs;
+        for (auto t : *args)
+        {
+            if (t.second->packed)
+            {
+                if (t.second->byPack.pack)
+                {
+                    for (auto t1 : *t.second->byPack.pack)
+                    {
+                        if (t1.second->byClass.val)
+                        {
+                            t1.second->byClass.dflt = t1.second->byClass.val;
+                        }
+
+                    }
+                }
+            }
+            else
+            {
+                if (t.second->byClass.val)
+                {
+                    t.second->byClass.dflt = t.second->byClass.val;
+                }
+            }
+        }
+        func->tp->BaseType()->btp->InstantiateDeferred();
+    }
     if (func->tp->BaseType()->btp->IsStructured())
     {
         std::list<TEMPLATEPARAMPAIR>* params = func->tp->BaseType()->btp->BaseType()->sp->templateParams;
@@ -2553,6 +2581,7 @@ static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARA
     int i;
     char hconst[200];
     char hvolatile[200];
+    TEMPLATEPARAM* hold[200];
     int count = 0;
     for (i = 0; i < n; i++)
     {
@@ -2564,27 +2593,62 @@ static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARA
             {
                 for (auto&& pP : *P)
                 {
-                    if (current >= count)
+                    if (pP.second->type == TplType::typename_ && pP.second->packed)
                     {
-                        hconst[current] = 0;
-                        hvolatile[current] = 0;
-                        count++;
-                    }
-                    if (pP.second->type == TplType::typename_)
-                    {
-                        Type* tp = pP.second->byClass.dflt;
-                        if (tp)
+                        if (pP.second->byPack.pack)
                         {
-                            while (tp->IsRef())
-                                tp = tp->BaseType()->btp;
+                            for (auto&& tpl : *pP.second->byPack.pack)
+                            {
+                                if (current >= count)
+                                {
+                                    hconst[current] = 0;
+                                    hvolatile[current] = 0;
+                                    hold[current] = tpl.second;
+                                    count++;
+                                }
+                                if (tpl.second->type == TplType::typename_)
+                                {
+                                    Type* tp = tpl.second->byClass.dflt;
+                                    if (tp)
+                                    {
+                                        while (tp->IsRef())
+                                            tp = tp->BaseType()->btp;
 
-                            if (tp->IsConst())
-                                hconst[current] = 1;
-                            if (tp->IsVolatile())
-                                hvolatile[current] = 1;
+                                        if (tp->IsConst())
+                                            hconst[current] = 1;
+                                        if (tp->IsVolatile())
+                                            hvolatile[current] = 1;
+                                    }
+                                }
+                                current++;
+                            }
                         }
                     }
-                    current++;
+                    else
+                    {
+                        if (current >= count)
+                        {
+                            hconst[current] = 0;
+                            hvolatile[current] = 0;
+                            hold[current] = pP.second;
+                            count++;
+                        }
+                        if (pP.second->type == TplType::typename_)
+                        {
+                            Type* tp = pP.second->byClass.dflt;
+                            if (tp)
+                            {
+                                while (tp->IsRef())
+                                    tp = tp->BaseType()->btp;
+
+                                if (tp->IsConst())
+                                    hconst[current] = 1;
+                                if (tp->IsVolatile())
+                                    hvolatile[current] = 1;
+                            }
+                        }
+                        current++;
+                    }
                 }
             }
         }
@@ -2598,10 +2662,10 @@ static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARA
             std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
             if (P && A)
             {
-                auto itP = P->begin();
                 auto itA = A->begin();
                 auto iteA = A->end();
-                for (; itP != P->end() && itA != iteA;)
+                int n = 0;
+                for (; n < count && itA != iteA;)
                 {
                     if (hconst[current] || hvolatile[current])
                     {
@@ -2612,10 +2676,10 @@ static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARA
                             iteA = itA->second->byPack.pack->end();
                             itA = itA->second->byPack.pack->begin();
                         }
-                        if (A && itP->second->type == TplType::typename_)
+                        if (A && hold[n]->type == TplType::typename_)
                         {
                             Type* ta = itA->second->byClass.dflt;
-                            Type* tp = itP->second->byClass.dflt;
+                            Type* tp = hold[n]->byClass.dflt;
                             if (ta && tp)
                             {
                                 while (ta->IsRef())
@@ -2635,7 +2699,7 @@ static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARA
                     current++;
                     if (itA != iteA)
                         ++itA;
-                    ++itP;
+                    n++;
                     if (itA == iteA && tas.size())
                     {
                         iteA = tas.top();
@@ -4052,7 +4116,8 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
         SYMBOL* found1 = classTemplateMap[sp][argumentName];
         if (found1)
         {
-            return found1;
+            if (allTemplateArgsSpecified(found1, found1->templateParams))
+                return found1;
         }
     }
     if (sp->sb->specializations)
@@ -4229,7 +4294,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             SetLinkerNames(found1, Linkage::cdecl_);
 
             auto found2 = classTemplateMap2[found1->sb->decoratedName];
-            if (found2 && (found2->sb->specialized || !found1->sb->specialized))
+            if (found2 && (found2->sb->specialized || !found1->sb->specialized) && allTemplateArgsSpecified(found2, found2->templateParams))
             {
                 restoreParams(origList, n);
                 return found2;
@@ -4424,7 +4489,6 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
             found1->sb->maintemplate = sym;
             found1->tp = sym->tp->CopyType();
             found1->tp->UpdateRootTypes();
-            found1->tp->sp = found1;
             found1->sb->gentemplate = true;
             found1->sb->instantiated = true;
             if (!partialCreation)
@@ -4468,7 +4532,6 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
             found1->sb->maintemplate = sym;
             found1->tp = sym->tp->CopyType();
             found1->tp->UpdateRootTypes();
-            found1->tp->sp = found1;
 
             found1->templateParams = templateParamPairListFactory.CreateList();
             found1->templateParams->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
@@ -4553,6 +4616,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                             std::list<TEMPLATEPARAMPAIR>* origTemplate, std::list<TEMPLATEPARAMPAIR>* origUsing);
 static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                           std::list<TEMPLATEPARAMPAIR>* origUsing);
+int count3;
 void SearchAlias(const char* name, TEMPLATEPARAMPAIR* x, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                  std::list<TEMPLATEPARAMPAIR>* origUsing)
 {
@@ -4637,6 +4701,7 @@ static Type* ReplaceTemplateParam(Type* in)
     }
     return in;
 }
+
 void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TEMPLATESELECTOR>* old, bool expression, SYMBOL* sym,
                              std::list<TEMPLATEPARAMPAIR>* origTemplate, std::list<TEMPLATEPARAMPAIR>* origUsing)
 {
@@ -4723,7 +4788,8 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
                                     optimize_for_constants(&x->back().second->byNonType.dflt);
                             }
                             if (!replaced && ittp->first &&
-                                (expression || (ittp->second->type == TplType::int_ || !ittp->second->byClass.dflt)))
+                                (expression || (ittp->second->type == TplType::int_ || !ittp->second->byClass.dflt)) || 
+                                ((!definingTemplate || instantiatingTemplate) &&  ittp->second->type == TplType::typename_ && ittp->second->byClass.dflt->IsDeferred()))
                             {
                                 const char* name = ittp->first->name;
                                 if (!expression && ittp->second->type == TplType::int_ && ittp->second->byNonType.dflt &&
@@ -5002,12 +5068,27 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                 (*last)->v.func->arguments = argumentListFactory.CreateList();
                 for (auto arg : *old)
                 {
-                    auto arg1 = Allocate<Argument>();
-                    *arg1 = *arg;
-                    (*last)->v.func->arguments->push_back(arg1);
-                    arg1->exp = SpecifyArgInt(sym, arg1->exp, orig, origTemplate, origUsing);
-                    arg1->tp = LookupTypeFromExpression(arg1->exp, nullptr, false);
-                    arg1->tp = SpecifyArgType(sym, arg1->tp, nullptr, orig, origTemplate, origUsing);
+                    if (arg->nested)
+                    {
+                        for (auto arg2 : *arg->nested)
+                        {
+                            auto arg1 = Allocate<Argument>();
+                            *arg1 = *arg2;
+                            (*last)->v.func->arguments->push_back(arg1);
+                            arg1->exp = SpecifyArgInt(sym, arg1->exp, orig, origTemplate, origUsing);
+                            arg1->tp = LookupTypeFromExpression(arg1->exp, nullptr, false);
+                            arg1->tp = SpecifyArgType(sym, arg1->tp, nullptr, orig, origTemplate, origUsing);
+                        }
+                    }
+                    else
+                    {
+                        auto arg1 = Allocate<Argument>();
+                        *arg1 = *arg;
+                        (*last)->v.func->arguments->push_back(arg1);
+                        arg1->exp = SpecifyArgInt(sym, arg1->exp, orig, origTemplate, origUsing);
+                        arg1->tp = LookupTypeFromExpression(arg1->exp, nullptr, false);
+                        arg1->tp = SpecifyArgType(sym, arg1->tp, nullptr, orig, origTemplate, origUsing);
+                    }
                 }
             }
             exp = exp1;
@@ -5109,7 +5190,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
         }
 
         SYMBOL* sp1;
-        if (tp->BaseType()->sp->tp->type == BasicType::typedef_) 
+        if (tp->BaseType()->sp->tp->type == BasicType::typedef_)
             sp1 = GetTypeAliasSpecialization(tp->BaseType()->sp, args1);
         else
             sp1 = GetClassTemplate(tp->BaseType()->sp, args1, true);
@@ -5130,11 +5211,11 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                         itea = ita->second->byPack.pack->end();
                         ita = ita->second->byPack.pack->begin();
                     }
-                    if (ita != itea)
+                    if (ita != itea && ita->second->byClass.val)
                     {
                         ita->second->byClass.dflt = ita->second->byClass.val;
-                        ++ita;
                     }
+                    ++ita;
                     if (ita == itea && !tas.empty())
                     {
                         itea = tas.top();
@@ -5253,6 +5334,11 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                                 (!args1->back().second->byPack.pack || !args1->back().second->byPack.pack->size()))
                             {
                                 SearchAlias(args1->back().first->name, &args1->back(), sym, origTemplate, origUsing);
+                                auto a1 = args1->back();
+                                if (a1.second->packed && a1.second->byPack.pack && a1.second->byPack.pack->size() == 1 && a1.second->byPack.pack->front().second->packed)
+                                {
+                                    a1.second->byPack.pack = a1.second->byPack.pack->front().second->byPack.pack;
+                                }
                             }
                             else if (args1->back().second->byClass.dflt)
                             {
@@ -5463,9 +5549,9 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
         {
             TEMPLATEPARAMPAIR* rv = TypeAliasSearch(syms[i]->name, false);
             // only care about unbound ellipsis at this level
-            if (rv && !rv->second->ellipsis)
+            if (rv && (!rv->second->ellipsis || rv->second->replaced) )
             {
-                if (rv && rv->second->packed)
+                if (rv && rv->second->packed && rv->second->byPack.pack)
                 {
                     int n1 = CountPacks(rv->second->byPack.pack);
                     if (n1 > n)
@@ -5558,8 +5644,10 @@ static bool ParseTypeAliasDefaults(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
 {
     if (origTemplate && args)
     {
-        std::list<TEMPLATEPARAMPAIR>::iterator tpl2, tpl3;
-        for (tpl2 = origTemplate->begin(), tpl3 = args->begin(); tpl2 != origTemplate->end();
+        std::list<TEMPLATEPARAMPAIR>::iterator tpl2 = origTemplate->begin(), tpl3;
+        if (tpl2->second->type == TplType::new_)
+            ++tpl2;
+        for (tpl3 = args->begin(); tpl2 != origTemplate->end();
              ++tpl2, tpl3 == args->end() ? tpl3 : ++tpl3)
             if ((tpl3 == args->end() || !tpl3->second->byClass.dflt) && tpl2->second->byClass.txtdflt)
                 break;
@@ -5777,6 +5865,10 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
     auto itt = tpx->begin();
     if (itt->second->type == TplType::new_)
         ++itt;
+    if (ita->second->type == TplType::new_)
+    {
+        ++ita;
+    }
     for (; itt != tpx->end() && n; ++itt, ++ita, n--)
     {
         ita->first = itt->first;
@@ -5822,17 +5914,10 @@ SYMBOL* ParseLibcxxAliases(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    bool checked = false;
-    TEMPLATEPARAMPAIR old;
     std::list<TEMPLATEPARAMPAIR> temp;
     if (!args)
     {
         args = &temp;
-    }
-    else if (args->front().second->type == TplType::new_)
-    {
-        checked = true;
-        old = args->front();
     }
     sp->tp->InstantiateDeferred();
     TemplateArgInstantiateDeferred(args);
@@ -5847,11 +5932,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     {
         enclosingDeclarations.Add(sp->sb->parentClass->templateParams);
     }
-    if (checked)
-        args->push_front(old);
     auto sp1 = ParseLibcxxAliases(sp, args);
-    if (checked)
-        args->pop_front();
     if (sp1)
     {
         if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
@@ -5892,8 +5973,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             {
                 enclosingDeclarations.Drop();
             }
-            if (checked)
-                args->push_front(old);
             return rv;
         }
         SpecifyTemplateSelector(&rv->sb->templateSelector, basetp->sp->sb->templateSelector, false, sp, sp->templateParams,
@@ -5933,8 +6012,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             tp1->sp = rv;
             rv->tp = tp1;
         }
-        if (checked)
-            args->push_front(old);
         return rv;
     }
     else if (basetp->type == BasicType::typedef_ || (basetp->IsStructured() && basetp->BaseType()->sp->sb->templateLevel))
@@ -6020,8 +6097,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
         {
             enclosingDeclarations.Drop();
         }
-        if (checked)
-            args->push_front(old);
         return rv;
     }
     basetp = sp->tp->btp;
@@ -6044,8 +6119,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     {
         enclosingDeclarations.Drop();
     }
-    if (checked)
-        args->push_front(old);
     return rv;
 }
 

@@ -50,6 +50,7 @@
 #include "templateutil.h"
 #include "templateinst.h"
 #include "templatededuce.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "types.h"
 

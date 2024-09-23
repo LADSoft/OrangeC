@@ -44,12 +44,13 @@
 #include "templateinst.h"
 #include "templatededuce.h"
 #include "declcons.h"
-#include "cpplookup.h"
 #include "inline.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "types.h"
 #include "stmt.h"
 #include "cppbltin.h"
+#include "overload.h"
 
 namespace Parser
 {
@@ -97,7 +98,7 @@ static const char* typeNames[] = {"bit",
 
 void rtti_init(void) 
 {
-    rttiSyms = symbols.CreateSymbolTable(); 
+    rttiSyms = symbols->CreateSymbolTable(); 
 }
 void makeXCTab(SYMBOL* funcsp)
 {

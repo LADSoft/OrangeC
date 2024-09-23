@@ -39,9 +39,6 @@
     <ClInclude Include="cppbltin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cpplookup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="crc32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -171,6 +168,15 @@
     <ClInclude Include="..\ocpp\ppEmbed.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="overload.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="namespace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="beinterf.cpp">
@@ -189,9 +195,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cppbltin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpplookup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="crc32.cpp">
@@ -438,6 +441,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ocpp\TokenSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="overload.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="namespace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="class.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

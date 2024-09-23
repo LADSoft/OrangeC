@@ -52,4 +52,5 @@ int TemplatePartialDeduce(Type* origl, Type* origr, Type* syml, Type* symr, bool
 int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Type* tpr, CallSite* fcall);
 static SYMBOL* SynthesizeTemplate(Type* tp, SYMBOL* rvt, sym::_symbody* rvs, Type* tpt);
 void TemplatePartialOrdering(SYMBOL** table, int count, CallSite* funcparams, Type* atype, bool asClass, bool save);
+void CTADLookup(SYMBOL* funcsp, EXPRESSION** exp, Type** templateType, CallSite* funcparams, int flags);
 }  // namespace Parser

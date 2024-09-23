@@ -37,6 +37,7 @@
 #include "templateutil.h"
 #include "templateinst.h"
 #include "templatededuce.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "stmt.h"
 #include "types.h"
@@ -149,7 +150,7 @@ void ParseBuiltins(void)
     }
     if (Optimizer::cparams.prm_cplusplus)
     {
-        stdXC.syms = symbols.CreateSymbolTable();
+        stdXC.syms = symbols->CreateSymbolTable();
         stdXC.sp = makeID(StorageClass::type_, &stdXC, nullptr, "$$XCTYPE");
         stdXC.sp->sb->decoratedName = stdXC.sp->name;
     }

@@ -38,7 +38,6 @@
 #include "occparse.h"
 #include "lex.h"
 #include "help.h"
-#include "cpplookup.h"
 #include "mangle.h"
 #include "constopt.h"
 #include "memory.h"
@@ -55,10 +54,261 @@
 #include "templatededuce.h"
 #include "libcxx.h"
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "class.h"
+#include "overload.h"
+
 namespace Parser
 {
+bool SameTemplateSelector(Type* tnew, Type* told)
+{
+    while (tnew->IsRef() && told->IsRef())
+    {
+        tnew = tnew->BaseType()->btp;
+        told = told->BaseType()->btp;
+    }
+    while (tnew->IsPtr() && told->IsPtr())
+    {
+        tnew = tnew->BaseType()->btp;
+        told = told->BaseType()->btp;
+    }
+    if (tnew->type == BasicType::templateselector_ && told->type == BasicType::templateselector_)
+    {
+        auto tsn = tnew->sp->sb->templateSelector->begin();
+        auto tsne = tnew->sp->sb->templateSelector->end();
+        auto tso = told->sp->sb->templateSelector->begin();
+        auto tsoe = told->sp->sb->templateSelector->end();
+        ++tsn;
+        ++tso;
+        // this is kinda loose, ideally we ought to go through template parameters/decltype expressions
+        // looking for equality...
+        if (tsn->isTemplate || tso->isTemplate)
+            return false;
+        if (tsn->isDeclType || tso->isDeclType)
+            return false;
+        for ( ++ tsn, ++ tso; tsn != tsne && tso != tsoe; ++tsn, ++tso)
+        {
+            if (strcmp(tsn->name, tso->name) != 0)
+                return false;
+        }
+        return tsn == tsne && tso == tsoe;
+    }
+    else if (tnew->type == BasicType::templateselector_ || told->type == BasicType::templateselector_)
+    {
+        auto y = tnew->type == BasicType::templateselector_ ? told : tnew;
+        if (!y->IsStructured())
+            return false;
+        auto& x = tnew->type == BasicType::templateselector_ ? tnew->sp->sb->templateSelector : told->sp->sb->templateSelector;
+        auto ts = x->begin();
+        auto tse = x->end();
+        ++ts;
+        if (ts->isDeclType)
+            return false;
+        auto tp = ts->sp->tp;
+        for (++ts; ts != tse; ++ts)
+        {
+            if (!tp->IsStructured())
+                return false;
+
+            auto sp = search(tp->BaseType()->syms, ts->name);
+            if (!sp)
+            {
+                sp = classdata(ts->name, tp->BaseType()->sp, nullptr, false, false);
+                if (sp == (SYMBOL*)-1 || sp == nullptr)
+                    return false;
+            }
+            if (sp->sb->access != AccessLevel::public_ && !resolvingStructDeclarations)
+            {
+                return false;
+            }
+            tp = sp->tp;
+        }
+        return tp->CompatibleType(y) || SameTemplate(tp, y);
+    }
+    return false;
+}
+bool SameTemplatePointedTo(Type* tnew, Type* told, bool quals)
+{
+    if (tnew->IsConst() != told->IsConst() || tnew->IsVolatile() != told->IsVolatile())
+        return false;
+    while (tnew->BaseType()->type == told->BaseType()->type && tnew->BaseType()->type == BasicType::pointer_)
+    {
+        tnew = tnew->BaseType()->btp;
+        told = told->BaseType()->btp;
+        if (tnew->IsConst() != told->IsConst() || tnew->IsVolatile() != told->IsVolatile())
+            return false;
+    }
+    return SameTemplate(tnew, told, quals);
+}
+bool SameTemplate(Type* P, Type* A, bool quals)
+{
+    bool PLd, PAd;
+    std::list<TEMPLATEPARAMPAIR>::iterator PL, PLE, PA, PAE;
+    if (!P || !A)
+        return false;
+    P = P->BaseType();
+    A = A->BaseType();
+    if (P->IsRef())
+        P = P->btp->BaseType();
+    if (A->IsRef())
+        A = A->btp->BaseType();
+    if (!P->IsStructured() || !A->IsStructured())
+        return false;
+    P = P->BaseType();
+    A = A->BaseType();
+    if (!P->sp->sb || !A->sp->sb || P->sp->sb->parentClass != A->sp->sb->parentClass || strcmp(P->sp->name, A->sp->name) != 0)
+        return false;
+    if (P->sp->sb->templateLevel != A->sp->sb->templateLevel)
+        return false;
+    if (!P->sp->templateParams || !A->sp->templateParams)
+    {
+        if (P->size == 0 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
+            return true;
+        return false;
+    }
+    // this next if stmt is a horrible hack.
+    PL = P->sp->templateParams->begin();
+    PLE = P->sp->templateParams->end();
+    PA = A->sp->templateParams->begin();
+    PAE = A->sp->templateParams->end();
+    if (P->sp->templateParams->size() == 0 || A->sp->templateParams->size() == 0)
+    {
+        if (P->sp->templateParams->size() == 0 && !strcmp(P->sp->sb->decoratedName, A->sp->sb->decoratedName))
+            return true;
+        return false;
+    }
+    PLd = PAd = false;
+    if (PL != PLE)
+    {
+        if (PL->second->bySpecialization.types)
+        {
+            PLE = PL->second->bySpecialization.types->end();
+            PL = PL->second->bySpecialization.types->begin();
+            PLd = true;
+        }
+        else
+        {
+            ++PL;
+        }
+    }
+    if (PA != PAE)
+    {
+        if (PA->second->bySpecialization.types)
+        {
+            PAE = PA->second->bySpecialization.types->end();
+            PA = PA->second->bySpecialization.types->begin();
+            PAd = true;
+        }
+        else
+        {
+            ++PA;
+        }
+    }
+    if (PL != PLE && PA != PAE)
+    {
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pls;
+        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pas;
+        while (PL != PLE && PA != PAE)
+        {
+            if (PL->second->packed != PA->second->packed)
+                break;
+
+            while (PL != PLE && PA != PAE && PL->second->packed)
+            {
+                pls.push(PL);
+                pls.push(PLE);
+                pas.push(PA);
+                pas.push(PAE);
+                if (PL->second->byPack.pack)
+                {
+                    PLE = PL->second->byPack.pack->end();
+                    PL = PL->second->byPack.pack->begin();
+                }
+                else
+                {
+                    PLE = std::list<TEMPLATEPARAMPAIR>::iterator();
+                    PL = PLE;
+                }
+                if (PA->second->byPack.pack)
+                {
+                    PAE = PA->second->byPack.pack->end();
+                    PA = PA->second->byPack.pack->begin();
+                }
+                else
+                {
+                    PAE = std::list<TEMPLATEPARAMPAIR>::iterator();
+                    PA = PAE;
+                }
+            }
+            if (PL == PLE || PA == PAE)
+                break;
+            if (PL->second->type != PA->second->type)
+            {
+                break;
+            }
+            else if (P->sp->sb->instantiated || A->sp->sb->instantiated || (PL->second->byClass.dflt && PA->second->byClass.dflt))
+            {
+                if (PL->second->type == TplType::typename_)
+                {
+                    Type* pl = PL->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PL->second->byClass.val : PL->second->byClass.dflt;
+                    Type* pa = PA->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PA->second->byClass.val : PA->second->byClass.dflt;
+                    if (!pl || !pa)
+                        break;
+                    if ((PAd || PA->second->byClass.val) && (PLd || PL->second->byClass.val) && !templateCompareTypes(pa, pl, true))
+                    {
+                        break;
+                    }
+                    // now make sure the qualifiers match...
+                    if (quals)
+                    {
+                        int n = 0;
+                        e_cvsrn xx[5];
+                        getQualConversion(pl, pa, nullptr, &n, xx);
+                        if (n != 1 || xx[0] != CV_IDENTITY)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if (PL->second->type == TplType::template_)
+                {
+                    SYMBOL* plt = PL->second->byTemplate.val && !PL->second->byTemplate.dflt ? PL->second->byTemplate.val : PL->second->byTemplate.dflt;
+                    SYMBOL* pat = PA->second->byTemplate.val && !PL->second->byTemplate.dflt ? PA->second->byTemplate.val : PA->second->byTemplate.dflt;
+                    if ((plt || pat) && !exactMatchOnTemplateParams(PL->second->byTemplate.args, PA->second->byTemplate.args))
+                        break;
+                }
+                else if (PL->second->type == TplType::int_)
+                {
+                    EXPRESSION* plt = PL->second->byNonType.val && !PL->second->byNonType.dflt ? PL->second->byNonType.val : PL->second->byNonType.dflt;
+                    EXPRESSION* pat = PA->second->byNonType.val && !PA->second->byNonType.dflt ? PA->second->byNonType.val : PA->second->byNonType.dflt;
+                    if (!templateCompareTypes(PL->second->byNonType.tp, PA->second->byNonType.tp, true))
+                        break;
+                    if ((!plt || !pat) || !equalTemplateMakeIntExpression(plt, pat))
+                        break;
+                }
+            }
+            ++PL;
+            ++PA;
+            if (PL == PLE && PA == PAE && !pls.empty() && !pas.empty())
+            {
+                PLE = pls.top();
+                pls.pop();
+                PL = pls.top();
+                pls.pop();
+                PAE = pas.top();
+                pas.pop();
+                PA = pas.top();
+                pas.pop();
+                ++PL;
+                ++PA;
+            }
+        }
+        return PL == PLE && PA == PAE;
+    }
+    return false;
+}
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
     EXPRESSION* rv = nullptr;

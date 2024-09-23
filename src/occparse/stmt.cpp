@@ -31,6 +31,7 @@
 #include "ccerr.h"
 #include "config.h"
 #include "initbackend.h"
+#include "namespace.h"
 #include "mangle.h"
 #include "lex.h"
 #include "occparse.h"
@@ -46,7 +47,6 @@
 #include "help.h"
 #include "declcons.h"
 #include "wseh.h"
-#include "cpplookup.h"
 #include "init.h"
 #include "declcpp.h"
 #include "constopt.h"
@@ -67,14 +67,17 @@
 #include "optmodules.h"
 #include "constexpr.h"
 #include "libcxx.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
-
+#include "overload.h"
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
 {
 void refreshBackendParams(SYMBOL* funcsp);
+
+static std::list<std::list<SYMBOL*>*> usingDirectives;
 
 bool isCallNoreturnFunction;
 
@@ -126,6 +129,7 @@ void statement_ini(bool global)
     inFunctionExpressionParsing = false;
     while (!expressionStatements.empty())
         expressionStatements.pop();
+    usingDirectives.clear();
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -135,6 +139,7 @@ bool msilManaged(SYMBOL* s)
 #endif
     return false;
 }
+
 
 Statement* Statement::MakeStatement(LexList* lex, std::list<FunctionBlock*>& parent, StatementNode stype)
 {
@@ -172,6 +177,77 @@ void FunctionBlock::AddThis(LexList* lex, std::list<FunctionBlock*>& parent)
     Statement* st = Statement::MakeStatement(lex, parent, StatementNode::block_);
     st->blockTail = this->blockTail;
     st->lower = this->statements;
+}
+void StatementGenerator::AllocateLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label)
+{
+    SymbolTable<SYMBOL>* tn = symbols->CreateSymbolTable();
+    Statement* st;
+    Optimizer::LIST* l;
+    st = Statement::MakeStatement(nullptr, block, StatementNode::dbgblock_);
+    st->label = 1;
+    if (block.size() && Optimizer::cparams.prm_debug)
+    {
+        st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
+        st->label = label;
+    }
+    tn->Next(localNameSpace->front()->syms);
+    tn->Chain(localNameSpace->front()->syms);
+
+    localNameSpace->front()->syms = tn;
+    tn = symbols->CreateSymbolTable();
+    tn->Next(localNameSpace->front()->tags);
+    tn->Chain(localNameSpace->front()->tags);
+    localNameSpace->front()->tags = tn;
+    if (sym)
+        localNameSpace->front()->tags->Block(sym->sb->value.i++);
+
+    usingDirectives.push_front(localNameSpace->front()->usingDirectives);
+}
+void StatementGenerator::TagSyms(SymbolTable<SYMBOL>* syms)
+{
+    int i;
+    for (auto sym : *syms)
+    {
+        sym->sb->ccEndLine = preProcessor->GetRealLineNo() + 1;
+    }
+}
+void StatementGenerator::FreeLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label)
+{
+    SymbolTable<SYMBOL>* locals = localNameSpace->front()->syms;
+    SymbolTable<SYMBOL>* tags = localNameSpace->front()->tags;
+    Statement* st;
+    if (block.size() && Optimizer::cparams.prm_debug)
+    {
+        st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
+        st->label = label;
+    }
+    checkUnused(localNameSpace->front()->syms);
+    if (sym)
+        sym->sb->value.i--;
+
+    st = Statement::MakeStatement(nullptr, block, StatementNode::expr_);
+    StatementGenerator::DestructorsForBlock(&st->select, localNameSpace->front()->syms, true);
+    localNameSpace->front()->syms = localNameSpace->front()->syms->Next();
+    localNameSpace->front()->tags = localNameSpace->front()->tags->Next();
+
+
+    localNameSpace->front()->usingDirectives = usingDirectives.front();
+    usingDirectives.pop_front();
+
+    if (!IsCompiler())
+    {
+        TagSyms(locals);
+        TagSyms(tags);
+    }
+    if (sym)
+    {
+        locals->Next(sym->sb->inlineFunc.syms);
+        tags->Next(sym->sb->inlineFunc.tags);
+        sym->sb->inlineFunc.syms = locals;
+        sym->sb->inlineFunc.tags = tags;
+    }
+    st = Statement::MakeStatement(nullptr, block, StatementNode::dbgblock_);
+    st->label = 0;
 }
 bool StatementGenerator::IsSelectTrue(EXPRESSION* exp)
 {
@@ -263,9 +339,21 @@ void StatementGenerator::SelectionExpression( std::list<FunctionBlock*>& parent,
 
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
+        *exp = MakeExpression(ExpressionNode::select_, *exp);
     }
-    *exp = MakeExpression(ExpressionNode::select_, *exp);
-    GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
+    else
+    {
+        *exp = MakeExpression(ExpressionNode::select_, *exp);
+        if ((*exp)->left->type == ExpressionNode::comma_)
+        {
+            // an initializer
+            GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, (*exp)->left->right);
+        }
+        else
+        {
+            GetLogicalDestructors(&(*exp)->v.logicaldestructors.left, *exp);
+        }
+    }
 }
 FunctionBlock* StatementGenerator::GetCommonParent(std::list<FunctionBlock*>& src, std::list<FunctionBlock*>& dest)
 {
@@ -1215,9 +1303,6 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 {
                                     Type* it2;
                                     it2 = iteratorType = beginFunc->tp->BaseType()->btp;
-                                    if (iteratorType->IsStructured())
-                                        if (!strcmp(iteratorType->BaseType()->sp->name, "directory_iterator"))
-                                            printf("hi");
                                     if (it2->IsRef())
                                         it2 = it2->btp;
                                     if (!beginFunc->tp->BaseType()->btp->CompatibleType(endFunc->tp->BaseType()->btp))
@@ -1642,7 +1727,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         {
                             if (declSP->tp->IsStructured() && !declSP->tp->BaseType()->sp->sb->trivialCons)
                             {
-                                lex = initialize(lex, funcsp, declSP, StorageClass::auto_, false, false, 0);
+                                lex = initialize(lex, funcsp, declSP, StorageClass::auto_, false, false, false, 0);
                             }
                             else
                             {
@@ -2281,7 +2366,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     std::list<Initializer*>* init = nullptr, *dest = nullptr;
                     SYMBOL* sym = nullptr;
                     sym = AnonymousVar(StorageClass::localstatic_, tp)->v.sp;
-                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, 0);
+                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, false, 0);
                     returnexp = ConverInitializersToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
                     returntype = tp;
                     if (sym)
@@ -3638,7 +3723,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
                    StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                 MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::constexpr_) || MATCHKW(lex, Keyword::decltype_) ||
-                MATCHKW(lex, Keyword::static_assert_))
+                MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::template_))
             {
                 RequiresDialect::Feature(Dialect::c99, "Intermingled declarations");
                 if (viacontrol)
@@ -3649,7 +3734,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
                           StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
                        MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::decltype_) ||
-                       MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_))
+                       MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_) || MATCHKW(lex, Keyword::template_))
                 {
                     std::list<Statement*>* prev = before->statements;
                     before->statements = nullptr;
@@ -4353,7 +4438,7 @@ void StatementGenerator::FunctionBody()
                 funcsp->sb->linedata = startStmt->front()->lineData;
         }
         funcsp->sb->declaring = true;
-        labelSyms = symbols.CreateSymbolTable();
+        labelSyms = symbols->CreateSymbolTable();
         StatementGenerator::AssignParameterSizes(parent);
         funcsp->sb->startLine = lex->data->errline;
         Compound(parent, true);

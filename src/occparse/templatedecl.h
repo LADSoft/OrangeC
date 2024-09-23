@@ -84,6 +84,7 @@ static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* por
                                                bool bySpecialization);
 bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym, bool bySpecialization);
 void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl);
+LexList* GetDeductionGuide(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, Type** tp);
 static bool ValidSpecialization(std::list<TEMPLATEPARAMPAIR>* special, std::list<TEMPLATEPARAMPAIR>* args, bool templateMatch);
 SYMBOL* MatchSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);
 void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVALUEDATA*>* nsv, SYMBOL* strSym,

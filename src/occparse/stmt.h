@@ -93,6 +93,8 @@ namespace Parser
         static EXPRESSION* DestructorsForExpression(EXPRESSION* exp);
         static void DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct);
         static void DestructorsForArguments(std::list<Argument*>* il);
+        static void AllocateLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label);
+        static void FreeLocalContext(std::list<FunctionBlock*>& block, SYMBOL* sym, int label);
 
     protected:
         bool IsSelectTrue(EXPRESSION* exp);
@@ -141,6 +143,7 @@ namespace Parser
         int CountInlineStatements(std::list<Statement*>* block);
         void HandleInlines();
         void SingleStatement(std::list<FunctionBlock*>& parent, bool viacontrol);
+        static void TagSyms(SymbolTable<SYMBOL>* syms);
 
     private:
         LexList*& lex;

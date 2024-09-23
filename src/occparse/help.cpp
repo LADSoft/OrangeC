@@ -41,12 +41,12 @@
 #include "lex.h"
 #include "constopt.h"
 #include "memory.h"
-#include "cpplookup.h"
 #include "beinterf.h"
 #include "declcons.h"
 #include "help.h"
 #include "declcpp.h"
 #include "ildata.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
@@ -56,6 +56,7 @@
 namespace Parser
 {
 
+SYMBOL* argFriend;
 int anonymousNotAlloc;
 
 static int staticanonymousIndex;
@@ -2186,4 +2187,5 @@ EXPRESSION* getFunc(EXPRESSION* exp)
     }
     return rv;
 }
+
 }  // namespace Parser

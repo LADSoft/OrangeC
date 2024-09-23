@@ -25,6 +25,9 @@
 namespace Parser
 {
 EXPRESSION* GetSymRef(EXPRESSION* n);
+bool SameTemplateSelector(Type* tnew, Type* told);
+bool SameTemplatePointedTo(Type* tnew, Type* told, bool quals = false);
+bool SameTemplate(Type* P, Type* A, bool quals = false);
 bool equalTemplateMakeIntExpression(EXPRESSION* exp1, EXPRESSION* exp2);
 bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2);
 bool templateselectorcompare(std::vector<TEMPLATESELECTOR>* tsin1, std::vector<TEMPLATESELECTOR>* tsin2);

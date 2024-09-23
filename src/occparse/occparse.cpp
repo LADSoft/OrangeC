@@ -78,6 +78,7 @@
 #include "DotNetPELib.h"
 #endif
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
@@ -372,6 +373,7 @@ void compile(bool global)
     declare_init();
     init_init();
     syminit();
+    namespaceinit();
     inlineinit();
     lambda_init();
     rtti_init();
@@ -750,8 +752,10 @@ int main(int argc, char* argv[])
             enter_filename((char*)clist->data);
             errorinit();
             syminit();
+            namespaceinit();
             lexini();
             setglbdefs();
+            statement_ini(true);
             while (getsym() != nullptr)
                 ;
         }

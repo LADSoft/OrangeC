@@ -50,6 +50,7 @@
 #include "browse.h"
 #include "help.h"
 #include "expr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"

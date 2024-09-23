@@ -59,14 +59,12 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp,
     LexList* start, std::list<Argument*>* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 LexList* handleStaticAssert(LexList* lex);
-LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked);
 void CheckIsLiteralClass(Type* tp);
 LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
     std::list<FunctionBlock*>& block);
 // templatedecl.cpp
 bool declaringTemplate(SYMBOL* sym);
 // cpplookup.cpp
-void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
 void CollapseReferences(Type* tp_in);
 // stmt.cpp
 EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);

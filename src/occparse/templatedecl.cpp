@@ -38,7 +38,6 @@
 #include "occparse.h"
 #include "lex.h"
 #include "help.h"
-#include "cpplookup.h"
 #include "mangle.h"
 #include "constopt.h"
 #include "memory.h"
@@ -55,8 +54,12 @@
 #include "templatededuce.h"
 #include "libcxx.h"
 #include "constexpr.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
+#include "class.h"
+#include "overload.h"
+
 namespace Parser
 {
 
@@ -1082,18 +1085,9 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                 expandingParams++;
                                 if (count)
                                 {
+                                    auto list = templateParamPairListFactory.CreateList();
                                     int i;
                                     int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-                                    /*
-                                    for (i = 1; i < count; i++)
-                                    {
-                                        if (CountPacks(arg[i]->tp->templateParam->second->byPack.pack) != n)
-                                        {
-                                            error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                                            break;
-                                        }
-                                    }
-                                    */
                                     for (i = 0; i < n; i++)
                                     {
                                         LexList* lex = SetAlternateLex(start);
@@ -1108,16 +1102,20 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                         SetAlternateLex(nullptr);
                                         if (tp)
                                         {
-                                            if (!*lst)
-                                                *lst = templateParamPairListFactory.CreateList();
-                                            (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                            (*lst)->back().second->type = TplType::int_;
-                                            (*lst)->back().second->byNonType.dflt = exp;
-                                            (*lst)->back().second->byNonType.tp = tp;
-                                            if (itorig != iteorig)
-                                                (*lst)->back().first = itorig->first;
+                                            list->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
+                                            list->back().second->type = TplType::int_;
+                                            list->back().second->byNonType.dflt = exp;
+                                            list->back().second->byNonType.tp = tp;
                                         }
                                     }
+                                    if (!*lst)
+                                        *lst = templateParamPairListFactory.CreateList();
+                                    (*lst)->push_back(TEMPLATEPARAMPAIR{ name, Allocate<TEMPLATEPARAM>() });
+                                    (*lst)->back().second->type = TplType::int_;
+                                    (*lst)->back().second->packed = true;
+                                    (*lst)->back().second->byPack.pack = list;
+                                    if (itorig != iteorig)
+                                        (*lst)->back().first = itorig->first;
                                 }
                                 expandingParams--;
                                 packIndex = oldPack;
@@ -2413,6 +2411,56 @@ void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
             }
         }
     }
+}
+LexList* GetDeductionGuide(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, Type** tp)
+{
+    if (funcsp || storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || (*tp)->sp->sb->parentClass)
+    {
+        errorsym(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, (*tp)->sp);
+    }
+    SYMBOL* sp = makeID(StorageClass::member_, &stdint, nullptr, DG_NAME);
+    sp->sb->templateLevel = 1;
+    Type* functp = TypeGenerator::FunctionParams(lex, funcsp, &sp, &stdint, true, storage_class, false);
+    if (needkw(&lex, Keyword::pointsto_))
+    {
+        sp->templateParams = TemplateGetParams(sp);
+        Linkage linkage2, linkage3;
+        bool notype, defd;
+        int consdest;
+        Type* deductionGuide = TypeGenerator::UnadornedType(lex, funcsp, nullptr, nullptr, true, storage_class, &linkage, &linkage2, &linkage3, (*tp)->sp->sb->access, &notype, &defd, &consdest, nullptr, nullptr, false, false, false, nullptr, false);
+        auto sp1 = (*tp)->sp, sp2 = deductionGuide && deductionGuide->IsStructured() && deductionGuide == deductionGuide->BaseType() ? deductionGuide->sp : nullptr;
+        if (sp2)
+        {
+            if (sp1->sb->maintemplate)
+                sp1 = sp1->sb->maintemplate;
+            if (sp2->sb->maintemplate)
+                sp2 = sp2->sb->maintemplate;
+            if (sp1->sb->parentTemplate)
+                sp1 = sp1->sb->parentTemplate;
+            if (sp2->sb->parentTemplate)
+                sp2 = sp2->sb->parentTemplate;
+        }
+        if (!deductionGuide || !sp2 || sp1 != sp2)
+        {
+            errorsym(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, (*tp)->sp);
+        }
+        if (sp2)
+        {
+            auto enclosing = search(sp1->tp->syms, DG_NAME);
+            SYMBOL* deductionSym = nullptr;
+            if (enclosing)
+                deductionSym = searchOverloads(sp, sp1->tp->syms);
+            if (!deductionSym)
+                deductionSym = insertFunc(sp1, sp);
+            deductionSym->sb->deductionGuide = deductionGuide;
+        }
+        *tp = sp->tp;
+    }
+    else
+    {
+        errskim(&lex, skim_semi, true);
+    }
+    return lex;
 }
 static bool ValidSpecialization(std::list<TEMPLATEPARAMPAIR>* special, std::list<TEMPLATEPARAMPAIR>* args, bool templateMatch)
 {

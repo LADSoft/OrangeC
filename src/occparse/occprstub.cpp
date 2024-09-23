@@ -30,6 +30,7 @@
 #include "templateutil.h"
 #include "templatededuce.h"
 #include "declare.h"
+#include "namespace.h"
 #include "symtab.h"
 
 namespace CompletionCompiler

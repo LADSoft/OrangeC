@@ -61,9 +61,11 @@
 #include "beinterf.h"
 #include "inasm.h"
 #include "optmodules.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "constopt.h"
 #include "types.h"
+
 Optimizer::SimpleSymbol* currentFunction;
 
 namespace Parser
@@ -1209,7 +1211,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     /*    if (funcsp->sb->loadds && funcsp->sb->farproc) */
     /*	        Optimizer::gen_icode(Optimizer::i_loadcontext, 0,0,0); */
-    AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
+    StatementGenerator::AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
     if (funcsp->sb->allocaUsed && (Optimizer::architecture != ARCHITECTURE_MSIL))
     {
         EXPRESSION* allocaExp = AnonymousVar(StorageClass::auto_, &stdpointer);
@@ -1230,7 +1232,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     tFree();
 
     InsertParameterThunks(funcsp, Optimizer::blockArray[1]);
-    FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
+    StatementGenerator::FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
 
     /* Code gen from icode */
     Optimizer::SymbolManager::Get(funcsp)->allocaUsed = funcsp->sb->allocaUsed;
@@ -1239,9 +1241,9 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (!currentFunction->isinternal && (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || tmpl))
         Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
 
-    AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
+    StatementGenerator::AllocateLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
     XTDumpTab(funcsp);
-    FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
+    StatementGenerator::FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel);
 
     Optimizer::intermed_head = nullptr;
     theCurrentFunc = oldCurrentFunc;

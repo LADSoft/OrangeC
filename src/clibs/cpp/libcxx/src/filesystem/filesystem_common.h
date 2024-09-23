@@ -402,8 +402,8 @@ bool posix_utimes(const path& p, std::array<TimeSpec, 2> const& TS,
     auto dur = duration_cast<microseconds>(nanoseconds(nsec)).count();
     return static_cast<int_type>(dur);
   };
-  struct ::timeval ConvertedTS[2] = {{TS[0].tv_sec, Convert(TS[0].tv_nsec)},
-                                     {TS[1].tv_sec, Convert(TS[1].tv_nsec)}};
+  struct ::timeval ConvertedTS[2] = {{/*DAL*/(long)TS[0].tv_sec, Convert(TS[0].tv_nsec)},
+                                     {/*DAL*/(long)TS[1].tv_sec, Convert(TS[1].tv_nsec)}};
   if (::utimes(p.c_str(), ConvertedTS) == -1) {
     ec = capture_errno();
     return true;

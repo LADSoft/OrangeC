@@ -38,6 +38,7 @@
 #include "memory.h"
 #include "wseh.h"
 #include "stmt.h"
+#include "namespace.h"
 #include "symtab.h"
 
 namespace Parser
@@ -99,7 +100,7 @@ static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     catchstmt->table = localNameSpace->front()->syms;
     parent.push_front(catchstmt);
     inLoopOrConditional++;
-    AllocateLocalContext(parent, funcsp, codeLabel++);
+    StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
     if (MATCHKW(lex, Keyword::openpa_))
     {
         needkw(&lex, Keyword::openpa_);
@@ -125,7 +126,7 @@ static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
     inLoopOrConditional--;
-    FreeLocalContext(parent, funcsp, codeLabel++);
+    StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
     st = Statement::MakeStatement(lex, parent, StatementNode::seh_catch_);
     st->blockTail = catchstmt->blockTail;
     st->lower = catchstmt->statements;
@@ -148,7 +149,7 @@ static LexList* SEH_finally(LexList* lex, SYMBOL* funcsp, std::list<FunctionBloc
     finallystmt->type = Keyword::catch_;
     finallystmt->table = localNameSpace->front()->syms;
     parent.push_front(finallystmt);
-    AllocateLocalContext(parent, funcsp, codeLabel++);
+    StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
     if (MATCHKW(lex, Keyword::begin_))
     {
@@ -163,7 +164,7 @@ static LexList* SEH_finally(LexList* lex, SYMBOL* funcsp, std::list<FunctionBloc
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
-    FreeLocalContext(parent, funcsp, codeLabel++);
+    StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional--;
     st = Statement::MakeStatement(lex, parent, StatementNode::seh_finally_);
     st->blockTail = finallystmt->blockTail;
@@ -185,7 +186,7 @@ static LexList* SEH_fault(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     faultstmt->type = Keyword::catch_;
     faultstmt->table = localNameSpace->front()->syms;
     parent.push_front(faultstmt);
-    AllocateLocalContext(parent, funcsp, codeLabel++);
+    StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
     if (MATCHKW(lex, Keyword::begin_))
     {
@@ -200,7 +201,7 @@ static LexList* SEH_fault(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
-    FreeLocalContext(parent, funcsp, codeLabel++);
+    StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
     st = Statement::MakeStatement(lex, parent, StatementNode::seh_fault_);
     st->blockTail = faultstmt->blockTail;
     st->lower = faultstmt->statements;
@@ -231,10 +232,10 @@ static LexList* SEH_try(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>&
         auto prev = parent.front()->statements;
         parent.front()->statements = nullptr;
         bool foundFinally = false, foundFault = false;
-        AllocateLocalContext(parent, funcsp, codeLabel++);
+        StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
         StatementGenerator sg(lex, funcsp);
         sg.Compound(parent, false);
-        FreeLocalContext(parent, funcsp, codeLabel++);
+        StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
         before->needlabel = trystmt->needlabel;
         st = Statement::MakeStatement(lex, parent, StatementNode::seh_try_);
         st->blockTail = trystmt->blockTail;

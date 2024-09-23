@@ -51,7 +51,6 @@
     <ClCompile Include="..\occparse\constexpr.cpp" />
     <ClCompile Include="..\occparse\constopt.cpp" />
     <ClCompile Include="..\occparse\cppbltin.cpp" />
-    <ClCompile Include="..\occparse\cpplookup.cpp" />
     <ClCompile Include="..\occparse\crc32.cpp" />
     <ClCompile Include="..\occparse\debug.cpp" />
     <ClCompile Include="..\occparse\declare.cpp" />
@@ -89,10 +88,16 @@
     <ClCompile Include="..\occparse\types.cpp" />
     <ClCompile Include="..\occparse\unmangle.cpp" />
     <ClCompile Include="..\occparse\wseh.cpp" />
+    <ClCompile Include="..\occparse\class.cpp" />
+    <ClCompile Include="..\occparse\overload.cpp" />
+    <ClCompile Include="..\occparse\namespace.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="symtypes.h" />
+    <ClInclude Include="..\occparse\class.h" />
+    <ClInclude Include="..\occparse\overload.h" />
+    <ClInclude Include="..\occparse\namespace.h" />
   </ItemGroup>
 </Project>

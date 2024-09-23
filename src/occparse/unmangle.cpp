@@ -84,6 +84,34 @@ char* unmangle(char* val, const char* name);
 static int manglenamecount = -1;
 static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
+const char* LookupIntrinsicName(const char *mangled)
+{
+    int i;
+    for (i = 0; i < IT_SIZE; i++)
+        if (!strcmp(mangled, cpp_funcname_tab[i]))
+            break;
+    if (i < IT_THRESHOLD)
+    {
+        switch (i)
+        {
+        case 0:
+            return "constructor";
+        case 1:
+            return "destructor";
+        case 2:
+            return "cast operator";
+        default:
+            return "????";
+        }
+    }
+    else if (i < IT_SIZE)
+    {
+        static char buf[512];
+        sprintf(buf, "operator %s", xlate_tab[i]);
+        return buf;
+    }
+    return nullptr;
+}
 const char* unmang_intrins(char* buf, const char* name, const char* last)
 {
     char cur[4096], *p = cur;

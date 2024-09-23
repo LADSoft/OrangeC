@@ -51,18 +51,19 @@
 #include "constopt.h"
 #include "OptUtils.h"
 #include "declcpp.h"
-#include "cpplookup.h"
 #include "beinterf.h"
 #include "exprcpp.h"
 #include "dsw.h"
 #include "constexpr.h"
 #include "ccerr.h"
 #include "rtti.h"
+#include "namespace.h"
 #include "symtab.h"
 #include "types.h"
 #include "stmt.h"
 #include "libcxx.h"
-
+#include "overload.h"
+#include "class.h"
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -3168,7 +3169,7 @@ int fold_const(EXPRESSION* node)
             {
 
                 std::list<Initializer*> *init = nullptr, *dest = nullptr;
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, 0);
+                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
                 if (init)
                     *node = *init->front()->exp;
             }
@@ -3176,7 +3177,7 @@ int fold_const(EXPRESSION* node)
             {
                 EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
                 lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
-                               exp->v.sp, false, 0);
+                               exp->v.sp, false, false, 0);
             }
             SetAlternateLex(nullptr);
         }
@@ -3281,9 +3282,12 @@ int typedconsts(EXPRESSION* node1)
             rv = true;
             break;
         case ExpressionNode::const_:
-            optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
-            *node1 = *node1->v.sp->sb->init->front()->exp;
-            rv = true;
+            if (!node1->v.sp->templateParams || allTemplateArgsSpecified(node1->v.sp, node1->v.sp->templateParams))
+            {
+                optimize_for_constants(&node1->v.sp->sb->init->front()->exp);
+                *node1 = *node1->v.sp->sb->init->front()->exp;
+                rv = true;
+            }
             break;
         default:
             break;

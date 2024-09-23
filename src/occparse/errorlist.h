@@ -404,7 +404,7 @@ ERRLIST(ERR_FORRANGE_REQUIRES_STRUCT_OR_ARRAY, 362, "For-range expression requir
 ERRLIST(ERR_FORRANGE_ARRAY_UNSIZED, 363, "For-range array expression unsized", CE_ERROR)
 ERRLIST(ERR_FORRANGE_DECLARATOR_NO_INIT, 364, "For-range declarator cannot be initialized", CE_ERROR)
 ERRLIST(ERR_FOR_DECLARATOR_MUST_INITIALIZE, 365, "For declarator must be initialized", CE_ERROR)
-ERRLIST(ERR_INIT_NARROWING, 366, "Value narrowing within { } is not allowed", CE_ERROR)
+ERRLIST(ERR_INIT_NARROWING, 366, "Conversion from '%s' to '%s' would require narrowing", CE_ERROR)
 ERRLIST(ERR_NONSTRUCTURED_INIT_LIST, 367, "Nonstructured initializer list expected", CE_ERROR)
 ERRLIST(ERR_CANNOT_USE_INIT_LIST, 368, "Cannot use initializer list here", CE_ERROR)
 ERRLIST(ERR_CANNOT_USE_INIT_LIST_WITH_BUILTIN_BRACKET, 369, "Initializer list requires overloaded operator []", CE_ERROR)
@@ -432,7 +432,7 @@ ERRLIST(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION, 388, "Only constructors
 ERRLIST(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION, 389, "Implicit use of explicit constructor or conversion function", CE_ERROR)
 ERRLIST(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, 390, "Type '%s' is not a defined class with virtual functions", CE_ERROR)
 ERRLIST(ERR_TEMPLATE_NO_LOCAL_CLASS, 391, "Template may not be declared in class defined within function scope", CE_ERROR)
-ERRLIST(ERR_TEMPLATE_GLOBAL_OR_CLASS_SCOPE, 392, "Template must be declared at global scope or within a class", CE_ERROR)
+ERRLIST(ERR_TEMPLATE_GLOBAL_OR_CLASS_SCOPE, 392, "Template must be declared at global or namespace scope or within a class", CE_ERROR)
 ERRLIST(ERR_CANNOT_USE_DEFAULT_WITH_PACKED_TEMPLATE_PARAMETER, 393, "Packed template parameter cannot have default", CE_ERROR)
 ERRLIST(ERR_CLASS_TEMPLATE_PARAMETER_MISSING_DEFAULT, 394, "'Class' template parameter missing default", CE_ERROR)
 ERRLIST(ERR_CLASS_TEMPLATE_DEFAULT_MUST_REFER_TO_TYPE, 395, "'Class' template parameter default must refer to type", CE_ERROR)
@@ -468,7 +468,7 @@ ERRLIST(ERR_USE_DOT_OR_POINTSTO_TO_CALL, 420, "Use . or -> to call '%s'", CE_ERR
 ERRLIST(ERR_TEMPLATE_ARGUMENT_MUST_BE_CONSTANT, 421, "Template argument must be a constant expression", CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE, 422, "Pack ... specifier not allowed here", CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER, 423,
-        "Pack ... specifier on variable requires packed template parameter", CE_ERROR)
+        "Pack ... specifier equires packed template parameter", CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER, 424,
         "Pack ... specifier on expression requires packed function parameter", CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_PARAMETER, 425, "Pack ... specifier must be used on function parameter", CE_ERROR)
@@ -626,6 +626,9 @@ ERRLIST(ERR_CANNOT_CAPTURE_BY_REFERENCE, 548, "Cannot explicitly capture '%s' wh
 ERRLIST(ERR_CANNOT_CAPTURE_THIS_BY_VALUE, 549, "Cannot explicitly capture 'this' default capture mode is by-value (=)", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE, 550, "Cannot explicitly capture '*this' when default capture mode is by-reference (&)", CE_ERROR)
 ERRLIST(ERR_TYPE_OR_VARIABLE_EXPECTED, 551, "Type or variable expected in using statement", CE_ERROR)
+ERRLIST(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, 552, "Deduction guide for '%s' does not match specified class", CE_ERROR)
+ERRLIST(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, 553, "Deduction guide for '%s' needs to be at global or namespace scope", CE_ERROR)
+ERRLIST(ERR_ARRAY_TYPE_NOT_EXPECTED, 554, "Array type not expected here", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

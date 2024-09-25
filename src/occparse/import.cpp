@@ -213,8 +213,8 @@ Type* Importer::TranslateType(DotNetPELib::Type* in)
         {
             rv = Type::MakeType(BasicType::lref_, rv);
         }
+        rv->UpdateRootTypes();
     }
-    rv->UpdateRootTypes();
     return rv;
 }
 

@@ -3568,7 +3568,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                         initializerListType = it->second->byClass.val;
                     }
                 }
-                else if (tp1->IsArray() && (ita != itae) && (!(*ita)->tp || !(*ita)->tp->IsArray()) )
+                else if (Optimizer::architecture != ARCHITECTURE_MSIL && tp1->IsArray() && (ita != itae) && (!(*ita)->tp || !(*ita)->tp->IsArray()) )
                 {
                     auto tp2 = tp1;
                     while (tp2->IsArray()) tp2 = tp2->BaseType()->btp;

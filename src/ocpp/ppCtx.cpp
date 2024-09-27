@@ -41,7 +41,7 @@ bool ppCtx::Check(kw token, std::string& line)
 }
 std::string ppCtx::GetId(std::string& line)
 {
-    Tokenizer tk(line, nullptr);
+    Tokenizer<kw> tk(line, nullptr);
     const Token* t = tk.Next();
     if (t->IsIdentifier())
     {

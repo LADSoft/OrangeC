@@ -23,8 +23,7 @@
  * 
  */
 
-#ifndef SymbolTable_h
-#define SymbolTable_h
+#pragma once
 
 #include <unordered_map>
 #include <deque>
@@ -99,4 +98,3 @@ class SymbolTable
     std::unordered_map<std::string, Symbol*> hashTable;
     std::deque<std::unique_ptr<Symbol>> symList;
 };
-#endif

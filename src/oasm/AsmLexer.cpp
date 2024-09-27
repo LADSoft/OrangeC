@@ -23,6 +23,7 @@
  * 
  */
 
+#include "AsmLexer.h"
 #include "AsmFile.h"
 #include "PreProcessor.h"
 #include "UTF8.h"
@@ -132,7 +133,7 @@ Lexer::Lexer(PreProcessor& PP, bool GAS) :
 }
 void Lexer::InitTokenizer()
 {
-    tokenizer = new Tokenizer("", &hash);
+    tokenizer = new Tokenizer<kw>("", &hash);
     tokenizer->SetCaseInsensitive(true);
 }
 std::string Lexer::GetRestOfLine(bool reset)
@@ -188,7 +189,7 @@ void Lexer::CheckAssign(std::string& line, PreProcessor& pp)
                 std::string name;
                 int value = 0;
                 npos = line.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                if (npos == std::string::npos || !Tokenizer::IsSymbolChar(line.c_str() + npos, true))
+                if (npos == std::string::npos || !TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + npos, true))
                 {
                     Errors::Error("Expected identifier");
                 }
@@ -196,7 +197,7 @@ void Lexer::CheckAssign(std::string& line, PreProcessor& pp)
                 {
                     int npos1 = npos;
 
-                    while (npos1 != line.size() && Tokenizer::IsSymbolChar(line.c_str() + npos1, false))
+                    while (npos1 != line.size() && TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + npos1, false))
                     {
                         int n = UTF8::CharSpan(line.c_str() + npos1);
                         while (n-- && npos1 < line.size())

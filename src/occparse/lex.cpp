@@ -676,7 +676,7 @@ int getChar(const unsigned char** source, LexType* tp)
         int i;
         do
             p++;
-        while (*p == ppDefine::MACRO_PLACEHOLDER);
+        while (*p == MacroStates::MACRO_PLACEHOLDER);
         i = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : v == LexType::l_u8chr_ ? 1 : 2, &p);
         if (i == INT_MIN)
         {
@@ -724,23 +724,23 @@ int getChar(const unsigned char** source, LexType* tp)
                         else
                             do
                                 p++;
-                            while (*p == ppDefine::MACRO_PLACEHOLDER);
+                            while (*p == MacroStates::MACRO_PLACEHOLDER);
                     }
                     else
                         do
                             p++;
-                        while (*p == ppDefine::MACRO_PLACEHOLDER);
+                        while (*p == MacroStates::MACRO_PLACEHOLDER);
                 }
                 else
                     do
                         p++;
-                    while (*p == ppDefine::MACRO_PLACEHOLDER);
+                    while (*p == MacroStates::MACRO_PLACEHOLDER);
             }
         }
         else
             do
                 p++;
-            while (*p == ppDefine::MACRO_PLACEHOLDER);
+            while (*p == MacroStates::MACRO_PLACEHOLDER);
         *tp = v;
         *source = p;
         return i;
@@ -765,14 +765,14 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
         v = LexType::l_wstr_;
         do
             p++;
-        while (*p == ppDefine::MACRO_PLACEHOLDER);
+        while (*p == MacroStates::MACRO_PLACEHOLDER);
     }
     else if (*p == '@' && (Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
     {
         v = LexType::l_msilstr_;
         do
             p++;
-        while (*p == ppDefine::MACRO_PLACEHOLDER);
+        while (*p == MacroStates::MACRO_PLACEHOLDER);
     }
     else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c11)
     {
@@ -781,13 +781,13 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
             v = LexType::l_ustr_;
             do
                 p++;
-            while (*p == ppDefine::MACRO_PLACEHOLDER);
+            while (*p == MacroStates::MACRO_PLACEHOLDER);
             if (*p == '8')
             {
                 v = LexType::l_u8str_;
                 do
                     p++;
-                while (*p == ppDefine::MACRO_PLACEHOLDER);
+                while (*p == MacroStates::MACRO_PLACEHOLDER);
             }
         }
         else if (*p == 'U')
@@ -795,7 +795,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
             v = LexType::l_Ustr_;
             do
                 p++;
-            while (*p == ppDefine::MACRO_PLACEHOLDER);
+            while (*p == MacroStates::MACRO_PLACEHOLDER);
         }
     }
     if (Optimizer::cparams.prm_cplusplus && *p == 'R')
@@ -803,13 +803,13 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
         raw = true;
         do
             p++;
-        while (*p == ppDefine::MACRO_PLACEHOLDER);
+        while (*p == MacroStates::MACRO_PLACEHOLDER);
     }
     if (*p == '"')
     {
         do
             p++;
-        while (*p == ppDefine::MACRO_PLACEHOLDER);
+        while (*p == MacroStates::MACRO_PLACEHOLDER);
         if (raw)
         {
             // fixme utf8 raw strings...
@@ -835,7 +835,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                 st[0] = *p;
                 do
                     p++;
-                while (*p == ppDefine::MACRO_PLACEHOLDER);
+                while (*p == MacroStates::MACRO_PLACEHOLDER);
                 if (err)
                 {
                     if (st[0] == '"')
@@ -887,7 +887,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                         st[0] = *p;
                         do
                             p++;
-                        while (*p == ppDefine::MACRO_PLACEHOLDER);
+                        while (*p == MacroStates::MACRO_PLACEHOLDER);
                     }
                     if (len < 3)
                     {
@@ -931,7 +931,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                 }
             *dest = 0;
             found = true;
-            while (isspace(*p) || *p == ppDefine::MACRO_PLACEHOLDER)
+            while (isspace(*p) || *p == MacroStates::MACRO_PLACEHOLDER)
                 p++;
             *source = p;
         }
@@ -939,7 +939,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
         {
             while (*p && *p != '"')
             {
-                while (*p == ppDefine::MACRO_PLACEHOLDER)
+                while (*p == MacroStates::MACRO_PLACEHOLDER)
                     p++;
                 if (!*p || *p == '"')
                     continue;
@@ -1008,9 +1008,9 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
             else
                 do
                     p++;
-                while (*p == ppDefine::MACRO_PLACEHOLDER);
+                while (*p == MacroStates::MACRO_PLACEHOLDER);
             found = true;
-            while (*p == ppDefine::MACRO_PLACEHOLDER)
+            while (*p == MacroStates::MACRO_PLACEHOLDER)
                 p++;
             *source = p;
         }
@@ -1681,7 +1681,7 @@ void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std:
     // print the line
     for (int i = 0; i < line.size(); i++)
     {
-        if (line[i] != ppDefine::MACRO_PLACEHOLDER)
+        if (line[i] != MacroStates::MACRO_PLACEHOLDER)
             fputc(line[i], fil);
     }
     fputc('\n', fil);
@@ -1698,7 +1698,7 @@ void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std:
         lastEnd = end;
         while (pos < start)
         {
-            if (line[pos++] != ppDefine::MACRO_PLACEHOLDER)
+            if (line[pos++] != MacroStates::MACRO_PLACEHOLDER)
             {
                 fputc(' ', fil);
             }
@@ -1706,7 +1706,7 @@ void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std:
         int count = 0;
         for (int i = start; i < end; i++)
         {
-            if (line[i] != ppDefine::MACRO_PLACEHOLDER)
+            if (line[i] != MacroStates::MACRO_PLACEHOLDER)
                 count++;
         }
         pos += end - start;
@@ -1783,7 +1783,7 @@ static void DumpPreprocessedLine()
         fprintf(cppFile, "#line %d \"%s\"\n", preProcessor->GetErrLineNo(), preProcessor->GetErrFile().c_str());
         while (*p)
         {
-            if (*p != ppDefine::MACRO_PLACEHOLDER)
+            if (*p != MacroStates::MACRO_PLACEHOLDER)
                 fputc(*p++, cppFile);
             else
                 p++;
@@ -1883,7 +1883,7 @@ LexList* getsym(void)
                 fetched = true;
                 valid = true;
             }
-            while (isspace(*linePointer) || *linePointer == ppDefine::MACRO_PLACEHOLDER)
+            while (isspace(*linePointer) || *linePointer == MacroStates::MACRO_PLACEHOLDER)
                 linePointer++;
             if (*linePointer != 0)
             {
@@ -2021,7 +2021,7 @@ LexList* getsym(void)
             int end = linePointer - (const unsigned char*)currentLine.c_str();
             if (valid && tokenIterator != preProcessor->TokenPositions().end())
             {
-                auto p = *tokenIterator;
+                const auto& p = *tokenIterator;
                 int oldend = end;
                 if (start <= p.newStart)
                 {

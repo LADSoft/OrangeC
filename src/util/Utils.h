@@ -3,20 +3,20 @@
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
@@ -36,7 +36,7 @@
 #ifdef TARGET_OS_WINDOWS
 #    include "io.h"
 #endif
-
+#include <sys/stat.h>
 class Utils
 {
   public:
@@ -65,6 +65,12 @@ class Utils
         Fatal(format.c_str(), arg...);
     }
     static bool HasLocalExe(const std::string& exeName);
+    static size_t file_size(const std::string& file)
+    {
+        struct stat stats;
+        stat(file.c_str(), &stats);
+        return stats.st_size;
+    }
     static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
@@ -84,6 +90,7 @@ class Utils
     static void StripExt(char* buffer);
     static bool HasExt(const char* buffer, const char* ext);
     static bool FileExists(const char* buffer);
+    static bool FileExists(std::string buffer) { return FileExists(buffer.data()); }
     static std::string FindOnPath(const std::string& name, const std::string& path);
     static std::vector<std::string> split(const std::string& strToSplit, char delimeter = ';');
     static void ReplaceAll(std::string& str, const std::string& from, const std::string& to);

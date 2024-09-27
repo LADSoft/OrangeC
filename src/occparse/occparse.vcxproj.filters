@@ -165,6 +165,9 @@
     <ClInclude Include="wseh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\ocpp\ppEmbed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="overload.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -432,6 +435,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\oasm\AsmFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ocpp\ppEmbed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ocpp\TokenSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="overload.cpp">

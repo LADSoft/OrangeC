@@ -2021,7 +2021,7 @@ LexList* getsym(void)
             int end = linePointer - (const unsigned char*)currentLine.c_str();
             if (valid && tokenIterator != preProcessor->TokenPositions().end())
             {
-                auto& p = *tokenIterator;
+                const auto& p = *tokenIterator;
                 int oldend = end;
                 if (start <= p.newStart)
                 {

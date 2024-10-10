@@ -611,7 +611,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
         auto templ1 = templ;
         if (templ1->sb && templ1->sb->maintemplate)
             templ1 = templ1->sb->maintemplate;
-        if (templ->tp && templ1->tp->type == BasicType::aggregate_)
+        if (templ->tp && templ1->tp->type == BasicType::aggregate_ && templ->tp->syms->size() == 1)
             templ1 = templ1->tp->syms->front();
         if (templ1->templateParams)
         {
@@ -802,11 +802,13 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         {
                             (*lst)->back().second->type = TplType::template_;
                             (*lst)->back().second->packed = true;
+                            (*lst)->back().second->derivedFromUnpacked = true;
                         }
                         else
                         {
                             (*lst)->back().second->type = TplType::typename_;
                             (*lst)->back().second->packed = true;
+                            (*lst)->back().second->derivedFromUnpacked = true;
                         }
                         if (itorig != iteorig)
                             (*lst)->back().first = itorig->first;

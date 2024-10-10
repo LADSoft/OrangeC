@@ -146,7 +146,8 @@ static void DumpInstantiations()
 {
     for (auto i : instantiationList)
     {
-        errorsym(ERR_REFERENCED_IN_INSTANTIATION, std::get<2>(i), std::get<1>(i), std::get<0>(i));
+        if (std::get<2>(i)->sb->templateLevel)
+            errorsym(ERR_REFERENCED_IN_INSTANTIATION, std::get<2>(i), std::get<1>(i), std::get<0>(i));
     }
     if (!instantiationList.empty() && preProcessor->GetErrLineNo())
     {
@@ -431,7 +432,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (!(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile &&
+    if (!(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && currentErrorFile[0] && currentErrorLine &&
         !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) && preProcessor->GetRealLineNo() == currentErrorLine)
     {
         disabledNote = true;
@@ -2156,6 +2157,37 @@ void checkscope(Type* tp1, Type* tp2)
             sp2 = tp2->btp->sp;
         if (sp1 != sp2)
             error(ERR_SCOPED_TYPE_MISMATCH);
+    }
+}
+void CheckThroughConstObject(Type* tp, EXPRESSION* exp)
+{
+    if ((!tp && exp->left && exp->left->type != ExpressionNode::l_p_) || (tp && tp->IsRef() && !tp->BaseType()->btp->IsConst() && !IsLValue(exp) && tp->type != BasicType::derivedfromtemplate_))
+    {
+        auto offset = 0;
+        // takes advantage of the fact that the this ptr will always be the last leftmost node if it is there at all...
+        while (exp && exp->type != ExpressionNode::auto_)
+        {
+            if (exp->type == ExpressionNode::structadd_)
+                offset = exp->right->v.i;
+            exp = exp->left;
+        }
+        if (exp && exp->v.sp->sb->thisPtr && exp->v.sp->tp->BaseType()->btp->IsConst())
+        {
+            // this next is necessary to catch alterations to mutable objects
+            // normally it will only be a bother if we do try to modify a mutable object
+            // so we aren't too worried about the inefficiency
+            auto sym = exp->v.sp->tp->BaseType()->btp->BaseType()->sp;
+            for (auto s : *sym->tp->syms)
+            {
+                // DAL FIXME figure out what to do with bit fields...
+                if (ismemberdata(s) && s->sb->offset == offset)
+                {
+                    if (s->sb->storage_class != StorageClass::mutable_)
+                        errorsym(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, s);
+                    break;
+                }
+            }
+        }
     }
 }
 }  // namespace Parser

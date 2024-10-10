@@ -2332,7 +2332,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     // pointer to func or pointer to memberfunc
                     Type* atype = tp;
                     tp = ptype;
-                    if (ptype->IsRef() && atype->BaseType()->array)
+                    if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
                         atype->BaseType()->byRefArray = true;
                     while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() || ptype->BaseType()->type == BasicType::memberptr_) &&
                         ptype->btp)

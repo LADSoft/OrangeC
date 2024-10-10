@@ -123,6 +123,7 @@ namespace Parser
         void ParseLabel(std::list<FunctionBlock*>& parent);
         EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, Type* tp, Type* boundTP);
         void MatchReturnTypes(Type* tp1, Type* tp2);
+        void AdjustForAutoReturnType(Type* tp1, EXPRESSION* exp1);
         void ParseReturn(std::list<FunctionBlock*>& parent);
         void ParseSwitch(std::list<FunctionBlock*>& parent);
         void ParseWhile(std::list<FunctionBlock*>& parent);
@@ -148,6 +149,7 @@ namespace Parser
     private:
         LexList*& lex;
         SYMBOL* funcsp;
+        Type* functionReturnType;
     };
 
 extern bool isCallNoreturnFunction;

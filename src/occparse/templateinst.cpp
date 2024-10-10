@@ -563,16 +563,22 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                 }
                 break;
             case BasicType::pointer_:
-                if (tp->IsArray() && tp->etype)
-                {
-                    tp->etype = SynthesizeType(tp->etype, enclosing, alt);
-                }
                 {
                     Type* tp3 = tp->btp;
                     tp->btp = nullptr;
                     SynthesizeQuals(&last, &qual, &lastQual);
                     tp->btp = tp3;
                     *last = tp->CopyType();
+                    if ((*last)->IsArray())
+                    {
+                        if ((*last)->etype)
+                            (*last)->etype = SynthesizeType((*last)->etype, enclosing, alt);
+                        if ((*last)->esize && !isintconst((*last)->esize))
+                        {
+                            (*last)->esize = copy_expression((*last)->esize);
+                            optimize_for_constants(&(*last)->esize);
+                        }
+                    }
                     (*last)->btp = SynthesizeType(tp->btp, enclosing, alt);
                     rv->UpdateRootTypes();
                 }
@@ -1138,6 +1144,13 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                     return &stdany;
                 }
             }
+            case BasicType::templatedeferredtype_:
+                *last = tp->CopyType();
+                *last = Type::MakeType(BasicType::derivedfromtemplate_, *last);
+                SynthesizeQuals(&last, &qual, &lastQual);
+                rv->UpdateRootTypes();
+                return rv;
+                break;
             default:
                 if (alt && tp->IsStructured())
                 {
@@ -1843,34 +1856,58 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         if (args && check != checke)
             ++check;
     }
-    if (func->tp->BaseType()->btp->IsDeferred())
+    auto tpbt = func->tp->BaseType()->btp;
+    if (tpbt->IsRef())
+        tpbt = tpbt->BaseType()->btp;
+    if (tpbt->IsDeferred())
     {
-        auto args = func->tp->BaseType()->btp->BaseType()->templateArgs;
+        auto args = tpbt->BaseType()->templateArgs;
+        std::list<TEMPLATEPARAMPAIR>* params = func->templateParams;
         for (auto t : *args)
         {
-            if (t.second->packed)
+            if (t.second->type != TplType::new_)
             {
-                if (t.second->byPack.pack)
+                if (t.second->packed)
                 {
-                    for (auto t1 : *t.second->byPack.pack)
+                    if (t.second->byPack.pack)
                     {
-                        if (t1.second->byClass.val)
+                        for (auto t1 : *t.second->byPack.pack)
                         {
-                            t1.second->byClass.dflt = t1.second->byClass.val;
-                        }
+                            if (t1.second->byClass.val)
+                            {
+                                t1.second->byClass.dflt = t1.second->byClass.val;
+                            }
 
+                        }
+                    }
+                    else if (0)
+                    {
+                        for (auto&& a : *params)
+                            if (a.first && !strcmp(a.first->name, t.first->name))
+                            {
+                                t.second->byPack.pack = a.second->byPack.pack;
+                            }
+                    }
+                }
+                else
+                {
+                    if (t.second->byClass.val)
+                    {
+                        t.second->byClass.dflt = t.second->byClass.val;
+                    }
+                    else
+                    {
+                        for (auto&& a : *params)
+                            if (a.first && !strcmp(a.first->name, t.first->name))
+                            {
+                                if (a.second->byClass.val)
+                                    t.second->byClass.dflt = a.second->byClass.dflt;
+                            }
                     }
                 }
             }
-            else
-            {
-                if (t.second->byClass.val)
-                {
-                    t.second->byClass.dflt = t.second->byClass.val;
-                }
-            }
         }
-        func->tp->BaseType()->btp->InstantiateDeferred();
+//        func->tp->BaseType()->btp->InstantiateDeferred();
     }
     if (func->tp->BaseType()->btp->IsStructured())
     {
@@ -3400,7 +3437,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
         if (itInitial != iteInitial && itInitial->second->packed &&
             (!itInitial->second->byPack.pack || !itInitial->second->byPack.pack->size()))
             itInitial = iteInitial;
-        if (itInitial != iteInitial && (max && itmax != max->end() || !spsyms))
+        if (itInitial != iteInitial && (max && itmax != max->end() || !spsyms || (itInitial->second->packed && itInitial->second->byPack.pack && itInitial->second->byPack.pack->size())))
             rv = nullptr;
         if (spsyms)
         {
@@ -4616,7 +4653,6 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                             std::list<TEMPLATEPARAMPAIR>* origTemplate, std::list<TEMPLATEPARAMPAIR>* origUsing);
 static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                           std::list<TEMPLATEPARAMPAIR>* origUsing);
-int count3;
 void SearchAlias(const char* name, TEMPLATEPARAMPAIR* x, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                  std::list<TEMPLATEPARAMPAIR>* origUsing)
 {

@@ -322,7 +322,7 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                     }
                     exp = change ? &to->second->byNonType.val : &to->second->byNonType.temp;
                     if (itTA->second->byNonType.val && to->second->byNonType.val &&
-                        !equalTemplateMakeIntExpression(to->second->byNonType.val, *exp))
+                        !equalTemplateMakeIntExpression(itTA->second->byNonType.val, *exp))
                         return false;
                     to->second->deduced = true;
                     *exp = itTA->second->byNonType.val;
@@ -780,7 +780,7 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
             (!allowSelectors || Pb->type != BasicType::templateselector_))
             // this next allows long and int to be considered the same, on architectures where there is no size difference
             if (!Ab->IsInt() || !Pb->IsInt() || Ab->BaseType()->type == BasicType::bool_ || Pb->BaseType()->type == BasicType::bool_ ||
-                Ab->IsUnsigned() != Pb->IsUnsigned() || getSize(Ab->BaseType()->type) != getSize(Pb->BaseType()->type))
+                (Ab->IsUnsigned() != Pb->IsUnsigned() && (!exp || !isintconst(exp))) || getSize(Ab->BaseType()->type) != getSize(Pb->BaseType()->type))
                 return false;
         switch (Pb->type)
         {
@@ -1415,9 +1415,14 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                 {
                     if (TemplateDeduceFromArg(sp->tp, (*symArgs)->tp, (*symArgs)->exp, false, false))
                     {
-                        if (sp->tp->IsStructured() && sp->tp->BaseType()->sp->templateParams)
+                        auto tp1 = sp->tp;
+                        if (tp1->IsRef())
                         {
-                            std::list<TEMPLATEPARAMPAIR>* params2 = sp->tp->BaseType()->sp->templateParams;
+                            tp1 = tp1->BaseType()->btp;
+                        }
+                        if (tp1->IsStructured() && tp1->BaseType()->sp->templateParams && (!tp1->BaseType()->sp->sb->instantiated || tp1->BaseType()->sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
+                        {
+                            std::list<TEMPLATEPARAMPAIR>* params2 = tp1->BaseType()->sp->templateParams;
                             std::list<TEMPLATEPARAMPAIR>* special = params2->front().second->bySpecialization.types
                                                                         ? params2->front().second->bySpecialization.types
                                                                         : params2;

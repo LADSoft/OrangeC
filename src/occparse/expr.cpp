@@ -68,6 +68,7 @@
 #include "expreval.h"
 #include "class.h"
 #include "overload.h"
+#include "exprpacked.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -82,8 +83,6 @@
 
 namespace Parser
 {
-int packIndex;
-
 int argumentNesting;
 int inAssignRHS;
 
@@ -6541,44 +6540,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             {
                                 if (!(*tp)->IsStructured() && !(*tp)->templateParam)
                                     checkPackedExpression(*exp);
-                                // this is going to presume that the expression involved
-                                // is not too long to be cached by the LexList mechanism.
-                                int oldPack = packIndex;
-                                int count = 0;
-                                SYMBOL* arg[200];
-                                GatherPackedVars(&count, arg, *exp);
-                                expandingParams++;
-                                if (count)
-                                {
-                                    *exp = nullptr;
-                                    EXPRESSION** next = exp;
-                                    int i;
-                                    int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-                                    for (i = 0; i < n; i++)
-                                    {
-                                        Argument* p = Allocate<Argument>();
-                                        LexList* lex = SetAlternateLex(start);
-                                        Type* tp1;
-                                        EXPRESSION* exp1;
-                                        packIndex = i;
-                                        expression_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, _F_PACKABLE);
-                                        SetAlternateLex(nullptr);
-                                        if (tp1)
-                                        {
-                                            if (!*next)
-                                            {
-                                                *next = exp1;
-                                            }
-                                            else
-                                            {
-                                                *next = MakeExpression(ExpressionNode::comma_, *next, exp1);
-                                                next = &(*next)->right;
-                                            }
-                                        }
-                                    }
-                                }
-                                expandingParams--;
-                                packIndex = oldPack;
+                                ExpandExpression(start, funcsp, exp);
                             }
                         }
                         else if (!inTemplateArgs)

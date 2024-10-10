@@ -59,7 +59,7 @@
 #include "ListFactory.h"
 #include "class.h"
 #include "overload.h"
-
+#include "exprpacked.h"
 namespace Parser
 {
 bool SameTemplateSelector(Type* tnew, Type* told)
@@ -970,224 +970,6 @@ void restoreParams(SYMBOL** table, int count)
         }
     }
 }
-static std::list<Argument*>* ExpandArguments(EXPRESSION* exp)
-{
-    std::list<Argument*>* rv = nullptr;
-    bool dofunc = false;
-    bool doparam = false;
-    if (exp->v.func->arguments)
-    {
-        for (auto arg : *exp->v.func->arguments)
-        {
-            if (arg->exp && (arg->exp->type == ExpressionNode::callsite_ || arg->exp->type == ExpressionNode::funcret_))
-            {
-                dofunc = true;
-            }
-            if (arg->tp && arg->tp->BaseType()->type == BasicType::templateparam_)
-            {
-                doparam |= !definingTemplate || instantiatingTemplate;
-            }
-        }
-        if (doparam)
-        {
-            Type* tp = nullptr;
-            for (auto arg : *exp->v.func->arguments)
-            {
-                Type* tp1 = arg->tp->BaseType();
-                if (tp1 && tp1->type == BasicType::templateparam_)
-                {
-                    if (tp1->templateParam->second->packed)
-                    {
-                        if (tp1->templateParam->second->byPack.pack)
-                        {
-                            for (auto&& tpx : *tp1->templateParam->second->byPack.pack)
-                            {
-                                auto dflt = tpx.second->byClass.val;
-                                if (!dflt)
-                                    dflt = tpx.second->byClass.dflt;
-                                if (dflt)
-                                {
-                                    tp = tpx.second->byClass.val;
-                                    if (arg->tp->IsConst())
-                                        tp = Type::MakeType(BasicType::const_, tp);
-                                    if (arg->tp->IsVolatile())
-                                        tp = Type::MakeType(BasicType::volatile_, tp);
-                                    if (!rv)
-                                        rv = argumentListFactory.CreateList();
-                                    auto arg1 = Allocate<Argument>();
-                                    arg1->tp = tp;
-                                    arg1->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                                    rv->push_back(arg1);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        auto arg1 = Allocate<Argument>();
-                        *arg1 = *arg;
-                        tp = tp1->templateParam->second->byClass.val;
-                        if (tp)
-                        {
-                            if (arg->tp->IsConst())
-                                tp = Type::MakeType(BasicType::const_, tp);
-                            if (arg->tp->IsVolatile())
-                                tp = Type::MakeType(BasicType::volatile_, tp);
-                            arg1->tp = tp;
-                        }
-                        if (!rv)
-                            rv = argumentListFactory.CreateList();
-                        rv->push_back(arg1);
-                    }
-                }
-                else
-                {
-                    auto arg1 = Allocate<Argument>();
-                    *arg1 = *arg;
-                    if (!rv)
-                        rv = argumentListFactory.CreateList();
-                    rv->push_back(arg1);
-                }
-            }
-        }
-        if (dofunc)
-        {
-            for (auto arg : *exp->v.func->arguments)
-            {
-                if (arg->exp)
-                {
-                    SYMBOL* syms[200];
-                    int count = 0, n = 0;
-                    GatherPackedVars(&count, syms, arg->exp);
-                    if (count)
-                    {
-                        for (int i = 0; i < count; i++)
-                        {
-                            int n1 = CountPacks(syms[i]->tp->templateParam->second->byPack.pack);
-                            if (n1 > n)
-                                n = n1;
-                        }
-                        int oldIndex = packIndex;
-                        for (int i = 0; i < n; i++)
-                        {
-                            std::deque<TEMPLATEPARAM*> defaults;
-                            std::deque<std::pair<Type**, Type*>> types;
-                            packIndex = i;
-                            auto arg1 = Allocate<Argument>();
-                            *arg1 = *arg;
-                            if (!rv)
-                                rv = argumentListFactory.CreateList();
-                            rv->push_back(arg1);
-                            if (arg1->exp->type == ExpressionNode::callsite_)
-                            {
-                                if (arg1->exp->v.func->templateParams)
-                                {
-                                    for (auto&& tpx : *arg1->exp->v.func->templateParams)
-                                    {
-                                        if (tpx.second->type != TplType::new_)
-                                        {
-                                            defaults.push_back(tpx.second);
-                                            if (tpx.second->packed && tpx.second->byPack.pack)
-                                            {
-                                                auto it = tpx.second->byPack.pack->begin();
-                                                auto ite = tpx.second->byPack.pack->end();
-                                                for (int j = 0; j < packIndex && it != ite; ++j, ++it)
-                                                    ;
-                                                if (it != ite)
-                                                    tpx.second = it->second;
-                                            }
-                                        }
-                                    }
-                                }
-                                if (arg1->exp->v.func->arguments)
-                                {
-                                    for (auto il : *arg1->exp->v.func->arguments)
-                                    {
-                                        Type** tp = &il->tp;
-                                        while ((*tp)->btp)
-                                            tp = &(*tp)->btp;
-                                        if ((*tp)->type == BasicType::templateparam_)
-                                        {
-                                            auto tpx = (*tp)->templateParam;
-                                            if (tpx->second->packed && tpx->second->byPack.pack)
-                                            {
-                                                auto it = tpx->second->byPack.pack->begin();
-                                                auto ite = tpx->second->byPack.pack->end();
-                                                for (int j = 0; j < packIndex && it != ite; ++j, ++it)
-                                                    ;
-                                                if (it != ite && it->second->type == TplType::typename_ && it->second->byClass.val)
-                                                {
-                                                    types.push_back(std::pair<Type**, Type*>(tp, *tp));
-                                                    (*tp) = it->second->byClass.val;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            arg1->tp = LookupTypeFromExpression(arg1->exp, nullptr, false);
-                            if (arg1->tp && arg1->tp->IsRef())
-                            {
-                                bool rref = arg1->tp->BaseType()->type == BasicType::rref_;
-                                arg1->tp = arg1->tp->BaseType()->btp;
-                                if (rref)
-                                    (arg1->tp)->rref = true;
-                                else
-                                    (arg1->tp)->lref = true;
-                            }
-                            if (arg1->tp == nullptr)
-                                arg1->tp = arg->tp;
-                            if (arg1->exp->type == ExpressionNode::callsite_)
-                            {
-                                if (arg1->exp->v.func->templateParams)
-                                {
-                                    for (auto&& tpx : *arg1->exp->v.func->templateParams)
-                                    {
-                                        if (tpx.second->type != TplType::new_)
-                                        {
-                                            tpx.second = defaults.front();
-                                            defaults.pop_front();
-                                        }
-                                    }
-                                }
-                                for (auto&& t : types)
-                                {
-                                    *(t.first) = t.second;
-                                }
-                                types.clear();
-                            }
-                        }
-                        packIndex = oldIndex;
-                    }
-                    else
-                    {
-                        auto arg1 = Allocate<Argument>();
-                        *arg1 = *arg;
-                        arg1->tp = LookupTypeFromExpression(arg1->exp, nullptr, false);
-                        if (arg1->tp == nullptr)
-                            arg1->tp = &stdany;
-                        if (!rv)
-                            rv = argumentListFactory.CreateList();
-                        rv->push_back(arg1);
-                    }
-                }
-                else
-                {
-                    auto arg1 = Allocate<Argument>();
-                    *arg1 = *arg;
-                    if (!rv)
-                        rv = argumentListFactory.CreateList();
-                    rv->push_back(arg1);
-                }
-            }
-        }
-        else if (!rv)
-        {
-            rv = exp->v.func->arguments;
-        }
-    }
-    return rv;
-}
 void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
 static void PushPopDefaults(std::deque<Type*>& defaults, EXPRESSION* exp, bool dflt, bool push)
 {
@@ -1472,7 +1254,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     func->sp = sym;
                     func->thistp = Type::MakeType(BasicType::pointer_, tp);
                     func->thisptr = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    func->arguments = ExpandArguments(next);
+                    func->arguments = ExpandTemplateArguments(next);
                     auto oldnoExcept = noExcept;
                     sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                     noExcept = oldnoExcept;
@@ -1739,7 +1521,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 }
                 std::list<Argument*>* old = exp->v.func->arguments;
                 std::list<TEMPLATEPARAMPAIR>* oldp = exp->v.func->templateParams;
-                exp->v.func->arguments = ExpandArguments(exp);
+                exp->v.func->arguments = ExpandTemplateArguments(exp);
                 exp->v.func->templateParams = ExpandParams(exp);
                 auto oldnoExcept = noExcept;
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, _F_NOEVAL);
@@ -1780,7 +1562,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     if (exp->v.func)
                     {
                         old = exp->v.func->arguments;
-                        exp->v.func->arguments = ExpandArguments(exp);
+                        exp->v.func->arguments = ExpandTemplateArguments(exp);
                     }
                     if (rve->IsStructured())
                     {

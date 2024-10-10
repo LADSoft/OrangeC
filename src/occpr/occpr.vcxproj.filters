@@ -91,6 +91,7 @@
     <ClCompile Include="..\occparse\class.cpp" />
     <ClCompile Include="..\occparse\overload.cpp" />
     <ClCompile Include="..\occparse\namespace.cpp" />
+    <ClCompile Include="..\occparse\exprpacked.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="db.h" />
@@ -99,5 +100,6 @@
     <ClInclude Include="..\occparse\class.h" />
     <ClInclude Include="..\occparse\overload.h" />
     <ClInclude Include="..\occparse\namespace.h" />
+    <ClInclude Include="..\occparse\exprpacked.h" />
   </ItemGroup>
 </Project>

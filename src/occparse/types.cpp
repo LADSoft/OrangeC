@@ -55,6 +55,7 @@
 #include "overload.h"
 #include "class.h"
 #include <cassert>
+#include "exprpacked.h"
 namespace Parser
 {
 static Type* RootType(Type* tp)

@@ -38,6 +38,7 @@
     <ClInclude Include="expr.h" />
     <ClInclude Include="exprcpp.h" />
     <ClInclude Include="expreval.h" />
+    <ClInclude Include="exprpacked.h" />
     <ClInclude Include="floatconv.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="iexpr.h" />
@@ -131,6 +132,7 @@
     <ClCompile Include="expr.cpp" />
     <ClCompile Include="exprcpp.cpp" />
     <ClCompile Include="expreval.cpp" />
+    <ClCompile Include="exprpacked.cpp" />
     <ClCompile Include="floatconv.cpp" />
     <ClCompile Include="help.cpp" />
     <ClCompile Include="iexpr.cpp" />

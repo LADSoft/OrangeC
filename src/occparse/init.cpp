@@ -62,6 +62,7 @@
 #include "ListFactory.h"
 #include "overload.h"
 #include "class.h"
+#include "exprpacked.h"
 
  /* initializers, local... can do w/out c99 */
 #define CPP_BASE_PRIO 99 // this is low prio, high prio is 98 

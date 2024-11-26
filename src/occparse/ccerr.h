@@ -164,6 +164,7 @@ void SpecializationError(SYMBOL* sym);
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
 void checkauto(Type* tp1, int err);
 void checkscope(Type* tp1, Type* tp2);
+void CheckThroughConstObject(Type* tp, EXPRESSION* exp);
 void EnterInstantiation(LexList* lex, SYMBOL* sp);
 void LeaveInstantiation();
 }  // namespace Parser

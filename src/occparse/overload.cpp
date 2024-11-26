@@ -152,6 +152,15 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                     matchOverloadLevel--;
                     return false;
                 }
+                if (tpn->IsArray() && tps->IsArray())
+                {
+                    if (!!tpn->BaseType()->esize != !!tps->BaseType()->esize || (tpn->BaseType()->esize && isintconst(tpn->BaseType()->esize) != isintconst(tps->BaseType()->esize)))
+                    {
+                        matchOverloadLevel--;
+                        return false;
+
+                    }
+                }
                 if (tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_ && (tpn->IsPtr() || tps->IsPtr()))
                 {
 
@@ -1023,8 +1032,8 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                 ta = ta->BaseType();
                 tl = tl->BaseType();
                 tr = tr->BaseType();
-                int cmpl = tl->CompatibleType(ta) && SameTemplate(tl, ta);
-                int cmpr = tr->CompatibleType(ta) && SameTemplate(tr, ta);
+                int cmpl = SameTemplate(tl, ta);
+                int cmpr =  SameTemplate(tr, ta);
                 if (fromUser)
                 {
                     if (cmpr || cmpl)
@@ -4912,7 +4921,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     inNothrowHandler++;
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
-                if (!(flags & _F_SIZEOF) || ((flags & _F_INDECLTYPE) && found1->tp->BaseType()->btp->IsAutoType()) ||
+                if (!(flags & _F_SIZEOF) || found1->tp->BaseType()->btp->IsAutoType() ||
                     ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LexList*)-1))
                 {
                     if (theCurrentFunc && !(flags & _F_NOEVAL) && !found1->sb->constexpression)

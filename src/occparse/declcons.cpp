@@ -57,6 +57,7 @@
 #include "overload.h"
 #include "class.h"
 #include "stmt.h"
+#include "exprpacked.h"
 namespace Parser
 {
 std::set<SYMBOL*> defaultRecursionMap;

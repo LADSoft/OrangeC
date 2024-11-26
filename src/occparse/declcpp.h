@@ -47,16 +47,6 @@ void deferredInitializeStructFunctions(SYMBOL* cur);
 void deferredInitializeStructMembers(SYMBOL* cur);
 bool usesVTab(SYMBOL* sym);
 LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess);
-void checkPackedType(SYMBOL* sym);
-void checkPackedExpression(EXPRESSION* exp);
-void checkUnpackedExpression(EXPRESSION* exp);
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
-    std::list<MEMBERINITIALIZERS*>::iterator& initend, std::list<MEMBERINITIALIZERS*>* mi,
-    std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase);
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp,
-    std::list<TEMPLATEPARAMPAIR>* templatePack,
-    std::list<MEMBERINITIALIZERS*>** p,
-    LexList* start, std::list<Argument*>* list);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 LexList* handleStaticAssert(LexList* lex);
 void CheckIsLiteralClass(Type* tp);

@@ -84,10 +84,12 @@ static std::deque<ppDefine::TokenPos>::const_iterator tokenIterator;
 struct ParseHold
 {
     std::string currentLine;
+    LexContext* context;
     int charIndex;
 };
 
 static std::stack<ParseHold> parseStack;
+LexContext* contextHold;
 
 KeywordData keywords[] = {
     {"!", 1, Keyword::not_, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
@@ -396,11 +398,14 @@ SymbolTableFactory<KeywordData> lexFactory;
 SymbolTable<KeywordData>* kwSymbols;
 
 static bool kwmatches(KeywordData* kw);
+static LexContext* AllocateContext();
+
 void lexini(void)
 /*
  * create a keyword table
  */
 {
+    contextHold = nullptr;
     bool old = Optimizer::cparams.prm_extwarning;
     Optimizer::cparams.prm_extwarning = false;
     int i;
@@ -413,7 +418,7 @@ void lexini(void)
     }
     llminus1 = 0;
     llminus1--;
-    context = Allocate<LexContext>();
+    context = AllocateContext();
     nextFree = 0;
     currentLine = "";
     linePointer = (const unsigned char*)currentLine.c_str();
@@ -421,6 +426,26 @@ void lexini(void)
         parseStack.pop();
     lastBrowseIndex = 0;
     Optimizer::cparams.prm_extwarning = old;
+}
+
+static LexContext* AllocateContext()
+{
+    if (!contextHold)
+    {
+        return Allocate<LexContext>();
+    }
+    else
+    {
+        auto rv = contextHold;
+        contextHold = contextHold->next;
+        *rv = {};
+        return rv;
+    }
+}
+static void FreeContext(LexContext*context)
+{
+    context->next = contextHold;
+    contextHold = context;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2094,7 +2119,7 @@ LexList* SetAlternateLex(LexList* lexList)
 {
     if (lexList)
     {
-        LexContext* newContext = Allocate<LexContext>();
+        LexContext* newContext = AllocateContext();
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;
@@ -2105,8 +2130,10 @@ LexList* SetAlternateLex(LexList* lexList)
     }
     else
     {
+        auto c = context;
         context = context->next;
         currentLex = context->last;
+        FreeContext(c);
         return nullptr;
     }
 }
@@ -2178,21 +2205,24 @@ void SetAlternateParse(bool set, const std::string& val)
     if (set)
     {
         int n = (int)(linePointer - (unsigned char*)currentLine.c_str());
-        parseStack.push(std::move(ParseHold{std::move(currentLine), n}));
+        parseStack.push(std::move(ParseHold{std::move(currentLine), context, n}));
         currentLine = val;
         linePointer = (const unsigned char*)currentLine.c_str();
+        context = AllocateContext();
     }
     else if (parseStack.size())
     {
+        FreeContext(context);
         currentLine = std::move(parseStack.top().currentLine);
         linePointer = (const unsigned char*)currentLine.c_str() + parseStack.top().charIndex;
+        context = parseStack.top().context;
         parseStack.pop();
     }
 }
 long long ParseExpression(std::string& line)
 {
     LexContext* oldContext = context;
-    LexContext* newContext = Allocate<LexContext>();
+    LexContext* newContext = AllocateContext();
     context = newContext;
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -2217,6 +2247,7 @@ long long ParseExpression(std::string& line)
     }
     SetAlternateParse(false, "");
     context = oldContext;
+    FreeContext(newContext);
     return exp->v.i;
 }
 }  // namespace Parser

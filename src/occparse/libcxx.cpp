@@ -515,6 +515,8 @@ static bool trivialCopyConstructible(Type* tp, bool rref)
             for (auto bc : *tp->BaseType()->sp->sb->baseClasses)
                 if (!trivialCopyConstructible(bc->cls->tp, rref))
                     return false;
+        if (!tp->BaseType()->syms)
+            return false;
         for (auto sym : *tp->BaseType()->syms)
         {
             if (sym->sb->storage_class == StorageClass::mutable_ || sym->sb->storage_class == StorageClass::member_)

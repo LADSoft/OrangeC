@@ -2469,6 +2469,7 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
 {
     LexList** cur = savePos, * last = nullptr;
     int paren = 0;
+    int begin = 0;
     int brack = 0;
     int ltgt = 0;
     while (lex != nullptr)
@@ -2502,7 +2503,18 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
             }
             else if (kw == Keyword::closepa_)
             {
-                if (paren-- == 0 && !brack)
+                if (paren-- == 0 && !brack && !begin)
+                {
+                    break;
+                }
+            }
+            else if (kw == Keyword::begin_)
+            {
+                begin++;
+            }
+            else if (kw == Keyword::end_)
+            {
+                if (begin-- == 0 && !brack && !paren)
                 {
                     break;
                 }
@@ -2515,7 +2527,7 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
             {
                 brack--;
             }
-            else if (kw == Keyword::comma_ && !paren && !brack && !ltgt)
+            else if (kw == Keyword::comma_ && !paren && !brack && !ltgt && !begin)
             {
                 break;
             }

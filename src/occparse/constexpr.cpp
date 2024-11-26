@@ -922,11 +922,53 @@ static bool HandleAssign(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
             auto assn = EvaluateExpression(node1, ths, retblk, true);
             if (assn->type == ExpressionNode::auto_ && !nestedMaps.empty())
             {
-                auto sp = assn->v.sp;
-                // new variable
-                assn = MakeVarPtr(false, 1, 1, sp, nullptr);
-                (*nestedMaps.top())[sp] = assn;
+                auto assn1 = LookupStruct(assn);
+                if (assn1)
+                {
+                    assn = assn1;
+                }
+                else
+                {
+                    auto sp = assn->v.sp;
+                    // new variable
+                    if (assn->v.sp->tp->IsArray())
+                    {
+                        auto elems = sp->tp->size / sp->tp->BaseType()->btp->size;
+                        assn = MakeVarPtr(false, 1, elems, sp, nullptr);
+                    }
+                    else
+                    {
+                        assn = MakeVarPtr(false, 1, 1, sp, nullptr);
+                    }
+                    (*nestedMaps.top())[sp] = assn;
+                }
 
+            }
+            else if (assn->type == ExpressionNode::add_)
+            {
+                int offset = 0;
+                auto rel = relptr(assn, offset);
+                if (rel && rel->type == ExpressionNode::auto_)
+                {
+                    auto sp = rel->v.sp;
+                    auto rel1 = LookupStruct(rel);
+                    if (rel1)
+                    {
+                        rel = rel1;
+                    }
+                    else
+                    {
+                        rel = MakeVarPtr(false, sp->tp->size, 1, sp, nullptr);
+                        if (nestedMaps.size())
+                            (*nestedMaps.top())[sp] = rel;
+                    }
+                }
+                if (rel && rel->type == ExpressionNode::cvarpointer_)
+                {
+                    rv = copy_expression(EvaluateExpression(exp->right, ths, retblk));
+                    optimize_for_constants(&rv);
+                    rel->v.constexprData.data[offset] = rv;
+                }
             }
             if (assn->type == ExpressionNode::cvarpointer_)
             {
@@ -966,6 +1008,10 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
         exp3 = exp3->left;
         while (IsCastValue(exp3))
             exp3 = exp3->left;
+        while (exp3->type == ExpressionNode::comma_)
+            exp3 = exp3->right;
+        while (IsCastValue(exp3))
+            exp3 = exp3->left;
         if (ths && exp4->type == ExpressionNode::l_p_ && exp3->type == ExpressionNode::auto_ && exp3->v.sp->sb->thisPtr)
         {
             rv = ths;
@@ -975,12 +1021,19 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
             optimize_for_constants(&exp3);
             int offset = 0;
             auto rel = relptr(exp3, offset);
-            if (rel && rel->type == ExpressionNode::cvarpointer_)
+            if (rel)
             {
-                offset /= rel->v.constexprData.multiplier;
-                if (offset < rel->v.constexprData.size)
+                if (rel->type != ExpressionNode::cvarpointer_)
                 {
-                    rv = rel->v.constexprData.data[offset];
+                    rel = LookupStruct(rel);
+                }
+                if (rel && rel->type == ExpressionNode::cvarpointer_)
+                {
+                    offset /= rel->v.constexprData.multiplier;
+                    if (offset < rel->v.constexprData.size)
+                    {
+                        rv = rel->v.constexprData.data[offset];
+                    }
                 }
             }
         }
@@ -1169,8 +1222,12 @@ static EXPRESSION* EvaluateExpression(EXPRESSION* node, EXPRESSION* ths, EXPRESS
             case ExpressionNode::auto_inc_:
                 stk.push(node1);
                 break;
+            case ExpressionNode::hook_:
+                stk.push(node1);
+                working.push_back(node1->left);
+                break;
             case ExpressionNode::comma_:
-                if (node1->right->type == ExpressionNode::comma_)
+                if (node1->right->type == ExpressionNode::comma_ || node1->right->type == ExpressionNode::assign_)
                 {
                     working.push_back(node1->right);
                 }
@@ -1620,8 +1677,8 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                             for (auto s : tempmap)
                             {
                                 argmap[s.first] = s.second;
-                                if (!nestedMaps.empty())
-                                    (*nestedMaps.top())[s.first] = s.second;
+//                                if (!nestedMaps.empty())
+//                                    (*nestedMaps.top())[s.first] = s.second;
                             }
                             nestedMaps.push(&argmap);
                             EXPRESSION* ths = nullptr;

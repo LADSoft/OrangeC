@@ -68,6 +68,7 @@
 #include "expreval.h"
 #include "class.h"
 #include "overload.h"
+#include "exprpacked.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -82,8 +83,6 @@
 
 namespace Parser
 {
-int packIndex;
-
 int argumentNesting;
 int inAssignRHS;
 
@@ -533,6 +532,7 @@ static EXPRESSION* GetConstMakeExpression(SYMBOL* sym)
             return MakeExpression(ExpressionNode::const_, sym);
     return nullptr;
 }
+int count3;
 static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     char idname[512];
@@ -592,10 +592,13 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
 
                 bool deferred = false;
-                for (auto&& tpl : *lst)
+                for (auto&& to : *lst)
                 {
-                    if (tpl.second->packed)
+                    if (to.second->packed && !to.second->derivedFromUnpacked)
+                    {
                         deferred = true;
+                    }
+
                 }
                 if (!deferred || packIndex >= 0)
                 {   
@@ -1084,6 +1087,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
         }
         else
         {
+            bool isref = false;
             if (sym->tp->BaseType()->type == BasicType::templateparam_)
             {
                 if (*exp && (*exp)->type != ExpressionNode::packedempty_ && !sym->tp->BaseType()->templateParam->second->packed)
@@ -1120,6 +1124,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 auto exp4 = relptr(*exp, offset);
                 if ((*tp)->IsRef())
                 {
+                    isref = true;
                     auto type = (*tp)->BaseType()->type;
                     Type* tp1 = *tp;
                     Dereference(*tp, exp);
@@ -1163,11 +1168,14 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             }
             if (strSym && funcparams)
                 funcparams->novtab = true;
+
             if (Optimizer::cparams.prm_cplusplus && sym->sb &&
                 (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_))
             {
-                qualifyForFunc(funcsp, tp, *ismutable);
+                if (!isref)
+                    qualifyForFunc(funcsp, tp, *ismutable);
             }
+
         }
     }
     else if (parsingPreprocessorConstant)
@@ -2152,6 +2160,8 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                 }
                 if (!decl && !hasEllipse && (Optimizer::architecture == ARCHITECTURE_MSIL))
                     toolong = true;
+                if (decl)
+                    CheckThroughConstObject(decl->tp, (*itp)->exp);
                 if (matching)
                 {
                     if (!decl)
@@ -4924,6 +4934,14 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             *tp = &stdint;
         }
     }
+    if (*exp)
+    {
+        auto exp1 = *exp;
+        if (exp1->type == ExpressionNode::thisref_)
+            exp1 = exp1->left;
+        if (exp1->type == ExpressionNode::callsite_ && exp1->v.func->thisptr && !exp1->v.sp->tp->IsConst())
+            CheckThroughConstObject(nullptr, exp1);
+    }
     return lex;
 }
 static LexList* expression_alloca(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
@@ -6522,44 +6540,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             {
                                 if (!(*tp)->IsStructured() && !(*tp)->templateParam)
                                     checkPackedExpression(*exp);
-                                // this is going to presume that the expression involved
-                                // is not too long to be cached by the LexList mechanism.
-                                int oldPack = packIndex;
-                                int count = 0;
-                                SYMBOL* arg[200];
-                                GatherPackedVars(&count, arg, *exp);
-                                expandingParams++;
-                                if (count)
-                                {
-                                    *exp = nullptr;
-                                    EXPRESSION** next = exp;
-                                    int i;
-                                    int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-                                    for (i = 0; i < n; i++)
-                                    {
-                                        Argument* p = Allocate<Argument>();
-                                        LexList* lex = SetAlternateLex(start);
-                                        Type* tp1;
-                                        EXPRESSION* exp1;
-                                        packIndex = i;
-                                        expression_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, _F_PACKABLE);
-                                        SetAlternateLex(nullptr);
-                                        if (tp1)
-                                        {
-                                            if (!*next)
-                                            {
-                                                *next = exp1;
-                                            }
-                                            else
-                                            {
-                                                *next = MakeExpression(ExpressionNode::comma_, *next, exp1);
-                                                next = &(*next)->right;
-                                            }
-                                        }
-                                    }
-                                }
-                                expandingParams--;
-                                packIndex = oldPack;
+                                ExpandExpression(start, funcsp, exp);
                             }
                         }
                         else if (!inTemplateArgs)
@@ -7392,6 +7373,7 @@ static LexList* expression_postfix(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                 }
                 else
                 {
+                    CheckThroughConstObject(nullptr, *exp);
                     EXPRESSION *exp3 = nullptr, *exp1 = nullptr;
                     if ((*exp)->left->type == ExpressionNode::callsite_ || (*exp)->left->type == ExpressionNode::thisref_)
                     {
@@ -7538,6 +7520,7 @@ LexList* expression_unary(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EX
             lex = expression_cast(lex, funcsp, atp, tp, exp, &localMutable, flags);
             if (*tp)
             {
+                CheckThroughConstObject(nullptr, *exp);
                 eval_unary_autoincdec(lexin, funcsp, atp, tp, exp, *tp, *exp, localMutable, flags);
             }
             break;
@@ -7665,6 +7648,7 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                                         error(ERR_LVALUE);
                                     else
                                     {
+                                        CheckThroughConstObject(nullptr, *exp);
                                         EXPRESSION* exp1 = nullptr;
                                         if ((*tp)->BaseType()->type == BasicType::pointer_)
                                         {
@@ -8813,6 +8797,8 @@ LexList* expression_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
             *tp = nullptr;
             return lex;
         }
+        if (!(*tp)->IsStructured())
+            CheckThroughConstObject(nullptr, *exp);
         eval_binary_assign(lexin, funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, localMutable, flags);
     }
     return lex;

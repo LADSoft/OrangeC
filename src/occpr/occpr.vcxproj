@@ -56,6 +56,7 @@
     <ClCompile Include="..\occparse\expr.cpp" />
     <ClCompile Include="..\occparse\exprcpp.cpp" />
     <ClCompile Include="..\occparse\expreval.cpp" />
+    <ClCompile Include="..\occparse\exprpacked.cpp" />
     <ClCompile Include="..\occparse\floatconv.cpp" />
     <ClCompile Include="..\occparse\help.cpp" />
     <ClCompile Include="..\occparse\iexpr.cpp" />
@@ -112,6 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\occparse\class.h" />
+    <ClInclude Include="..\occparse\exprpacked.h" />
     <ClInclude Include="..\occparse\namespace.h" />
     <ClInclude Include="..\occparse\overload.h" />
     <ClInclude Include="db.h" />

@@ -475,6 +475,7 @@ typedef struct expr
     int computedLabel : 1;
     int structByAddress : 1;
     int isStructAddress : 1;
+    int packedArray : 1;
 } EXPRESSION;
 
 typedef struct _msilarray
@@ -882,6 +883,7 @@ typedef struct _templateParam
     int index : 8;
     int packed : 1;
     int usedAsUnpacked : 1;
+    int derivedFromUnpacked : 1;
     int initialized : 1;
     int lref : 1;
     int rref : 1;

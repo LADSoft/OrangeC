@@ -629,6 +629,8 @@ ERRLIST(ERR_TYPE_OR_VARIABLE_EXPECTED, 551, "Type or variable expected in using 
 ERRLIST(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, 552, "Deduction guide for '%s' does not match specified class", CE_ERROR)
 ERRLIST(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, 553, "Deduction guide for '%s' needs to be at global or namespace scope", CE_ERROR)
 ERRLIST(ERR_ARRAY_TYPE_NOT_EXPECTED, 554, "Array type not expected here", CE_ERROR)
+ERRLIST(ERR_AUTO_RETURN_TYPE_CANNOT_BE_RESOLVED, 555, "'auto' return type cannot be resolved", CE_ERROR)
+ERRLIST(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, 556, "Cannot modify member '%s' accessed through const object", CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

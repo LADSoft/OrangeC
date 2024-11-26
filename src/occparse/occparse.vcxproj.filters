@@ -177,6 +177,9 @@
     <ClInclude Include="class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="exprpacked.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="beinterf.cpp">
@@ -450,6 +453,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="class.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exprpacked.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

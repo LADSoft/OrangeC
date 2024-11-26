@@ -2282,11 +2282,32 @@ void StatementGenerator::MatchReturnTypes(Type* tp1, Type* tp2)
         }
     }
 }
+void StatementGenerator::AdjustForAutoReturnType(Type *tp1, EXPRESSION* exp1)
+{
+    if (functionReturnType->IsAutoType())
+    {
+        if (tp1->BaseType()->lref)
+        {
+            tp1 = Type::MakeType(BasicType::lref_, tp1);
+        }
+        else if (tp1->BaseType()->rref)
+        {
+            tp1 = Type::MakeType(BasicType::rref_, tp1);
+        }
+        while (tp1->type == BasicType::typedef_)
+            tp1 = tp1->btp;
+        DeduceAuto(&functionReturnType, tp1, exp1);
+        functionReturnType->UpdateRootTypes();
+    }
+    else
+    {
+        MatchReturnTypes(functionReturnType, tp1);
+    }
+}
 void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     Statement* st;
-    Type* tp = nullptr;
     EXPRESSION* returnexp = nullptr;
     Type* returntype = nullptr;
     EXPRESSION* destexp = nullptr;
@@ -2309,32 +2330,36 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
     {
         int oldInLoop = inLoopOrConditional;
         inLoopOrConditional = 0;
-        tp = funcsp->tp->BaseType()->btp;
 
-        if (tp->IsAutoType())
+        Type* tp1 = nullptr;
+        EXPRESSION* exp1 = nullptr;
+        if (MATCHKW(lex, Keyword::begin_))
         {
-            Type* tp1;
-            EXPRESSION* exp1;
-            LexList* current = lex;
-            lex = expression(lex, funcsp, nullptr, &tp1, &exp1, _F_SIZEOF);
-            if (tp1->BaseType()->lref)
+            if (functionReturnType->IsAutoType())
             {
-                tp1 = Type::MakeType(BasicType::lref_, tp1);
+                error(ERR_AUTO_RETURN_TYPE_CANNOT_BE_RESOLVED);
+                errskim(&lex, skim_end);
+                tp1 = &stdint;
+                exp1 = MakeIntExpression(ExpressionNode::c_i_, 0);
+                AdjustForAutoReturnType(tp1, exp1);
             }
-            else if (tp1->BaseType()->rref)
-            {
-                tp1 = Type::MakeType(BasicType::rref_, tp1);
-            }
-            lex = prevsym(current);
-            while (tp1->type == BasicType::typedef_)
-                tp1 = tp1->btp;
-            DeduceAuto(&funcsp->tp->BaseType()->btp, tp1, exp1);
-            tp = funcsp->tp->BaseType()->btp;
-            funcsp->tp->UpdateRootTypes();
-            SetLinkerNames(funcsp, funcsp->sb->attribs.inheritable.linkage);
-            matchReturnTypes = true;
         }
-        if (tp->IsStructured() || tp->IsBitInt() || tp->BaseType()->type == BasicType::memberptr_)
+        else
+        {
+            lex = optimized_expression(lex, funcsp, functionReturnType, &tp1, &exp1, !functionReturnType->IsStructured() && !functionReturnType->IsBitInt() && functionReturnType->BaseType()->type != BasicType::memberptr_);
+            if (!tp1)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+                exp1 = MakeIntExpression(ExpressionNode::c_i_, 0);
+                tp1 = &stdint;
+            }
+            else
+            {
+                AdjustForAutoReturnType(tp1, exp1);
+            }
+
+        }
+        if (functionReturnType->IsStructured() || functionReturnType->IsBitInt() || functionReturnType->BaseType()->type == BasicType::memberptr_)
         {
             EXPRESSION* en = AnonymousVar(StorageClass::parameter_, &stdpointer);
             SYMBOL* sp = en->v.sp;
@@ -2349,26 +2374,25 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->tp->type != BasicType::void_)
                 sp->sb->offset = funcsp->sb->paramsize;
             Dereference(&stdpointer, &en);
-            if (Optimizer::cparams.prm_cplusplus && tp->IsStructured() && (!tp->BaseType()->sp->sb->trivialCons || MATCHKW(lex, Keyword::begin_)))
+            if (Optimizer::cparams.prm_cplusplus && functionReturnType->IsStructured() && (!functionReturnType->BaseType()->sp->sb->trivialCons || MATCHKW(lex, Keyword::begin_)))
             {
                 bool implicit = false;
-                if (tp->BaseType()->sp->sb->templateLevel && tp->BaseType()->sp->templateParams && !tp->BaseType()->sp->sb->instantiated)
+                if (functionReturnType->BaseType()->sp->sb->templateLevel && functionReturnType->BaseType()->sp->templateParams && !functionReturnType->BaseType()->sp->sb->instantiated)
                 {
-                    SYMBOL* sym = tp->BaseType()->sp;
+                    SYMBOL* sym = functionReturnType->BaseType()->sp;
                     if (!allTemplateArgsSpecified(sym, sym->templateParams))
                         sym = GetClassTemplate(sym, sym->templateParams, false);
                     if (sym && allTemplateArgsSpecified(sym, sym->templateParams))
-                        tp = TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_)->tp;
+                        functionReturnType = TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_)->tp;
                 }
                 if (MATCHKW(lex, Keyword::begin_))
                 {
                     implicit = true;
                     std::list<Initializer*>* init = nullptr, *dest = nullptr;
-                    SYMBOL* sym = nullptr;
-                    sym = AnonymousVar(StorageClass::localstatic_, tp)->v.sp;
-                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, tp, sym, false, false, 0);
-                    returnexp = ConverInitializersToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
-                    returntype = tp;
+                    SYMBOL* sym = AnonymousVar(StorageClass::localstatic_, functionReturnType)->v.sp;
+                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, functionReturnType, sym, false, false, 0);
+                    returnexp = ConverInitializersToExpression(functionReturnType, nullptr, nullptr, funcsp, init, en, false);
+                    returntype = functionReturnType;
                     if (sym)
                         sym->sb->dest = dest;
                 }
@@ -2376,26 +2400,15 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 {
                     bool oldrref, oldlref;
                     CallSite* funcparams = Allocate<CallSite>();
-                    Type* ctype = tp;
+                    Type* ctype = functionReturnType;
                     // shortcut for conversion from single expression
-                    EXPRESSION* exp1 = nullptr;
-                    Type* tp1 = nullptr;
-                    lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, 0);
-                    MatchReturnTypes(tp, tp1);
-                    if (!tp1)
-                    {
-                        tp1 = &stdint;
-                        exp1 = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        error(ERR_IDENTIFIER_EXPECTED);
-                    }
                     if (tp1 && tp1->IsStructured())
                     {
-                        if (SameTemplate(tp, tp1))
+                        if (SameTemplate(functionReturnType, tp1))
                         {
-                            ctype = tp = tp1;
-                            funcsp->tp->BaseType()->btp = tp1;
+                            ctype = functionReturnType = tp1;
                         }
-                        else if (tp->CompatibleType(tp1))
+                        else if (functionReturnType->CompatibleType(tp1))
                         {
                             implicit = true;
                         }
@@ -2415,13 +2428,13 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         exptemp = exptemp->left;
                     if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->sb->isConstructor &&
                         exptemp->v.func->sp->tp->IsFunction() && exptemp->v.func->thisptr &&
-                        tp->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
-                        (!tp->BaseType()->sp->sb->templateLevel || SameTemplate(tp, exptemp->v.func->thistp->BaseType()->btp)) &&
+                        functionReturnType->SameType(exptemp->v.func->thistp->BaseType()->btp) &&
+                        (!functionReturnType->BaseType()->sp->sb->templateLevel || SameTemplate(functionReturnType, exptemp->v.func->thistp->BaseType()->btp)) &&
                         exptemp->v.func->thisptr->type == ExpressionNode::auto_ && exptemp->v.func->thisptr->v.sp->sb->anonymous)
                     {
                         exptemp->v.func->thisptr->v.sp->sb->destructed = true;
                         exptemp->v.func->thisptr = en;
-                        returntype = tp;
+                        returntype = functionReturnType;
                         returnexp = exp1;
                         maybeConversion = false;
                         implicit = false;
@@ -2452,25 +2465,12 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         if (test2)
                         {
                             test2->v.sp->sb->destructed = true;
-//                            auto targetPointer = AnonymousVar(StorageClass::auto_, &stdpointer);
-//                            Dereference(&stdpointer, &targetPointer);
-//                            auto targetExpr = MakeExpression(ExpressionNode::assign_, targetPointer, en);
                             ReplaceVarRef(&exp1, test2->v.sp, en);
-//                            exp1 = MakeExpression(ExpressionNode::comma_, targetExpr, exp1);
-                            returntype = tp;
+                            returntype = functionReturnType;
                             returnexp = exp1;
                             maybeConversion = false;
                             implicit = false;
                         }
-                        /*
-                        else if ((tp1->CompatibleType(tp) || SameTemplate(tp, tp1)) && !tp1->rref && !tp1->lref)
-                        {
-                            returntype = tp;
-                            returnexp = exp1;
-                            maybeConversion = false;
-                            implicit = false;
-                        }
-                        */
                         else
                         {
                             bool nonconst = funcsp->sb->nonConstVariableUsed;
@@ -2486,7 +2486,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 tp1->BaseType()->rref = true;
                             tp1->BaseType()->lref = !tp1->BaseType()->rref;
                             maybeConversion = false;
-                            returntype = tp;
+                            returntype = functionReturnType;
                             // try the rref constructor first
                             if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
                                 false, false))
@@ -2508,7 +2508,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             else
                             {
                                 // not there try an lref version of the constructor
-                                ctype = tp;
+                                ctype = functionReturnType;
                                 tp1->BaseType()->rref = false;
                                 tp1->BaseType()->lref = true;
                                 CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false, false,
@@ -2525,27 +2525,20 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             else
             {
 
-                Type* tp1;
-                lex = optimized_expression(lex, funcsp, nullptr, &tp1, &returnexp, true);
-                if (!tp1)
-                {
-                    error(ERR_EXPRESSION_SYNTAX);
-                }
-                else
-                    MatchReturnTypes(tp, tp1);
-                if (!tp->CompatibleType(tp1) &&
-                    (!tp->IsBitInt() || !tp1->IsBitInt()) &&
-                    ((Optimizer::architecture != ARCHITECTURE_MSIL) || !tp->IsStructured() || !isconstzero(&stdint, returnexp)))
+                returnexp = exp1;
+                if (!functionReturnType->CompatibleType(tp1) &&
+                    (!functionReturnType->IsBitInt() || !tp1->IsBitInt()) &&
+                    ((Optimizer::architecture != ARCHITECTURE_MSIL) || !functionReturnType->IsStructured() || !isconstzero(&stdint, returnexp)))
                 {
                     bool toErr = true;
-                    if (tp->IsStructured() && tp1->IsStructured() && classRefCount(tp->BaseType()->sp,tp1->BaseType()->sp))
+                    if (functionReturnType->IsStructured() && tp1->IsStructured() && classRefCount(functionReturnType->BaseType()->sp,tp1->BaseType()->sp))
                     {
                         toErr = false;
-                        returnexp = baseClassOffset(tp->BaseType()->sp, tp1->BaseType()->sp, returnexp);
+                        returnexp = baseClassOffset(functionReturnType->BaseType()->sp, tp1->BaseType()->sp, returnexp);
                     }
                     if (toErr)
                     {
-                        errorConversionOrCast(true, tp1, tp);
+                        errorConversionOrCast(true, tp1, functionReturnType);
                     }
                 }
                 else
@@ -2557,37 +2550,37 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             SYMBOL* funcsp;
                             if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                                 error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
-                            funcsp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &returnexp, 0);
-                            if (funcsp && tp->BaseType()->type == BasicType::memberptr_)
+                            funcsp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &returnexp, 0);
+                            if (funcsp && functionReturnType->BaseType()->type == BasicType::memberptr_)
                             {
-                                int lbl = dumpMemberPtr(funcsp, tp, true);
+                                int lbl = dumpMemberPtr(funcsp, functionReturnType, true);
                                 returnexp = MakeIntExpression(ExpressionNode::labcon_, lbl);
                             }
                         }
                         else
                         {
-                            returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.func->sp, tp, true));
+                            returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.func->sp, functionReturnType, true));
                         }
                     }
                     else if (returnexp->type == ExpressionNode::pc_ || returnexp->type == ExpressionNode::memberptr_)
                     {
-                        returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.sp, tp, true));
+                        returnexp = MakeIntExpression(ExpressionNode::labcon_, dumpMemberPtr(returnexp->v.sp, functionReturnType, true));
                     }
                     if ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                         funcsp->sb->attribs.inheritable.linkage2 == Linkage::unmanaged_ || !msilManaged(funcsp))
                     {
-                        if (tp->IsBitInt())
+                        if (functionReturnType->IsBitInt())
                         {
-                            if (!tp->SameType(tp1))
+                            if (!functionReturnType->SameType(tp1))
                             {
-                                cast(tp, &returnexp);
+                                cast(functionReturnType, &returnexp);
                             }
                             returnexp = MakeExpression(ExpressionNode::blockassign_, en, returnexp);
-                            returnexp->size = tp;
-                            returnexp->altdata = (void*)(tp->BaseType());
+                            returnexp->size = functionReturnType;
+                            returnexp->altdata = (void*)(functionReturnType->BaseType());
 
                         }
-                        else if (!tp->IsStructured() || !tp->BaseType()->sp->sb->structuredAliasType)
+                        else if (!functionReturnType->IsStructured() || !functionReturnType->BaseType()->sp->sb->structuredAliasType)
                         {
                             if (Optimizer::cparams.prm_cplusplus && returnexp->type == ExpressionNode::comma_)
                             {
@@ -2608,8 +2601,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             else
                             {
                                 returnexp = MakeExpression(ExpressionNode::blockassign_, en, returnexp);
-                                returnexp->size = tp;
-                                returnexp->altdata = (void*)(tp->BaseType());
+                                returnexp->size = functionReturnType;
+                                returnexp->altdata = (void*)(functionReturnType->BaseType());
                             }
                         }
                         else
@@ -2621,31 +2614,23 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                     expx = &(*expx)->right;
                                 expx = &(*expx)->right;
                             }
-                            Dereference(tp->BaseType()->sp->sb->structuredAliasType, expx);
+                            Dereference(functionReturnType->BaseType()->sp->sb->structuredAliasType, expx);
                         }
                     }
-                    returntype = tp;
+                    returntype = functionReturnType;
                 }
             }
         }
         else
         {
-            Type* tp1 = nullptr;
             bool needend = false;
             if (MATCHKW(lex, Keyword::begin_))
             {
                 needend = true;
                 lex = getsym();
             }
-            lex = optimized_expression(lex, funcsp, tp, &tp1, &returnexp, true);
-            if (!tp1)
-            {
-                tp1 = &stdint;
-                error(ERR_EXPRESSION_SYNTAX);
-            }
-            else
-                MatchReturnTypes(tp, tp1);
-            if (tp->BaseType()->type == BasicType::string_)
+            returnexp = exp1;
+            if (functionReturnType->BaseType()->type == BasicType::string_)
             {
                 if (returnexp->type == ExpressionNode::labcon_)
                     returnexp->type = ExpressionNode::c_string_;
@@ -2653,19 +2638,19 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     returnexp = MakeExpression(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
-            else if (!tp->CompatibleType(tp1))
+            else if (!functionReturnType->CompatibleType(tp1))
             {
                 bool err = false;
                 if (Optimizer::cparams.prm_cplusplus)
                 {
                     if (tp1->IsStructured())
                     {
-                        auto tpx = tp;
+                        auto tpx = functionReturnType;
                         if (tpx->IsRef())
                             tpx = tpx->BaseType()->btp;
                         if (tpx->IsStructured())
                         {
-                            if (!doStaticCast(&tp, tp1, &returnexp, funcsp, true))
+                            if (!doStaticCast(&functionReturnType, tp1, &returnexp, funcsp, true))
                                 err = true;
                         }
                         else
@@ -2675,15 +2660,15 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 err = true;
                         }
                     }
-                    else if (tp1->IsPtr() && tp->IsPtr())
+                    else if (tp1->IsPtr() && functionReturnType->IsPtr())
                     {
-                        if (!doStaticCast(&tp, tp1, &returnexp, funcsp, true))
+                        if (!doStaticCast(&functionReturnType, tp1, &returnexp, funcsp, true))
                             err = true;
                     }
-                    else if ((!tp1->IsArithmetic() && tp1->type != BasicType::enum_) || (!tp->IsArithmetic() && tp->type != BasicType::enum_))
+                    else if ((!tp1->IsArithmetic() && tp1->type != BasicType::enum_) || (!functionReturnType->IsArithmetic() && functionReturnType->type != BasicType::enum_))
                     {
-                        if ((!tp->IsPtr() || (!isconstzero(tp1, returnexp) && tp1->type != BasicType::aggregate_ && !tp1->IsFunction())) &&
-                            (tp->BaseType()->type != BasicType::bool_ || !tp1->IsPtr()))
+                        if ((!functionReturnType->IsPtr() || (!isconstzero(tp1, returnexp) && tp1->type != BasicType::aggregate_ && !tp1->IsFunction())) &&
+                            (functionReturnType->BaseType()->type != BasicType::bool_ || !tp1->IsPtr()))
                         {
                             err = true;
                         }
@@ -2695,7 +2680,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 }
                 if (err)
                 {
-                    errorConversionOrCast(true, tp1, tp);
+                    errorConversionOrCast(true, tp1, functionReturnType);
                 }
             }
             if (needend)
@@ -2706,25 +2691,27 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     skip(&lex, Keyword::end_);
                 }
             }
-            if (tp->BaseType()->type == BasicType::object_)
+            if (functionReturnType->BaseType()->type == BasicType::object_)
                 if (tp1->BaseType()->type != BasicType::object_ && !tp1->IsStructured() && (!tp1->IsArray() || !tp1->BaseType()->msil))
                     returnexp = MakeExpression(ExpressionNode::x_object_, returnexp);
-            if (tp1->IsStructured() && tp->IsArithmetic())
+            if (tp1->IsStructured() && functionReturnType->IsArithmetic())
             {
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    castToArithmetic(false, &tp1, &returnexp, (Keyword) - 1, tp, true);
+                    castToArithmetic(false, &tp1, &returnexp, (Keyword) - 1, functionReturnType, true);
                 }
                 else
                 {
-                    errorConversionOrCast(false, tp1, tp);
+                    errorConversionOrCast(false, tp1, functionReturnType);
                 }
             }
-            if (tp->type == BasicType::auto_)
-                returntype = tp = tp1;
+            if (functionReturnType->type == BasicType::auto_)
+            {
+                returntype = functionReturnType = tp1;
+            }
             else
             {
-                returntype = tp;
+                returntype = functionReturnType;
             }
             if (returnexp->type == ExpressionNode::callsite_)
             {
@@ -2733,7 +2720,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     EXPRESSION* exp1 = returnexp;
                     if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                         error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
-                    returnexp->v.func->sp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &exp1, 0);
+                    returnexp->v.func->sp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &exp1, 0);
                     returnexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, returnexp->v.func->sp);
                 }
             }
@@ -2743,21 +2730,21 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 if (tp1->IsRef())
                     tp1 = tp1->BaseType()->btp;
                 if (cppCast(returntype, &tp1, &returnexp))
-                    returntype = tp = funcsp->tp->BaseType()->btp;
+                    returntype = functionReturnType;
             }
         }
-        if (funcsp->tp->BaseType()->btp->IsRef())
+        if (functionReturnType->IsRef())
         {
-            if (funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_)
-                returnexp = ConvertReturnToRef(returnexp, funcsp->tp->BaseType()->btp, returntype);
+            if (functionReturnType->BaseType()->type != BasicType::memberptr_)
+                returnexp = ConvertReturnToRef(returnexp, functionReturnType, returntype);
         }
         else if (returnexp && returnexp->type == ExpressionNode::auto_ && returnexp->v.sp->sb->storage_class == StorageClass::auto_)
         {
-            if (!funcsp->tp->BaseType()->btp->IsStructured() && funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_ &&
-                !funcsp->tp->BaseType()->btp->IsBitInt())
-                if (funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::object_ &&
-                    (!funcsp->tp->BaseType()->btp->IsArray() || !funcsp->tp->BaseType()->btp->msil) &&
-                    funcsp->tp->BaseType()->btp->BaseType()->type != BasicType::templateselector_)
+            if (!functionReturnType->IsStructured() && functionReturnType->BaseType()->type != BasicType::memberptr_ &&
+                !functionReturnType->IsBitInt())
+                if (functionReturnType->BaseType()->type != BasicType::object_ &&
+                    (!functionReturnType->IsArray() || !functionReturnType->msil) &&
+                    functionReturnType->BaseType()->type != BasicType::templateselector_)
                     error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
         if (!returnexp)
@@ -2772,9 +2759,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
     ThunkCatchCleanup(st, parent, emptyBlockdata);  // to top level
     if (returnexp && returntype && !returntype->IsAutoType() && !matchReturnTypes)
     {
-        if (!tp)  // some error...
-            tp = &stdint;
-        if (tp->type == BasicType::void_)
+        if (functionReturnType->type == BasicType::void_)
         {
             if (!Optimizer::cparams.prm_cplusplus || returntype->type != BasicType::void_)
                 error(ERR_VOID_FUNCTION_RETURNS_VALUE);
@@ -2787,14 +2772,14 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             {
                 error(ERR_CONSTRUCTOR_HAS_RETURN);
             }
-            else if (returntype->IsStructured() || tp->IsStructured())
+            else if (returntype->IsStructured() || functionReturnType->IsStructured())
             {
-                if (!returntype->SameType(tp) && !SameTemplate(returntype, tp))
+                if (!returntype->SameType(functionReturnType) && !SameTemplate(returntype, functionReturnType))
                     error(ERR_RETMISMATCH);
             }
-            else if (returntype->BaseType()->type == BasicType::memberptr_ || tp->BaseType()->type == BasicType::memberptr_)
+            else if (returntype->BaseType()->type == BasicType::memberptr_ || functionReturnType->BaseType()->type == BasicType::memberptr_)
             {
-                if (isconstzero(tp, st->select))
+                if (isconstzero(functionReturnType, st->select))
                 {
                     int lbl = dumpMemberPtr(nullptr, returntype, true);
                     st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
@@ -2806,24 +2791,24 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         int lbl = dumpMemberPtr(st->select->v.sp, returntype, true);
                         st->select = MakeIntExpression(ExpressionNode::labcon_, lbl);
                     }
-                    if (!returntype->CompatibleType(tp))
+                    if (!returntype->CompatibleType(functionReturnType))
                         error(ERR_RETMISMATCH);
                 }
             }
             else
             {
-                if (!funcsp->tp->BaseType()->btp->IsRef() &&
-                    !funcsp->tp->BaseType()->btp->IsBitInt() &&
-                    (funcsp->tp->BaseType()->btp->IsArithmetic() ||
-                     (funcsp->tp->BaseType()->btp->IsPtr() && !funcsp->tp->BaseType()->btp->IsArray())))
+                if (!functionReturnType->IsRef() &&
+                    !functionReturnType->IsBitInt() &&
+                    (functionReturnType->IsArithmetic() ||
+                     (functionReturnType->IsPtr() && !functionReturnType->IsArray())))
                     cast(returntype, &st->select);
                 if (returntype->IsPtr())
                 {
-                    if (tp->IsArithmetic())
+                    if (functionReturnType->IsArithmetic())
                     {
-                        if (tp->IsComplex())
+                        if (functionReturnType->IsComplex())
                             error(ERR_ILL_USE_OF_COMPLEX);
-                        else if (tp->IsFloat() || tp->IsImaginary())
+                        else if (functionReturnType->IsFloat() || functionReturnType->IsImaginary())
                             error(ERR_ILL_USE_OF_FLOATING);
                         else if (isarithmeticconst(returnexp))
                         {
@@ -2833,33 +2818,33 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         else if (returnexp->type != ExpressionNode::callsite_ || returnexp->v.func->fcall->type != ExpressionNode::l_p_)
                             error(ERR_NONPORTABLE_POINTER_CONVERSION);
                     }
-                    else if (tp->IsPtr())
+                    else if (functionReturnType->IsPtr())
                     {
-                        if (!returntype->CompatibleType(tp))
+                        if (!returntype->CompatibleType(functionReturnType))
                         {
-                            if (!returntype->IsVoidPtr() && !tp->IsVoidPtr())
+                            if (!returntype->IsVoidPtr() && !functionReturnType->IsVoidPtr())
                             {
-                                if (!returntype->SameCharType(tp))
+                                if (!returntype->SameCharType(functionReturnType))
                                     error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                             }
                             else
                             {
                                 if (Optimizer::cparams.prm_cplusplus && !returntype->IsVoidPtr() && returnexp->type != ExpressionNode::nullptr_ &&
-                                    tp->IsVoidPtr())
+                                    functionReturnType->IsVoidPtr())
                                     error(ERR_ANSI_FORBIDS_IMPLICIT_CONVERSION_FROM_VOID);
                             }
                         }
                     }
-                    else if (tp->IsFunction())
+                    else if (functionReturnType->IsFunction())
                     {
                         if (!returntype->IsVoidPtr() &&
-                            (!returntype->BaseType()->btp->IsFunction() || !returntype->CompatibleType(tp)))
+                            (!returntype->BaseType()->btp->IsFunction() || !returntype->CompatibleType(functionReturnType)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else
                         error(ERR_INVALID_POINTER_CONVERSION);
                 }
-                else if (tp->IsPtr())
+                else if (functionReturnType->IsPtr())
                 {
                     if (returntype->IsComplex())
                         error(ERR_ILL_USE_OF_COMPLEX);
@@ -2868,7 +2853,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     else if (returntype->IsInt())
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 }
-                else if (tp->IsPtr())
+                else if (functionReturnType->IsPtr())
                 {
                     if (returntype->IsComplex())
                         error(ERR_ILL_USE_OF_COMPLEX);
@@ -4390,6 +4375,7 @@ void StatementGenerator::FunctionBody()
     SymbolTable<SYMBOL>* oldSyms = localNameSpace->front()->syms;
     SymbolTable<SYMBOL>* oldLabelSyms = labelSyms;
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
+    Type* oldReturnType = functionReturnType;
     FunctionBlock* block = Allocate<FunctionBlock>();
     std::list<FunctionBlock*> parent { block };
     std::list<Statement*>* startStmt;
@@ -4414,10 +4400,11 @@ void StatementGenerator::FunctionBody()
     localNameSpace->front()->syms = nullptr;
     Optimizer::functionHasAssembly = false;
     Optimizer::setjmp_used = false;
+    functionReturnType = funcsp->tp->BaseType()->btp;
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
     theCurrentFunc = funcsp;
-
+ 
 
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -4442,6 +4429,11 @@ void StatementGenerator::FunctionBody()
         StatementGenerator::AssignParameterSizes(parent);
         funcsp->sb->startLine = lex->data->errline;
         Compound(parent, true);
+        if (funcsp->tp->BaseType()->btp->IsAutoType())
+        {
+            funcsp->tp->BaseType()->btp = functionReturnType;
+            SetLinkerNames(funcsp, funcsp->sb->attribs.inheritable.linkage);
+        }
         if (funcsp->tp->BaseType()->btp->IsStructured())
             StatementGenerator::AssignParameterSizes(parent);
         refreshBackendParams(funcsp);
@@ -4510,6 +4502,7 @@ void StatementGenerator::FunctionBody()
             localFree();
         HandleInlines();
     }
+    functionReturnType = oldReturnType;
     ellipsePos = oldEllipsePos;
     noExcept = oldNoExcept;
     controlSequences = oldControlSequences;

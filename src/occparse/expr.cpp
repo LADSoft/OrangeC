@@ -532,7 +532,6 @@ static EXPRESSION* GetConstMakeExpression(SYMBOL* sym)
             return MakeExpression(ExpressionNode::const_, sym);
     return nullptr;
 }
-int count3;
 static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     char idname[512];

@@ -1333,9 +1333,13 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
             (*ptr)++;
             radix = 2;
         }
-        else
+        else if (isdigit(**ptr))
         {
             radix = 8;
+        }
+        else /* zero */
+        {
+           (*ptr)--;
         }
     }
     else if (Optimizer::cparams.prm_assemble && **ptr == '$')
@@ -1486,6 +1490,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
                 lastst = LexType::ull_;
             }
         }
+
         if (lastst == LexType::i_) /* no qualifiers */
         {
             if (*ival > INT_MAX || radix != 10)

@@ -70,7 +70,9 @@ static char *ermsg[7] = {
 "overflow",
 "underflow",
 "total loss of precision",
-"partial loss of precision"
+"partial loss of precision",
+"range",
+"no converge",
 };
 
 
@@ -91,7 +93,7 @@ merror = code;
 /* Display error message defined
  * by the code argument.
  */
-if( (code <= 0) || (code >= 7) )
+if( (code <= 0) || (code >= 9) )
 	code = 0;
 printf( "%s error\n", ermsg[code] );
 

@@ -63,7 +63,7 @@ int merror = 0;
  * messages is bound to the error codes defined
  * in mconf.h.
  */
-static char *ermsg[7] = {
+static char *ermsg[9] = {
 "unknown",      /* error code 0 */
 "domain",       /* error code 1 */
 "singularity",  /* et seq.      */

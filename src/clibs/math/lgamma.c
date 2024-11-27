@@ -202,15 +202,15 @@ float __lgammafn_f_sign(float x, int *sgn)
     return ans;
 }
 
-double lgamma(double x)
+double _RTL_FUNC lgamma(double x)
 {
     return __lgammafn_sign(x, NULL);
 }
-long double lgammal(long double x)
+long double _RTL_FUNC lgammal(long double x)
 {
     return __lgammafn_sign(x, NULL);
 }
-float lgammaf(float x)
+float _RTL_FUNC lgammaf(float x)
 {
     return __lgammafn_f_sign(x, NULL);
 }

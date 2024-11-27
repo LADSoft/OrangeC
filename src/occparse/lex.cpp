@@ -1333,9 +1333,13 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
             (*ptr)++;
             radix = 2;
         }
-        else
+        else if (isdigit(**ptr))
         {
             radix = 8;
+        }
+        else /* zero */
+        {
+           (*ptr)--;
         }
     }
     else if (Optimizer::cparams.prm_assemble && **ptr == '$')
@@ -1486,27 +1490,35 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
                 lastst = LexType::ull_;
             }
         }
+
         if (lastst == LexType::i_) /* no qualifiers */
         {
-            if (*ival > INT_MAX)
+            if (*ival > INT_MAX || radix != 10)
             {
                 lastst = LexType::ui_;
-                if (radix == 10 || (unsigned long long)*ival > UINT_MAX)
+                if ((unsigned long long)*ival > UINT_MAX)
                 {
                     lastst = LexType::l_;
-                    if (*ival > LONG_MAX)
+                    if (radix != 10 || *ival > LONG_MAX || *ival < LONG_MIN)
                     {
                         lastst = LexType::ul_;
-                        if (radix == 10 || (unsigned long long)*ival > ULONG_MAX)
+                        if ((unsigned long long)*ival > ULONG_MAX)
                         {
-                            if (radix == 10 || *ival > ULLONG_MAX)
+                            lastst = LexType::ll_;
+                            if (radix != 10 || *ival > LLONG_MAX || *ival < LLONG_MIN)
                             {
-                                lastst = LexType::ll_;
-                            }
-                            else
                                 lastst = LexType::ull_;
+                            }
                         }
                     }
+                }
+            }
+            else if (*ival < INT_MIN)
+            {
+                lastst = LexType::l_;
+                if (*ival < LONG_MIN)
+                {
+                    lastst = LexType::ll_;
                 }
             }
         }

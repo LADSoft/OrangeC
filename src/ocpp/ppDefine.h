@@ -3,43 +3,42 @@
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  * 
  */
 
-#ifndef ppDefine_h
-#define ppDefine_h
+#pragma once
 
+#include "SymbolTable.h"
 #include <string>
 #include <vector>
 #include <set>
 #include <ctime>
 #include <memory>
 #include <stack>
+#include "forwarddecls.h"
 #include "Utils.h"
-#include "SymbolTable.h"
-#include "Token.h"
 #include "ppExpr.h"
 #include "ppCtx.h"
 #include "ppMacro.h"
 #include "ppCommon.h"
-
+#include "ppMacroStates.h"
 typedef std::vector<std::string> DefinitionArgList;
 
 class ppInclude;
@@ -109,7 +108,7 @@ class ppDefine
     };
 
   public:
-    ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect, bool Asmpp);
+    ppDefine(bool UseExtensions, ppInclude* Include, embeder* embed, Dialect dialect, bool Asmpp);
     ~ppDefine() {}
 
     void SetParams(ppCtx* Ctx, ppMacro* Macro)
@@ -132,16 +131,6 @@ class ppDefine
     SymbolTable& GetDefines() { return symtab; }
 
     void PushPopMacro(std::string name, bool push);
-    enum
-    {
-        MACRO_REPLACE_SIZE = 65536,
-        REPLACED_TOKENIZING = 1,
-        /* left or right-hand size of a ## when an arg has been replaced by an empty string */
-        TOKENIZING_PLACEHOLDER = 2,
-        STRINGIZING_PLACEHOLDER = 3,
-        REPLACED_ALREADY = 4,
-        MACRO_PLACEHOLDER = 5
-    };
     std::string defid(const std::string& macro, int& i, int& j);
     void DoDefine(std::string& line, bool caseInsensitive);
     void DoAssign(std::string& line, bool caseInsensitive);
@@ -177,8 +166,8 @@ class ppDefine
     ppExpr expr;
     ppCtx* ctx;
     ppMacro* macro;
+    embeder* embed;
     bool asmpp;
     int counter_val;
     time_t source_date_epoch;
 };
-#endif

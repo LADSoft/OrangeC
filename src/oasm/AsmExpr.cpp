@@ -23,12 +23,12 @@
  * 
  */
 
+#include "AsmLexer.h"
 #include "AsmExpr.h"
 #include "ppDefine.h"
 #include "ppExpr.h"
 #include "Errors.h"
 #include "Section.h"
-#include "AsmLexer.h"
 #include <exception>
 #include <fstream>
 #include <climits>
@@ -64,7 +64,7 @@ void AsmExpr::ReInit()
 }
 std::shared_ptr<AsmExprNode> AsmExpr::Build(std::string& line)
 {
-    tokenizer = std::make_unique<Tokenizer>(line, &hash);
+    tokenizer = std::make_unique<Tokenizer<kw>>(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;

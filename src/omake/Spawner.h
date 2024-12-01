@@ -102,7 +102,10 @@ class Spawner
     {
         return retVal;
     }
-
+    std::string last_ran()
+    {
+        return last_ran_cmd;
+    }
     static const char escapeStart;
     static const char escapeEnd;
 
@@ -120,6 +123,7 @@ class Spawner
     size_t lineLength;
     std::list<std::string> cmdList;
     EnvironmentStrings environment;
+    std::string last_ran_cmd;
     bool ignoreErrors;
     bool silent;
     bool oneShell;

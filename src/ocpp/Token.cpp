@@ -27,46 +27,23 @@
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"
-#include "ppExpr.h"
-#include "ppDefine.h"
-#include "Errors.h"
-#include "ppInclude.h"
-#include "ppkw.h"
-
-#include <cfloat>
-#include <climits>
-
+#include <iostream>
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
 bool NumericToken::c99;
-
-typedef unsigned long long L_UINT;
-
-bool (*Tokenizer::IsSymbolChar)(const char*, bool) = Tokenizer::IsSymbolCharDefault;
-
-bool Tokenizer::IsSymbolCharDefault(const char* data, bool startOnly)
-{
-    switch (*data)
-    {
-        case '_':
-        case '$':
-            return true;
-        default:
-            return (startOnly ? UTF8::IsAlpha(data) : UTF8::IsAlnum(data));
-    }
-}
-
-unsigned long long llminus1 = (unsigned long long)-1LL;
-
 bool StringToken::Start(const std::string& line)
 {
-    if (line[0] == '"')
+    bool isOasm = TokenizerSettings::Instance()->GetDialect() == Dialect::oasm;
+    if (line[0] == '"' || (isOasm && line[0] == '\''))
         return true;
     if (line[0] == 'L')
     {
         size_t n = line.find_first_not_of(' ', 1);
-        if (n != std::string::npos && line[n] == '"')
-            return true;
+        if (n != std::string::npos)
+        {
+            if (line[n] == '"' || (isOasm && line[n] == '\''))
+                return true;
+        }
     }
     return false;
 }
@@ -82,8 +59,9 @@ void StringToken::Parse(std::string& line)
         while (isspace(*start))
             start++;
     }
+    int quote = *start;
     start++;  // past the quote
-    while (*start && *start != '\"')
+    while (*start && *start != quote)
     {
         int n;
         const char* cur = start;
@@ -112,7 +90,7 @@ void StringToken::Parse(std::string& line)
         *q = 0;
         raw += Raw;
     }
-    if (*start != '"')
+    if (*start != quote)
         Errors::Error("Unterminated string constant");
     else
         start++;
@@ -121,6 +99,9 @@ void StringToken::Parse(std::string& line)
 }
 bool CharacterToken::Start(const std::string& line)
 {
+    bool isOasm = TokenizerSettings::Instance()->GetDialect() == Dialect::oasm;
+    if (isOasm)
+        return false;
     if (line[0] == '\'')
         return true;
     if (line[0] == 'L')
@@ -153,6 +134,12 @@ void CharacterToken::Parse(std::string& line)
 }
 int CharacterToken::QuotedChar(int bytes, const char** source)
 {
+    // No clue why we need to special case AsmToken here...
+    bool isOasm = TokenizerSettings::Instance()->GetDialect() == Dialect::oasm;
+    if (isOasm)
+    {
+        return *(*source)++;
+    }
     int i = *(*source)++, j;
     if (**source == '\n')
         return INT_MIN;
@@ -205,7 +192,7 @@ int CharacterToken::QuotedChar(int bytes, const char** source)
             bytes = 2;
             goto dox;
         case 'x':
-        dox : {
+        dox: {
             int n = 0;
             while (isxdigit(*(*source)))
             {
@@ -237,6 +224,12 @@ int CharacterToken::QuotedChar(int bytes, const char** source)
             return (char)i;
     }
 }
+void ErrorToken::Parse(std::string& line)
+{
+    ch = line[0];
+    SetChars(line.substr(0, 1));
+    line.erase(0, 1);
+}
 long long NumericToken::GetInteger() const
 {
     if (parsedAsFloat)
@@ -245,6 +238,7 @@ long long NumericToken::GetInteger() const
     }
     return intValue;
 }
+
 const FPF* NumericToken::GetFloat() const
 {
     if (!parsedAsFloat)
@@ -261,7 +255,9 @@ const FPF* NumericToken::GetFloat() const
         }
     return &floatValue;
 }
+
 bool NumericToken::Start(const std::string& line) { return isdigit(line[0]) || (line[0] == '.' && isdigit(line[1])); }
+
 int NumericToken::Radix36(char c)
 {
     if (c >= '0' && c <= '9')
@@ -272,6 +268,7 @@ int NumericToken::Radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
+
 long long NumericToken::GetBase(int b, char** ptr)
 {
     long long i;
@@ -328,6 +325,7 @@ int NumericToken::GetExponent(char** ptr)
         intValue = -intValue;
     return intValue;
 }
+
 void NumericToken::GetFloating(FPF& floatValue, int radix, char** ptr)
 {
     FPF fradix;
@@ -360,7 +358,6 @@ void NumericToken::GetFloating(FPF& floatValue, int radix, char** ptr)
         }
     }
 }
-
 int NumericToken::GetNumber(const char** ptr)
 {
     char buf[256];
@@ -571,10 +568,10 @@ int NumericToken::GetNumber(const char** ptr)
         }
         parsedAsFloat = true;
     }
-    if (Tokenizer::IsSymbolChar(*ptr, false))
+    if (TokenizerSettings::Instance()->GetSymbolCheckFunction()(*ptr, false))
     {
         Errors::Error("Invalid constant value");
-        while (**ptr && Tokenizer::IsSymbolChar(*ptr, false))
+        while (**ptr && TokenizerSettings::Instance()->GetSymbolCheckFunction()(*ptr, false))
         {
             int n = UTF8::CharSpan(*ptr);
             for (int i = 0; i < n && **ptr; i++)
@@ -589,118 +586,4 @@ void NumericToken::Parse(std::string& line)
     GetNumber(&p);
     SetChars(line.substr(0, p - line.c_str()));
     line.erase(0, p - line.c_str());
-}
-bool KeywordToken::Start(const std::string& line) { return ispunct(line[0]) != 0; }
-void KeywordToken::Parse(std::string& line)
-{
-    char buf[256], *p = buf;
-    int i;
-    for (i = 0; i < line.size(); i++)
-        if (ispunct(line[i]))
-            *p++ = line[i];
-        else
-            break;
-    *p = 0;
-    if (keywordTable)
-    {
-        bool found = false;
-        for (int j = i; j > 0; j--)
-        {
-            buf[j] = 0;
-            auto it = keywordTable->find(std::string(buf));
-            if (it != keywordTable->end())
-            {
-                SetChars(line.substr(0, j));
-                line.erase(0, j);
-                keyValue = (int)it->second;
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            SetChars(line.substr(0, 1));
-            line.erase(0, 1);
-            keyValue = (int)kw::UNKNOWN;
-        }
-    }
-}
-bool IdentifierToken::Start(const std::string& line) { return Tokenizer::IsSymbolChar(line.c_str(), true); }
-void IdentifierToken::Parse(std::string& line)
-{
-    char buf[256], *p = buf;
-    int i, n;
-    for (i = 0;
-         (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && Tokenizer::IsSymbolChar(line.c_str() + i, false);)
-    {
-        n = UTF8::CharSpan(line.c_str() + i);
-        for (int j = 0; j < n && i < line.size(); j++)
-            *p++ = line[i++];
-    }
-    *p = 0;
-    SetChars(line.substr(0, i));
-    line.erase(0, i);
-    id = buf;
-    if (keywordTable)
-    {
-        KeywordHash::const_iterator it;
-        if (caseInsensitive)
-        {
-            p = buf;
-            while (*p)
-                *p = toupper(*p), p++;
-            std::string id1 = buf;
-            it = keywordTable->find(id1);
-        }
-        else
-        {
-            it = keywordTable->find(id);
-        }
-        if (it != keywordTable->end())
-            keyValue = (int)it->second;
-    }
-}
-void ErrorToken::Parse(std::string& line)
-{
-    ch = line[0];
-    SetChars(line.substr(0, 1));
-    line.erase(0, 1);
-}
-const Token* Tokenizer::Next()
-{
-    size_t n = line.find_first_not_of("\t \v");
-    line.erase(0, n);
-    if (line.empty())
-        currentToken.reset(new EndToken());
-    else if (NumericToken::Start(line))
-        currentToken.reset(new NumericToken(line));
-    else if (CharacterToken::Start(line))
-        currentToken.reset(new CharacterToken(line));
-    else if (StringToken::Start(line))
-        currentToken.reset(new StringToken(line));
-    else if (IdentifierToken::Start(line))
-        currentToken.reset(new IdentifierToken(line, keywordTable, caseInsensitive));
-    else if (keywordTable && KeywordToken::Start(line))
-        currentToken.reset(new KeywordToken(line, keywordTable));
-    else
-        currentToken.reset(new ErrorToken(line));
-    return currentToken.get();
-}
-void Tokenizer::Reset(const std::string& Line)
-{
-    line = "";
-    int last = 0;
-    for (int p = 0; p < Line.size(); p++)
-    {
-        if (Line[p] == ppDefine::MACRO_PLACEHOLDER)
-        {
-            if (p != last)
-                line += Line.substr(last, p - last);
-            while (Line[p] == ppDefine::MACRO_PLACEHOLDER)
-                p++;
-            last = p;
-        }
-    }
-    line += Line.substr(last);
-    currentToken = nullptr;
 }

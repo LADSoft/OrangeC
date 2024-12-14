@@ -76,7 +76,7 @@ int rcMain::Run(int argc, char* argv[])
 #else
     int language = 0;
 #endif
-    if (files.size() > 1 && !OutputFile.GetValue().empty())
+    if (files.size() > 2 && !OutputFile.GetValue().empty())
         Utils::Fatal("Cannot specify output file for multiple input files");
     std::string sysSrchPth;
     std::string srchPth;

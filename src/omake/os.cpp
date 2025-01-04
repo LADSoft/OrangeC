@@ -1,34 +1,44 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
-
+#ifdef __unix__
+#    define HAVE_UNISTD_H
+#endif
 #ifdef HAVE_UNISTD_H
+#    define _POSIX_C_SOURCE 200809L
+#    include <fcntl.h>
+#    include <sys/stat.h>
+#    include <spawn.h>
+#    include <signal.h>
 #    include <unistd.h>
 #    define _SH_DENYNO 0
 #    include <xmmintrin.h>
+#    include <wordexp.h>
+#    include <wait.h>
+#    include <unistd.h>
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -68,7 +78,7 @@
 #include <mutex>
 #include <memory>
 #include "JobServer.h"
-//#define DEBUG
+// #define DEBUG
 static std::mutex processIdMutex;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
 // all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated
@@ -82,20 +92,26 @@ std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
 #ifdef TARGET_OS_WINDOWS
 static std::set<HANDLE> processIds;
+#else
+static std::set<int> processIds;
 #endif
 std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
     std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
-#ifdef TARGET_OS_WINDOWS
     for (auto a : processIds)
+    {
+#ifdef TARGET_OS_WINDOWS
         TerminateProcess(a, 0);
+#else
+        kill(a, 0);
 #endif
+    }
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
     std::string rv;
-    bool sh = exe.find("sh.exe") != std::string::npos || exe.find("bash.exe") != std::string::npos;
+    bool sh = exe.find("sh") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
         rv = command;
@@ -192,10 +208,7 @@ bool OS::TakeJob()
     localJobServer->TakeNewJob();
     return false;
 }
-bool OS::TryTakeJob()
-{
-    return localJobServer->TryTakeNewJob() != -1;
-}
+bool OS::TryTakeJob() { return localJobServer->TryTakeNewJob() != -1; }
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
@@ -212,6 +225,14 @@ std::string OS::GetFullPath(const std::string& fullname)
     if (!return_val)
     {
         // Do error handling somewhere
+    }
+#else
+    // https://pubs.opengroup.org/onlinepubs/000095399/functions/realpath.html
+    recievingbuffer.resize(PATH_MAX);
+    if (realpath(fullname.c_str(), recievingbuffer.data()))
+    {
+        recievingbuffer.resize(strlen(recievingbuffer.c_str()));
+        return recievingbuffer;
     }
 #endif
     return recievingbuffer;
@@ -238,7 +259,9 @@ void OS::InitJobServer()
     }
     else
     {
-        std::cerr << "An attempt to remake a job server has been performed, this should not happen, please contact the developers if this message appears" << std::endl;
+        std::cerr << "An attempt to remake a job server has been performed, this should not happen, please contact the developers "
+                     "if this message appears"
+                  << std::endl;
     }
 }
 bool OS::first = false;
@@ -512,7 +535,60 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 #    endif
     return rv;
 #else
-    return -1;
+    std::vector<std::string> parent_strs;
+    for (auto&& str : environment)
+    {
+        parent_strs.push_back(str.name + "=" + str.value);
+    }
+    std::vector<char*> strs;
+
+    for (auto&& str : parent_strs)
+    {
+        strs.push_back(const_cast<char*>(str.data()));
+    }
+    strs.push_back(nullptr);
+    posix_spawn_file_actions_t spawn_file_actions;
+    posix_spawn_file_actions_init(&spawn_file_actions);
+    posix_spawnattr_t spawn_attr;
+    posix_spawnattr_init(&spawn_attr);
+
+    pid_t default_pid = 0;
+    auto shell_var = VariableContainer::Instance()->Lookup("SHELL");
+    // Default to a basic shell if we have an issue
+    std::string shell_var_value = "/bin/sh";
+    if (shell_var != nullptr)
+    {
+        shell_var_value = shell_var->GetValue();
+    }
+    else
+    {
+        OS::WriteToConsole(
+            "Warning: The current shell var for $(SHELL) somehow is not set according to OS::Spawn, please report this to the "
+            "developers!");
+    }
+    const char* args[] = {shell_var_value.c_str(), "-c", command.c_str(), nullptr};
+
+    int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, args, strs.data());
+    if (ret != 0)
+    {
+        posix_spawn_file_actions_destroy(&spawn_file_actions);
+        posix_spawnattr_destroy(&spawn_attr);
+        return -1;
+    }
+    int status;
+    int ret_wait = 0;
+    do
+    {
+        ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
+        if (ret == -1)
+        {
+            // Some error state has happened
+            OS::WriteToConsole("An error has occured!");
+        }
+    } while (!WIFEXITED(status));
+    posix_spawn_file_actions_destroy(&spawn_file_actions);
+    posix_spawnattr_destroy(&spawn_attr);
+    return 0;
 #endif
 }
 std::string OS::SpawnWithRedirect(const std::string command)
@@ -585,7 +661,68 @@ std::string OS::SpawnWithRedirect(const std::string command)
     CloseHandle(pipeWriteDuplicate);
     return rv;
 #else
-    return "";
+    posix_spawn_file_actions_t spawn_file_actions;
+    posix_spawn_file_actions_init(&spawn_file_actions);
+    posix_spawnattr_t spawn_attr;
+    posix_spawnattr_init(&spawn_attr);
+
+    pid_t default_pid = 0;
+    auto shell_var = VariableContainer::Instance()->Lookup("SHELL");
+    // Default to a basic shell if we have an issue
+    std::string shell_var_value = "/bin/sh";
+    if (shell_var != nullptr)
+    {
+        shell_var_value = shell_var->GetValue();
+    }
+    else
+    {
+        OS::WriteToConsole(
+            "Warning: The current shell var for $(SHELL) somehow is not set according to OS::Spawn, please report this to the "
+            "developers!");
+    }
+
+    // Basing a lot of following code on this, but not directly:
+    // https://stackoverflow.com/a/27328610
+
+    int cout_pipe[2];
+    pipe(cout_pipe);
+
+    int pipefd = cout_pipe[0];
+    // Close out the child-side when the process closes
+    posix_spawn_file_actions_addclose(&spawn_file_actions, cout_pipe[0]);
+    // Send the stdout pipe on the child to the cout pipe(?)
+    posix_spawn_file_actions_adddup2(&spawn_file_actions, cout_pipe[1], 1);
+    posix_spawn_file_actions_addclose(&spawn_file_actions, cout_pipe[1]);
+    const char* args[] = {shell_var_value.c_str(), "-c", command.c_str(), nullptr};
+    int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, environ);
+    posix_spawn_file_actions_destroy(&spawn_file_actions);
+    posix_spawnattr_destroy(&spawn_attr);
+
+    close(cout_pipe[0]);
+
+    if (ret != 0)
+    {
+        return "";
+    }
+    int status;
+    int ret_wait = 0;
+    std::string readable;
+    do
+    {
+        ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
+        if (ret == -1)
+        {
+            // Some error state has happened
+            OS::WriteToConsole("An error has occured!");
+        }
+        else
+        {
+            char bytes_to_read[1024];
+            int bytes = read(default_pid, bytes_to_read, sizeof(bytes_to_read));
+            readable += std::string(bytes_to_read, bytes);
+        }
+    } while (!WIFEXITED(status));
+    return readable;
 #endif
 }
 Time OS::GetCurrentTime()
@@ -606,7 +743,9 @@ Time OS::GetCurrentTime()
     Time rv(t, systemTime.wMilliseconds);
     return rv;
 #else
-    Time rv;
+    auto cur_time = std::chrono::system_clock::now();
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(cur_time.time_since_epoch());
+    Time rv(secs.count(), std::chrono::duration_cast<std::chrono::milliseconds>(cur_time.time_since_epoch()).count());
     return rv;
 #endif
 }
@@ -633,9 +772,18 @@ Time OS::GetFileTime(const std::string fileName)
         Time rv(t, systemTime.wMilliseconds);
         return rv;
     }
+#else
+    struct stat file_status;
+    if (stat(fileName.c_str(), &file_status) == 0)
+    {
+        // POSIX-2008 uses timespecs per spec https://www.man7.org/linux/man-pages/man3/stat.3type.html
+        struct timespec ts = file_status.st_mtim;
+        // S and MS of the file,
+        Time rv(ts.tv_sec, ts.tv_nsec / 1'000'000);
+        return rv;
+    }
 #endif
-    Time rv;
-    return rv;
+    return Time();
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
@@ -662,24 +810,24 @@ void OS::SetFileTime(const std::string fileName, Time time)
         ::SetFileTime(h, nullptr, nullptr, &mod);
         CloseHandle(h);
     }
+#else
+    int fd = open(fileName.c_str(), 0);
+    if (fd > 0)
+    {
+        struct timespec times[2];
+
+        clock_gettime(CLOCK_REALTIME, &times[0]);
+        times[1] = times[0];
+        futimens(fd, times);
+        close(fd);
+    }
 #endif
 }
 std::string OS::GetWorkingDir()
 {
-    char buf[260];
-    getcwd(buf, 260);
+    char buf[PATH_MAX];
+    getcwd(buf, PATH_MAX);
     return buf;
-}
-void OS::CreateThread(void* func, void* data)
-{
-#ifdef TARGET_OS_WINDOWS
-#    ifdef BCC32c
-    DWORD tid;
-    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
-#    else
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
-#    endif
-#endif
 }
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
 void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
@@ -707,7 +855,7 @@ std::string OS::NormalizeFileName(const std::string file)
         }
         else if (isSHEXE)
         {
-            if (name[i] == '\\' && (!i || name[i-1] != '='))
+            if (name[i] == '\\' && (!i || name[i - 1] != '='))
                 name[i] = '/';
         }
         else if (name[i] == '/' && i > 0 && !isspace(name[i - 1]))

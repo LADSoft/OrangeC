@@ -14,7 +14,7 @@ bool POSIXJobServer::TryTakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-//    if (current_jobs != 0)
+    //    if (current_jobs != 0)
     {
         int err = 0;
         char only_buffer;
@@ -40,8 +40,8 @@ bool POSIXJobServer::TryTakeNewJob()
             }
         }
     }
-//    current_jobs++;
-//    return true;
+    //    current_jobs++;
+    return false;
 }
 bool POSIXJobServer::TakeNewJob()
 {
@@ -49,7 +49,7 @@ bool POSIXJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-//    if (current_jobs != 0)
+    //    if (current_jobs != 0)
     {
         int err = 0;
         char only_buffer;
@@ -76,8 +76,8 @@ bool POSIXJobServer::TakeNewJob()
             }
         }
     }
-//    current_jobs++;
-//    return true;
+    //    current_jobs++;
+    return false;
 }
 bool POSIXJobServer::ReleaseJob()
 {
@@ -89,7 +89,7 @@ bool POSIXJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    else //if (current_jobs != 1)
+    else  // if (current_jobs != 1)
     {
         int err = 0;
         char write_buffer = '1';
@@ -143,12 +143,12 @@ static int populate_pipe(int writefd, int max_jobs)
 #endif
                     std::this_thread::yield();
                     goto try_again;
-                    break;
                 default:
                     throw std::system_error(err, std::system_category());
             }
         }
     }
+    return true;
 }
 POSIXJobServer::POSIXJobServer(int max_jobs)
 {
@@ -157,10 +157,14 @@ POSIXJobServer::POSIXJobServer(int max_jobs)
     {
         throw std::invalid_argument("The max_jobs that a JobServer has cannot be less than one at the time of construction");
     }
-    if (pipe(readwrite) == -1)
+    if (pipe(readwrite) != -1)
     {
         readfd = readwrite[0];
         writefd = readwrite[1];
+    }
+    else
+    {
+        throw std::system_error(errno, std::generic_category());
     }
     populate_pipe(writefd, max_jobs);
 }

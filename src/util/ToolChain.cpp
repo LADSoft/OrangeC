@@ -94,7 +94,7 @@ void ToolChain::Usage(const char* text, int exitVal)
             left = rows - 1;
         }
     }
-    exit(1);
+    exit(0);
 }
 CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc, char** argv, const char* usageText,
                                         const char* helpText, std::function<bool()> noBanner)

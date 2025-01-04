@@ -306,11 +306,18 @@ bool MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef TARGET_OS_WINDOWS
-    char** env = environ;
-#else
-    char** env = 0;
+// https://www.man7.org/linux/man-pages/man7/environ.7.html
+/*
+ *Historically and by standard, environ must be declared in the
+ *user program.  However, as a (nonstandard) programmer
+ *convenience, environ is declared in the header file <unistd.h> if
+ *the _GNU_SOURCE feature test macro is defined (see
+ *feature_test_macros(7)).
+ */
+#ifndef TARGET_OS_WINDOWS
+    extern char** environ;
 #endif
+    char** env = environ;
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;

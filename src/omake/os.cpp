@@ -39,6 +39,8 @@
 #    include <wordexp.h>
 #    include <wait.h>
 #    include <unistd.h>
+#    include <poll.h>
+
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -564,31 +566,80 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     {
         OS::WriteToConsole(
             "Warning: The current shell var for $(SHELL) somehow is not set according to OS::Spawn, please report this to the "
-            "developers!");
+            "developers! Using /bin/sh.");
     }
-    const char* args[] = {shell_var_value.c_str(), "-c", command.c_str(), nullptr};
 
-    int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, args, strs.data());
+    int pipe_cout[2];
+
+    // Copy the spawned program's stdout to the pipe's input
+    int ret = posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
+    if (ret)
+    {
+        printf("Line: %d, Errno: %d, error: %s\n", __LINE__, errno, strerror(errno));
+        return -1;
+    }
+    ret = posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);
+    if (ret)
+    {
+        printf("Line: %d, Errno: %d, error: %s\n", __LINE__, errno, strerror(errno));
+        return -1;
+    }
+    ret = posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[0]);
+    if (ret)
+    {
+        printf("Line: %d, Errno: %d, error: %s\n", __LINE__, errno, strerror(errno));
+        return -1;
+    }
+    const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
+    ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, strs.data());
     if (ret != 0)
     {
-        posix_spawn_file_actions_destroy(&spawn_file_actions);
-        posix_spawnattr_destroy(&spawn_attr);
+        printf("Failed to spawn, errno: %d, err: %s\n", errno, strerror(errno));
+    }
+    std::string output_str;
+    posix_spawn_file_actions_destroy(&spawn_file_actions);
+    posix_spawnattr_destroy(&spawn_attr);
+    if (ret != 0)
+    {
+        printf("Failed to spawn, errno: %d, err: %s\n", errno, strerror(errno));
+        close(pipe_cout[0]);
+        close(pipe_cout[1]);
         return -1;
     }
     int status;
     int ret_wait = 0;
+    bool exit_condition = false;
     do
     {
-        ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
-        if (ret == -1)
+        struct pollfd polls;
+        polls.events = POLLIN;
+        polls.fd = pipe_cout[0];
+        polls.revents = 0;
+        int poll_ret = poll(&polls, 1, 100);
+        if (poll_ret > 0 && polls.revents & POLLIN)
         {
-            // Some error state has happened
-            OS::WriteToConsole("An error has occured!");
+            char bytes_to_read[120];
+            int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                output_str += std::string(bytes_to_read, bytes_read);
+            }
         }
-    } while (!WIFEXITED(status));
-    posix_spawn_file_actions_destroy(&spawn_file_actions);
-    posix_spawnattr_destroy(&spawn_attr);
-    return 0;
+        if ((poll_ret && !(polls.revents & POLLIN)) || poll_ret == 0)
+        {
+            ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
+            if (ret == -1)
+            {
+                OS::WriteToConsole("An error has occured!");
+            }
+            exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            status = WEXITSTATUS(status);
+        }
+
+    } while (!exit_condition);
+    close(pipe_cout[0]);
+    close(pipe_cout[1]);
+    return status;
 #endif
 }
 std::string OS::SpawnWithRedirect(const std::string command)
@@ -661,6 +712,10 @@ std::string OS::SpawnWithRedirect(const std::string command)
     CloseHandle(pipeWriteDuplicate);
     return rv;
 #else
+
+    // Basing a lot of following code on this, but not directly:
+    // https://stackoverflow.com/a/27328610
+
     posix_spawn_file_actions_t spawn_file_actions;
     posix_spawn_file_actions_init(&spawn_file_actions);
     posix_spawnattr_t spawn_attr;
@@ -678,51 +733,60 @@ std::string OS::SpawnWithRedirect(const std::string command)
     {
         OS::WriteToConsole(
             "Warning: The current shell var for $(SHELL) somehow is not set according to OS::Spawn, please report this to the "
-            "developers!");
+            "developers! Using /bin/sh.");
     }
 
-    // Basing a lot of following code on this, but not directly:
-    // https://stackoverflow.com/a/27328610
+    int pipe_cout[2];
 
-    int cout_pipe[2];
-    pipe(cout_pipe);
-
-    int pipefd = cout_pipe[0];
-    // Close out the child-side when the process closes
-    posix_spawn_file_actions_addclose(&spawn_file_actions, cout_pipe[0]);
-    // Send the stdout pipe on the child to the cout pipe(?)
-    posix_spawn_file_actions_adddup2(&spawn_file_actions, cout_pipe[1], 1);
-    posix_spawn_file_actions_addclose(&spawn_file_actions, cout_pipe[1]);
-    const char* args[] = {shell_var_value.c_str(), "-c", command.c_str(), nullptr};
+    // Copy the spawned program's stdout to the pipe's input
+    posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
+    posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);
+    posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[0]);
+    const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
     int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, environ);
+    std::string output_str;
     posix_spawn_file_actions_destroy(&spawn_file_actions);
     posix_spawnattr_destroy(&spawn_attr);
-
-    close(cout_pipe[0]);
-
     if (ret != 0)
     {
+        close(pipe_cout[0]);
+        close(pipe_cout[1]);
         return "";
     }
     int status;
     int ret_wait = 0;
-    std::string readable;
+    bool exit_condition = false;
     do
     {
-        ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
-        if (ret == -1)
+        struct pollfd polls;
+        polls.events = POLLIN;
+        polls.fd = pipe_cout[0];
+        polls.revents = 0;
+        int poll_ret = poll(&polls, 1, 100);
+        if (poll_ret > 0 && (polls.revents & POLLIN))
         {
-            // Some error state has happened
-            OS::WriteToConsole("An error has occured!");
+            char bytes_to_read[120];
+            int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                output_str += std::string(bytes_to_read, bytes_read);
+            }
         }
-        else
+        if ((poll_ret && !(polls.revents & POLLIN)) || poll_ret == 0)
+
         {
-            char bytes_to_read[1024];
-            int bytes = read(default_pid, bytes_to_read, sizeof(bytes_to_read));
-            readable += std::string(bytes_to_read, bytes);
+            ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
+            if (ret == -1)
+            {
+                OS::WriteToConsole("An error has occured!");
+            }
+            exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
         }
-    } while (!WIFEXITED(status));
-    return readable;
+
+    } while (!exit_condition);
+    close(pipe_cout[0]);
+    close(pipe_cout[1]);
+    return output_str;
 #endif
 }
 Time OS::GetCurrentTime()

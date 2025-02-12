@@ -80,6 +80,7 @@ std::list<SYMBOL*> nameSpaceList;
 char anonymousNameSpaceName[512];
 int noNeedToSpecialize;
 int parsingUsing;
+int inStaticAssert;
 
 static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTABENTRY*>* entries)
 {
@@ -1923,6 +1924,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 }
 LexList* handleStaticAssert(LexList* lex)
 {
+    if (lex->data->errline == 237 && strstr(lex->data->errfile, "filesystem_common"))
+        printf("hi");
     RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
     if (!MATCHKW(lex, Keyword::openpa_))
     {
@@ -1938,16 +1941,15 @@ LexList* handleStaticAssert(LexList* lex)
     else
     {
         lex = getsym(); // past '('
-
         bool v = true;
         char buf[5000];
         Type* tp;
         EXPRESSION *expr = nullptr, *expr2 = nullptr;
         inConstantExpression++;
         anonymousNotAlloc++;
-        argumentNesting++;
+        inStaticAssert++;
         lex = expression_assign(lex, nullptr, nullptr, &tp, &expr, nullptr, 0);
-        argumentNesting--;
+        inStaticAssert--;
         anonymousNotAlloc--;
         expr2 = Allocate<EXPRESSION>();
         expr2->type = ExpressionNode::x_bool_;
@@ -3473,7 +3475,7 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
         if ((*tn))
         {
             optimize_for_constants(&exp);
-            if (definingTemplate && !instantiatingTemplate)
+            if (definingTemplate && !instantiatingTemplate || (*tn)->type == BasicType::any_)
             {
                 (*tn) = Type::MakeType(BasicType::templatedecltype_);
                 (*tn)->templateDeclType = exp;

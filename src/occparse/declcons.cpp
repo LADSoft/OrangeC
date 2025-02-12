@@ -3256,7 +3256,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 e1 = MakeExpression(params);
             }
         }
-        if (params->sp->sb->constexpression && argumentNesting == 0)
+        if (params->sp->sb->constexpression && (argumentNesting == 0 && !inStaticAssert))
         {
             EXPRESSION* node = MakeExpression(params);
             if (EvaluateConstexprFunction(node))

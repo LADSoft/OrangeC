@@ -1257,7 +1257,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                 {
                     if (itInitial->second->byPack.pack)
                     {
-                        if (packIndex >= 0)
+                        if (packIndex >= 0 && !itInitial->second->resolved)
                         {
                             auto itx = itInitial->second->byPack.pack->begin();
                             auto itxe = itInitial->second->byPack.pack->end();

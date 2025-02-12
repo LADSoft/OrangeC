@@ -3195,7 +3195,7 @@ int fold_const(EXPRESSION* node)
                         thisptr = nullptr;
                 }
             }
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression && argumentNesting == 0)
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression && (argumentNesting == 0 && !inStaticAssert))
             {
                 if (!rv && node->v.func->thisptr)
                 {

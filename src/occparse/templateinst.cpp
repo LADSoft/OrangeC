@@ -4664,7 +4664,7 @@ void SearchAlias(const char* name, TEMPLATEPARAMPAIR* x, SYMBOL* sym, std::list<
             x->second->byPack.pack = templateParamPairListFactory.CreateList();
             x->second->byPack.pack->push_back(TEMPLATEPARAMPAIR{nullptr, rv->second});
         }
-        else if (rv->second->packed && packIndex >= 0 && !x->second->ellipsis)
+        else if (rv->second->packed && packIndex >= 0 && !x->second->ellipsis && !x->second->resolved)
         {
             if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
             {
@@ -4946,7 +4946,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                 {
                     if (packIndex >= 0 && rv->second->packed && !exp->v.sp->tp->BaseType()->templateParam->second->ellipsis)
                     {
-                        if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
+                        if (rv->second->byPack.pack && !rv->second->resolved && packIndex < rv->second->byPack.pack->size())
                         {
                             auto it = rv->second->byPack.pack->begin();
                             for (int i = 0; i < packIndex; ++i, ++it)
@@ -4967,7 +4967,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
                     if (rv->second->byClass.dflt)
                     {
                         Type* dflt = rv->second->byClass.dflt;
-                        if (packIndex >= 0 && rv->second->packed && !exp->v.sp->tp->BaseType()->templateParam->second->ellipsis)
+                        if (packIndex >= 0 && !rv->second->resolved && rv->second->packed && !exp->v.sp->tp->BaseType()->templateParam->second->ellipsis)
                         {
                             if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
                             {
@@ -5021,9 +5021,9 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
             if (packIndex >= 0)
             {
                 TEMPLATEPARAMPAIR* rv = TypeAliasSearch(exp->v.sp->name, false);
-                if (rv && rv->second->packed)
+                if (rv && rv->second->packed && !rv->second->resolved)
                 {
-                    if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
+                    if (rv->second->byPack.pack && !rv->second->resolved && packIndex < rv->second->byPack.pack->size())
                     {
                         auto it = rv->second->byPack.pack->begin();
                         for (int i = 0; i < packIndex; ++i, ++it)
@@ -5185,7 +5185,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                         {
                             if (args1->back().second->packed)
                             {
-                                if (packIndex >= 0 && !args1->back().second->ellipsis)
+                                if (packIndex >= 0 && !args1->back().second->resolved &&  !args1->back().second->ellipsis)
                                 {
                                     std::list<TEMPLATEPARAMPAIR>* tpx = args1->back().second->byPack.pack;
                                     if (tpx && packIndex < tpx->size())
@@ -5279,7 +5279,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
             {
                 if (packIndex >= 0 && !tpr->back().second->ellipsis)
                 {
-                    if (tpr->back().second->byPack.pack && packIndex < tpr->back().second->byPack.pack->size())
+                    if (tpr->back().second->byPack.pack && !tpr->back().second->resolved &&  packIndex < tpr->back().second->byPack.pack->size())
                     {
                         auto it = tpr->back().second->byPack.pack->begin();
                         for (int i = 0; i < packIndex; ++i, ++it)
@@ -5335,7 +5335,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
             tp->templateParam->second = tpp;
             if (rv->second->packed && !tp->templateParam->second->ellipsis)
             {
-                if (rv->second->byPack.pack && packIndex < rv->second->byPack.pack->size())
+                if (rv->second->byPack.pack && !rv->second->resolved && packIndex < rv->second->byPack.pack->size())
                 {
                     auto it = rv->second->byPack.pack->begin();
                     for (int i = 0; i < packIndex; ++i, ++it)
@@ -5383,7 +5383,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                                     if (packIndex >= 0 && !args1->back().second->ellipsis)
                                     {
                                         std::list<TEMPLATEPARAMPAIR>* tpx = args1->back().second->byPack.pack;
-                                        if (tpx && packIndex < tpx->size())
+                                        if (tpx && !args1->back().second->resolved && packIndex < tpx->size())
                                         {
                                             auto it = tpx->begin();
                                             for (int i = 0; i < packIndex; i++, ++it)
@@ -5515,7 +5515,7 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                                 if (packIndex >= 0 && !tpr->back().second->ellipsis)
                                 {
                                     std::list<TEMPLATEPARAMPAIR>* tpx = tpr->back().second->byPack.pack;
-                                    if (tpx && packIndex < tpx->size())
+                                    if (tpx && ! tpr->back().second->resolved && packIndex < tpx->size())
                                     {
                                         auto it = tpx->begin();
                                         for (int i = 0; i < packIndex; ++i, ++it)
@@ -5959,10 +5959,13 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     TemplateArgInstantiateDeferred(args);
     SYMBOL* rv;
     // if we get here we have a templated typedef
-    args = TypeAliasAdjustArgs(sp->templateParams, args);
-    for (auto&& a : *args)
+    if (args->size())
     {
-        SpecifyOneArg(sp, &a, sp->templateParams, sp->sb->typeAlias);
+        args = TypeAliasAdjustArgs(sp->templateParams, args);
+        for (auto&& a : *args)
+        {
+            SpecifyOneArg(sp, &a, sp->templateParams, sp->sb->typeAlias);
+        }
     }
     if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
     {

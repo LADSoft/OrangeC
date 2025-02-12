@@ -1521,10 +1521,13 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         }
         else
         {
-            if (points)
-                errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, tokenName);
-            else
-                errorstr(ERR_STRUCTURED_TYPE_EXPECTED, tokenName);
+            if (!hasPackedExpression(*exp, true))
+            {
+                if (points)
+                    errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, tokenName);
+                else
+                    errorstr(ERR_STRUCTURED_TYPE_EXPECTED, tokenName);
+            }
             while (ISID(lex) || MATCHKW(lex, Keyword::operator_))
             {
                 Type* tp = nullptr;
@@ -2440,30 +2443,6 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                 {
                     while (exp3->type == ExpressionNode::comma_)
                         exp3 = exp3->right;
-                    /*
-                    if ((exp3->type == ExpressionNode::auto_ || exp3->type == ExpressionNode::global_) && exp3->v.sp->sb->constexpression)
-                    {
-                        auto sym = exp3->v.sp;
-                        auto its = p->tp->BaseType()->syms->begin();
-                        exp3 = p->exp;
-                        std::list<Initializer*>* it = new std::list<Initializer*>;
-                        while (exp3->type == ExpressionNode::comma_)
-                        {
-                            if (exp3->left->type == ExpressionNode::assign_ && exp3->left->left->left->type == ExpressionNode::structadd_)
-                            {
-                                while (its != p->tp->BaseType()->syms->end() && !ismemberdata(*its)) ++its;
-                                if (its != p->tp->BaseType()->syms->end())
-                                {
-                                    int ofs = exp3->left->left->left->right->v.i;
-                                    auto exp2 = exp3->left->right;
-                                    InsertInitializer(&it, (*its)->tp, exp2, ofs, false);
-                                }
-                            }
-                            exp3 = exp3->right;
-                        }
-                        sym->sb->init = it;
-                    }
-                    */
                 }
                 if (exp3->type == ExpressionNode::thisref_)
                 {
@@ -2471,12 +2450,6 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                     p->tp->lref = false;
                     p->tp->rref = true;
                 }
-                /*
-                else if (exp3->type == ExpressionNode::auto_)
-                {
-                    exp3->v.sp->sb->constexpression = false;
-                }
-                */
             }
             if (p->tp)
             {
@@ -4367,12 +4340,16 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
 
+    if (lex && lex->data->errline == 512 && strstr(lex->data->errfile,"variant"))
+    {
+        printf("hi");
+    }
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
     }
 
-    if (funcparams->astemplate && argumentNesting)
+    if (funcparams->astemplate && (argumentNesting || inStaticAssert))
     {
         // if we hit a packed template param here, then this is going to be a candidate
         // for some other function's packed expression
@@ -4432,13 +4409,15 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         // we may get here with the overload resolution already done, e.g.
         // for operator or cast function calls...
         // also if in a trailing return we want to defer the lookup until later if there are going to be multiple choices...
-        if (funcparams->sp->sb->storage_class == StorageClass::overloads_ &&
-            (!parsingTrailingReturnOrUsing || funcparams->sp->tp->type != BasicType::aggregate_ ||
-             funcparams->sp->tp->syms->size() < 2))
+        static EXPRESSION funcExpr;
+        funcExpr.type = ExpressionNode::callsite_;
+        funcExpr.v.func = funcparams;
+        if (funcparams->sp->sb->storage_class == StorageClass::overloads_ && (funcparams->sp->tp->type != BasicType::aggregate_ || funcparams->sp->tp->syms->size() < 2 ||
+            (!parsingTrailingReturnOrUsing && (!(flags & _F_INDECLTYPE)  || !inTemplateArgs || !hasPackedExpression(&funcExpr, true)))))
         {
             Type* tp1;
             // note at this pointer the arglist does NOT have the this pointer,
-            // it will be added after we select a member function that needs it.
+            // it will be ad  ded after we select a member function that needs it.
             funcparams->ascall = true;
             sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, flags);
             if ((*tp)->IsFunction())
@@ -4663,7 +4642,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 std::list<Argument*>* temp2 = &temp1;
                 if (initializerListType)
                 {
-                    if (funcparams->sp->sb->constexpression && argumentNesting == 0)
+                    if (funcparams->sp->sb->constexpression && (argumentNesting == 0 && !inStaticAssert))
                     {
                         EXPRESSION* node = Allocate<EXPRESSION>();
                         node->type = ExpressionNode::callsite_;
@@ -6531,6 +6510,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                 }
                             }
                         }
+#if 0
                         else if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
                         {
                             // lose p
@@ -6542,6 +6522,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                 ExpandExpression(start, funcsp, exp);
                             }
                         }
+#endif
                         else if (!inTemplateArgs)
                         {
                             if (argumentNesting <= 1)

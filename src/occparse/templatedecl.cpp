@@ -550,10 +550,6 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         tp->BaseType()->sp->sb->declaringRecursive = true;
                     }
                 }
-                if (!definingTemplate && tp->type == BasicType::any_)
-                {
-                    error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
-                }
                 if (MATCHKW(lex, Keyword::begin_))  // initializer list?
                 {
                     if (definingTemplate)
@@ -620,19 +616,20 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         }
                         else
                         {
-                            if (!*lst)
-                                *lst = templateParamPairListFactory.CreateList();
-                            (*lst)->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
+                            std::list<TEMPLATEPARAMPAIR> a;
+                            a.push_back({ nullptr, nullptr });
+                            a.front().second = Allocate<_templateParam>();
                             if (itorig != iteorig && itorig->second->type == TplType::template_ && tp->IsStructured() && tp->BaseType()->sp->sb->templateLevel)
                             {
-                                (*lst)->back().second->type = TplType::template_;
-                                (*lst)->back().second->byTemplate.dflt = tp->BaseType()->sp;
+                                a.front().second->type = TplType::template_;
+                                a.front().second->byTemplate.dflt = tp->BaseType()->sp;
                             }
                             else
                             {
-                                (*lst)->back().second->type = TplType::typename_;
-                                (*lst)->back().second->byClass.dflt = tp1;
+                                a.front().second->type = TplType::typename_;
+                                a.front().second->byClass.dflt = tp1;
                             }
+                            lst = ExpandTemplateArguments(lst, start, funcsp, &a, true);
                         }
                     }
                     (*lst)->back().second->ellipsis = true;
@@ -641,6 +638,10 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         for (auto&& tpx : *(*lst)->back().second->byPack.pack)
                             tpx.second->ellipsis = true;
                     }
+                }
+                else if (!definingTemplate && tp->type == BasicType::any_)
+                {
+                    error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
                 }
                 else if (tp && tp->type == BasicType::templateparam_)
                 {
@@ -654,7 +655,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         (*lst)->back().second->ellipsis = false;
                         (*lst)->back().second->usedAsUnpacked = true;
                     }
-                    else if (inTemplateSpecialization)
+                    else if (inTemplateSpecialization)  
                     {
                         if (!*lst)
                             *lst = templateParamPairListFactory.CreateList();
@@ -987,7 +988,10 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         {
                             if (exp)
                             {
+                                int oldStaticAssert = inStaticAssert;
+                                inStaticAssert = 0;
                                 optimize_for_constants(&exp);
+                                inStaticAssert = oldStaticAssert;
                                 while (exp->type == ExpressionNode::comma_ && exp->right)
                                     exp = exp->right;
                             }
@@ -1874,7 +1878,8 @@ bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATE
         auto ita = args->begin();
         if (its != sym->end())
             ++its;
-        for ( ; its != sym->end() && ita != args->end(); ++its, ++ita)
+        bool firstVariadic = true;
+        for (; its != sym->end() && ita != args->end();)
         {
             if (its->second->type == TplType::template_ && ita->second->type == TplType::typename_)
             {
@@ -1889,8 +1894,42 @@ bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATE
             {
                 if (!matchArg(*its, *ita))
                     return false;
-                switch (ita->second->type)
+                if (its->second->packed)
                 {
+                    if (firstVariadic)
+                    {
+                        if (ita->second->packed)
+                        {
+                            its->second->byPack.pack = ita->second->byPack.pack;
+                        }
+                        else
+                        {
+                            its->second->byPack.pack = templateParamPairListFactory.CreateList();
+                            its->second->byPack.pack->push_back(*ita);
+                        }
+                    }
+                    else
+                    {
+                        if (ita->second->packed)
+                        {
+                            if (ita->second->byPack.pack)
+                            {
+                                for (auto itt : *ita->second->byPack.pack)
+                                {
+                                    its->second->byPack.pack->push_back(itt);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            its->second->byPack.pack->push_back(*ita);
+                        }
+                    }
+                }
+                else
+                {
+                    switch (ita->second->type)
+                    {
                     case TplType::typename_:
                         its->second->byClass.val = ita->second->byClass.dflt;
                         break;
@@ -1902,7 +1941,19 @@ bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATE
                         break;
                     default:
                         break;
+                    }
                 }
+            }
+            auto oldPacked = ita->second->packed;
+            ++ita;
+            if (!its->second->packed || oldPacked || (ita != args->end() && its->second->type != ita->second->type))
+            {
+                ++its;
+                firstVariadic = true;
+            }
+            else
+            {
+                firstVariadic = false;
             }
         }
     }

@@ -3234,7 +3234,7 @@ founddecltype:
                                 diag("TypeGenerator::UnadornedType: expected typename template param");
                             }
                         }
-                        else if (expandingParams && tpx->type == BasicType::templateparam_ && tpx->templateParam->second->byPack.pack)
+                        else if (expandingParams && tpx->type == BasicType::templateparam_ && tpx->templateParam->second->byPack.pack && !tpx->templateParam->second->resolved)
                         {
 
                             auto packed = tpx->templateParam->second->byPack.pack->begin();

@@ -928,7 +928,20 @@ void GetPackedTypes(TEMPLATEPARAMPAIR** packs, int* count, std::list<TEMPLATEPAR
         {
             if (arg.second->type == TplType::typename_)
             {
-                if (arg.second->packed)
+                if (arg.second->byClass.dflt && arg.second->byClass.dflt->type == BasicType::templatedecltype_)
+                {
+                    // this is deliberately simplistic....
+                    auto exp = arg.second->byClass.dflt->templateDeclType;
+                    if (exp->type == ExpressionNode::thisref_)
+                    {
+                        exp = exp->left;
+                    }
+                    if (exp->type == ExpressionNode::callsite_ && exp->v.func->templateParams)
+                    {
+                        GetPackedTypes(packs, count, exp->v.func->templateParams);                        
+                    }
+                }
+                else if (arg.second->packed)
                 {
                     packs[(*count)++] = &arg;
                 }
@@ -1695,10 +1708,10 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::templateparam_:
             if (exp->v.sp->tp->BaseType()->templateParam->second->type == TplType::typename_)
             {
-                if (exp->v.sp->tp->BaseType()->templateParam->second->packed)
+                if (exp->v.sp->tp->BaseType()->templateParam->second->packed) 
                 {
                     Type* rv = &stdany;
-                    if (packIndex < 0)
+                    if (packIndex < 0 || exp->v.sp->tp->BaseType()->templateParam->second->resolved)
                     {
                         if (exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack)
                             rv = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->front().second->byClass.val;

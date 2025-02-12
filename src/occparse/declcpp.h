@@ -32,6 +32,7 @@ extern std::list<SYMBOL*> nameSpaceList;
 extern char anonymousNameSpaceName[512];
 extern int noNeedToSpecialize;
 extern int parsingUsing;
+extern int inStaticAssert;
 
 typedef struct
 {

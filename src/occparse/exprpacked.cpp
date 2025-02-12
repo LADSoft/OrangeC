@@ -235,7 +235,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
         {
             if (exp1->v.sp->templateParams)
                 for (auto&&tpl : *exp1->v.sp->templateParams)
-                    if (tpl.second->packed)
+                    if (tpl.second->packed && !tpl.second->resolved)
                         return true;
         }
         if (exp1->type == ExpressionNode::callsite_)
@@ -244,7 +244,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
             {
                 if (exp1->v.func->templateParams)
                     for (auto&& tpl : *exp1->v.func->templateParams)
-                        if (tpl.second->packed)
+                        if (tpl.second->packed && !tpl.second->resolved)
                             return true;
             }
             if (exp1->v.func->arguments)
@@ -256,7 +256,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
         }
         if (exp1->type == ExpressionNode::templateparam_)
         {
-            if (exp1->v.sp->tp->BaseType()->templateParam->second->packed)
+            if (exp1->v.sp->tp->BaseType()->templateParam->second->packed && !exp1->v.sp->tp->BaseType()->templateParam->second->resolved)
                 return true;
         }
         if (exp1->type == ExpressionNode::templateselector_)
@@ -268,7 +268,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
                     if (i.isTemplate && i.templateParams)
                     {
                         for (auto&& tpl : *i.templateParams)
-                            if (tpl.second->packed)
+                            if (tpl.second->packed && !tpl.second->resolved)
                                 return true;
                     }
                 }
@@ -295,10 +295,14 @@ void GatherTemplateParams(int* count, SYMBOL** arg, std::list<TEMPLATEPARAMPAIR>
     {
         for (auto&& tpl : *tplx)
         {
-            if (tpl.second->packed && tpl.first && tpl.second->type == TplType::typename_)
+            if (tpl.second->packed && tpl.first)
             {
-                arg[(*count)++] = /*sym*/ tpl.first;
-                NormalizePacked(tpl.first->tp);
+                if (!tpl.second->resolved)
+                {
+                    arg[(*count)++] = /*sym*/ tpl.first;
+                    if (tpl.second->type == TplType::typename_)
+                        NormalizePacked(tpl.first->tp);
+                }
             }
             else if (tpl.second->type == TplType::int_)
             {
@@ -396,6 +400,10 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
     else if (packedExp->type == ExpressionNode::callsite_)
     {
         GatherTemplateParams(count, arg, packedExp->v.func->templateParams);
+        if (arg, packedExp->v.func->sp->sb->parentClass)
+        {
+            GatherTemplateParams(count, arg, packedExp->v.func->sp->sb->parentClass->templateParams);
+        }
         Argument* lst;
         if (packedExp->v.func->arguments)
             for (auto lst : *packedExp->v.func->arguments)
@@ -1197,7 +1205,7 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
                                 {
                                     for (auto&& tpx : *arg1->exp->v.func->templateParams)
                                     {
-                                        if (tpx.second->type != TplType::new_)
+                                        if (tpx.second->type != TplType::new_ && !tpx.second->resolved)
                                         {
                                             defaults.push_back(tpx.second);
                                             if (tpx.second->packed && tpx.second->byPack.pack)
@@ -1222,7 +1230,7 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
                                         if ((*tp)->type == BasicType::templateparam_)
                                         {
                                             auto tpx = (*tp)->templateParam;
-                                            if (tpx->second->packed && tpx->second->byPack.pack)
+                                            if (tpx->second->packed && tpx->second->byPack.pack && !tpx->second->resolved)
                                             {
                                                 auto it = tpx->second->byPack.pack->begin();
                                                 auto ite = tpx->second->byPack.pack->end();
@@ -1315,7 +1323,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     {
         if (!*lst)
             *lst = templateParamPairListFactory.CreateList();
-        if (select->front().second->packed && packIndex >= 0)
+        if (select->front().second->packed && packIndex >= 0 && select->front().second->byPack.pack && !select->front().second->resolved)
         {
             std::list<TEMPLATEPARAMPAIR>* templateParam = select->front().second->byPack.pack;
             int i;
@@ -1366,6 +1374,10 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
             packIndex = i;
             tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::parameter_, false, true, false);
             SetAlternateLex(nullptr);
+            if (!definingTemplate && (!tp || tp->type == BasicType::any_))
+            {
+                 error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
+            }
             if (tp)
             {
                 if (!*lst)
@@ -1419,6 +1431,8 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start,
     SYMBOL* arg[200];
     GatherPackedVars(&count, arg, *exp);
     expandingParams++;
+    int oldStaticAssert = inStaticAssert;
+    inStaticAssert = 0;
     if (count)
     {
         auto list = templateParamPairListFactory.CreateList();
@@ -1453,6 +1467,7 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start,
         if (first)
             (*lst)->back().first = first;
     }
+    inStaticAssert = oldStaticAssert;
     expandingParams--;
     packIndex = oldPack;
 }

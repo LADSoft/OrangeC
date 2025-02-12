@@ -2891,6 +2891,8 @@ EXPRESSION* getThisNode(SYMBOL* sym)
 auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int offset, SYMBOL* funcsp, StorageClass sc, SYMBOL* base,
                                std::list<Initializer*>** dest, bool templateLevel, bool deduceTemplate, int flags)
 {
+    if (lex->data->errline == 482 && strstr(lex->data->errfile, "variant"))
+        printf("hi");
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
     bool toomany = false;
@@ -3138,6 +3140,8 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
 static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL * base, int offset, StorageClass sc, Type* itype,
                                           std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember, bool deduceTemplate, int flags)
 {
+    if (lex->data->errline == 520 && strstr(lex->data->errfile, "variant"))
+        printf("hi");
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
     bool needend = false;

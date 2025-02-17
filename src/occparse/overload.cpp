@@ -3806,14 +3806,19 @@ SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp)
 
                 globalNameSpace->push_front(ns->sb->nameSpaceValues->front());
             }
-            if (args && !TemplateIntroduceArgs(sym->templateParams, args->templateParams))
+            if (args && !FunctionTemplateCandidate(sym->templateParams, args->templateParams))
                 sym = nullptr;
             else if (atp)
                 sym = TemplateDeduceArgsFromType(sym, atp);
             else if (args->ascall)
                 sym = TemplateDeduceArgsFromArgs(sym, args);
             else
-                sym = TemplateDeduceWithoutArgs(sym);
+            {
+                if (args && !TemplateIntroduceArgs(sym->templateParams, args->templateParams))
+                    sym = nullptr;
+                else
+                    sym = TemplateDeduceWithoutArgs(sym);
+            }
             if (linked)
             {
                 SYMBOL* sym = nameSpaceList.front();

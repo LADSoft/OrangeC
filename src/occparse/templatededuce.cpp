@@ -240,10 +240,87 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                 }
                 if (itTA->second->byPack.pack)
                 {
-                    tas.push(itTA);
-                    tas.push(itTAe);
-                    itTAe = itTA->second->byPack.pack->end();
-                    itTA = itTA->second->byPack.pack->begin();
+                    if (itTP->second->packed)
+                    {
+                        if (itTP->second->byPack.pack)
+                        {
+                            if (itTP->second->byPack.pack->size() == itTA->second->byPack.pack->size())
+                            {
+                                auto packedP = itTP->second->byPack.pack->begin();
+                                auto packedPe = itTP->second->byPack.pack->end();
+                                auto packedA = itTA->second->byPack.pack->begin();
+                                for (; packedP != packedPe; ++packedP, ++packedA)
+                                {
+                                    switch (packedP->second->type)
+                                    {
+                                    case TplType::typename_: {
+                                        Type** tp = &packedP->second->byClass.val;
+                                        if (*tp || !templateCompareTypes(packedP->second->byClass.val, packedA->second->byClass.val, true))
+                                                return false;
+                                        break;
+                                    }
+                                    case TplType::template_: {
+                                        std::list<TEMPLATEPARAMPAIR>* paramT = packedP->first->templateParams;
+                                        std::list<TEMPLATEPARAMPAIR>* paramA = packedA->first->templateParams;
+                                        if (!paramT || !paramA || paramT->size() != paramA->size())
+                                            return false;
+                                        auto it1 = paramT->begin();
+                                        auto it2 = paramA->begin();
+                                        for (int i = 0; i < paramT->size(); ++i, ++it1, ++it2)
+                                        {
+                                            if (it1->second->type != it2->second->type)
+                                                return false;
+                                        }
+                                        break;
+                                    }
+                                    case TplType::int_: {
+                                        EXPRESSION** exp;
+                                        if (itTAo->second->bySpecialization.types)
+                                        {
+                                        }
+                                        exp = &packedP->second->byNonType.val;
+                                        if (packedA->second->byNonType.val && packedP->second->byNonType.val &&
+                                            !equalTemplateMakeIntExpression(packedA->second->byNonType.val, *exp))
+                                            return false;
+                                        break;
+                                    }
+                                    default:
+                                        break;
+                                    }
+
+                                }
+                                ++itTA;
+                                continue;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            auto packedP = itTP->second->byPack.pack = templateParamPairListFactory.CreateList();
+                            auto packedA = itTA->second->byPack.pack->begin();
+                            auto packedAe= itTA->second->byPack.pack->end();
+                            for (; packedA != packedAe; ++packedA)
+                            {
+                                auto p = Allocate<TEMPLATEPARAM>();
+                                *p = *packedA->second;
+                                p->deduced = true;
+                                packedP->push_back(TEMPLATEPARAMPAIR{ itTA->first, p });
+                            }
+                            itTP->second->deduced = true;
+                        }
+                        ++itTA;
+                        continue;
+                    }
+                    else
+                    {
+                        tas.push(itTA);
+                        tas.push(itTAe);
+                        itTAe = itTA->second->byPack.pack->end();
+                        itTA = itTA->second->byPack.pack->begin();
+                    }
                 }
             }
             if (itTA == itTAe)

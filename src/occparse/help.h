@@ -86,7 +86,7 @@ bool isDerivedFromTemplate(Type* tp);
 bool isconstexpr(const EXPRESSION* expa);
 EXPRESSION* createTemporary(Type* tp, EXPRESSION* val);
 EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val);
-void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp);
+void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref);
 SYMBOL* getFunctionSP(Type** tp);
 LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems);
 LexList* concatStrings(LexList* lex, EXPRESSION** expr, LexType* tp, int* elems);

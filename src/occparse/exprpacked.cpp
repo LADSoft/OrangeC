@@ -668,7 +668,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
             {
                 int i;
                 int n = CountPacks(arg[0]->tp->templateParam->second->byPack.pack);
-                if (n > 1 || !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() || packedExp->v.func->arguments->front()->tp->type != BasicType::void_)
+                if (n > 1 || n == 1 && (!packedExp->v.func->arguments || !packedExp->v.func->arguments->size() || packedExp->v.func->arguments->front()->tp->type != BasicType::void_))
                 {
                     if (!*lptr)
                         *lptr = argumentListFactory.CreateList();

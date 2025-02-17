@@ -257,7 +257,7 @@ EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val)
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
-void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp)
+void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
 {
     Type* patin = *pat;
     Type* in = nt;
@@ -333,15 +333,8 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp)
         }
         else if (!pointerOrRef)
         {
-            if ((*pat)->decltypeauto)
-                if ((*pat)->decltypeautoextended)
-                {
+            if (canref && (*pat)->decltypeauto)
                     *pat = Type::MakeType(BasicType::lref_, nt);
-                }
-                else
-                {
-                    *pat = nt;
-                }
             else if (nt->IsRef())
             {
                 *pat = nt->BaseType()->btp;

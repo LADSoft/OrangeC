@@ -3424,7 +3424,6 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
         (*tn) = Type::MakeType(BasicType::auto_);
         (*tn)->size = 0;
         (*tn)->decltypeauto = true;
-        (*tn)->decltypeautoextended = extended;
     }
     else
     {

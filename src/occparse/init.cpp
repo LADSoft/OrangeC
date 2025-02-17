@@ -1734,6 +1734,7 @@ static LexList* initialize_pointer_type(LexList* lex, SYMBOL* funcsp, int offset
     }
     else
     {
+        bool hasOpenPa = !needend && lex && MATCHKW(lex, Keyword::openpa_);
         if (!lex || (lex->data->type != LexType::l_astr_ && lex->data->type != LexType::l_wstr_ && lex->data->type != LexType::l_ustr_ &&
                      lex->data->type != LexType::l_Ustr_ && lex->data->type != LexType::l_msilstr_ && lex->data->type != LexType::l_u8str_))
         {
@@ -1754,7 +1755,7 @@ static LexList* initialize_pointer_type(LexList* lex, SYMBOL* funcsp, int offset
             string = true;
         }
         castToPointer(&tp, &exp, (Keyword) - 1, itype);
-        DeduceAuto(&itype, tp, exp);
+        DeduceAuto(&itype, tp, exp, hasOpenPa);
         if (sc != StorageClass::auto_ && sc != StorageClass::register_)
         {
             EXPRESSION* exp2 = exp;
@@ -2136,8 +2137,8 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
     if (tp)
     {
         ResolveTemplateVariable(&tp, &exp, itype->BaseType()->btp, nullptr);
-        DeduceAuto(&itype, tp, exp);
-        DeduceAuto(&sym->tp, tp, exp);
+        DeduceAuto(&itype, tp, exp,  true);
+        DeduceAuto(&sym->tp, tp, exp, true);
         itype->InstantiateDeferred();
         itype->UpdateRootTypes();
         sym->tp->UpdateRootTypes();
@@ -4506,6 +4507,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 lex = getsym();
                 if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::openbr_))
                 {
+                    bool hasOpenPa = lex && MATCHKW(lex, Keyword::openpa_);
                     lex = expression_no_check(lex, funcsp, nullptr, &tp1, &exp1, _F_TYPETEST);
                     if (tp1 && tp1->stringconst)
                     {
@@ -4519,7 +4521,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                         {
                             tp1 = Type::MakeType(BasicType::pointer_, tp1->BaseType()->btp);
                         }
-                        DeduceAuto(&sym->tp, tp1, exp1);
+                        DeduceAuto(&sym->tp, tp1, exp1, hasOpenPa);
                         Type** tp2 = &sym->tp;
                         while ((*tp2)->IsPtr() || (*tp2)->IsRef())
                             tp2 = &(*tp2)->BaseType()->btp;

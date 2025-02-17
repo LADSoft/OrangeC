@@ -48,7 +48,6 @@ struct Type
     int lref : 1;
     int rref : 1;
     int decltypeauto : 1;
-    int decltypeautoextended : 1;
     int stringconst : 1;
     char bits;      /* -1 for not a bit val, else bit field len */
     char startbit;  /* start of bit field */

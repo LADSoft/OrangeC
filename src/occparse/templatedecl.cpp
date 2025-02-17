@@ -492,6 +492,10 @@ bool constructedInt(LexList* lex, SYMBOL* funcsp)
 }
 LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst)
 {
+    if (lex && lex->data->errline == 512 && strstr(lex->data->errfile, "variant"))
+    {
+        printf("hi");
+    }
     std::list<TEMPLATEPARAMPAIR>** start = lst;
     int oldnoTn = noTypeNameError;
     noTypeNameError = 0;
@@ -890,7 +894,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                             lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_INTEMPLATEPARAMS);
                             if (tp && tp->type == BasicType::templateparam_)
                             {
-                                if (parsingTrailingReturnOrUsing)
+                                if (parsingTrailingReturnOrUsing && exp->type != ExpressionNode::c_i_)
                                 {
                                     std::list<TEMPLATEPARAMPAIR> a;
                                     a.push_back(*exp->v.sp->tp->templateParam);
@@ -1898,50 +1902,39 @@ bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATE
                 {
                     if (firstVariadic)
                     {
-                        if (ita->second->packed)
+                        its->second->byPack.pack = templateParamPairListFactory.CreateList();
+                    }
+                    if (ita->second->packed)
+                    {
+                        if (ita->second->byPack.pack)
                         {
-                            its->second->byPack.pack = ita->second->byPack.pack;
-                        }
-                        else
-                        {
-                            its->second->byPack.pack = templateParamPairListFactory.CreateList();
-                            its->second->byPack.pack->push_back(*ita);
+                            for (auto&& tpl : *ita->second->byPack.pack)
+                            {
+                                its->second->byPack.pack->push_back(tpl);
+                                auto& item = its->second->byPack.pack->back();
+                                auto second = item.second;
+                                item.second = Allocate<TEMPLATEPARAM>();
+                                *item.second = *second;
+                                item.second->byClass.val = item.second->byClass.dflt;
+                                item.second->byClass.dflt = nullptr;
+                            }
                         }
                     }
                     else
                     {
-                        if (ita->second->packed)
-                        {
-                            if (ita->second->byPack.pack)
-                            {
-                                for (auto itt : *ita->second->byPack.pack)
-                                {
-                                    its->second->byPack.pack->push_back(itt);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            its->second->byPack.pack->push_back(*ita);
-                        }
+                        its->second->byPack.pack->push_back(*ita);
+                        auto& item = its->second->byPack.pack->back();
+                        auto second = item.second;
+                        item.second = Allocate<TEMPLATEPARAM>();
+                        *item.second = *second;
+                        item.second->byClass.val = item.second->byClass.dflt;
+                        item.second->byClass.dflt = nullptr;
                     }
                 }
                 else
                 {
-                    switch (ita->second->type)
-                    {
-                    case TplType::typename_:
-                        its->second->byClass.val = ita->second->byClass.dflt;
-                        break;
-                    case TplType::template_:
-                        its->second->byTemplate.val = ita->second->byTemplate.dflt;
-                        break;
-                    case TplType::int_:
-                        its->second->byNonType.val = ita->second->byNonType.dflt;
-                        break;
-                    default:
-                        break;
-                    }
+                    // takes advantage of the fact all the defaults are in the same structure offset...
+                    its->second->byClass.val = ita->second->byClass.dflt;
                 }
             }
             auto oldPacked = ita->second->packed;
@@ -1954,6 +1947,39 @@ bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATE
             else
             {
                 firstVariadic = false;
+            }
+        }
+    }
+    return true;
+}
+bool FunctionTemplateCandidate(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATEPARAMPAIR>* args)
+{
+    if (sym && args)
+    {
+        auto its = sym->begin();
+        auto ita = args->begin();
+        if (its != sym->end())
+            ++its;
+        for (; its != sym->end() && ita != args->end();)
+        {
+            if (its->second->type == TplType::template_ && ita->second->type == TplType::typename_)
+            {
+                Type* tp1 = ita->second->byClass.dflt;
+                while (tp1 && tp1->type != BasicType::typedef_ && tp1->btp)
+                    tp1 = tp1->btp;
+                if (tp1->type != BasicType::typedef_ && !tp1->IsStructured())
+                    return false;
+            }
+            else
+            {
+                if (!matchArg(*its, *ita))
+                    return false;
+            }
+            auto oldPacked = ita->second->packed;
+            ++ita;
+            if (!its->second->packed || oldPacked || (ita != args->end() && its->second->type != ita->second->type))
+            {
+                ++its;
             }
         }
     }

@@ -1924,7 +1924,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
                 else
                 {
                     exp1 = initializers->arguments->front()->exp;
-                    DeduceAuto(tp, initializers->arguments->front()->tp, exp1);
+                    DeduceAuto(tp, initializers->arguments->front()->tp, exp1, false);
                     (*tp)->UpdateRootTypes();
                     if (exp1 && val)
                     {

@@ -79,6 +79,7 @@ static LexList* TemplateArg(LexList* lex, SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg
                             bool templateParam);
 static bool matchArg(TEMPLATEPARAMPAIR& param, TEMPLATEPARAMPAIR& arg);
 bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATEPARAMPAIR>* args);
+bool FunctionTemplateCandidate(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATEPARAMPAIR>* args);
 static bool comparePointerTypes(Type* tpo, Type* tps);
 static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* porig, std::list<TEMPLATEPARAMPAIR>* psym, bool dflt,
                                                bool bySpecialization);

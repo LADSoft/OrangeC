@@ -3227,7 +3227,22 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             last->back().second->byClass.val = (Type*)dflt;
                             if (itParams->second->type == TplType::int_)
                             {
-                                last->back().second->byNonType.tp = itParams->second->byNonType.tp;
+                                auto nonTypeTp = itInitial->second->byNonType.tp;
+                                if (nonTypeTp->type == BasicType::templateparam_)
+                                {
+                                    if (nonTypeTp->templateParam->second->packed)
+                                    {
+                                        if (nonTypeTp->templateParam->second->byPack.pack && nonTypeTp->templateParam->second->byPack.pack->size())
+                                        {
+                                            nonTypeTp = nonTypeTp->templateParam->second->byPack.pack->front().second->byNonType.tp;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        nonTypeTp = nonTypeTp->templateParam->second->byClass.dflt;
+                                    }
+                                }
+                                last->back().second->byNonType.tp = nonTypeTp;
                             }
                             itParams->second->initialized = true;
                         }
@@ -5789,7 +5804,7 @@ std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPAR
         {
             args1->back().second->byClass.dflt = args1->back().second->byClass.val;
         }
-        if (args1->back().first && !args1->back().second->byClass.dflt)
+        if (args1->back().first && (!args1->back().second->byClass.dflt || args1->back().second->packed))
         {
             std::list<TEMPLATEPARAMPAIR>::iterator itargs2 = args->begin();
             for (auto test : *origTemplate)
@@ -5857,7 +5872,7 @@ std::list<TEMPLATEPARAMPAIR>* GetTypeAliasArgs(SYMBOL* sp, std::list<TEMPLATEPAR
     args1 = ResolveTemplateSelectors(sp, args1, false);
     return args1;
 }
-static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAMPAIR>* tpx, std::list<TEMPLATEPARAMPAIR>* args)
+static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAMPAIR>* tpx, std::list<TEMPLATEPARAMPAIR>* args, std::list<std::pair<SYMBOL*, SYMBOL*>>& newNames)
 {
     int n = args->size();
     std::list<TEMPLATEPARAMPAIR>* t;
@@ -5900,13 +5915,16 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
     auto ita = args->begin();
     auto itt = tpx->begin();
     if (itt->second->type == TplType::new_)
+    {
         ++itt;
+    }
     if (ita->second->type == TplType::new_)
     {
         ++ita;
     }
     for (; itt != tpx->end() && n; ++itt, ++ita, n--)
     {
+        newNames.push_back(std::pair<SYMBOL*, SYMBOL*>(itt->first, ita->first));
         ita->first = itt->first;
     }
     for (; itt != tpx->end(); ++itt)
@@ -5951,6 +5969,7 @@ SYMBOL* ParseLibcxxAliases(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
     std::list<TEMPLATEPARAMPAIR> temp;
+    std::list<std::pair<SYMBOL*, SYMBOL*>> newNames;
     if (!args)
     {
         args = &temp;
@@ -5961,7 +5980,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     // if we get here we have a templated typedef
     if (args->size())
     {
-        args = TypeAliasAdjustArgs(sp->templateParams, args);
+        args = TypeAliasAdjustArgs(sp->templateParams, args, newNames);
         for (auto&& a : *args)
         {
             SpecifyOneArg(sp, &a, sp->templateParams, sp->sb->typeAlias);
@@ -6065,6 +6084,20 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             else
             {
                 rv = GetClassTemplate(basetp->BaseType()->sp, newParams, false);
+            }
+            if (newNames.size())
+            {
+                for (auto&& t  : * rv->templateParams)
+                {
+                    for (auto&& n : newNames)
+                    {
+                        if (t.first && !strcmp(t.first->name, n.first->name))
+                        {
+                            t.first = n.second;
+                            break;
+                        }
+                    }
+                }
             }
         }
         else

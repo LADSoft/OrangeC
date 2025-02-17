@@ -1485,7 +1485,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                         if (!selectTP->IsStructured())
                         {
-                            DeduceAuto(&declSP->tp, selectTP, declExp);
+                            DeduceAuto(&declSP->tp, selectTP, declExp, false);
                             if (selectTP->IsPtr() && declSP->tp->IsPtr())
                                 declSP->tp = declSP->tp->BaseType()->btp;
                             declSP->tp->UpdateRootTypes();
@@ -1542,7 +1542,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             st->select = eBegin;
                             if (iteratorType->IsPtr())
                             {
-                                DeduceAuto(&declSP->tp, iteratorType->BaseType()->btp, declExp);
+                                DeduceAuto(&declSP->tp, iteratorType->BaseType()->btp, declExp, false);
                                 declSP->tp->UpdateRootTypes();
                                 if (!declSP->tp->CompatibleType(iteratorType->BaseType()->btp))
                                 {
@@ -1586,7 +1586,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 {
                                     ref = true;
                                 }
-                                DeduceAuto(&declSP->tp, starType, declExp);
+                                DeduceAuto(&declSP->tp, starType, declExp, false);
                                 declSP->tp->UpdateRootTypes();
                                 if (!declSP->tp->CompatibleType(starType) &&
                                     (!declSP->tp->IsArithmetic() || !starType->IsArithmetic()))
@@ -2296,7 +2296,7 @@ void StatementGenerator::AdjustForAutoReturnType(Type *tp1, EXPRESSION* exp1)
         }
         while (tp1->type == BasicType::typedef_)
             tp1 = tp1->btp;
-        DeduceAuto(&functionReturnType, tp1, exp1);
+        DeduceAuto(&functionReturnType, tp1, exp1, true);
         functionReturnType->UpdateRootTypes();
     }
     else
@@ -2705,8 +2705,10 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     errorConversionOrCast(false, tp1, functionReturnType);
                 }
             }
+            bool autoReturnType = false;
             if (functionReturnType->type == BasicType::auto_)
             {
+                autoReturnType = true;
                 returntype = functionReturnType = tp1;
             }
             else
@@ -2718,10 +2720,26 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 if (returnexp->v.func->sp->sb->storage_class == StorageClass::overloads_)
                 {
                     EXPRESSION* exp1 = returnexp;
-                    if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
-                        error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
-                    returnexp->v.func->sp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &exp1, 0);
-                    returnexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, returnexp->v.func->sp);
+                    // gcc doesn't check this for return values....  cl does though....
+//                    if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
+//                       error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                    if (returntype->type == BasicType::aggregate_)
+                    {
+                        returntype = LookupSingleAggregate(returntype, &returnexp, returnexp->v.func->sp->sb->parentClass);
+                    }
+                    if (autoReturnType || functionReturnType->type == BasicType::aggregate_)
+                    {
+                        functionReturnType = returntype;
+                    }
+                    if (returnexp->type == ExpressionNode::callsite_)
+                    {
+                        returnexp->v.func->sp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &exp1, 0);
+                        returnexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, returnexp->v.func->sp);
+                    }
+                    else
+                    {
+                        returnexp->v.sp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &exp1, 0);
+                    }
                 }
             }
             if (Optimizer::cparams.prm_cplusplus && returntype->IsStructured())

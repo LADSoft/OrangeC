@@ -591,13 +591,15 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
 
                 bool deferred = false;
-                for (auto&& to : *lst)
+                if (lst)
                 {
-                    if (to.second->packed && !to.second->derivedFromUnpacked)
+                    for (auto&& to : *lst)
                     {
-                        deferred = true;
+                        if (to.second->packed && !to.second->derivedFromUnpacked)
+                        {
+                            deferred = true;
+                        }
                     }
-
                 }
                 if (!deferred || packIndex >= 0)
                 {   
@@ -4340,7 +4342,11 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
 
-    if (lex && lex->data->errline == 512 && strstr(lex->data->errfile,"variant"))
+    if (lex && lex->data->errline == 520 && strstr(lex->data->errfile,"variant"))
+    {
+        printf("hi");
+    }
+    if (lex && lex->data->errline == 512 && strstr(lex->data->errfile, "variant"))
     {
         printf("hi");
     }

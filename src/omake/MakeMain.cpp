@@ -607,7 +607,7 @@ int MakeMain::Run(int argc, char** argv)
             if (treeBuild.GetValue())
                 files = "treetop.mak";
             else
-                files = "makefile";
+                files = "Makefile";
         }
         if (treeBuild.GetValue())
             SetTreePath(files);

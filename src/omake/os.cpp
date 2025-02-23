@@ -80,6 +80,7 @@
 #include <mutex>
 #include <memory>
 #include "JobServer.h"
+#include "CmdFiles.h"
 // #define DEBUG
 static std::mutex processIdMutex;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
@@ -307,11 +308,9 @@ void OS::JobInit()
                 tempfile[0] = 0;
         }
         if (tempfile[0] == 0)
-#ifdef TARGET_OS_WINDOWS
-            Utils::StrCpy(tempfile, ".\\");
-#else
-            Utils::StrCpy(tempfile, "./");
-#endif
+        {
+            Utils::StrCpy(tempfile, CmdFiles::DIR_SEP);
+        }
         Utils::StrCpy(tempfile, (name + ".flg").c_str());
         OS::WriteToConsole("Flag file name: " + name + ".flg");
         int fil = -1;
@@ -570,7 +569,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     }
 
     int pipe_cout[2];
-
+    pipe(pipe_cout);
     // Copy the spawned program's stdout to the pipe's input
     int ret = posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
     if (ret)
@@ -591,17 +590,15 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         return -1;
     }
     const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
+    char cwd[1024];
+    getcwd(cwd, 1024);
     ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, strs.data());
-    if (ret != 0)
-    {
-        printf("Failed to spawn, errno: %d, err: %s\n", errno, strerror(errno));
-    }
     std::string output_str;
     posix_spawn_file_actions_destroy(&spawn_file_actions);
     posix_spawnattr_destroy(&spawn_attr);
     if (ret != 0)
     {
-        printf("Failed to spawn, errno: %d, err: %s\n", errno, strerror(errno));
+        printf("Failed to spawn, errno: %d, err: %s, command: %s\ncwd:%s\n", errno, strerror(errno), command.c_str(), cwd);
         close(pipe_cout[0]);
         close(pipe_cout[1]);
         return -1;
@@ -737,7 +734,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     }
 
     int pipe_cout[2];
-
+    pipe(pipe_cout);
     // Copy the spawned program's stdout to the pipe's input
     posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
     posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);

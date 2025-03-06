@@ -60,7 +60,7 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     std::string shtest = v->GetValue();
     std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
-    OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos || shtest.find("BASH.EXE") != std::string::npos);
+    OS::SetSHEXE(shtest.find("sh") != std::string::npos);
 }
 Maker::~Maker() {}
 void Maker::SetFirstGoal(const std::string& name)

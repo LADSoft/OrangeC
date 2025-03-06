@@ -202,13 +202,9 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     int rv = 0;
     std::string cmd = cmdin;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (v)
+    if (!v)
     {
-        std::string shell = v->GetValue();
-        if (shell != "/bin/sh")
-        {
-            cmd = OS::NormalizeFileName(cmdin);
-        }
+        cmd = OS::NormalizeFileName(cmdin);
     }
     if (oneShell)
     {

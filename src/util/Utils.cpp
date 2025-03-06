@@ -1,30 +1,30 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <cstdio>
 #include <fstream>
@@ -38,6 +38,7 @@
 #    define _access access
 #    define _isatty isatty
 #    include <sys/ioctl.h>
+#    include <wordexp.h>
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
@@ -215,7 +216,7 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
             current = fpath.substr(0, npos);
             fpath.erase(0, npos + 1);
         }
-        if (current[current.size()-1] != CmdFiles::DIR_SEP[0])
+        if (current[current.size() - 1] != CmdFiles::DIR_SEP[0])
         {
             current += CmdFiles::DIR_SEP;
         }
@@ -302,7 +303,7 @@ FILE* Utils::TempName(std::string& name)
         StrCpy(tempFile, ".\\");
         tmpnam(tempFile + strlen(tempFile));
         // this next because it apparently isn't standard how to do the return value of tmpnam
-        const char *p = strrchr(tempFile, '\\');
+        const char* p = strrchr(tempFile, '\\');
         strcpy(tempFile + 2, p);
 
         fil = fopen(tempFile, "w");
@@ -321,7 +322,7 @@ FILE* Utils::TempName(std::string& name)
 void Utils::AddExt(char* buffer, const char* ext)
 {
     char* pos = (char*)strrchr(buffer, '.');
-    if (!pos || strcmp(pos,ext) != 0)
+    if (!pos || strcmp(pos, ext) != 0)
         strcat(buffer, ext);
 }
 

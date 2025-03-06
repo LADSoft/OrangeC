@@ -644,7 +644,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     std::string command1 = command;
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    bool shell_line = (bool)v;
+    bool shell_like = (bool)v;
     std::string cmd = v->GetValue();
     if (v->GetFlavor() == Variable::f_recursive)
     {

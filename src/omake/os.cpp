@@ -360,8 +360,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     std::string command1 = command;
 
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
-        return -1;
+    bool shell_type = (bool)v;
     std::string cmd = v->GetValue();
     if (v->GetFlavor() == Variable::f_recursive)
     {
@@ -369,9 +368,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd = r.Evaluate();
     }
     bool asapp = true;
-    if (cmd.find("bash") != std::string::npos || cmd.find("sh") != std::string::npos)
+    if (shell_type)
     {
-        cmd = "sh.exe -c ";
+        cmd = v->GetValue() + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)
@@ -645,17 +644,16 @@ std::string OS::SpawnWithRedirect(const std::string command)
     std::string command1 = command;
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
-        return "";
+    bool shell_line = (bool)v;
     std::string cmd = v->GetValue();
     if (v->GetFlavor() == Variable::f_recursive)
     {
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
+    if (shell_like)
     {
-        cmd = "sh.exe -c ";
+        cmd = v->GetValue() + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)
@@ -885,7 +883,12 @@ void OS::SetFileTime(const std::string fileName, Time time)
 #endif
 }
 std::string OS::GetWorkingDir()
-{
+{ 
+    #ifdef _WIN32
+    #ifndef PATH_MAX
+    #define PATH_MAX MAX_PATH
+    #endif
+    #endif
     char buf[PATH_MAX];
     getcwd(buf, PATH_MAX);
     return buf;

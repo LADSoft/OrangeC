@@ -26,7 +26,7 @@ KeywordHash hasher = {{"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus
                       {"||", kw::lor},        {"&&", kw::land},   {"?", kw::hook},   {":", kw::colon}, {",", kw::comma},
                       {"::", kw::coloncolon}};
 
-std::array<std::string, 4> ourKnownValues = {"prefix", "suffix", "limit", "if_empty"};
+std::array<std::string, 5> ourKnownValues = {"prefix", "suffix", "limit", "if_empty", "offset"};
 static void push_back_values(std::vector<embeder_type>& embed_vec,
                              const std::unordered_map<std::string, std::vector<embed_token_type>>& args,
                              const std::string& map_vals_string)
@@ -65,7 +65,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
     EmbedReturnValue ret_val = has_embed(info, true);
     if (ret_val == EmbedReturnValue::EMBED_NOT_FOUND)
     {
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, EmbedReturnValue::EMBED_NOT_FOUND};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, EmbedReturnValue::EMBED_NOT_FOUND};
     }
     bool found_system = false;
     int discard = 0;
@@ -84,6 +84,12 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         std::string line = reconstruct_string(vals);
         info.limit = evaluator.Eval(line);
     }
+    if (info.mapped_values.find("offset") != info.mapped_values.end())
+    {
+        auto& vals = info.mapped_values["offset"];
+        std::string line = reconstruct_string(vals);
+        info.offset = evaluator.Eval(line);
+    }
     if (fil != "" && info.limit != 0 && size != 0)
     {
         push_back_values(info.prefix, info.mapped_values, "prefix");
@@ -94,6 +100,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         // we need to actually get the real file in here
         size_t resval = info.limit < 0 ? size : info.limit;
         next_thing.resize(resval);
+        fseek(file, info.offset, SEEK_SET);
         // We will always correctly get the number of bytes based on the size given for us...
         auto data_loc = next_thing.data();
         for (int i = 0; i < resval; i++)
@@ -107,7 +114,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, has_embed(info)};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
     }
     else if (fil != "" && (info.limit == 0 || size == 0))
     {
@@ -120,9 +127,9 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, has_embed(info)};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
     }
-    return std::tuple<std::vector<embeder_type>, EmbedReturnValue> {builder, has_embed(info)};
+    return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
 }
 
 EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
@@ -156,6 +163,11 @@ EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
         {
             return EmbedReturnValue::EMBED_EMPTY;
         }
+        auto fil_size = Utils::file_size(fil);
+        if (info.offset > fil_size || (info.limit != -1 && (info.offset + info.limit > fil_size)))
+        {
+            return EmbedReturnValue::EMBED_EMPTY;
+        }
         return (Utils::file_size(fil) % info.bytes == 0) ? EmbedReturnValue::EMBED_FOUND : EmbedReturnValue::EMBED_EMPTY;
     }
     return EmbedReturnValue::EMBED_NOT_FOUND;
@@ -178,7 +190,6 @@ std::string tokens_to_inject(std::vector<embeder_type> type)
             total += ',';
         }
     }
-
     return total;
 }
 
@@ -319,6 +330,7 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
                 if (!identifierString.empty())
                 {
                     // Initialize this where possible
+                    // C++20 adds contains, which will be *so* nice.
                     auto val = info.mapped_values.find(identifierString);
                     if (val == info.mapped_values.end())
                     {

@@ -593,11 +593,11 @@ int main(int argc, char* argv[])
             {
                 Optimizer::cparams.c_dialect = Dialect::c99;
             }
-            else if (prm_std.GetValue() == "c11")
+            else if (prm_std.GetValue() == "c11" || prm_std.GetValue() == "c1x")
             {
                 Optimizer::cparams.c_dialect = Dialect::c11;
             }
-            else if (prm_std.GetValue() == "c2x")
+            else if (prm_std.GetValue() == "c2x" || prm_std.GetValue() == "c23")
             {
                 Optimizer::cparams.c_dialect = Dialect::c2x;
             }

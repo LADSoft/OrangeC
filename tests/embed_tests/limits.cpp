@@ -7,7 +7,7 @@ char vals[]{
 };
 int main()
 {
-    static_assert(sizeof(vals) == 2, "Wtf, vals size should be 2");
+    static_assert(sizeof(vals) == ONE_PLUS_ONE, "Wtf, vals size should be 2");
     if (vals[0] != '1' && vals[1] != '2')
     {
         int a0 = vals[0];

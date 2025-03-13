@@ -68,7 +68,7 @@ DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
 CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DGNUC -std=c99
-CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES) -DGNUC -std=gnu++14
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES) -DGNUC -std=gnu++17
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows

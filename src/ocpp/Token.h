@@ -1,7 +1,7 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@
  *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #pragma once
@@ -342,7 +342,7 @@ const Token* Tokenizer<T>::Next()
         currentToken = std::make_shared<ErrorToken>(line);
     return currentToken.get();
 }
-template<typename T>
+template <typename T>
 std::shared_ptr<Token> Tokenizer<T>::NextShared()
 {
     Next();

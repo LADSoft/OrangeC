@@ -25,6 +25,7 @@ struct embeder_info
     std::vector<embeder_type> prefix = {};
     std::vector<embeder_type> suffix = {};
     bool is_system;
+    unsigned long long offset = 0;
     int bytes = 1;
     EmbedReturnValue ret_value;
     std::unordered_map<std::string, std::vector<embed_token_type>> mapped_values;

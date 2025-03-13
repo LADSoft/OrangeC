@@ -15,6 +15,13 @@ test_postfix: suffix.exe
 test_single: single.exe
 	.\single.exe
 	fc /b single.txt single_out.txt
+
+offset.exe:
+	occ /2 offset.c -o offset.exe
+test_offset: offset.exe
+	.\offset.exe
+	fc /b offset_expected.txt offset_out.txt
+
 fails.exe:
 	-occ fails.cpp -o fails.exe > NUL 2>&1
 fails: fails.exe

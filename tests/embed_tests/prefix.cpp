@@ -1,6 +1,5 @@
 #include <stdio.h>
-char vals[]
-{
+char vals[]{
 #embed "prefix_in.txt" __prefix__('1', '2', '3', )
 };
 int main()

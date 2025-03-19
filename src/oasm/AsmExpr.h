@@ -158,7 +158,7 @@ class AsmExpr
 
   private:
     ppDefine* define;
-    std::unique_ptr<Tokenizer> tokenizer;
+    std::unique_ptr<Tokenizer<kw>> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static std::string currentLabel;

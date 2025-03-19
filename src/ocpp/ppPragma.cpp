@@ -69,7 +69,7 @@ bool ppPragma::Check(kw token, const std::string& args)
 }
 void ppPragma::ParsePragma(const std::string& args)
 {
-    Tokenizer tk(args, &hash);
+    Tokenizer<kw> tk(args, &hash);
     const Token* id = tk.Next();
     if (id->IsIdentifier())
     {
@@ -112,7 +112,7 @@ void ppPragma::ParsePragma(const std::string& args)
         // unmatched is not an error
     }
 }
-void ppPragma::HandleSTDC(Tokenizer& tk)
+void ppPragma::HandleSTDC(Tokenizer<kw>& tk)
 {
     const Token* token = tk.Next();
     if (token && token->IsIdentifier())
@@ -146,7 +146,7 @@ void ppPragma::HandleSTDC(Tokenizer& tk)
         }
     }
 }
-void ppPragma::HandlePack(Tokenizer& tk)
+void ppPragma::HandlePack(Tokenizer<kw>& tk)
 {
     const Token* tok = tk.Next();
     if (tok && tok->GetKeyword() == kw::openpa)
@@ -181,8 +181,8 @@ void ppPragma::HandlePack(Tokenizer& tk)
             }
     }
 }
-void ppPragma::HandleError(Tokenizer& tk) { Errors::Error(tk.GetString()); }
-void ppPragma::HandleWarning(Tokenizer& tk)
+void ppPragma::HandleError(Tokenizer<kw>& tk) { Errors::Error(tk.GetString()); }
+void ppPragma::HandleWarning(Tokenizer<kw>& tk)
 {
     // check for microsoft warning pragma
     std::string warn = tk.GetString();
@@ -258,7 +258,7 @@ void ppPragma::HandleWarning(Tokenizer& tk)
         }
     }
 }
-void ppPragma::HandleSR(Tokenizer& tk, bool startup)
+void ppPragma::HandleSR(Tokenizer<kw>& tk, bool startup)
 {
     const Token* name = tk.Next();
     if (name && name->IsIdentifier())
@@ -323,7 +323,7 @@ void Once::OnceItem::SetParams(const std::string& fileName)
         crc = 0;
     }
 }
-void ppPragma::HandleLibrary(Tokenizer& tk)
+void ppPragma::HandleLibrary(Tokenizer<kw>& tk)
 {
     char buf[260 + 10];
     char* p = buf;
@@ -348,7 +348,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
         }
     }
 }
-void ppPragma::HandleAlias(Tokenizer& tk)
+void ppPragma::HandleAlias(Tokenizer<kw>& tk)
 {
     const Token* name = tk.Next();
     if (name && name->IsIdentifier())
@@ -365,12 +365,12 @@ void ppPragma::HandleAlias(Tokenizer& tk)
         }
     }
 }
-void ppPragma::HandleFar(Tokenizer& tk)
+void ppPragma::HandleFar(Tokenizer<kw>& tk)
 {
     // fixme
 }
-
-static std::pair<std::wstring, const Token*> MunchStrings(Tokenizer& tk)
+template <typename T>
+static std::pair<std::wstring, const Token*> MunchStrings(Tokenizer<T>& tk)
 {
     std::wstring finalStr;
     const Token* tok;
@@ -380,7 +380,7 @@ static std::pair<std::wstring, const Token*> MunchStrings(Tokenizer& tk)
     }
     return {finalStr, tok};
 }
-void ppPragma::HandleComment(Tokenizer& tk)
+void ppPragma::HandleComment(Tokenizer<kw>& tk)
 {
     const Token* checkCode = tk.Next();
     if (!checkCode->IsKeyword() && checkCode->GetKeyword() != kw::openpa)
@@ -401,7 +401,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
         };
         const std::unordered_map<std::string, switchVals> switchMap = {
             {"compiler", COMPILER}, {"lib", LIB}, {"linker", LINKER}, {"user", USER}};
-        auto idVal = tok->GetId();
+        std::string idVal = tok->GetId();
         std::transform(idVal.begin(), idVal.end(), idVal.begin(), ::tolower);
         auto switchVal = switchMap.find(idVal);
         if (switchVal != switchMap.end())
@@ -535,9 +535,9 @@ void ppPragma::HandleComment(Tokenizer& tk)
         }
     }
 }
-void ppPragma::HandleOnce(Tokenizer& tk) { Once::Instance()->CheckForMultiple(); }
+void ppPragma::HandleOnce(Tokenizer<kw>& tk) { Once::Instance()->CheckForMultiple(); }
 
-void ppPragma::HandleIgnoreGlobalInit(Tokenizer& tk)
+void ppPragma::HandleIgnoreGlobalInit(Tokenizer<kw>& tk)
 {
     const Token* name = tk.Next();
     if (name && name->IsNumeric())
@@ -546,7 +546,7 @@ void ppPragma::HandleIgnoreGlobalInit(Tokenizer& tk)
     }
 }
 
-void ppPragma::HandlePushPopMacro(Tokenizer& tk, bool push)
+void ppPragma::HandlePushPopMacro(Tokenizer<kw>& tk, bool push)
 {
     int n = 0;
     std::string cache = tk.GetString();
@@ -588,7 +588,7 @@ int ppPragma::StdPragmas()
     return rv;
 }
 
-void ppPragma::HandleGcc(Tokenizer& tk)
+void ppPragma::HandleGcc(Tokenizer<kw>& tk)
 {
     const Token* name = tk.Next();
     if (name->IsIdentifier() && name->GetId() == "system_header")

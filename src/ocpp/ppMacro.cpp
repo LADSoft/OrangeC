@@ -226,7 +226,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     std::string name;
     int start, end;
     bool plussign;
-    Tokenizer tk(line, ppExpr::GetHash());
+    Tokenizer<kw> tk(line, ppExpr::GetHash());
     const Token* next = tk.Next();
     MacroData* p = nullptr;
     bool bailed = false;

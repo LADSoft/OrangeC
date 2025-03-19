@@ -29,4 +29,5 @@ extern "C" char *__cpp_tmpnam(char *buf)
         buf[i] = ch;
     }
     strcpy(buf + 8, ".tmp");
+    return buf;
 }

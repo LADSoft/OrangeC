@@ -3,32 +3,33 @@
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  * 
  */
 
+#include "ppkw.h"
 #include "ppExpr.h"
 #include "ppDefine.h"
 #include "Errors.h"
 #include "ppInclude.h"
-#include "ppkw.h"
 #include <iostream>
+#include <memory>
 
 KeywordHash ppExpr::hash = {
     {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
@@ -40,16 +41,11 @@ KeywordHash ppExpr::hash = {
 
 ppExpr::CompilerExpression* ppExpr::expressionHandler;
 
-std::unordered_map<std::string, unsigned> ppExpr::cattributes = { 
- {"deprecated" , 202311},
- {"fallthrough" , 202311},
- {"nodiscard" , 202311},
- {"noreturn" , 202311},
- {"maybe_unused" , 202311}
-};
+std::unordered_map<std::string, unsigned> ppExpr::cattributes = {
+    {"deprecated", 202311}, {"fallthrough", 202311}, {"nodiscard", 202311}, {"noreturn", 202311}, {"maybe_unused", 202311}};
 
 ppInclude* ppExpr::include;
-
+std::string ppExpr::GetString() { return tokenizer->GetString(); }
 PPINT ppExpr::Eval(std::string& line, bool fromConditional)
 {
     if (line.empty() || line.find_first_not_of(" \t\r\v\n") == std::string::npos)
@@ -60,7 +56,7 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
     if (fromConditional && expressionHandler)
         return expressionHandler(line);
     floatWarned = false;
-    tokenizer.reset(new Tokenizer(line, &hash));
+    tokenizer.reset(new Tokenizer<kw>(line, &hash));
     token = tokenizer->Next();
     if (!token)
         return 0;
@@ -173,8 +169,8 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                 if (token->IsIdentifier())
                 {
                     std::string name = token->GetId();
-                    if (name.size() >= 5 && name.substr(0,2) == "__" && name.substr(name.size()-2, 2) == "")
-                        name = name.substr(2, name.size()-4);
+                    if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "")
+                        name = name.substr(2, name.size() - 4);
                     rv = cattributes[name];
                     token = tokenizer->Next();
                     if (token->GetKeyword() != kw::closepa)

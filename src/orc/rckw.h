@@ -22,7 +22,7 @@
  * 
  * 
  */
-
+#pragma once
 enum class kw
 {
     openpa = 1,

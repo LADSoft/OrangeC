@@ -32,6 +32,7 @@
     <ClCompile Include="ppCond.cpp" />
     <ClCompile Include="ppCtx.cpp" />
     <ClCompile Include="ppDefine.cpp" />
+    <ClCompile Include="ppEmbed.cpp" />
     <ClCompile Include="ppError.cpp" />
     <ClCompile Include="ppExpr.cpp" />
     <ClCompile Include="ppFile.cpp" />
@@ -42,6 +43,7 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="Token.cpp" />
+    <ClCompile Include="TokenSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Errors.h" />
@@ -53,6 +55,7 @@
     <ClInclude Include="ppCond.h" />
     <ClInclude Include="ppCtx.h" />
     <ClInclude Include="ppDefine.h" />
+    <ClInclude Include="ppEmbed.h" />
     <ClInclude Include="ppError.h" />
     <ClInclude Include="ppExpr.h" />
     <ClInclude Include="ppFile.h" />
@@ -64,6 +67,7 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Token.h" />
+    <ClInclude Include="TokenSettings.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -79,6 +83,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -120,6 +125,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>ocpp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -138,6 +144,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\util</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -117,7 +117,7 @@ static char help_text[] =
     "       c89   1989 version of ansi c\n"
     "       c99   1999 version of ansi c\n"
     "       c11   2011 version of ansi c\n"
-    "       c24   2024 version of ansi c\n"
+    "       c23   2023 version of ansi c\n"
     "       c++11 2011 version of C++\n"
     "       c++14 2014 version of C++\n"
     " -nostdinc, nostdinc++           disable system include file path\n"

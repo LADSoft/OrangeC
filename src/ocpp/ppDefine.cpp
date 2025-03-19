@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -55,7 +55,7 @@ ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition
     value = old.value;
     if (old.argList)
     {
-        argList.reset( new DefinitionArgList());
+        argList.reset(new DefinitionArgList());
         for (auto&& a : *old.argList)
             argList->push_back(a);
     }
@@ -72,14 +72,22 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     value = old.value;
     if (old.argList)
     {
-        argList.reset( new DefinitionArgList());
+        argList.reset(new DefinitionArgList());
         for (auto&& a : *old.argList)
             argList->push_back(a);
     }
 }
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, embeder* embed, Dialect dialect_, bool Asmpp) :
-    expr(false, dialect_), include(Include), embed(embed), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
+    expr(false, dialect_),
+    include(Include),
+    embed(embed),
+    dialect(dialect_),
+    asmpp(Asmpp),
+    ctx(nullptr),
+    macro(nullptr),
+    source_date_epoch((time_t)-1),
+    counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -326,7 +334,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             else
             {
                 bool hascomma = true;
-                da.reset( new DefinitionArgList());
+                da.reset(new DefinitionArgList());
                 bool done = false;
                 while (next->IsIdentifier())
                 {
@@ -430,33 +438,37 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
     }
     else
     {
+
         // Only pull out the tokenizer if we use a "special"-type macro
-        Tokenizer<kw> tokenizer(macro, ppExpr::GetHash());
-        auto token = tokenizer.Next();
-        if (dialect == Dialect::c2x && token->GetId() == "__has_embed")
+        if (macro == "__has_embed")
         {
-            token = tokenizer.Next();
-            if (token->GetKeyword() == kw::openpa)
+            Tokenizer<kw> tokenizer(macro, ppExpr::GetHash());
+            auto token = tokenizer.Next();
+            if (dialect == Dialect::c2x && token->GetId() == "__has_embed")
             {
-                std::string line = tokenizer.GetString();
-                int n = line.rfind(")");
-                if (n == std::string::npos)
+                token = tokenizer.Next();
+                if (token->GetKeyword() == kw::openpa)
                 {
-                    end = macro.length();
-                    Errors::Error("Expected ')'");
+                    std::string line = tokenizer.GetString();
+                    int n = line.rfind(")");
+                    if (n == std::string::npos)
+                    {
+                        end = macro.length();
+                        Errors::Error("Expected ')'");
+                    }
+                    else
+                    {
+                        end = macro.rfind(')') + 1;
+                        std::string arg = line.substr(0, n);
+                        insert = std::to_string(embed->has_embed(embed->GetEmbedFromLine(arg)));
+                        tokenizer.SetString(line.substr(n + 1));
+                        token = tokenizer.Next();
+                    }
                 }
                 else
                 {
-                    end = macro.rfind(')') + 1;
-                    std::string arg = line.substr(0, n);
-                    insert = std::to_string(embed->has_embed(embed->GetEmbedFromLine(arg)));
-                    tokenizer.SetString(line.substr(n + 1));
-                    token = tokenizer.Next();
+                    Errors::Error("Expected '('");
                 }
-            }
-            else
-            {
-                Errors::Error("Expected '('");
             }
         }
         else
@@ -672,9 +684,10 @@ bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
         isdigit(macro[pos]))  // we would get here with the first alpha char following the number
     {
         // backtrack through all characters that could possibly be part of the number
-        while (pos >= start && (TokenizerSettings::Instance()->GetSymbolCheckFunction()(macro.c_str() + pos, false) || macro[pos] == '.' ||
-                                ((macro[pos] == '-' || macro[pos] == '+') && (macro[pos - 1] == 'e' || macro[pos - 1] == 'E' ||
-                                                                              macro[pos - 1] == 'p' || macro[pos - 1] == 'P'))))
+        while (pos >= start &&
+               (TokenizerSettings::Instance()->GetSymbolCheckFunction()(macro.c_str() + pos, false) || macro[pos] == '.' ||
+                ((macro[pos] == '-' || macro[pos] == '+') &&
+                 (macro[pos - 1] == 'e' || macro[pos - 1] == 'E' || macro[pos - 1] == 'p' || macro[pos - 1] == 'P'))))
         {
             if (macro[pos] == '-' || macro[pos] == '+')
                 pos--;
@@ -728,8 +741,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                 {
                     int sv;
                     std::string temp(varargs);
-                    ReplaceSegment(temp, 0, temp.size(), sv, p == macro.size(),
-                                                definitions, nullptr);
+                    ReplaceSegment(temp, 0, temp.size(), sv, p == macro.size(), definitions, nullptr);
                     int rv;
                     if ((rv = InsertReplacementString(macro, p, q, temp, temp)) < -MACRO_REPLACE_SIZE)
                         return (false);
@@ -740,14 +752,15 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
             }
             else if (dialect == Dialect::c2x && name == "__VA_OPT__" && macro[p] == '(')
             {
-                auto start = p+1;
+                auto start = p + 1;
                 auto end = start;
                 int count = 1;
                 while (end < macro.size())
                 {
-                    if (macro[end] == '(') count ++;
+                    if (macro[end] == '(')
+                        count++;
                     if (macro[end++] == ')')
-                        if (--count ==0)
+                        if (--count == 0)
                             break;
                 }
                 if (!count)
@@ -759,11 +772,10 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                             return (false);
                         else
                             p = q + rv - 1;
-                    
                     }
                     else
                     {
-                        std::string temp = macro.substr(p+1, end-p-2);
+                        std::string temp = macro.substr(p + 1, end - p - 2);
                         int rv;
                         if ((rv = InsertReplacementString(macro, end, q, temp, temp)) < -MACRO_REPLACE_SIZE)
                             return (false);
@@ -852,7 +864,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
             origPos++;
         }
         else if (TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + p, true) &&
-                 (p == begin || line[p - 1] == '$' || !TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + p - 1, false)))
+                 (p == begin || line[p - 1] == '$' ||
+                  !TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + p - 1, false)))
         {
             TokenPos tokenPos;
             tokenPos.origStart = origPos;
@@ -915,7 +928,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     {
                         int ln = name.size();
                         for (auto d : definitions)
-                             d->SetPreprocessing(false);
+                            d->SetPreprocessing(false);
                         do
                         {
                             int pb = p;
@@ -955,7 +968,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             count++;
                         } while (line[p] && line[p++] == ',' && count != d->GetArgCount());
                         for (auto d : definitions)
-                             d->SetPreprocessing(true);
+                            d->SetPreprocessing(true);
                     }
                     else
                     {
@@ -1132,7 +1145,8 @@ void ppDefine::ParseAsmSubstitutions(std::string& line)
                 }
                 else if (n == 0)
                 {
-                    if ((n < line.size() - 2) && line[n + 1] == '$' && TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + n + 2, true))
+                    if ((n < line.size() - 2) && line[n + 1] == '$' &&
+                        TokenizerSettings::Instance()->GetSymbolCheckFunction()(line.c_str() + n + 2, true))
                     {
                         int n1 = ctx->GetTopId();
                         if (n1 != -1)

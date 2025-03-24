@@ -334,7 +334,10 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
         else if (!pointerOrRef)
         {
             if (canref && (*pat)->decltypeauto)
+            {
+                if (!nt->IsVoid())
                     *pat = Type::MakeType(BasicType::lref_, nt);
+            }
             else if (nt->IsRef())
             {
                 *pat = nt->BaseType()->btp;
@@ -541,7 +544,7 @@ EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
     return AnonymousVar(storageClass, tp);
 }
 void Dereference(Type* tp, EXPRESSION** exp)
-    {
+{
     ExpressionNode en = ExpressionNode::l_i_;
     tp = tp->BaseType();
     switch ((tp->type == BasicType::enum_ && tp->btp) ? tp->btp->type : tp->type)
@@ -647,7 +650,13 @@ void Dereference(Type* tp, EXPRESSION** exp)
             break;
         case BasicType::pointer_:
             if (tp->array || tp->vla)
+            {
                 return;
+            }
+            if (tp->IsFunctionPtr() && (*exp)->type == ExpressionNode::callsite_ && (!(*exp)->v.func->ascall))
+            {
+                return;
+            }
             en = ExpressionNode::l_p_;
             break;
         case BasicType::inative_:
@@ -730,6 +739,11 @@ bool TakeAddress(EXPRESSION** exp, Type* extended)
         if (assignmentNode && extended->BaseType()->type != BasicType::memberptr_)
         {
             (*last) = MakeExpression(ExpressionNode::comma_, assignmentNode, *last);
+        }
+        if ((*last)->type == ExpressionNode::callsite_ && !(*last)->v.func->ascall)
+        {
+            *last = (*last)->v.func->fcall;
+            rv = true;
         }
     }
     if (rv)
@@ -1542,7 +1556,11 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                                 if (*itx == initItem)
                                     break;
                             }
-                            if (initItem->offset ||
+                            if (tp->IsStructured())
+                            {
+                                exps = MakeExpression(ExpressionNode::structadd_, exps, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                            }
+                            else if (initItem->offset ||
                                 (last != init->end() && (*last)->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
                             {
                                 exps = MakeExpression(ExpressionNode::add_, exps, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));

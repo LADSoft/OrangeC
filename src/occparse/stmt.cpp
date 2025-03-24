@@ -71,6 +71,9 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "overload.h"
+#include "exprpacked.h"
+#include "lambda.h"
+
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
@@ -2286,14 +2289,17 @@ void StatementGenerator::AdjustForAutoReturnType(Type *tp1, EXPRESSION* exp1)
 {
     if (functionReturnType->IsAutoType())
     {
-        if (tp1->BaseType()->lref)
+        if (!tp1->IsVoid())
         {
-            tp1 = Type::MakeType(BasicType::lref_, tp1);
-        }
-        else if (tp1->BaseType()->rref)
-        {
-            tp1 = Type::MakeType(BasicType::rref_, tp1);
-        }
+            if (tp1->BaseType()->lref)
+            {
+                tp1 = Type::MakeType(BasicType::lref_, tp1);
+            }
+            else if (tp1->BaseType()->rref)
+            {
+                tp1 = Type::MakeType(BasicType::rref_, tp1);
+            }
+        }{}
         while (tp1->type == BasicType::typedef_)
             tp1 = tp1->btp;
         DeduceAuto(&functionReturnType, tp1, exp1, true);
@@ -2638,7 +2644,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     returnexp = MakeExpression(ExpressionNode::x_string_, returnexp);
                 tp1 = &std__string;
             }
-            else if (!functionReturnType->CompatibleType(tp1))
+            else if (!functionReturnType->CompatibleType(tp1) && !functionReturnType->IsAutoType())
             {
                 bool err = false;
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2719,12 +2725,14 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             {
                 if (returnexp->v.func->sp->sb->storage_class == StorageClass::overloads_)
                 {
+                    bool found = false;
                     EXPRESSION* exp1 = returnexp;
                     // gcc doesn't check this for return values....  cl does though....
 //                    if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
 //                       error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     if (returntype->type == BasicType::aggregate_)
                     {
+                        found = true;
                         returntype = LookupSingleAggregate(returntype, &returnexp, returnexp->v.func->sp->sb->parentClass);
                     }
                     if (autoReturnType || functionReturnType->type == BasicType::aggregate_)
@@ -2736,7 +2744,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         returnexp->v.func->sp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &exp1, 0);
                         returnexp->v.func->fcall = MakeExpression(ExpressionNode::pc_, returnexp->v.func->sp);
                     }
-                    else
+                    else if (!found)
                     {
                         returnexp->v.sp = MatchOverloadedFunction(functionReturnType, &tp1, returnexp->v.func->sp, &exp1, 0);
                     }
@@ -4423,10 +4431,15 @@ void StatementGenerator::FunctionBody()
     block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
     theCurrentFunc = funcsp;
  
-
+    std::list<LAMBDA*> oldlambdas;
     if (Optimizer::cparams.prm_cplusplus)
     {
         InitializeFunctionArguments(funcsp, true);
+        if (funcsp->sb->lambdas)
+        {
+            oldlambdas = std::move(lambdas);
+            lambdas = *funcsp->sb->lambdas;
+        }
     }
 
     if (inTemplateHeader)
@@ -4519,6 +4532,13 @@ void StatementGenerator::FunctionBody()
         if (IsCompiler() && funcNesting == 1)  // top level function
             localFree();
         HandleInlines();
+    }
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        if (funcsp->sb->lambdas)
+        {
+            lambdas = std::move(oldlambdas);
+        }
     }
     functionReturnType = oldReturnType;
     ellipsePos = oldEllipsePos;

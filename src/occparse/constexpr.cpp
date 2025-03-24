@@ -1265,14 +1265,14 @@ static EXPRESSION* ParseRetBlock(EXPRESSION* funcNode, EXPRESSION* retNode)
                 auto rv = MakeVarPtr(false, funcNode->v.func->returnSP->tp->size, 1, funcNode->v.func->returnSP, Allocate<EXPRESSION>(funcNode->v.func->returnSP->tp->size));
 
 
-                while (retNode->type == ExpressionNode::comma_ && retNode->left->type == ExpressionNode::l_p_) retNode = retNode->right;
+                while (retNode->type == ExpressionNode::comma_ && (retNode->left->type == ExpressionNode::l_p_ || retNode->left->type == ExpressionNode::blockclear_)) retNode = retNode->right;
                 while (retNode->type == ExpressionNode::comma_ && retNode->left->type == ExpressionNode::assign_)
                 {
                     auto lhs = retNode->left->left;
                     while (TakeAddress(&lhs));
                     if (lhs->type != ExpressionNode::structadd_ || lhs->left->type != ExpressionNode::l_p_ || lhs->left->left->type != ExpressionNode::auto_ || !lhs->left->left->v.sp->sb->retblk)
                     {
-                        break;
+                            break;
                     }
                     rv->v.constexprData.data[lhs->right->v.i] = retNode->left->right;
                     retNode = retNode->right;

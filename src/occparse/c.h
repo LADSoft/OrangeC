@@ -781,10 +781,14 @@ typedef struct sym
         std::list<TEMPLATEPARAMPAIR>* typeAlias;
         std::list<struct sym*>* specializations;
         std::list<struct sym*>* instantiations;
-        struct Type* deductionGuide;
-        const char* msil;                            // MSIL path
-        std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
-                                                     // parameter sym following elements are the list of pointers to names
+        union
+        {
+            struct Type* deductionGuide;
+            std::list<struct __lambda*>* lambdas;
+            const char* msil;                            // MSIL path
+            std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
+        };
+        // parameter sym following elements are the list of pointers to names
         struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
         std::list<Initializer *>* init, *lastInit, *dest;
         // clang-format off

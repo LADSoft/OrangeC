@@ -224,7 +224,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
         }
         else
         {
-            if (sym->sb->parent != lambdas.front()->func)
+            if (sym->sb->parent != lambdas.front()->func && sym->sb->parent->sb->maintemplate != lambdas.front()->func)
             {
                 if (sym->sb->storage_class != StorageClass::auto_ && sym->sb->storage_class != StorageClass::parameter_)
                 {
@@ -1063,6 +1063,12 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
             lex = getsym();
         }
         ParseAttributeSpecifiers(&lex, funcsp, true);
+        if (MATCHKW(lex, Keyword::noexcept_))
+        {
+            funcLevel++;
+            TypeGenerator::ExceptionSpecifiers(lex, funcsp, self->func, self->func->sb->storage_class);
+            funcLevel--;
+        }
         if (MATCHKW(lex, Keyword::pointsto_))
         {
             lex = getsym();
@@ -1155,6 +1161,11 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     finishClass();
     *exp = createLambda(0);
     *tp = lambdas.front()->cls->tp;
+    if (self->func->sb->templateLevel)
+    {
+        self->func->sb->lambdas = lambdaListFactory.CreateList();
+        *self->func->sb->lambdas = lambdas;
+    }
     lambdas.pop_front();
     lines = declline;
     return lex;

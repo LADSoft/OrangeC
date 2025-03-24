@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <iterator>
 #include <string>
+#include "types.h"
 namespace CompletionCompiler
 {
     extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;

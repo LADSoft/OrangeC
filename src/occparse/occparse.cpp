@@ -66,7 +66,6 @@
 #include "iinline.h"
 #include "iexpr.h"
 #include "help.h"
-#include "inasm.h"
 #include "expr.h"
 #include "constopt.h"
 #include "browse.h"
@@ -82,7 +81,7 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
-#include "stmt.h"
+#include "exprpacked.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -378,6 +377,7 @@ void compile(bool global)
     lambda_init();
     rtti_init();
     expr_init();
+    packed_init();
     libcxx_init();
     statement_ini(global);
     lexini();
@@ -413,6 +413,7 @@ void compile(bool global)
 #endif
         first = false;
     }
+    EnterPackedContext();
     if (Optimizer::cparams.prm_assemble)
     {
         lex = getsym();
@@ -471,6 +472,7 @@ void compile(bool global)
     }
     findUnusedStatics(globalNameSpace);
     dumperrs(stdout);
+    LeavePackedContext();
     RELEASE_GLOBAL(1);
 }
 /*-------------------------------------------------------------------------*/

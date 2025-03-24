@@ -112,7 +112,6 @@ std::unordered_map<std::string, unsigned, StringHash> cattributes = {
 
 void expr_init(void)
 {
-    packIndex = -1;
     importThunks.clear();
     inGetUserConversion = 0;
     inSearchingFunctions = 0;
@@ -595,13 +594,13 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 {
                     for (auto&& to : *lst)
                     {
-                        if (to.second->packed && !to.second->derivedFromUnpacked)
+                        if (to.second->packed && (!to.second->derivedFromUnpacked || to.second->resolved))
                         {
                             deferred = true;
                         }
                     }
                 }
-                if (!deferred || packIndex >= 0)
+                if (!deferred || unpackingTemplate)
                 {   
                     sp1 = GetVariableTemplate(sp1, lst);
                     if (sp1)
@@ -663,17 +662,14 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 case TplType::int_:
                     if (sym->tp->templateParam->second->packed)
                     {
-                        if (packIndex >= 0)
+                        if (unpackingTemplate && !sym->tp->templateParam->second->resolved)
                         {
                             if (sym->tp->templateParam->second->byPack.pack)
                             {
-                                auto it = sym->tp->templateParam->second->byPack.pack->begin();
-                                auto ite = sym->tp->templateParam->second->byPack.pack->end();
-                                int n = packIndex;
-                                for (; n && it != ite; n--, ++it);
-                                if (it != ite)
+                                auto tpl = LookupPackedInstance(*sym->tp->templateParam);
+                                if (tpl)
                                 {
-                                    *exp = it->second->byNonType.val;
+                                    *exp = tpl->byNonType.val;
                                 }
                                 else
                                 {
@@ -733,21 +729,14 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) || sym->tp->BaseType()->templateParam->second->type == TplType::int_) &&
                     sym->tp->BaseType()->templateParam->second->packed)
                 {
-                    if (packIndex >= 0)
+                    if (unpackingTemplate && ! sym->tp->BaseType()->templateParam->second->resolved)
                     {
-                        std::list<TEMPLATEPARAMPAIR>::iterator itt, ite = itt;
-                        if (sym->tp->BaseType()->templateParam->second->byPack.pack)
+                        auto tpl = LookupPackedInstance(*sym->tp->BaseType()->templateParam);
+                        if (tpl)
                         {
-                            itt = sym->tp->BaseType()->templateParam->second->byPack.pack->begin();
-                            ite = sym->tp->BaseType()->templateParam->second->byPack.pack->end();
-                            int i;
-                            for (i = 0; i < packIndex && itt != ite; i++, ++itt);
-                        }
-                        if (itt != ite)
-                        {
-                            if (itt->second->type == TplType::int_ && !itt->second->packsym)
+                            if (tpl->type == TplType::int_ && !tpl->packsym)
                             {
-                                *tp = itt->second->byNonType.tp;
+                                *tp = tpl->byNonType.tp;
                                 if ((*tp)->type == BasicType::templateparam_)
                                 {
                                     if ((*tp)->templateParam->second->byClass.val)
@@ -773,11 +762,11 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                                         }
                                     }
                                 }
-                                *exp = itt->second->byNonType.val;
+                                *exp = tpl->byNonType.val;
                             }
                             else
                             {
-                                sym = itt->second->packsym;
+                                sym = tpl->packsym;
                                 *tp = sym->tp;
                                 *exp = MakeExpression(ExpressionNode::auto_, sym);
                             }
@@ -908,7 +897,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         {
                             if (!(flags & _F_PACKABLE))
                                 error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_ARGUMENT);
-                            if (packIndex >= 0)
+                            if (unpackingTemplate)
                             {
                                 Type* tp1 = sym->tp;
                                 std::list<TEMPLATEPARAMPAIR>* templateParam;
@@ -918,23 +907,23 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                                 tp1 = tp1->BaseType();
                                 if (tp1->type == BasicType::templateparam_)
                                 {
-                                    std::list<TEMPLATEPARAMPAIR>::iterator itt, ite = itt;
-                                    if (sym->tp->templateParam->second->byPack.pack)
+                                    if (tp1->templateParam->second->resolved)
                                     {
-                                        itt = sym->tp->templateParam->second->byPack.pack->begin();
-                                        ite = sym->tp->templateParam->second->byPack.pack->end();
-                                        int i;
-                                        for (i = 0; i < packIndex && itt != ite; i++, ++itt);
-                                    }
-                                    if (itt != ite)
-                                    {
-                                        sym = itt->second->packsym;
-                                        *tp = sym->tp;
                                         *exp = MakeExpression(ExpressionNode::auto_, sym);
                                     }
                                     else
                                     {
-                                        *exp = MakeIntExpression(ExpressionNode::packedempty_, 0);
+                                        auto tpl = LookupPackedInstance(*sym->tp->templateParam);
+                                        if (tpl)
+                                        {
+                                            sym = tpl->packsym;
+                                            *tp = sym->tp;
+                                            *exp = MakeExpression(ExpressionNode::auto_, sym);
+                                        }
+                                        else
+                                        {
+                                            *exp = MakeIntExpression(ExpressionNode::packedempty_, 0);
+                                        }
                                     }
                                 }
                                 else
@@ -959,7 +948,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                                     if (found)
                                     {
                                         int i;
-                                        for (i = 0; it != itend && i < packIndex; i++)
+                                        for (i = 0; it != itend && i < GetPackIndex(); i++)
                                             ++it;
                                         if (it != itend)
                                         {
@@ -976,7 +965,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                             }
                             else
                             {
-                                *exp = MakeExpression(ExpressionNode::auto_, sym);
+                                AddPackedEntityToSequence(sym, nullptr);
+                                 *exp = MakeExpression(ExpressionNode::auto_, sym);
                             }
                         }
                         else
@@ -1320,11 +1310,25 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         }
                         find = find->next;
                     }
+                    bool found = false;
                     if (!(flags & _F_MEMBER))
                     {
-                        errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
+                        // look up packed symbol that has been elided during synthesis.
+                        if (theCurrentFunc && theCurrentFunc->sb->maintemplate)
+                        {
+                            auto syms = theCurrentFunc->sb->maintemplate->tp->syms;
+                            auto sym1 = syms->Lookup(sym->name);
+                            if (sym1 && sym1->packed)
+                            {
+                                sym = sym1;
+                                *tp = sym->tp;
+                                found = true;
+                            }
+                        }
+                        if (!found)
+                            errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
                     }
-                    if (sym->sb->storage_class != StorageClass::overloads_ &&
+                    if (!found && sym->sb->storage_class != StorageClass::overloads_ &&
                         (localNameSpace->front()->syms || sym->sb->storage_class != StorageClass::auto_))
                         InsertSymbol(sym, sym->sb->storage_class, Linkage::none_, false);
                 }
@@ -1840,6 +1844,10 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
                             sp = TemplateFunctionInstantiate(sp, false);
                         }
                     }
+                    if (sp->tp->BaseType()->btp->IsAutoType() && sp->sb->deferredCompile && !sp->sb->inlineFunc.stmt)
+                    {
+                        CompileInline(sp, false);
+                    }
                 }
             }
             *exp = MakeExpression(ExpressionNode::pc_, sp);
@@ -1951,7 +1959,7 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                 }
                 return lex;
             }
-            else if ((*tp)->IsPtr() && !(*tp)->IsFunctionPtr())
+            else if ((*tp)->IsPtr() && (!(*tp)->IsFunctionPtr() || (*tp)->IsArray()))
             {
                 if (!tp2->IsInt() && tp2->BaseType()->type != BasicType::enum_)
                 {
@@ -2390,7 +2398,11 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                 ++itp;
             }
             if (it != itend)
+            {
+                if ((*it)->packed && !unpackingTemplate)
+                    break;
                 ++it;
+            }
         }
     if (noproto)
     {
@@ -2425,6 +2437,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
         else
         {
             LexList* start = lex;
+            EnterPackedSequence();
             lex = expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr,
                                     _F_PACKABLE | (finish == Keyword::closepa_ ? _F_INARGS : 0) | (flags & _F_SIZEOF));
             if (p->tp && p->tp->IsVoid() && finish != Keyword::closepa_)
@@ -2475,19 +2488,20 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                     {
                         (*lptr)->push_back(p);
                     }
-                    else if (p->exp && p->exp->type != ExpressionNode::packedempty_ && p->tp->type != BasicType::any_)
+                    else if (p->exp && p->exp->type != ExpressionNode::packedempty_)// && p->tp->type != BasicType::any_)
                     {
-                        if (!p->tp->IsStructured() && !p->tp->templateParam)
+                        if (!p->tp->IsStructured() && !p->tp->templateParam && p->tp->type != BasicType::any_)
                             checkPackedExpression(p->exp);
                         // this is going to presume that the expression involved
                         // is not too long to be cached by the LexList mechanism.
                         expandPackedInitList(lptr, funcsp, start, p->exp);
                     }
+                    ClearPackedSequence();
                 }
                 else
                 {
-                    if (toErr && argumentNesting <= 1)
-                        checkUnpackedExpression(p->exp);
+// fixme            if (toErr && argumentNesting <= 1)
+//                        checkUnpackedExpression(p->exp);
                     (*lptr)->push_back(p);
                 }
             }
@@ -2498,6 +2512,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                 errskim(&lex, finish == Keyword::closepa_ ? skim_closepa : skim_end);
                 return lex;
             }
+            LeavePackedSequence();
         }
         if (!MATCHKW(lex, Keyword::comma_))
         {
@@ -4341,15 +4356,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
     if (/*(!definingTemplate || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
-
-    if (lex && lex->data->errline == 520 && strstr(lex->data->errfile,"variant"))
-    {
-        printf("hi");
-    }
-    if (lex && lex->data->errline == 512 && strstr(lex->data->errfile, "variant"))
-    {
-        printf("hi");
-    }
+    
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
@@ -4418,14 +4425,14 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         static EXPRESSION funcExpr;
         funcExpr.type = ExpressionNode::callsite_;
         funcExpr.v.func = funcparams;
-        if (funcparams->sp->sb->storage_class == StorageClass::overloads_ && (funcparams->sp->tp->type != BasicType::aggregate_ || funcparams->sp->tp->syms->size() < 2 ||
-            (!parsingTrailingReturnOrUsing && (!(flags & _F_INDECLTYPE)  || !inTemplateArgs || !hasPackedExpression(&funcExpr, true)))))
+        if (funcparams->sp->sb->storage_class == StorageClass::overloads_ && (funcparams->sp->tp->type != BasicType::aggregate_ || funcparams->sp->tp->syms->size() < 2||
+            (!parsingTrailingReturnOrUsing && (!MATCHKW(lex, Keyword::ellipse_) || unpackingTemplate) && (!(flags & _F_INDECLTYPE)  || !inTemplateArgs || unpackingTemplate || !hasPackedExpression(&funcExpr, true)))))
         {
             Type* tp1;
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be ad  ded after we select a member function that needs it.
             funcparams->ascall = true;
-            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, flags);
+            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, !(MATCHKW(lex, Keyword::ellipse_)), false, flags);
             if ((*tp)->IsFunction())
             {
                 if ((*tp)->BaseType()->btp->IsStructured())
@@ -4507,6 +4514,8 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         else
         {
             ResolveArgumentFunctions(funcparams, true);
+            if (funcparams->sp->tp->IsFunction())
+                sym = funcparams->sp;
         }
         if (sym)
         {
@@ -4568,7 +4577,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         doit = !!arg->tp->templateParam->second->byPack.pack;
                 }
             }
-            if (doit && !definingTemplate && !(flags & _F_INDECLTYPE))
+            if (doit && !definingTemplate && !(flags & _F_INDECLTYPE) && (!MATCHKW(lex, Keyword::ellipse_) || unpackingTemplate))
                 error(ERR_CALL_OF_NONFUNCTION);
         }
     }
@@ -4650,9 +4659,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 {
                     if (funcparams->sp->sb->constexpression && (argumentNesting == 0 && !inStaticAssert))
                     {
-                        EXPRESSION* node = Allocate<EXPRESSION>();
-                        node->type = ExpressionNode::callsite_;
-                        node->v.func = funcparams;
+                        EXPRESSION* node = MakeExpression(funcparams);
                         if (EvaluateConstexprFunction(node))
                         {
                             *tp = funcparams->sp->tp->BaseType()->btp;
@@ -6516,24 +6523,11 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                 }
                             }
                         }
-#if 0
-                        else if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_))
-                        {
-                            // lose p
-                            lex = getsym();
-                            if (!definingTemplate && *exp && (*exp)->type != ExpressionNode::packedempty_)
-                            {
-                                if (!(*tp)->IsStructured() && !(*tp)->templateParam)
-                                    checkPackedExpression(*exp);
-                                ExpandExpression(start, funcsp, exp);
-                            }
-                        }
-#endif
-                        else if (!inTemplateArgs)
-                        {
-                            if (argumentNesting <= 1)
-                                checkUnpackedExpression(*exp);
-                        }
+//  fixme                      else if (!inTemplateArgs)
+ //                       {
+  //                          if (argumentNesting <= 1)
+     //                           checkUnpackedExpression(*exp);
+       //                 }
                         needkw(&lex, Keyword::closepa_);
                         break;
                     }
@@ -6965,29 +6959,11 @@ static LexList* expression_sizeof(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             }
             if (paren)
                 needkw(&lex, Keyword::closepa_);
-            if (MATCHKW(lex, Keyword::ellipse_))
+            if (unpackingTemplate && (*tp)->type == BasicType::templateparam_ && (*tp)->templateParam->second->packed)
             {
-                lex = getsym();
-                if ((*tp)->type == BasicType::templateparam_)
-                {
-                    if (!(*tp)->templateParam->second->packed)
-                    {
-                        error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
-                    }
-                    else if (packIndex != -1 && (*tp)->templateParam->second->byPack.pack)
-                    {
-                        auto tpl = (*tp)->templateParam->second->byPack.pack->begin();
-                        auto tple = (*tp)->templateParam->second->byPack.pack->end();
-                        int i;
-                        for (i = 0; tpl != tple && i < packIndex; i++, ++tpl);
-                        if (tpl != tple)
-                            *tp = tpl->second->byClass.val;
-                    }
-                }
-                else
-                {
-                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
-                }
+                auto tpl = LookupPackedInstance(*(*tp)->templateParam);
+                if (tpl)
+                    *tp = tpl->byClass.val;
             }
             if (!*tp)
             {
@@ -7019,29 +6995,11 @@ static LexList* expression_alignof(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             lex = expression(lex, funcsp, nullptr, tp, &exp, 0);
         }
         needkw(&lex, Keyword::closepa_);
-        if (MATCHKW(lex, Keyword::ellipse_))
+        if (unpackingTemplate && (*tp)->type == BasicType::templateparam_ && (*tp)->templateParam->second->packed)
         {
-            lex = getsym();
-            if ((*tp)->type == BasicType::templateparam_)
-            {
-                if (!(*tp)->templateParam->second->packed)
-                {
-                    error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
-                }
-                else if (packIndex != -1)
-                {
-                    auto tpl = (*tp)->templateParam->second->byPack.pack->begin();
-                    auto tple = (*tp)->templateParam->second->byPack.pack->end();
-                    int i;
-                    for (i = 0; tpl != tple && i < packIndex; i++, ++tpl);
-                    if (tpl != tple)
-                        *tp = tpl->second->byClass.val;
-                }
-            }
-            else
-            {
-                error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
-            }
+                auto tpl = LookupPackedInstance(*(*tp)->templateParam);
+                if (tpl)
+                    *tp = tpl->byClass.val;
         }
         if (!*tp)
         {
@@ -7094,10 +7052,11 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
         else if ((!btp->IsPtr() || !(btp)->array) && !btp->IsStructured() && !btp->IsFunction() && btp->type != BasicType::aggregate_ &&
                  (exp1)->type != ExpressionNode::memberptr_)
         {
-            if ((exp1)->type != ExpressionNode::const_ && exp1->type != ExpressionNode::assign_)
-                if (!IsLValue(exp1))
-                    if (Optimizer::cparams.prm_ansi || !IsCastValue(exp1))
-                        error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
+            if (exp1->type != ExpressionNode::callsite_)
+                if ((exp1)->type != ExpressionNode::const_ && exp1->type != ExpressionNode::assign_)
+                    if (!IsLValue(exp1))
+                        if (Optimizer::cparams.prm_ansi || !IsCastValue(exp1))
+                            error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
             if (IsLValue(exp1))
             {
                 if (exp1->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, exp1->left->right) && exp1->left->left->type == ExpressionNode::l_ref_ && exp1->left->left->left->type == ExpressionNode::auto_)

@@ -31,7 +31,7 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass);
 static bool DeduceFromBaseTemplates(Type* P, SYMBOL* A, bool change, bool byClass);
 static bool DeduceFromMemberPointer(Type* P, Type* A, bool change, bool byClass);
 static bool TemplateConstExpr(Type* tp, EXPRESSION* exp);
-bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, Type* P, Type* A, EXPRESSION* exp, bool change);
+bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, Type* P, Type* A, EXPRESSION* exp, bool byClass, bool change);
 bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool allowSelectors, bool baseClasses);
 static Type* GetForwardType(Type* P, Type* A, EXPRESSION* exp);
 static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool allowSelectors, bool baseClasses);

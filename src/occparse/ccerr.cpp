@@ -522,6 +522,7 @@ int printerr(int err, const char* file, int line, ...)
     bool canprint = false;
     va_list arg;
     va_start(arg, line);
+
     canprint = printerrinternal(err, file, line, arg);
     va_end(arg);
     return canprint;

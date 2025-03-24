@@ -59,7 +59,8 @@
 #include "types.h"
 #include "mangle.h"
 #include "overload.h"
-
+#include "exprpacked.h"
+#include "exprpacked.h"
 namespace Parser
 {
 static std::unordered_set<SYMBOL*> enteredInlines;
@@ -488,14 +489,13 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
     }
     if (sym->sb->deferredCompile && !sym->sb->inlineFunc.stmt)
     {
-        int oldPackIndex = packIndex;
+        EnterPackedContext();
         int oldArgumentNesting = argumentNesting;
         int oldExpandingParams = expandingParams;
         int oldconst = inConstantExpression;
         int oldanon = anonymousNotAlloc;
         anonymousNotAlloc = 0;
         inConstantExpression = 0;
-        packIndex = -1;
         argumentNesting = 0;
         expandingParams = 0;
         if (sym->sb->specialized && sym->templateParams->size() == 1)
@@ -515,7 +515,7 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
         inConstantExpression = oldconst;
         expandingParams = oldExpandingParams;
         argumentNesting = oldArgumentNesting;
-        packIndex = oldPackIndex;
+        LeavePackedContext();
     }
     return sym->sb->inlineFunc.stmt;
 }

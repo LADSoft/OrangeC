@@ -1377,6 +1377,7 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
             noeval = _F_NOEVAL;
         lex = prevsym(start);
     }
+    EnterPackedSequence();
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, noeval);
     else
@@ -1441,12 +1442,10 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                     }
                 }
             }
-        }
-        else
-        {
-            checkUnpackedExpression(*expr);
+            ClearPackedSequence();
         }
     }
+    LeavePackedSequence();
     return lex;
 }
 static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, Type* itype, bool commaallowed, bool arrayElem, SYMBOL* sym)
@@ -2068,14 +2067,19 @@ ExpressionNode referenceTypeError(Type* tp, EXPRESSION* exp)
         case BasicType::pointer_:
             if (tp->array || tp->vla)
                 return ExpressionNode::comma_;
+            if (tp->IsFunctionPtr() && (exp->type == ExpressionNode::callsite_ || exp->type == ExpressionNode::pc_))
+                return exp->type;
             en = ExpressionNode::l_p_;
             break;
         case BasicType::class_:
         case BasicType::struct_:
         case BasicType::union_:
+            if (exp->type == ExpressionNode::l_ref_)
+                return exp->type;
+            return ExpressionNode::l_p_;
         case BasicType::func_:
         case BasicType::ifunc_:
-            if (exp->type == ExpressionNode::l_ref_)
+            if (exp->type == ExpressionNode::l_ref_ || exp->type == ExpressionNode::callsite_ || exp->type == ExpressionNode::pc_)
                 return exp->type;
             return ExpressionNode::l_p_;
         default:
@@ -2892,8 +2896,6 @@ EXPRESSION* getThisNode(SYMBOL* sym)
 auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int offset, SYMBOL* funcsp, StorageClass sc, SYMBOL* base,
                                std::list<Initializer*>** dest, bool templateLevel, bool deduceTemplate, int flags)
 {
-    if (lex->data->errline == 482 && strstr(lex->data->errfile, "variant"))
-        printf("hi");
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
     bool toomany = false;
@@ -2987,9 +2989,9 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
             SYMBOL* fieldsp;
             int size = data ? data->size() : 0;
             auto tp1 = nexttp(desc);
-            lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, tp1, base, itype->IsArray(),
+            lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, &data, dest, tp1, base, true,
                 templateLevel, flags | _F_NESTEDINIT);
-            if (itype->IsArray() && !data->empty() && data->back()->exp->packedArray)
+            if (!data->empty() && data->back()->exp->packedArray)
             {
                 auto cm = data->back()->exp;
                 while (cm->type == ExpressionNode::comma_)
@@ -3141,8 +3143,6 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
 static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL * base, int offset, StorageClass sc, Type* itype,
                                           std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember, bool deduceTemplate, int flags)
 {
-    if (lex->data->errline == 520 && strstr(lex->data->errfile, "variant"))
-        printf("hi");
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
     bool needend = false;
@@ -4138,9 +4138,33 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
     }
     if (!tp)
     {
+        if (MATCHKW(lex, Keyword::begin_))
+        {
+            lex = getsym();
+            errskim(&lex, skim_end);
+            skip(&lex, Keyword::end_);
+        }
         if (!definingTemplate && !(flags & _F_TEMPLATEARGEXPANSION))
         {
-            errortype(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
+            if (itype->BaseType()->type != BasicType::templateselector_)
+            {
+                errortype(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
+            }
+            else
+            {
+                auto&& tpl = (*itype->BaseType()->sp->sb->templateSelector)[1];
+                if (unpackingTemplate || tpl.sp->name[0] != '_'  || tpl.sp->name[2] != 'm' || strcmp(tpl.sp->name, "__make_integer_seq_cls") != 0)
+                {
+                    errortype(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
+                }
+                else
+                {
+                    // make a dummy templateselector node so the make_integer_seq can be processed...
+                    auto exp = MakeExpression(ExpressionNode::templateselector_);
+                    exp->v.templateSelector = itype->BaseType()->sp->sb->templateSelector;
+                    InsertInitializer(init, itype, exp, 0, true);
+                }
+            }
         }
         return lex;
     }

@@ -477,7 +477,8 @@ bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType)
         tp2 = tp2->BaseType()->btp;
     if (tp1->BaseType()->type != tp2->BaseType()->type)
         if (tp1->IsRef() || !tp2->IsRef())
-            return false;
+            if (tp1->BaseType()->type != BasicType::pointer_  || !tp2->IsFunction() || !tp1->BaseType()->btp->IsFunction())
+                return false;
     if (tp1->BaseType()->type == BasicType::enum_)
     {
         if (tp1->BaseType()->sp != tp2->BaseType()->sp)
@@ -938,13 +939,14 @@ void GetPackedTypes(TEMPLATEPARAMPAIR** packs, int* count, std::list<TEMPLATEPAR
                     }
                     if (exp->type == ExpressionNode::callsite_ && exp->v.func->templateParams)
                     {
-                        GetPackedTypes(packs, count, exp->v.func->templateParams);                        
+                        GetPackedTypes(packs, count, exp->v.func->templateParams);
                     }
                 }
                 else if (arg.second->packed)
                 {
                     packs[(*count)++] = &arg;
                 }
+
             }
             else if (arg.second->type == TplType::delete_)
             {
@@ -1137,6 +1139,7 @@ std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp)
     }
     return rv;
 }
+Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt);
 static Type* LookupUnaryMathFromExpression(EXPRESSION* exp, Keyword kw, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt)
 {
     Type* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
@@ -1590,7 +1593,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                         bool ascall = exp->v.func->ascall;
                         exp->v.func->ascall = true;
                         Type* tp1 = nullptr;
-                        SYMBOL* sym = rve->sp;
+                        SYMBOL* sym = rve->BaseType()->sp;
                         if (sym->tp->type != BasicType::aggregate_)
                             sym = sym->sb->overloadName;
                         rv = rve->BaseType()->btp;
@@ -1711,19 +1714,16 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 if (exp->v.sp->tp->BaseType()->templateParam->second->packed) 
                 {
                     Type* rv = &stdany;
-                    if (packIndex < 0 || exp->v.sp->tp->BaseType()->templateParam->second->resolved)
+                    if (!unpackingTemplate || exp->v.sp->tp->BaseType()->templateParam->second->resolved)
                     {
                         if (exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack)
                             rv = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->front().second->byClass.val;
                     }
                     else if (exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack)
                     {
-                        auto itl = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->begin();
-                        auto itel = exp->v.sp->tp->BaseType()->templateParam->second->byPack.pack->end();
-                        for (int i = 0; i < packIndex && itl != itel; i++, ++itl)
-                            ;
-                        if (itl != itel)
-                            rv = itl->second->byClass.val;
+                        auto tpl = LookupPackedInstance(*exp->v.sp->tp->BaseType()->templateParam);
+                        if (tpl)
+                            rv = tpl->byClass.val;
                     }
                     return rv;
                 }
@@ -1993,96 +1993,88 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
     {
         SYMBOL* ts = (*tso)[1].sp;
         SYMBOL* sp = nullptr;
-        Type* tp;
 
-        if (0 && ts && ts->sb && ts->sb->instantiated)
+        auto tp = ts->tp;
+        if (ts->tp->BaseType()->type == BasicType::templateparam_ &&
+            ts->tp->BaseType()->templateParam->second->type == TplType::typename_)
         {
-            sp = ts;
+            tp = ts->tp->BaseType()->templateParam->second->byClass.val;
+        }
+        if (!tp || !tp->IsStructured())
+        {
+            sp = nullptr;
         }
         else
         {
-            auto tp = ts->tp;
-            if (ts->tp->BaseType()->type == BasicType::templateparam_ &&
-                ts->tp->BaseType()->templateParam->second->type == TplType::typename_)
+            ts = tp->BaseType()->sp;
+            if ((*tso)[1].isTemplate)
             {
-                tp = ts->tp->BaseType()->templateParam->second->byClass.val;
-            }
-            if (!tp || !tp->IsStructured())
-            {
-                sp = nullptr;
-            }
-            else
-            {
-                ts = tp->BaseType()->sp;
-                if ((*tso)[1].isTemplate)
+                if ((*tso)[1].templateParams)
                 {
-                    if ((*tso)[1].templateParams)
+                    if (!(*tso)[1].sp->sb->instantiated || (*tso)[1].sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
                     {
-                        if (!(*tso)[1].sp->sb->instantiated || (*tso)[1].sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
+                        std::list<TEMPLATEPARAMPAIR>* currentx = (*tso)[1].templateParams;
+                        std::deque<Type*> types;
+                        std::deque<EXPRESSION*> expressions;
+                        for (auto&& current : *currentx)
                         {
-                            std::list<TEMPLATEPARAMPAIR>* currentx = (*tso)[1].templateParams;
-                            std::deque<Type*> types;
-                            std::deque<EXPRESSION*> expressions;
-                            for (auto&& current : *currentx)
+                            if (current.second->type == TplType::typename_)
                             {
-                                if (current.second->type == TplType::typename_)
-                                {
-                                    types.push_back(current.second->byClass.dflt);
-                                    if (current.second->byClass.val)
-                                        current.second->byClass.dflt = current.second->byClass.val;
-                                }
-                                else if (current.second->type == TplType::int_)
-                                {
-                                    expressions.push_back(current.second->byNonType.dflt);
-                                    if (current.second->byNonType.val)
-                                        current.second->byNonType.dflt = current.second->byNonType.val;
-                                }
+                                types.push_back(current.second->byClass.dflt);
+                                if (current.second->byClass.val)
+                                    current.second->byClass.dflt = current.second->byClass.val;
                             }
-                            sp = GetClassTemplate(ts, (*tso)[1].templateParams, false);
-                            tp = nullptr;
-                            if (sp)
-                                sp = TemplateClassInstantiateInternal(sp, (*tso)[1].templateParams, false);
-                            for (auto&& current : *currentx)
+                            else if (current.second->type == TplType::int_)
                             {
-                                if (current.second->type == TplType::typename_)
-                                {
-                                    if (types.size())
-                                    {
-                                        current.second->byClass.dflt = types.front();
-                                        types.pop_front();
-                                    }
-                                }
-                                else if (current.second->type == TplType::int_)
-                                {
-                                    if (expressions.size())
-                                    {
-                                        current.second->byNonType.dflt = expressions.front();
-                                        expressions.pop_front();
-                                    }
-                                }
+                                expressions.push_back(current.second->byNonType.dflt);
+                                if (current.second->byNonType.val)
+                                    current.second->byNonType.dflt = current.second->byNonType.val;
                             }
                         }
-                        else
+                        sp = GetClassTemplate(ts, (*tso)[1].templateParams, false);
+                        tp = nullptr;
+                        if (sp)
+                            sp = TemplateClassInstantiateInternal(sp, (*tso)[1].templateParams, false);
+                        for (auto&& current : *currentx)
                         {
-                            sp = (*tso)[1].sp;
+                            if (current.second->type == TplType::typename_)
+                            {
+                                if (types.size())
+                                {
+                                    current.second->byClass.dflt = types.front();
+                                    types.pop_front();
+                                }
+                            }
+                            else if (current.second->type == TplType::int_)
+                            {
+                                if (expressions.size())
+                                {
+                                    current.second->byNonType.dflt = expressions.front();
+                                    expressions.pop_front();
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        sp = ts;
+                        sp = (*tso)[1].sp;
                     }
                 }
-                else if (ts->tp->BaseType()->type == BasicType::templateselector_)
-                {
-                    sp = nullptr;
-                }
-                else if (ts->tp->IsStructured())
+                else
                 {
                     sp = ts;
                 }
-                if (sp)
-                    sp->tp = sp->tp->InitializeDeferred();
             }
+            else if (ts->tp->BaseType()->type == BasicType::templateselector_)
+            {
+                sp = nullptr;
+            }
+            else if (ts->tp->IsStructured())
+            {
+                sp = ts;
+            }
+            if (sp)
+                sp->tp = sp->tp->InitializeDeferred();
         }
         if (sp)
         {
@@ -2577,6 +2569,8 @@ std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEM
                     tas.push(te);
                     te = t->second->byPack.pack->end();
                     t = t->second->byPack.pack->begin();
+                    if (t->second->packed)
+                        continue;
                 }
                 else
                 {
@@ -2777,11 +2771,11 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
                 }
             }
             n--;
-            int oldIndex = packIndex;
+            PushPackIndex();
             for (int i = n < 0 ? -1 : 0; i <= n; i++)
             {
                 if (n >= 0)
-                    packIndex = i;
+                    SetPackIndex(i);
                 hold[k] = &*t;
                 auto t1 = ResolveDeclType(sp, &*hold[k], true);
                 if (t1)
@@ -2794,7 +2788,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
                     hold[k] = &*t3->begin();
                 k++;
             }
-            packIndex = oldIndex;
+            PopPackIndex();
             ++t;
             if (t == te && !tas.empty())
             {

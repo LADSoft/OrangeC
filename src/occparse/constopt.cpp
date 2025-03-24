@@ -3184,26 +3184,29 @@ int fold_const(EXPRESSION* node)
         break;
         case ExpressionNode::callsite_:
         {
-            auto thisptr = node->v.func->thisptr;
-            if (thisptr)
+            if (node->v.func->ascall)
             {
-                int offset;
-                thisptr = relptr(thisptr, offset);
+                auto thisptr = node->v.func->thisptr;
                 if (thisptr)
                 {
-                    if (node->v.func->sp->sb->isDestructor && node->v.func->sp->sb->defaulted)
-                        thisptr = nullptr;
+                    int offset;
+                    thisptr = relptr(thisptr, offset);
+                    if (thisptr)
+                    {
+                        if (node->v.func->sp->sb->isDestructor && node->v.func->sp->sb->defaulted)
+                            thisptr = nullptr;
+                    }
                 }
-            }
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression && (argumentNesting == 0 && !inStaticAssert))
-            {
-                if (!rv && node->v.func->thisptr)
+                if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression && (argumentNesting == 0 && !inStaticAssert))
                 {
-                    fold_const(node->v.func->thisptr);
+                    if (!rv && node->v.func->thisptr)
+                    {
+                        fold_const(node->v.func->thisptr);
+                    }
+                    inConstantExpression++;
+                    rv = EvaluateConstexprFunction(node);
+                    inConstantExpression--;
                 }
-                inConstantExpression++;
-                rv = EvaluateConstexprFunction(node);
-                inConstantExpression--;
             }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);

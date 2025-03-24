@@ -3236,13 +3236,9 @@ founddecltype:
                         }
                         else if (expandingParams && tpx->type == BasicType::templateparam_ && tpx->templateParam->second->byPack.pack && !tpx->templateParam->second->resolved)
                         {
-
-                            auto packed = tpx->templateParam->second->byPack.pack->begin();
-                            auto packede = tpx->templateParam->second->byPack.pack->end();
-                            int i;
-                            for (i = 0; i < packIndex && packed != packede; i++, ++packed);
-                            if (packed != packede)
-                                tn = packed->second->byClass.val;
+                            auto tn2 = LookupPackedInstance(*tpx->templateParam);
+                            if (tn2)
+                                tn = tn2->byClass.val;
                         }
                         if (!tn)
                             tn = sp->tp;
@@ -3723,6 +3719,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
             if (fullySpecialized)
                 ++instantiatingTemplate;
             inTemplateType = !!definingTemplate;
+            EnterPackedSequence();
             if (MATCHKW(lex, Keyword::ellipse_))
             {
                 if (!pastfirst)
@@ -3739,6 +3736,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 tp->syms->Add(spi);
                 lex = getsym();
                 hasellipse = true;
+                ClearPackedSequence();
             }
             else
             {
@@ -3881,6 +3879,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             clonedParams = true;
                         }
                     }
+                    ClearPackedSequence();
                 }
                 if (!clonedParams)
                 {
@@ -3962,6 +3961,8 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                         voiderror = true;
                 }
             }
+            ClearPackedSequence();
+            LeavePackedSequence();
             if (fullySpecialized)
                 --instantiatingTemplate;
             inTemplateType = templType;
@@ -4308,7 +4309,10 @@ bool TypeGenerator::StartOfType(LexList*& lex, bool* structured, bool assumeType
         SYMBOL *sym, *strSym = nullptr;
         LexList* placeholder = lex;
         bool dest = false;
+        EnterPackedSequence();
         nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
+        ClearPackedSequence();
+        LeavePackedSequence();
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
             prevsym(placeholder);
         lines = old;

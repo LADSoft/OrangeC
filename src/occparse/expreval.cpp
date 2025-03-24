@@ -68,7 +68,7 @@
 #include "expreval.h"
 #include "overload.h"
 #include "class.h"
-
+#include "exprpacked.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -1677,7 +1677,7 @@ bool eval_binary_assign(LexList *lex, SYMBOL *funcsp,Type *atp, Type **resulttp,
         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
     else if ((*resulttp)->IsVoid() || righttp->IsVoid() || (*resulttp)->type == BasicType::aggregate_)
         error(ERR_NOT_AN_ALLOWED_TYPE);
-    else if ((!definingTemplate || instantiatingTemplate) && !(*resulttp)->IsStructured() && /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
+    else if ((!definingTemplate || instantiatingTemplate) && !(*resulttp)->IsStructured() && !(*resulttp)->IsFunctionPtr() && /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
              (*resulttp)->BaseType()->type != BasicType::memberptr_ && (*resulttp)->BaseType()->type != BasicType::templateparam_ &&
              (*resulttp)->BaseType()->type != BasicType::templateselector_ && !IsLValue(*resultexp) &&
              (*resultexp)->type != ExpressionNode::msil_array_access_)

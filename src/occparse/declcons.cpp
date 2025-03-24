@@ -98,6 +98,7 @@ std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList **lex2, SYMBOL* fu
     //        error(ERR_Initializer_LIST_REQUIRES_CONSTRUCTOR);
     while (lex != nullptr)
     {
+        EnterPackedSequence();
         if (ISID(lex) || MATCHKW(lex, Keyword::classsel_))
         {
             SYMBOL* sym = nullptr;
@@ -201,6 +202,7 @@ std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList **lex2, SYMBOL* fu
                 }
                 if (MATCHKW(lex, Keyword::ellipse_))
                 {
+                    ClearPackedSequence();
                     v->packed = true;
                     lex = getsym();
                 }
@@ -218,6 +220,7 @@ std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList **lex2, SYMBOL* fu
         {
             error(ERR_MEMBER_NAME_REQUIRED);
         }
+        LeavePackedSequence();
         if (!MATCHKW(lex, Keyword::comma_))
             break;
         lex = getsym();
@@ -2134,7 +2137,10 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
                 else if (init->packed)
                 {
+                    EnterPackedSequence();
                     expandPackedBaseClasses(cls, cons, it, ite, cons->sb->memberInitializers, cls->sb->baseClasses, cls->sb->vbaseEntries);
+                    ClearPackedSequence();
+                    LeavePackedSequence();
                     continue;
                 }
                 else

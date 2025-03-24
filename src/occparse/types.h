@@ -45,8 +45,8 @@ struct Type
     int nullptrType : 1;   /* c++: std::nullptr */
     int templateTop : 1;
     int enumConst : 1; /* is an enumeration constant */
-    int lref : 1;
-    int rref : 1;
+    int lref : 1 ;
+    int rref  : 1;
     int decltypeauto : 1;
     int stringconst : 1;
     char bits;      /* -1 for not a bit val, else bit field len */
@@ -146,8 +146,8 @@ struct TypeGenerator
         bool constexpression);
     static Type* TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
     static bool StartOfType(LexList*& lex, bool* structured, bool assumeType);
-private:
     static void ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class);
+private:
     static Type* FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class);
     static void ResolveVLAs(Type* tp);
     static Type* ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,

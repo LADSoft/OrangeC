@@ -236,8 +236,11 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                 {
                                     if (!definingTemplate || instantiatingTemplate)
                                         params->second->byClass.val->InstantiateDeferred();
-                                    sp = params->second->byClass.val->BaseType()->sp;
-                                    dependentType = params->second->byClass.val;
+                                    if (params->second->byClass.val->IsStructured())
+                                    {
+                                        sp = params->second->byClass.val->BaseType()->sp;
+                                        dependentType = params->second->byClass.val;
+                                    }
                                 }
                             }
                             else if (params->second->type == TplType::template_)

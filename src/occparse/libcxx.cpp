@@ -47,7 +47,7 @@
 #include "ListFactory.h"
 #include "exprcpp.h"
 #include "overload.h"
-
+#include "constopt.h"
 namespace Parser
 {
 int inNoExceptHandler;
@@ -1921,7 +1921,13 @@ SYMBOL* MakeIntegerSeq(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
     rv->sb->mainsym = sym;
     auto rs = MakeIntegerSeqType(sym, args);
     if (rs)
+    {
         rv->tp = rs->tp;
+    }
+    else
+    {
+        (*rv->tp->BaseType()->sp->sb->templateSelector)[1].templateParams = args;
+    }
     return rv;
 }
 static Type* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)

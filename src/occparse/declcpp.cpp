@@ -53,7 +53,6 @@
 #include "ildata.h"
 #include "types.h"
 #include "declare.h"
-#include "constopt.h"
 #include "constexpr.h"
 #include "optmain.h"
 #include "iexpr.h"
@@ -63,9 +62,9 @@
 #include "namespace.h"
 #include "symtab.h"
 #include "ListFactory.h"
-#include "inline.h"
 #include "overload.h"
 #include "class.h"
+#include "exprpacked.h"
 
 namespace CompletionCompiler
 {
@@ -1111,6 +1110,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     do
     {
         ParseAttributeSpecifiers(&lex, funcsp, true);
+        EnterPackedSequence();
         if (MATCHKW(lex, Keyword::decltype_))
         {
             Type* tp = nullptr;
@@ -1187,6 +1187,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                 if (!done)
                 {
                     lex = getsym();
+                    LeavePackedSequence();
                     continue;
                 }
                 goto endloop;
@@ -1241,6 +1242,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                 done = !MATCHKW(lex, Keyword::comma_);
                                 if (!done)
                                     lex = getsym();
+                                LeavePackedSequence();
                                 continue;
                             }
                             else if (bcsym && (!definingTemplate || instantiatingTemplate))
@@ -1258,6 +1260,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     done = !MATCHKW(lex, Keyword::comma_);
                     if (!done)
                         lex = getsym();
+                    LeavePackedSequence();
                     continue;
                 }
                 else
@@ -1368,6 +1371,8 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                             done = !MATCHKW(lex, Keyword::comma_);
                             if (!done)
                                 lex = getsym();
+                            ClearPackedSequence();
+                            LeavePackedSequence();
                             continue;
                         }
                         else
@@ -1506,6 +1511,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                     return lex;
             }
     endloop:
+        LeavePackedSequence();
         if (!done)
             ParseAttributeSpecifiers(&lex, funcsp, true);
     } while (!done);
@@ -1924,8 +1930,6 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 }
 LexList* handleStaticAssert(LexList* lex)
 {
-    if (lex->data->errline == 237 && strstr(lex->data->errfile, "filesystem_common"))
-        printf("hi");
     RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
     if (!MATCHKW(lex, Keyword::openpa_))
     {

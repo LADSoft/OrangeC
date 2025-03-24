@@ -316,6 +316,8 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
                         tps = tps->BaseType()->btp;
                     if (tpn->IsRef())
                         tpn = tpn->BaseType()->btp;
+                    if (tps->type == BasicType::auto_ || tpn->type == BasicType::auto_)
+                        return true;
                     while (tpn->IsPtr() && tps->IsPtr())
                     {
                         if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
@@ -3491,7 +3493,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                     }
                     m = 0;
                     if (((f->thisptr && isconstexpr(f->thisptr)) ||
-                         (!f->thisptr && f->arguments && isconstexpr(f->arguments->front()->exp))) &&
+                         (!f->thisptr && f->arguments && f->arguments->front()->tp->IsConst())) &&
                         !sym->tp->IsConst())
                         seq[m++] = CV_QUALS;
                     getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);

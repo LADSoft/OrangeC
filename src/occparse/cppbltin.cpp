@@ -41,7 +41,7 @@
 #include "symtab.h"
 #include "stmt.h"
 #include "types.h"
-
+#include "exprpacked.h"
 namespace Parser
 {
 
@@ -113,6 +113,8 @@ void ParseBuiltins(void)
         "bool __stdcall __rtllinkage ___ckdsub(void*, int, void*, int, void*, int);";
     LexList* lex;
 
+    packed_init();
+    EnterPackedContext();
     if (Optimizer::cparams.prm_cplusplus)
     {
         libcxx_builtins();
@@ -148,6 +150,7 @@ void ParseBuiltins(void)
         }
         SetAlternateParse(false, "");
     }
+    LeavePackedContext();
     if (Optimizer::cparams.prm_cplusplus)
     {
         stdXC.syms = symbols->CreateSymbolTable();

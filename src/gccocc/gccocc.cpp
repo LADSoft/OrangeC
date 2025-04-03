@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <stdio.h>
@@ -45,7 +45,7 @@
 #define DEFINE_SPLIT_CHAR 0x1b
 CmdSwitchParser gccocc::SwitchParser;
 CmdSwitchBool gccocc::prm_compileonly(SwitchParser, 'c');
-CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i'); // ignored
+CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i');  // ignored
 CmdSwitchBool gccocc::prm_debug(SwitchParser, 'g');
 CmdSwitchBool gccocc::prm_verbose(SwitchParser, 'v');
 CmdSwitchString gccocc::prm_libs(SwitchParser, 'l', ';');
@@ -59,7 +59,7 @@ CmdSwitchBool gccocc::prm_assemble(SwitchParser, 'S');
 CmdSwitchCombineString gccocc::prm_undefine(SwitchParser, 'U', ';');
 CmdSwitchCombineString gccocc::prmLdCommand(SwitchParser, 0, ';', {"Wl"});
 CmdSwitchCombineString gccocc::prm_warning_and_flags(SwitchParser, 'W', ';');
-CmdSwitchString gccocc::prm_std(SwitchParser,0, 0, {"std"});
+CmdSwitchString gccocc::prm_std(SwitchParser, 0, 0, {"std"});
 CmdSwitchBool gccocc::prm_nostdinc(SwitchParser, 0, false, {"nostdinc"});
 CmdSwitchBool gccocc::prm_nostdincpp(SwitchParser, 0, false, {"nostdinc++"});
 CmdSwitchBool gccocc::prmSyntaxOnly(SwitchParser, 0, false, {"fsyntax-only"});
@@ -78,7 +78,7 @@ CmdSwitchString gccocc::prm_march(SwitchParser, 0, false, {"march"});
 CmdSwitchCombineString gccocc::prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString gccocc::prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 CmdSwitchBool gccocc::prmInhibitWarnings(SwitchParser, 'w');
-CmdSwitchInt  gccocc::prmMaxErrors(SwitchParser, 0, 24, 1,999, {"fmax-errors"});
+CmdSwitchInt gccocc::prmMaxErrors(SwitchParser, 0, 24, 1, 999, {"fmax-errors"});
 CmdSwitchBool gccocc::prmPedantic(SwitchParser, 0, 0, {"pedantic", "pedantic-errors"});
 CmdSwitchBool gccocc::prmm32(SwitchParser, 0, false, {"m32"});
 CmdSwitchBool gccocc::prmm64(SwitchParser, 0, false, {"m64"});
@@ -136,7 +136,7 @@ const char* gccocc::helpText =
     "   -Wfatal-errors  stop after first error\n"
     "   -Wxxxxxxxxxx    ignored\n"
     "   -V, --version   show version information\n"
-    "   --nologo        no logo\n"	
+    "   --nologo        no logo\n"
     "   /?, --help      this text\n"
     "Other options\n"
     "   -dll                      generate a DLL\n"
@@ -160,7 +160,7 @@ const char* gccocc::helpText =
     "   -municode                 use the unicode version of the headers\n"
     "   -nostdinc                 disable c language system include files\n"
     "   -nostdinc++               disable c++ language system include files\n"
-    "   -output-def xxxx          create a .def file\n"  
+    "   -output-def xxxx          create a .def file\n"
     "   -pedantic                 ignored\n"
     "   -pedantic-errors          ignored\n"
     "   -pipe                     ignored\n"
@@ -180,7 +180,6 @@ const char* gccocc::helpText =
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* gccocc::usageText = "[options] files...";
 
-
 int main(int argc, char** argv)
 {
     gccocc gcc;
@@ -189,8 +188,8 @@ int main(int argc, char** argv)
 
 void gccocc::PutMultiple(FILE* fil, const char* switchName, std::string lst)
 {
-    auto splt = Utils::split(lst,';');
-    for (int i=0; i < splt.size(); i++)
+    auto splt = Utils::split(lst, ';');
+    for (int i = 0; i < splt.size(); i++)
     {
         fprintf(fil, " -%s%s\n", switchName, splt[i].c_str());
     }
@@ -199,7 +198,7 @@ void gccocc::PutWarnings(FILE* fil)
 {
     if (prmMaxErrors.GetExists())
     {
-        fprintf(fil,  " /E%d", prmMaxErrors.GetValue());
+        fprintf(fil, " /E%d", prmMaxErrors.GetValue());
     }
     if (prmInhibitWarnings.GetValue())
     {
@@ -215,28 +214,29 @@ void gccocc::PutWarnings(FILE* fil)
             for (auto w : warnings)
             {
                 if (w == "no")
-                   fputs(" /w", fil);
+                    fputs(" /w", fil);
                 else if (w == "error")
-                   fputs(" /wx", fil);
+                    fputs(" /wx", fil);
                 else if (w == "all" || w == "extra")
-                   fputs(" /w+", fil);
+                    fputs(" /w+", fil);
                 else if (w == "fatal-errors")
                 {
-                   fputs(" /E1", fil);
+                    fputs(" /E1", fil);
                 }
                 else
                 {
                     // anything else is ignored
-                }                   
+                }
             }
         }
     }
 }
-int gccocc::Run(int argc, char** argv) 
+int gccocc::Run(int argc, char** argv)
 {
-    #define XPE_SUBSYS_DLL -1
-    int subsystem = PE_SUBSYS_CONSOLE; 
-    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return prm_cppmode.GetValue();});
+#define XPE_SUBSYS_DLL -1
+    int subsystem = PE_SUBSYS_CONSOLE;
+    auto files =
+        ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return prm_cppmode.GetValue(); });
     if (files.size() < 2 && !prmDumpVersion.GetExists() && !prmDumpMachine.GetExists() && !prmPrintFileName.GetExists() &&
         !prmPrintProgName.GetExists())
         ToolChain::Usage(usageText);
@@ -282,22 +282,22 @@ int gccocc::Run(int argc, char** argv)
             ch = prm_optimize.GetValue()[0];
         switch (ch)
         {
-             default:
-                 Utils::Fatal("Unknown optimizer flag");
-                 break;
-             case '1':
-             case '2':
-             case '3':
-                 fputs(" -O2", fil);
-                 break;
-             case 's':
-                 fputs(" -O1", fil);
-                 break;
+            default:
+                Utils::Fatal("Unknown optimizer flag");
+                break;
+            case '1':
+            case '2':
+            case '3':
+                fputs(" -O2", fil);
+                break;
+            case 's':
+                fputs(" -O1", fil);
+                break;
         }
     }
     else
     {
-         fputs(" -O-", fil);
+        fputs(" -O-", fil);
     }
     if (prmShared.GetValue())
         subsystem = XPE_SUBSYS_DLL;
@@ -332,13 +332,13 @@ int gccocc::Run(int argc, char** argv)
         else if (key == "--subsystem" && val.size())
         {
             if (isdigit(val[0]))
-                 subsystem = atoi(val.c_str());
+                subsystem = atoi(val.c_str());
             else if (val == "windows")
-                 subsystem = PE_SUBSYS_WINDOWS;
+                subsystem = PE_SUBSYS_WINDOWS;
             else if (val == "console")
-                 subsystem = PE_SUBSYS_CONSOLE;
+                subsystem = PE_SUBSYS_CONSOLE;
             else if (val == "native")
-                 subsystem = PE_SUBSYS_NATIVE;
+                subsystem = PE_SUBSYS_NATIVE;
         }
         else
         {
@@ -347,16 +347,16 @@ int gccocc::Run(int argc, char** argv)
     }
     switch (subsystem)
     {
-         case XPE_SUBSYS_DLL:
-             fputs(" -Wd", fil);
-             break;
-         case PE_SUBSYS_WINDOWS:
-             fputs(" -Wg", fil);
-             break;
-         case PE_SUBSYS_CONSOLE:
-         default:
-             fputs(" -Wc", fil);
-             break;
+        case XPE_SUBSYS_DLL:
+            fputs(" -Wd", fil);
+            break;
+        case PE_SUBSYS_WINDOWS:
+            fputs(" -Wg", fil);
+            break;
+        case PE_SUBSYS_CONSOLE:
+        default:
+            fputs(" -Wc", fil);
+            break;
     }
     if (MakeStubsOption.GetValue())
         fputs(" -M", fil);
@@ -404,14 +404,14 @@ int gccocc::Run(int argc, char** argv)
     std::string defines;
     if (prm_define.GetExists())
     {
-        auto splt = Utils::split(prm_define.GetValue(),DEFINE_SPLIT_CHAR);
-        for (int i=0; i < splt.size(); i++)
+        auto splt = Utils::split(prm_define.GetValue(), DEFINE_SPLIT_CHAR);
+        for (int i = 0; i < splt.size(); i++)
         {
-            for (int j=0; j < splt[i].size(); j++)
+            for (int j = 0; j < splt[i].size(); j++)
             {
                 if (splt[i][j] == '"' || splt[i][j] == '\\' || splt[i][j] == ' ')
                 {
-                    splt[i].insert(j,1,'\\');
+                    splt[i].insert(j, 1, '\\');
                     j++;
                 }
             }
@@ -424,19 +424,17 @@ int gccocc::Run(int argc, char** argv)
         PutMultiple(fil, "I", prm_cinclude.GetValue());
     if (prm_libpath.GetExists())
         PutMultiple(fil, "L", prm_libpath.GetValue());
-    for (int i=1; i < files.size(); i++)
+    for (int i = 1; i < files.size(); i++)
         fprintf(fil, " \"%s\"", files[i].c_str());
-    auto libs = Utils::split(prm_libs.GetValue(),';');
-    for (int i=0; i < libs.size(); i++)
+    auto libs = Utils::split(prm_libs.GetValue(), ';');
+    for (int i = 0; i < libs.size(); i++)
     {
         if (libs[i].find(".") == std::string::npos)
-           libs[i] += ".lib";
+            libs[i] += ".lib";
         fprintf(fil, " \"%s\"", libs[i].c_str());
-     
-    } 
+    }
     fclose(fil);
     int rv = ToolChain::ToolInvoke("occ.exe", nullptr, " -! %s @%s", defines.c_str(), tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }
-

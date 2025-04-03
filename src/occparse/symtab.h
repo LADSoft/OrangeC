@@ -1,47 +1,49 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
+ *
  */
+
 #pragma once
 
 #ifndef _SYMTAB_H
-#define _SYMTAB_H
-#include <list>
-#include <unordered_map>
-#include <iterator>
-#include <string>
-#include "types.h"
+#    define _SYMTAB_H
+#    include <list>
+#    include <unordered_map>
+#    include <iterator>
+#    include <string>
+#    include "types.h"
 namespace CompletionCompiler
 {
-    extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;
-    void ccSetSymbol(Parser::SYMBOL* s);
-};
+extern Parser::SymbolTable<Parser::SYMBOL>* ccSymbols;
+void ccSetSymbol(Parser::SYMBOL* s);
+};  // namespace CompletionCompiler
 
 namespace Parser
 {
 
-    extern SymbolTableFactory<SYMBOL>* symbols;
+extern SymbolTableFactory<SYMBOL>* symbols;
 
-    void syminit(void);
+void syminit(void);
 
 template <class T>
 inline T* SymbolTable<T>::AddOverloadName(T* sym)
@@ -71,25 +73,25 @@ inline SYMBOL* SymbolTable<SYMBOL>::AddOverloadName(SYMBOL* sym)
     AddName(sym);
     return (0);
 }
-template<class T>
+template <class T>
 void SymbolTable<T>::remove(typename SymbolTable<T>::iterator it)
 {
     lookupTable_.erase((*it)->name);
     return inOrder_.remove(*it);
 }
-template<class T>
+template <class T>
 inline void SymbolTable<T>::remove(T* sym)
 {
     lookupTable_.erase(sym->name);
     inOrder_.remove(sym);
 }
-template<class T>
+template <class T>
 typename SymbolTable<T>::iterator SymbolTable<T>::insert(typename SymbolTable<T>::iterator it, SYMBOL* sym)
 {
     lookupTable_[sym->name] = sym;
     return inOrder_.insert(it, sym);
 }
-template<class T>
+template <class T>
 T* SymbolTable<T>::Lookup(const std::string& name) const
 {
     auto it = lookupTable_.find(name);
@@ -97,7 +99,7 @@ T* SymbolTable<T>::Lookup(const std::string& name) const
         return nullptr;
     return (*it).second;
 }
-template<class T>
+template <class T>
 T* search(const SymbolTable<T>* tbl, const std::string& name)
 {
     const SymbolTable<T>* p = tbl;
@@ -125,7 +127,8 @@ template <>
 inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
 {
     if (Optimizer::cparams.prm_extwarning)
-        if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ || in->sb->storage_class == StorageClass::register_)
+        if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ ||
+            in->sb->storage_class == StorageClass::register_)
         {
             SYMBOL* sym;
             if ((sym = gsearch(in->name)) != nullptr &&
@@ -173,7 +176,8 @@ inline void SymbolTable<T>::insertOverload(T* in)
 {
 
     if (Optimizer::cparams.prm_extwarning)
-        if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ || in->sb->storage_class == StorageClass::register_)
+        if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ ||
+            in->sb->storage_class == StorageClass::register_)
         {
             SYMBOL* sym;
             if ((sym = gsearch(in->name)) != nullptr)

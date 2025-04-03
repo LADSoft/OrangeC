@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -253,41 +253,41 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                                 {
                                     switch (packedP->second->type)
                                     {
-                                    case TplType::typename_: {
-                                        Type** tp = &packedP->second->byClass.val;
-                                        if (*tp || !templateCompareTypes(packedP->second->byClass.val, packedA->second->byClass.val, true))
+                                        case TplType::typename_: {
+                                            Type** tp = &packedP->second->byClass.val;
+                                            if (*tp || !templateCompareTypes(packedP->second->byClass.val,
+                                                                             packedA->second->byClass.val, true))
                                                 return false;
-                                        break;
-                                    }
-                                    case TplType::template_: {
-                                        std::list<TEMPLATEPARAMPAIR>* paramT = packedP->first->templateParams;
-                                        std::list<TEMPLATEPARAMPAIR>* paramA = packedA->first->templateParams;
-                                        if (!paramT || !paramA || paramT->size() != paramA->size())
-                                            return false;
-                                        auto it1 = paramT->begin();
-                                        auto it2 = paramA->begin();
-                                        for (int i = 0; i < paramT->size(); ++i, ++it1, ++it2)
-                                        {
-                                            if (it1->second->type != it2->second->type)
+                                            break;
+                                        }
+                                        case TplType::template_: {
+                                            std::list<TEMPLATEPARAMPAIR>* paramT = packedP->first->templateParams;
+                                            std::list<TEMPLATEPARAMPAIR>* paramA = packedA->first->templateParams;
+                                            if (!paramT || !paramA || paramT->size() != paramA->size())
                                                 return false;
+                                            auto it1 = paramT->begin();
+                                            auto it2 = paramA->begin();
+                                            for (int i = 0; i < paramT->size(); ++i, ++it1, ++it2)
+                                            {
+                                                if (it1->second->type != it2->second->type)
+                                                    return false;
+                                            }
+                                            break;
                                         }
-                                        break;
-                                    }
-                                    case TplType::int_: {
-                                        EXPRESSION** exp;
-                                        if (itTAo->second->bySpecialization.types)
-                                        {
+                                        case TplType::int_: {
+                                            EXPRESSION** exp;
+                                            if (itTAo->second->bySpecialization.types)
+                                            {
+                                            }
+                                            exp = &packedP->second->byNonType.val;
+                                            if (packedA->second->byNonType.val && packedP->second->byNonType.val &&
+                                                !equalTemplateMakeIntExpression(packedA->second->byNonType.val, *exp))
+                                                return false;
+                                            break;
                                         }
-                                        exp = &packedP->second->byNonType.val;
-                                        if (packedA->second->byNonType.val && packedP->second->byNonType.val &&
-                                            !equalTemplateMakeIntExpression(packedA->second->byNonType.val, *exp))
-                                            return false;
-                                        break;
+                                        default:
+                                            break;
                                     }
-                                    default:
-                                        break;
-                                    }
-
                                 }
                                 ++itTA;
                                 continue;
@@ -301,13 +301,13 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                         {
                             auto packedP = itTP->second->byPack.pack = templateParamPairListFactory.CreateList();
                             auto packedA = itTA->second->byPack.pack->begin();
-                            auto packedAe= itTA->second->byPack.pack->end();
+                            auto packedAe = itTA->second->byPack.pack->end();
                             for (; packedA != packedAe; ++packedA)
                             {
                                 auto p = Allocate<TEMPLATEPARAM>();
                                 *p = *packedA->second;
                                 p->deduced = true;
-                                packedP->push_back(TEMPLATEPARAMPAIR{ itTA->first, p });
+                                packedP->push_back(TEMPLATEPARAMPAIR{itTA->first, p});
                             }
                             itTP->second->deduced = true;
                         }
@@ -726,11 +726,11 @@ bool DeduceTemplateParam(TEMPLATEPARAMPAIR* Pt, Type* P, Type* A, EXPRESSION* ex
                     q = q->BaseType()->btp;
                 }
             }
-/*            if (TemplateConstExpr(A, exp) && !P->IsConst())
-                *tp = Type::MakeType(BasicType::const_, A);
-            else*
-            */
-                *tp = A;
+            /*            if (TemplateConstExpr(A, exp) && !P->IsConst())
+                            *tp = Type::MakeType(BasicType::const_, A);
+                        else*
+                        */
+            *tp = A;
             Pt->second->deduced = true;
         }
         return true;
@@ -856,8 +856,9 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
         if (Ab->type != Pb->type && (!Ab->IsFunction() || !Pb->IsFunction()) && Pb->type != BasicType::templateparam_ &&
             (!allowSelectors || Pb->type != BasicType::templateselector_))
             // this next allows long and int to be considered the same, on architectures where there is no size difference
-            if (!Ab->IsInt() || !Pb->IsInt() || Ab->BaseType()->type == BasicType::bool_ || Pb->BaseType()->type == BasicType::bool_ ||
-                (Ab->IsUnsigned() != Pb->IsUnsigned() && (!exp || !isintconst(exp))) || getSize(Ab->BaseType()->type) != getSize(Pb->BaseType()->type))
+            if (!Ab->IsInt() || !Pb->IsInt() || Ab->BaseType()->type == BasicType::bool_ ||
+                Pb->BaseType()->type == BasicType::bool_ || (Ab->IsUnsigned() != Pb->IsUnsigned() && (!exp || !isintconst(exp))) ||
+                getSize(Ab->BaseType()->type) != getSize(Pb->BaseType()->type))
                 return false;
         switch (Pb->type)
         {
@@ -1403,7 +1404,9 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                         {
                             tp1 = tp1->BaseType()->btp;
                         }
-                        if (tp1->IsStructured() && tp1->BaseType()->sp->templateParams && (!tp1->BaseType()->sp->sb->instantiated || tp1->BaseType()->sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
+                        if (tp1->IsStructured() && tp1->BaseType()->sp->templateParams &&
+                            (!tp1->BaseType()->sp->sb->instantiated ||
+                             tp1->BaseType()->sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
                         {
                             std::list<TEMPLATEPARAMPAIR>* params2 = tp1->BaseType()->sp->templateParams;
                             std::list<TEMPLATEPARAMPAIR>* special = params2->front().second->bySpecialization.types
@@ -1462,7 +1465,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                                 GetForwardType(nullptr, last->back().second->byClass.val, (*symArgs)->exp);
                             if (last->back().second->byClass.val->IsRef())
                             {
-                                    last->back().second->byClass.val->BaseType()->btp->BaseType()->rref = false;
+                                last->back().second->byClass.val->BaseType()->btp->BaseType()->rref = false;
                             }
                         }
                     }
@@ -1472,8 +1475,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
         else
         {
             bool rv = TemplateDeduceArgList(sym->tp->BaseType()->syms->begin(), sym->tp->BaseType()->syms->end(), templateArgs,
-                                            templateArgsEnd, symArgs, itae, sym->tp->BaseType()->type == BasicType::templateselector_,
-                                            true);
+                                            templateArgsEnd, symArgs, itae,
+                                            sym->tp->BaseType()->type == BasicType::templateselector_, true);
             for (auto sp : *sym->tp->BaseType()->syms)
             {
                 Type* tp = sp->tp;
@@ -1550,7 +1553,8 @@ SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym)
         if (s->packed)
         {
             auto tp = s->tp;
-            while (tp->IsPtr() || tp->IsRef()) tp = tp->BaseType()->btp;
+            while (tp->IsPtr() || tp->IsRef())
+                tp = tp->BaseType()->btp;
             tp = tp->BaseType();
             if (tp->type == BasicType::templateparam_)
             {
@@ -1568,11 +1572,10 @@ SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym)
             }
             else if (tp->IsStructured() && tp->sp->templateParams)
             {
-                TransferClassTemplates(nparams,nparams, tp->sp->templateParams);
+                TransferClassTemplates(nparams, nparams, tp->sp->templateParams);
             }
         }
     }
-
 
     if (TemplateParseDefaultArgs(sym, nullptr, nparams, nparams, nparams) &&
         (rv = ValidateArgsSpecified(sym->templateParams, sym, nullptr, nparams)))
@@ -1749,8 +1752,8 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Typ
     }
     else if (syml->sb->castoperator)
     {
-        which =
-            TemplatePartialDeduce(syml->tp->BaseType()->btp, symr->tp->BaseType()->btp, tpx->BaseType()->btp, tpr->BaseType()->btp, false);
+        which = TemplatePartialDeduce(syml->tp->BaseType()->btp, symr->tp->BaseType()->btp, tpx->BaseType()->btp,
+                                      tpr->BaseType()->btp, false);
     }
     else if (!syml->tp->IsFunction())
     {

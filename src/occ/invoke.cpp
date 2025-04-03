@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -41,7 +41,7 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
-#define _unlink unlink
+#    define _unlink unlink
 #else
 #    include <io.h>
 #endif
@@ -156,7 +156,8 @@ int InsertExternalFile(const char* name, bool primary)
     else
         p++;
     strcpy(buf, p);
-    InsertFile(&objlist, buf, 0, primary); // don't add an extension if we don't know what it is, let the linker deal with the file as it will
+    InsertFile(&objlist, buf, 0,
+               primary);  // don't add an extension if we don't know what it is, let the linker deal with the file as it will
 
     // compiling via assembly
     if (Optimizer::cparams.prm_asmfile && !Optimizer::cparams.prm_compileonly)
@@ -201,11 +202,11 @@ int RunExternalFiles()
     {
         if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
             rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" %s %s \"%s\"",
-                                   Optimizer::outputFileName.c_str(), asm_params ? asm_params : "",
-                                   !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
+                                       Optimizer::outputFileName.c_str(), asm_params ? asm_params : "",
+                                       !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         else
             rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"",
-                                   asm_params ? asm_params : "", !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
+                                       asm_params ? asm_params : "", !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         first = true;
         if (rv)
             return rv;
@@ -219,11 +220,11 @@ int RunExternalFiles()
     {
         if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
             rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"",
-                                   Optimizer::outputFileName.c_str(), rc_params ? rc_params : "",
-                                   !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
+                                       Optimizer::outputFileName.c_str(), rc_params ? rc_params : "",
+                                       !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         else
             rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"",
-                                   rc_params ? rc_params : "", !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
+                                       rc_params ? rc_params : "", !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         first = true;
         if (rv)
             return rv;
@@ -257,11 +258,8 @@ int RunExternalFiles()
             }
             Utils::StripExt(outName);
             strcat(outName, ".l");
-            rv = ToolChain::ToolInvoke(
-                "olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s \"%s\" +- @%s", 
-                !Optimizer::showBanner ? "-!" : "", 
-                outName,
-                tempName.c_str());
+            rv = ToolChain::ToolInvoke("olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s \"%s\" +- @%s",
+                                       !Optimizer::showBanner ? "-!" : "", outName, tempName.c_str());
         }
         else
         {
@@ -295,7 +293,7 @@ int RunExternalFiles()
                 fprintf(fil, " \"%s\"", (char*)liblist->data);
                 liblist = liblist->next;
             }
-            for (auto&&s : Utils::split(Optimizer::specifiedLibs))
+            for (auto&& s : Utils::split(Optimizer::specifiedLibs))
             {
                 fprintf(fil, " \"-l%s\"", s.c_str());
             }
@@ -306,14 +304,14 @@ int RunExternalFiles()
             else if (Optimizer::cparams.prm_crtdll)
                 fprintf(fil, " climp.l crtdll.l ");
             else if (Optimizer::cparams.prm_targettype == DOS || Optimizer::cparams.prm_targettype == DOS32A ||
-                 Optimizer::cparams.prm_targettype == RAW || Optimizer::cparams.prm_targettype == WHXDOS)
+                     Optimizer::cparams.prm_targettype == RAW || Optimizer::cparams.prm_targettype == WHXDOS)
             {
                 if (Optimizer::cparams.prm_farkeyword)
                     fprintf(fil, " farmem");
                 fprintf(fil, " cldos.l ");
             }
             else
-               fprintf(fil, " climp.l clwin.l ");
+                fprintf(fil, " climp.l clwin.l ");
             while (reslist)
             {
                 fprintf(fil, " \"%s\"", (char*)reslist->data);
@@ -337,9 +335,10 @@ int RunExternalFiles()
                 link_params ? link_params : "", Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
                 !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
                 !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "",
-                !Optimizer::prm_OutputImportLibraryFile.empty() ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str() : "",
-                (Optimizer::cparams.prm_stackprotect & HEAP_CHECK) ? "-D__HEAP_CHECK=1" : "",
-                tempName.c_str());
+                !Optimizer::prm_OutputImportLibraryFile.empty()
+                    ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str()
+                    : "",
+                (Optimizer::cparams.prm_stackprotect & HEAP_CHECK) ? "-D__HEAP_CHECK=1" : "", tempName.c_str());
         }
         _unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)
@@ -350,7 +349,7 @@ int RunExternalFiles()
         if (Optimizer::cparams.prm_targettype == WHXDOS && !Optimizer::cparams.prm_makelib)
         {
             rv = ToolChain::ToolInvoke("patchpe.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s",
-                                   Optimizer::outputFileName.c_str());
+                                       Optimizer::outputFileName.c_str());
             if (rv)
             {
                 printf("Could not spawn patchpe.exe\n");

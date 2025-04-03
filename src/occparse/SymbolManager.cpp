@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -48,7 +48,8 @@
 #include "beinterf.h"
 #include "initbackend.h"
 #include "types.h"
-namespace Parser {
+namespace Parser
+{
 const char* beDecorateSymName(SYMBOL* sym)
 {
     const char* q;
@@ -61,7 +62,8 @@ const char* beDecorateSymName(SYMBOL* sym)
         q = preProcessor->LookupAlias(sym->name);
         if (q)
             return litlate(q);
-        else if (sym->sb->compilerDeclared || sym->tp->type == BasicType::templateparam_ || sym->tp->type == BasicType::templateselector_)
+        else if (sym->sb->compilerDeclared || sym->tp->type == BasicType::templateparam_ ||
+                 sym->tp->type == BasicType::templateselector_)
         {
             return litlate(sym->name);
         }
@@ -71,7 +73,7 @@ const char* beDecorateSymName(SYMBOL* sym)
         }
     }
 }
-}
+}  // namespace Parser
 using namespace Parser;
 
 void Optimizer::SymbolManager::clear()
@@ -129,7 +131,8 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Test(struct Parser::sym* sym)
 
 Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* e)
 {
-    while (e && (e->type == ExpressionNode::lvalue_ || e->type == ExpressionNode::not__lvalue_ || e->type == ExpressionNode::x_string_ || e->type == ExpressionNode::x_object_))
+    while (e && (e->type == ExpressionNode::lvalue_ || e->type == ExpressionNode::not__lvalue_ ||
+                 e->type == ExpressionNode::x_string_ || e->type == ExpressionNode::x_object_))
         e = e->left;
     Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     rv->sizeFromType = natural_size(e);
@@ -356,7 +359,8 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(Parser::Type* tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->type != BasicType::aggregate_ && (!tp->IsFunction() || Optimizer::architecture == ARCHITECTURE_MSIL) && tp->syms && tp->syms->size() && rv->sp && !rv->sp->syms)
+        if (tp->type != BasicType::aggregate_ && (!tp->IsFunction() || Optimizer::architecture == ARCHITECTURE_MSIL) && tp->syms &&
+            tp->syms->size() && rv->sp && !rv->sp->syms)
         {
             Optimizer::LIST** p = &rv->sp->syms;
             for (auto sp : *tp->syms)
@@ -428,8 +432,8 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
 {
     Optimizer::SimpleSymbol* rv = Allocate<Optimizer::SimpleSymbol>();
     rv->name = sym->name;
-    rv->align =
-        sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(StorageClass::auto_, sym->tp->BaseType());
+    rv->align = sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign
+                                                         : getAlign(StorageClass::auto_, sym->tp->BaseType());
     rv->size = sym->tp->BaseType()->size;
     rv->importfile = sym->sb->importfile;
     if (sym->sb->parentNameSpace)
@@ -437,7 +441,8 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->i = sym->sb->value.i;
     Add(sym, rv);
     rv->storage_class = Get(sym->sb->storage_class);
-    if (!sym->tp->IsStructured() && !sym->tp->IsFunction() && sym->tp->type != BasicType::ellipse_ && sym->tp->BaseType()->type != BasicType::any_ && !sym->tp->IsDeferred())
+    if (!sym->tp->IsStructured() && !sym->tp->IsFunction() && sym->tp->type != BasicType::ellipse_ &&
+        sym->tp->BaseType()->type != BasicType::any_ && !sym->tp->IsDeferred())
         rv->sizeFromType = SizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;
@@ -457,7 +462,8 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     }
     rv->label = sym->sb->label;
     rv->tp = Get(sym->tp);
-    // normalize for middle and backend.   Not modifying the front Keyword::end_ data structures because there would be too much ripple...
+    // normalize for middle and backend.   Not modifying the front Keyword::end_ data structures because there would be too much
+    // ripple...
     if (rv->storage_class == scc_parameter && rv->tp->isarray)
     {
         rv->tp->size = getSize(BasicType::pointer_);
@@ -507,11 +513,12 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
         // and before we pack up the function we will check theCurrentFunc->sb->usesAlloca
         // we don't know any of that definitively right now.
         rv->stackProtectStrong = true;
-        Type *tp1 = sym->tp;
+        Type* tp1 = sym->tp;
         while (tp1->IsArray())
             tp1 = tp1->BaseType()->btp;
         tp1 = tp1->BaseType();
-        rv->stackProtectBasic = (tp1->type == BasicType::char_ || tp1->type == BasicType::unsigned_char_) && sym->tp->size >= STACK_PROTECT_MINIMUM_CONSIDERED;
+        rv->stackProtectBasic = (tp1->type == BasicType::char_ || tp1->type == BasicType::unsigned_char_) &&
+                                sym->tp->size >= STACK_PROTECT_MINIMUM_CONSIDERED;
     }
     return rv;
 }

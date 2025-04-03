@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <unordered_set>
@@ -61,9 +61,8 @@
 #include "crc32.h"
 namespace Parser
 {
-    SymbolTable<SYMBOL>* labelSyms;
-    std::list<NAMESPACEVALUEDATA*>* globalNameSpace, * localNameSpace, * rootNameSpace;
-
+SymbolTable<SYMBOL>* labelSyms;
+std::list<NAMESPACEVALUEDATA*>*globalNameSpace, *localNameSpace, *rootNameSpace;
 
 void namespaceinit()
 {
@@ -115,7 +114,7 @@ SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly)
     return nullptr;
 }
 static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::list<SYMBOL*>& gather, bool tagsOnly,
-                                           bool allowUsing);
+                               bool allowUsing);
 std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing)
 {
     // main namespace
@@ -152,8 +151,7 @@ std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, b
         }
     }
     // enclosing ns if this one is inline
-    if (ns->name && !ns->name->sb->visited &&
-        ns->name->sb->attribs.inheritable.linkage == Linkage::inline_)
+    if (ns->name && !ns->name->sb->visited && ns->name->sb->attribs.inheritable.linkage == Linkage::inline_)
     {
         ns->name->sb->visited = true;
         auto rv1 = tablesearchinline(name, ns->name->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
@@ -164,8 +162,7 @@ std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, b
     }
     return rv;
 }
-static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::list<SYMBOL*>& gather, bool tagsOnly,
-                                           bool allowUsing)
+static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::list<SYMBOL*>& gather, bool tagsOnly, bool allowUsing)
 {
     auto rv = tablesearchinline(name, ns, tagsOnly, allowUsing);
     if (rv.size())
@@ -189,12 +186,12 @@ static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::li
     }
     gather = rv;
 }
-static std::list<SYMBOL*> namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly,
-                                                bool allowUsing)
+static std::list<SYMBOL*> namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified,
+                                                  bool tagsOnly, bool allowUsing)
 {
     std::list<SYMBOL*> lst;
 
-    for (auto ns1 : *ns )
+    for (auto ns1 : *ns)
     {
         unvisitUsingDirectives(ns1);
         namespacesearchone(name, ns1, lst, tagsOnly, allowUsing);
@@ -229,7 +226,7 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
                 for (auto a : lst)
                 {
                     for (auto b : *a->tp->syms)
-                    { 
+                    {
                         tp->syms->AddName(b);
                     }
                 }
@@ -316,7 +313,8 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
                         if (sym)
                         {
                             // already exists, bug check it
-                            if (sym->sb->storage_class == StorageClass::namespace_alias_ && sym->sb->nameSpaceValues->front()->origname == src)
+                            if (sym->sb->storage_class == StorageClass::namespace_alias_ &&
+                                sym->sb->nameSpaceValues->front()->origname == src)
                             {
                                 if (linkage == Linkage::inline_)
                                 {
@@ -390,7 +388,7 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
     {
         error(ERR_NO_NAMESPACE_IN_FUNCTION);
     }
-    SYMBOL *sp = globalNameSpace->front()->syms->Lookup(buf);
+    SYMBOL* sp = globalNameSpace->front()->syms->Lookup(buf);
     if (!sp)
     {
         sym = makeID(StorageClass::namespace_, Type::MakeType(BasicType::void_), nullptr, litlate(buf));

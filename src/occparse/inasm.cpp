@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -636,7 +636,8 @@ static AMODE* inasm_mem(void)
                 case LexType::l_:
                 case LexType::ul_:
                     if (node)
-                        node = MakeExpression(subtract ? ExpressionNode::sub_ : ExpressionNode::add_, node, MakeIntExpression(ExpressionNode::c_i_, lex->data->value.i));
+                        node = MakeExpression(subtract ? ExpressionNode::sub_ : ExpressionNode::add_, node,
+                                              MakeIntExpression(ExpressionNode::c_i_, lex->data->value.i));
                     else if (subtract)
                         node = MakeIntExpression(ExpressionNode::c_i_, -lex->data->value.i);
                     else
@@ -797,8 +798,8 @@ static AMODE* inasm_amode(int nosegreg)
                         if (MATCHKW(lex, Keyword::openpa_))
                         {
                             inasm_getsym();
-                            if (!lex || (lex->data->type != LexType::i_ && lex->data->type != LexType::ui_) || lex->data->value.i < 0 ||
-                                lex->data->value.i > 7)
+                            if (!lex || (lex->data->type != LexType::i_ && lex->data->type != LexType::ui_) ||
+                                lex->data->value.i < 0 || lex->data->value.i > 7)
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                                 return 0;
@@ -1085,9 +1086,9 @@ static void AssembleInstruction(OCODE* ins)
 
             asmError err =
 #ifndef ORANGE_NO_INASM
-                    instructionParser->GetInstruction(&ins1, newIns, operands);
+                instructionParser->GetInstruction(&ins1, newIns, operands);
 #else
-                    AERR_SYNTAX;
+                AERR_SYNTAX;
 #endif
             Optimizer::assembling = false;
             switch (err)
@@ -1158,7 +1159,7 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
         }
         atend = AtEol();
         op = inasm_op();
-        if (op == (e_opcode) - 1)
+        if (op == (e_opcode)-1)
         {
 
             return lex;

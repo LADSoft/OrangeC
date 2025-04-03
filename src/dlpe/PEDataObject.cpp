@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <fstream>
@@ -32,10 +32,7 @@
 #include "ObjSymbol.h"
 #include <cstring>
 #include <algorithm>
-PEDataObject::PEDataObject(ObjFile* File, ObjSection* Sect) : file(File), PEObject(Sect->GetName()), sect(Sect)
-{
-    InitFlags();
-}
+PEDataObject::PEDataObject(ObjFile* File, ObjSection* Sect) : file(File), PEObject(Sect->GetName()), sect(Sect) { InitFlags(); }
 void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
     if (virtual_addr == 0)
@@ -51,17 +48,18 @@ void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     int delayLoadSize = PEImportObject::ThunkSize(name);
     if (name == ".text")
     {
-        delayLoadThunkRVA = RVA(size- delayLoadSize);
+        delayLoadThunkRVA = RVA(size - delayLoadSize);
         codeRVA = virtual_addr;
     }
     else if (name == ".data")
     {
-        delayLoadHandleRVA = RVA(size- delayLoadSize);
+        delayLoadHandleRVA = RVA(size - delayLoadSize);
     }
     raw_addr = endPhys;
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
-    data = std::shared_ptr<unsigned char>(new unsigned char[initSize + importCount * PEImportObject::ImportThunkSize + delayLoadSize]);
+    data =
+        std::shared_ptr<unsigned char>(new unsigned char[initSize + importCount * PEImportObject::ImportThunkSize + delayLoadSize]);
     std::fill(data.get(), data.get() + initSize + importCount * PEImportObject::ImportThunkSize, 0);
     if (name == ".text")
     {
@@ -123,7 +121,7 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
             if (importNames.find(sym->GetName()) != importNames.end())
             {
                 if (hasPC(fixup))
-                {                     
+                {
                     ObjInt val1 = fixup->Eval(base);
                     ObjInt val;
                     int en = sym->GetIndex();
@@ -245,7 +243,7 @@ ObjInt PEDataObject::SetImportThunk(int index, unsigned va)
     {
         unsigned char* pdata = data.get();
         unsigned offs = importThunkVA - virtual_addr - imageBase + index * PEImportObject::ImportThunkSize;
-        if (!*(short *)(pdata + offs))
+        if (!*(short*)(pdata + offs))
         {
             memcpy(pdata + offs, importThunk, PEImportObject::ImportThunkSize);
             *(unsigned*)(pdata + offs + 2) = va;

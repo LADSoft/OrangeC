@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /* we are only doing local opts on temp variables.  At this point,
@@ -140,8 +140,8 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
     SimpleType* tp;
     /* needed for pointer aliasing */
     if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr &&
-        ((sym->tp->type != st_struct &&
-        sym->tp->type != st_union) || sym->tp->structuredAlias) && sym->tp->type != st_ellipse && sym->tp->type != st_aggregate)
+        ((sym->tp->type != st_struct && sym->tp->type != st_union) || sym->tp->structuredAlias) && sym->tp->type != st_ellipse &&
+        sym->tp->type != st_aggregate)
     {
         if (sym->imaddress)
         {
@@ -173,8 +173,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
     if (!sym->pushedtotemp &&
         (!sym->addressTaken && (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) || fastcallCandidate) &&
         !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
-        (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) ||
-         sym->tp->structuredAlias ||
+        (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) || sym->tp->structuredAlias ||
          (tp->type == st_pointer && tp->btp->type != st_func) || tp->type == st_lref || tp->type == st_rref) &&
         (sym->storage_class == scc_auto || sym->storage_class == scc_register || sym->storage_class == scc_parameter) &&
         (!sym->usedasbit || fastcallCandidate) && !sym->tp->isvolatile)
@@ -187,7 +186,8 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         SimpleExpression* ep;
         if (sym->imaddress || sym->inCatch)
         {
-            ep = anonymousVar(scc_auto, sym->tp->structuredAlias ? sym->tp->structuredAlias : sym->tp);  // fastcall which takes an address
+            ep = anonymousVar(scc_auto,
+                              sym->tp->structuredAlias ? sym->tp->structuredAlias : sym->tp);  // fastcall which takes an address
         }
         else
         {

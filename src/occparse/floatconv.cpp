@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -113,7 +113,7 @@ FPF refloat(EXPRESSION* node)
 
 /*-------------------------------------------------------------------------*/
 unsigned char* make_bitint(int bits, unsigned char* array)
-{ 
+{
     bits += Optimizer::chosenAssembler->arch->bitintunderlying - 1;
     bits /= Optimizer::chosenAssembler->arch->bitintunderlying;
     bits *= Optimizer::chosenAssembler->arch->bitintunderlying;
@@ -138,17 +138,16 @@ unsigned char* make_bitint(int bits, long long val)
     return rv;
 }
 
-unsigned char* rebitint(EXPRESSION* xref, EXPRESSION* cref) 
+unsigned char* rebitint(EXPRESSION* xref, EXPRESSION* cref)
 {
     int xsz = (xref->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
     xsz /= Optimizer::chosenAssembler->arch->bitintunderlying;
-    xsz *= Optimizer::chosenAssembler->arch->bitintunderlying;    
+    xsz *= Optimizer::chosenAssembler->arch->bitintunderlying;
     xsz /= CHAR_BIT;
     switch (cref->type)
     {
         case ExpressionNode::c_bitint_:
-        case ExpressionNode::c_ubitint_:
-        {
+        case ExpressionNode::c_ubitint_: {
             int csz = (cref->v.b.bits + Optimizer::chosenAssembler->arch->bitintunderlying - 1);
             csz /= Optimizer::chosenAssembler->arch->bitintunderlying;
             csz *= Optimizer::chosenAssembler->arch->bitintunderlying;
@@ -163,8 +162,8 @@ unsigned char* rebitint(EXPRESSION* xref, EXPRESSION* cref)
                 int fill = 0;
                 if (cref->type == ExpressionNode::c_bitint_)
                 {
-                    int byte = (cref->v.b.bits-1) / 8;
-                    int bit = (cref->v.b.bits-1) % 8;
+                    int byte = (cref->v.b.bits - 1) / 8;
+                    int bit = (cref->v.b.bits - 1) % 8;
                     if (cref->v.b.value[byte] & (1 << bit))
                         fill = 0xff;
                 }
@@ -173,9 +172,8 @@ unsigned char* rebitint(EXPRESSION* xref, EXPRESSION* cref)
                 return rv;
             }
         }
-            break;
-        default:
-        {
+        break;
+        default: {
             int csz = sizeof(unsigned long long);
             unsigned long long aa = reint(cref);
             unsigned char* rv = new unsigned char[xsz];
@@ -194,12 +192,11 @@ unsigned char* rebitint(EXPRESSION* xref, EXPRESSION* cref)
                 case ExpressionNode::c_ldc_:
                 case ExpressionNode::c_fi_:
                 case ExpressionNode::c_di_:
-                case ExpressionNode::c_ldi_:
-                {   
-                    if ((aa) & ( 1ULL << (csz * CHAR_BIT - 1) ))
+                case ExpressionNode::c_ldi_: {
+                    if ((aa) & (1ULL << (csz * CHAR_BIT - 1)))
                         fill = 0xff;
                 }
-                    break;                
+                break;
             }
             memset(rv, fill, xsz);
             memcpy(rv, &aa, csz < xsz ? csz : xsz);
@@ -289,24 +286,23 @@ unsigned long long reint(EXPRESSION* node)
             break;
         case ExpressionNode::c_bitint_:
             rv = LoadBitInt(node);
-            if (rv & (1ULL << (node->bits-1)))
+            if (rv & (1ULL << (node->bits - 1)))
             {
-                long long mask = ~(( 1ULL << node->v.b.bits) - 1);
+                long long mask = ~((1ULL << node->v.b.bits) - 1);
                 rv |= mask;
             }
             else
             {
-                long long mask = ( 1ULL << node->v.b.bits) - 1;
+                long long mask = (1ULL << node->v.b.bits) - 1;
                 rv &= mask;
             }
             break;
-        case ExpressionNode::c_ubitint_:
-            {
-                rv = LoadBitInt(node);
-                long long mask = ( 1ULL << node->v.b.bits) - 1;
-                rv &= mask;
-            }
-            break;
+        case ExpressionNode::c_ubitint_: {
+            rv = LoadBitInt(node);
+            long long mask = (1ULL << node->v.b.bits) - 1;
+            rv &= mask;
+        }
+        break;
         default:
             break;
     }

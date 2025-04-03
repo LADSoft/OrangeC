@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -95,8 +95,7 @@ static char help_text[] =
     "  /MMD           - basic generation and continue, user files only\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
-static char usage_text[] =
-    "[options] [@response file] files";
+static char usage_text[] = "[options] [@response file] files";
 
 char msil_bltins[] =
     " void exit(int); "
@@ -186,7 +185,7 @@ static ARCH_SIZING alignments = {
     8,  /*char a_double;*/
     8,  /*char a_longdouble;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
-    8,                    /* char a_maxalign; */
+    8,  /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -212,7 +211,7 @@ static ARCH_SIZING locks = {
     1,                  /*char a_rcomplexpad; */
     1,                  /*char a_lrcomplexpad; */
     0,                  // char a_alignedstruct; // __attribute((__aligned__))
-    0,                    /* char a_maxalign; */
+    0,                  /* char a_maxalign; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
@@ -265,8 +264,8 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     false,             /* library functions should bes genned as import calls */
     0,                 /* Adjustment for retblock parameters */
     0,                 /* register that can be used as scratch at end of function */
-    32,            /* size of underlying type for bitint */
-    (1 << 20) - 1  /* max number of bits for bitint */
+    32,                /* size of underlying type for bitint */
+    (1 << 20) - 1      /* max number of bits for bitint */
 };
 
 static ARCH_DEBUG dbgStruct[1];

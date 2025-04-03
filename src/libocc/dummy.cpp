@@ -1,3 +1,1 @@
-void __arocc()
-{
-}
+void __arocc() {}

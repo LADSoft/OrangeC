@@ -1,6 +1,6 @@
 /*  Software License Agreement
  *  
- *      Copyright(C) 1994-2024 David Lindauer, (LADSoft)
+ *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
  *  
  *      This file is part of the Orange C Compiler package.
  *  
@@ -21,6 +21,7 @@
  *          email: TouchStone222@runbox.com <David Lindauer>
  *  
  */
+
 #pragma GCC system_header
 
 #ifndef __DIRECT_H

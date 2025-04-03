@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -180,7 +180,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                 {
                     bool errorflg = false;
                     // have to try to replicate the symbol into the current context
-                    for (auto cil = cilb ; cil != cile; ++cil )
+                    for (auto cil = cilb; cil != cile; ++cil)
                     {
                         if ((*cil)->captureMode == cmNone && !lambdas.front()->captureThis)
                         {
@@ -213,7 +213,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                         for (auto cil = cilb; cil != cile; ++cil)
                         {
                             (*cil)->captureThis = true;
-                        }                            
+                        }
                     }
                 }
                 else
@@ -235,7 +235,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                     auto current = cilb;
                     SYMBOL* sym2 = NULL;
                     LAMBDA* check;
-                    for ( ; current != cile; ++current)
+                    for (; current != cile; ++current)
                     {
                         LAMBDASP* lsp = search((*current)->captured, sym->name);
                         if (lsp)
@@ -257,7 +257,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                         auto ilt = cilb;
                         current = cilb;
                         SYMBOL* sp = nullptr;
-                        for  ( ; ++ilt != cile ; ++ current)
+                        for (; ++ilt != cile; ++current)
                         {
                             sp = search((*current)->oldSyms, sym->name);
                             if (sp)
@@ -286,7 +286,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                             }
                         }
                     }
-                    for ( ; current != cilb;)
+                    for (; current != cilb;)
                     {
                         --current;
                         // we are replicating captures through intermediate lambdas
@@ -340,7 +340,7 @@ static void cloneTemplateParams(SYMBOL* func)
     int index = 0;
     auto second = Allocate<TEMPLATEPARAM>();
     second->type = TplType::new_;
-    func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+    func->templateParams->push_back(TEMPLATEPARAMPAIR{nullptr, second});
     for (auto arg : *func->tp->BaseType()->syms)
     {
         if (!arg->sb->thisPtr)
@@ -352,7 +352,7 @@ static void cloneTemplateParams(SYMBOL* func)
             *first = *arg;
             first->sb = nullptr;
             second->type = TplType::typename_;
-            func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
+            func->templateParams->push_back(TEMPLATEPARAMPAIR{first, second});
             arg->tp->templateParam = &func->templateParams->back();
             arg->templateParams = templateParamPairListFactory.CreateList();
             arg->templateParams->push_back(func->templateParams->back());
@@ -364,7 +364,7 @@ static void convertCallToTemplate(SYMBOL* func)
     func->templateParams = templateParamPairListFactory.CreateList();
     auto second = Allocate<TEMPLATEPARAM>();
     second->type = TplType::new_;
-    func->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+    func->templateParams->push_back(TEMPLATEPARAMPAIR{nullptr, second});
 
     if (lambdas.front()->functp->IsAutoType())
         func->tp->BaseType()->btp = &stdauto;  // convert return type back to auto
@@ -379,7 +379,7 @@ static void convertCallToTemplate(SYMBOL* func)
             first->sb = nullptr;
             second->type = TplType::typename_;
             second->index = index++;
-            func->templateParams->push_back(TEMPLATEPARAMPAIR{ first, second });
+            func->templateParams->push_back(TEMPLATEPARAMPAIR{first, second});
             arg->tp = Type::MakeType(BasicType::templateparam_);
             arg->tp->templateParam = &func->templateParams->back();
         }
@@ -397,7 +397,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     Type* args = cloneFuncType(lambdas.front()->func);
     SYMBOL* func = makeID(StorageClass::static_, args, NULL, "___ptrcall");
     FunctionBlock bd1 = {}, bd2 = {};
-    std::list<FunctionBlock*> block1{ &bd1 }, block2{ &bd2 };
+    std::list<FunctionBlock*> block1{&bd1}, block2{&bd2};
     Statement* st;
     args->BaseType()->sp = func;
     args->BaseType()->btp = lambdas.front()->func->tp->BaseType()->btp;
@@ -408,8 +408,9 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     func->sb->access = AccessLevel::private_;
 
     insertFunc(lambdas.front()->cls, func);
-    func->tp->syms->remove(func->tp->syms->begin()); // elide this pointer
-    st = Statement::MakeStatement(NULL, block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
+    func->tp->syms->remove(func->tp->syms->begin());  // elide this pointer
+    st = Statement::MakeStatement(
+        NULL, block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
     st->select = MakeExpression(params);
     st->select = MakeExpression(ExpressionNode::thisref_, st->select);
 
@@ -485,9 +486,10 @@ static void createConverter(SYMBOL* self)
 {
     SYMBOL* caller = createPtrToCaller(self);
     Type* args = cloneFuncType(lambdas.front()->func);
-    SYMBOL* func = makeID(StorageClass::member_, Type::MakeType(BasicType::func_, Type::MakeType(BasicType::pointer_, args)), NULL, overloadNameTab[CI_CAST]);
+    SYMBOL* func = makeID(StorageClass::member_, Type::MakeType(BasicType::func_, Type::MakeType(BasicType::pointer_, args)), NULL,
+                          overloadNameTab[CI_CAST]);
     FunctionBlock bd1 = {}, bd2 = {};
-    std::list<FunctionBlock*> block1{ &bd1 }, block2{ &bd2 };
+    std::list<FunctionBlock*> block1{&bd1}, block2{&bd2};
     Statement* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(StorageClass::parameter_, &stdvoid, NULL, AnonymousName());
@@ -621,8 +623,8 @@ static EXPRESSION* createLambda(bool noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
     EXPRESSION *clsThs, *parentThs;
-    SYMBOL* cls = makeID(lambdas.front()->enclosingFunc ? StorageClass::auto_ : StorageClass::localstatic_, lambdas.front()->cls->tp, NULL,
-                         lambdas.front()->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
+    SYMBOL* cls = makeID(lambdas.front()->enclosingFunc ? StorageClass::auto_ : StorageClass::localstatic_,
+                         lambdas.front()->cls->tp, NULL, lambdas.front()->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
     SetLinkerNames(cls, Linkage::cdecl_);
     cls->sb->allocate = true;
     cls->sb->assigned = true;
@@ -634,8 +636,8 @@ static EXPRESSION* createLambda(bool noinline)
     else
     {
         globalNameSpace->front()->syms->Add(cls);  // well if we could put this as an auto in the init func that would be good
-                                                        // but there is no way to do that here...
-        clsThs = MakeExpression(ExpressionNode::global_, cls);               // this ptr
+                                                   // but there is no way to do that here...
+        clsThs = MakeExpression(ExpressionNode::global_, cls);  // this ptr
         cls->sb->label = Optimizer::nextLabel++;
         insertInitSym(cls);
     }
@@ -656,7 +658,8 @@ static EXPRESSION* createLambda(bool noinline)
         }
     }
     if (lambdas.front()->enclosingFunc)
-        parentThs = MakeExpression(ExpressionNode::auto_, (SYMBOL*)lambdas.front()->enclosingFunc->tp->BaseType()->syms->front());  // this ptr
+        parentThs = MakeExpression(ExpressionNode::auto_,
+                                   (SYMBOL*)lambdas.front()->enclosingFunc->tp->BaseType()->syms->front());  // this ptr
     else
         parentThs = nullptr;
     auto thisByVal = lambdas.size() == 2 && lambdas.back()->thisByVal;
@@ -800,7 +803,7 @@ static EXPRESSION* createLambda(bool noinline)
             *cur = MakeExpression(ExpressionNode::comma_, en);
             cur = &(*cur)->right;
         }
-    } 
+    }
     *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
@@ -808,7 +811,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
 {
     auto declline = lines;
     LAMBDA* self;
-    SYMBOL *vpl;
+    SYMBOL* vpl;
     SYMLIST* hrl;
     Type* ltp;
     if (funcsp)
@@ -844,7 +847,8 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
         ++itx;
         self->lthis = (*itx)->lthis;
     }
-    else if (funcsp && funcsp->sb->parentClass && (funcsp->sb->storage_class == StorageClass::member_ || funcsp->sb->storage_class == StorageClass::virtual_))
+    else if (funcsp && funcsp->sb->parentClass &&
+             (funcsp->sb->storage_class == StorageClass::member_ || funcsp->sb->storage_class == StorageClass::virtual_))
     {
         self->lthis = ((SYMBOL*)funcsp->tp->BaseType()->syms->front())->tp->BaseType()->btp->BaseType()->sp;
     }
@@ -991,12 +995,14 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                             }
                             if (sp->packed)
                             {
-                                int n = sp->tp->templateParam->second->byPack.pack ? sp->tp->templateParam->second->byPack.pack->size() : 0;
+                                int n = sp->tp->templateParam->second->byPack.pack
+                                            ? sp->tp->templateParam->second->byPack.pack->size()
+                                            : 0;
                                 auto it = funcsp->tp->syms->begin();
-                                auto ite= funcsp->tp->syms->end();
+                                auto ite = funcsp->tp->syms->end();
                                 while (it != ite && *it != sp)
                                     ++it;
-                                for ( ; it != ite && n; n--, ++it)
+                                for (; it != ite && n; n--, ++it)
                                     lambda_capture(*it, localMode, true);
                             }
                             else
@@ -1113,7 +1119,9 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
             if (lambdas.front()->enclosingFunc)
             {
                 auto ths =
-                    makeID(StorageClass::member_, lambda_type(lambdas.front()->enclosingFunc->tp->BaseType()->syms->front()->tp->BaseType()->btp, cmValue), NULL, "*this");
+                    makeID(StorageClass::member_,
+                           lambda_type(lambdas.front()->enclosingFunc->tp->BaseType()->syms->front()->tp->BaseType()->btp, cmValue),
+                           NULL, "*this");
                 SetLinkerNames(ths, Linkage::cdecl_);
                 lambda_insert(ths, lambdas.front());
             }
@@ -1123,7 +1131,6 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
             auto ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
             SetLinkerNames(ths, Linkage::cdecl_);
             lambda_insert(ths, lambdas.front());
-
         }
     }
     else

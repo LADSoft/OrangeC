@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -78,14 +78,18 @@ struct ptrint
 };
 #pragma pack()
 
-static std::unordered_map < ptrint*, ALIASADDRESS*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
-    OrangeC::Utils::bin_eql<sizeof(ptrint)>> addresses;
+static std::unordered_map<ptrint*, ALIASADDRESS*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
+                          OrangeC::Utils::bin_eql<sizeof(ptrint)>>
+    addresses;
 static std::unordered_map<IMODE**, std::list<ALIASNAME*>, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>,
-    OrangeC::Utils::bin_eql<sizeof(IMODE*)>> mem;
+                          OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
+    mem;
 static std::unordered_map<ptrint*, UIVHash*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
-                          OrangeC::Utils::bin_eql<sizeof(ptrint)>> names;
+                          OrangeC::Utils::bin_eql<sizeof(ptrint)>>
+    names;
 static std::unordered_map<ALIASNAME**, ADDRBYNAME*, OrangeC::Utils::fnv1a32_binary<sizeof(ALIASNAME*)>,
-                          OrangeC::Utils::bin_eql<sizeof(ALIASNAME*)>> addrNames;
+                          OrangeC::Utils::bin_eql<sizeof(ALIASNAME*)>>
+    addrNames;
 static void ResetProcessed(void);
 static void GatherInds(BITINT* p, int n, ALIASLIST* al);
 void AliasInit(void)
@@ -224,8 +228,7 @@ static ALIASNAME* LookupMem(IMODE* im)
     {
         for (auto p : it->second)
         {
-            if ((p->byUIV == false && p->v.name == im) ||
-                (p->byUIV == true && p->v.uiv->im == im && p->v.uiv->offset == nullptr))
+            if ((p->byUIV == false && p->v.name == im) || (p->byUIV == true && p->v.uiv->im == im && p->v.uiv->offset == nullptr))
             {
                 return p;
             }
@@ -664,7 +667,8 @@ static void HandleAssn(QUAD* head)
             }
         }
     }
-    else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->dc.left->mode == i_direct && head->dc.left->offset->type == se_global)
+    else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->dc.left->mode == i_direct &&
+             head->dc.left->offset->type == se_global)
     {
         // mem, temp
         ALIASLIST* al;
@@ -674,7 +678,7 @@ static void HandleAssn(QUAD* head)
         aa = LookupAddress(an, 0);
         al = Allocate<ALIASLIST>();
         al->address = aa;
-        AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);        
+        AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
     }
 }
 static int InferOffset(IMODE* im)
@@ -859,7 +863,8 @@ static void HandleAdd(QUAD* head)
             }
             else if (head->dc.right->mode == i_immed)
             {
-                if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != se_labcon && head->dc.left->offset->type != se_pc)
+                if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != se_labcon &&
+                    head->dc.left->offset->type != se_pc)
                 {
                     // p + C
                     ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
@@ -868,7 +873,8 @@ static void HandleAdd(QUAD* head)
                     al->address = aa;
                     AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
                 }
-                else if (!isintconst(head->dc.right->offset) && head->dc.right->offset->type != se_labcon && head->dc.right->offset->type != se_pc )
+                else if (!isintconst(head->dc.right->offset) && head->dc.right->offset->type != se_labcon &&
+                         head->dc.right->offset->type != se_pc)
                 {
                     // C + p
                     ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
@@ -1075,7 +1081,7 @@ static void AliasesOneBlock(Block* b)
         head = head->fwd;
     }
 }
-static void GatherAliases(Block *b)
+static void GatherAliases(Block* b)
 {
     AliasesOneBlock(b);
     for (auto d = b->dominates; d; d = d->next)
@@ -1465,7 +1471,7 @@ void FinishScanUIVs()
         }
         al = al->next;
     }
-}    
+}
 static void MakeAliasLists(void)
 {
     int i;
@@ -1570,7 +1576,7 @@ void AliasPass1(void)
     do
     {
         changed = false;
-        GatherAliases(loopArray[loopCount-1]);
+        GatherAliases(loopArray[loopCount - 1]);
     } while (changed);
 }
 void AliasPass2(void)

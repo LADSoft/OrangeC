@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -59,7 +59,7 @@
 #include "config.h"
 #include "constexpr.h"
 #ifndef ORANGE_NO_INASM
-#include "AsmLexer.h"
+#    include "AsmLexer.h"
 #endif
 #include "namespace.h"
 #include "symtab.h"
@@ -86,7 +86,6 @@ namespace Parser
 int argumentNesting;
 int inAssignRHS;
 
-
 std::list<SYMBOL*> importThunks;
 static SYMBOL* msilToString;
 
@@ -102,13 +101,8 @@ static LexList* expression_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp
 LexList* expression_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 static LexList* expression_msilfunc(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
 
-std::unordered_map<std::string, unsigned, StringHash> cattributes = { 
- {"deprecated" , 202311},
- {"fallthrough" , 202311},
- {"nodiscard" , 202311},
- {"noreturn" , 202311},
- {"maybe_unused" , 202311}
-};
+std::unordered_map<std::string, unsigned, StringHash> cattributes = {
+    {"deprecated", 202311}, {"fallthrough", 202311}, {"nodiscard", 202311}, {"noreturn", 202311}, {"maybe_unused", 202311}};
 
 void expr_init(void)
 {
@@ -365,7 +359,8 @@ void ValidateMSILFuncPtr(Type* dest, Type* src, EXPRESSION** exp)
     if (dest->IsFunction())
     {
         // function arg or assignment to function constant
-        managedDest = dest->BaseType()->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(dest->BaseType()->sp);
+        managedDest =
+            dest->BaseType()->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(dest->BaseType()->sp);
     }
     else if (dest->IsFunctionPtr())
     {
@@ -508,7 +503,8 @@ static bool inreg(EXPRESSION* exp, bool first)
     {
         return exp->v.sp->sb->storage_class == StorageClass::register_;
     }
-    else if (exp->type == ExpressionNode::add_ || exp->type == ExpressionNode::arrayadd_ || exp->type == ExpressionNode::arraymul_ || exp->type == ExpressionNode::lsh_ ||
+    else if (exp->type == ExpressionNode::add_ || exp->type == ExpressionNode::arrayadd_ ||
+             exp->type == ExpressionNode::arraymul_ || exp->type == ExpressionNode::lsh_ ||
              exp->type == ExpressionNode::structadd_ || exp->type == ExpressionNode::arraylsh_)
         return inreg(exp->left, first) || inreg(exp->right, first);
     else
@@ -579,7 +575,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             default:
                 break;
         }
-        if (sym->sb && sym->sb->templateLevel && !sym->tp->IsFunction() && sym->sb->storage_class != StorageClass::type_ && !ismember(sym))
+        if (sym->sb && sym->sb->templateLevel && !sym->tp->IsFunction() && sym->sb->storage_class != StorageClass::type_ &&
+            !ismember(sym))
         {
             if (MATCHKW(lex, Keyword::lt_))
             {
@@ -601,7 +598,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                     }
                 }
                 if (!deferred || unpackingTemplate)
-                {   
+                {
                     sp1 = GetVariableTemplate(sp1, lst);
                     if (sp1)
                     {
@@ -615,7 +612,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 }
                 else
                 {
-                    // set up for unpacking... 
+                    // set up for unpacking...
                     sp1 = CopySymbolfalse(sym);
                     sp1->templateParams = lst;
                     sym = sp1;
@@ -726,10 +723,11 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             if (sym->tp->BaseType()->type == BasicType::templateparam_)
             {
 
-                if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) || sym->tp->BaseType()->templateParam->second->type == TplType::int_) &&
+                if (((sym->sb && sym->sb->storage_class == StorageClass::parameter_) ||
+                     sym->tp->BaseType()->templateParam->second->type == TplType::int_) &&
                     sym->tp->BaseType()->templateParam->second->packed)
                 {
-                    if (unpackingTemplate && ! sym->tp->BaseType()->templateParam->second->resolved)
+                    if (unpackingTemplate && !sym->tp->BaseType()->templateParam->second->resolved)
                     {
                         auto tpl = LookupPackedInstance(*sym->tp->BaseType()->templateParam);
                         if (tpl)
@@ -813,7 +811,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         break;
                     case StorageClass::alias_:
                         *exp = sym->sb->init->front()->exp;
-                        *exp = MakeExpression(ExpressionNode::add_, *exp, MakeIntExpression(ExpressionNode::c_i_, sym->sb->init->front()->offset));
+                        *exp = MakeExpression(ExpressionNode::add_, *exp,
+                                              MakeIntExpression(ExpressionNode::c_i_, sym->sb->init->front()->offset));
                         break;
                     case StorageClass::type_:
                     case StorageClass::typedef_:
@@ -823,8 +822,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         if (!*exp)
                             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                         return lex;
-                    case StorageClass::overloads_:
-                    {
+                    case StorageClass::overloads_: {
                         funcparams = Allocate<CallSite>();
                         if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::lt_))
                         {
@@ -869,7 +867,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                     case StorageClass::catchvar_:
                         makeXCTab(funcsp);
                         *exp = MakeExpression(ExpressionNode::auto_, funcsp->sb->xc->xctab);
-                        *exp = MakeExpression(ExpressionNode::add_, *exp, MakeIntExpression(ExpressionNode::c_i_, XCTAB_INSTANCE_OFS));
+                        *exp =
+                            MakeExpression(ExpressionNode::add_, *exp, MakeIntExpression(ExpressionNode::c_i_, XCTAB_INSTANCE_OFS));
                         Dereference(&stdpointer, exp);
                         break;
                     case StorageClass::enumconstant_:
@@ -880,17 +879,17 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         break;
                     case StorageClass::auto_:
                     case StorageClass::register_: /* register variables are treated as
-                                       * auto variables in this compiler
-                                       * of course the usage restraints of the
-                                       * register keyword are enforced elsewhere
-                                       */
+                                                   * auto variables in this compiler
+                                                   * of course the usage restraints of the
+                                                   * register keyword are enforced elsewhere
+                                                   */
                         if (((*exp) = GetConstMakeExpression(sym)))
                             break;
                         if (sym->sb->anonymousGlobalUnion)
                             sym = localAnonymousUnions[sym->sb->label];
                         *exp = MakeExpression(ExpressionNode::auto_, sym);
                         sym->sb->anyTry |= tryLevel != 0;
-                        SetRuntimeData(lex, *exp, sym);              
+                        SetRuntimeData(lex, *exp, sym);
                         break;
                     case StorageClass::parameter_:
                         if (sym->packed)
@@ -966,7 +965,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                             else
                             {
                                 AddPackedEntityToSequence(sym, nullptr);
-                                 *exp = MakeExpression(ExpressionNode::auto_, sym);
+                                *exp = MakeExpression(ExpressionNode::auto_, sym);
                             }
                         }
                         else
@@ -990,8 +989,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         {
                             if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
                             {
-                                funcsp->sb->attribs.inheritable.isInline =
-                                    funcsp->sb->promotedToInline = false;
+                                funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
                             }
                         }
                         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
@@ -1129,8 +1127,9 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 if (sym->sb && sym->sb->storage_class != StorageClass::overloads_)
                 {
                     if (!(*tp)->IsStructured() && (*tp)->BaseType()->type != BasicType::memberptr_ && !(*tp)->IsFunction() &&
-                        sym->sb->storage_class != StorageClass::constant_ && sym->sb->storage_class != StorageClass::enumconstant_ &&
-                        sym->tp->type != BasicType::void_ && (*exp)->type != ExpressionNode::const_)
+                        sym->sb->storage_class != StorageClass::constant_ &&
+                        sym->sb->storage_class != StorageClass::enumconstant_ && sym->tp->type != BasicType::void_ &&
+                        (*exp)->type != ExpressionNode::const_)
                     {
                         if (!(*tp)->array || (*tp)->vla || (!(*tp)->msil && sym->sb->storage_class == StorageClass::parameter_))
                             if ((*tp)->vla)
@@ -1166,7 +1165,6 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 if (!isref)
                     qualifyForFunc(funcsp, tp, *ismutable);
             }
-
         }
     }
     else if (parsingPreprocessorConstant)
@@ -1181,7 +1179,10 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
         if (strSym && strSym->tp->type == BasicType::templateselector_)
         {
             SYMBOL* sym = (*strSym->tp->BaseType()->sp->sb->templateSelector)[1].sp;
-            if ((!definingTemplate || instantiatingTemplate) && (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) && (!sym->sb->templateLevel || allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
+            if ((!definingTemplate || instantiatingTemplate) &&
+                (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) &&
+                 (!sym->sb->templateLevel ||
+                  allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
             {
                 errorNotMember(sym, nsv ? nsv->front() : nullptr, ISID(lex) ? lex->data->value.s.a : "__unknown");
             }
@@ -1240,7 +1241,8 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
             if (sym->sb->storage_class != StorageClass::overloads_)
             {
                 InsertSymbol(sym, sym->sb->storage_class, Linkage::none_, false);
-                *exp = MakeExpression(sym->sb->storage_class == StorageClass::auto_ ? ExpressionNode::auto_ : ExpressionNode::global_, sym);
+                *exp = MakeExpression(
+                    sym->sb->storage_class == StorageClass::auto_ ? ExpressionNode::auto_ : ExpressionNode::global_, sym);
             }
             else
             {
@@ -1412,12 +1414,14 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         bool notype = false;
         Type* tp1 = nullptr;
         lex = getsym();
-        tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr, false);
+        tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3,
+                                           AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false,
+                                           nullptr, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
         }
-        else 
+        else
         {
             tp1->InstantiateDeferred();
             if (!(*tp)->CompatibleType(tp1))
@@ -1460,7 +1464,9 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             bool defd = false;
             bool notype = false;
             Type* tp1 = nullptr;
-            tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr, false);
+            tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2,
+                                               &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false,
+                                               true, false, nullptr, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1484,8 +1490,9 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 {
                     lex = getsym();
                     tp1 = nullptr;
-                    tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false, nullptr,
-                                       false);
+                    tp1 = TypeGenerator::UnadornedType(lex, funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2,
+                                                       &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr,
+                                                       false, true, false, nullptr, false);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
@@ -1624,7 +1631,8 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                         {
                             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                             lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
-                            if (!exactMatchOnTemplateArgs(lst, sp2->sb->parentClass->templateParams->front().second->bySpecialization.types))
+                            if (!exactMatchOnTemplateArgs(
+                                    lst, sp2->sb->parentClass->templateParams->front().second->bySpecialization.types))
                                 error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
                         }
                         else if (isTemplate)
@@ -1732,7 +1740,8 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                     }
                     else
                     {
-                        if (typein->IsStructured() && !typein->lref && !typein->rref && !(flags & _F_AMPERSAND) && typein->BaseType()->sp->sb->structuredAliasType)
+                        if (typein->IsStructured() && !typein->lref && !typein->rref && !(flags & _F_AMPERSAND) &&
+                            typein->BaseType()->sp->sb->structuredAliasType)
                         {
                             structuredAlias = true;
                             // use it as-is
@@ -1744,12 +1753,13 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                             {
                                 if (isconstzero(*tp, *exp))
                                 {
-                                   offset = MakeIntExpression(ExpressionNode::c_i_, sp2->sb->offset);
+                                    offset = MakeIntExpression(ExpressionNode::c_i_, sp2->sb->offset);
                                 }
                                 else
                                 {
-                                    offset = MakeExpression(ExpressionNode::structelem_, sp2);  // prepare for the MSIL ldflda instruction
-				}
+                                    offset = MakeExpression(ExpressionNode::structelem_,
+                                                            sp2);  // prepare for the MSIL ldflda instruction
+                                }
                             }
                             else
                                 offset = MakeIntExpression(ExpressionNode::c_i_, sp2->sb->offset);
@@ -1803,7 +1813,8 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                             (*exp)->lockOffset = basetp->size - ATOMIC_FLAG_SPACE - sp2->sb->offset;
                     }
                 }
-                if (!points && ((*exp)->type == ExpressionNode::not__lvalue_ || (*exp)->type == ExpressionNode::callsite_ || (*exp)->type == ExpressionNode::comma_))
+                if (!points && ((*exp)->type == ExpressionNode::not__lvalue_ || (*exp)->type == ExpressionNode::callsite_ ||
+                                (*exp)->type == ExpressionNode::comma_))
                     if (ISKW(lex) && lex->data->kw->key >= Keyword::assign_ && lex->data->kw->key <= Keyword::asxor_)
                         error(ERR_LVALUE);
             }
@@ -1817,8 +1828,8 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
     if (tp->type == BasicType::aggregate_)
     {
         auto sp = tp->syms->front();
-        if (memberptr && sp->sb->parentClass && sp->sb->storage_class != StorageClass::static_ && sp->sb->storage_class != StorageClass::global_ &&
-            sp->sb->storage_class != StorageClass::external_)
+        if (memberptr && sp->sb->parentClass && sp->sb->storage_class != StorageClass::static_ &&
+            sp->sb->storage_class != StorageClass::global_ && sp->sb->storage_class != StorageClass::external_)
         {
             EXPRESSION* rv;
             tp1 = Type::MakeType(BasicType::memberptr_, sp->tp);
@@ -1851,7 +1862,7 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
                 }
             }
             *exp = MakeExpression(ExpressionNode::pc_, sp);
-            tp1 = Type::MakeType(BasicType::pointer_, sp->tp);            
+            tp1 = Type::MakeType(BasicType::pointer_, sp->tp);
         }
         auto it = tp->syms->begin();
         for (++it; it != tp->syms->end(); ++it)
@@ -1869,9 +1880,11 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
 static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
 {
     /* sizeof operators will already be present */
-    if (in->type == ExpressionNode::add_ && in->right->type == ExpressionNode::umul_ && in->right->right->type == ExpressionNode::sizeof_)
+    if (in->type == ExpressionNode::add_ && in->right->type == ExpressionNode::umul_ &&
+        in->right->right->type == ExpressionNode::sizeof_)
     {
-        if (in->left->type == ExpressionNode::add_ && in->left->right->type == ExpressionNode::umul_ && in->left->right->right->type == ExpressionNode::sizeof_)
+        if (in->left->type == ExpressionNode::add_ && in->left->right->type == ExpressionNode::umul_ &&
+            in->left->right->right->type == ExpressionNode::sizeof_)
         {
             if (in->right->right->left->v.tp->SameType(in->left->right->right->left->v.tp))
             {
@@ -1909,8 +1922,9 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
         {
             LookupSingleAggregate(tp2, &expr2);
             if (((*tp)->IsStructuredMath(tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
-                ( FindOperatorFunction(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags) ||
-                  (Optimizer::architecture != ARCHITECTURE_MSIL && castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false))))
+                (FindOperatorFunction(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags) ||
+                 (Optimizer::architecture != ARCHITECTURE_MSIL &&
+                  castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false))))
             {
             }
             else if ((*tp)->IsVoid() || tp2->IsVoid() || (*tp)->type == BasicType::aggregate_ || (*tp)->IsMsil() || tp2->IsMsil())
@@ -1976,7 +1990,8 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     int soa = getSize(BasicType::pointer_);
                     int sou = getSize(BasicType::unsigned_);
                     EXPRESSION* vlanode = MakeExpression(ExpressionNode::auto_, (*tp)->sp);
-                    EXPRESSION* exp1 = MakeExpression(ExpressionNode::add_, vlanode, MakeIntExpression(ExpressionNode::c_i_, soa + sou * (1 + (*tp)->vlaindex)));
+                    EXPRESSION* exp1 = MakeExpression(ExpressionNode::add_, vlanode,
+                                                      MakeIntExpression(ExpressionNode::c_i_, soa + sou * (1 + (*tp)->vlaindex)));
                     Dereference(&stdint, &exp1);
                     cast(&stdpointer, &expr2);
                     exp1 = MakeExpression(ExpressionNode::umul_, exp1, expr2);
@@ -2015,11 +2030,15 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     }
                     expr2 = *exp;
                     *exp = MakeExpression(ExpressionNode::add_, *exp, exp1);
-                
-                    if (!inConstantExpression && expr2->type == ExpressionNode::auto_ && expr2->v.sp->sb->constexpression && !expr2->v.sp->sb->indecltable)
+
+                    if (!inConstantExpression && expr2->type == ExpressionNode::auto_ && expr2->v.sp->sb->constexpression &&
+                        !expr2->v.sp->sb->indecltable)
                     {
                         expr2->v.sp->sb->indecltable = true;
-                        *exp = MakeExpression(ExpressionNode::comma_, ConverInitializersToExpression(expr2->v.sp->tp, expr2->v.sp, nullptr, funcsp, expr2->v.sp->sb->init, nullptr, false), *exp);
+                        *exp = MakeExpression(ExpressionNode::comma_,
+                                              ConverInitializersToExpression(expr2->v.sp->tp, expr2->v.sp, nullptr, funcsp,
+                                                                             expr2->v.sp->sb->init, nullptr, false),
+                                              *exp);
                     }
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
@@ -2043,7 +2062,8 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     int soa = getSize(BasicType::pointer_);
                     int sou = getSize(BasicType::unsigned_);
                     EXPRESSION* vlanode = MakeExpression(ExpressionNode::auto_, tp2->sp);
-                    expr2 = MakeExpression(ExpressionNode::add_, expr2, MakeIntExpression(ExpressionNode::c_i_, soa + sou * (1 + tp2->vlaindex)));
+                    expr2 = MakeExpression(ExpressionNode::add_, expr2,
+                                           MakeIntExpression(ExpressionNode::c_i_, soa + sou * (1 + tp2->vlaindex)));
                     Dereference(&stdint, exp);
                     *exp = MakeExpression(ExpressionNode::umul_, expr2, *exp);
                     Dereference(&stdpointer, &vlanode);
@@ -2080,10 +2100,14 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                         exp1 = MakeExpression(ExpressionNode::umul_, *exp, MakeIntExpression(ExpressionNode::c_i_, (*tp)->size));
                     }
                     *exp = MakeExpression(ExpressionNode::add_, expr2, exp1);
-                    if (!inConstantExpression && expr2->type == ExpressionNode::auto_ && expr2->v.sp->sb->constexpression && !expr2->v.sp->sb->indecltable && expr2->v.sp->sb->init)
+                    if (!inConstantExpression && expr2->type == ExpressionNode::auto_ && expr2->v.sp->sb->constexpression &&
+                        !expr2->v.sp->sb->indecltable && expr2->v.sp->sb->init)
                     {
                         expr2->v.sp->sb->indecltable = true;
-                        *exp = MakeExpression(ExpressionNode::comma_, ConverInitializersToExpression(expr2->v.sp->tp, expr2->v.sp, nullptr, funcsp, expr2->v.sp->sb->init, nullptr, false), *exp);
+                        *exp = MakeExpression(ExpressionNode::comma_,
+                                              ConverInitializersToExpression(expr2->v.sp->tp, expr2->v.sp, nullptr, funcsp,
+                                                                             expr2->v.sp->sb->init, nullptr, false),
+                                              *exp);
                     }
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
@@ -2117,7 +2141,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
         itp = params->arguments->begin();
         itpe = params->arguments->end();
     }
-    
+
     bool matching = true;
     bool tooshort = false;
     bool toolong = false;
@@ -2247,12 +2271,14 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                                 {
                                     if (decl->tp->BaseType()->type == BasicType::object_)
                                     {
-                                        if (!(*itp)->tp->IsStructured() && (!(*itp)->tp->IsArray() || !(*itp)->tp->BaseType()->msil))
+                                        if (!(*itp)->tp->IsStructured() &&
+                                            (!(*itp)->tp->IsArray() || !(*itp)->tp->BaseType()->msil))
                                         {
                                             (*itp)->exp = MakeExpression(ExpressionNode::x_object_, (*itp)->exp);
                                         }
                                     }
-                                    else if ((!(*itp)->tp->IsBitInt() && !(*itp)->tp->IsInt()) || (!decl->tp->IsBitInt() && !decl->tp->IsInt()))
+                                    else if ((!(*itp)->tp->IsBitInt() && !(*itp)->tp->IsInt()) ||
+                                             (!decl->tp->IsBitInt() && !decl->tp->IsInt()))
                                         if (decl->tp->BaseType()->type != BasicType::memberptr_)
                                             errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                                 }
@@ -2262,7 +2288,8 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                                     SYMBOL* derived = (*itp)->tp->BaseType()->sp;
                                     if (base != derived && classRefCount(base, derived) != 1)
                                         errorConversionOrCast(true, (*itp)->tp, decl->tp);
-                                    if (base != derived && !isAccessible(derived, derived, base, funcsp, AccessLevel::public_, false))
+                                    if (base != derived &&
+                                        !isAccessible(derived, derived, base, funcsp, AccessLevel::public_, false))
                                         errorsym(ERR_CANNOT_ACCESS, base);
                                 }
                                 else if (!isconstzero((*itp)->tp, (*itp)->exp))
@@ -2277,12 +2304,13 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                             }
                             else if (decl->tp->IsPtr())
                             {
-                                if (!(*itp)->tp->IsPtr() && (!isarithmeticconst((*itp)->exp) || !isconstzero(decl->tp, (*itp)->exp)))
+                                if (!(*itp)->tp->IsPtr() &&
+                                    (!isarithmeticconst((*itp)->exp) || !isconstzero(decl->tp, (*itp)->exp)))
                                 {
                                     if (!(*itp)->tp->IsFunction() ||
                                         (!decl->tp->IsVoidPtr() &&
                                          (!decl->tp->IsFunctionPtr() || (Optimizer::cparams.prm_cplusplus &&
-                                                                   !decl->tp->BaseType()->btp->CompatibleType((*itp)->tp)))))
+                                                                         !decl->tp->BaseType()->btp->CompatibleType((*itp)->tp)))))
                                         errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                                 }
                                 else if (!decl->tp->CompatibleType((*itp)->tp))
@@ -2362,7 +2390,8 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                         ((*itp)->exp->type != ExpressionNode::auto_ || !(*itp)->exp->v.sp->sb->va_typeof) && !params->vararg)
                         cast(&stdint, &(*itp)->exp);
                 }
-                if (dest && itp != itpe && (*itp)->tp && dest->BaseType()->type != BasicType::memberptr_ && !dest->CompatibleType((*itp)->tp))
+                if (dest && itp != itpe && (*itp)->tp && dest->BaseType()->type != BasicType::memberptr_ &&
+                    !dest->CompatibleType((*itp)->tp))
                 {
                     if ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                         (!dest->IsStructured() && (!dest->IsArray() || !dest->BaseType()->msil)))
@@ -2417,8 +2446,8 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
     }
 }
-static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting, bool allowPack,
-                                bool toErr, int flags)
+static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting,
+                                bool allowPack, bool toErr, int flags)
 {
     *lptr = argumentListFactory.CreateList();
     lex = getsym(); /* past ( */
@@ -2468,10 +2497,10 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
             }
             if (p->tp)
             {
-                if (p->exp && p->exp->type == ExpressionNode::callsite_ && p->exp->v.func->sp->sb->parentClass && !p->exp->v.func->ascall &&
-                    !p->exp->v.func->asaddress && p->exp->v.func->functp)
+                if (p->exp && p->exp->type == ExpressionNode::callsite_ && p->exp->v.func->sp->sb->parentClass &&
+                    !p->exp->v.func->ascall && !p->exp->v.func->asaddress && p->exp->v.func->functp)
                 {
-                    for (auto sym: *p->exp->v.func->functp->BaseType()->syms)
+                    for (auto sym : *p->exp->v.func->functp->BaseType()->syms)
                     {
                         if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
                         {
@@ -2488,7 +2517,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                     {
                         (*lptr)->push_back(p);
                     }
-                    else if (p->exp && p->exp->type != ExpressionNode::packedempty_)// && p->tp->type != BasicType::any_)
+                    else if (p->exp && p->exp->type != ExpressionNode::packedempty_)  // && p->tp->type != BasicType::any_)
                     {
                         if (!p->tp->IsStructured() && !p->tp->templateParam && p->tp->type != BasicType::any_)
                             checkPackedExpression(p->exp);
@@ -2500,8 +2529,8 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                 }
                 else
                 {
-// fixme            if (toErr && argumentNesting <= 1)
-//                        checkUnpackedExpression(p->exp);
+                    // fixme            if (toErr && argumentNesting <= 1)
+                    //                        checkUnpackedExpression(p->exp);
                     (*lptr)->push_back(p);
                 }
             }
@@ -2794,10 +2823,10 @@ static bool cloneTempExpr(EXPRESSION** expr, SYMBOL** found, SYMBOL** replace)
     }
     return rv;
 }
-void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* initializerListType, std::list<Argument*>** lptr, bool operands,
-                           bool asref)
+void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* initializerListType, std::list<Argument*>** lptr,
+                           bool operands, bool asref)
 {
- 
+
     std::list<Argument*>* initial = *lptr;
     EXPRESSION *rv = nullptr, **pos = &rv;
     int count = initial->size(), i;
@@ -2858,7 +2887,8 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         for (i = 0; i < count; i++, ++itl)
         {
             EXPRESSION* node;
-            dest = MakeExpression(ExpressionNode::add_, data, MakeIntExpression(ExpressionNode::c_i_, i * (initializerListType->size)));
+            dest = MakeExpression(ExpressionNode::add_, data,
+                                  MakeIntExpression(ExpressionNode::c_i_, i * (initializerListType->size)));
             if (initializerListType->IsStructured())
             {
                 initializerListType = initializerListType->BaseType();
@@ -2870,12 +2900,14 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     auto itae = (*itl)->nested ? (*itl)->nested->end() : initial->end();
 
                     SymbolTable<SYMBOL>::iterator it;
-                    for (it = initializerListType->syms->begin(); ita != itae && it != initializerListType->syms->end(); ++it, ++ita)
+                    for (it = initializerListType->syms->begin(); ita != itae && it != initializerListType->syms->end();
+                         ++it, ++ita)
                     {
                         auto sym = *it;
                         if (ismemberdata(sym))
                         {
-                            auto pos = MakeExpression(ExpressionNode::structadd_, dest, MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                            auto pos = MakeExpression(ExpressionNode::structadd_, dest,
+                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, (*ita)->exp);
                             if (node)
@@ -2894,7 +2926,8 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         auto sym = *it;
                         if (ismemberdata(sym))
                         {
-                            auto pos = MakeExpression(ExpressionNode::structadd_, dest, MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                            auto pos = MakeExpression(ExpressionNode::structadd_, dest,
+                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, MakeIntExpression(ExpressionNode::c_i_, 0));
                             if (node)
@@ -2919,7 +2952,9 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     for (; ita != itae; ++ita)
                     {
                         Type* ctype = initializerListType;
-                        auto pos = copy_expression(MakeExpression(ExpressionNode::add_, dest, MakeIntExpression(ExpressionNode::c_i_, count1++ * initializerListType->size)));
+                        auto pos = copy_expression(
+                            MakeExpression(ExpressionNode::add_, dest,
+                                           MakeIntExpression(ExpressionNode::c_i_, count1++ * initializerListType->size)));
                         CallSite* params = Allocate<CallSite>();
                         params->ascall = true;
                         params->thisptr = pos;
@@ -2941,10 +2976,11 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     tp->size += (count1 - 1) * (initializerListType->size);
                     tp->esize->v.i += count1 - 1;
                 }
-                else if (!(*itl)->nested && initializerListType->IsStructured() && (initializerListType->CompatibleType((*itl)->tp) || SameTemplate(initializerListType, (*itl)->tp)))
+                else if (!(*itl)->nested && initializerListType->IsStructured() &&
+                         (initializerListType->CompatibleType((*itl)->tp) || SameTemplate(initializerListType, (*itl)->tp)))
                 {
                     node = (*itl)->exp;
-                    int offs;                    
+                    int offs;
                     auto exp = getFunc((*itl)->exp);
                     if (exp)
                     {
@@ -2970,7 +3006,6 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                             CallConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false,
                                             true);
                             node = cdest;
-
                         }
                     }
                     else
@@ -3014,9 +3049,10 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     node = nullptr;
                     auto list = &node;
                     int count1 = 0;
-                    for ( ; ita != itae ; ++ita)
+                    for (; ita != itae; ++ita)
                     {
-                        auto pos = MakeExpression(ExpressionNode::structadd_, dest, MakeIntExpression(ExpressionNode::c_i_, count1++ * initializerListType->size));
+                        auto pos = MakeExpression(ExpressionNode::structadd_, dest,
+                                                  MakeIntExpression(ExpressionNode::c_i_, count1++ * initializerListType->size));
                         Dereference(initializerListType, &pos);
                         auto node1 = MakeExpression(ExpressionNode::assign_, pos, (*ita)->exp);
                         listOfScalars.push_back((*ita)->exp);
@@ -3076,7 +3112,8 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         }
         dest = MakeExpression(ExpressionNode::structadd_, initList, MakeIntExpression(ExpressionNode::c_i_, size->sb->offset));
         Dereference(&stdpointer, &dest);
-        dest = MakeExpression(ExpressionNode::assign_, dest, MakeIntExpression(ExpressionNode::c_i_, tp->size / initializerListType->size));
+        dest = MakeExpression(ExpressionNode::assign_, dest,
+                              MakeIntExpression(ExpressionNode::c_i_, tp->size / initializerListType->size));
         if (rv)
         {
             *pos = MakeExpression(ExpressionNode::comma_, *pos, dest);
@@ -3096,7 +3133,8 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         else
         {
             initial->front()->tp = initializerListTemplate;
-            initial->front()->exp = MakeExpression(ExpressionNode::stackblock_, MakeExpression(ExpressionNode::comma_, rv, initList));
+            initial->front()->exp =
+                MakeExpression(ExpressionNode::stackblock_, MakeExpression(ExpressionNode::comma_, rv, initList));
             initial->front()->exp->size = initializerListTemplate;
         }
         if (ildest)
@@ -3156,7 +3194,9 @@ EXPRESSION* convertArgToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
             Type::MakeType(tp2, BasicType::lref_, &stdpointer);
             exp = createTemporary(&tp2, exp);
         }
-        else if (!tp->IsRef() || exp->type != ExpressionNode::callsite_ || (boundTP->type == BasicType::aggregate_ || (exp->v.func->sp->tp->IsFunction() && !exp->v.func->sp->tp->BaseType()->btp->IsRef())))
+        else if (!tp->IsRef() || exp->type != ExpressionNode::callsite_ ||
+                 (boundTP->type == BasicType::aggregate_ ||
+                  (exp->v.func->sp->tp->IsFunction() && !exp->v.func->sp->tp->BaseType()->btp->IsRef())))
         {
             exp = createTemporary(tp, exp);
         }
@@ -3165,7 +3205,8 @@ EXPRESSION* convertArgToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
 
     return exp;
 }
-void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr, bool operands, bool implicit)
+void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr,
+                  bool operands, bool implicit)
 {
     std::list<Argument*>::iterator itl, itle;
     if (*lptr)
@@ -3177,11 +3218,11 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
     argFriend = func;
     (void)operands;
     if (func->sb->storage_class == StorageClass::overloads_)
-        return;	
+        return;
     if (it != itend && (*it)->sb->thisPtr)
         ++it;
-    while (it != itend  && (itl != itle || (*it)->sb->init != nullptr ||
-                  ((*it)->sb->deferredCompile != nullptr && (!definingTemplate || instantiatingTemplate))))
+    while (it != itend && (itl != itle || (*it)->sb->init != nullptr ||
+                           ((*it)->sb->deferredCompile != nullptr && (!definingTemplate || instantiatingTemplate))))
     {
         SYMBOL* sym = *it;
         Argument* p;
@@ -3253,7 +3294,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             exp2 = exp2->left;
                         if (exp2 && exp2->type == ExpressionNode::callsite_)
                             sym = exp2->v.func->returnSP;
-                        if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->front()->exp && !sym->tp->BaseType()->sp->sb->trivialCons )
+                        if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->front()->exp &&
+                            !sym->tp->BaseType()->sp->sb->trivialCons)
                         {
                             exp2->v.func->returnSP->sb->destructed = true;
                             if (!p->destructors)
@@ -3284,7 +3326,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     EXPRESSION* thisptr;
                     if (stype->IsRef())
                         stype = stype->BaseType()->btp;
-                    thisptr = AnonymousVar(theCurrentFunc || !sym->tp->IsRef() ? StorageClass::auto_ : StorageClass::localstatic_, stype);
+                    thisptr =
+                        AnonymousVar(theCurrentFunc || !sym->tp->IsRef() ? StorageClass::auto_ : StorageClass::localstatic_, stype);
                     sp = thisptr->v.sp;
                     if (!theCurrentFunc)
                     {
@@ -3294,7 +3337,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     if (stype->BaseType()->sp->sb->trivialCons)
                     {
                         std::list<Initializer*> init1;
-                        std::list<Initializer*>* init = { &init1 };
+                        std::list<Initializer*>* init = {&init1};
                         for (auto shr : *stype->BaseType()->syms)
                         {
                             if (itpinit == itpinite)
@@ -3321,7 +3364,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         if (itpinit != itpinite)
                             ++itx;
                         params->arguments = argumentListFactory.CreateList();
-                        if ((itpinit != itpinite && itx != itpinite) || (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
+                        if ((itpinit != itpinite && itx != itpinite) ||
+                            (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
                         {
                             Type* tp;
                             if (itpinit == itpinite)
@@ -3352,7 +3396,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             p->exp = thisptr;
                             CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
                         }
-                
+
                         if (!sym->tp->IsRef())
                         {
                             sp->sb->stackblock = true;
@@ -3402,7 +3446,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     n = 0;
                     std::list<Initializer*> init1;
                     std::list<Initializer*>* init = &init1;
-                    for ( ; itpinit != itpinite ; ++itpinit)
+                    for (; itpinit != itpinite; ++itpinit)
                     {
                         InsertInitializer(&init, (*itpinit)->tp, (*itpinit)->exp, n, false);
                         n += btp->size;
@@ -3473,11 +3517,13 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             int count = 0;
                             for (auto init : *p->nested)
                             {
-                                while (it != ctype->syms->end() && !ismemberdata(*it)) ++it;
+                                while (it != ctype->syms->end() && !ismemberdata(*it))
+                                    ++it;
                                 if (it == ctype->syms->end())
                                     break;
                                 count++;
-                                auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr, MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset));
+                                auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
+                                                           MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset));
                                 Dereference(initListType, &exp2);
                                 auto exp1 = MakeExpression(ExpressionNode::assign_, exp2, init->exp);
                                 *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
@@ -3492,18 +3538,20 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             {
                                 while (it != ctype->syms->end())
                                 {
-                                    while (it != ctype->syms->end() && !ismemberdata(*it)) ++it;
+                                    while (it != ctype->syms->end() && !ismemberdata(*it))
+                                        ++it;
                                     if (it != ctype->syms->end())
                                     {
-                                        auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr, MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset));
+                                        auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
+                                                                   MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset));
                                         Dereference(initListType, &exp2);
-                                        auto exp1 = MakeExpression(ExpressionNode::assign_, exp2, MakeIntExpression(ExpressionNode::c_i_, 0));
+                                        auto exp1 = MakeExpression(ExpressionNode::assign_, exp2,
+                                                                   MakeIntExpression(ExpressionNode::c_i_, 0));
                                         *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
                                         last = &(*last)->right;
                                         ++it;
                                     }
                                 }
-
                             }
                             *last = MakeExpression(ExpressionNode::comma_, *last, ptr);
                         }
@@ -3554,7 +3602,9 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         // copy elision
                         if (p->exp->type != ExpressionNode::thisref_ || !p->exp->left->v.func->thistp ||
                             (!sym->tp->SameType(p->exp->left->v.func->thistp) &&
-                             !SameTemplate(sym->tp, p->exp->left->v.func->thistp)) || !exp || exp->type != ExpressionNode::thisref_ || !exp->left->v.func->sp->sb->isConstructor || !matchesCopy(exp->left->v.func->sp, false))
+                             !SameTemplate(sym->tp, p->exp->left->v.func->thistp)) ||
+                            !exp || exp->type != ExpressionNode::thisref_ || !exp->left->v.func->sp->sb->isConstructor ||
+                            !matchesCopy(exp->left->v.func->sp, false))
                         {
                             if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
                             {
@@ -3646,7 +3696,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 params->arguments->push_back(p);
                             }
                             Type* ctype = sym->tp->BaseType()->btp;
-                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                                               sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                             SYMBOL* esp = consexp->v.sp;
                             p->exp = consexp;
                             CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
@@ -3663,15 +3714,16 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
                         }
                         else if ((!sym->tp->BaseType()->btp->IsConst() && !sym->tp->IsConst() &&
-                                 (sym->tp->type != BasicType::rref_ &&
+                                  (sym->tp->type != BasicType::rref_ &&
                                    (!func->sb->templateLevel &&
-                                   (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
+                                    (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
                                   tpx->IsConst()) ||
                                  (!sym->tp->CompatibleType(tpx) && !SameTemplate(sym->tp, tpx) &&
                                   !classRefCount(sym->tp->BaseType()->btp->BaseType()->sp, tpx->BaseType()->sp)))
                         {
                             // make temp via constructor or conversion function
-                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                                               sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                             SYMBOL* esp = consexp->v.sp;
                             Type* ctype = sym->tp->BaseType()->btp;
                             EXPRESSION* paramexp = p->exp;
@@ -3709,13 +3761,15 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         Type* sourceType = p->nested->front()->tp;
                         Type* arrtype = sym->tp->BaseType()->btp;
                         Type* basetype = sym->tp->BaseType()->btp;
-                        while (basetype->IsArray()) basetype = basetype->BaseType()->btp;
+                        while (basetype->IsArray())
+                            basetype = basetype->BaseType()->btp;
                         int elemsize = basetype->size;
                         int elems = arrtype->size / basetype->size;
-                        EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                        EXPRESSION* consexp =
+                            AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                         auto it = p->nested->begin();
                         auto ite = p->nested->end();
-                        EXPRESSION* rv = nullptr, ** last = &rv;
+                        EXPRESSION *rv = nullptr, **last = &rv;
                         if (!basetype->IsStructured())
                         {
                             // this is broken right now, arraysize is number of elements instead of total size...
@@ -3734,7 +3788,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             for (int i = 0; i < elems; i++)
                             {
                                 bool skip = false;
-                                EXPRESSION* baseAddress = MakeExpression(ExpressionNode::arrayadd_, consexp, MakeIntExpression(ExpressionNode::c_i_, i * elemsize));
+                                EXPRESSION* baseAddress = MakeExpression(ExpressionNode::arrayadd_, consexp,
+                                                                         MakeIntExpression(ExpressionNode::c_i_, i * elemsize));
                                 EXPRESSION* next = nullptr;
                                 if (basetype->IsStructured())
                                 {
@@ -3753,7 +3808,6 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                             auto ctype = basetype;
                                             p->exp = (*it)->exp;
                                             castToPointer(&ctype, &p->exp, (Keyword)-1, sourceType);
-
                                         }
                                         else
                                         {
@@ -3841,11 +3895,11 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                     {
                         Argument* p1;
                         if (p->tp)
-                                p1 = p;
+                            p1 = p;
                         else
                             p1 = p->nested->front();
-                        if (isarithmeticconst(p1->exp) ||
-                            (sym->tp->BaseType()->type != BasicType::rref_ && !sym->tp->BaseType()->btp->IsConst() && p1->tp->IsConst()))
+                        if (isarithmeticconst(p1->exp) || (sym->tp->BaseType()->type != BasicType::rref_ &&
+                                                           !sym->tp->BaseType()->btp->IsConst() && p1->tp->IsConst()))
                         {
                             // make numeric temp and perform cast
                             p->exp = createTemporary(sym->tp, p1->exp);
@@ -3858,7 +3912,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 exp = exp->left;
                             if (exp->type != ExpressionNode::l_ref_)
                             {
-                                if (!sym->tp->IsRef() || (!sym->tp->BaseType()->btp->IsFunction() && !sym->tp->BaseType()->btp->IsArray()))
+                                if (!sym->tp->IsRef() ||
+                                    (!sym->tp->BaseType()->btp->IsFunction() && !sym->tp->BaseType()->btp->IsArray()))
                                 {
                                     if (exp->type == ExpressionNode::lvalue_)
                                     {
@@ -3878,7 +3933,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             }
                             else if (sym->tp->BaseType()->btp->BaseType()->byRefArray)
                             {
-                                 p->exp->left = p->exp->left->left;
+                                p->exp->left = p->exp->left->left;
                             }
                         }
                     }
@@ -3897,8 +3952,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         p->exp = createTemporary(sym->tp, p->exp);
                     }
                     if (!tpx1->IsRef() && ((tpx1->IsConst() && !sym->tp->BaseType()->btp->IsConst()) ||
-                                         (tpx1->IsVolatile() && !sym->tp->BaseType()->btp->IsVolatile())))
-                        if (sym->tp->BaseType()->type != BasicType::rref_)         // converting const lref to rref is ok...
+                                           (tpx1->IsVolatile() && !sym->tp->BaseType()->btp->IsVolatile())))
+                        if (sym->tp->BaseType()->type != BasicType::rref_)  // converting const lref to rref is ok...
                             if (!sym->tp->BaseType()->btp->IsStructured())  // structure constructor is ok
                                 if (!tpx1->IsArray())
                                     error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
@@ -4049,7 +4104,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             {
                 if (sym->tp->BaseType()->type == BasicType::string_)
                 {
-                    if ((p->tp->BaseType()->type == BasicType::string_) || (p->exp->type == ExpressionNode::labcon_ && p->exp->string))
+                    if ((p->tp->BaseType()->type == BasicType::string_) ||
+                        (p->exp->type == ExpressionNode::labcon_ && p->exp->string))
                     {
                         if (p->exp->type == ExpressionNode::labcon_)
                             p->exp->type = ExpressionNode::c_string_;
@@ -4069,7 +4125,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                 }
                 else if (sym->tp->BaseType()->type == BasicType::object_)
                 {
-                    if (p->tp->BaseType()->type != BasicType::object_ && !p->tp->IsStructured() && (!p->tp->IsArray() || !p->tp->BaseType()->msil))
+                    if (p->tp->BaseType()->type != BasicType::object_ && !p->tp->IsStructured() &&
+                        (!p->tp->IsArray() || !p->tp->BaseType()->msil))
                     {
                         if ((p->tp->IsArray() || p->tp->IsPtr()) && !p->tp->BaseType()->msil &&
                             p->tp->BaseType()->btp->BaseType()->type == BasicType::char_)
@@ -4165,18 +4222,19 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
     if (tplx)
     {
         rv = templateParamPairListFactory.CreateList();
-        for (auto tpl :*tplx)
+        for (auto tpl : *tplx)
         {
             auto second = Allocate<TEMPLATEPARAM>();
             *second = *tpl.second;
-            rv->push_back(TEMPLATEPARAMPAIR{ tpl.first, second });
+            rv->push_back(TEMPLATEPARAMPAIR{tpl.first, second});
             if (tpl.second->type == TplType::typename_ && !tpl.second->packed && tpl.second->byClass.dflt &&
                 tpl.second->byClass.dflt->BaseType()->type == BasicType::templateparam_)
             {
                 *rv->back().second = *tpl.second->byClass.dflt->BaseType()->templateParam->second;
                 rv->back().first = tpl.second->byClass.dflt->BaseType()->templateParam->first;
             }
-            else if (tpl.second->type == TplType::int_ && tpl.second->byNonType.dflt && tpl.second->byNonType.dflt->type == ExpressionNode::templateparam_)
+            else if (tpl.second->type == TplType::int_ && tpl.second->byNonType.dflt &&
+                     tpl.second->byNonType.dflt->type == ExpressionNode::templateparam_)
             {
                 *rv->back().second = *tpl.second->byNonType.dflt->v.sp->tp->templateParam->second;
                 rv->back().first = tpl.second->byNonType.dflt->v.sp->tp->templateParam->first;
@@ -4212,7 +4270,7 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
                                 auto second = Allocate<TEMPLATEPARAM>();
                                 second->type = rv->back().second->type;
                                 second->byClass.dflt = tpl2.second->byClass.val;
-                                rv->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+                                rv->back().second->byPack.pack->push_back(TEMPLATEPARAMPAIR{nullptr, second});
                             }
                         }
                     }
@@ -4269,7 +4327,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 auto find = (*tsl).begin();
                 ++find;
                 ++find;
-                for (; find != (*tsl).end() && sp ; )
+                for (; find != (*tsl).end() && sp;)
                 {
                     SYMBOL* spo = sp;
                     if (!spo->tp->IsStructured())
@@ -4356,7 +4414,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
     if (/*(!definingTemplate || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
-    
+
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
@@ -4386,8 +4444,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
             funcparams->ascall = true;
-            SYMBOL* sym =
-                GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, flags);
+            SYMBOL* sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, flags);
             if (sym)
             {
                 sym->sb->attribs.inheritable.used = true;
@@ -4425,14 +4482,17 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         static EXPRESSION funcExpr;
         funcExpr.type = ExpressionNode::callsite_;
         funcExpr.v.func = funcparams;
-        if (funcparams->sp->sb->storage_class == StorageClass::overloads_ && (funcparams->sp->tp->type != BasicType::aggregate_ || funcparams->sp->tp->syms->size() < 2||
-            (!parsingTrailingReturnOrUsing && (!MATCHKW(lex, Keyword::ellipse_) || unpackingTemplate) && (!(flags & _F_INDECLTYPE)  || !inTemplateArgs || unpackingTemplate || !hasPackedExpression(&funcExpr, true)))))
+        if (funcparams->sp->sb->storage_class == StorageClass::overloads_ &&
+            (funcparams->sp->tp->type != BasicType::aggregate_ || funcparams->sp->tp->syms->size() < 2 ||
+             (!parsingTrailingReturnOrUsing && (!MATCHKW(lex, Keyword::ellipse_) || unpackingTemplate) &&
+              (!(flags & _F_INDECLTYPE) || !inTemplateArgs || unpackingTemplate || !hasPackedExpression(&funcExpr, true)))))
         {
             Type* tp1;
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be ad  ded after we select a member function that needs it.
             funcparams->ascall = true;
-            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, !(MATCHKW(lex, Keyword::ellipse_)), false, flags);
+            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr,
+                                        !(MATCHKW(lex, Keyword::ellipse_)), false, flags);
             if ((*tp)->IsFunction())
             {
                 if ((*tp)->BaseType()->btp->IsStructured())
@@ -4462,7 +4522,7 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                     ++tplo;
                     auto tploe = sym->sb->parentTemplate->templateParams->end();
                     bool found = false;
-                    for ( ; tpln != tplne && tplo != tploe; ++ tpln, ++tplo)
+                    for (; tpln != tplne && tplo != tploe; ++tpln, ++tplo)
                     {
                         if (tplo->second->packed)
                         {
@@ -4487,9 +4547,11 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         {
                             errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
                         }
-                        else if (funcsp->sb->storage_class == StorageClass::member_ || funcsp->sb->storage_class == StorageClass::virtual_)
+                        else if (funcsp->sb->storage_class == StorageClass::member_ ||
+                                 funcsp->sb->storage_class == StorageClass::virtual_)
                         {
-                            funcparams->thisptr = MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());
+                            funcparams->thisptr =
+                                MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());
                             Dereference(&stdpointer, &funcparams->thisptr);
                             funcparams->thisptr =
                                 DerivedToBase(sym->sb->parentClass->tp, funcparams->thisptr->left->v.sp->tp->BaseType()->btp,
@@ -4668,7 +4730,8 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         }
                     }
                     bool isnested = false;
-                    if (funcparams->arguments->front()->nested && funcparams->arguments->front()->nested->front()->nested && !funcparams->arguments->front()->initializer_list)
+                    if (funcparams->arguments->front()->nested && funcparams->arguments->front()->nested->front()->nested &&
+                        !funcparams->arguments->front()->initializer_list)
                     {
                         funcparams->arguments = funcparams->arguments->front()->nested;
                         itl = funcparams->arguments->begin();
@@ -4789,7 +4852,6 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         if (theCurrentFunc && theCurrentFunc->sb->constexpression)
                             funcparams->returnEXP->v.sp->sb->constexpression = true;
                     }
-
                 }
                 funcparams->ascall = true;
                 funcparams->functp = *tp;
@@ -4839,7 +4901,8 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         if (!allTemplateArgsSpecified(sym, sym->templateParams))
                             sym = GetClassTemplate(sym, sym->templateParams, false);
                         if (sym && allTemplateArgsSpecified(sym, sym->templateParams))
-                            funcparams->returnSP->tp = TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_)->tp;
+                            funcparams->returnSP->tp =
+                                TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_)->tp;
                     }
                 }
                 if ((!funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure)) && funcparams->sp &&
@@ -4847,7 +4910,8 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                 {
                     exp_in = funcparams->thisptr;
                     Dereference(&stdpointer, &exp_in);
-                    exp_in = MakeExpression(ExpressionNode::add_, exp_in, MakeIntExpression(ExpressionNode::c_i_, funcparams->sp->sb->vtaboffset));
+                    exp_in = MakeExpression(ExpressionNode::add_, exp_in,
+                                            MakeIntExpression(ExpressionNode::c_i_, funcparams->sp->sb->vtaboffset));
                     Dereference(&stdpointer, &exp_in);
                     funcparams->fcall = exp_in;
                 }
@@ -4878,7 +4942,8 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                         {
                             EXPRESSION* rv = AnonymousVar(StorageClass::auto_, tp);
                             Dereference(tp, &rv);
-                            exp_in = MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, exp_in), rv);
+                            exp_in =
+                                MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, exp_in), rv);
                             errortype(ERR_CREATE_TEMPORARY, tp, tp);
                         }
                     }
@@ -5019,7 +5084,6 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
                             sym = sp1;
                     }
                     sym->tp->InitializeDeferred();
-
                 }
                 if (needkw(&lex, Keyword::comma_))
                 {
@@ -5066,7 +5130,8 @@ static LexList* expression_msilfunc(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
             errorstr(ERR_PARAMETER_LIST_TOO_SHORT, "__cpblk/__initblk");
         }
-        else {
+        else
+        {
             auto it = funcparams.arguments->begin();
             auto arg1 = *it;
             ++it;
@@ -5075,53 +5140,53 @@ static LexList* expression_msilfunc(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
             auto arg3 = *it;
             switch (kw)
             {
-            case Keyword::cpblk_:
-                if (!arg1->tp->IsPtr())
-                {
+                case Keyword::cpblk_:
+                    if (!arg1->tp->IsPtr())
+                    {
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__cpblk");
+                    }
+                    else if (!arg2->tp->IsPtr())
+                    {
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__src", "__cpblk");
+                    }
+                    else if (!arg3->tp->IsInt())
+                    {
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__cpblk");
+                    }
+                    else
+                    {
+                        *exp = MakeExpression(ExpressionNode::comma_, arg1->exp, arg2->exp);
+                        *exp = MakeExpression(ExpressionNode::cpblk_, *exp, arg3->exp);
+                    }
+                    break;
+                case Keyword::initblk_:
+                    if (!arg1->tp->IsPtr())
+                    {
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__initblk");
+                    }
+                    else if (!arg2->tp->IsInt())
+                    {
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__value", "__initblk");
+                    }
+                    else if (!arg3->tp->IsInt())
+                    {
+                        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__initblk");
+                    }
+                    else
+                    {
+                        *exp = MakeExpression(ExpressionNode::comma_, arg1->exp, arg2->exp);
+                        *exp = MakeExpression(ExpressionNode::initblk_, *exp, arg3->exp);
+                    }
+                    break;
+                default:
                     *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__cpblk");
-                }
-                else if (!arg2->tp->IsPtr())
-                {
-                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__src", "__cpblk");
-                }
-                else if (!arg3->tp->IsInt())
-                {
-                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__cpblk");
-                }
-                else
-                {
-                    *exp = MakeExpression(ExpressionNode::comma_, arg1->exp, arg2->exp);
-                    *exp = MakeExpression(ExpressionNode::cpblk_, *exp, arg3->exp);
-                }
-                break;
-            case Keyword::initblk_:
-                if (!arg1->tp->IsPtr())
-                {
-                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__initblk");
-                }
-                else if (!arg2->tp->IsInt())
-                {
-                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__value", "__initblk");
-                }
-                else if (!arg3->tp->IsInt())
-                {
-                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__initblk");
-                }
-                else
-                {
-                    *exp = MakeExpression(ExpressionNode::comma_, arg1->exp,  arg2->exp);
-                    *exp = MakeExpression(ExpressionNode::initblk_, *exp, arg3->exp);
-                }
-                break;
-            default:
-                *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                break;
+                    break;
             }
         }
         *tp = &stdpointer;
@@ -5252,25 +5317,23 @@ static LexList* expression_string(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         (*tp)->size = (elems + 1) * (*tp)->btp->size;
     return lex;
 }
-static bool matchesAttributes(Type *tp1, Type *tp2)
+static bool matchesAttributes(Type* tp1, Type* tp2)
 {
     while (tp1 && tp2)
     {
-       if (tp1->IsConst() != tp2->IsConst() ||
-           tp1->IsVolatile() != tp2->IsVolatile() ||
-           tp1->IsRestrict() != tp2->IsRestrict())
-           return false;
-       tp1 = tp1->BaseType()->btp;
-       tp2 = tp2->BaseType()->btp;
+        if (tp1->IsConst() != tp2->IsConst() || tp1->IsVolatile() != tp2->IsVolatile() || tp1->IsRestrict() != tp2->IsRestrict())
+            return false;
+        tp1 = tp1->BaseType()->btp;
+        tp2 = tp2->BaseType()->btp;
     }
     return true;
 }
 static bool sameTypedef(Type* tp1, Type* tp2)
 {
     while (tp1->btp && !tp1->typedefType)
-       tp1 = tp1->btp;
+        tp1 = tp1->btp;
     while (tp2->btp && !tp2->typedefType)
-       tp2 = tp2->btp;
+        tp2 = tp2->btp;
     return tp1->typedefType == tp2->typedefType;
 }
 static LexList* expression_generic(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
@@ -5724,7 +5787,8 @@ static LexList* expression_atomic_func(LexList* lex, SYMBOL* funcsp, Type** tp, 
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
-                    d->memoryOrder1 = MakeExpression(ExpressionNode::add_, d->memoryOrder1, MakeIntExpression(ExpressionNode::c_i_, 0x80));
+                    d->memoryOrder1 =
+                        MakeExpression(ExpressionNode::add_, d->memoryOrder1, MakeIntExpression(ExpressionNode::c_i_, 0x80));
                     d->atomicOp = Optimizer::ao_thread_fence;
                     *tp = &stdvoid;
                     break;
@@ -5732,7 +5796,8 @@ static LexList* expression_atomic_func(LexList* lex, SYMBOL* funcsp, Type** tp, 
                     lex = expression_assign(lex, funcsp, nullptr, &tpf, &d->memoryOrder1, nullptr, flags);
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
-                    d->memoryOrder1 = MakeExpression(ExpressionNode::add_, d->memoryOrder1, MakeIntExpression(ExpressionNode::c_i_, 0x80));
+                    d->memoryOrder1 =
+                        MakeExpression(ExpressionNode::add_, d->memoryOrder1, MakeIntExpression(ExpressionNode::c_i_, 0x80));
                     d->atomicOp = Optimizer::ao_signal_fence;
                     *tp = &stdvoid;
                     break;
@@ -5803,7 +5868,8 @@ static LexList* expression_atomic_func(LexList* lex, SYMBOL* funcsp, Type** tp, 
                     d->atomicOp = Optimizer::ao_store;
                     if (!d->memoryOrder2)
                         d->memoryOrder2 = d->memoryOrder1;
-                    d->memoryOrder1 = MakeExpression(ExpressionNode::add_, d->memoryOrder1, MakeIntExpression(ExpressionNode::c_i_, 0x80));
+                    d->memoryOrder1 =
+                        MakeExpression(ExpressionNode::add_, d->memoryOrder1, MakeIntExpression(ExpressionNode::c_i_, 0x80));
                     break;
                     // there's extremely likely a better way to do this, maybe a lookup table for these and using that...
                 case Keyword::c11_atomic_xchg_:
@@ -6036,30 +6102,32 @@ static bool validate_checked_args(std::list<Argument*>* args)
         errorstr(ERR_PARAMETER_LIST_TOO_LONG, "<checked math>");
         return false;
     }
-    else for (auto&& arg : *args)
-    {
-        Type* tp = arg->tp->BaseType();        
-        if (&arg == &args->front())
+    else
+        for (auto&& arg : *args)
         {
-             if (!tp->IsPtr() || tp->BaseType()->btp->IsConst())
-             {
-                 error(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT);
-                 return false;
-             }
-             else
-             {
-                 tp = tp->btp->BaseType();
-             }
+            Type* tp = arg->tp->BaseType();
+            if (&arg == &args->front())
+            {
+                if (!tp->IsPtr() || tp->BaseType()->btp->IsConst())
+                {
+                    error(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT);
+                    return false;
+                }
+                else
+                {
+                    tp = tp->btp->BaseType();
+                }
+            }
+            if (!tp->IsInt() || tp->type == BasicType::char_ || tp->type == BasicType::bitint_ ||
+                tp->type == BasicType::unsigned_bitint_ || tp->type == BasicType::bool_)
+            {
+                error(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE);
+                return false;
+            }
         }
-        if (!tp->IsInt() || tp->type == BasicType::char_ || tp->type == BasicType::bitint_ || tp->type == BasicType::unsigned_bitint_ || tp->type == BasicType::bool_)
-        {
-             error(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE);
-             return false;
-        }
-    }
     return true;
 }
-static int ___typeid_val(Type *tp);
+static int ___typeid_val(Type* tp);
 static std::list<Argument*>* checked_arguments(std::list<Argument*>* args)
 {
     Argument* arr[3];
@@ -6067,23 +6135,24 @@ static std::list<Argument*>* checked_arguments(std::list<Argument*>* args)
     // already been validated at three arguments
     for (auto entry : *args)
         arr[i++] = entry;
-    for (int i=1; i < 3; i++)
+    for (int i = 1; i < 3; i++)
     {
         arr[i]->tp = Type::MakeType(BasicType::pointer_, arr[i]->tp);
         auto exp = arr[i]->exp;
-        while (IsCastValue(exp)) exp = exp->left;
+        while (IsCastValue(exp))
+            exp = exp->left;
         TakeAddress(&exp);
         arr[i]->exp = exp;
     }
     args->clear();
-    for (int i=0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         args->push_back(arr[i]);
         Argument* typeval = Allocate<Argument>();
         typeval->tp = &stdint;
         typeval->exp = MakeIntExpression(ExpressionNode::c_i_, ___typeid_val(arr[i]->tp->BaseType()->btp->BaseType()));
         args->push_back(typeval);
-    }    
+    }
     return args;
 }
 static LexList* expression_checked_int(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
@@ -6096,45 +6165,45 @@ static LexList* expression_checked_int(LexList* lex, SYMBOL* funcsp, Type** tp, 
         lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, flags);
         if (validate_checked_args(funcparams->arguments))
         {
-             const char *name = nullptr;
-             switch(kw)
-             {
-                 case Keyword::ckdadd_:
-                     name = "___ckdadd";
-                     break;
-                 case Keyword::ckdmul_:
-                     name = "___ckdmul";
-                     break;
-                 case Keyword::ckdsub_:
-                     name = "___ckdsub";
-                     break;
-                 default:
-                     break;
-             }
-             if (name)
-             {
-                 auto sym = gsearch(name);
-                 if (!sym)
-                 {
-                     diag("expression_checked_int unknown func");
-                     *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                 }
-                 else
-                 {
-                     sym = sym->tp->syms->front();
-                     funcparams->sp = sym;
-                     funcparams->functp = sym->tp;
-                     funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);                     
-                     funcparams->ascall = true;
-                     funcparams->arguments = checked_arguments(funcparams->arguments);
-                     *exp = MakeExpression(funcparams);
-                 }
-             }
-             else
-             {
-                 diag("expression_checked_int unknown func2");
-                 *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-             }
+            const char* name = nullptr;
+            switch (kw)
+            {
+                case Keyword::ckdadd_:
+                    name = "___ckdadd";
+                    break;
+                case Keyword::ckdmul_:
+                    name = "___ckdmul";
+                    break;
+                case Keyword::ckdsub_:
+                    name = "___ckdsub";
+                    break;
+                default:
+                    break;
+            }
+            if (name)
+            {
+                auto sym = gsearch(name);
+                if (!sym)
+                {
+                    diag("expression_checked_int unknown func");
+                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                }
+                else
+                {
+                    sym = sym->tp->syms->front();
+                    funcparams->sp = sym;
+                    funcparams->functp = sym->tp;
+                    funcparams->fcall = MakeExpression(ExpressionNode::pc_, sym);
+                    funcparams->ascall = true;
+                    funcparams->arguments = checked_arguments(funcparams->arguments);
+                    *exp = MakeExpression(funcparams);
+                }
+            }
+            else
+            {
+                diag("expression_checked_int unknown func2");
+                *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+            }
         }
         else
         {
@@ -6152,7 +6221,7 @@ static LexList* expression_checked_int(LexList* lex, SYMBOL* funcsp, Type** tp, 
     }
     return lex;
 }
-static int ___typeid_val(Type *tp)
+static int ___typeid_val(Type* tp)
 {
     int id;
     switch (tp->type)
@@ -6252,32 +6321,33 @@ static LexList* expression___typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
     }
     return lex;
 }
-static LexList* expression_statement(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static LexList* expression_statement(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable,
+                                     int flags)
 {
-	// gcc extension
-     if (expressionStatements.size())
-     {
-         expressionReturns.push_back(std::pair<EXPRESSION*, Type*>(nullptr, nullptr));
-         StatementGenerator sg(lex, funcsp);
-         sg.Compound(*expressionStatements.top(), false);
-         std::pair<EXPRESSION*, Type*> rv = std::move(expressionReturns.back());
-         expressionReturns.pop_back();
-         *tp = rv.second;
-         *exp = rv.first;
-         if (!*tp)
-             *tp = &stdvoid;
-         if (!*exp)
-             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-     }
-     else
-     {
-         errskim(&lex, skim_end);
-         if (lex)
-             needkw(&lex, Keyword::end_);
-         *tp = &stdvoid;
-         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-     }
-     return lex;
+    // gcc extension
+    if (expressionStatements.size())
+    {
+        expressionReturns.push_back(std::pair<EXPRESSION*, Type*>(nullptr, nullptr));
+        StatementGenerator sg(lex, funcsp);
+        sg.Compound(*expressionStatements.top(), false);
+        std::pair<EXPRESSION*, Type*> rv = std::move(expressionReturns.back());
+        expressionReturns.pop_back();
+        *tp = rv.second;
+        *exp = rv.first;
+        if (!*tp)
+            *tp = &stdvoid;
+        if (!*exp)
+            *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+    }
+    else
+    {
+        errskim(&lex, skim_end);
+        if (lex)
+            needkw(&lex, Keyword::end_);
+        *tp = &stdvoid;
+        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+    }
+    return lex;
 }
 
 static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
@@ -6315,11 +6385,11 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             if (ths)
                             {
                                 *tp = Type::MakeType(BasicType::pointer_, lambdas.front()->lthis->tp);
-                                *exp =
-                                    MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
+                                *exp = MakeExpression(ExpressionNode::auto_,
+                                                      (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
                                 Dereference(&stdpointer, exp);
-                                *exp =
-                                    MakeExpression(ExpressionNode::structadd_, *exp, MakeIntExpression(ExpressionNode::c_i_, ths->sb->offset));
+                                *exp = MakeExpression(ExpressionNode::structadd_, *exp,
+                                                      MakeIntExpression(ExpressionNode::c_i_, ths->sb->offset));
                                 if (!lambdas.front()->thisByVal)
                                 {
                                     Dereference(&stdpointer, exp);
@@ -6466,7 +6536,9 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                     else
                     {
                         LexList* start = lex;
-                        lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable, (flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD)) | _F_EXPRESSIONINPAREN);
+                        lex = expression_comma(lex, funcsp, nullptr, tp, exp, ismutable,
+                                               (flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD)) |
+                                                   _F_EXPRESSIONINPAREN);
                         if (!*tp)
                         {
                             *tp = &stdint;
@@ -6502,7 +6574,7 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                         error(ERR_BINARY_FOLDING_OPERATOR_MISMATCH);
                                     }
                                     lex = getsym();
-                                    Type *tp1 = nullptr;
+                                    Type* tp1 = nullptr;
                                     EXPRESSION* exp1 = nullptr;
                                     auto start2 = lex;
                                     lex = expression_cast(lex, funcsp, atp, &tp1, &exp1, nullptr,
@@ -6514,7 +6586,8 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                     }
                                     else
                                     {
-                                        eval_binary_fold(lexin, funcsp, atp, tp, exp, start, *tp, *exp, start2, tp1, exp1, false, flags);
+                                        eval_binary_fold(lexin, funcsp, atp, tp, exp, start, *tp, *exp, start2, tp1, exp1, false,
+                                                         flags);
                                     }
                                 }
                                 else
@@ -6523,15 +6596,15 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                                 }
                             }
                         }
-//  fixme                      else if (!inTemplateArgs)
- //                       {
-  //                          if (argumentNesting <= 1)
-     //                           checkUnpackedExpression(*exp);
-       //                 }
+                        //  fixme                      else if (!inTemplateArgs)
+                        //                       {
+                        //                          if (argumentNesting <= 1)
+                        //                           checkUnpackedExpression(*exp);
+                        //                 }
                         needkw(&lex, Keyword::closepa_);
                         break;
                     }
-                }  
+                }
                 case Keyword::func_:
                     *tp = &std__func__;
                     if (!funcsp->sb->__func__label || Optimizer::msilstrings)
@@ -6611,23 +6684,23 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                     lex = expression___typeid(lex, funcsp, tp, exp);
                     break;
                 case Keyword::has_c_attribute_:
-                     lex = getsym();
-                     *tp = &stdint;
-                     *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                     if (needkw(&lex, Keyword::openpa_))
-                     {
-                         if (ISID(lex))
-                         {
-                             (*exp)->v.i = cattributes[lex->data->value.s.a];
-                             lex = getsym();
-                         }
-                         else
-                         {
-                             error(ERR_IDENTIFIER_EXPECTED);
-                         }
-                         needkw(&lex, Keyword::closepa_);
-                     }
-                     break;
+                    lex = getsym();
+                    *tp = &stdint;
+                    *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                    if (needkw(&lex, Keyword::openpa_))
+                    {
+                        if (ISID(lex))
+                        {
+                            (*exp)->v.i = cattributes[lex->data->value.s.a];
+                            lex = getsym();
+                        }
+                        else
+                        {
+                            error(ERR_IDENTIFIER_EXPECTED);
+                        }
+                        needkw(&lex, Keyword::closepa_);
+                    }
+                    break;
                 case Keyword::D0_:
                 case Keyword::D1_:
                 case Keyword::D2_:
@@ -6997,9 +7070,9 @@ static LexList* expression_alignof(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
         needkw(&lex, Keyword::closepa_);
         if (unpackingTemplate && (*tp)->type == BasicType::templateparam_ && (*tp)->templateParam->second->packed)
         {
-                auto tpl = LookupPackedInstance(*(*tp)->templateParam);
-                if (tpl)
-                    *tp = tpl->byClass.val;
+            auto tpl = LookupPackedInstance(*(*tp)->templateParam);
+            if (tpl)
+                *tp = tpl->byClass.val;
         }
         if (!*tp)
         {
@@ -7045,12 +7118,13 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
         else if (btp->msil)
             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
-        else if (symRef && symRef->type != ExpressionNode::labcon_ && symRef->v.sp->sb->attribs.inheritable.linkage2 == Linkage::property_)
+        else if (symRef && symRef->type != ExpressionNode::labcon_ &&
+                 symRef->v.sp->sb->attribs.inheritable.linkage2 == Linkage::property_)
             errorsym(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, symRef->v.sp);
         else if (inreg(*exp, true))
             error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
-        else if ((!btp->IsPtr() || !(btp)->array) && !btp->IsStructured() && !btp->IsFunction() && btp->type != BasicType::aggregate_ &&
-                 (exp1)->type != ExpressionNode::memberptr_)
+        else if ((!btp->IsPtr() || !(btp)->array) && !btp->IsStructured() && !btp->IsFunction() &&
+                 btp->type != BasicType::aggregate_ && (exp1)->type != ExpressionNode::memberptr_)
         {
             if (exp1->type != ExpressionNode::callsite_)
                 if ((exp1)->type != ExpressionNode::const_ && exp1->type != ExpressionNode::assign_)
@@ -7059,7 +7133,8 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
                             error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
             if (IsLValue(exp1))
             {
-                if (exp1->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, exp1->left->right) && exp1->left->left->type == ExpressionNode::l_ref_ && exp1->left->left->left->type == ExpressionNode::auto_)
+                if (exp1->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, exp1->left->right) &&
+                    exp1->left->left->type == ExpressionNode::l_ref_ && exp1->left->left->left->type == ExpressionNode::auto_)
                 {
                     if (exp1->left->left->left->v.sp->sb->storage_class == StorageClass::parameter_)
                         exp1->left->left->left->v.sp->sb->addressTaken = true;
@@ -7355,9 +7430,9 @@ static LexList* expression_postfix(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                     if ((*tp)->BaseType()->type == BasicType::bool_)
                     {
                         /* Keyword::autoinc_ of a bool sets it true.  Keyword::autodec_ not allowed in C++
-                            * these aren't spelled out in the C99 standard, we are
-                            * doing the normal thing here...
-                            */
+                         * these aren't spelled out in the C99 standard, we are
+                         * doing the normal thing here...
+                         */
                         if (kw == Keyword::autodec_)
                         {
                             if (Optimizer::cparams.prm_cplusplus)
@@ -7375,11 +7450,13 @@ static LexList* expression_postfix(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             cast(&stdint, &exp1);
                         else
                             cast(*tp, &exp1);
-                        *exp = MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::auto_inc_ : ExpressionNode::auto_dec_, *exp, exp1);
+                        *exp = MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::auto_inc_ : ExpressionNode::auto_dec_, *exp,
+                                              exp1);
                     }
                     if (exp3)
                         *exp = MakeExpression(ExpressionNode::comma_, exp3, *exp);
-                    while (TakeAddress(&exp1));
+                    while (TakeAddress(&exp1))
+                        ;
                     if (exp1->type == ExpressionNode::auto_)
                         exp1->v.sp->sb->altered = true;
                 }
@@ -7578,7 +7655,7 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                                     {
                                         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                                             FindOperatorFunction(ovcl_unary_postfix, kw, funcsp, tp, exp, nullptr, nullptr, nullptr,
-                                                flags))
+                                                                 flags))
                                         {
                                             continue;
                                         }
@@ -7613,19 +7690,23 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                                         if ((*tp)->BaseType()->type == BasicType::bool_)
                                         {
                                             /* Keyword::autoinc_ of a bool sets it true.  Keyword::autodec_ not allowed
-                                                * these aren't spelled out in the C99 standard, we are
-                                                * following the C++ standard here
-                                                */
+                                             * these aren't spelled out in the C99 standard, we are
+                                             * following the C++ standard here
+                                             */
                                             if (kw == Keyword::autodec_)
                                                 error(ERR_CANNOT_USE_bool_HERE);
-                                            *exp = MakeExpression(ExpressionNode::assign_, *exp, MakeIntExpression(ExpressionNode::c_bool_, 1));
+                                            *exp = MakeExpression(ExpressionNode::assign_, *exp,
+                                                                  MakeIntExpression(ExpressionNode::c_bool_, 1));
                                         }
                                         else
                                         {
                                             cast(*tp, &exp1);
-                                            *exp = MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::auto_inc_ : ExpressionNode::auto_dec_, *exp, exp1);
+                                            *exp = MakeExpression(kw == Keyword::autoinc_ ? ExpressionNode::auto_inc_
+                                                                                          : ExpressionNode::auto_dec_,
+                                                                  *exp, exp1);
                                         }
-                                        while (TakeAddress(&exp1));
+                                        while (TakeAddress(&exp1))
+                                            ;
                                         if (exp1->type == ExpressionNode::auto_)
                                             exp1->v.sp->sb->altered = true;
                                     }
@@ -7642,7 +7723,8 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                         lex = expression_cast(lex, funcsp, nullptr, &throwaway, exp, ismutable, flags);
                         if (throwaway)
                         {
-                            if ((*exp)->type == ExpressionNode::pc_ || ((*exp)->type == ExpressionNode::callsite_ && !(*exp)->v.func->ascall))
+                            if ((*exp)->type == ExpressionNode::pc_ ||
+                                ((*exp)->type == ExpressionNode::callsite_ && !(*exp)->v.func->ascall))
                                 thunkForImportTable(exp);
                             if ((*tp)->BaseType()->type == BasicType::string_)
                             {
@@ -7662,7 +7744,8 @@ LexList* expression_cast(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXP
                                 error(ERR_NOT_AN_ALLOWED_TYPE);
                             }
                             else if (!Optimizer::cparams.prm_cplusplus &&
-                                     ((throwaway->IsStructured() && !(*tp)->IsVoid()) || throwaway->BaseType()->type == BasicType::memberptr_ ||
+                                     ((throwaway->IsStructured() && !(*tp)->IsVoid()) ||
+                                      throwaway->BaseType()->type == BasicType::memberptr_ ||
                                       (*tp)->BaseType()->type == BasicType::memberptr_) &&
                                      !throwaway->CompatibleType(*tp))
                             {
@@ -8017,7 +8100,7 @@ void GetLogicalDestructors(std::list<struct expr*>** rv, EXPRESSION* cur)
         GetLogicalDestructors(rv, cur->right);
     }
 }
-void GetAssignDestructors (std::list<EXPRESSION*> **rv, EXPRESSION *exp)
+void GetAssignDestructors(std::list<EXPRESSION*>** rv, EXPRESSION* exp)
 {
     while (IsCastValue(exp) || IsLValue(exp) || exp->type == ExpressionNode::thisref_)
         exp = exp->left;
@@ -8030,7 +8113,7 @@ void GetAssignDestructors (std::list<EXPRESSION*> **rv, EXPRESSION *exp)
     {
         for (auto t : *exp->v.func->arguments)
         {
-            GetAssignDestructors(rv, t->exp); 
+            GetAssignDestructors(rv, t->exp);
             if (t->destructors)
             {
                 if (!*rv)
@@ -8070,9 +8153,9 @@ static LexList* binop(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRES
             GetLogicalDestructors(&logicaldestructorsleft, *exp);
             if (Optimizer::cparams.prm_cplusplus && *tp && (*tp)->IsStructured())
             {
-                if (!castToArithmeticInternal(false, tp, exp, (Keyword) - 1, &stdbool, false))
-                    if (!castToArithmeticInternal(false, tp, exp, (Keyword) - 1, &stdint, false))
-                        if (!castToPointer(tp, exp, (Keyword) - 1, &stdpointer))
+                if (!castToArithmeticInternal(false, tp, exp, (Keyword)-1, &stdbool, false))
+                    if (!castToArithmeticInternal(false, tp, exp, (Keyword)-1, &stdint, false))
+                        if (!castToPointer(tp, exp, (Keyword)-1, &stdpointer))
                             errorConversionOrCast(true, *tp, &stdint);
             }
         }
@@ -8105,9 +8188,9 @@ static LexList* binop(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRES
             GetLogicalDestructors(&logicaldestructorsright, exp1);
             if (Optimizer::cparams.prm_cplusplus && tp1 && tp1->IsStructured())
             {
-                if (!castToArithmeticInternal(false, &tp1, &exp1, (Keyword) - 1, &stdbool, false))
-                    if (!castToArithmeticInternal(false, &tp1, &exp1, (Keyword) - 1, &stdint, false))
-                        if (!castToPointer(&tp1, &exp1, (Keyword) - 1, &stdpointer))
+                if (!castToArithmeticInternal(false, &tp1, &exp1, (Keyword)-1, &stdbool, false))
+                    if (!castToArithmeticInternal(false, &tp1, &exp1, (Keyword)-1, &stdint, false))
+                        if (!castToPointer(&tp1, &exp1, (Keyword)-1, &stdpointer))
                             errorConversionOrCast(true, tp1, &stdint);
             }
         }
@@ -8151,9 +8234,9 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
         EXPRESSION *eph = nullptr, *epc = nullptr;
         if (Optimizer::cparams.prm_cplusplus && *tp && (*tp)->IsStructured())
         {
-            if (!castToArithmeticInternal(false, tp, exp, (Keyword) - 1, &stdbool, false))
-                if (!castToArithmeticInternal(false, tp, exp, (Keyword) - 1, &stdint, false))
-                    if (!castToPointer(tp, exp, (Keyword) - 1, &stdpointer))
+            if (!castToArithmeticInternal(false, tp, exp, (Keyword)-1, &stdbool, false))
+                if (!castToArithmeticInternal(false, tp, exp, (Keyword)-1, &stdint, false))
+                    if (!castToPointer(tp, exp, (Keyword)-1, &stdpointer))
                         errorConversionOrCast(true, *tp, &stdint);
         }
         std::list<EXPRESSION*>* logicaldestructors = nullptr;
@@ -8249,10 +8332,12 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                                 errorConversionOrCast(true, tph, atp);
                         }
                     }
-                    else if ( ! tpc->IsStructured() || !tph->IsStructured() || 
-                        (((!tpc->lref && !tpc->lref && !tph->lref && !tph->rref) || (tpc->lref != tph->lref && tpc->rref != tph->rref))
-                            && ((tph->SameType(tpc) && !SameTemplate(tph, tpc, false)) 
-                                    || epc->type == ExpressionNode::thisref_ || epc->type == ExpressionNode::callsite_ || eph->type == ExpressionNode::thisref_ || eph->type == ExpressionNode::callsite_)))
+                    else if (!tpc->IsStructured() || !tph->IsStructured() ||
+                             (((!tpc->lref && !tpc->lref && !tph->lref && !tph->rref) ||
+                               (tpc->lref != tph->lref && tpc->rref != tph->rref)) &&
+                              ((tph->SameType(tpc) && !SameTemplate(tph, tpc, false)) || epc->type == ExpressionNode::thisref_ ||
+                               epc->type == ExpressionNode::callsite_ || eph->type == ExpressionNode::thisref_ ||
+                               eph->type == ExpressionNode::callsite_)))
                     {
                         // structure is result of constructor or return value
                         // at this point we want to check that both sides
@@ -8318,7 +8403,8 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                         else
                         {
                             // now make sure both sides are in an anonymous variable
-                            if (tph->lref || tph->rref || (eph->type != ExpressionNode::callsite_ && eph->type != ExpressionNode::thisref_))
+                            if (tph->lref || tph->rref ||
+                                (eph->type != ExpressionNode::callsite_ && eph->type != ExpressionNode::thisref_))
                             {
                                 if (!rv)
                                     rv = AnonymousVar(StorageClass::auto_, tph);
@@ -8327,10 +8413,11 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                                 callConstructorParam(&ctype, &exp, tph, eph, true, false, false, false, true);
                                 eph = exp;
                             }
-                            if (tpc->lref || tpc->rref || (epc->type != ExpressionNode::callsite_ && epc->type != ExpressionNode::thisref_))
+                            if (tpc->lref || tpc->rref ||
+                                (epc->type != ExpressionNode::callsite_ && epc->type != ExpressionNode::thisref_))
                             {
-                                //if (!rv)
-                                    rv = AnonymousVar(StorageClass::auto_, tph);
+                                // if (!rv)
+                                rv = AnonymousVar(StorageClass::auto_, tph);
                                 EXPRESSION* exp = rv;
                                 Type* ctype = tpc;
                                 callConstructorParam(&ctype, &exp, tpc, epc, true, false, false, false, true);
@@ -8348,7 +8435,8 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                                 exp = exp->left;
                             if (exp->v.func->returnSP)
                             {
-                                if (exp->v.func->returnEXP && exp->v.func->returnEXP->type == ExpressionNode::auto_ && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                if (exp->v.func->returnEXP && exp->v.func->returnEXP->type == ExpressionNode::auto_ &&
+                                    exp->v.func->returnEXP->v.sp != rv->v.sp)
                                     exp->v.func->returnEXP->v.sp->sb->allocate = false;
                                 exp->v.func->returnEXP = rv;
                             }
@@ -8363,7 +8451,8 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                                 exp = exp->left;
                             if (exp->v.func->returnSP)
                             {
-                                if (exp->v.func->returnEXP && exp->v.func->returnEXP->type == ExpressionNode::auto_ && exp->v.func->returnEXP->v.sp != rv->v.sp)
+                                if (exp->v.func->returnEXP && exp->v.func->returnEXP->type == ExpressionNode::auto_ &&
+                                    exp->v.func->returnEXP->v.sp != rv->v.sp)
                                     exp->v.func->returnEXP->v.sp->sb->allocate = false;
                                 exp->v.func->returnEXP = rv;
                             }
@@ -8462,7 +8551,8 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                 (*exp)->v.logicaldestructors.left = logicaldestructors;
                 // when assigning a structure to itself, need an intermediate copy
                 // this always puts it in...
-                if (Optimizer::cparams.prm_cplusplus && (*tp)->IsStructured() && !(*tp)->lref && atp && !(*tp)->BaseType()->sp->sb->structuredAliasType)
+                if (Optimizer::cparams.prm_cplusplus && (*tp)->IsStructured() && !(*tp)->lref && atp &&
+                    !(*tp)->BaseType()->sp->sb->structuredAliasType)
                 {
                     EXPRESSION* rv = AnonymousVar(StorageClass::auto_, *tp);
                     Type* ctype = *tp;
@@ -8535,7 +8625,8 @@ LexList* expression_throw(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** 
                 arg2->exp = MakeExpression(ExpressionNode::comma_, exp3, arg2->exp);
             }
             arg2->tp = &stdpointer;
-            arg3->exp = tp1->IsArray() ? MakeIntExpression(ExpressionNode::c_i_, tp1->size / (tp1->BaseType()->btp->size)) : MakeIntExpression(ExpressionNode::c_i_, 1);
+            arg3->exp = tp1->IsArray() ? MakeIntExpression(ExpressionNode::c_i_, tp1->size / (tp1->BaseType()->btp->size))
+                                       : MakeIntExpression(ExpressionNode::c_i_, 1);
             arg3->tp = &stdint;
             arg4->exp = cons ? MakeExpression(ExpressionNode::pc_, cons) : MakeIntExpression(ExpressionNode::c_i_, 0);
             arg4->tp = &stdpointer;
@@ -8647,8 +8738,8 @@ LexList* expression_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                         tp1 = *tp;
                         spinit = AnonymousVar(StorageClass::localstatic_, tp1)->v.sp;
                         localNameSpace->front()->syms->Add(spinit);
-                        lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, spinit, false,
-                            false, flags | _F_ASSIGNINIT);
+                        lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, spinit, false, false,
+                                       flags | _F_ASSIGNINIT);
                         EXPRESSION* exp2 = nullptr;
                         if (init && init->front()->exp->type == ExpressionNode::thisref_)
                         {
@@ -8795,7 +8886,7 @@ LexList* expression_no_check(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
     if (flags & _F_TYPETEST)
     {
         anonymousNotAlloc++;
-        lex = expression_no_comma(lex, funcsp, atp, tp, exp, nullptr, flags);        
+        lex = expression_no_comma(lex, funcsp, atp, tp, exp, nullptr, flags);
         anonymousNotAlloc--;
     }
     else

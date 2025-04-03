@@ -1,8 +1,9 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-//The logic in this file was ported from https://github.com/dotnet/runtime/blob/17154bd7b8f21d6d8d6fca71b89d7dcb705ec32b/src/coreclr/utilcode/longfilepathwrappers.cpp
-//Please reflect any change here into the above file too!
+// The logic in this file was ported from
+// https://github.com/dotnet/runtime/blob/17154bd7b8f21d6d8d6fca71b89d7dcb705ec32b/src/coreclr/utilcode/longfilepathwrappers.cpp
+// Please reflect any change here into the above file too!
 #include "pal.h"
 #include "trace.h"
 #include "fxrutils.h"
@@ -31,9 +32,9 @@ bool ShouldNormalizeWorker(const pal::string_t& path)
     return true;
 }
 
-//For longpath names on windows, if the paths are normalized they are always prefixed with
-//extended syntax, Windows does not do any more normalizations on this string and uses it as is
-//So we should ensure that there are NO adjacent DirectorySeparatorChar
+// For longpath names on windows, if the paths are normalized they are always prefixed with
+// extended syntax, Windows does not do any more normalizations on this string and uses it as is
+// So we should ensure that there are NO adjacent DirectorySeparatorChar
 bool AssertRepeatingDirSeparator(const pal::string_t& path)
 {
     if (path.empty())
@@ -84,27 +85,21 @@ bool AssertRepeatingDirSeparator(const pal::string_t& path)
     assert(path_to_check.find(_X("..")) == pal::string_t::npos);
     return true;
 }
-bool  LongFile::ShouldNormalize(const pal::string_t& path)
+bool LongFile::ShouldNormalize(const pal::string_t& path)
 {
     bool retval = ShouldNormalizeWorker(path);
     assert(retval || AssertRepeatingDirSeparator(path));
     return retval;
 }
 
-bool LongFile::IsExtended(const pal::string_t& path)
-{
-    return path.compare(0, ExtendedPrefix.length(), ExtendedPrefix) == 0;
-}
+bool LongFile::IsExtended(const pal::string_t& path) { return path.compare(0, ExtendedPrefix.length(), ExtendedPrefix) == 0; }
 
 bool LongFile::IsUNCExtended(const pal::string_t& path)
 {
     return path.compare(0, UNCExtendedPathPrefix.length(), UNCExtendedPathPrefix) == 0;
 }
 
-bool LongFile::IsDevice(const pal::string_t& path)
-{
-    return path.compare(0, DevicePathPrefix.length(), DevicePathPrefix) == 0;
-}
+bool LongFile::IsDevice(const pal::string_t& path) { return path.compare(0, DevicePathPrefix.length(), DevicePathPrefix) == 0; }
 
 // Relative here means it could be relative to current directory on the relevant drive
 // NOTE: Relative segments ( \..\) are not considered relative
@@ -123,21 +118,17 @@ bool LongFile::IsPathNotFullyQualified(const pal::string_t& path)
 
     if (IsDirectorySeparator(path[0]))
     {
-        return !IsDirectorySeparator(path[1]); // There is no valid way to specify a relative path with two initial slashes
+        return !IsDirectorySeparator(path[1]);  // There is no valid way to specify a relative path with two initial slashes
     }
 
-    return (path.length() < 3)           //The only way to specify a fixed path that doesn't begin with two slashes is the drive, colon, slash format- "i.e. C:\"
-        || (path[1] != VolumeSeparatorChar)
-        || !IsDirectorySeparator(path[2]);
+    return (path.length() < 3)  // The only way to specify a fixed path that doesn't begin with two slashes is the drive, colon,
+                                // slash format- "i.e. C:\"
+           || (path[1] != VolumeSeparatorChar) || !IsDirectorySeparator(path[2]);
 }
 
-bool LongFile::ContainsDirectorySeparator(const pal::string_t & path)
+bool LongFile::ContainsDirectorySeparator(const pal::string_t& path)
 {
-    return path.find(DirectorySeparatorChar) != pal::string_t::npos ||
-           path.find(AltDirectorySeparatorChar) != pal::string_t::npos;
+    return path.find(DirectorySeparatorChar) != pal::string_t::npos || path.find(AltDirectorySeparatorChar) != pal::string_t::npos;
 }
 
-bool LongFile::IsDirectorySeparator(const pal::char_t c)
-{
-    return c == DirectorySeparatorChar || c == AltDirectorySeparatorChar;
-}
+bool LongFile::IsDirectorySeparator(const pal::char_t c) { return c == DirectorySeparatorChar || c == AltDirectorySeparatorChar; }

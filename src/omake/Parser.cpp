@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "Parser.h"
@@ -150,12 +150,12 @@ std::string Parser::RemoveComment(const std::string& line)
                 // for even count remove half the characters + everything after that
                 // for odd count remove half the characters + 1 and leave the '#' and everything after it intact
                 int count = 0;
-                while (n > 0 && rv[n-1] == '\\')
+                while (n > 0 && rv[n - 1] == '\\')
                     count++, n--;
-                n += count/2;
+                n += count / 2;
                 if (count % 2)
                 {
-                    rv.replace(n, count/2 + 1, "");
+                    rv.replace(n, count / 2 + 1, "");
                     start = n + 1;
                 }
                 else
@@ -374,7 +374,8 @@ bool Parser::ParseLine(const std::string& line)
     }
     return rv;
 }
-bool Parser::ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
+bool Parser::ParseAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific,
+                         std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -407,7 +408,8 @@ bool Parser::ParseAssign(const std::string& left, const std::string& right, bool
         v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
+bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific,
+                                  std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -439,7 +441,8 @@ bool Parser::ParseRecursiveAssign(const std::string& left, const std::string& ri
         v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
+bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific,
+                             std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -476,7 +479,8 @@ bool Parser::ParsePlusAssign(const std::string& left, const std::string& right, 
         v->SetExport(exportSpecific);
     return true;
 }
-bool Parser::ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific, std::shared_ptr<RuleList> ruleList)
+bool Parser::ParseQuestionAssign(const std::string& left, const std::string& right, bool dooverride, bool exportSpecific,
+                                 std::shared_ptr<RuleList> ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -803,8 +807,8 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                         ps2 = ReplaceAllStems(stem, ps2);
                         std::string os1 = os;
                         os1 = ReplaceAllStems(stem, os1);
-                        rule = std::make_shared<Rule>(cur, ps2, os1, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
-                                        secondaryExpansionEnabled);
+                        rule = std::make_shared<Rule>(cur, ps2, os1, lastCommand, file, lineno, dontCare, ignore, silent, make,
+                                                      precious, secondaryExpansionEnabled);
                     }
                     else
                     {
@@ -814,7 +818,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 else
                 {
                     rule = std::make_shared<Rule>(cur, ps1, os, lastCommand, file, lineno, dontCare, ignore, silent, make, precious,
-                                    secondaryExpansionEnabled, !orderPrereqs.empty() || !prereqs.empty());
+                                                  secondaryExpansionEnabled, !orderPrereqs.empty() || !prereqs.empty());
                 }
                 std::shared_ptr<RuleList> ruleList = RuleContainer::Instance()->Lookup(cur);
                 if (!ruleList)
@@ -909,7 +913,8 @@ bool Parser::ParseCommand(const std::string& line)
         if (n != std::string::npos && n == line.size() - 3)
         {
             // this handles && as a temporary command file marker
-            // note that we are not supporting it if you use a line continuation in conjunction with it and it must be the last thing on a line
+            // note that we are not supporting it if you use a line continuation in conjunction with it and it must be the last
+            // thing on a line
             char match = line[n + 2];
             bool found = false;
             while (!remaining.empty() && !found)

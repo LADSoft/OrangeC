@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -114,7 +114,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
 }
 static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, SymbolTable<SYMBOL>* table, EXPRESSION* thisptr)
 {
-    EXPRESSION *rv = nullptr;
+    EXPRESSION* rv = nullptr;
     if (table->size())
     {
         SYMBOL* sym = table->front();
@@ -122,14 +122,14 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
         {
             if (thisptr)
             {
-                if(Optimizer::architecture == ARCHITECTURE_MSIL)
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
                     Optimizer::SimpleSymbol* simpleSym;
                     Optimizer::IMODE *src, *ap1, *idest;
                     EXPRESSION* dest;
                     thisptr = inlineSymThisPtr.size() == 0 || inlineSymThisPtr.back() == nullptr || !hasRelativeThis(thisptr)
-                              ? thisptr
-                              : inlineGetThisPtr(thisptr);
+                                  ? thisptr
+                                  : inlineGetThisPtr(thisptr);
                     simpleSym = Optimizer::SymbolManager::Get(sym = makeID(StorageClass::auto_, sym->tp, nullptr, AnonymousName()));
                     simpleSym->allocate = true;
                     simpleSym->anonymous = true;
@@ -154,20 +154,25 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                     Optimizer::IMODE *src, *ap1, *idest;
                     EXPRESSION* dest;
                     thisptr = inlineSymThisPtr.size() == 0 || inlineSymThisPtr.back() == nullptr || !hasRelativeThis(thisptr)
-                              ? thisptr
-                              : inlineGetThisPtr(thisptr);
+                                  ? thisptr
+                                  : inlineGetThisPtr(thisptr);
                     Type* tr = nullptr;
 
                     // special case the -> operator, as it always must return a pointer
-                    if (func->name[0] != '.' || func->name[2] !=  'a' || strcmp(func->name, overloadNameTab[CI_POINTSTO]) != 0)
-                    if (!(flags & F_RETURNSTRUCTBYADDRESS) && (func->sb->isConstructor || func->sb->isDestructor ||
-                        (!func->tp->BaseType()->btp->IsStructured() && !sym->tp->CompatibleType(func->tp->BaseType()->btp) &&
-                         !SameTemplatePointedTo(sym->tp, func->tp->BaseType()->btp))))
-                        tr = sym->tp->BaseType()->btp->BaseType();
-                    if (tr && tr->sp->sb->structuredAliasType && (thisptr->type != ExpressionNode::l_p_ || thisptr->left->type != ExpressionNode::auto_ || !thisptr->left->v.sp->sb->thisPtr || thisptr->left->v.sp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType) && !expressionHasSideEffects(thisptr))
+                    if (func->name[0] != '.' || func->name[2] != 'a' || strcmp(func->name, overloadNameTab[CI_POINTSTO]) != 0)
+                        if (!(flags & F_RETURNSTRUCTBYADDRESS) &&
+                            (func->sb->isConstructor || func->sb->isDestructor ||
+                             (!func->tp->BaseType()->btp->IsStructured() && !sym->tp->CompatibleType(func->tp->BaseType()->btp) &&
+                              !SameTemplatePointedTo(sym->tp, func->tp->BaseType()->btp))))
+                            tr = sym->tp->BaseType()->btp->BaseType();
+                    if (tr && tr->sp->sb->structuredAliasType &&
+                        (thisptr->type != ExpressionNode::l_p_ || thisptr->left->type != ExpressionNode::auto_ ||
+                         !thisptr->left->v.sp->sb->thisPtr ||
+                         thisptr->left->v.sp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType) &&
+                        !expressionHasSideEffects(thisptr))
                     {
                         auto val = thisptr;
-                        Dereference(tr->sp->sb->structuredAliasType, &val); 
+                        Dereference(tr->sp->sb->structuredAliasType, &val);
                         src = gen_expr(funcsp, val, F_STORE, natural_size(val));
                         dest = makeParamSubs(thisptr, src);
                         Dereference(&stdpointer, &dest);
@@ -181,7 +186,8 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
                             Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
                             src = ap1;
                         }
-                        if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref || src->size != ISZ_ADDR || src->offset->sp->loadTemp)
+                        if (src->mode != Optimizer::i_direct || src->offset->type != Optimizer::se_tempref ||
+                            src->size != ISZ_ADDR || src->offset->sp->loadTemp)
                         {
                             if (src->size != ISZ_ADDR)
                             {
@@ -211,7 +217,7 @@ static EXPRESSION* inlineBindThis(SYMBOL* funcsp, SYMBOL* func, int flags, Symbo
     }
     return rv;
 }
-static void ArgDeref(Type* desttp, Type* srctp, EXPRESSION **dest)
+static void ArgDeref(Type* desttp, Type* srctp, EXPRESSION** dest)
 {
     if (desttp->IsArray())
     {
@@ -245,14 +251,16 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
         {
             ++it;
         }
-        
+
         std::list<Argument*>::iterator ita, itae;
         if (args)
         {
             ita = args->begin();
             itae = args->end();
         }
-        for ( ; it != table->end() && ita != itae; ++it, ++ita )  // args might go to nullptr for a destructor, which currently has a VOID at the Keyword::end_ of the arg list
+        for (; it != table->end() && ita != itae;
+             ++it,
+             ++ita)  // args might go to nullptr for a destructor, which currently has a VOID at the Keyword::end_ of the arg list
         {
             SYMBOL* sym = *it;
             if (!sym->tp->IsVoid())
@@ -265,10 +273,12 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     n = m;
                 else
                     n = SizeFromType(sym->tp->IsStructured() ? sym->tp->BaseType()->sp->sb->structuredAliasType : sym->tp);
-                Type *tpr = nullptr;
+                Type* tpr = nullptr;
                 if (sym->tp->IsRef())
                     tpr = sym->tp->BaseType()->btp;
-                if (tpr && (tpr->IsStructured() && tpr->BaseType()->sp->sb->structuredAliasType) && tpr->size <= Optimizer::chosenAssembler->arch->word_size && Optimizer::architecture != ARCHITECTURE_MSIL && !expressionHasSideEffects((*ita)->exp))
+                if (tpr && (tpr->IsStructured() && tpr->BaseType()->sp->sb->structuredAliasType) &&
+                    tpr->size <= Optimizer::chosenAssembler->arch->word_size && Optimizer::architecture != ARCHITECTURE_MSIL &&
+                    !expressionHasSideEffects((*ita)->exp))
                 {
                     // can pass reference by value...
                     auto val = (*ita)->exp;
@@ -281,7 +291,8 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                     {
                         Dereference(tpr->BaseType()->sp->sb->structuredAliasType, &val);
                     }
-                    if (sym->sb->addressTaken && (ext->type == ExpressionNode::callsite_ && !ext->v.func->sp->tp->BaseType()->btp->IsRef()))   
+                    if (sym->sb->addressTaken &&
+                        (ext->type == ExpressionNode::callsite_ && !ext->v.func->sp->tp->BaseType()->btp->IsRef()))
                     {
                         src = nullptr;
                         addr = tempVar(&stdpointer);
@@ -331,7 +342,8 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
 
                     if (src->wasinlined && !createTemp)
                     {
-                        if (val->type == ExpressionNode::l_ref_ && val->left->type == ExpressionNode::auto_ && val->left->v.sp->sb->storage_class == StorageClass::parameter_)
+                        if (val->type == ExpressionNode::l_ref_ && val->left->type == ExpressionNode::auto_ &&
+                            val->left->v.sp->sb->storage_class == StorageClass::parameter_)
                         {
                             if (val->left->v.sp->tp->IsRef() && val->left->v.sp->tp->BaseType()->btp->IsStructured())
                                 if (val->left->v.sp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
@@ -363,7 +375,6 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
                             src = ap1;
                         }
                         Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
-
                     }
                     else
                     {
@@ -407,7 +418,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
         // we have to fill in the args last in case the same constructor was used
         // in multiple arguments...
         // also deals with things like the << and >> operators, where an expression can have arguments chained into the same
-          // operator over and over...
+        // operator over and over...
         auto ital = argList.begin();
         for (auto sym : *table)
         {
@@ -429,7 +440,7 @@ static void inlineUnbindArgs(SymbolTable<SYMBOL>* table)
         Optimizer::SymbolManager::Get(sym)->paramSubstitute = nullptr;
     }
 }
-static void inlineResetSym(Optimizer::SimpleSymbol* sym) 
+static void inlineResetSym(Optimizer::SimpleSymbol* sym)
 {
     if (sym->storage_class != Optimizer::scc_localstatic)
     {
@@ -446,7 +457,7 @@ static void inlineCopySyms(SymbolTable<SYMBOL>* src)
 {
     while (src)
     {
-        for (auto sym : * src)
+        for (auto sym : *src)
         {
             if (!sym->sb->thisPtr && !sym->sb->anonymous && sym->sb->storage_class != StorageClass::parameter_ &&
                 sym->sb->storage_class != StorageClass::localstatic_ && sym->sb->storage_class != StorageClass::constant_)
@@ -490,14 +501,15 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldretlab = retlab, oldstartlab = startlab;
     int oldretcount = retcount;
     int oldOffset = codeLabelOffset;
-//        return nullptr;
+    //        return nullptr;
     if (noinline)
         return nullptr;
     if (Optimizer::chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
 
     // don't put unnecessary destructor calls into the final output file
-    if ((Optimizer::cparams.prm_debug || (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE)) && (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
+    if ((Optimizer::cparams.prm_debug || (Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE)) &&
+        (!f->sp->sb->isDestructor || !f->sp->sb->parentClass->sb->pureDest))
     {
         return nullptr;
     }
@@ -584,7 +596,8 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     for (auto sp : *f->sp->tp->BaseType()->syms)
     {
-        if ((sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->structuredAliasType) || sp->tp->BaseType()->type == BasicType::memberptr_)
+        if ((sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->structuredAliasType) ||
+            sp->tp->BaseType()->type == BasicType::memberptr_)
         {
             return nullptr;
         }
@@ -606,7 +619,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             auto exp = fargs->exp;
             if (exp->type == ExpressionNode::comma_)
                 exp = exp->left;
-            if (hasaincdec(fargs->exp) || (exp->type == ExpressionNode::thisref_ && exp->left->v.func->sp->sb->isConstructor) )
+            if (hasaincdec(fargs->exp) || (exp->type == ExpressionNode::thisref_ && exp->left->v.func->sp->sb->isConstructor))
             {
                 return nullptr;
             }
@@ -633,7 +646,8 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     if (f->sp->tp->BaseType()->btp->IsStructured())
     {
         EXPRESSION* exp = f->returnEXP;
-        if (exp && inlineSymStructPtr.size() && IsLValue(exp) && exp->left->type == ExpressionNode::auto_ && exp->left->v.sp->sb->retblk)
+        if (exp && inlineSymStructPtr.size() && IsLValue(exp) && exp->left->type == ExpressionNode::auto_ &&
+            exp->left->v.sp->sb->retblk)
         {
             exp = inlineSymStructPtr.back();
         }
@@ -681,7 +695,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     else
     {
-        auto ap4 = LookupLoadTemp(nullptr,ap3);
+        auto ap4 = LookupLoadTemp(nullptr, ap3);
         ap4->returnRefByVal = ap3->returnRefByVal;
         gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
         ap3 = ap4;

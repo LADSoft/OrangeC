@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -130,7 +130,7 @@ static void InitRegAliases(ARCH_REGDESC* desc)
     {
         int j;
 #ifdef TESTBITS
-        desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT)*2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
         *desc[i].aliasBits++ = REG_MAX;
 #else
         desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
@@ -154,13 +154,13 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
         c->vertex = child->index;
         c->index = classCount++;
 #ifdef TESTBITS
-        c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) *2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
         *c->aliasBits++ = REG_MAX;
 #else
         c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #endif
 #ifdef TESTBITS
-        c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT)*2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
         *c->regBits++ = REG_MAX;
 #else
         c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
@@ -171,7 +171,7 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
             setbit(c->regBits, c->regs[i]);
             for (j = 0; j < (REG_MAX + BITINTBITS - 1) / BITINTBITS; j++)
             {
-               c->aliasBits[j] |= chosenAssembler->arch->regNames[c->regs[i]].aliasBits[j];
+                c->aliasBits[j] |= chosenAssembler->arch->regNames[c->regs[i]].aliasBits[j];
             }
         }
         c = c->next;
@@ -209,8 +209,7 @@ static void LoadWorstCase(void)
                 int count = 0;
                 for (m = 0; m < (REG_MAX + BITINTBITS - 1) / BITINTBITS; m++)
                 {
-                    BITINT x =
-                        classes[i]->regBits[m] & chosenAssembler->arch->regNames[classes[j]->regs[k]].aliasBits[m];
+                    BITINT x = classes[i]->regBits[m] & chosenAssembler->arch->regNames[classes[j]->regs[k]].aliasBits[m];
                     int y;
                     for (y = 0; y < sizeof(BITINT); y++)
                     {
@@ -236,7 +235,7 @@ static void LoadAliases(ARCH_REGVERTEX* v)
     if (v->right)
         LoadAliases(v->right);
 #ifdef TESTBITS
-    v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT)*2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+    v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
     *v->aliasBits++ = REG_MAX;
 #else
     v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
@@ -393,7 +392,6 @@ void AllocateStackSpace(int begin)
     bool show = false;
     lc_maxauto = max = begin;
 
-
     for (auto&& dq : queue)
     {
         int oldauto = lc_maxauto;
@@ -420,7 +418,8 @@ void AllocateStackSpace(int begin)
             {
                 int val;
                 lc_maxauto += sym->tp->size;
-                if ((sym->tp->isarray || sym->tp->type == st_struct || sym->tp->type == st_union || sym->tp->type == st_class) && (Optimizer::cparams.prm_stackprotect & STACK_OBJECT_OVERFLOW))
+                if ((sym->tp->isarray || sym->tp->type == st_struct || sym->tp->type == st_union || sym->tp->type == st_class) &&
+                    (Optimizer::cparams.prm_stackprotect & STACK_OBJECT_OVERFLOW))
                 {
                     // make a canary on each such variables, that will be checked for buffer overflow...
                     lc_maxauto += chosenAssembler->arch->type_sizes->a_addr;

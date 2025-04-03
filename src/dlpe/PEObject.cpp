@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "PEObject.h"
@@ -42,24 +42,24 @@ DWORD PEObject::imageBaseVA;
 std::shared_ptr<unsigned char> PEObject::codeData;
 DWORD PEObject::codeRVA;
 DWORD PEObject::delayLoadHandleRVA;
-DWORD PEObject::delayLoadThunkRVA; 
+DWORD PEObject::delayLoadThunkRVA;
 std::vector<DWORD> PEObject::thunkFixups;
 
-const char* PEObject::importThunk = "\xff\x25\x00\x00\x00\x00";   //jmp near [through an iat entry]
+const char* PEObject::importThunk = "\xff\x25\x00\x00\x00\x00";  // jmp near [through an iat entry]
 
 const char* PEObject::delayLoadThunk =
-    "\xb8\x00\x00\x00\x00" // mov eax, iatoffset
-    "\xe9\x00\x00\x00\x00";// jmp rel to another thunk
+    "\xb8\x00\x00\x00\x00"   // mov eax, iatoffset
+    "\xe9\x00\x00\x00\x00";  // jmp rel to another thunk
 
 const char* PEObject::delayLoadModuleThunk =
-    "\x52"                    // push edx
-    "\x51"                    // push ecx
-    "\x50"                    // push eax (from the preceding thunk)
-    "\x68\x00\x00\x00\x00"    // push dword constant
-    "\xE8\x00\x00\x00\x00"    // call relative
-    "\x59"                    // pop ecx                    
-    "\x5a"                    // pop edx
-    "\xFF\xE0";               // jmp eax
+    "\x52"                  // push edx
+    "\x51"                  // push ecx
+    "\x50"                  // push eax (from the preceding thunk)
+    "\x68\x00\x00\x00\x00"  // push dword constant
+    "\xE8\x00\x00\x00\x00"  // call relative
+    "\x59"                  // pop ecx
+    "\x5a"                  // pop edx
+    "\xFF\xE0";             // jmp eax
 
 std::vector<std::string> PEObject::delayLoadNames;
 

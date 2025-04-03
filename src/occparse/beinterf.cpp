@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -86,7 +86,7 @@ int needsAtomicLockFromType(Type* tp)
         case BasicType::far_:
             return p->a_farptr;
         case BasicType::memberptr_:
-             return p->a_memberptr;
+            return p->a_memberptr;
         case BasicType::float_:
         case BasicType::float__imaginary_:
             return p->a_float;
@@ -215,10 +215,7 @@ int getBaseAlign(BasicType type)
     tp.rootType = &tp;
     return basesize(Optimizer::chosenAssembler->arch->type_align, &tp);
 }
-int getMaxAlign()
-{
-    return Optimizer::chosenAssembler->arch->type_align->a_maxalign;
-}
+int getMaxAlign() { return Optimizer::chosenAssembler->arch->type_align->a_maxalign; }
 long getautoval(long val)
 {
     if (Optimizer::chosenAssembler->arch->spgrowsup)

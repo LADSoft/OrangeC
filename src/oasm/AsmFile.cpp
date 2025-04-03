@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "AsmFile.h"
@@ -789,7 +789,7 @@ void AsmFile::TimesDirective()
             for (auto& f : *ins->GetFixups())
             {
                 auto expr = f->GetExpr();
-                auto expr2 = AsmExpr::Eval(expr, currentSection->GetPC()); 
+                auto expr2 = AsmExpr::Eval(expr, currentSection->GetPC());
                 f->SetExpr(expr2);
             }
             currentSection->InsertInstruction(ins);
@@ -1568,7 +1568,8 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         {
             if (!numericSections[i]->MakeData(
                     factory, [this](std::string& aa) { return Lookup(aa); },
-                    [this](std::string& aa) { return GetSectionByName(aa); }, [](ObjFactory&, Section*, std::shared_ptr<Instruction>&) {}))
+                    [this](std::string& aa) { return GetSectionByName(aa); },
+                    [](ObjFactory&, Section*, std::shared_ptr<Instruction>&) {}))
                 rv = false;
         }
     }

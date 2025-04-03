@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "ioptimizer.h"
@@ -39,15 +39,12 @@ namespace Optimizer
 {
 static std::unordered_map<std::string, int> nameMap;
 static bool overflowInitted;
-void localprotect_init()
-{
-    nameMap.clear();
-}
+void localprotect_init() { nameMap.clear(); }
 static bool CanaryCheckVars(FunctionData* fd, bool strong)
 {
     for (auto sym : functionVariables)
         if (!sym->regmode && sym->storage_class != scc_constant &&
-                       (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
+            (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
         {
             if (strong)
             {
@@ -60,7 +57,7 @@ static bool CanaryCheckVars(FunctionData* fd, bool strong)
             }
         }
     for (auto sym : temporarySymbols)
-                // compiler-created variable
+        // compiler-created variable
         if (sym->storage_class != scc_static && sym->storage_class != scc_constant && !sym->stackblock)
         {
             if (strong)
@@ -72,7 +69,7 @@ static bool CanaryCheckVars(FunctionData* fd, bool strong)
             {
                 return true;
             }
-       }
+        }
     return false;
 }
 bool HasCanary(FunctionData* fd)
@@ -82,7 +79,7 @@ bool HasCanary(FunctionData* fd)
     {
         if (Optimizer::cparams.prm_stackprotect & STACK_PROTECT_ALL)
             hasCanary = true;
-        else 
+        else
         {
             if (Optimizer::cparams.prm_stackprotect & STACK_PROTECT_EXPLICIT)
                 hasCanary = fd->name->stackProtectExplicit;
@@ -94,7 +91,7 @@ bool HasCanary(FunctionData* fd)
     }
     return hasCanary;
 }
-static auto InsertName(const char *name)
+static auto InsertName(const char* name)
 {
     int label;
     auto it = nameMap.find(name);
@@ -111,7 +108,7 @@ static auto InsertName(const char *name)
         nameMap[name] = label;
     }
     auto result = Allocate<IMODE>();
-    result->mode =  i_immed;
+    result->mode = i_immed;
     result->offset = Allocate<SimpleExpression>();
     result->offset->type = se_labcon;
     result->offset->i = label;
@@ -136,7 +133,7 @@ void CreateCanaryStubs(QUAD* head, QUAD* tail, SimpleSymbol* func)
 
         it = tail;
         while (it && it->dc.opcode != i_epilogue)
-           it = it->back;
+            it = it->back;
         if (it)
         {
             ins = Allocate<QUAD>();
@@ -170,7 +167,6 @@ static void OverflowInit(QUAD* head)
     insert_nullparmadj(it->fwd->fwd, 0);
 }
 
-
 void CreateUninitializedVariableStubs(QUAD* head, QUAD* tail)
 {
     IMODE* check = nullptr;
@@ -192,7 +188,7 @@ void CreateUninitializedVariableStubs(QUAD* head, QUAD* tail)
             if (it->runtimeData && !it->runtimeData->asStore)
             {
                 SimpleSymbol* sym = reinterpret_cast<SimpleSymbol*>(it->runtimeData->runtimeSym);
-                int label = loadHold[it];                
+                int label = loadHold[it];
                 put_label(label);
                 genint(sym->offset);
                 gen_labref(nameMap[it->runtimeData->varName]);
@@ -228,7 +224,7 @@ void CreateUninitializedVariableStubs(QUAD* head, QUAD* tail)
                         check = rwSetSymbol("___uninit_var_check", true);
                     }
                     IMODE* arg = Allocate<IMODE>();
-                    arg->mode =  i_immed;
+                    arg->mode = i_immed;
                     arg->offset = Allocate<SimpleExpression>();
                     arg->offset->type = se_labcon;
                     arg->offset->i = loadHold[it];
@@ -253,11 +249,11 @@ auto CreateOverflowTable()
     for (auto sym : functionVariables)
     {
         if (!sym->regmode && sym->storage_class != scc_constant &&
-                       (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
+            (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
         {
             if (sym->tp->isarray)
             {
-                InsertName(sym->outputName);              
+                InsertName(sym->outputName);
             }
         }
     }
@@ -271,7 +267,7 @@ auto CreateOverflowTable()
     for (auto sym : functionVariables)
     {
         if (!sym->regmode && sym->storage_class != scc_constant &&
-                       (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
+            (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
         {
             if (sym->tp->isarray || sym->tp->type == st_struct || sym->tp->type == st_union || sym->tp->type == st_class)
             {
@@ -294,13 +290,12 @@ void CreateBufferOverflowStubs(QUAD* head, QUAD* tail)
         for (auto sym : functionVariables)
         {
             if (!sym->regmode && sym->storage_class != scc_constant &&
-                       (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
+                (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous)
             {
                 if (sym->tp->isarray || sym->tp->type == st_struct || sym->tp->type == st_union || sym->tp->type == st_class)
                 {
-                   found = true;
+                    found = true;
                 }
-
             }
         }
         if (found)
@@ -320,8 +315,7 @@ void CreateBufferOverflowStubs(QUAD* head, QUAD* tail)
             ins->dc.left = check;
             InsertInstruction(it->back, ins);
             insert_nullparmadj(it->back, 0);
-
         }
     }
 }
-}
+}  // namespace Optimizer

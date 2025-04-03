@@ -1,3 +1,1 @@
-void __gcccc()
-{
-}
+void __gcccc() {}

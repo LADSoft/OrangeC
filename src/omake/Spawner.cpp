@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "Spawner.h"
@@ -66,7 +66,8 @@ const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 bool Spawner::stopAll;
 
-void Spawner::Run(std::shared_ptr<Command>& Commands, OutputType Type, std::shared_ptr<RuleList> RuleListx, std::shared_ptr<Rule> Rulex)
+void Spawner::Run(std::shared_ptr<Command>& Commands, OutputType Type, std::shared_ptr<RuleList> RuleListx,
+                  std::shared_ptr<Rule> Rulex)
 {
     commands = Commands;
     outputType = Type;
@@ -230,26 +231,26 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
             OSTakeJobIfNotMake lockJob(!make1);
 
             auto cmdList = Utils::split(command, '\n');
-            for (auto&&cmd : cmdList)
+            for (auto&& cmd : cmdList)
             {
-               if (!stopAll)
-               {
-                   if (!silent)
-                   {
-                       OS::WriteToConsole(OS::JobName() + cmd + "\n");
-                   }
-                   int rv1;
-                   if (!dontrun)
-                   {
-                       std::string str;
-                       rv1 = OS::Spawn(cmd, environment,
-                                       outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
-                       if (outputType != o_none && !str.empty())
-                           output.push_back(str);
-                       if (!rv)
-                           rv = rv1;
-                   }
-               }
+                if (!stopAll)
+                {
+                    if (!silent)
+                    {
+                        OS::WriteToConsole(OS::JobName() + cmd + "\n");
+                    }
+                    int rv1;
+                    if (!dontrun)
+                    {
+                        std::string str;
+                        rv1 = OS::Spawn(cmd, environment,
+                                        outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                        if (outputType != o_none && !str.empty())
+                            output.push_back(str);
+                        if (!rv)
+                            rv = rv1;
+                    }
+                }
             }
             if (rv && posix)
                 return rv;
@@ -331,9 +332,9 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
             break;
         s = working.find_first_of(" \t\n");
         int lfcount = 0;
-        for (int t=s; t< working.size() && isspace(working[t]); t++)
+        for (int t = s; t < working.size() && isspace(working[t]); t++)
             if (working[t] == '\n')
-               lfcount++;
+                lfcount++;
         std::string trailer = lfcount > 1 ? "\n" : "";
         if (s == std::string::npos)
             s = working.size();
@@ -366,7 +367,7 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
             working = working.substr(s);
         }
         cur = Maker::GetFullName(cur);
-        if (!rv.empty() && rv[rv.size()-1] != '\n')
+        if (!rv.empty() && rv[rv.size() - 1] != '\n')
             rv += " ";
         rv += cur + trailer;
     }

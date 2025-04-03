@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -92,30 +92,29 @@ const char* MakeMain::helpText =
     "/!    No logo                 /? or --help  this help\n"
     "--jobserver-auth=xxxx               Name a jobserver to use for getting jobs\n"
     "--version                           Show version info\n"
-    "--no-builtin-rules                  Ignore builtin rules\n" 
-    "--no-builtin-vars                   Ignore builtin variables\n" 
+    "--no-builtin-rules                  Ignore builtin rules\n"
+    "--no-builtin-vars                   Ignore builtin variables\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* MakeMain::usageText = "[options] goals\n";
 
-const char* MakeMain::builtinVars = 
-"CC=${ORANGEC}/bin/occ\n"
-"CXX=${ORANGEC}/bin/occ\n"
-"AS=${ORANGEC}/bin/oasm\n";
+const char* MakeMain::builtinVars =
+    "CC=${ORANGEC}/bin/occ\n"
+    "CXX=${ORANGEC}/bin/occ\n"
+    "AS=${ORANGEC}/bin/oasm\n";
 
 const char* MakeMain::builtinRules =
-"%.o: %.c .__BUILTIN\n"
-"\t${CC} ${CPPFLAGS} ${CFLAGS} -o $@ -c $<\n"
-"%.o: %.cc .__BUILTIN\n"
-"\t${CXX} ${CPPFLAGS} ${CXXFLAGS} -o $@ -c $<\n"
-"%.o: %.cpp .__BUILTIN\n"
-"\t${CXX} ${CPPFLAGS} ${CXXFLAGS} -o $@ -c $<\n"
-"%.o: %.s .__BUILTIN\n"
-"\t${AS} ${ASFLAGS} -o $@ $<\n"
-"%.exe: %.o .__BUILTIN\n"
-"\t${CC} -o $@ ${LDFLAGS} $^ ${LOADLIBES} ${LDLIBS}\n"
-"%.c: %.y .__BUILTIN\n"
-"\t${YACC} ${YFLAGS} $<\n";
-
+    "%.o: %.c .__BUILTIN\n"
+    "\t${CC} ${CPPFLAGS} ${CFLAGS} -o $@ -c $<\n"
+    "%.o: %.cc .__BUILTIN\n"
+    "\t${CXX} ${CPPFLAGS} ${CXXFLAGS} -o $@ -c $<\n"
+    "%.o: %.cpp .__BUILTIN\n"
+    "\t${CXX} ${CPPFLAGS} ${CXXFLAGS} -o $@ -c $<\n"
+    "%.o: %.s .__BUILTIN\n"
+    "\t${AS} ${ASFLAGS} -o $@ $<\n"
+    "%.exe: %.o .__BUILTIN\n"
+    "\t${CC} -o $@ ${LDFLAGS} $^ ${LOADLIBES} ${LDLIBS}\n"
+    "%.c: %.y .__BUILTIN\n"
+    "\t${YACC} ${YFLAGS} $<\n";
 
 int MakeMain::makeLevel;
 
@@ -282,7 +281,6 @@ bool MakeMain::LoadJobArgs()
         jobCount = jobs.GetValue();
         if (jobCount == 0)
             return false;
-        
     }
     else
     {
@@ -453,7 +451,6 @@ void MakeMain::LoadEquates(CmdFiles& files)
             equates.push_back(name);
             toRemove.push_back(name);
         }
-
     }
     for (auto&& name : toRemove)
     {
@@ -528,7 +525,7 @@ int MakeMain::Run(int argc, char** argv)
         LoadEnvironment();
         LoadCmdDefines();
         RunEquates();
-        OS::InitJobServer(); 
+        OS::InitJobServer();
         SetVariable("MAKE", files[0].c_str(), Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)
@@ -590,7 +587,8 @@ int MakeMain::Run(int argc, char** argv)
             v->SetExport(true);
             Include::Instance()->AddFileList(v->GetValue(), true, true);
         }
-        std::shared_ptr<Rule> rule = std::make_shared<Rule>(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", std::make_shared<Command>("", 0), "", 0, false);
+        std::shared_ptr<Rule> rule =
+            std::make_shared<Rule>(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", std::make_shared<Command>("", 0), "", 0, false);
         std::shared_ptr<RuleList> ruleList = std::make_shared<RuleList>(".SUFFIXES");
         ruleList->Add(rule, false);
         *RuleContainer::Instance() += ruleList;

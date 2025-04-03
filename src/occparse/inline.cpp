@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -65,12 +65,12 @@ namespace Parser
 {
 static std::unordered_set<SYMBOL*> enteredInlines;
 static std::list<SYMBOL*> inlines, inlineVTabs, inlineData, inlineRttis;
-static std::unordered_map<SYMBOL *, SYMBOL*> contextMap;
+static std::unordered_map<SYMBOL*, SYMBOL*> contextMap;
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 static void PushInline(SYMBOL* sym, bool traceback);
 static inline void PopInline() { enclosingDeclarations.Release(); }
 static std::list<std::tuple<int, Optimizer::SimpleSymbol*, int, int>> inlineMemberPtrData;
-static std::list<std::pair<SYMBOL*, EXPRESSION *>> inlineLocalUninitializers;
+static std::list<std::pair<SYMBOL*, EXPRESSION*>> inlineLocalUninitializers;
 
 static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
@@ -99,8 +99,7 @@ static void GenInline(SYMBOL* sym);
 static bool inSearch(SYMBOL* sp) { return didInlines.find(sp->sb->decoratedName) != didInlines.end(); }
 static void inInsert(SYMBOL* sym) { didInlines.insert(sym->sb->decoratedName); }
 static void UndoPreviousCodegen(SYMBOL* sym) {}
-static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& uninit);
-
+static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION*>& uninit);
 
 void dumpInlines(void)
 {
@@ -133,8 +132,8 @@ void dumpInlines(void)
                                 if (sym->sb->parentClass)
                                     SwapMainTemplateArgs(sym->sb->parentClass);
                                 enclosingDeclarations.clear();
-                                if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ ||
-                                     sym->sb->forcedefault) &&
+                                if ((sym->sb->attribs.inheritable.isInline ||
+                                     sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || sym->sb->forcedefault) &&
                                     CompileInline(sym, true))
                                 {
                                     inInsert(sym);
@@ -155,7 +154,8 @@ void dumpInlines(void)
                 startlab = retlab = 0;
                 for (auto sym : inlineVTabs)
                 {
-                    if (Optimizer::SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline && !sym->sb->dontinstantiate)
+                    if (Optimizer::SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline &&
+                        !sym->sb->dontinstantiate)
                     {
                         if (inSearch(sym))
                         {
@@ -184,7 +184,8 @@ void dumpInlines(void)
                 }
                 for (auto sym : inlineRttis)
                 {
-                    if (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Get(sym)->generated && !sym->sb->didinline)
+                    if (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Get(sym)->generated &&
+                        !sym->sb->didinline)
                     {
                         if (inSearch(sym))
                         {
@@ -207,9 +208,11 @@ void dumpInlines(void)
             std::stack<SYMBOL*> destructors;
             for (auto sym : inlineData)
             {
-                if ((!sym->sb->attribs.inheritable.isInlineData || sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_) && sym->sb->attribs.inheritable.linkage2 != Linkage::import_)
+                if ((!sym->sb->attribs.inheritable.isInlineData || sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_) &&
+                    sym->sb->attribs.inheritable.linkage2 != Linkage::import_)
                 {
-                    if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate && (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
+                    if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate &&
+                        (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
                     {
                         SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         SYMBOL* origsym;
@@ -231,7 +234,8 @@ void dumpInlines(void)
                         {
                             sym->sb->dontinstantiate = true;
                         }
-                        if (origsym && origsym->sb->storage_class == StorageClass::global_ && !sym->sb->didinline && !sym->sb->dontinstantiate)
+                        if (origsym && origsym->sb->storage_class == StorageClass::global_ && !sym->sb->didinline &&
+                            !sym->sb->dontinstantiate)
                         {
                             Optimizer::SymbolManager::Get(sym)->generated = true;
                             sym->sb->didinline = true;
@@ -255,7 +259,8 @@ void dumpInlines(void)
                                 enclosingDeclarations.Drop();
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
-                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
+                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym),
+                                                   sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                             if (sym->sb->init)
                             {
                                 if (sym->tp->IsStructured() || sym->tp->IsArray())
@@ -292,7 +297,8 @@ void dumpInlines(void)
                             {
                                 Optimizer::SymbolManager::Get(sym)->generated = true;
                                 inInsert(sym);
-                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
+                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym),
+                                                       sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                                 if (sym->sb->init)
                                 {
                                     if (sym->tp->IsStructured() || sym->tp->IsArray())
@@ -311,7 +317,8 @@ void dumpInlines(void)
                                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                                 if (sym->sb->dest)
                                     destructors.push(sym);
-                                if (sym->sb->init && sym->sb->init->front()->exp && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                                if (sym->sb->init && sym->sb->init->front()->exp &&
+                                    sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                     CreateInlineConstructor(sym);
                             }
                         }
@@ -352,7 +359,7 @@ void dumpvc1Thunks(void)
         }
     }
 }
-void dumpMemberPointer(std::tuple<int, Optimizer::SimpleSymbol*, int, int> &data)
+void dumpMemberPointer(std::tuple<int, Optimizer::SimpleSymbol*, int, int>& data)
 {
     int lbl = std::get<0>(data);
     Optimizer::SimpleSymbol* sym = std::get<1>(data);
@@ -372,17 +379,17 @@ void dumpMemberPointer(std::tuple<int, Optimizer::SimpleSymbol*, int, int> &data
     Optimizer::genint(offset1);
     Optimizer::genint(offset2);
     if (!sym)
-        Optimizer::genint(0); // padding so non-function structures will be the same size as function structures
+        Optimizer::genint(0);  // padding so non-function structures will be the same size as function structures
 }
-void dumpMemberPointers() 
+void dumpMemberPointers()
 {
     Optimizer::dseg();
     for (auto&& p : inlineMemberPtrData)
     {
-         dumpMemberPointer(p);
+        dumpMemberPointer(p);
     }
 }
-static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION *>& uninit)
+static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION*>& uninit)
 {
     auto newFunc = uninit.first;
     auto body = uninit.second;
@@ -520,7 +527,7 @@ bool CompileInline(SYMBOL* sym, bool toplevel)
     }
     return sym->sb->inlineFunc.stmt;
 }
-static void GenInline(SYMBOL* sym) 
+static void GenInline(SYMBOL* sym)
 {
     InitializeFunctionArguments(sym);
     startlab = Optimizer::nextLabel++;
@@ -573,7 +580,7 @@ void InsertMemberPointer(int label, Optimizer::SimpleSymbol* sym, int offset1, i
 }
 void InsertLocalStaticUnInitializer(SYMBOL* func, EXPRESSION* body)
 {
-	inlineLocalUninitializers.push_back(std::pair<SYMBOL*, EXPRESSION*>(func, body));
+    inlineLocalUninitializers.push_back(std::pair<SYMBOL*, EXPRESSION*>(func, body));
 }
 /*-------------------------------------------------------------------------*/
 
@@ -898,54 +905,54 @@ std::list<Statement*>* inlinestmt(std::list<Statement*>* blocks)
             block = stmt;
             switch (block->type)
             {
-            case StatementNode::genword_:
-                break;
-            case StatementNode::try_:
-            case StatementNode::catch_:
-            case StatementNode::seh_try_:
-            case StatementNode::seh_catch_:
-            case StatementNode::seh_finally_:
-            case StatementNode::seh_fault_:
-                block->lower = inlinestmt(block->lower);
-                block->blockTail = inlinestmt(block->blockTail);
-                break;
-            case StatementNode::return_:
-            case StatementNode::expr_:
-            case StatementNode::declare_:
-                block->select = inlineexpr(block->select, nullptr);
-                break;
-            case StatementNode::goto_:
-            case StatementNode::label_:
-                break;
-            case StatementNode::select_:
-            case StatementNode::notselect_:
-                block->select = inlineexpr(block->select, nullptr);
-                break;
-            case StatementNode::switch_:
-                block->select = inlineexpr(block->select, nullptr);
-                block->lower = inlinestmt(block->lower);
-                break;
-            case StatementNode::block_:
-                block->lower = inlinestmt(block->lower);
-                block->blockTail = inlinestmt(block->blockTail);
-                break;
-            case StatementNode::passthrough_:
+                case StatementNode::genword_:
+                    break;
+                case StatementNode::try_:
+                case StatementNode::catch_:
+                case StatementNode::seh_try_:
+                case StatementNode::seh_catch_:
+                case StatementNode::seh_finally_:
+                case StatementNode::seh_fault_:
+                    block->lower = inlinestmt(block->lower);
+                    block->blockTail = inlinestmt(block->blockTail);
+                    break;
+                case StatementNode::return_:
+                case StatementNode::expr_:
+                case StatementNode::declare_:
+                    block->select = inlineexpr(block->select, nullptr);
+                    break;
+                case StatementNode::goto_:
+                case StatementNode::label_:
+                    break;
+                case StatementNode::select_:
+                case StatementNode::notselect_:
+                    block->select = inlineexpr(block->select, nullptr);
+                    break;
+                case StatementNode::switch_:
+                    block->select = inlineexpr(block->select, nullptr);
+                    block->lower = inlinestmt(block->lower);
+                    break;
+                case StatementNode::block_:
+                    block->lower = inlinestmt(block->lower);
+                    block->blockTail = inlinestmt(block->blockTail);
+                    break;
+                case StatementNode::passthrough_:
 #ifndef ORANGE_NO_INASM
-                if (block->lower)
-                    inlineAsmStmt(block->lower);
+                    if (block->lower)
+                        inlineAsmStmt(block->lower);
 #endif
-                break;
-            case StatementNode::nop_:
-                break;
-            case StatementNode::datapassthrough_:
-                break;
-            case StatementNode::line_:
-            case StatementNode::varstart_:
-            case StatementNode::dbgblock_:
-                break;
-            default:
-                diag("Invalid block type in inlinestmt");
-                break;
+                    break;
+                case StatementNode::nop_:
+                    break;
+                case StatementNode::datapassthrough_:
+                    break;
+                case StatementNode::line_:
+                case StatementNode::varstart_:
+                case StatementNode::dbgblock_:
+                    break;
+                default:
+                    diag("Invalid block type in inlinestmt");
+                    break;
             }
         }
         return out;
@@ -989,47 +996,47 @@ static void reduceReturns(std::list<Statement*>* blocks, Type* rettp, EXPRESSION
         {
             switch (block->type)
             {
-            case StatementNode::genword_:
-                break;
-            case StatementNode::try_:
-            case StatementNode::catch_:
-            case StatementNode::seh_try_:
-            case StatementNode::seh_catch_:
-            case StatementNode::seh_finally_:
-            case StatementNode::seh_fault_:
-                reduceReturns(block->lower, rettp, retnode);
-                break;
-            case StatementNode::return_:
-                inlineResetReturn(block, rettp, retnode);
-                break;
-            case StatementNode::goto_:
-            case StatementNode::label_:
-                break;
-            case StatementNode::expr_:
-                /*			case StatementNode::functailexpr_: */
-            case StatementNode::declare_:
-            case StatementNode::select_:
-            case StatementNode::notselect_:
-                break;
-            case StatementNode::switch_:
-                reduceReturns(block->lower, rettp, retnode);
-                break;
-            case StatementNode::block_:
-                reduceReturns(block->lower, rettp, retnode);
-                /* skipping block tail as it will have no returns  */
-                break;
-            case StatementNode::passthrough_:
-            case StatementNode::datapassthrough_:
-                break;
-            case StatementNode::nop_:
-                break;
-            case StatementNode::line_:
-            case StatementNode::varstart_:
-            case StatementNode::dbgblock_:
-                break;
-            default:
-                diag("Invalid block type in reduceReturns");
-                break;
+                case StatementNode::genword_:
+                    break;
+                case StatementNode::try_:
+                case StatementNode::catch_:
+                case StatementNode::seh_try_:
+                case StatementNode::seh_catch_:
+                case StatementNode::seh_finally_:
+                case StatementNode::seh_fault_:
+                    reduceReturns(block->lower, rettp, retnode);
+                    break;
+                case StatementNode::return_:
+                    inlineResetReturn(block, rettp, retnode);
+                    break;
+                case StatementNode::goto_:
+                case StatementNode::label_:
+                    break;
+                case StatementNode::expr_:
+                    /*			case StatementNode::functailexpr_: */
+                case StatementNode::declare_:
+                case StatementNode::select_:
+                case StatementNode::notselect_:
+                    break;
+                case StatementNode::switch_:
+                    reduceReturns(block->lower, rettp, retnode);
+                    break;
+                case StatementNode::block_:
+                    reduceReturns(block->lower, rettp, retnode);
+                    /* skipping block tail as it will have no returns  */
+                    break;
+                case StatementNode::passthrough_:
+                case StatementNode::datapassthrough_:
+                    break;
+                case StatementNode::nop_:
+                    break;
+                case StatementNode::line_:
+                case StatementNode::varstart_:
+                case StatementNode::dbgblock_:
+                    break;
+                default:
+                    diag("Invalid block type in reduceReturns");
+                    break;
             }
         }
     }
@@ -1042,56 +1049,56 @@ static EXPRESSION* scanReturn(std::list<Statement*>* blocks, Type* rettp)
         {
             switch (block->type)
             {
-            case StatementNode::genword_:
-                break;
-            case StatementNode::try_:
-            case StatementNode::catch_:
-            case StatementNode::seh_try_:
-            case StatementNode::seh_catch_:
-            case StatementNode::seh_finally_:
-            case StatementNode::seh_fault_:
-                rv = scanReturn(block->lower, rettp);
-                break;
-            case StatementNode::return_:
-                rv = block->select;
-                if (!rettp->IsStructured())
-                {
-                    if (rettp->IsRef())
-                        Dereference(&stdpointer, &rv);
-                    else
-                        cast(rettp, &rv);
-                }
-                block->type = StatementNode::expr_;
-                block->select = rv;
-                return rv;
-            case StatementNode::goto_:
-            case StatementNode::label_:
-                break;
-            case StatementNode::expr_:
-                /*			case StatementNode::functailexpr_: */
-            case StatementNode::declare_:
-            case StatementNode::select_:
-            case StatementNode::notselect_:
-                break;
-            case StatementNode::switch_:
-                rv = scanReturn(block->lower, rettp);
-                break;
-            case StatementNode::block_:
-                rv = scanReturn(block->lower, rettp);
-                /* skipping block tail as it will have no returns  */
-                break;
-            case StatementNode::passthrough_:
-            case StatementNode::datapassthrough_:
-                break;
-            case StatementNode::nop_:
-                break;
-            case StatementNode::line_:
-            case StatementNode::varstart_:
-            case StatementNode::dbgblock_:
-                break;
-            default:
-                diag("Invalid block type in scanReturn");
-                break;
+                case StatementNode::genword_:
+                    break;
+                case StatementNode::try_:
+                case StatementNode::catch_:
+                case StatementNode::seh_try_:
+                case StatementNode::seh_catch_:
+                case StatementNode::seh_finally_:
+                case StatementNode::seh_fault_:
+                    rv = scanReturn(block->lower, rettp);
+                    break;
+                case StatementNode::return_:
+                    rv = block->select;
+                    if (!rettp->IsStructured())
+                    {
+                        if (rettp->IsRef())
+                            Dereference(&stdpointer, &rv);
+                        else
+                            cast(rettp, &rv);
+                    }
+                    block->type = StatementNode::expr_;
+                    block->select = rv;
+                    return rv;
+                case StatementNode::goto_:
+                case StatementNode::label_:
+                    break;
+                case StatementNode::expr_:
+                    /*			case StatementNode::functailexpr_: */
+                case StatementNode::declare_:
+                case StatementNode::select_:
+                case StatementNode::notselect_:
+                    break;
+                case StatementNode::switch_:
+                    rv = scanReturn(block->lower, rettp);
+                    break;
+                case StatementNode::block_:
+                    rv = scanReturn(block->lower, rettp);
+                    /* skipping block tail as it will have no returns  */
+                    break;
+                case StatementNode::passthrough_:
+                case StatementNode::datapassthrough_:
+                    break;
+                case StatementNode::nop_:
+                    break;
+                case StatementNode::line_:
+                case StatementNode::varstart_:
+                case StatementNode::dbgblock_:
+                    break;
+                default:
+                    diag("Invalid block type in scanReturn");
+                    break;
             }
         }
     return rv;
@@ -1309,7 +1316,7 @@ static bool sideEffects(EXPRESSION* node)
     }
     return rv;
 }
-static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<Statement*> **stp)
+static void setExp(SYMBOL* sx, EXPRESSION* exp, std::list<Statement*>** stp)
 {
     if (!sx->sb->altered && !sx->sb->addressTaken && !sideEffects(exp))
     {

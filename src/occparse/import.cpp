@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -157,8 +157,9 @@ BasicType Importer::translatedTypes[] = {
     ///** type is an mvar
     BasicType::void_,
     /* below this is various CIL types*/
-    BasicType::void_, BasicType::bool_, BasicType::wchar_t_, BasicType::char_, BasicType::unsigned_char_, BasicType::short_, BasicType::unsigned_short_, BasicType::int_, BasicType::unsigned_, BasicType::long_long_,
-    BasicType::unsigned_long_long_, BasicType::inative_, BasicType::unative_, BasicType::float_, BasicType::double_, BasicType::object_, BasicType::string_
+    BasicType::void_, BasicType::bool_, BasicType::wchar_t_, BasicType::char_, BasicType::unsigned_char_, BasicType::short_,
+    BasicType::unsigned_short_, BasicType::int_, BasicType::unsigned_, BasicType::long_long_, BasicType::unsigned_long_long_,
+    BasicType::inative_, BasicType::unative_, BasicType::float_, BasicType::double_, BasicType::object_, BasicType::string_
 
 };
 
@@ -236,10 +237,8 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
 {
     diag("Namespace", nameSpace->Name());
     level_++;
-    SYMBOL* sp = (nameSpaces_.size() == 0
-        ? globalNameSpace->front()->syms
-        : nameSpaces_.back()->sb->nameSpaceValues->front()->syms
-    )->Lookup((char*)nameSpace->Name().c_str());
+    SYMBOL* sp = (nameSpaces_.size() == 0 ? globalNameSpace->front()->syms : nameSpaces_.back()->sb->nameSpaceValues->front()->syms)
+                     ->Lookup((char*)nameSpace->Name().c_str());
     if (!sp)
     {
         Type* tp = Type::MakeType(BasicType::void_);
@@ -336,8 +335,8 @@ bool Importer::EnterClass(const Class* cls)
             if (useGlobal())
                 globalNameSpace->front()->syms->Add(sp);
             else
-                (structures_.size() ? structures_.back()->tp->syms
-                    : nameSpaces_.back()->sb->nameSpaceValues->front()->syms)->Add(sp);
+                (structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->sb->nameSpaceValues->front()->syms)
+                    ->Add(sp);
             sp->sb->msil = GetName(cls);
             cachedClasses_[sp->name] = sp;
         }
@@ -424,7 +423,7 @@ void Importer::InsertBaseClass(SYMBOL* sp, Class* cls)
 }
 void Importer::InsertFuncs(SYMBOL* sp, SYMBOL* base)
 {
-    for (auto sym : * base->tp->syms)
+    for (auto sym : *base->tp->syms)
     {
         // inserts an overload list, if there is not already an overload list for this func
         if (sym->sb->storage_class == StorageClass::overloads_)

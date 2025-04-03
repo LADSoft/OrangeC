@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -131,8 +131,8 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
 {
     SYMBOL* p = CreateSetterPrototype(sym);
     Statement* st;
-    FunctionBlock bd = { };
-    std::list<FunctionBlock*> b = { &bd };
+    FunctionBlock bd = {};
+    std::list<FunctionBlock*> b = {&bd};
     EXPRESSION* left = MakeExpression(ExpressionNode::global_, backing);
     EXPRESSION* right = MakeExpression(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
     p->tp->type = BasicType::ifunc_;
@@ -152,7 +152,7 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     SYMBOL* p = CreateGetterPrototype(sym);
     Statement* st;
     FunctionBlock bd = {};
-    std::list<FunctionBlock*> b { &bd };
+    std::list<FunctionBlock*> b{&bd};
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
     st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
@@ -272,18 +272,16 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
 }
 Type* find_boxed_type(Type* in)
 {
-    static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Uint8",
-                                      "Int16",  "Int16",   "UInt16", "UInt16", 
-                                      "Int32", "Int32",  "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32", "UInt32", 
-                                      "Int64", "UInt64",  "",      "",       "Single", "Double",  "Double", 
-                                      "Single", "Double","Double",  
-                                      "",      "",       "",       "",        "", "String"};
+    static const char* typeNames[] = {"int8",   "Bool",   "Int8",  "Int8",   "UInt8",  "Uint8",  "Int16",   "Int16",  "UInt16",
+                                      "UInt16", "Int32",  "Int32", "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32",  "UInt32",
+                                      "Int64",  "UInt64", "",      "",       "Single", "Double", "Double",  "Single", "Double",
+                                      "Double", "",       "",      "",       "",       "",       "String"};
     if (in->BaseType()->IsArray() && in->BaseType()->msil)
     {
-        SYMBOL* sym = search(globalNameSpace->front()->syms , "System");
+        SYMBOL* sym = search(globalNameSpace->front()->syms, "System");
         if (sym && sym->sb->storage_class == StorageClass::namespace_)
         {
-            SYMBOL* sym2 = search(sym->sb->nameSpaceValues->front()->syms , "Array");
+            SYMBOL* sym2 = search(sym->sb->nameSpaceValues->front()->syms, "Array");
             if (sym2)
                 return sym2->tp;
         }

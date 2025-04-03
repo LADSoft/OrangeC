@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "ObjFactory.h"
@@ -187,7 +187,7 @@ std::shared_ptr<Instruction> Section::InsertLabel(std::shared_ptr<Label>& label)
     else
         subSections[subSection]->GetInstructions().push_back(std::make_shared<Instruction>(label));
     labels[label->GetName()] = pc;
-    return subSection == 0 ? instructions.back(): subSections[subSection]->GetInstructions().back();
+    return subSection == 0 ? instructions.back() : subSections[subSection]->GetInstructions().back();
 }
 void Section::pop_back()
 {
@@ -206,7 +206,8 @@ ObjSection* Section::CreateObject(ObjFactory& factory)
         objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;
 }
-ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node, std::function<std::shared_ptr<Label>(std::string&)> Lookup,
+ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node,
+                                          std::function<std::shared_ptr<Label>(std::string&)> Lookup,
                                           std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory)
 {
     ObjExpression* xleft = nullptr;

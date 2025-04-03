@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "ctypes.h"
@@ -67,12 +67,12 @@ struct StringData;
 
 class StringHash
 {
-public:
-    unsigned operator() (const std::string& aa) const
+  public:
+    unsigned operator()(const std::string& aa) const
     {
         unsigned rv = 0;
-        const unsigned char *x = (const unsigned char *)aa.c_str();
-        for (;*x; ++x)
+        const unsigned char* x = (const unsigned char*)aa.c_str();
+        for (; *x; ++x)
             rv = (rv << 8) + (rv << 1) + rv + *x;
         return rv;
     }
@@ -80,7 +80,7 @@ public:
 template <class T>
 class SymbolTable
 {
-public:
+  public:
     typedef typename std::list<T*>::iterator iterator;
     typedef typename std::list<T*>::reverse_iterator reverse_iterator;
     iterator begin() { return inOrder_.begin(); }
@@ -98,7 +98,13 @@ public:
     SymbolTable<T>* Next() const { return next_; }
     void Chain(SymbolTable<T>* chain) { chain_ = chain; }
     SymbolTable<T>* Chain() const { return chain_; }
-    SymbolTable<T>* ReleaseNext() { SymbolTable<T>* rv = next_; if (next_) next_ = next_->next_; return rv; }
+    SymbolTable<T>* ReleaseNext()
+    {
+        SymbolTable<T>* rv = next_;
+        if (next_)
+            next_ = next_->next_;
+        return rv;
+    }
     int Block() const { return blockLevel_; }
     void Block(int level) { blockLevel_ = level; }
 
@@ -108,7 +114,8 @@ public:
     inline void baseInsert(T* sym);
 
     inline void AddName(T* sym);
-private:
+
+  private:
     std::list<T*> inOrder_;
     std::unordered_map<std::string, T*, StringHash> lookupTable_;
     int blockLevel_;
@@ -119,21 +126,18 @@ private:
 template <class T>
 class SymbolTableFactory
 {
-public:
+  public:
     SymbolTableFactory() = default;
-    void Reset()
-    {
-        tables.clear();
-    }
+    void Reset() { tables.clear(); }
     SymbolTable<T>* CreateSymbolTable()
     {
         tables.push_back(SymbolTable<T>());
         return &tables.back();
     }
-private:
+
+  private:
     std::list<SymbolTable<T>> tables;
 };
-
 
 /* keywords and symbols */
 // clang-format off
@@ -269,7 +273,7 @@ typedef struct
         seh_try_, seh_catch_, seh_finally_, seh_fault_,
     };
 // clang-format on
-                
+
 /* storage classes */
 // clang-format off
     enum class StorageClass : int
@@ -315,9 +319,9 @@ typedef struct
         interrupt_, fault_, inline_, virtual_, noreturn_, threadlocal_,
         import_, export_, internal_, auto_, msil_rtl_, unmanaged_, property_, entrypoint_
     };
-    // clang-format on
+// clang-format on
 
-    // clang-format off
+// clang-format off
     enum class AccessLevel : int
     {
         private_,
@@ -523,7 +527,6 @@ struct u_val
     };
 };
 
-
 struct Initializer
 {
     int offset;
@@ -636,89 +639,89 @@ typedef struct sym
         std::list<NAMESPACEVALUEDATA*>* nameSpaceValues; /* for a namespace SP */
         struct sym* vtabsp;
         Optimizer::LINEDATA* linedata;
-        StorageClass storage_class;                /* storage class */
-        AccessLevel access;                        /* c++ access rights for members */
-        int operatorId;                /* operator id, CI + kw for an operator function */
+        StorageClass storage_class; /* storage class */
+        AccessLevel access;         /* c++ access rights for members */
+        int operatorId;             /* operator id, CI + kw for an operator function */
         enum e_cm lambdaMode;
         INLINEFUNC inlineFunc;
         int overlayIndex;              /* differentiating index when function differs only in return type from similar functions */
         int ccEndLine;                 /* end line for code completion */
         unsigned long long ccStructId; /* code completion struct id */
         std::list<struct _ccNamespaceData*>* ccNamespaceData; /* namespace data for code completion */
-        unsigned declaring : 1;                   /* currently being declared */
-        unsigned declaringRecursive : 1;          /* structure is recursively declared */
-        unsigned compilerDeclared : 1;            /* compiler declared this */
-        unsigned hasproto : 1;                    /* C/90 language prototype was encountered */
-        unsigned intagtable : 1;                  /* it is in a tag table */
-        unsigned dontlist : 1;                    /* it is a system include, don't put in list file */
-        unsigned allocate : 1;                    /* variable is used, allocate space for it */
-        unsigned indecltable : 1;                 /* global already in dump table */
-        unsigned spaceallocated : 1;              /* space has been allocated */
-        unsigned loadds : 1;                      /* to load data seg (limited) */
-        unsigned farproc : 1;                     /* this procedure should be terminated with retf */
-        unsigned calleenearret : 1;               /* true if callee provided a place for the return
-                           value */
-        unsigned hasunnamed : 1;                  /* structure has unnamed substructs */
-        unsigned isunnamed : 1;                   /* substructure is unnamed */
-        unsigned recalculateParameters : 1;       /* inline func needs its parameters
-                   recalculated */
-        unsigned nullsym : 1;                     /* if was a callblock return which isn't used */
-        unsigned anonymous : 1;                   /* if it is a generated variable */
-        unsigned inasm : 1;                       /* a way to force the local optimizer to leave autos on the stack */
-        unsigned assigned : 1;                    /* value has been assigned */
+        unsigned declaring : 1;                               /* currently being declared */
+        unsigned declaringRecursive : 1;                      /* structure is recursively declared */
+        unsigned compilerDeclared : 1;                        /* compiler declared this */
+        unsigned hasproto : 1;                                /* C/90 language prototype was encountered */
+        unsigned intagtable : 1;                              /* it is in a tag table */
+        unsigned dontlist : 1;                                /* it is a system include, don't put in list file */
+        unsigned allocate : 1;                                /* variable is used, allocate space for it */
+        unsigned indecltable : 1;                             /* global already in dump table */
+        unsigned spaceallocated : 1;                          /* space has been allocated */
+        unsigned loadds : 1;                                  /* to load data seg (limited) */
+        unsigned farproc : 1;                                 /* this procedure should be terminated with retf */
+        unsigned calleenearret : 1;                           /* true if callee provided a place for the return
+                                       value */
+        unsigned hasunnamed : 1;                              /* structure has unnamed substructs */
+        unsigned isunnamed : 1;                               /* substructure is unnamed */
+        unsigned recalculateParameters : 1;                   /* inline func needs its parameters
+                               recalculated */
+        unsigned nullsym : 1;                                 /* if was a callblock return which isn't used */
+        unsigned anonymous : 1;                               /* if it is a generated variable */
+        unsigned inasm : 1;                                   /* a way to force the local optimizer to leave autos on the stack */
+        unsigned assigned : 1;                                /* value has been assigned */
         unsigned altered : 1;
-        unsigned wasExternal : 1;  /* was originally declared as external */
+        unsigned wasExternal : 1; /* was originally declared as external */
         unsigned gentemplate : 1; /* template instantiation or reference generated */
         unsigned allocaUsed : 1;
-        unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
-        unsigned constexpression : 1;  /* declared with constexpression */
-        unsigned builtin_constexpression : 1;  /* builtin declared with constexpression */
-        unsigned addressTaken : 1;     /* address taken */
-        unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
-        unsigned usingTypedef : 1;     /* typedef defined as a 'using' statement */
-        unsigned redeclared : 1;       /* symbol was declared more than once */
-        unsigned thisPtr : 1;          /*is a this pointer*/
-        unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */
-        unsigned constop : 1;          /* a constructor 'top' parameter */
-        unsigned castoperator : 1;     /* a cast operator */
-        unsigned deleted : 1;          /* function was deleted */
-        unsigned defaulted : 1;        /* function was defaulted */
-        unsigned defaultarg : 1;       /* function argument was defaulted */
-        unsigned isfinal : 1;          /* class or virtual function is final */
-        unsigned isoverride : 1;       /* virtual function marked override */
-        unsigned ispure : 1;           /* pure virtual function */
-        unsigned hasvtab : 1;          /* class has a vtab */
-        unsigned isabstract : 1;       /* class is abstract */
-        unsigned accessspecified : 1;  /* class has access specifiers */
-        unsigned safefunc : 1;         /* RTL helper function with no side effects */
-        unsigned throughClass : 1;     /* last search was found through a class */
-        unsigned hasUserCons : 1;      /* has user-defined constructors */
-        unsigned trivialCons : 1;      /* constructor is trivial */
-        unsigned trivialDest : 1;      /* destructor is trivial */
-        unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
-        unsigned stackblock : 1;       // stacked structure in C++ mode
-        unsigned islambda : 1;         // lambda closure struct
-        unsigned noinline : 1;         // don't inline an inline qualified function
-        unsigned didinline : 1;        // already genned an inline func for this symbol
-        unsigned simpleFunc : 1;       // simple enough to override the max_nesting inline requirement
-        unsigned hasTry : 1;           // function surrounded by try statement
-        unsigned anyTry : 1;           // function has either external or internal try statement
-                                       // or variable is used within a try statement
-        unsigned canThrow : 1;         // function throws directly
-        unsigned hasDest : 1;          // class has a destructor that is called
-        unsigned pureDest : 1;         // destructor is pure
-        unsigned isConstructor : 1;    // is a constructor
-        unsigned isDestructor : 1;     // is  adestructor
-        unsigned isAssign : 1;         // is an assignment operator
-        unsigned literalClass : 1;     // is a literal class
-        unsigned anonymousGlobalUnion:1; // global or function-scope union symbol
-        unsigned xtEntry : 1;          // is an exception table label
-        unsigned isExplicit : 1;       // explicit constructor or conversion function
-        unsigned specialized : 1;      // is a template specialization
-        unsigned specialized2 : 1;     // specialization of a template class nontemplate func
-        unsigned instantiated : 1;     // instantiated template
-        unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
-        unsigned instantiating : 1;    // template is currently being instantiated
+        unsigned oldstyle : 1;                /* pointer to a names list if an old style function arg */
+        unsigned constexpression : 1;         /* declared with constexpression */
+        unsigned builtin_constexpression : 1; /* builtin declared with constexpression */
+        unsigned addressTaken : 1;            /* address taken */
+        unsigned wasUsing : 1;                /* came to this symbol table as a result of 'using' */
+        unsigned usingTypedef : 1;            /* typedef defined as a 'using' statement */
+        unsigned redeclared : 1;              /* symbol was declared more than once */
+        unsigned thisPtr : 1;                 /*is a this pointer*/
+        unsigned structuredReturn : 1;        /* is a pointer to a structure's structure pointer address for returning a value */
+        unsigned constop : 1;                 /* a constructor 'top' parameter */
+        unsigned castoperator : 1;            /* a cast operator */
+        unsigned deleted : 1;                 /* function was deleted */
+        unsigned defaulted : 1;               /* function was defaulted */
+        unsigned defaultarg : 1;              /* function argument was defaulted */
+        unsigned isfinal : 1;                 /* class or virtual function is final */
+        unsigned isoverride : 1;              /* virtual function marked override */
+        unsigned ispure : 1;                  /* pure virtual function */
+        unsigned hasvtab : 1;                 /* class has a vtab */
+        unsigned isabstract : 1;              /* class is abstract */
+        unsigned accessspecified : 1;         /* class has access specifiers */
+        unsigned safefunc : 1;                /* RTL helper function with no side effects */
+        unsigned throughClass : 1;            /* last search was found through a class */
+        unsigned hasUserCons : 1;             /* has user-defined constructors */
+        unsigned trivialCons : 1;             /* constructor is trivial */
+        unsigned trivialDest : 1;             /* destructor is trivial */
+        unsigned internallyGenned : 1;        /* constructor declaration was made by the compiler */
+        unsigned stackblock : 1;              // stacked structure in C++ mode
+        unsigned islambda : 1;                // lambda closure struct
+        unsigned noinline : 1;                // don't inline an inline qualified function
+        unsigned didinline : 1;               // already genned an inline func for this symbol
+        unsigned simpleFunc : 1;              // simple enough to override the max_nesting inline requirement
+        unsigned hasTry : 1;                  // function surrounded by try statement
+        unsigned anyTry : 1;                  // function has either external or internal try statement
+                                              // or variable is used within a try statement
+        unsigned canThrow : 1;                // function throws directly
+        unsigned hasDest : 1;                 // class has a destructor that is called
+        unsigned pureDest : 1;                // destructor is pure
+        unsigned isConstructor : 1;           // is a constructor
+        unsigned isDestructor : 1;            // is  adestructor
+        unsigned isAssign : 1;                // is an assignment operator
+        unsigned literalClass : 1;            // is a literal class
+        unsigned anonymousGlobalUnion : 1;    // global or function-scope union symbol
+        unsigned xtEntry : 1;                 // is an exception table label
+        unsigned isExplicit : 1;              // explicit constructor or conversion function
+        unsigned specialized : 1;             // is a template specialization
+        unsigned specialized2 : 1;            // specialization of a template class nontemplate func
+        unsigned instantiated : 1;            // instantiated template
+        unsigned dontinstantiate : 1;         // don't instantiate this template (is extern)
+        unsigned instantiating : 1;           // template is currently being instantiated
         unsigned copiedTemplateFunction : 1;
         unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
@@ -756,7 +759,7 @@ typedef struct sym
         short accessibleTemplateArgument;                /* something used as a template argument was validated for
                                                           * accessibility before instantiating the template */
         short retcount;                                  /* number of return statements in a function */
-        struct sym* runtimeSym;                                /* Simple symbol for runtime assignment tracking */
+        struct sym* runtimeSym;                          /* Simple symbol for runtime assignment tracking */
         /* Also name for CPP overload lists */
         /* also default for template parameters, is a TYP */
         char* importfile;    /* import name */
@@ -764,8 +767,8 @@ typedef struct sym
         int uuidLabel;       /* Microsoft: Label for a GUID which has been instantiated */
         struct sym* overloadName;
         struct sym* typedefSym;
-        struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
-        struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
+        struct sym* mainsym;                                        /* pointer to the global version of a copied symbol */
+        struct sym* maintemplate;                                   /* pointer to the global version of a copied symbol */
         std::list<struct _memberInitializers*>* memberInitializers; /* initializers for constructor */
         std::list<Statement*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
         std::list<FunctionBlock*>* gotoBlockTable;
@@ -785,12 +788,13 @@ typedef struct sym
         {
             struct Type* deductionGuide;
             std::list<struct __lambda*>* lambdas;
-            const char* msil;                            // MSIL path
-            std::vector<struct _templateSelector>* templateSelector;  // first element is the last valid sym found, second element is the template
+            const char* msil;  // MSIL path
+            std::vector<struct _templateSelector>*
+                templateSelector;  // first element is the last valid sym found, second element is the template
         };
         // parameter sym following elements are the list of pointers to names
-        struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
-        std::list<Initializer *>* init, *lastInit, *dest;
+        struct sym* parentTemplate;  // could be the parent of a specialization or an instantiation
+        std::list<Initializer*>*init, *lastInit, *dest;
         // clang-format off
             enum e_xc xcMode, xcModeSpecified;
         // clang-format on
@@ -798,7 +802,7 @@ typedef struct sym
         std::list<struct sym*>* friends;
         Type* structuredAliasType;
         attributes attribs;
-    } * sb;
+    }* sb;
 } SYMBOL;
 
 typedef struct __lambda
@@ -891,13 +895,13 @@ typedef struct _templateParam
     int initialized : 1;
     int lref : 1;
     int rref : 1;
-    int resolved : 1;  // packed template has already been resolved.
-    int ellipsis : 1;  // ellipsis found after this item...
-    int replaced : 1;  // replaced during type alias substitution
-    int deduced : 1;   // filled in during deduction
-    int specializationParam : 1; // specialization paramneter
+    int resolved : 1;             // packed template has already been resolved.
+    int ellipsis : 1;             // ellipsis found after this item...
+    int replaced : 1;             // replaced during type alias substitution
+    int deduced : 1;              // filled in during deduction
+    int specializationParam : 1;  // specialization paramneter
     int nopop : 1;
-    int flag : 1; // utility flag
+    int flag : 1;  // utility flag
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;
@@ -1003,7 +1007,6 @@ struct CallSite
 
 #define MAX_STRLEN 16384
 #define MAX_STLP1 (MAX_STRLEN + 1)
-
 
 struct templateListData
 {

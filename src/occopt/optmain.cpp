@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "ioptimizer.h"
@@ -60,7 +60,7 @@
 #include "iloop.h"
 #include "localprotect.h"
 
-//#define x64_compiler
+// #define x64_compiler
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
@@ -68,7 +68,7 @@
 // and this keeps from having the full impact of new/delete any
 // time they are used
 // resulted in about a 20% speedup of the compiler on the worst files
-#define HASHBLKSIZE 128
+#    define HASHBLKSIZE 128
 
 struct __preheader
 {
@@ -96,23 +96,23 @@ void* operator new(size_t aa)
     {
         // If malloc fails and there is a new_handler,
         // call it to try free up memory.
-#if __GNUC__ > 4
+#    if __GNUC__ > 4
         std::new_handler nh = std::get_new_handler();
         if (nh)
             nh();
         else
-#endif
+#    endif
             throw std::bad_alloc();
     }
     rv->size = bb;
     rv->link = nullptr;
-    return (void *)(rv + 1);
+    return (void*)(rv + 1);
 }
 void operator delete(void* p)
 {
     if (!p)
         return;
-    __preheader* item = ((__preheader *)p)-1;
+    __preheader* item = ((__preheader*)p) - 1;
     if (item->size < HASHBLKSIZE)
     {
         __preheader** x = dictionary + item->size;
@@ -369,7 +369,7 @@ void ProcessFunction(FunctionData* fd)
     Optimize(currentFunction);
 
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-        AllocateStackSpace(hasCanary? chosenAssembler->arch->type_sizes->a_addr : 0);
+        AllocateStackSpace(hasCanary ? chosenAssembler->arch->type_sizes->a_addr : 0);
     FillInPrologue(intermed_head, currentFunction);
     // canary has priority over runtime checks so it must be first...
     if (hasCanary)

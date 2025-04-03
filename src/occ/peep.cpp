@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -163,7 +163,7 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
 /*
  *      generate a code sequence into the peep list.
  */
-{    
+{
     OCODE* newitem;
 
     newitem = beLocalAllocate<OCODE>();
@@ -1670,58 +1670,61 @@ static int matches_set(OCODE* ip)
 {
     switch (ip->opcode)
     {
-                case op_seta:
-                case op_setnbe:
-                case op_setae:
-                case op_setnb:
-                case op_setnc:
-                case op_setb:
-                case op_setc:
-                case op_setnae:
-                case op_setbe:
-                case op_setna:
-                case op_sete:
-                case op_setz:
-                case op_setg:
-                case op_setnle:
-                case op_setl:
-                case op_setnge:
-                case op_setge:
-                case op_setnl:
-                case op_setle:
-                case op_setng:
-                case op_setne:
-                case op_setnz:
-                case op_seto:
-                case op_setno:
-                case op_setp:
-                case op_setnp:
-                case op_setpe:
-                case op_setpo:
-                case op_sets:
-                case op_setns:
-                    break;
-                default: 
-                    return -1;
+        case op_seta:
+        case op_setnbe:
+        case op_setae:
+        case op_setnb:
+        case op_setnc:
+        case op_setb:
+        case op_setc:
+        case op_setnae:
+        case op_setbe:
+        case op_setna:
+        case op_sete:
+        case op_setz:
+        case op_setg:
+        case op_setnle:
+        case op_setl:
+        case op_setnge:
+        case op_setge:
+        case op_setnl:
+        case op_setle:
+        case op_setng:
+        case op_setne:
+        case op_setnz:
+        case op_seto:
+        case op_setno:
+        case op_setp:
+        case op_setnp:
+        case op_setpe:
+        case op_setpo:
+        case op_sets:
+        case op_setns:
+            break;
+        default:
+            return -1;
     }
-    if (ip->fwd->opcode == op_and && ip->fwd->oper1->mode == am_dreg && ip->fwd-> oper2->mode == am_immed && ip->oper1->mode == am_dreg)
+    if (ip->fwd->opcode == op_and && ip->fwd->oper1->mode == am_dreg && ip->fwd->oper2->mode == am_immed &&
+        ip->oper1->mode == am_dreg)
     {
-         if (ip->oper1->preg == ip->fwd->oper1->preg && ip->fwd->oper2->offset->type == Optimizer::se_i && ip->fwd->oper2->offset->i == 1)
-         {
-             return ip->oper1->preg;
-         }
+        if (ip->oper1->preg == ip->fwd->oper1->preg && ip->fwd->oper2->offset->type == Optimizer::se_i &&
+            ip->fwd->oper2->offset->i == 1)
+        {
+            return ip->oper1->preg;
+        }
     }
     return -1;
 }
 // we can elide a setne reg followed by an and reg,1 if there was a previous set & and
 //
-void peep_setne(OCODE *ip)
+void peep_setne(OCODE* ip)
 {
     int final = matches_set(ip);
     if (final >= 0)
     {
-        OCODE *ip1 = ip->back;
-        while (ip1->opcode <= (e_opcode)op_blockend) ip1 = ip1->back;
+        OCODE* ip1 = ip->back;
+        while (ip1->opcode <= (e_opcode)op_blockend)
+            ip1 = ip1->back;
         ip1 = ip1->back;
         int initial = matches_set(ip1);
         if (initial >= 0)

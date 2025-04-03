@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "Instruction.h"
@@ -193,7 +193,8 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                 memcpy(pdata, pdata + 2, size - 2);
                 size -= 2;
                 f->SetInsOffs(f->GetInsOffs() - 2);
-                std::shared_ptr<AsmExprNode> n = std::make_shared<AsmExprNode>(AsmExprNode::DIV, f->GetExpr(), std::make_shared<AsmExprNode>(16));
+                std::shared_ptr<AsmExprNode> n =
+                    std::make_shared<AsmExprNode>(AsmExprNode::DIV, f->GetExpr(), std::make_shared<AsmExprNode>(16));
                 fixups.push_back(std::make_shared<Fixup>(n, 2, false));
                 f = fixups.back();
                 f->SetInsOffs(size - 2);

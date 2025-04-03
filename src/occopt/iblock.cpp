@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -320,7 +320,8 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
         node = it->second;
     if (node)
     {
-        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->sp->storeTemp && node->dc.left->size == newQuad->dc.left->size)
+        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->sp->storeTemp &&
+            node->dc.left->size == newQuad->dc.left->size)
         {
             newQuad->dc.left = node->dc.left;
             newQuad->livein |= IM_LIVELEFT;
@@ -391,7 +392,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
                         if (newQuad->dc.opcode != i_assn ||
                             (!newQuad->genConflict &&
                              (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size)))
-                             ins_hash[newQuad] = newQuad;
+                            ins_hash[newQuad] = newQuad;
                 }
         }
         /* convert back to a quad structure and generate code */
@@ -457,7 +458,7 @@ void flush_dag(bool leaveAddresses)
             }
             else
             {
-               it = name_hash.erase(it);
+                it = name_hash.erase(it);
             }
         }
     }
@@ -494,7 +495,7 @@ BLOCKLIST* newBlock(void)
     list->next = 0;
     list->block = block;
     block->blocknum = blockCount++;
-    blockArray[blockCount-1] = block;
+    blockArray[blockCount - 1] = block;
     currentBlock = block;
     return list;
 }

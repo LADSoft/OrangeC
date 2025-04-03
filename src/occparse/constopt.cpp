@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -141,9 +141,11 @@ static ExpressionNode maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     ExpressionNode type1 = ep1->type;
     ExpressionNode type2 = ep2->type;
-    if (type1 == ExpressionNode::c_ld_ || type2 == ExpressionNode::c_ld_ || type1 == ExpressionNode::c_ldi_ || type2 == ExpressionNode::c_ldi_)
+    if (type1 == ExpressionNode::c_ld_ || type2 == ExpressionNode::c_ld_ || type1 == ExpressionNode::c_ldi_ ||
+        type2 == ExpressionNode::c_ldi_)
         return ExpressionNode::c_ld_;
-    if (type1 == ExpressionNode::c_d_ || type2 == ExpressionNode::c_d_ || type1 == ExpressionNode::c_di_ || type2 == ExpressionNode::c_di_)
+    if (type1 == ExpressionNode::c_d_ || type2 == ExpressionNode::c_d_ || type1 == ExpressionNode::c_di_ ||
+        type2 == ExpressionNode::c_di_)
         return ExpressionNode::c_d_;
     return ExpressionNode::c_f_;
 }
@@ -154,9 +156,11 @@ static ExpressionNode maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     ExpressionNode type1 = ep1->type;
     ExpressionNode type2 = ep2->type;
-    if (type1 == ExpressionNode::c_ld_ || type2 == ExpressionNode::c_ld_ || type1 == ExpressionNode::c_ldi_ || type2 == ExpressionNode::c_ldi_)
+    if (type1 == ExpressionNode::c_ld_ || type2 == ExpressionNode::c_ld_ || type1 == ExpressionNode::c_ldi_ ||
+        type2 == ExpressionNode::c_ldi_)
         return ExpressionNode::c_ldi_;
-    if (type1 == ExpressionNode::c_d_ || type2 == ExpressionNode::c_d_ || type1 == ExpressionNode::c_di_ || type2 == ExpressionNode::c_di_)
+    if (type1 == ExpressionNode::c_d_ || type2 == ExpressionNode::c_d_ || type1 == ExpressionNode::c_di_ ||
+        type2 == ExpressionNode::c_di_)
         return ExpressionNode::c_di_;
     return ExpressionNode::c_fi_;
 }
@@ -167,9 +171,11 @@ static ExpressionNode maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     ExpressionNode type1 = ep1->type;
     ExpressionNode type2 = ep2->type;
-    if (type1 == ExpressionNode::c_ld_ || type2 == ExpressionNode::c_ld_ || type1 == ExpressionNode::c_ldi_ || type2 == ExpressionNode::c_ldi_ || type1 == ExpressionNode::c_ldc_ || type2 == ExpressionNode::c_ldc_)
+    if (type1 == ExpressionNode::c_ld_ || type2 == ExpressionNode::c_ld_ || type1 == ExpressionNode::c_ldi_ ||
+        type2 == ExpressionNode::c_ldi_ || type1 == ExpressionNode::c_ldc_ || type2 == ExpressionNode::c_ldc_)
         return ExpressionNode::c_ldc_;
-    if (type1 == ExpressionNode::c_d_ || type2 == ExpressionNode::c_d_ || type1 == ExpressionNode::c_di_ || type2 == ExpressionNode::c_di_ || type1 == ExpressionNode::c_dc_ || type2 == ExpressionNode::c_dc_)
+    if (type1 == ExpressionNode::c_d_ || type2 == ExpressionNode::c_d_ || type1 == ExpressionNode::c_di_ ||
+        type2 == ExpressionNode::c_di_ || type1 == ExpressionNode::c_dc_ || type2 == ExpressionNode::c_dc_)
         return ExpressionNode::c_dc_;
     return ExpressionNode::c_fc_;
 }
@@ -1268,7 +1274,7 @@ void addaside(EXPRESSION* node)
 }
 
 /*-------------------------------------------------------------------------*/
-bool expressionHasSideEffects(EXPRESSION *exp)
+bool expressionHasSideEffects(EXPRESSION* exp)
 {
     std::stack<EXPRESSION*> stk;
     stk.push(exp);
@@ -1449,9 +1455,9 @@ int opt0(EXPRESSION** node)
                 for (int i = 0; i < sz; i++)
                 {
                     if (!carry)
-                        c1 = ep->v.b.value[i] == 0 ? 0 : 1; 
+                        c1 = ep->v.b.value[i] == 0 ? 0 : 1;
                     ep->v.b.value[i] = -ep->v.b.value[i] - carry;
-                    carry = carry ? 1 : c1;                    
+                    carry = carry ? 1 : c1;
                 }
             }
             else if (isfloatconst(ep->left))
@@ -1461,8 +1467,9 @@ int opt0(EXPRESSION** node)
                 (*node)->v.f->Negate();
                 rv = true;
             }
-            else if (ep->left->type == ExpressionNode::c_d_ || ep->left->type == ExpressionNode::c_f_ || ep->left->type == ExpressionNode::c_ld_ ||
-                     ep->left->type == ExpressionNode::c_di_ || ep->left->type == ExpressionNode::c_fi_ || ep->left->type == ExpressionNode::c_ldi_)
+            else if (ep->left->type == ExpressionNode::c_d_ || ep->left->type == ExpressionNode::c_f_ ||
+                     ep->left->type == ExpressionNode::c_ld_ || ep->left->type == ExpressionNode::c_di_ ||
+                     ep->left->type == ExpressionNode::c_fi_ || ep->left->type == ExpressionNode::c_ldi_)
             {
                 rv = true;
                 ep->type = ep->left->type;
@@ -1472,7 +1479,8 @@ int opt0(EXPRESSION** node)
                 *node = ep;
                 ep->left = ep->right = nullptr;
             }
-            else if (ep->left->type == ExpressionNode::c_dc_ || ep->left->type == ExpressionNode::c_fc_ || ep->left->type == ExpressionNode::c_ldc_)
+            else if (ep->left->type == ExpressionNode::c_dc_ || ep->left->type == ExpressionNode::c_fc_ ||
+                     ep->left->type == ExpressionNode::c_ldc_)
             {
                 rv = true;
                 ep->type = ep->left->type;
@@ -2229,7 +2237,8 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_,
+                                              ((unsigned long long)ep->left->v.i > (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2252,7 +2261,8 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_,
+                                              ((unsigned long long)ep->left->v.i >= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2275,7 +2285,8 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_,
+                                              ((unsigned long long)ep->left->v.i < (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2298,7 +2309,8 @@ int opt0(EXPRESSION** node)
             switch (mode)
             {
                 case 1:
-                    *node = MakeIntExpression(ExpressionNode::c_i_, ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
+                    *node = MakeIntExpression(ExpressionNode::c_i_,
+                                              ((unsigned long long)ep->left->v.i <= (unsigned long long)ep->right->v.i));
                     rv = true;
                     break;
                 default: {
@@ -2372,7 +2384,8 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::hook_:
             rv |= opt0(&(ep->right));
             rv |= opt0(&(ep->left));
-            if (isoptconst(ep->left) && (parsingPreprocessorConstant || isoptconst(ep->right->left) && isoptconst(ep->right->right)))
+            if (isoptconst(ep->left) &&
+                (parsingPreprocessorConstant || isoptconst(ep->right->left) && isoptconst(ep->right->right)))
             {
                 if (isfloatconst(ep->left))
                 {
@@ -2610,7 +2623,7 @@ int opt0(EXPRESSION** node)
                                     }
                                 Type* ctype = sym->tp;
                                 EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                                CallSite funcparams = { };
+                                CallSite funcparams = {};
                                 funcparams.arguments = (*find).arguments;
                                 funcparams.templateParams = (*find).templateParams;
                                 funcparams.ascall = true;
@@ -2618,11 +2631,12 @@ int opt0(EXPRESSION** node)
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, 0);
                                 if (sp1)
                                 {
-                                    EXPRESSION exp1 = { }, * exp2 = &exp1;;
+                                    EXPRESSION exp1 = {}, *exp2 = &exp1;
+                                    ;
                                     funcparams.fcall = exp;
                                     funcparams.sp = sp1;
                                     funcparams.functp = sp1->tp;
-//                                    funcparams.templateParams = nullptr;
+                                    //                                    funcparams.templateParams = nullptr;
                                     exp1.type = ExpressionNode::callsite_;
                                     exp1.v.func = &funcparams;
                                     optimize_for_constants(&exp2);
@@ -2650,7 +2664,8 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!definingTemplate || instantiatingTemplate) && (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
+            if ((!definingTemplate || instantiatingTemplate) &&
+                (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
@@ -2713,7 +2728,8 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::structadd_:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
-            if (!inConstantExpression && (node->right->type == ExpressionNode::structelem_ || node->left->type == ExpressionNode::structadd_))
+            if (!inConstantExpression &&
+                (node->right->type == ExpressionNode::structelem_ || node->left->type == ExpressionNode::structadd_))
                 break;
             if (isoptconst(node->right))
             {
@@ -3168,7 +3184,7 @@ int fold_const(EXPRESSION* node)
             if (node->v.construct.tp->IsArithmetic())
             {
 
-                std::list<Initializer*> *init = nullptr, *dest = nullptr;
+                std::list<Initializer*>*init = nullptr, *dest = nullptr;
                 lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
                 if (init)
                     *node = *init->front()->exp;
@@ -3176,14 +3192,13 @@ int fold_const(EXPRESSION* node)
             else
             {
                 EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
-                               exp->v.sp, false, false, 0);
+                lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
+                               node->v.construct.tp, exp->v.sp, false, false, 0);
             }
             SetAlternateLex(nullptr);
         }
         break;
-        case ExpressionNode::callsite_:
-        {
+        case ExpressionNode::callsite_: {
             if (node->v.func->ascall)
             {
                 auto thisptr = node->v.func->thisptr;
@@ -3197,7 +3212,8 @@ int fold_const(EXPRESSION* node)
                             thisptr = nullptr;
                     }
                 }
-                if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression && (argumentNesting == 0 && !inStaticAssert))
+                if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression &&
+                    (argumentNesting == 0 && !inStaticAssert))
                 {
                     if (!rv && node->v.func->thisptr)
                     {
@@ -3211,7 +3227,7 @@ int fold_const(EXPRESSION* node)
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);
         }
-            break;
+        break;
 #ifdef LIBCXX17
         case ExpressionNode::cppintrinsic_:
             if (!definingTemplate || instantiatingTemplate)
@@ -3229,8 +3245,7 @@ int fold_const(EXPRESSION* node)
                 rv = true;
             }
             break;
-        case ExpressionNode::stmt_:
-        {   // constructor thunks
+        case ExpressionNode::stmt_: {  // constructor thunks
             auto its = node->v.stmt->begin();
             auto itse = node->v.stmt->end();
             while (its != itse && (*its)->type == StatementNode::expr_)
@@ -3417,7 +3432,8 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left->type == ExpressionNode::global_)
             {
-                if ((node1->left->v.sp->sb->storage_class == StorageClass::constant_ && isintconst(node1->left->v.sp->sb->init->front()->exp)))
+                if ((node1->left->v.sp->sb->storage_class == StorageClass::constant_ &&
+                     isintconst(node1->left->v.sp->sb->init->front()->exp)))
                 {
                     optimize_for_constants(&node1->left->v.sp->sb->init->front()->exp);
                     *node1 = *node1->left->v.sp->sb->init->front()->exp;

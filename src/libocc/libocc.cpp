@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <stdio.h>
@@ -53,15 +53,14 @@ CmdSwitchString libocc::Subsytem(SwitchParser, 0, ';', {"subsystem"});
 CmdSwitchString libocc::WarningsAsErrors(SwitchParser, 0, ';', {"wx"});
 ;
 
-
-	const char* libocc::helpText =
+const char* libocc::helpText =
     "[options] library files...\n"
     "\n"
     "/EXTRACT:name     add file to extract\n"
     "/LIBPATH:xxx      reserved for compatibility\n"
     "/LIST:xxx         reserved for compatibility\n"
     "/MACHINE:xxx      reserved for compatibility\n"
-    "/NAME:xxx         create import library from dll\n" 
+    "/NAME:xxx         create import library from dll\n"
     "/NODEFAULTLIB:xxx  reserved for compatibility\n"
     "/OUT:xxx          specify output file name\n"
     "/REMOVE:name      add file to remove\n"
@@ -81,8 +80,8 @@ int main(int argc, char** argv)
     return lib.Run(argc, argv);
 }
 
-std::string libocc::SanitizeExtension(std::string fileName, std::string ext) 
-{ 
+std::string libocc::SanitizeExtension(std::string fileName, std::string ext)
+{
     int n = fileName.rfind(".obj");
     if (n != std::string::npos && n == fileName.size() - 4)
     {
@@ -104,7 +103,7 @@ std::string libocc::SanitizeExtension(std::string fileName, std::string ext)
         return fileName;
     }
 }
-int libocc::Run(int argc, char** argv) 
+int libocc::Run(int argc, char** argv)
 {
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
     if (files.size() < 2 && !Remove.GetExists() && !Extract.GetExists())
@@ -166,7 +165,7 @@ int libocc::Run(int argc, char** argv)
         for (auto n : names)
         {
             args += "\"";
-            args += SanitizeExtension(n,"");
+            args += SanitizeExtension(n, "");
             args += "\"";
         }
     }
@@ -177,7 +176,7 @@ int libocc::Run(int argc, char** argv)
         for (auto n : names)
         {
             args += "\"";
-            args += SanitizeExtension(n,"");
+            args += SanitizeExtension(n, "");
             args += "\"";
         }
     }

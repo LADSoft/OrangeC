@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "Utils.h"
@@ -54,7 +54,7 @@ SharedMemory::~SharedMemory()
     CloseHandle(regionHandle);
     CloseHandle(fileHandle_);
 #else
-    if( regionHandle )
+    if (regionHandle)
         free(regionHandle);
 #endif
 }
@@ -103,7 +103,7 @@ unsigned char* SharedMemory::GetMapping(unsigned pos)
     if (regionStart)
         return regionStart - regionBase_;
 #else
-    return (unsigned char*) regionHandle;
+    return (unsigned char*)regionHandle;
 #endif
     return 0;
 }
@@ -139,28 +139,30 @@ bool SharedMemory::EnsureCommitted(int size)
     }
     return true;
 #else
-    if( size > max_ )
+    if (size > max_)
         return false;
-    if( size > current_ )
+    if (size > current_)
     {
         unsigned new_size = current_;
-        while( size > new_size )
+        while (size > new_size)
             new_size += windowSize_;
         void* old_handle = regionHandle;
         void* new_handle = malloc(new_size);
-        if( new_handle && old_handle )
+        if (new_handle && old_handle)
         {
-            memcpy(new_handle,old_handle,current_);
+            memcpy(new_handle, old_handle, current_);
             free(old_handle);
         }
-        if( new_handle )
+        if (new_handle)
         {
             current_ = new_size;
             regionHandle = new_handle;
             return true;
-        }else
+        }
+        else
             return false;
-    }else
+    }
+    else
         return true;
 #endif
 }

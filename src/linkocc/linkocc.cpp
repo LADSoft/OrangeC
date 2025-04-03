@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <stdio.h>
@@ -64,7 +64,6 @@ CmdSwitchString linkocc::prm_subsystem(SwitchParser, 0, ';', {"subsystem"});
 CmdSwitchString linkocc::prm_version(SwitchParser, 0, ';', {"version"});
 CmdSwitchString linkocc::prm_wx(SwitchParser, 0, ';', {"wx"});
 
-
 const char* linkocc::helpText =
     "[options] files...\n"
     "\n"
@@ -77,7 +76,7 @@ const char* linkocc::helpText =
     "/FILEALIGN:#                  set file alignment\n"
     "/IMPLIB:name                  create an import library\n"
     "/LIBPATH:xxx                  add to library path\n"
-    "/MACHINE:xxx                  reserved for compatibility\n"    
+    "/MACHINE:xxx                  reserved for compatibility\n"
     "/MANIFESTFILE:xxx             reserved for compatibility\n"
     "/MAP                          create a map file\n"
     "/NODEFAULTLIB:xxx             removes default libraries\n"
@@ -91,7 +90,7 @@ const char* linkocc::helpText =
     "/STUB:xxx                     reserved for compatibility\n"
     "/SUBSYSTEM:{CONSOLE, WINDOWS} set the subsystem\n"
     "/WX:xxx                       reserved for compatibility\n"
-    "\n" 
+    "\n"
     "-V, --version                 show version information\n"
     "--nologo                      no logo\n"
     "/?, --help                    this text\n"
@@ -128,7 +127,7 @@ std::string linkocc::SanitizeExtension(std::string fileName, std::string ext)
         return fileName;
     }
 }
-int linkocc::Run(int argc, char** argv) 
+int linkocc::Run(int argc, char** argv)
 {
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
     if (files.size() < 2)
@@ -241,4 +240,3 @@ int linkocc::Run(int argc, char** argv)
     unlink(tempName.c_str());
     return rv;
 }
-

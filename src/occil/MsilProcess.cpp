@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -43,7 +43,7 @@
 #include "memory.h"
 
 // must match the definition in lex.h
-    // clang-format off
+// clang-format off
 enum class LexType : unsigned char
 {
     none_,
@@ -683,8 +683,11 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             Type* type;
             if (it == typeList.end())
             {
-		// the minimum size is to address a crash in .netcore 8.
-                cls = peLib->AllocateClass(name1, Qualifiers::Public | Qualifiers::ClassClass,  -1, tp->size == 0 ? 1 : tp->size < 8 ? 8 : tp->size);
+                // the minimum size is to address a crash in .netcore 8.
+                cls = peLib->AllocateClass(name1, Qualifiers::Public | Qualifiers::ClassClass, -1,
+                                           tp->size == 0  ? 1
+                                           : tp->size < 8 ? 8
+                                                          : tp->size);
                 mainContainer->Add(cls);
                 // declare any structure we are referencing..
                 while (tp->type == Optimizer::st_pointer)
@@ -2014,8 +2017,8 @@ void msil_main_postprocess(bool errors)
             {
                 netCoreInstance->DumpOutputFile(ilName,
                                                 Optimizer::cparams.prm_asmfile
-                                                     ? PELib::ilasm
-                                                     : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe));
+                                                    ? PELib::ilasm
+                                                    : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe));
             }
             else
 #endif
@@ -2023,7 +2026,7 @@ void msil_main_postprocess(bool errors)
                 peLib->DumpOutputFile(ilName,
                                       Optimizer::cparams.prm_asmfile
                                           ? PELib::ilasm
-                                         : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
+                                          : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
                                       Optimizer::cparams.prm_targettype == GUI);
             }
         }

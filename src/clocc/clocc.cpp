@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <stdio.h>
@@ -32,7 +32,7 @@
 #include "ToolChain.h"
 #include "CmdSwitch.h"
 #include "clocc.h"
-#include "../exefmt/PEHeader.h" 
+#include "../exefmt/PEHeader.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -71,7 +71,7 @@ const char* clocc::helpText =
     "/c                   compile only\n"
     "/Dxxx                define a macro\n"
     "/E                   reserved for compatibility\n"
-    "/F#                  set stack size\n" 
+    "/F#                  set stack size\n"
     "/Fe{file}            link to exe and set executable file name\n"
     "/Fm{file}            reserved for compatibility\n"
     "/Fo{file}            compile only and set object file name\n"
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     return cl.Run(argc, argv);
 }
 
-int clocc::LinkOptions(std::string& args) 
+int clocc::LinkOptions(std::string& args)
 {
     int subsys = prmDll.GetValue() ? DLL_STUB_SUBSYS : PE_SUBSYS_CONSOLE;
     if (prmLinkOptions.GetExists())
@@ -128,13 +128,13 @@ int clocc::LinkOptions(std::string& args)
         bool debug = false;
         for (auto&& o : a)
         {
-            std::string select = o; 
+            std::string select = o;
             std::string val;
             int n = o.find_first_of(':');
             if (n != std::string::npos)
             {
                 select = o.substr(0, n);
-                val = o.substr(n+1);
+                val = o.substr(n + 1);
             }
             std::transform(select.begin(), select.end(), select.begin(), ::toupper);
             if (select == "/DEBUG")
@@ -172,7 +172,6 @@ int clocc::LinkOptions(std::string& args)
                 args += " -pl-DSTACKSIZE=" + a[0];
                 if (a.size() == 2)
                     args += " -pl-DSTACKCOMMIT=" + a[1];
-
             }
             else if (select == "/SUBSYSTEM" && val.size())
             {
@@ -200,7 +199,7 @@ int clocc::LinkOptions(std::string& args)
                     subsys = type;
             }
             else if (select == "/ENTRY" || select == "/EXPORT" || select == "/MACHINE" || select == "/MANIFESTFILE" ||
-                select == "/NODEFAULTLIB" || select == "/OPT" || select == "/PROFILE" || select == "/RELEASE" ||
+                     select == "/NODEFAULTLIB" || select == "/OPT" || select == "/PROFILE" || select == "/RELEASE" ||
                      select == "/SAFESEH" || select == "/STUB" || select == "/WX" || select == "/DEF")
             {
                 // ignored;
@@ -213,10 +212,10 @@ int clocc::LinkOptions(std::string& args)
         if (debug)
             args += " -pl-g";
     }
-    return subsys; 
+    return subsys;
 }
 std::string clocc::SanitizeExtension(std::string fileName, std::string ext)
-    {
+{
     int n = fileName.rfind(".obj");
     if (n != std::string::npos && n == fileName.size() - 4)
     {
@@ -355,7 +354,7 @@ int clocc::Run(int argc, char** argv)
     }
     if (compileType)
         args += std::string(" -") + compileType;
-    args += " -o \"" + outputFile + "\""; 
+    args += " -o \"" + outputFile + "\"";
 
     char optimizeType = '-';
     char optimizeType2 = 0;
@@ -369,45 +368,45 @@ int clocc::Run(int argc, char** argv)
         {
             if (o.size() == 0)
                 err = true;
-            else switch (o[0])
-            {
-                case 'd':
-                    optimizeType = '-';
-                    err = o.size() != 1;
-                    break;
-                case '1':
-                case 's':
-                    optimizeType = '1';
-                    err = o.size() != 1;
-                    break;
-                case '2':
-                case 't':
-                case 'x':
-                    optimizeType = '2';
-                    err = o.size() != 1;
-                    break;
-
-                case 'y':
-                    if (o.size() == 2)
-                    {
-                        if (o[1] != '-')
-                            err = true;
-                        optimizeType2 = 'B';
-                    }
-                    else
-                    {
-                        optimizeType2 = 'S';
+            else
+                switch (o[0])
+                {
+                    case 'd':
+                        optimizeType = '-';
                         err = o.size() != 1;
-                    }
-                    break;
-                default:
-                    err = true;
-                    break;
-            }
+                        break;
+                    case '1':
+                    case 's':
+                        optimizeType = '1';
+                        err = o.size() != 1;
+                        break;
+                    case '2':
+                    case 't':
+                    case 'x':
+                        optimizeType = '2';
+                        err = o.size() != 1;
+                        break;
+
+                    case 'y':
+                        if (o.size() == 2)
+                        {
+                            if (o[1] != '-')
+                                err = true;
+                            optimizeType2 = 'B';
+                        }
+                        else
+                        {
+                            optimizeType2 = 'S';
+                            err = o.size() != 1;
+                        }
+                        break;
+                    default:
+                        err = true;
+                        break;
+                }
         }
         if (err)
             Utils::Fatal("Invalid optimizer parameter");
-
     }
     args += std::string(" -O") + optimizeType;
     if (optimizeType2 == 'S')
@@ -429,14 +428,14 @@ int clocc::Run(int argc, char** argv)
     std::string defines;
     if (prm_define.GetExists())
     {
-        auto splt = Utils::split(prm_define.GetValue(),DEFINE_SPLIT_CHAR);
-        for (int i=0; i < splt.size(); i++)
+        auto splt = Utils::split(prm_define.GetValue(), DEFINE_SPLIT_CHAR);
+        for (int i = 0; i < splt.size(); i++)
         {
-            for (int j=0; j < splt[i].size(); j++)
+            for (int j = 0; j < splt[i].size(); j++)
             {
                 if (splt[i][j] == '"' || splt[i][j] == '\\' || splt[i][j] == ' ')
                 {
-                    splt[i].insert(j,1,'\\');
+                    splt[i].insert(j, 1, '\\');
                     j++;
                 }
             }
@@ -450,26 +449,21 @@ int clocc::Run(int argc, char** argv)
         auto a = prmStandard.GetValue();
         if (a == "c++11")
         {
-
         }
         else if (a == "c++14")
         {
-
         }
         else if (a == "c++17")
         {
         }
         else if (a == "c89")
         {
-
         }
         else if (a == "c99")
         {
-
         }
         else if (a == "c11")
         {
-
         }
         else
         {
@@ -522,7 +516,6 @@ int clocc::Run(int argc, char** argv)
         }
         if (debug)
             args += " -g";
-          
     }
     if (prmCharTypeIsUnsigned.GetValue())
         args += " -C+u";
@@ -530,14 +523,14 @@ int clocc::Run(int argc, char** argv)
     args += " -W";
     switch (subsys)
     {
-        case PE_SUBSYS_NATIVE: // native
-        case PE_SUBSYS_CONSOLE: // console
+        case PE_SUBSYS_NATIVE:   // native
+        case PE_SUBSYS_CONSOLE:  // console
             args += "c";
             break;
-        case PE_SUBSYS_WINDOWS: // gui
+        case PE_SUBSYS_WINDOWS:  // gui
             args += "g";
             break;
-        case DLL_STUB_SUBSYS: //dll
+        case DLL_STUB_SUBSYS:  // dll
             args += "d";
             break;
         default:
@@ -653,4 +646,3 @@ int clocc::Run(int argc, char** argv)
     unlink(tempName.c_str());
     return rv;
 }
-

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #pragma once
@@ -462,8 +462,8 @@ typedef struct _imode_
     SimpleExpression* offset2; /* a second temp reg */
     SimpleExpression* offset3; /* an address */
     SimpleExpression* vararg;
-    RUNTIMEDATA* runtimeData; // this is a temporary, will be moved to the quad when it gets generated
-    int scale; /* scale factor on the second temp reg */
+    RUNTIMEDATA* runtimeData;  // this is a temporary, will be moved to the quad when it gets generated
+    int scale;                 /* scale factor on the second temp reg */
     char useindx;
     char size;           /* size */
     char ptrsize;        /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
@@ -473,14 +473,14 @@ typedef struct _imode_
     {
         struct
         {
-            unsigned char vol : 1;        /* true if is a node for a volatile var */
-            unsigned char restricted : 1; /* true if pointer type is set to restricted */
-            unsigned char retval : 1;     /* true if this is the value returned by a function */
-            unsigned char altretval : 1;  /* true if an alternate return value should be used (e.g. SSE instead of FP)*/
-            unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
-            unsigned char msilObject : 1; /* true if this is an MSIL object that shouldn't be loaded by address */
+            unsigned char vol : 1;            /* true if is a node for a volatile var */
+            unsigned char restricted : 1;     /* true if pointer type is set to restricted */
+            unsigned char retval : 1;         /* true if this is the value returned by a function */
+            unsigned char altretval : 1;      /* true if an alternate return value should be used (e.g. SSE instead of FP)*/
+            unsigned char fieldname : 1;      /* vararg is an en_structelem field name */
+            unsigned char msilObject : 1;     /* true if this is an MSIL object that shouldn't be loaded by address */
             unsigned char returnRefByVal : 1; /* true if this return value is a by value reference value */
-            unsigned char wasinlined : 1;        /* true if this is the result of an inlining operation */
+            unsigned char wasinlined : 1;     /* true if this is the result of an inlining operation */
         };
         unsigned flags;
     };
@@ -597,7 +597,7 @@ typedef struct quad
             int vararg : 1;          // msil
             int ptrbox : 1;          // msil - box this pointer
             int runtimeIsStore : 1;
-            int moveBarrier : 1;     /* can't move instructions past this point, e.g. for computed goto/label */
+            int moveBarrier : 1; /* can't move instructions past this point, e.g. for computed goto/label */
         };
         unsigned flags;
     };

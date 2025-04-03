@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdint>
@@ -55,7 +55,7 @@ static unsigned char* streamPointer;
 static SharedMemory* shared;
 static unsigned top;
 
-static int inputPos;  // it is not intended we ever reset this, as multiple files could be streamed 
+static int inputPos;  // it is not intended we ever reset this, as multiple files could be streamed
                       // one after the other and we are going to read them in order
 inline void dothrow()
 {
@@ -373,7 +373,7 @@ static OCODE* UnstreamAssemblyInstruction()
     rv->oper2 = UnstreamAssemblyOperand();
     rv->oper3 = UnstreamAssemblyOperand();
 #else
-    memset(rv,0,sizeof(OCODE));
+    memset(rv, 0, sizeof(OCODE));
 #endif
     return rv;
 }
@@ -505,7 +505,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
         if (n)
         {
             rv->runtimeData = Allocate<RUNTIMEDATA>();
-            rv->runtimeData->runtimeSym = (void *)n;
+            rv->runtimeData->runtimeSym = (void*)n;
             rv->runtimeData->fileName = (const char*)UnstreamTextIndex();
             rv->runtimeData->varName = (const char*)UnstreamTextIndex();
             rv->runtimeData->lineno = UnstreamIndex();
@@ -943,7 +943,7 @@ void ReadText(std::vector<std::string>& texts)
         i += len;
     }
     int count = UnstreamIndex();
-    for (int i=0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
         int index1 = UnstreamIndex();
         int index2 = UnstreamIndex();
@@ -984,7 +984,8 @@ static Optimizer::SimpleSymbol* SymbolName(Optimizer::SimpleSymbol* selection, s
 }
 static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, const std::vector<std::string>& texts,
                           std::vector<Optimizer::SimpleSymbol*>& table);
-static void ResolveType(Optimizer::SimpleType* tp, const std::vector<std::string>& texts, std::vector<Optimizer::SimpleSymbol*>& table)
+static void ResolveType(Optimizer::SimpleType* tp, const std::vector<std::string>& texts,
+                        std::vector<Optimizer::SimpleSymbol*>& table)
 {
     bool ispointer = false;
     while (tp)
@@ -1117,9 +1118,9 @@ static void ResolveInstruction(Optimizer::QUAD* q, const std::vector<std::string
     }
     if (q->runtimeData)
     {
-        SimpleSymbol *s = reinterpret_cast<SimpleSymbol*>(q->runtimeData->runtimeSym);
+        SimpleSymbol* s = reinterpret_cast<SimpleSymbol*>(q->runtimeData->runtimeSym);
         ResolveSymbol(s, texts, current->variables);
-        q->runtimeData->fileName = texts[(int)(intptr_t)q->runtimeData->fileName].c_str();    
+        q->runtimeData->fileName = texts[(int)(intptr_t)q->runtimeData->fileName].c_str();
         q->runtimeData->varName = texts[(int)(intptr_t)q->runtimeData->varName].c_str();
         q->runtimeData->runtimeSym = s;
     }

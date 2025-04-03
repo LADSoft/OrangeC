@@ -3,7 +3,7 @@
 #include <array>
 #include <algorithm>
 #ifdef TARGET_OS_WINDOWS
-#include <process.h>
+#    include <process.h>
 #endif
 namespace OMAKE
 {

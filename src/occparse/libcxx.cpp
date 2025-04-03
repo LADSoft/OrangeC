@@ -10,7 +10,7 @@
  *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
  *
- *     The Orange C Compiler package is distributed in the hope that it will be 
+ *     The Orange C Compiler package is distributed in the hope that it will be
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -52,7 +52,6 @@ namespace Parser
 {
 int inNoExceptHandler;
 
-
 typedef bool INTRINS_FUNC(EXPRESSION* exp);
 static bool is_abstract(EXPRESSION* exp);
 static bool is_base_of(EXPRESSION* exp);
@@ -83,7 +82,7 @@ static bool is_member_pointer(EXPRESSION* exp);
 static bool has_unique_object_representations(EXPRESSION* exp);
 static bool has_virtual_destructor(EXPRESSION* exp);
 
-static std::unordered_map<std::string, INTRINS_FUNC*> intrinsicHash {
+static std::unordered_map<std::string, INTRINS_FUNC*> intrinsicHash{
     {"__has_unique_object_representations", has_unique_object_representations},
     {"__has_virtual_destructor", has_virtual_destructor},
     {"__is_abstract", is_abstract},
@@ -328,7 +327,7 @@ bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type**
     }
     return false;
 }
-	
+
 void EvaluateLibcxxConstant(EXPRESSION** exp)
 {
     auto it = intrinsicHash.find((*exp)->v.cppintrinsicName);
@@ -337,7 +336,7 @@ void EvaluateLibcxxConstant(EXPRESSION** exp)
         auto rv = (it->second)(*exp);
         (**exp).type = ExpressionNode::c_i_;
         (**exp).v.i = rv;
-//        *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
+        //        *exp = MakeIntExpression(ExpressionNode::c_i_, rv);
     }
 }
 static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool initialize)
@@ -370,7 +369,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
                             }
                         }
                 }
-                else 
+                else
                 {
                     auto arg1 = Allocate<Argument>();
                     (*arguments)->push_back(arg1);
@@ -394,7 +393,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         }
     }
 }
-static LexList* GetTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**lptr)
+static LexList* GetTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr)
 {
     if (!*lptr)
         *lptr = argumentListFactory.CreateList();
@@ -586,7 +585,7 @@ static bool trivialDefaultConstructor(Type* tp)
             for (auto sym : *ovl->tp->syms)
             {
                 auto syms = sym->tp->BaseType()->syms;
-              
+
                 if (syms->size() < 3 || (syms->size() == 3 && (syms->back()->tp->type == BasicType::void_)))
                 {
                     if (!sym->sb->defaulted)
@@ -600,7 +599,7 @@ static bool trivialDefaultConstructor(Type* tp)
             for (auto bc : *tp->BaseType()->sp->sb->baseClasses)
                 if (!trivialDefaultConstructor(bc->cls->tp))
                     return false;
-        for (auto sym: *tp->BaseType()->syms)
+        for (auto sym : *tp->BaseType()->syms)
         {
             if (sym->sb->storage_class == StorageClass::mutable_ || sym->sb->storage_class == StorageClass::member_)
                 if (!trivialDefaultConstructor(sym->tp))
@@ -611,9 +610,8 @@ static bool trivialDefaultConstructor(Type* tp)
 }
 static bool triviallyCopyable(Type* tp)
 {
-    return trivialCopyConstructible(tp, false) && trivialAssignable(tp, false) &&
-        trivialCopyConstructible(tp, true) && trivialAssignable(tp, true) &&
-        trivialDestructor(tp);
+    return trivialCopyConstructible(tp, false) && trivialAssignable(tp, false) && trivialCopyConstructible(tp, true) &&
+           trivialAssignable(tp, true) && trivialDestructor(tp);
 }
 static bool trivialStructure(Type* tp)
 {
@@ -651,7 +649,7 @@ static bool trivialStructureWithBases(Type* tp)
 static bool isPOD(Type* tp)
 {
     SYMBOL* found = nullptr;
-    if (isStandardLayout(tp, &found) && trivialStructureWithBases(tp)) 
+    if (isStandardLayout(tp, &found) && trivialStructureWithBases(tp))
     {
         if (found)
         {
@@ -666,7 +664,11 @@ static bool isPOD(Type* tp)
     return false;
 }
 inline Argument* first(std::list<Argument*>* args) { return args->front(); }
-inline Argument* second(std::list<Argument*>* args) { auto it = args->begin(); return (*++it); }
+inline Argument* second(std::list<Argument*>* args)
+{
+    auto it = args->begin();
+    return (*++it);
+}
 static bool __is_nothrow(Type* tp, std::list<Argument*>* arguments, SYMBOL* ovl)
 {
     // recursion will have been taken care of elsewhere...
@@ -995,7 +997,7 @@ static bool is_constructible(EXPRESSION* exp)
             {
                 Type* tp3 = NULL;
                 tp2 = tp2->BaseType()->sp->tp;
-                if (arguments->size()  > 1)
+                if (arguments->size() > 1)
                 {
                     tp3 = second(arguments)->tp;
                 }
@@ -1009,7 +1011,7 @@ static bool is_constructible(EXPRESSION* exp)
 #endif
                 {
                     int i = 0;
-                    std::vector<bool>holdl, holdr;
+                    std::vector<bool> holdl, holdr;
                     Argument* temp;
                     EXPRESSION* cexp = nullptr;
                     SYMBOL* cons = search(tp2->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
@@ -1052,8 +1054,8 @@ static bool is_constructible(EXPRESSION* exp)
                             }
                         }
                         Type* tp = nullptr;
-                        auto sym = GetOverloadedFunction(&tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false,
-                                                         _F_SIZEOF);
+                        auto sym =
+                            GetOverloadedFunction(&tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, _F_SIZEOF);
                         rv = sym && sym->sb->access == AccessLevel::public_;
 
                         while (stk.size())
@@ -1254,7 +1256,7 @@ static bool is_nothrow_constructible(EXPRESSION* exp)
                 rv = true;
             }
         }
-        else if (arguments->size()  > 1)
+        else if (arguments->size() > 1)
         {
             rv = tp2->CompatibleType(second(arguments)->tp);
         }
@@ -1290,7 +1292,7 @@ static bool is_nothrow_assignable(EXPRESSION* exp)
             arguments->pop_front();
             rv = nothrowAssignable(tp2, arguments);
         }
-        else if (arguments->size()  > 1)
+        else if (arguments->size() > 1)
         {
             rv = tp2->CompatibleType(second(arguments)->tp);
         }
@@ -1356,11 +1358,11 @@ static bool is_trivially_assignable(EXPRESSION* exp)
     {
         if (arguments->size() == 2)
         {
-           Type* tp1 = second(arguments)->tp;
-           if (tp1->IsRef())
-               tp1 = tp1->BaseType()->btp;
-           if (tp1->CompatibleType(first(arguments)->tp) || SameTemplate(tp1, first(arguments)->tp))
-              rv = trivialAssignable(first(arguments)->tp, second(arguments)->tp->BaseType()->type== BasicType::rref_);
+            Type* tp1 = second(arguments)->tp;
+            if (tp1->IsRef())
+                tp1 = tp1->BaseType()->btp;
+            if (tp1->CompatibleType(first(arguments)->tp) || SameTemplate(tp1, first(arguments)->tp))
+                rv = trivialAssignable(first(arguments)->tp, second(arguments)->tp->BaseType()->type == BasicType::rref_);
         }
     }
     return rv;
@@ -1373,14 +1375,14 @@ static bool is_trivially_constructible(EXPRESSION* exp)
     if (arguments && arguments->size() && first(arguments)->tp->IsStructured())
     {
         if (arguments->size() == 1)
-           rv = trivialDefaultConstructor(first(arguments)->tp);
+            rv = trivialDefaultConstructor(first(arguments)->tp);
         else if (arguments->size() == 2)
         {
-           Type* tp1 = second(arguments)->tp;
-           if (tp1->IsRef())
-               tp1 = tp1->BaseType()->btp;
-           if (tp1->CompatibleType(first(arguments)->tp) || SameTemplate(tp1, first(arguments)->tp))
-              rv = trivialCopyConstructible(first(arguments)->tp, second(arguments)->tp->BaseType()->type== BasicType::rref_);
+            Type* tp1 = second(arguments)->tp;
+            if (tp1->IsRef())
+                tp1 = tp1->BaseType()->btp;
+            if (tp1->CompatibleType(first(arguments)->tp) || SameTemplate(tp1, first(arguments)->tp))
+                rv = trivialCopyConstructible(first(arguments)->tp, second(arguments)->tp->BaseType()->type == BasicType::rref_);
         }
     }
     return rv;
@@ -1515,7 +1517,8 @@ static bool is_same(EXPRESSION* exp)
                 left = left->BaseType()->btp;
                 right = right->BaseType()->btp;
             }
-            while (left->IsPtr() && right->IsPtr() && left->IsArray() == right->IsArray() && left->IsConst() == right->IsConst() && left->IsVolatile() == right->IsVolatile())
+            while (left->IsPtr() && right->IsPtr() && left->IsArray() == right->IsArray() && left->IsConst() == right->IsConst() &&
+                   left->IsVolatile() == right->IsVolatile())
             {
                 left = left->BaseType()->btp;
                 right = right->BaseType()->btp;
@@ -1524,7 +1527,7 @@ static bool is_same(EXPRESSION* exp)
             {
                 if (left->IsArithmetic())
                 {
-                    rv = left->type == right->type;   
+                    rv = left->type == right->type;
                 }
                 else if (left->IsStructured() || left->IsDeferred())
                 {
@@ -1554,7 +1557,8 @@ static bool is_assignable(EXPRESSION* exp)
     {
         auto left = first(arguments)->tp;
         auto right = second(arguments)->tp;
-        if (!left->IsConst() && (!left->IsRef() || (!left->BaseType()->btp->IsConst() && !(right->IsRef() ? right->BaseType()->btp->IsConst() : right->IsConst() ))))
+        if (!left->IsConst() && (!left->IsRef() || (!left->BaseType()->btp->IsConst() &&
+                                                    !(right->IsRef() ? right->BaseType()->btp->IsConst() : right->IsConst()))))
         {
             left->InstantiateDeferred();
             right->InstantiateDeferred();
@@ -1606,7 +1610,6 @@ static bool is_assignable(EXPRESSION* exp)
         }
     }
     return rv;
-
 }
 static bool is_aggregate(EXPRESSION* exp)
 {
@@ -1617,9 +1620,11 @@ static bool is_aggregate(EXPRESSION* exp)
     {
 
         auto tp = first(arguments)->tp;
-        while (tp->IsRef()) tp = tp->BaseType()->btp;
+        while (tp->IsRef())
+            tp = tp->BaseType()->btp;
         rv = tp->IsArray();
-        while (tp->IsArray()) tp = tp->BaseType()->btp;
+        while (tp->IsArray())
+            tp = tp->BaseType()->btp;
         tp->InstantiateDeferred();
         if (tp->IsStructured() && tp->BaseType()->syms && !tp->BaseType()->sp->sb->hasUserCons)
         {
@@ -1631,7 +1636,8 @@ static bool is_aggregate(EXPRESSION* exp)
                 {
                     if (ismemberdata(s))
                     {
-                        if (s->sb->access != AccessLevel::public_ || s->tp->IsRef() || (s->tp->IsStructured() && !s->tp->BaseType()->sp->sb->trivialCons))
+                        if (s->sb->access != AccessLevel::public_ || s->tp->IsRef() ||
+                            (s->tp->IsStructured() && !s->tp->BaseType()->sp->sb->trivialCons))
                         {
                             rv = false;
                             break;
@@ -1651,14 +1657,16 @@ static bool is_member_pointer(EXPRESSION* exp)
     if (arguments->size() == 1)
     {
         auto tp = first(arguments)->tp;
-	rv = tp->BaseType()->type == BasicType::memberptr_;
+        rv = tp->BaseType()->type == BasicType::memberptr_;
     }
     return rv;
 }
 static bool hasUniqueRepresentation(Type* tp)
 {
-    while (tp->IsRef()) tp = tp->BaseType()->btp; // we want the object type not the representation of the ref
-    while (tp->IsArray()) tp = tp->BaseType()->btp; // we want the base type for arrays
+    while (tp->IsRef())
+        tp = tp->BaseType()->btp;  // we want the object type not the representation of the ref
+    while (tp->IsArray())
+        tp = tp->BaseType()->btp;  // we want the base type for arrays
     if (tp->IsStructured())
     {
         tp->InstantiateDeferred();
@@ -1701,7 +1709,7 @@ static bool hasUniqueRepresentation(Type* tp)
                         }
                         first = false;
                         last = s->sb->offset;
-                        lastsz =  s->tp->size;
+                        lastsz = s->tp->size;
                         laststart = s->tp->startbit;
                         lastbits = s->tp->bits;
                         if (lastbits && !strncmp(s->name, "Unnamed++", 9))
@@ -1711,7 +1719,7 @@ static bool hasUniqueRepresentation(Type* tp)
                     {
                         if (s->sb->offset == last)
                         {
-                            //bits
+                            // bits
                             if (laststart + lastbits != s->tp->startbit)
                                 return false;
                             laststart = s->tp->startbit;
@@ -1723,10 +1731,10 @@ static bool hasUniqueRepresentation(Type* tp)
                         {
                             if (last + lastsz != s->sb->offset)
                                 return false;
-                            if (lastbits && ((lastbits + laststart)/CHAR_BIT != lastsz))
-                				return false;
+                            if (lastbits && ((lastbits + laststart) / CHAR_BIT != lastsz))
+                                return false;
                             last = s->sb->offset;
-                            lastsz =  s->tp->size;
+                            lastsz = s->tp->size;
                             laststart = s->tp->startbit;
                             lastbits = s->tp->bits;
                             if (lastbits && !strncmp(s->name, "Unnamed++", 9))
@@ -1763,7 +1771,8 @@ static bool has_virtual_destructor(EXPRESSION* exp)
     if (arguments->size() == 1)
     {
         auto tp = first(arguments)->tp;
-        while (tp->IsRef()) tp = tp->BaseType()->btp;
+        while (tp->IsRef())
+            tp = tp->BaseType()->btp;
         tp->InstantiateDeferred();
         if (tp->IsStructured())
         {
@@ -1871,7 +1880,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
     if (e && isintconst(e))
     {
         it = args->begin();
-        ++it; // second arg
+        ++it;  // second arg
         SYMBOL* tpl = args->front().second->byTemplate.dflt;
         if (tpl->sb->parentTemplate)
             tpl = tpl->sb->parentTemplate;
@@ -1884,13 +1893,13 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
         decltype(args) args1 = templateParamPairListFactory.CreateList();
         auto second = Allocate<TEMPLATEPARAM>();
         second->type = TplType::new_;
-        args1->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
-        args1->push_back(TEMPLATEPARAMPAIR{ nullptr, it->second });
+        args1->push_back(TEMPLATEPARAMPAIR{nullptr, second});
+        args1->push_back(TEMPLATEPARAMPAIR{nullptr, it->second});
         second = Allocate<TEMPLATEPARAM>();
         second->type = TplType::int_;
         second->byNonType.tp = it->second->byClass.dflt;
         second->packed = true;
-        args1->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+        args1->push_back(TEMPLATEPARAMPAIR{nullptr, second});
         auto last = args1->back().second->byPack.pack = templateParamPairListFactory.CreateList();
         for (int i = 0; i < n; i++)
         {
@@ -1898,7 +1907,7 @@ static SYMBOL* MakeIntegerSeqType(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args
             second->type = TplType::int_;
             second->byNonType.tp = it->second->byClass.dflt;
             second->byNonType.val = MakeIntExpression(ExpressionNode::c_i_, i);
-            last->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+            last->push_back(TEMPLATEPARAMPAIR{nullptr, second});
         }
         sym = GetClassTemplate(tpl, args1, false);
         if (sym)
@@ -1965,7 +1974,7 @@ static Type* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
             ite = it->second->byPack.pack->end();
             it = it->second->byPack.pack->begin();
             if (it != ite && it->second->type == TplType::new_)
-                ++it;        
+                ++it;
         }
         while (n-- && it != ite)
         {
@@ -1973,7 +1982,8 @@ static Type* TypePackElementType(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args
         }
         if (it == ite)
             return &stdany;
-        return Type::MakeType(BasicType::derivedfromtemplate_, it->second->byClass.val ? it->second->byClass.val : it->second->byClass.dflt);
+        return Type::MakeType(BasicType::derivedfromtemplate_,
+                              it->second->byClass.val ? it->second->byClass.val : it->second->byClass.dflt);
     }
     else
     {

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #ifndef OBJIEEE_H
@@ -66,7 +66,7 @@ class ObjIeeeBinary : public ObjIOBase
     };
 
   public:
-    ObjIeeeBinary(const ObjString&Name, bool CaseSensitive = true) :
+    ObjIeeeBinary(const ObjString& Name, bool CaseSensitive = true) :
         ObjIOBase(Name, CaseSensitive),
         ioBufferLen(0),
         ioBuffer(0),
@@ -76,7 +76,7 @@ class ObjIeeeBinary : public ObjIOBase
         cs(0),
         currentDataSection(nullptr),
         ioBufferPos(0),
-        lineno(0), 
+        lineno(0),
         first(true)
     {
     }
@@ -119,10 +119,7 @@ class ObjIeeeBinary : public ObjIOBase
     class BadFileError : public std::domain_error
     {
       public:
-        BadFileError(const std::string& name) :
-            std::domain_error(name + " is not an object file")
-        {
-        }
+        BadFileError(const std::string& name) : std::domain_error(name + " is not an object file") {}
         virtual ~BadFileError() noexcept {};
     };
 
@@ -424,10 +421,7 @@ class ObjIeeeAscii : public ObjIOBase
     class BadFileError : public std::domain_error
     {
       public:
-        BadFileError(const std::string& name) :
-            std::domain_error(name + " is not an object file")
-        {
-        }
+        BadFileError(const std::string& name) : std::domain_error(name + " is not an object file") {}
         virtual ~BadFileError() noexcept {};
     };
     friend class ObjIeeeAscii::ParseData;

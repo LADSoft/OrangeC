@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -408,7 +408,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
-    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs || (definingTemplate && !instantiatingTemplate && ignoreErrdefiningTemplate(err)))
+    if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs ||
+        (definingTemplate && !instantiatingTemplate && ignoreErrdefiningTemplate(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
@@ -473,10 +474,10 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     else
     {
-        disabledNote = true;    
+        disabledNote = true;
         if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
-        if (Warning::Instance()->IsSet(err, Warning::OnlyOnce)) 
+        if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))
             if (Warning::Instance()->IsSet(err, Warning::Emitted))
                 return false;
         disabledNote = false;
@@ -531,7 +532,7 @@ int printerr(int err, const char* file, int line, ...)
 
 bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
 {
-    static std::unordered_map<Dialect, const char*,EnumClassHash> lookup = {
+    static std::unordered_map<Dialect, const char*, EnumClassHash> lookup = {
         {Dialect::c89, "C89"},     {Dialect::c99, "C99"},     {Dialect::c11, "C11"},    {Dialect::c2x, "C23"},
         {Dialect::cpp11, "C++11"}, {Dialect::cpp14, "C++14"}, {Dialect::cpp17, "C++17"}};
     if (cpp >= Dialect::c89 && cpp < Dialect::cpp11)
@@ -689,12 +690,12 @@ void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 }
 void error(int err) { printerr(err, nullptr, 0); }
 void errorint(int err, int val) { printerr(err, nullptr, 0, val); }
-void errorstr(int err, const char* val) 
+void errorstr(int err, const char* val)
 {
     const char* t = LookupIntrinsicName(val);
     if (t)
         val = t;
-    printerr(err, nullptr, 0, (char*)val); 
+    printerr(err, nullptr, 0, (char*)val);
 }
 void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
 void errorsym(int err, SYMBOL* sym)
@@ -1079,15 +1080,15 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, Statement* stmt, VL
     return rv;
 }
 /* thisll be sluggish if there are lots of gotos & labels... */
-static std::list<VLASHIM*> getVLAList(std::list<Statement*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
-                           int level, bool* branched)
+static std::list<VLASHIM*> getVLAList(std::list<Statement*>* statements, VLASHIM* last, VLASHIM* parent, VLASHIM** labels,
+                                      int minLabel, int* blocknum, int level, bool* branched)
 {
     std::list<VLASHIM*> rv;
     if (!statements)
         return rv;
     int curBlockNum = (*blocknum)++;
     int curBlockIndex = 0;
-    VLASHIM *nextParent = nullptr;
+    VLASHIM* nextParent = nullptr;
     for (auto stmt : *statements)
     {
         switch (stmt->type)
@@ -1114,7 +1115,8 @@ static std::list<VLASHIM*> getVLAList(std::list<Statement*>* statements, VLASHIM
                 if (stmt->lower && stmt->lower->front()->type == StatementNode::goto_ && !stmt->lower->front()->indirectGoto)
                 {
                     // unwrap the goto for purposes of these diagnostics
-                    rv.push_back(mkshim(v_goto, level, stmt->lower->front()->label, stmt->lower->front(), last, parent, curBlockNum, curBlockIndex++));
+                    rv.push_back(mkshim(v_goto, level, stmt->lower->front()->label, stmt->lower->front(), last, parent, curBlockNum,
+                                        curBlockIndex++));
                     last = rv.back();
                     last->checkme = stmt->lower->front()->explicitGoto;
                     *branched = true;
@@ -1328,7 +1330,7 @@ static void validateGotos(std::list<VLASHIM*>& vlashims, std::list<VLASHIM*>& ro
         }
     }
 }
-void checkGotoPastVLA(std::list<Statement*>*statements, bool first)
+void checkGotoPastVLA(std::list<Statement*>* statements, bool first)
 {
     if (hasGoto(statements) && hasDeclarations(statements))
     {
@@ -1364,7 +1366,7 @@ void checkUnused(SymbolTable<SYMBOL>* syms)
 {
     int i;
     for (auto sp : *syms)
-    { 
+    {
         if (sp->sb->storage_class == StorageClass::overloads_)
             sp = *sp->tp->syms->begin();
         if (!sp->sb->attribs.inheritable.used && !sp->sb->anonymous)
@@ -1407,8 +1409,8 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                             errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                         }
                         else if (sp1->sb->attribs.inheritable.linkage2 == Linkage::internal_ ||
-                            (sp1->sb->storage_class == StorageClass::static_ && !sp1->sb->inlineFunc.stmt &&
-                                !(sp1->sb->templateLevel || sp1->sb->instantiated)))
+                                 (sp1->sb->storage_class == StorageClass::static_ && !sp1->sb->inlineFunc.stmt &&
+                                  !(sp1->sb->templateLevel || sp1->sb->instantiated)))
                         {
                             if (sp1->sb->attribs.inheritable.used)
                                 errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
@@ -1437,7 +1439,8 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
 }
 static void usageErrorCheck(SYMBOL* sp)
 {
-    if ((sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_ || sp->sb->storage_class == StorageClass::localstatic_) &&
+    if ((sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_ ||
+         sp->sb->storage_class == StorageClass::localstatic_) &&
         !sp->sb->assigned && !sp->sb->attribs.inheritable.used && !sp->sb->altered)
     {
         if (!structLevel || !sp->sb->deferredCompile)
@@ -1475,7 +1478,8 @@ static void assignmentAssign(EXPRESSION* left, bool assign)
         sp = getAssignSP(left->left);
         if (sp)
         {
-            if (sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_ || sp->sb->storage_class == StorageClass::parameter_)
+            if (sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_ ||
+                sp->sb->storage_class == StorageClass::parameter_)
             {
                 if (assign)
                     sp->sb->assigned = true;
@@ -2099,8 +2103,9 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
             if (sym != cur && !strcmp(sym->name, cur->name))
             {
-                if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ || cur->sb->storage_class == StorageClass::overloads_ ||
-                    cur->sb->storage_class == StorageClass::const_ || cur->sb->storage_class == StorageClass::type_)
+                if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ ||
+                    cur->sb->storage_class == StorageClass::overloads_ || cur->sb->storage_class == StorageClass::const_ ||
+                    cur->sb->storage_class == StorageClass::type_)
                 {
                     errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
                     break;
@@ -2113,7 +2118,8 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
                     if (localClassWarnings)
                     {
                         if (cur1->tp->IsFunction())
-                            if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt && !cur1->tp->BaseType()->sp->sb->deferredCompile)
+                            if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt &&
+                                !cur1->tp->BaseType()->sp->sb->deferredCompile)
                                 errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                     }
                     if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
@@ -2129,7 +2135,8 @@ void checkauto(Type* tp1, int err)
     if (tp1->IsAutoType())
     {
         error(err);
-        while (tp1->type == BasicType::const_ || tp1->type == BasicType::volatile_ || tp1->type == BasicType::lrqual_ || tp1->type == BasicType::rrqual_)
+        while (tp1->type == BasicType::const_ || tp1->type == BasicType::volatile_ || tp1->type == BasicType::lrqual_ ||
+               tp1->type == BasicType::rrqual_)
         {
             tp1->size = getSize(BasicType::int_);
             tp1 = tp1->btp;
@@ -2148,7 +2155,7 @@ void checkscope(Type* tp1, Type* tp2)
     }
     else if (tp1->scoped && tp2->scoped)
     {
-        SYMBOL* sp1 = nullptr, * sp2 = nullptr;
+        SYMBOL *sp1 = nullptr, *sp2 = nullptr;
         if ((tp1)->type == BasicType::enum_)
             sp1 = (tp1)->sp;
         else
@@ -2163,7 +2170,8 @@ void checkscope(Type* tp1, Type* tp2)
 }
 void CheckThroughConstObject(Type* tp, EXPRESSION* exp)
 {
-    if ((!tp && exp->left && exp->left->type != ExpressionNode::l_p_) || (tp && tp->IsRef() && !tp->BaseType()->btp->IsConst() && !IsLValue(exp) && tp->type != BasicType::derivedfromtemplate_))
+    if ((!tp && exp->left && exp->left->type != ExpressionNode::l_p_) ||
+        (tp && tp->IsRef() && !tp->BaseType()->btp->IsConst() && !IsLValue(exp) && tp->type != BasicType::derivedfromtemplate_))
     {
         auto offset = 0;
         // takes advantage of the fact that the this ptr will always be the last leftmost node if it is there at all...

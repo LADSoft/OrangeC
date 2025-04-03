@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -55,7 +55,7 @@ ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition
     value = old.value;
     if (old.argList)
     {
-        argList.reset( new DefinitionArgList());
+        argList.reset(new DefinitionArgList());
         for (auto&& a : *old.argList)
             argList->push_back(a);
     }
@@ -72,14 +72,21 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     value = old.value;
     if (old.argList)
     {
-        argList.reset( new DefinitionArgList());
+        argList.reset(new DefinitionArgList());
         for (auto&& a : *old.argList)
             argList->push_back(a);
     }
 }
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect_, bool Asmpp) :
-    expr(false, dialect_), include(Include), dialect(dialect_), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1), counter_val(0)
+    expr(false, dialect_),
+    include(Include),
+    dialect(dialect_),
+    asmpp(Asmpp),
+    ctx(nullptr),
+    macro(nullptr),
+    source_date_epoch((time_t)-1),
+    counter_val(0)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
@@ -326,7 +333,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             else
             {
                 bool hascomma = true;
-                da.reset( new DefinitionArgList());
+                da.reset(new DefinitionArgList());
                 bool done = false;
                 while (next->IsIdentifier())
                 {
@@ -694,8 +701,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                 {
                     int sv;
                     std::string temp(varargs);
-                    ReplaceSegment(temp, 0, temp.size(), sv, p == macro.size(),
-                                                definitions, nullptr);
+                    ReplaceSegment(temp, 0, temp.size(), sv, p == macro.size(), definitions, nullptr);
                     int rv;
                     if ((rv = InsertReplacementString(macro, p, q, temp, temp)) < -MACRO_REPLACE_SIZE)
                         return (false);
@@ -706,14 +712,15 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
             }
             else if (dialect == Dialect::c2x && name == "__VA_OPT__" && macro[p] == '(')
             {
-                auto start = p+1;
+                auto start = p + 1;
                 auto end = start;
                 int count = 1;
                 while (end < macro.size())
                 {
-                    if (macro[end] == '(') count ++;
+                    if (macro[end] == '(')
+                        count++;
                     if (macro[end++] == ')')
-                        if (--count ==0)
+                        if (--count == 0)
                             break;
                 }
                 if (!count)
@@ -725,11 +732,10 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                             return (false);
                         else
                             p = q + rv - 1;
-                    
                     }
                     else
                     {
-                        std::string temp = macro.substr(p+1, end-p-2);
+                        std::string temp = macro.substr(p + 1, end - p - 2);
                         int rv;
                         if ((rv = InsertReplacementString(macro, end, q, temp, temp)) < -MACRO_REPLACE_SIZE)
                             return (false);
@@ -881,7 +887,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     {
                         int ln = name.size();
                         for (auto d : definitions)
-                             d->SetPreprocessing(false);
+                            d->SetPreprocessing(false);
                         do
                         {
                             int pb = p;
@@ -921,7 +927,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             count++;
                         } while (line[p] && line[p++] == ',' && count != d->GetArgCount());
                         for (auto d : definitions)
-                             d->SetPreprocessing(true);
+                            d->SetPreprocessing(true);
                     }
                     else
                     {

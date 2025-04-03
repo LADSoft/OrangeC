@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "MakeMain.h"
@@ -65,41 +65,38 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
 Maker::~Maker() {}
 void Maker::SetFirstGoal(const std::string& name)
 {
-    static std::unordered_set<std::string> InvalidCandidates
-    {
-        ".SUFFIXES",
-        ".DEFAULT",
-        ".EXPORT_ALL_VARIABLES",
-        ".INTERMEDIATE",
-        ".PRECIOUS",
-        ".SECONDARY",
-        ".SILENT",
-        ".IGNORE",
-        ".SECONDEXPANSION",
-        ".PHONY",
-        ".DELTE_ON_ERROR",
-        ".LOW_RESOLUTION_TIME",
-        ".NOTPARALLEL",
-        ".ONESHELL",
-        ".POSIX",
-        ".RECURSIVE",
-        ".MAIN",
-        ".BEGIN",
-        ".END",
-        ".INCLUDES",
-        ".INTERRUPT",
-        ".LIBS",
-        ".MAKEFILEDEPS",
-        ".MFLAGS",
-        ".MAKEFLAGS",
-        ".NOTPARALLEL",
-        ".ORDER",
-        ".SHELL",
-        ".WARN"
-    };
+    static std::unordered_set<std::string> InvalidCandidates{".SUFFIXES",
+                                                             ".DEFAULT",
+                                                             ".EXPORT_ALL_VARIABLES",
+                                                             ".INTERMEDIATE",
+                                                             ".PRECIOUS",
+                                                             ".SECONDARY",
+                                                             ".SILENT",
+                                                             ".IGNORE",
+                                                             ".SECONDEXPANSION",
+                                                             ".PHONY",
+                                                             ".DELTE_ON_ERROR",
+                                                             ".LOW_RESOLUTION_TIME",
+                                                             ".NOTPARALLEL",
+                                                             ".ONESHELL",
+                                                             ".POSIX",
+                                                             ".RECURSIVE",
+                                                             ".MAIN",
+                                                             ".BEGIN",
+                                                             ".END",
+                                                             ".INCLUDES",
+                                                             ".INTERRUPT",
+                                                             ".LIBS",
+                                                             ".MAKEFILEDEPS",
+                                                             ".MFLAGS",
+                                                             ".MAKEFLAGS",
+                                                             ".NOTPARALLEL",
+                                                             ".ORDER",
+                                                             ".SHELL",
+                                                             ".WARN"};
     if (firstGoal.empty())
     {
-        if(InvalidCandidates.find(name) == InvalidCandidates.end())
+        if (InvalidCandidates.find(name) == InvalidCandidates.end())
             firstGoal = name;
     }
 }
@@ -203,7 +200,8 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    auto dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), false, rule->File(), rule->Line());
+                    auto dp =
+                        Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), false, rule->File(), rule->Line());
                     auto dependentRuleList = RuleContainer::Instance()->Lookup(thisOne);
                     ruleList->CopyExports(dependentRuleList);
                     if (current > dependsTime)
@@ -232,8 +230,8 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
                     bool exists = !!goalTime;
                     if (!exists)
                     {
-                        auto dp =
-                            Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), false, rule->File(), rule->Line());
+                        auto dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), false, rule->File(),
+                                               rule->Line());
                         auto dependentRuleList = RuleContainer::Instance()->Lookup(thisOne);
                         ruleList->CopyExports(dependentRuleList);
                         if (dp)
@@ -336,7 +334,7 @@ std::string Maker::GetFileTime(const std::string& goal, const std::string& prefe
 {
     std::string rv;
     std::string internalGoal = goal;
-    Utils::ReplaceAll(internalGoal, SpaceThunk, " "); 
+    Utils::ReplaceAll(internalGoal, SpaceThunk, " ");
     if (internalGoal.size() > 1 && internalGoal[0] == '"')
     {
         internalGoal = internalGoal.substr(1, internalGoal.size() - 2);
@@ -635,7 +633,8 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
         }
     }
 }
-void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise) {
+void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise)
+{
     std::list<std::shared_ptr<RuleList>> list;
     promise.set_value(runner.RunOne(&list, depend, env, keepGoing));
 }

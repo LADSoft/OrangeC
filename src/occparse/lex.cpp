@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -71,7 +71,7 @@ LexContext* context;
 int charIndex;
 
 LexList* currentLex;
-Optimizer::LINEDATA nullLineData = { 0, "", "", 0, 0 };
+Optimizer::LINEDATA nullLineData = {0, "", "", 0, 0};
 
 static bool valid;
 static unsigned long long llminus1;
@@ -442,7 +442,7 @@ static LexContext* AllocateContext()
         return rv;
     }
 }
-static void FreeContext(LexContext*context)
+static void FreeContext(LexContext* context)
 {
     context->next = contextHold;
     contextHold = context;
@@ -519,7 +519,7 @@ KeywordData* searchkw(const unsigned char** p)
             *q++ = *q1++;
         }
         *q = 0;
-        kw = search(kwSymbols, (char*) buf);
+        kw = search(kwSymbols, (char*)buf);
         if (kw)
         {
             if (len == kw->len)
@@ -562,7 +562,7 @@ KeywordData* searchkw(const unsigned char** p)
         if (len)
         {
             buf[len] = 0;
-            while (len && (found = search(kwSymbols, (char*) buf)) == nullptr)
+            while (len && (found = search(kwSymbols, (char*)buf)) == nullptr)
             {
                 buf[--len] = 0;
             }
@@ -682,7 +682,7 @@ int getChar(const unsigned char** source, LexType* tp)
             if (p[1] == '8')
             {
                 v = LexType::l_u8chr_;
-                p+=2;
+                p += 2;
             }
             else
             {
@@ -702,7 +702,11 @@ int getChar(const unsigned char** source, LexType* tp)
         do
             p++;
         while (*p == ppDefine::MACRO_PLACEHOLDER);
-        i = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : v == LexType::l_u8chr_ ? 1 : 2, &p);
+        i = getsch(v == LexType::l_Uchr_                            ? 8
+                   : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4
+                   : v == LexType::l_u8chr_                         ? 1
+                                                                    : 2,
+                   &p);
         if (i == INT_MIN)
         {
             error(ERR_INVALID_CHAR_CONSTANT);
@@ -972,7 +976,10 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                 if (v == LexType::l_msilstr_)
                     i = *p++;
                 else
-                    i = getsch(v == LexType::l_Ustr_ || v == LexType::l_u8str_ ? 8 : v == LexType::l_wstr_ || v == LexType::l_ustr_ ? 4 : 2, &p);
+                    i = getsch(v == LexType::l_Ustr_ || v == LexType::l_u8str_  ? 8
+                               : v == LexType::l_wstr_ || v == LexType::l_ustr_ ? 4
+                                                                                : 2,
+                               &p);
                 if (i == INT_MIN)
                 {
                     if (!errored)
@@ -1154,7 +1161,7 @@ static int getfrac(int radix, const unsigned char** ptr, FPF* rval)
             i = 0;
         }
         (*ptr)++;
-        hasSep |= **ptr ==  '\'';
+        hasSep |= **ptr == '\'';
         while (**ptr == '\'')
             (*ptr)++;
     }
@@ -1205,12 +1212,13 @@ static int getexp(const unsigned char** ptr)
     return ival;
 }
 
-LexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radix, long long* ival, unsigned char** bitintvalue)
+LexType getBitInt(const unsigned char* base, const unsigned char** ptr, int radix, long long* ival, unsigned char** bitintvalue)
 {
     bool isunsigned = false;
     if (tolower(**ptr) == 'u')
     {
-        if (tolower((*ptr)[1]) != 'w' || tolower((*ptr)[2]) != 'b') return LexType::none_;
+        if (tolower((*ptr)[1]) != 'w' || tolower((*ptr)[2]) != 'b')
+            return LexType::none_;
         *ptr += 3;
         isunsigned = true;
     }
@@ -1264,10 +1272,10 @@ LexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radi
             for (int i = 0; i < bits / CHAR_BIT + 2; i++)
             {
                 int d = bitIntBuffer[i] * 10 + carry;
-                bitIntBuffer[i] =  d;
+                bitIntBuffer[i] = d;
                 carry = d >> 8;
             }
-            bits += 4; // conservative
+            bits += 4;  // conservative
         }
     }
     int i;
@@ -1286,12 +1294,12 @@ LexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radi
             break;
         }
     }
-    i += j+1;
+    i += j + 1;
     if (i <= 0)
         i++;
     if (!isunsigned)
         i++;
-    *ival = i; // bit count
+    *ival = i;  // bit count
     *bitintvalue = make_bitint(i, bitIntBuffer);
     if (hasSep)
     {
@@ -1301,13 +1309,14 @@ LexType getBitInt(const unsigned char *base, const unsigned char** ptr, int radi
     return isunsigned ? LexType::ubitint_ : LexType::bitint_;
 }
 
-    /*
+/*
  *      getnum - get a number from input.
  *
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival, unsigned char ** bitintvalue)
+LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, long long* ival,
+                  unsigned char** bitintvalue)
 {
     int radix = 10;
     int floatradix = 0;
@@ -1339,7 +1348,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
         }
         else /* zero */
         {
-           (*ptr)--;
+            (*ptr)--;
         }
     }
     else if (Optimizer::cparams.prm_assemble && **ptr == '$')
@@ -1348,8 +1357,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
         (*ptr)++;
     }
     const unsigned char* base = *ptr;
-    while (**ptr == '\'' || radix36(**ptr) < radix ||
-           (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
+    while (**ptr == '\'' || radix36(**ptr) < radix || (Optimizer::cparams.prm_assemble && radix36(**ptr) < 16))
     {
         (*ptr)++;
     }
@@ -1364,7 +1372,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
         if (radix == 8)
             radix = 10;
         (*ptr)++;
-        while (**ptr == '\''  || radix36(**ptr) < radix)
+        while (**ptr == '\'' || radix36(**ptr) < radix)
         {
             (*ptr)++;
         }
@@ -1387,7 +1395,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
         {
             (*ptr)++;
         }
-        while (**ptr == '\''  || radix36(**ptr) < 10)
+        while (**ptr == '\'' || radix36(**ptr) < 10)
         {
             (*ptr)++;
         }
@@ -1414,7 +1422,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
             (*ptr)++;
         }
     }
-    const unsigned char *p = base;
+    const unsigned char* p = base;
     if (floatradix || hasdot)
     {
         getfloatingbase(radix, rval, &p);
@@ -1465,7 +1473,8 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
             lastst = LexType::ul_;
             suffix[0] = 0;
         }
-        else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
+        else if (((Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.prm_cplusplus) &&
+                  Utils::iequal((char*)suffix, "LL")) ||
                  (!Optimizer::cparams.prm_ansi && Utils::iequal((char*)suffix, "i64")))
         {
             lastst = LexType::ll_;

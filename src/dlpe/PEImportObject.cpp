@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "PEObject.h"
@@ -239,7 +239,7 @@ void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD im
 #else
                                   0
 #endif
-};
+        };
 
         std::copy((char*)&dir, (char*)(&dir + 1), data + directoryPos);
         std::copy(m->name.begin(), m->name.end(), data + stringPos);
@@ -256,7 +256,8 @@ void DllImports<DelayLoadDirectory>::WriteDirectory(DWORD virtual_addr, DWORD im
     }
 }
 template <>
-void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase, DWORD& thunkTableRVA, unsigned char* data)
+void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups, DWORD virtual_addr, DWORD imageBase,
+                                                 DWORD& thunkTableRVA, unsigned char* data)
 {
     DWORD iatPos = iatAddr;
     DWORD namePos = nameAddr;
@@ -285,7 +286,7 @@ void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups
                 *namePointer = RVA(stringPos);
             }
             *iatPointer = thunkTableRVA + imageBase;
-            thunkFixups.push_back(RVA((BYTE *)iatPointer - data) + imageBase );
+            thunkFixups.push_back(RVA((BYTE*)iatPointer - data) + imageBase);
             if (unloadPos)
             {
                 *unloadPointer = thunkTableRVA + imageBase;
@@ -315,8 +316,8 @@ void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups
     }
 }
 
-PEImportObject::PEImportObject(std::deque<std::shared_ptr<PEObject>>& Objects, 
-        bool BindTable, bool UnloadTable) : PEObject(".rdata"), objects(Objects), bindTable(BindTable), unloadTable(UnloadTable)
+PEImportObject::PEImportObject(std::deque<std::shared_ptr<PEObject>>& Objects, bool BindTable, bool UnloadTable) :
+    PEObject(".rdata"), objects(Objects), bindTable(BindTable), unloadTable(UnloadTable)
 {
     SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
 }
@@ -353,7 +354,7 @@ void PEImportObject::LoadBindingInfo(DllImports<DelayLoadDirectory>& delay, std:
                 }
                 if (complete)
                 {
-                    PEHeader* hdr = reinterpret_cast<PEHeader*>(*(DWORD*)((char *)handle + 0x3c) + (char *)handle);
+                    PEHeader* hdr = reinterpret_cast<PEHeader*>(*(DWORD*)((char*)handle + 0x3c) + (char*)handle);
                     m.second->time = hdr->time;
                 }
                 FreeLibrary(handle);
@@ -490,8 +491,8 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             }
             if (s->GetExternalName().size() == 0)
             {
-                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, FARPROC>(s->GetName(), it1->second,
-                                                                              s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, nullptr));
+                m->externalNames.push_back(std::tuple<std::string, ObjSymbol*, DWORD, FARPROC>(
+                    s->GetName(), it1->second, s->GetByOrdinal() ? s->GetOrdinal() : 0xffffffff, nullptr));
             }
             else
             {
@@ -520,7 +521,6 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     delayLoad.WriteDirectory(virtual_addr, imageBase, data.get());
     thunk = delayLoadThunkRVA;
     delayLoad.WriteTables(thunkFixups, virtual_addr, imageBase, thunk, data.get());
-
 
     if (delayLoad.Modules().size())
     {

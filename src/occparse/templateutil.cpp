@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -88,7 +88,7 @@ bool SameTemplateSelector(Type* tnew, Type* told)
             return false;
         if (tsn->isDeclType || tso->isDeclType)
             return false;
-        for ( ++ tsn, ++ tso; tsn != tsne && tso != tsoe; ++tsn, ++tso)
+        for (++tsn, ++tso; tsn != tsne && tso != tsoe; ++tsn, ++tso)
         {
             if (strcmp(tsn->name, tso->name) != 0)
                 return false;
@@ -252,8 +252,10 @@ bool SameTemplate(Type* P, Type* A, bool quals)
             {
                 if (PL->second->type == TplType::typename_)
                 {
-                    Type* pl = PL->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PL->second->byClass.val : PL->second->byClass.dflt;
-                    Type* pa = PA->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PA->second->byClass.val : PA->second->byClass.dflt;
+                    Type* pl = PL->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PL->second->byClass.val
+                                                                                        : PL->second->byClass.dflt;
+                    Type* pa = PA->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PA->second->byClass.val
+                                                                                        : PA->second->byClass.dflt;
                     if (!pl || !pa)
                         break;
                     if ((PAd || PA->second->byClass.val) && (PLd || PL->second->byClass.val) && !templateCompareTypes(pa, pl, true))
@@ -274,15 +276,19 @@ bool SameTemplate(Type* P, Type* A, bool quals)
                 }
                 else if (PL->second->type == TplType::template_)
                 {
-                    SYMBOL* plt = PL->second->byTemplate.val && !PL->second->byTemplate.dflt ? PL->second->byTemplate.val : PL->second->byTemplate.dflt;
-                    SYMBOL* pat = PA->second->byTemplate.val && !PL->second->byTemplate.dflt ? PA->second->byTemplate.val : PA->second->byTemplate.dflt;
+                    SYMBOL* plt = PL->second->byTemplate.val && !PL->second->byTemplate.dflt ? PL->second->byTemplate.val
+                                                                                             : PL->second->byTemplate.dflt;
+                    SYMBOL* pat = PA->second->byTemplate.val && !PL->second->byTemplate.dflt ? PA->second->byTemplate.val
+                                                                                             : PA->second->byTemplate.dflt;
                     if ((plt || pat) && !exactMatchOnTemplateParams(PL->second->byTemplate.args, PA->second->byTemplate.args))
                         break;
                 }
                 else if (PL->second->type == TplType::int_)
                 {
-                    EXPRESSION* plt = PL->second->byNonType.val && !PL->second->byNonType.dflt ? PL->second->byNonType.val : PL->second->byNonType.dflt;
-                    EXPRESSION* pat = PA->second->byNonType.val && !PA->second->byNonType.dflt ? PA->second->byNonType.val : PA->second->byNonType.dflt;
+                    EXPRESSION* plt = PL->second->byNonType.val && !PL->second->byNonType.dflt ? PL->second->byNonType.val
+                                                                                               : PL->second->byNonType.dflt;
+                    EXPRESSION* pat = PA->second->byNonType.val && !PA->second->byNonType.dflt ? PA->second->byNonType.val
+                                                                                               : PA->second->byNonType.dflt;
                     if (!templateCompareTypes(PL->second->byNonType.tp, PA->second->byNonType.tp, true))
                         break;
                     if ((!plt || !pat) || !equalTemplateMakeIntExpression(plt, pat))
@@ -477,7 +483,7 @@ bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType)
         tp2 = tp2->BaseType()->btp;
     if (tp1->BaseType()->type != tp2->BaseType()->type)
         if (tp1->IsRef() || !tp2->IsRef())
-            if (tp1->BaseType()->type != BasicType::pointer_  || !tp2->IsFunction() || !tp1->BaseType()->btp->IsFunction())
+            if (tp1->BaseType()->type != BasicType::pointer_ || !tp2->IsFunction() || !tp1->BaseType()->btp->IsFunction())
                 return false;
     if (tp1->BaseType()->type == BasicType::enum_)
     {
@@ -946,7 +952,6 @@ void GetPackedTypes(TEMPLATEPARAMPAIR** packs, int* count, std::list<TEMPLATEPAR
                 {
                     packs[(*count)++] = &arg;
                 }
-
             }
             else if (arg.second->type == TplType::delete_)
             {
@@ -1081,8 +1086,8 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
                       item.second->byClass.val->IsStructured() && item.second->byClass.val->BaseType()->sp->templateParams)))
                 {
                     PushPopDefaults(defaults,
-                                    (dflt ? item.second->byClass.dflt : item.second->byClass.val)->BaseType()->sp->templateParams, dflt,
-                                    push);
+                                    (dflt ? item.second->byClass.dflt : item.second->byClass.val)->BaseType()->sp->templateParams,
+                                    dflt, push);
                 }
                 if (!item.second->packed && ((dflt && item.second->type == TplType::int_ && item.second->byClass.dflt) ||
                                              (!dflt && item.second->type == TplType::typename_ && item.second->byClass.val)))
@@ -1711,7 +1716,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::templateparam_:
             if (exp->v.sp->tp->BaseType()->templateParam->second->type == TplType::typename_)
             {
-                if (exp->v.sp->tp->BaseType()->templateParam->second->packed) 
+                if (exp->v.sp->tp->BaseType()->templateParam->second->packed)
                 {
                     Type* rv = &stdany;
                     if (!unpackingTemplate || exp->v.sp->tp->BaseType()->templateParam->second->resolved)
@@ -2153,7 +2158,6 @@ static void FixIntSelectors(EXPRESSION** exp)
                                 types.push_back(current2.second->byClass.dflt);
                                 if (current2.second->byClass.val)
                                     current2.second->byClass.dflt = current2.second->byClass.val;
-
                             }
                         }
                     }
@@ -2175,7 +2179,6 @@ static void FixIntSelectors(EXPRESSION** exp)
                                 expressions.push_back(current2.second->byNonType.dflt);
                                 if (current2.second->byNonType.val)
                                     current2.second->byNonType.dflt = current2.second->byNonType.val;
-
                             }
                         }
                     }

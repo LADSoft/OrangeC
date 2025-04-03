@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -45,7 +45,7 @@
 #include "occparse.h"
 #include "ildata.h"
 #ifndef ORANGE_NO_MSIL
-#include "using.h"
+#    include "using.h"
 #endif
 #include "configx86.h"
 #include "OptUtils.h"
@@ -60,7 +60,6 @@ extern bool doBackendInit;
 }
 namespace Parser
 {
-
 
 #include "../version.h"
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
@@ -769,7 +768,7 @@ static void ParamTransfer(const char* name)
     {
         Optimizer::cparams.prm_netcore_version = occmsil::ValidateNetCoreVersion(NetCoreSwitch.GetValue());
         if (Optimizer::cparams.prm_netcore_version == INT_MAX)
-            Utils::Fatal("Selected .net core version not installed"); 
+            Utils::Fatal("Selected .net core version not installed");
     }
 #endif
 }
@@ -844,8 +843,9 @@ void setglbdefs(void)
     preProcessor->Define("__STDC__", "1");
     preProcessor->Define("__STDC_ENDIAN_LITTLE__", "1");
     preProcessor->Define("__STDC_ENDIAN_BIG__", "2");
-    preProcessor->Define("__STDC_ENDIAN_NATIVE__", Optimizer::chosenAssembler->arch->big_endian ? "__STDC_ENDIAN_BIG__" : "__STDC_ENDIAN_LITTLE__");
-   
+    preProcessor->Define("__STDC_ENDIAN_NATIVE__",
+                         Optimizer::chosenAssembler->arch->big_endian ? "__STDC_ENDIAN_BIG__" : "__STDC_ENDIAN_LITTLE__");
+
     if (prm_prmCharIsUnsigned.GetValue())
         preProcessor->Define("__CHAR_UNSIGNED__", "1");
     else
@@ -857,7 +857,8 @@ void setglbdefs(void)
     sprintf(buf, "%d", getMaxAlign());
     preProcessor->Define("__MAX_ALIGN__", buf);
 
-    if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.prm_cplusplus)
+    if (Optimizer::cparams.c_dialect >= Dialect::c99 || Optimizer::cparams.c_dialect >= Dialect::c11 ||
+        Optimizer::cparams.prm_cplusplus)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
     }
@@ -997,7 +998,7 @@ void InsertOneFile(const char* filename, char* path, int drive)
     bool found = false;
 
     // im gonna let them compile header files directly
-    static std::list<std::string> acceptedExtensions = { ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx" };
+    static std::list<std::string> acceptedExtensions = {".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"};
     for (auto& str : acceptedExtensions)
     {
         if (Utils::HasExt(buffer, str.c_str()))
@@ -1175,7 +1176,7 @@ int ccinit(int argc, char* argv[])
             {
                 showVersion = true;
             }
-            else if (!strcmp(argv[i], "--architecture") && i < argc-1)
+            else if (!strcmp(argv[i], "--architecture") && i < argc - 1)
             {
                 architecture = argv[i + 1];
             }
@@ -1197,9 +1198,9 @@ int ccinit(int argc, char* argv[])
         auto splt = Utils::split(architecture, ';');
         static std::map<std::string, int> architectures = {
             {"x86", ARCHITECTURE_X86},
-    #ifndef ORANGE_NO_MSIL
-           {"msil", ARCHITECTURE_MSIL},
-    #endif
+#ifndef ORANGE_NO_MSIL
+            {"msil", ARCHITECTURE_MSIL},
+#endif
         };
         if (architectures.find(splt[0]) != architectures.end())
         {
@@ -1242,15 +1243,14 @@ int ccinit(int argc, char* argv[])
     argv[0] = temp;
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, getUsageText(), getHelpText(), []() {
         return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
-               prmPrintProgName.GetExists() || MakeStubsOption.GetValue() ||
-               MakeStubsUser.GetValue() || (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
-        });
+               prmPrintProgName.GetExists() || MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ||
+               (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
+    });
 
     argv[0] = old;
-    Optimizer::showBanner = prm_verbose.GetExists(); 
+    Optimizer::showBanner = prm_verbose.GetExists();
 
-
-    DisableTrivialWarnings();   
+    DisableTrivialWarnings();
     /* parse the environment and command line */
     int ecnt = 0;
     char* eargs[200];
@@ -1270,7 +1270,6 @@ int ccinit(int argc, char* argv[])
         if (env && !SwitchParser.Parse(std::string(env), &ecnt, eargs))
             ToolChain::Usage(getUsageText());
     }
-
 
     ParamTransfer(files[0].c_str());
     if (files.size() < 2)

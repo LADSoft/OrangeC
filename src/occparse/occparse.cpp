@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -33,14 +33,14 @@
 #include "../version.h"
 #include "winmode.h"
 #ifndef ORANGE_NO_INASM
-#include "InstructionParser.h"
+#    include "InstructionParser.h"
 #endif
 #include "SharedMemory.h"
 #include "MakeStubs.h"
 
 #ifndef ORANGE_NO_INASM
-#include "x64Operand.h"
-#include "x64Parser.h"
+#    include "x64Operand.h"
+#    include "x64Parser.h"
 #endif
 #include "ccerr.h"
 #include "config.h"
@@ -74,7 +74,7 @@
 #include "istmt.h"
 #include "irc.h"
 #ifndef ORANGE_NO_MSIL
-#include "DotNetPELib.h"
+#    include "DotNetPELib.h"
 #endif
 #include "constexpr.h"
 #include "namespace.h"
@@ -85,11 +85,11 @@
 #include <cstdlib>
 #include <cstdio>
 
-//#define x64_compiler
+// #define x64_compiler
 #ifndef x64_compiler
 // if you compile with the runtime being a shared library/DLL other than LSCRTL.DLL
 // this block of code just isn't going to work....
-#ifndef USES_SHARED_LIBRARY
+#    ifndef USES_SHARED_LIBRARY
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
 // there are a lot of temporary containers created and maintained
@@ -97,7 +97,7 @@
 // time they are used
 // resulted in about a 20% speedup of the compiler on the worst files
 
-#define HASHBLKSIZE 128 * 8
+#        define HASHBLKSIZE 128 * 8
 
 // this structure is similar to the one used by the occ runtime library
 // so for example we can cache things that were allocated by LSCRTL.DLL
@@ -129,23 +129,23 @@ void* operator new(size_t aa)
         // If malloc fails and there is a new_handler,
         // call it to try free up memory.
 
-#if !defined(__GNUC__) || __GNUC__ > 4
+#        if !defined(__GNUC__) || __GNUC__ > 4
         std::new_handler nh = std::get_new_handler();
         if (nh)
             nh();
         else
-#endif
+#        endif
             throw std::bad_alloc();
     }
     rv->size = aa;
     rv->link = nullptr;
-    return (void *)(rv + 1);
+    return (void*)(rv + 1);
 }
 void operator delete(void* p)
 {
     if (!p)
         return;
-    __preheader* item = ((__preheader *)p)-1;
+    __preheader* item = ((__preheader*)p) - 1;
     if (item->size < HASHBLKSIZE)
     {
         unsigned bb = (item->size + 7) / 8;
@@ -161,7 +161,7 @@ void operator delete(void* p)
     }
 }
 
-#endif
+#    endif
 #endif
 #ifndef ORANGE_NO_MSIL
 using namespace DotNetPELib;
@@ -233,8 +233,6 @@ void diag(const char* fmt, ...)
     }
 }
 
-
-
 namespace Parser
 {
 #ifdef TARGET_OS_WINDOWS
@@ -262,11 +260,11 @@ InstructionParser* instructionParser;
 static int stoponerr = 0;
 
 Optimizer::COMPILER_PARAMS cparams_default = {
-    25,    /* int  prm_maxerr;*/
-    0,     /* prm_stackalign */
-    ~0,    /* optimizer modules */
-    0,     /* icd flags */
-    0,     /* verbosity */
+    25, /* int  prm_maxerr;*/
+    0,  /* prm_stackalign */
+    ~0, /* optimizer modules */
+    0,  /* icd flags */
+    0,  /* verbosity */
     Dialect::c11,
     Dialect::cpp17,
     true,  /* optimize_for_speed */
@@ -328,13 +326,13 @@ Optimizer::COMPILER_PARAMS cparams_default = {
 
 int usingEsp;
 
-bool IsCompiler() 
+bool IsCompiler()
 {
 #ifdef PARSER_ONLY
     return false;
 #else
     return true;
-#endif 
+#endif
 }
 
 static void debug_dumptypedefs(std::list<NAMESPACEVALUEDATA*>* nameSpace)
@@ -422,7 +420,7 @@ void compile(bool global)
             FunctionBlock bd;
             memset(&bd, 0, sizeof(bd));
             bd.type = Keyword::begin_;
-            std::list<FunctionBlock*> block{ &bd };
+            std::list<FunctionBlock*> block{&bd};
             StatementGenerator sg(lex, nullptr);
             while (sg.ParseAsm(block))
                 ;
@@ -437,8 +435,8 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false, AccessLevel::public_)) !=
-                   nullptr)
+            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
+                                  AccessLevel::public_)) != nullptr)
             {
                 if (MATCHKW(lex, Keyword::end_))
                 {
@@ -468,7 +466,7 @@ void compile(bool global)
         if (!Optimizer::cparams.prm_assemble && Optimizer::cparams.prm_debug)
             debug_dumptypedefs(globalNameSpace);
         Optimizer::libIncludes = preProcessor->GetIncludeLibs();
-        Optimizer::dseg(); // so we can tack various data on in the optimizer...
+        Optimizer::dseg();  // so we can tack various data on in the optimizer...
     }
     findUnusedStatics(globalNameSpace);
     dumperrs(stdout);
@@ -653,14 +651,13 @@ int main(int argc, char* argv[])
         }
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))
             Utils::Fatal("MSIL compiler does not compile C++ files at this time");
-        preProcessor =
-            new PreProcessor(buffer, prm_cinclude.GetValue(),
-                             Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
-                             Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-                             Optimizer::cparams.prm_cplusplus ? Dialect::c2x : Optimizer::cparams.c_dialect, 
-                             !Optimizer::cparams.prm_ansi,
-                             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
-                             prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
+        preProcessor = new PreProcessor(
+            buffer, prm_cinclude.GetValue(),
+            Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
+            Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
+            Optimizer::cparams.prm_cplusplus ? Dialect::c2x : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
+            (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
+            prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 
         if (!preProcessor->IsOpen())
             exit(1);
@@ -871,8 +868,9 @@ int main(int argc, char* argv[])
         stopTime = clock();
         printf("occparse timing: %d.%03d\n", (stopTime - startTime) / 1000, (stopTime - startTime) % 1000);
     }
-    if (!Optimizer::cparams.prm_cppfile && (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
-                                                 (!prm_error.GetExists() || !prm_error.GetValue().empty())))
+    if (!Optimizer::cparams.prm_cppfile &&
+        (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
+                                                  (!prm_error.GetExists() || !prm_error.GetValue().empty())))
         rv = IsCompiler() ? !!stoponerr : 0;
     else
         rv = 255;

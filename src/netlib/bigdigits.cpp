@@ -63,7 +63,7 @@ static const int kUseNoAllocs = 0;
 /* Internal macros */
 #define BITS_PER_HALF_DIGIT (BITS_PER_DIGIT / 2)
 #define BYTES_PER_DIGIT (BITS_PER_DIGIT / 8)
-#define LOHALF(x) ((DIGIT_T)((x)&MAX_HALF_DIGIT))
+#define LOHALF(x) ((DIGIT_T)((x) & MAX_HALF_DIGIT))
 #define HIHALF(x) ((DIGIT_T)((x) >> BITS_PER_HALF_DIGIT & MAX_HALF_DIGIT))
 #define TOHIGH(x) ((DIGIT_T)((x) << BITS_PER_HALF_DIGIT))
 #define mpNEXTBITMASK(mask, n) \
@@ -2852,7 +2852,7 @@ int mpRabinMiller(DIGIT_T w[], size_t ndigits, size_t t)
             break;
         }
     } /* Step 9. Go to Step 3 until i >= n */
-      /* Else, if i = n, w is probably prime => success */
+    /* Else, if i = n, w is probably prime => success */
 
     /* Clean up */
 done:
@@ -3017,7 +3017,7 @@ int mpModExp(DIGIT_T y[], const DIGIT_T x[], const DIGIT_T n[], DIGIT_T d[], siz
     do                                         \
     {                                          \
         mpMultiply(t1, x, y, (n));             \
-        mpDivide(t2, w, t1, (n)*2, m, (n));    \
+        mpDivide(t2, w, t1, (n) * 2, m, (n));  \
     } while (0)
 
 static int mpModExp_1(DIGIT_T yout[], const DIGIT_T x[], const DIGIT_T e[], DIGIT_T m[], size_t ndigits)

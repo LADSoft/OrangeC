@@ -432,7 +432,8 @@ ERRLIST(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION, 388, "Only constructors
 ERRLIST(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION, 389, "Implicit use of explicit constructor or conversion function", CE_ERROR)
 ERRLIST(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, 390, "Type '%s' is not a defined class with virtual functions", CE_ERROR)
 ERRLIST(ERR_TEMPLATE_NO_LOCAL_CLASS, 391, "Template may not be declared in class defined within function scope", CE_ERROR)
-ERRLIST(ERR_TEMPLATE_GLOBAL_OR_CLASS_SCOPE, 392, "Template must be declared at global or namespace scope or within a class", CE_ERROR)
+ERRLIST(ERR_TEMPLATE_GLOBAL_OR_CLASS_SCOPE, 392, "Template must be declared at global or namespace scope or within a class",
+        CE_ERROR)
 ERRLIST(ERR_CANNOT_USE_DEFAULT_WITH_PACKED_TEMPLATE_PARAMETER, 393, "Packed template parameter cannot have default", CE_ERROR)
 ERRLIST(ERR_CLASS_TEMPLATE_PARAMETER_MISSING_DEFAULT, 394, "'Class' template parameter missing default", CE_ERROR)
 ERRLIST(ERR_CLASS_TEMPLATE_DEFAULT_MUST_REFER_TO_TYPE, 395, "'Class' template parameter default must refer to type", CE_ERROR)
@@ -467,8 +468,8 @@ ERRLIST(ERR_TEMPLATE_ALREADY_INSTANTIATED, 419, "Template '%s' is already instan
 ERRLIST(ERR_USE_DOT_OR_POINTSTO_TO_CALL, 420, "Use . or -> to call '%s'", CE_ERROR)
 ERRLIST(ERR_TEMPLATE_ARGUMENT_MUST_BE_CONSTANT, 421, "Template argument must be a constant expression", CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE, 422, "Pack ... specifier not allowed here", CE_ERROR)
-ERRLIST(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER, 423,
-        "Pack ... specifier equires packed template parameter", CE_ERROR)
+ERRLIST(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER, 423, "Pack ... specifier equires packed template parameter",
+        CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER, 424,
         "Pack ... specifier on expression requires packed function parameter", CE_ERROR)
 ERRLIST(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_PARAMETER, 425, "Pack ... specifier must be used on function parameter", CE_ERROR)
@@ -572,50 +573,43 @@ ERRLIST(ERR_CONSTEXPR_NO_STRUCT, 514, "'constexpr' specifier cannot be used with
 ERRLIST(ERR_CONSTEXPR_MUST_INITIALIZE, 515, "constexpr constructor does not initialize '%s'", CE_ERROR)
 ERRLIST(ERR_NO_ASSIGNMENT_OPERATOR, 516, "Cannot find a matching assignment operator for class '%s'", CE_ERROR)
 ERRLIST(ERR_CONSTEXPR_CLASS_NOT_LITERAL, 517, "'%s' is not a literal class", CE_ERROR)
-ERRLIST(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, 518, 
+ERRLIST(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, 518,
         "Cannot call '%s' = A suitable operator() ws not found, or could not be called", CE_ERROR)
 ERRLIST(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, 519,
-        "Cannot convert '%s' to '%s' - a suitable user-defined conversion function was not found, or could not be called",
-        CE_ERROR)
+        "Cannot convert '%s' to '%s' - a suitable user-defined conversion function was not found, or could not be called", CE_ERROR)
 ERRLIST(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, 520,
-        "Cannot convert '%s' to '%s' - a suitable constructor was not found, or overload resolution is ambiguous",
-        CE_ERROR)
-ERRLIST(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT, 521, "Expected modifiable pointer to int for checked math result",
-        CE_ERROR)
+        "Cannot convert '%s' to '%s' - a suitable constructor was not found, or overload resolution is ambiguous", CE_ERROR)
+ERRLIST(ERR_EXPECTED_POINTER_FOR_CHECKED_MATH_RESULT, 521, "Expected modifiable pointer to int for checked math result", CE_ERROR)
 ERRLIST(ERR_EXPECTED_VALID_CHECKED_MATH_TYPE, 522, "Type for checked math must be an integer but not char, bool, or _BitInt",
         CE_ERROR)
-ERRLIST(ERR_VA_START_IN_VARIADIC_FUNCTION, 523, "va_start should only be used in variadic functions",
-        CE_WARNING)
-ERRLIST(ERR_CONSTEXPR_MUST_BE_OBJECT, 524, "constexpr keyword cannot be used with functions",
-        CE_ERROR)
-ERRLIST(ERR_RETURN_VALUE_NO_DISCARD, 525, "Return value may not be discarded",
-        CE_ERROR)
-ERRLIST(ERR_FALLTHROUGH, 526, "Switch case falls through",
-        CE_TRIVIALWARNING)
+ERRLIST(ERR_VA_START_IN_VARIADIC_FUNCTION, 523, "va_start should only be used in variadic functions", CE_WARNING)
+ERRLIST(ERR_CONSTEXPR_MUST_BE_OBJECT, 524, "constexpr keyword cannot be used with functions", CE_ERROR)
+ERRLIST(ERR_RETURN_VALUE_NO_DISCARD, 525, "Return value may not be discarded", CE_ERROR)
+ERRLIST(ERR_FALLTHROUGH, 526, "Switch case falls through", CE_TRIVIALWARNING)
 ERRLIST(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, 527,
         "Nested inline declaration for '%s' cannot be inline and cannot have attributes", CE_ERROR)
-ERRLIST(ERR_FOLDING_NEEDS_PARENTHESIS, 528, "Variadic folding must be enclosed in parenthesis",
-        CE_ERROR)
-ERRLIST(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION, 529,
-        "Variadic folding needs a simple expression", CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_PARENTHESIS, 528, "Variadic folding must be enclosed in parenthesis", CE_ERROR)
+ERRLIST(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION, 529, "Variadic folding needs a simple expression", CE_ERROR)
 ERRLIST(ERR_FOLDING_USES_INVALID_OPERATOR, 530, "Variadic folding uses invalid operator", CE_ERROR)
 ERRLIST(ERR_FOLDING_NEEDS_OPERATOR, 531, "Variadic folding needs operator", CE_ERROR)
 ERRLIST(ERR_UNARY_LEFT_FOLDING_NEEDS_VARIADIC_TEMPLATE, 532,
-        "Variadic unary left folding needs a variadic template in the LHS expression",
-        CE_ERROR)
+        "Variadic unary left folding needs a variadic template in the LHS expression", CE_ERROR)
 ERRLIST(ERR_UNARY_RIGHT_FOLDING_NEEDS_VARIADIC_TEMPLATE, 533,
-        "Variadic unary right folding needs a variadic template in the RHS expression",
-        CE_ERROR)
-ERRLIST(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE, 534, "Variadic binary folding needs variadic template in one of the expressions", CE_ERROR)
+        "Variadic unary right folding needs a variadic template in the RHS expression", CE_ERROR)
+ERRLIST(ERR_BINARY_FOLDING_NEEDS_VARIADIC_TEMPLATE, 534,
+        "Variadic binary folding needs variadic template in one of the expressions", CE_ERROR)
 ERRLIST(ERR_BINARY_FOLDING_TOO_MANY_VARIADIC_TEMPLATES, 535,
         "Variadic binary folding cannot have variadic template in both expressions", CE_ERROR)
 ERRLIST(ERR_BINARY_FOLDING_OPERATOR_MISMATCH, 536, "Variadic binary folding has mismatched operators", CE_ERROR)
-ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, 537, "Structured binding must be to non-union structured or array type not '%s'", CE_ERROR)
-ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, 538, "Structured binding can't be decomposed; both '%s' and '%s' have non-static members", CE_ERROR)
-ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539,
-        "Structured binding element count must equal array size", CE_ERROR)
-ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ", CE_ERROR)
-ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541, "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, 537, "Structured binding must be to non-union structured or array type not '%s'",
+        CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, 538,
+        "Structured binding can't be decomposed; both '%s' and '%s' have non-static members", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_ARRAY_MISMATCH, 539, "Structured binding element count must equal array size", CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_STRUCT_MISMATCH, 540, "Structured binding element count must equal number of non-static members ",
+        CE_ERROR)
+ERRLIST(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, 541,
+        "Structured binding can't be decomposed, no nonstatic data members in '%s' or its base classes", CE_ERROR)
 ERRLIST(ERR_CANNOT_DEDUCE_TEMPLATE, 542, "Cannot deduce template from '%s'", CE_ERROR)
 ERRLIST(ERR_CLASS_MEMBER_ALREADY_DECLARED, 543, "Member '%s' has already been declared or defined", CE_ERROR)
 ERRLIST(ERR_FEATURE_AVAILABLE_IN, 544, "The feature '%s' requires '%s'", CE_ERROR)
@@ -624,13 +618,16 @@ ERRLIST(ERR_KEYWORD_AVAILABLE_IN, 546, "The keyword '%s' requires '%s'", CE_WARN
 ERRLIST(ERR_CANNOT_CAPTURE_BY_VALUE, 547, "Cannot explicitly capture '&%s' when default capture mode is by-reference (&)", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_BY_REFERENCE, 548, "Cannot explicitly capture '%s' when default capture mode is by-value (=)", CE_ERROR)
 ERRLIST(ERR_CANNOT_CAPTURE_THIS_BY_VALUE, 549, "Cannot explicitly capture 'this' default capture mode is by-value (=)", CE_ERROR)
-ERRLIST(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE, 550, "Cannot explicitly capture '*this' when default capture mode is by-reference (&)", CE_ERROR)
+ERRLIST(ERR_CANNOT_CAPTURE_STAR_THIS_BY_VALUE, 550,
+        "Cannot explicitly capture '*this' when default capture mode is by-reference (&)", CE_ERROR)
 ERRLIST(ERR_TYPE_OR_VARIABLE_EXPECTED, 551, "Type or variable expected in using statement", CE_ERROR)
 ERRLIST(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, 552, "Deduction guide for '%s' does not match specified class", CE_ERROR)
-ERRLIST(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, 553, "Deduction guide for '%s' needs to be at global or namespace scope", CE_ERROR)
+ERRLIST(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, 553, "Deduction guide for '%s' needs to be at global or namespace scope",
+        CE_ERROR)
 ERRLIST(ERR_ARRAY_TYPE_NOT_EXPECTED, 554, "Array type not expected here", CE_ERROR)
 ERRLIST(ERR_AUTO_RETURN_TYPE_CANNOT_BE_RESOLVED, 555, "'auto' return type cannot be resolved", CE_ERROR)
-ERRLIST(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, 556, "Cannot modify member '%s' accessed through const object", CE_ERROR)
+ERRLIST(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, 556, "Cannot modify member '%s' accessed through const object",
+        CE_ERROR)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

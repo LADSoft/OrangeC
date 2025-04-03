@@ -8,12 +8,8 @@
 
 static bool validIdentifiers(const pal::string_t& ids);
 
-fx_ver_t::fx_ver_t(int major, int minor, int patch, const pal::string_t& pre, const pal::string_t& build)
-    : m_major(major)
-    , m_minor(minor)
-    , m_patch(patch)
-    , m_pre(pre)
-    , m_build(build)
+fx_ver_t::fx_ver_t(int major, int minor, int patch, const pal::string_t& pre, const pal::string_t& build) :
+    m_major(major), m_minor(minor), m_patch(patch), m_pre(pre), m_build(build)
 {
     // verify preconditions
     assert(is_empty() || m_major >= 0);
@@ -23,50 +19,23 @@ fx_ver_t::fx_ver_t(int major, int minor, int patch, const pal::string_t& pre, co
     assert(m_build[0] == 0 || validIdentifiers(m_build));
 }
 
-fx_ver_t::fx_ver_t(int major, int minor, int patch, const pal::string_t& pre)
-    : fx_ver_t(major, minor, patch, pre, _X(""))
-{
-}
+fx_ver_t::fx_ver_t(int major, int minor, int patch, const pal::string_t& pre) : fx_ver_t(major, minor, patch, pre, _X("")) {}
 
-fx_ver_t::fx_ver_t(int major, int minor, int patch)
-    : fx_ver_t(major, minor, patch, _X(""), _X(""))
-{
-}
+fx_ver_t::fx_ver_t(int major, int minor, int patch) : fx_ver_t(major, minor, patch, _X(""), _X("")) {}
 
-fx_ver_t::fx_ver_t()
-    : fx_ver_t(-1, -1, -1, _X(""), _X(""))
-{
-}
+fx_ver_t::fx_ver_t() : fx_ver_t(-1, -1, -1, _X(""), _X("")) {}
 
-bool fx_ver_t::operator ==(const fx_ver_t& b) const
-{
-    return compare(*this, b) == 0;
-}
+bool fx_ver_t::operator==(const fx_ver_t& b) const { return compare(*this, b) == 0; }
 
-bool fx_ver_t::operator !=(const fx_ver_t& b) const
-{
-    return !operator ==(b);
-}
+bool fx_ver_t::operator!=(const fx_ver_t& b) const { return !operator==(b); }
 
-bool fx_ver_t::operator <(const fx_ver_t& b) const
-{
-    return compare(*this, b) < 0;
-}
+bool fx_ver_t::operator<(const fx_ver_t& b) const { return compare(*this, b) < 0; }
 
-bool fx_ver_t::operator >(const fx_ver_t& b) const
-{
-    return compare(*this, b) > 0;
-}
+bool fx_ver_t::operator>(const fx_ver_t& b) const { return compare(*this, b) > 0; }
 
-bool fx_ver_t::operator <=(const fx_ver_t& b) const
-{
-    return compare(*this, b) <= 0;
-}
+bool fx_ver_t::operator<=(const fx_ver_t& b) const { return compare(*this, b) <= 0; }
 
-bool fx_ver_t::operator >=(const fx_ver_t& b) const
-{
-    return compare(*this, b) >= 0;
-}
+bool fx_ver_t::operator>=(const fx_ver_t& b) const { return compare(*this, b) >= 0; }
 
 pal::string_t fx_ver_t::as_str() const
 {
@@ -84,7 +53,7 @@ pal::string_t fx_ver_t::as_str() const
     return version;
 }
 
-static pal::string_t getId(const pal::string_t &ids, size_t idStart)
+static pal::string_t getId(const pal::string_t& ids, size_t idStart)
 {
     size_t next = ids.find(_X('.'), idStart);
 
@@ -92,7 +61,7 @@ static pal::string_t getId(const pal::string_t &ids, size_t idStart)
 }
 
 /* static */
-int fx_ver_t::compare(const fx_ver_t&a, const fx_ver_t& b)
+int fx_ver_t::compare(const fx_ver_t& a, const fx_ver_t& b)
 {
     // compare(u.v.w-p+b, x.y.z-q+c)
     if (a.m_major != b.m_major)

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "ppMain.h"
@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-#define BITINTMAXWIDTH ((1 << 24)-1)
+#define BITINTMAXWIDTH ((1 << 24) - 1)
 
 #ifdef TARGET_OS_WINDOWS
 extern "C"
@@ -41,7 +41,7 @@ extern "C"
 }
 #endif
 
-//#define TESTANNOTATE
+// #define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::NoLogo(SwitchParser, '!', false, {"nologo"});
 CmdSwitchBool ppMain::ShowVersion(SwitchParser, 'v', false, {"version"});
@@ -152,12 +152,10 @@ static void TestCharInfo(std::ostream* outStream, PreProcessor& pp, std::string&
 int ppMain::Run(int argc, char* argv[])
 {
     char buffer[256];
-    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText,
-                                                [this]() {
+    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() {
         return !MakeStubs.GetValue() && !MakeStubsUser.GetValue() && !MakeStubsContinue.GetValue() &&
                !MakeStubsContinueUser.GetValue();
-        }
-    );
+    });
     if (files.size() < 2)
         ToolChain::Usage(usageText);
 
@@ -184,9 +182,8 @@ int ppMain::Run(int argc, char* argv[])
             dialect = Dialect::c99;
         else
             dialect = Dialect::c89;
-        PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false,
-                        trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect,
-                        !disableExtensions.GetValue(),
+        PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(),
+                        false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect, !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
         if (c2xMode.GetValue())
         {
@@ -208,8 +205,8 @@ int ppMain::Run(int argc, char* argv[])
             std::string ver = "199404L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
-        sprintf(buffer,"%d", BITINTMAXWIDTH);
-        pp.Define("__bitint_max_width", buffer) ;
+        sprintf(buffer, "%d", BITINTMAXWIDTH);
+        pp.Define("__bitint_max_width", buffer);
         // for libcxx 10
 #ifdef TARGET_OS_WINDOWS
         pp.Define("_WIN32", "1");

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "Rule.h"
@@ -48,9 +48,9 @@ CommandContainer& CommandContainer::operator+=(std::shared_ptr<Command>& p)
 
 void CommandContainer::Clear() { commands.clear(); }
 
-Rule::Rule(const std::string& Target, const std::string& Prerequisites, const std::string& OrderPrerequisites, std::shared_ptr<Command> Commands,
-           const std::string& File, int Lineno, bool DontCare, bool Ignore, bool Silent, bool Make, bool Precious,
-           bool SecondExpansion, bool prereq) :
+Rule::Rule(const std::string& Target, const std::string& Prerequisites, const std::string& OrderPrerequisites,
+           std::shared_ptr<Command> Commands, const std::string& File, int Lineno, bool DontCare, bool Ignore, bool Silent,
+           bool Make, bool Precious, bool SecondExpansion, bool prereq) :
     target(Target),
     prerequisites(Prerequisites),
     orderPrerequisites(OrderPrerequisites),
@@ -99,7 +99,7 @@ void RuleList::CopyExports(std::shared_ptr<RuleList>& source)
             if (a.second->GetExport())
             {
                 if (specificVariables.find(a.first) == specificVariables.end())
-                    specificVariables[a.first] = a.second;                
+                    specificVariables[a.first] = a.second;
             }
         }
     }
@@ -126,10 +126,7 @@ bool RuleList::Add(std::shared_ptr<Rule>& rule, bool Double)
     rules.push_back(rule);
     return true;
 }
-void RuleList::InsertFirst(std::shared_ptr<Rule>& rule)
-{
-    rules.push_front(rule);
-}
+void RuleList::InsertFirst(std::shared_ptr<Rule>& rule) { rules.push_front(rule); }
 void RuleList::operator+=(Variable* variable)
 {
     std::unique_ptr<Variable> temp(variable);

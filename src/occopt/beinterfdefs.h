@@ -1,27 +1,28 @@
-
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
+ *
  */
+
 #pragma once
 
 #include "browsedefs.h"
@@ -42,13 +43,13 @@ extern int architecture;
 
 #define REG_DOUBLE_FLAG 0x10000
 
-#define STACK_PROTECT_BASIC    1
-#define STACK_PROTECT_ALL      2
-#define STACK_PROTECT_STRONG   4
+#define STACK_PROTECT_BASIC 1
+#define STACK_PROTECT_ALL 2
+#define STACK_PROTECT_STRONG 4
 #define STACK_PROTECT_EXPLICIT 8
-#define STACK_OBJECT_OVERFLOW  16
-#define STACK_UNINIT_VARIABLE  32
-#define HEAP_CHECK             64
+#define STACK_OBJECT_OVERFLOW 16
+#define STACK_UNINIT_VARIABLE 32
+#define HEAP_CHECK 64
 #define STACK_PROTECT_WITH_CANARY (STACK_PROTECT_BASIC | STACK_PROTECT_ALL | STACK_PROTECT_STRONG | STACK_PROTECT_EXPLICIT)
 
 #define STACK_PROTECT_MINIMUM_CONSIDERED 4
@@ -60,9 +61,9 @@ typedef struct
     int prm_stackalign;     /* stack alignment */
     int optimizer_modules;  // optimizer module selection
     int icd_flags;
-    int verbosity;  // verbosity level
-    Dialect c_dialect;           /* language dialect for C */
-    Dialect cpp_dialect;         /* lanaguage dialect for c++ */
+    int verbosity;       // verbosity level
+    Dialect c_dialect;   /* language dialect for C */
+    Dialect cpp_dialect; /* lanaguage dialect for c++ */
     bool prm_optimize_for_speed;
     bool prm_optimize_for_size;
     bool prm_optimize_float_access;
@@ -114,8 +115,8 @@ typedef struct
     bool msilAllowExtensions;    /* occil: allow extensions*/
     bool prm_displaytiming;      /* display timing info */
     bool prm_makelib;            /* make library */
-    int  prm_stackprotect;       /* stack protection mode */
-    int  prm_netcore_version;    /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
+    int prm_stackprotect;        /* stack protection mode */
+    int prm_netcore_version;     /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -152,7 +153,7 @@ typedef struct
     char a_rcomplexpad;
     char a_lrcomplexpad;
     char a_alignedstruct;  // __attribute((__aligned__))
-    char a_maxalign; // maximum alignment native to the implementation
+    char a_maxalign;       // maximum alignment native to the implementation
 } ARCH_SIZING;
 
 /* floating point characteristics */
@@ -286,7 +287,7 @@ typedef struct
     char stackalign;                  /* minimum stack alignment */
     char libsasimports;               /* library functions should be genned as import calls */
     char retblockparamadjust;         /* Adjustment for retblock parameters */
-    char eofScratchReg;                  /* register that can be used as scratch at end of function */
+    char eofScratchReg;               /* register that can be used as scratch at end of function */
     char bitintunderlying;            /* size of underlying type for bitint */
     int bitintmax;                    /* max number of bits for bitint */
 } ARCH_CHARACTERISTICS;

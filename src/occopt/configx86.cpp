@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -247,8 +247,7 @@ static ARCH_DEFINES defines[] = {
     {"_X86_", "1", true, true},
     {"_M_IX86", "1", true, true},
     {"_INTEGRAL_MAX_BITS", "64", true, true},
-    { 0 }
-};
+    {0}};
 static ARCH_SIZING sizes = {
     1,  /*char a_bool;*/
     1,  /*char a_char;*/
@@ -264,7 +263,8 @@ static ARCH_SIZING sizes = {
     8,  /*char a_farptr;*/
     2,  /*char a_farseg;*/
     12, /*char a_memberptr;    */
-    0, /* char a_struct;  */ /* alignment only */
+    0,
+    /* char a_struct;  */ /* alignment only */
     4,                    /*char a_float;*/
     8,                    /*char a_double;*/
     8,                    /*char a_longdouble;*/
@@ -294,11 +294,11 @@ static ARCH_SIZING alignments = {
     4,  /*char a_float;*/
     8,  /*char a_double;*/
     8,  /*char a_longdouble;*/
-    0,                    /*char a_fcomplexpad;*/
-    0,                    /*char a_rcomplexpad;*/
-    0,                    /*char a_lrcomplexpad;*/
+    0,  /*char a_fcomplexpad;*/
+    0,  /*char a_rcomplexpad;*/
+    0,  /*char a_lrcomplexpad;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
-    8,                    /* char a_maxalign; */
+    8,  /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -324,7 +324,7 @@ static ARCH_SIZING locks = {
     1,  /*char a_rcomplexpad; */
     1,  /*char a_lrcomplexpad; */
     0,  // char a_alignedstruct; // __attribute((__aligned__))
-    0,                    /* char a_maxalign; */
+    0,  /* char a_maxalign; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
@@ -362,21 +362,21 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     0,                                                                           /* floating point modes, not honored currently */
     ABM_USESIZE,                                                                 /* bool is determined by sizing above */
     ARM_FUNCTIONSCOPE,                                                           /* register allocation across entire function */
-    8,     /* number of bits in a MAU.  values other than 8 not supported */
-    4,                   /* natural size for this architecture, e.g. 4 for 32 bit arches and 8 for 64 bits */
-    false, /* little endian */
-    false, /* normal bit allocation*/
-    false, /* locals in stack memory*/
-    false, /* stack pointer grows down */
-    false, /* preallocate locals */
-    4,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
-    4,     /* minimium width/ padding of passed parameters in maus */
-    4,     /* minimum stack alignment */
-    false, /* library functions should bes genned as import calls */
-    4,     /* ret block param adjust for RTTI */
-    ECX,    /* register that can be used as scratch at end of function */
-    32,            /* size of underlying type for bitint */
-    (1 << 20) - 1  /* max number of bits for bitint */
+    8,            /* number of bits in a MAU.  values other than 8 not supported */
+    4,            /* natural size for this architecture, e.g. 4 for 32 bit arches and 8 for 64 bits */
+    false,        /* little endian */
+    false,        /* normal bit allocation*/
+    false,        /* locals in stack memory*/
+    false,        /* stack pointer grows down */
+    false,        /* preallocate locals */
+    4,            /* size of a return block on stack (e.g. function ret addr & frame ptr) */
+    4,            /* minimium width/ padding of passed parameters in maus */
+    4,            /* minimum stack alignment */
+    false,        /* library functions should bes genned as import calls */
+    4,            /* ret block param adjust for RTTI */
+    ECX,          /* register that can be used as scratch at end of function */
+    32,           /* size of underlying type for bitint */
+    (1 << 20) - 1 /* max number of bits for bitint */
 };
 static ARCH_DEBUG dbgStruct[1];
 #if 0
@@ -583,7 +583,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
-        help_text,                                  /* pointer to help text */
+        help_text,                             /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -632,7 +632,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
-        help_text,                                  /* pointer to help text */
+        help_text,                             /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -681,7 +681,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
-        help_text,                                  /* pointer to help text */
+        help_text,                             /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -730,7 +730,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
-        help_text,                                  /* pointer to help text */
+        help_text,                             /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */
@@ -779,7 +779,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "occ",                                 /* name of the program, for usage */
         "occ",                                 /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                            /* pointer to usage text */
-        help_text,                                  /* pointer to help text */
+        help_text,                             /* pointer to help text */
         "clwin.l",                             /* lib file */
         "i686-w32-occ",                        /* machine string */
         nullptr,                               // args,                           /* extra args */

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -82,44 +82,44 @@ bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
         return 0;
     switch (node1->type)
     {
-    case ExpressionNode::const_:
-    case ExpressionNode::pc_:
-    case ExpressionNode::global_:
-    case ExpressionNode::auto_:
-    case ExpressionNode::absolute_:
-    case ExpressionNode::threadlocal_:
-    case ExpressionNode::structelem_:
-        return node1->v.sp == node2->v.sp;
-    case ExpressionNode::labcon_:
-        return node1->v.i == node2->v.i;
-    default:
-        return (!node1->left || equalnode(node1->left, node2->left)) &&
-            (!node1->right || equalnode(node1->right, node2->right));
-    case ExpressionNode::c_i_:
-    case ExpressionNode::c_l_:
-    case ExpressionNode::c_ul_:
-    case ExpressionNode::c_ui_:
-    case ExpressionNode::c_c_:
-    case ExpressionNode::c_u16_:
-    case ExpressionNode::c_u32_:
-    case ExpressionNode::c_bool_:
-    case ExpressionNode::c_uc_:
-    case ExpressionNode::c_ll_:
-    case ExpressionNode::c_ull_:
-    case ExpressionNode::c_wc_:
-    case ExpressionNode::nullptr_:
-        return node1->v.i == node2->v.i;
-    case ExpressionNode::c_d_:
-    case ExpressionNode::c_f_:
-    case ExpressionNode::c_ld_:
-    case ExpressionNode::c_di_:
-    case ExpressionNode::c_fi_:
-    case ExpressionNode::c_ldi_:
-        return (*node1->v.f == *node2->v.f);
-    case ExpressionNode::c_dc_:
-    case ExpressionNode::c_fc_:
-    case ExpressionNode::c_ldc_:
-        return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
+        case ExpressionNode::const_:
+        case ExpressionNode::pc_:
+        case ExpressionNode::global_:
+        case ExpressionNode::auto_:
+        case ExpressionNode::absolute_:
+        case ExpressionNode::threadlocal_:
+        case ExpressionNode::structelem_:
+            return node1->v.sp == node2->v.sp;
+        case ExpressionNode::labcon_:
+            return node1->v.i == node2->v.i;
+        default:
+            return (!node1->left || equalnode(node1->left, node2->left)) &&
+                   (!node1->right || equalnode(node1->right, node2->right));
+        case ExpressionNode::c_i_:
+        case ExpressionNode::c_l_:
+        case ExpressionNode::c_ul_:
+        case ExpressionNode::c_ui_:
+        case ExpressionNode::c_c_:
+        case ExpressionNode::c_u16_:
+        case ExpressionNode::c_u32_:
+        case ExpressionNode::c_bool_:
+        case ExpressionNode::c_uc_:
+        case ExpressionNode::c_ll_:
+        case ExpressionNode::c_ull_:
+        case ExpressionNode::c_wc_:
+        case ExpressionNode::nullptr_:
+            return node1->v.i == node2->v.i;
+        case ExpressionNode::c_d_:
+        case ExpressionNode::c_f_:
+        case ExpressionNode::c_ld_:
+        case ExpressionNode::c_di_:
+        case ExpressionNode::c_fi_:
+        case ExpressionNode::c_ldi_:
+            return (*node1->v.f == *node2->v.f);
+        case ExpressionNode::c_dc_:
+        case ExpressionNode::c_fc_:
+        case ExpressionNode::c_ldc_:
+            return (node1->v.c->r == node2->v.c->r) && (node1->v.c->i == node2->v.c->i);
     }
 }
 EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
@@ -133,14 +133,14 @@ EXPRESSION* relptr(EXPRESSION* node, int& offset, bool add)
         case ExpressionNode::cvarpointer_:
             return node;
         case ExpressionNode::add_: {
-        case ExpressionNode::structadd_:
-            auto rv1 = relptr(node->left, offset, true);
-            auto rv2 = relptr(node->right, offset, true);
-            if (rv1)
-                return rv1;
-            else
-                return rv2;
-            break;
+            case ExpressionNode::structadd_:
+                auto rv1 = relptr(node->left, offset, true);
+                auto rv2 = relptr(node->right, offset, true);
+                if (rv1)
+                    return rv1;
+                else
+                    return rv2;
+                break;
         }
         case ExpressionNode::sub_: {
             auto rv1 = rv = relptr(node->left, offset, false);
@@ -229,7 +229,7 @@ EXPRESSION* createTemporary(Type* tp, EXPRESSION* val)
 {
     EXPRESSION* rv;
     tp = tp->BaseType()->btp;
-    if (tp->type == BasicType::pointer_) // to get around arrays not doing a Dereference...
+    if (tp->type == BasicType::pointer_)  // to get around arrays not doing a Dereference...
         tp = &stdpointer;
     rv = AnonymousVar(StorageClass::auto_, tp);
     if (val)
@@ -270,7 +270,8 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
             if ((*pat)->type == BasicType::rref_ && !(*pat)->btp->IsConst() && !(*pat)->btp->IsVolatile())
             {
                 // forwarding?  unadorned rref!
-                if (!nt->rref && nt->BaseType()->type != BasicType::rref_ && (!isarithmeticconst(exp) || exp->type == ExpressionNode::const_))
+                if (!nt->rref && nt->BaseType()->type != BasicType::rref_ &&
+                    (!isarithmeticconst(exp) || exp->type == ExpressionNode::const_))
                 {
                     // lref
                     Type* t = nt;
@@ -387,8 +388,9 @@ LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
     LexType type = LexType::l_astr_;
     StringData* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
-    while (lex && (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_wstr_ || lex->data->type == LexType::l_ustr_ ||
-                   lex->data->type == LexType::l_Ustr_ || lex->data->type == LexType::l_msilstr_ || lex->data->type == LexType::l_u8str_ ))
+    while (lex &&
+           (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_wstr_ || lex->data->type == LexType::l_ustr_ ||
+            lex->data->type == LexType::l_Ustr_ || lex->data->type == LexType::l_msilstr_ || lex->data->type == LexType::l_u8str_))
     {
         if (lex->data->type == LexType::l_u8str_)
             type = LexType::l_u8str_;
@@ -398,7 +400,8 @@ LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
             type = LexType::l_Ustr_;
         else if (type != LexType::l_Ustr_ && type != LexType::l_msilstr_ && lex->data->type == LexType::l_ustr_)
             type = LexType::l_ustr_;
-        else if (type != LexType::l_Ustr_ && type != LexType::l_ustr_ && type != LexType::l_msilstr_ && lex->data->type == LexType::l_wstr_)
+        else if (type != LexType::l_Ustr_ && type != LexType::l_ustr_ && type != LexType::l_msilstr_ &&
+                 lex->data->type == LexType::l_wstr_)
             type = LexType::l_wstr_;
         if (lex->data->suffix)
         {
@@ -531,7 +534,10 @@ EXPRESSION* AnonymousVar(StorageClass storage_class, Type* tp)
     if (theCurrentFunc && localNameSpace->front()->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, Linkage::none_, false);
     SetLinkerNames(rv, Linkage::none_);
-    return MakeExpression(storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_ ? ExpressionNode::auto_ : ExpressionNode::global_, rv);
+    return MakeExpression(storage_class == StorageClass::auto_ || storage_class == StorageClass::parameter_
+                              ? ExpressionNode::auto_
+                              : ExpressionNode::global_,
+                          rv);
 }
 EXPRESSION* anonymousBits(StorageClass storageClass, bool issigned, int bits)
 {
@@ -690,7 +696,7 @@ void Dereference(Type* tp, EXPRESSION** exp)
 bool TakeAddress(EXPRESSION** exp, Type* extended)
 {
     bool rv = false;
-    auto temp = *exp, * last = &temp;
+    auto temp = *exp, *last = &temp;
     if (!extended)
     {
         while (IsCastValue(*last))
@@ -708,7 +714,7 @@ bool TakeAddress(EXPRESSION** exp, Type* extended)
         if (extended->IsRef())
             extended = extended->BaseType()->btp;
         EXPRESSION* assignmentNode = nullptr;
-        while ( (*last)->right && (*last)->type == ExpressionNode::comma_)
+        while ((*last)->right && (*last)->type == ExpressionNode::comma_)
         {
             (*last) = MakeExpression(ExpressionNode::comma_, (*last)->left, (*last)->right);
             last = &(*last)->right;
@@ -750,18 +756,18 @@ bool TakeAddress(EXPRESSION** exp, Type* extended)
     {
         switch ((*last)->type)
         {
-        case ExpressionNode::auto_:
-            SetRuntimeData(currentLex, *last, (*last)->v.sp);
-            (*last)->v.sp->sb->addressTaken = true;
-            break;
-        case ExpressionNode::pc_:
-        case ExpressionNode::global_:
-        case ExpressionNode::absolute_:
-        case ExpressionNode::threadlocal_:
-            (*last)->v.sp->sb->addressTaken = true;
-            break;
-        default:
-            break;
+            case ExpressionNode::auto_:
+                SetRuntimeData(currentLex, *last, (*last)->v.sp);
+                (*last)->v.sp->sb->addressTaken = true;
+                break;
+            case ExpressionNode::pc_:
+            case ExpressionNode::global_:
+            case ExpressionNode::absolute_:
+            case ExpressionNode::threadlocal_:
+                (*last)->v.sp->sb->addressTaken = true;
+                break;
+            default:
+                break;
         }
         *exp = temp;
     }
@@ -1133,7 +1139,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
             offset %= tp->size;  // in case of array
             if (tp->IsStructured())
             {
-                for (auto sp : * tp->BaseType()->syms)
+                for (auto sp : *tp->BaseType()->syms)
                     if (offset >= sp->sb->offset && offset < sp->sb->offset + sp->tp->size)
                     {
                         if (ismemberdata(sp))
@@ -1141,7 +1147,8 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
                             if (sp->tp->IsStructured())
                             {
                                 offset -= sp->sb->offset;
-                                exps = MakeExpression(ExpressionNode::structadd_, exps, MakeExpression(ExpressionNode::structelem_, sp));
+                                exps = MakeExpression(ExpressionNode::structadd_, exps,
+                                                      MakeExpression(ExpressionNode::structelem_, sp));
                                 tp = sp->tp;
                             }
                             else
@@ -1161,7 +1168,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
     return exps;
 }
 EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
-                                    EXPRESSION* thisptr, bool isdest)
+                                           EXPRESSION* thisptr, bool isdest)
 {
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
@@ -1183,8 +1190,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                 expsym = thisptr;
             else if (funcsp)
             {
-                SYMBOL* sym =
-                    funcsp->tp->BaseType()->syms->size() > 0 ? (SYMBOL*)funcsp->tp->BaseType()->syms->front() : nullptr;
+                SYMBOL* sym = funcsp->tp->BaseType()->syms->size() > 0 ? (SYMBOL*)funcsp->tp->BaseType()->syms->front() : nullptr;
                 if (sym && sym->sb->thisPtr)
                     expsym = MakeExpression(ExpressionNode::auto_, sym);  // this ptr
                 else
@@ -1206,62 +1212,64 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
         {
             switch (sym->sb->storage_class)
             {
-            case StorageClass::auto_:
-            case StorageClass::register_:
-            case StorageClass::parameter_:
-                local = true;
-                expsym = MakeExpression(ExpressionNode::auto_, sym);
-                break;
-            case StorageClass::localstatic_:
-                if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
-                {
-                    expsym = thisptr;
-                }
-                else
-                {
+                case StorageClass::auto_:
+                case StorageClass::register_:
+                case StorageClass::parameter_:
                     local = true;
-                    expsym = MakeExpression(ExpressionNode::global_, sym);
-                }
-                break;
-            case StorageClass::static_:
-            case StorageClass::global_:
-                if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
-                {
-                    expsym = thisptr;
-                }
-                else
-                {
-                    local = true;
-                    expsym = MakeExpression(ExpressionNode::global_, sym);
-                }
-                break;
-            case StorageClass::member_:
-            case StorageClass::mutable_:
-                if (thisptr)
-                    expsym = thisptr;
-                else if (funcsp)
-                    expsym = MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
-                else
-                {
+                    expsym = MakeExpression(ExpressionNode::auto_, sym);
+                    break;
+                case StorageClass::localstatic_:
+                    if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
+                    {
+                        expsym = thisptr;
+                    }
+                    else
+                    {
+                        local = true;
+                        expsym = MakeExpression(ExpressionNode::global_, sym);
+                    }
+                    break;
+                case StorageClass::static_:
+                case StorageClass::global_:
+                    if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
+                    {
+                        expsym = thisptr;
+                    }
+                    else
+                    {
+                        local = true;
+                        expsym = MakeExpression(ExpressionNode::global_, sym);
+                    }
+                    break;
+                case StorageClass::member_:
+                case StorageClass::mutable_:
+                    if (thisptr)
+                        expsym = thisptr;
+                    else if (funcsp)
+                        expsym = MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
+                    else
+                    {
+                        expsym = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        diag("ConverInitializersToExpression: no this ptr");
+                    }
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                        expsym =
+                            MakeExpression(ExpressionNode::structadd_, expsym, MakeExpression(ExpressionNode::structelem_, sym));
+                    else
+                        expsym = MakeExpression(ExpressionNode::structadd_, expsym,
+                                                MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                    break;
+                case StorageClass::external_:
+                    /*			expsym = MakeExpression(ExpressionNode::global_, sym);
+                                local = true;
+                                break;
+                    */
+                case StorageClass::constant_:
+                    return nullptr;
+                default:
+                    diag("ConverInitializersToExpression: unknown sym type");
                     expsym = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    diag("ConverInitializersToExpression: no this ptr");
-                }
-                if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                    expsym = MakeExpression(ExpressionNode::structadd_, expsym, MakeExpression(ExpressionNode::structelem_, sym));
-                else
-                    expsym = MakeExpression(ExpressionNode::structadd_, expsym, MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
-                break;
-            case StorageClass::external_:
-                /*			expsym = MakeExpression(ExpressionNode::global_, sym);
-                            local = true;
-                            break;
-                */
-            case StorageClass::constant_:
-                return nullptr;
-            default:
-                diag("ConverInitializersToExpression: unknown sym type");
-                expsym = MakeIntExpression(ExpressionNode::c_i_, 0);
-                break;
+                    break;
             }
         }
     }
@@ -1294,8 +1302,9 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                     if (thisptr && exp->type == ExpressionNode::callsite_)
                     {
                         EXPRESSION* exp1 = initItem->offset || (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)
-                            ? MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset))
-                            : copy_expression(expsym);
+                                               ? MakeExpression(ExpressionNode::add_, copy_expression(expsym),
+                                                                MakeIntExpression(ExpressionNode::c_i_, initItem->offset))
+                                               : copy_expression(expsym);
                         exp->v.func->thisptr = exp1;
                         /*
                         if (tp->IsArray())
@@ -1355,7 +1364,8 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                         {
                             exp = copy_expression(expsym);
                             if (initItem->offset)
-                                exp = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                exp = MakeExpression(ExpressionNode::add_, exp,
+                                                     MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = MakeExpression(ExpressionNode::blockassign_, exp, exp2);
                             exp->size = initItem->basetp;
                             exp->altdata = (void*)(initItem->basetp);
@@ -1413,7 +1423,8 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                                     }
                                     else
                                     {
-                                        asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                        asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym),
+                                                             MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                                     }
                                     Dereference(initItem->basetp, &asn);
                                     cast(initItem->basetp, &right);
@@ -1521,27 +1532,35 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                             exps = MakeExpression(ExpressionNode::add_, exps, initItem->fieldoffs);
                         }
                         exps = msilThunkSubStructs(exps, expsym, initItem->fieldsp, initItem->offset);
-                        exps = MakeExpression(ExpressionNode::structadd_, exps, MakeExpression(ExpressionNode::structelem_, initItem->fieldsp));
+                        exps = MakeExpression(ExpressionNode::structadd_, exps,
+                                              MakeExpression(ExpressionNode::structelem_, initItem->fieldsp));
                     }
                     else
                     {
                         if (initItem->basetp->bits)
                         {
                             auto it1 = it;
-                            exp = MakeExpression(ExpressionNode::and_, exp, MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it)->basetp->bits)));
+                            exp =
+                                MakeExpression(ExpressionNode::and_, exp,
+                                               MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it)->basetp->bits)));
                             if ((*it)->basetp->startbit)
-                                exp = MakeExpression(ExpressionNode::lsh_, exp, MakeIntExpression(ExpressionNode::c_i_, (*it)->basetp->startbit));
+                                exp = MakeExpression(ExpressionNode::lsh_, exp,
+                                                     MakeIntExpression(ExpressionNode::c_i_, (*it)->basetp->startbit));
                             while (true)
                             {
                                 ++it1;
-                                if (it1 == init->end() || !(*it1)->exp || !(*it1)->basetp || !(*it1)->basetp->bits || (*it1)->offset != initItem->offset)
+                                if (it1 == init->end() || !(*it1)->exp || !(*it1)->basetp || !(*it1)->basetp->bits ||
+                                    (*it1)->offset != initItem->offset)
                                 {
                                     break;
                                 }
                                 auto exp1 = (*it1)->exp;
-                                exp1 = MakeExpression(ExpressionNode::and_, exp1, MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it1)->basetp->bits)));
+                                exp1 = MakeExpression(
+                                    ExpressionNode::and_, exp1,
+                                    MakeIntExpression(ExpressionNode::c_ui_, Optimizer::mod_mask((*it1)->basetp->bits)));
                                 if ((*it1)->basetp->startbit)
-                                    exp1 = MakeExpression(ExpressionNode::lsh_, exp1, MakeIntExpression(ExpressionNode::c_i_, (*it1)->basetp->startbit));
+                                    exp1 = MakeExpression(ExpressionNode::lsh_, exp1,
+                                                          MakeIntExpression(ExpressionNode::c_i_, (*it1)->basetp->startbit));
                                 exp = MakeExpression(ExpressionNode::or_, exp, exp1);
                                 ++it;
                             }
@@ -1558,12 +1577,14 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                             }
                             if (tp->IsStructured())
                             {
-                                exps = MakeExpression(ExpressionNode::structadd_, exps, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                exps = MakeExpression(ExpressionNode::structadd_, exps,
+                                                      MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             }
-                            else if (initItem->offset ||
-                                (last != init->end() && (*last)->basetp && (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
+                            else if (initItem->offset || (last != init->end() && (*last)->basetp &&
+                                                          (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
                             {
-                                exps = MakeExpression(ExpressionNode::add_, exps, MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                exps = MakeExpression(ExpressionNode::add_, exps,
+                                                      MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                                 exps->init = true;
                             }
                         }
@@ -1583,8 +1604,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                     }
                     else
                     {
-                        if ((initItem->basetp->IsArithmetic() || initItem->basetp->IsPtr())
-                            && !initItem->basetp->IsBitInt())
+                        if ((initItem->basetp->IsArithmetic() || initItem->basetp->IsPtr()) && !initItem->basetp->IsBitInt())
                             cast(initItem->basetp, &exp);
                         if (exps)
                         {
@@ -1596,7 +1616,9 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                 }
                 if (sym && sym->sb->init && initItem->basetp->IsAtomic() && needsAtomicLockFromType(initItem->basetp))
                 {
-                    EXPRESSION* p1 = MakeExpression(ExpressionNode::add_, expsym->left, MakeIntExpression(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
+                    EXPRESSION* p1 =
+                        MakeExpression(ExpressionNode::add_, expsym->left,
+                                       MakeIntExpression(ExpressionNode::c_i_, initItem->basetp->size - ATOMIC_FLAG_SPACE));
                     Dereference(&stdint, &p1);
                     p1 = MakeExpression(ExpressionNode::assign_, p1, MakeIntExpression(ExpressionNode::c_i_, 0));
                     exp = MakeExpression(ExpressionNode::comma_, exp, p1);
@@ -1621,7 +1643,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
     if ((sym || expsymin) && !noClear && !isdest &&
         ((tp->IsArray() && (!tp->BaseType()->btp->IsStructured() || !tp->BaseType()->btp->BaseType()->sp->sb->hasUserCons)) ||
          (tp->IsStructured() && ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
-                               !tp->BaseType()->sp->sb->hasUserCons))))
+                                 !tp->BaseType()->sp->sb->hasUserCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
@@ -1632,7 +1654,8 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
         exp->size = tp;
         rv = MakeExpression(ExpressionNode::comma_, exp, rv);
     }
-    if (sym && sym->sb->storage_class == StorageClass::localstatic_ && !(Optimizer::architecture == ARCHITECTURE_MSIL) && guardFuncs.find(sym->sb->decoratedName) == guardFuncs.end())
+    if (sym && sym->sb->storage_class == StorageClass::localstatic_ && !(Optimizer::architecture == ARCHITECTURE_MSIL) &&
+        guardFuncs.find(sym->sb->decoratedName) == guardFuncs.end())
     {
         guardFuncs.insert(sym->sb->decoratedName);
         SYMBOL* guardfunc = namespacesearch("__static_guard", globalNameSpace, false, false);
@@ -1655,12 +1678,16 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
             arg->tp = &stdpointer;
             arg->exp = guard->left;
             guardexp->v.func->arguments->push_back(arg);
-            rv = MakeExpression(ExpressionNode::check_nz_,
-                          MakeExpression(ExpressionNode::comma_,
-                                   MakeExpression(ExpressionNode::land_, MakeExpression(ExpressionNode::ne_, guard, MakeIntExpression(ExpressionNode::c_i_, -1)),
-                                            MakeExpression(ExpressionNode::ne_, guardexp, MakeIntExpression(ExpressionNode::c_i_, 0))),
-                                   MakeExpression(ExpressionNode::comma_, rv, MakeExpression(ExpressionNode::assign_, guard, MakeIntExpression(ExpressionNode::c_i_, -1)))),
-                          MakeIntExpression(ExpressionNode::c_i_, 0));
+            rv = MakeExpression(
+                ExpressionNode::check_nz_,
+                MakeExpression(
+                    ExpressionNode::comma_,
+                    MakeExpression(ExpressionNode::land_,
+                                   MakeExpression(ExpressionNode::ne_, guard, MakeIntExpression(ExpressionNode::c_i_, -1)),
+                                   MakeExpression(ExpressionNode::ne_, guardexp, MakeIntExpression(ExpressionNode::c_i_, 0))),
+                    MakeExpression(ExpressionNode::comma_, rv,
+                                   MakeExpression(ExpressionNode::assign_, guard, MakeIntExpression(ExpressionNode::c_i_, -1)))),
+                MakeIntExpression(ExpressionNode::c_i_, 0));
         }
     }
     if (tp->IsStructured() || tp->IsArray())
@@ -2038,7 +2065,8 @@ Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             t1 = BasicType::unsigned_;
         if (t2 == BasicType::wchar_t_)
             t2 = BasicType::unsigned_;
-        if (t1 < BasicType::int_ || ((t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_) && tp1->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
+        if (t1 < BasicType::int_ || ((t1 == BasicType::bitint_ || t1 == BasicType::unsigned_bitint_) &&
+                                     tp1->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
             t1 = BasicType::int_;
         if (t2 < BasicType::int_ || ((t2 == BasicType::bitint_ || t2 == BasicType::unsigned_bitint_) &&
                                      tp2->bitintbits < getSize(BasicType::int_) * CHAR_BIT))
@@ -2120,7 +2148,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
         newExp->right = RemoveAutoIncDec(newExp->right);
     return newExp;
 }
-EXPRESSION* EvaluateDest(EXPRESSION*exp, Type* tp)
+EXPRESSION* EvaluateDest(EXPRESSION* exp, Type* tp)
 {
     EXPRESSION* result = nullptr;
     if (!tp->BaseType()->hasbits && !IsCastValue(exp) && IsLValue(exp))

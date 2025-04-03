@@ -1,30 +1,30 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "CmdSwitch.h"
 #include "Utils.h"
@@ -40,17 +40,16 @@
 #    define strnicmp strncasecmp
 #endif
 
-
 #ifdef __ORANGEC__
-#ifndef __LSCRTL_DLL
-#include <windows.h>
-#include "../version.h"
+#    ifndef __LSCRTL_DLL
+#        include <windows.h>
+#        include "../version.h"
 extern "C" void _RTL_FUNC __excepthook()
 {
     printf("version: " STRING_VERSION "\n");
     printf("Command Line: %s\n", GetCommandLineA());
 }
-#endif
+#    endif
 #endif
 
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames) :
@@ -246,7 +245,7 @@ void CmdSwitchFile::Dispatch(char* data)
 char* CmdSwitchFile::GetStr(char* data)
 {
     int size = 30000 + 1;
-    char *buf = (char *)malloc(size), *p = buf;
+    char *buf = (char*)malloc(size), *p = buf;
     bool quote = false;
     while (isspace(*data))
         data++;
@@ -366,11 +365,11 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             (*argc)--;
         }
         else if ((argv[0][0] == '-' ||
-          #ifdef TARGET_OS_WINDOWS
+#ifdef TARGET_OS_WINDOWS
                   argv[0][0] == '/' ||
-          #endif
-                  (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
-                 (argv[0][1] != '-' || argv[0][2]))
+#endif
+                  (argv[0][0] == '+' && argv[0][1] != '-')) &&
+                 argv[0][1] && (argv[0][1] != '-' || argv[0][2]))
         {
             const char* swtch = &argv[0][0];
             const char* data = &argv[0][0];

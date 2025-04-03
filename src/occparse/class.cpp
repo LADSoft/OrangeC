@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <unordered_set>
@@ -75,8 +75,8 @@ static void GetUsingName(char* buf)
         }
     }
 }
-LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly, StorageClass storage_class,
-                    bool isType, int flags)
+LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly,
+                    StorageClass storage_class, bool isType, int flags)
 {
     (void)tagsOnly;
     (void)storage_class;
@@ -169,7 +169,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             }
             if ((!inTemplateType || parsingUsing) && MATCHKW(lex, Keyword::openpa_))
             {
-                CallSite funcparams = { };
+                CallSite funcparams = {};
                 lex = getArgs(lex, theCurrentFunc, &funcparams, Keyword::closepa_, true, 0);
                 templateSelector->back().arguments = funcparams.arguments;
                 templateSelector->back().asCall = true;
@@ -287,7 +287,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 if (!sp && !templateParamAsTemplate)
                 {
-                    SYMBOL *cached = nullptr;
+                    SYMBOL* cached = nullptr;
                     if (!qualified)
                         sp = namespacesearch(buf, localNameSpace, qualified, tagsOnly);
                     if (sp && MATCHKW(lex, Keyword::classsel_) && !istype(sp))
@@ -439,8 +439,8 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     {
                         if (!MATCHKW(lex, Keyword::classsel_))
                             break;
-                        if (hasTemplate &&
-                            (sp->tp->BaseType()->type != BasicType::templateparam_ || sp->tp->BaseType()->templateParam->second->type != TplType::template_))
+                        if (hasTemplate && (sp->tp->BaseType()->type != BasicType::templateparam_ ||
+                                            sp->tp->BaseType()->templateParam->second->type != TplType::template_))
                         {
                             errorsym(ERR_NOT_A_TEMPLATE, sp);
                         }
@@ -471,7 +471,8 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 if (hasTemplateArgs)
                 {
-                    deferred = inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing || (flags & _F_NOEVAL);
+                    deferred =
+                        inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing || (flags & _F_NOEVAL);
                     if (currentsp)
                     {
                         sp = currentsp;
@@ -540,12 +541,12 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                     {
                                         if (sp->tp->type == BasicType::templatedecltype_)
                                         {
-                                            auto tp = LookupTypeFromExpression(sp->tp->templateDeclType,nullptr, false);
+                                            auto tp = LookupTypeFromExpression(sp->tp->templateDeclType, nullptr, false);
                                             if (!tp)
                                             {
                                                 sp = nullptr;
                                             }
-                                            else 
+                                            else
                                             {
                                                 tp->InstantiateDeferred();
                                                 if (tp->IsStructured())
@@ -590,7 +591,8 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     sp->tp = sp->tp->InitializeDeferred();
                     sp->tp->InstantiateDeferred();
                 }
-                if (sp && (!sp->sb || (sp->sb->storage_class != StorageClass::namespace_ && (!sp->tp->IsStructured() || sp->templateParams))))
+                if (sp && (!sp->sb ||
+                           (sp->sb->storage_class != StorageClass::namespace_ && (!sp->tp->IsStructured() || sp->templateParams))))
                     pastClassSel = true;
                 lex = getsym();
                 finalPos = lex;
@@ -628,11 +630,14 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     if (!qualified)
                         nssym = nullptr;
                 }
-                else if (sp && sp->sb && (sp->sb->storage_class == StorageClass::namespace_ || sp->sb->storage_class == StorageClass::namespace_alias_))
+                else if (sp && sp->sb &&
+                         (sp->sb->storage_class == StorageClass::namespace_ ||
+                          sp->sb->storage_class == StorageClass::namespace_alias_))
                 {
                     nssym = sp->sb->nameSpaceValues;
                 }
-                else if (sp && (sp->tp->BaseType()->type == BasicType::templateparam_ || sp->tp->BaseType()->type == BasicType::templateselector_))
+                else if (sp && (sp->tp->BaseType()->type == BasicType::templateparam_ ||
+                                sp->tp->BaseType()->type == BasicType::templateselector_))
                 {
                     if (!templateSelector)
                         templateSelector = templateSelectorListFactory.CreateVector();
@@ -818,8 +823,8 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
     }
     return nullptr;
 }
-LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out, std::list<NAMESPACEVALUEDATA*>** nsv_out,
-    StorageClass storage_class)
+LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
+                   std::list<NAMESPACEVALUEDATA*>** nsv_out, StorageClass storage_class)
 {
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
     SYMBOL* strSym = nullptr;
@@ -840,7 +845,8 @@ LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
                     *rsp = strSym->tp->tags->Lookup((*rsp)->name);
                 else if (nsv)
                     *rsp = nsv->front()->tags->Lookup((*rsp)->name);
-                else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
+                else if (Optimizer::cparams.prm_cplusplus &&
+                         (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
                     *rsp = enclosingDeclarations.GetFirst()->tp->tags->Lookup((*rsp)->name);
                 else if (storage_class == StorageClass::auto_)
                     *rsp = localNameSpace->front()->tags->Lookup((*rsp)->name);
@@ -877,7 +883,8 @@ LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
     {
         *table = strSym->tp->tags;
     }
-    else if (Optimizer::cparams.prm_cplusplus && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
+    else if (Optimizer::cparams.prm_cplusplus &&
+             (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_))
     {
         strSym = enclosingDeclarations.GetFirst();
         *table = strSym->tp->tags;
@@ -1075,8 +1082,8 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
     }
     return rv;
 }
-LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor, bool* isTemplate,
-                      bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType)
+LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor,
+                      bool* isTemplate, bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
@@ -1328,8 +1335,8 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** cast
     }
     return lex;
 }
-LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* isTemplate,
-                       bool tagsOnly, bool membersOnly, char* idname, int flags)
+LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+                       bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int flags)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
@@ -1358,7 +1365,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
                 SYMBOL* ssp = enclosingDeclarations.GetFirst();
                 if (ssp)
                 {
-                    *sym =search( ssp->tp->syms, lex->data->value.s.a);
+                    *sym = search(ssp->tp->syms, lex->data->value.s.a);
                 }
                 if (*sym == nullptr)
                     *sym = gsearch(lex->data->value.s.a);
@@ -1457,7 +1464,7 @@ SYMBOL* LookupSym(char* name)
     return rv;
 }
 
-static bool IsFriend(SYMBOL * cls, SYMBOL * frnd)
+static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
 {
     if (cls != frnd)
     {
@@ -1485,8 +1492,8 @@ static bool IsFriend(SYMBOL * cls, SYMBOL * frnd)
 }
 // works by searching the tree for the base or member symbol, and stopping any
 // time the access wouldn't work.  If the symbol is found it is accessible.
-static bool isAccessibleInternal(SYMBOL * derived, SYMBOL * currentBase, SYMBOL * member, SYMBOL * funcsp, AccessLevel minAccess,
-    AccessLevel maxAccess, int level)
+static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess,
+                                 AccessLevel maxAccess, int level)
 {
     AccessLevel memberAccess = member->sb->access > maxAccess ? maxAccess : member->sb->access;
     BASECLASS* lst;
@@ -1511,7 +1518,8 @@ static bool isAccessibleInternal(SYMBOL * derived, SYMBOL * currentBase, SYMBOL 
         if (member->sb->parentClass == currentBase || member->sb->parentClass == currentBase->sb->mainsym)
             return memberAccess >= minAccess || level == 0;
         else if (member->sb->mainsym)
-            if (member->sb->mainsym->sb->parentClass == currentBase || member->sb->mainsym->sb->parentClass == currentBase->sb->mainsym)
+            if (member->sb->mainsym->sb->parentClass == currentBase ||
+                member->sb->mainsym->sb->parentClass == currentBase->sb->mainsym)
                 return memberAccess >= minAccess || level == 0;
         if (currentBase->sb->baseClasses)
         {
@@ -1522,19 +1530,21 @@ static bool isAccessibleInternal(SYMBOL * derived, SYMBOL * currentBase, SYMBOL 
 
                 // we have to go through the base classes even if we know that a normal
                 // lookup wouldn't work, so we can check their friends lists...
-                if (isAccessibleInternal(derived, sym, member, funcsp, minAccess, lst->accessLevel < maxAccess ? AccessLevel::protected_ : maxAccess, lst->accessLevel == AccessLevel::private_ ? 2 : 1))
+                if (isAccessibleInternal(derived, sym, member, funcsp, minAccess,
+                                         lst->accessLevel < maxAccess ? AccessLevel::protected_ : maxAccess,
+                                         lst->accessLevel == AccessLevel::private_ ? 2 : 1))
                     return true;
             }
         }
     }
     return (level == 0 && memberAccess >= minAccess);
 }
-bool isAccessible(SYMBOL * derived, SYMBOL * currentBase, SYMBOL * member, SYMBOL * funcsp, AccessLevel minAccess, bool asAddress)
+bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress)
 {
     return (definingTemplate && !instantiatingTemplate) || instantiatingFunction || member->sb->accessibleTemplateArgument ||
-        isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, AccessLevel::public_, 0);
+           isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, AccessLevel::public_, 0);
 }
-static SYMBOL* AccessibleClassInstance(SYMBOL * parent)
+static SYMBOL* AccessibleClassInstance(SYMBOL* parent)
 {
     // search through all active structure declarations
     // to try to find a structure which is derived from parent...
@@ -1555,7 +1565,7 @@ static SYMBOL* AccessibleClassInstance(SYMBOL * parent)
     }
     return nullptr;
 }
-bool isExpressionAccessible(SYMBOL * derived, SYMBOL * sym, SYMBOL * funcsp, EXPRESSION * exp, bool asAddress)
+bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress)
 {
     if (sym->sb->parentClass)
     {
@@ -1595,7 +1605,7 @@ bool isExpressionAccessible(SYMBOL * derived, SYMBOL * sym, SYMBOL * funcsp, EXP
     }
     return true;
 }
-bool checkDeclarationAccessible(SYMBOL * sp, SYMBOL * derived, SYMBOL * funcsp)
+bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp)
 {
     Type* tp = sp->tp;
     while (tp)

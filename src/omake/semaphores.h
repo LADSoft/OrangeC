@@ -85,7 +85,7 @@ class Semaphore
         {
             throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
         }
-        handle =*ret;
+        handle = *ret;
 #endif
     }
     Semaphore& operator=(const Semaphore& other)
@@ -109,7 +109,7 @@ class Semaphore
                 {
                     throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
                 }
-                handle =*ret;
+                handle = *ret;
 #endif
             }
         }
@@ -126,16 +126,16 @@ class Semaphore
             if (!null)
             {
 #ifdef TARGET_OS_WINDOWS
-            CloseHandle(other.handle);
+                CloseHandle(other.handle);
 #else
-        if (named)
-        {
-            sem_close(&handle);
-        }
-        else
-        {
-            sem_destroy(&handle);
-        }
+                if (named)
+                {
+                    sem_close(&handle);
+                }
+                else
+                {
+                    sem_destroy(&handle);
+                }
 #endif
             }
             named = other.named;
@@ -151,7 +151,7 @@ class Semaphore
                 {
                     throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
                 }
-                handle =*ret;
+                handle = *ret;
 #endif
             }
             other.named = false;
@@ -159,14 +159,14 @@ class Semaphore
 #ifdef TARGET_OS_WINDOWS
             CloseHandle(other.handle);
 #else
-        if (named)
-        {
-            sem_close(&handle);
-        }
-        else
-        {
-            sem_destroy(&handle);
-        }
+            if (named)
+            {
+                sem_close(&handle);
+            }
+            else
+            {
+                sem_destroy(&handle);
+            }
 #endif
         }
         return *this;
@@ -218,10 +218,9 @@ class Semaphore
                 return false;
         }
 #else
-        timespec ts = { waitTime/1000, (waitTime%1000) * 1000000 };
+        timespec ts = {waitTime / 1000, (waitTime % 1000) * 1000000};
         return !sem_timedwait(&handle, &ts);
 #endif
-
     }
     bool TryWait()
     {
@@ -239,7 +238,7 @@ class Semaphore
                 return false;
         }
 #else
-        return !! sem_trywait(&handle);
+        return !!sem_trywait(&handle);
 #endif
     }
     void Wait()

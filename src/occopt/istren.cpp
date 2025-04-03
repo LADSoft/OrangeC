@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -56,7 +56,7 @@ namespace Optimizer
 {
 static std::unordered_map<int, IMODE*> loadTemps;
 static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> hash;
-static void ScanVarStrength(InstructionList *l, IMODE* multiplier, int tnum, int match, ILIST* vars)
+static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
     if (!l)
         return;
@@ -326,7 +326,8 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         while (true)
         {
             QUAD* q = tempInfo[im2->offset->sp->i]->instructionDefines;
-            if (!q /* probably an RV */ || q->dc.opcode != i_assn || q->dc.left->size != q->ans->size || q->dc.left->offset->type != se_tempref)
+            if (!q /* probably an RV */ || q->dc.opcode != i_assn || q->dc.left->size != q->ans->size ||
+                q->dc.left->offset->type != se_tempref)
                 break;
             im2 = q->dc.left;
         }

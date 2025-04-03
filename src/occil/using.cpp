@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "be.h"
@@ -115,18 +115,18 @@ bool msil_managed(Optimizer::SimpleSymbol* sp)
 }
 int ValidateNetCoreVersion(int requestedVersion)
 {
-	NetCore core(PELib::bits32);
-        if (requestedVersion == 0)
-            requestedVersion = NetCore::DummyChooseLatest;        
+    NetCore core(PELib::bits32);
+    if (requestedVersion == 0)
+        requestedVersion = NetCore::DummyChooseLatest;
 #ifdef TARGET_OS_WINDOWS
-	if (core.SupportsRuntime(requestedVersion))
-        {
-             return requestedVersion;
-        }
-        // error
-        return INT_MAX;
-#else
+    if (core.SupportsRuntime(requestedVersion))
+    {
         return requestedVersion;
+    }
+    // error
+    return INT_MAX;
+#else
+    return requestedVersion;
 #endif
 }
 

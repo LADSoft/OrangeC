@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -58,12 +58,12 @@ const char* tn_char8_t = "char8_t";
 const char* tn_char16_t = "char16_t";
 const char* tn_char32_t = "char32_t";
 
-const char* cpp_funcname_tab[] = {".bctr",  ".bdtr",   ".bcast",  ".bnew",   ".bdel",   ".badd",   ".bsub",   ".bmul",    ".bdiv",
-                                  ".bshl",  ".bshr",   ".bmod",   ".bequ",   ".bneq",   ".blt",    ".bleq",   ".bgt",     ".bgeq",
-                                  ".basn",  ".basadd", ".bassub", ".basmul", ".basdiv", ".basmod", ".basshl", ".bsasshr", ".basand",
-                                  ".basor", ".basxor", ".binc",   ".bdec",   ".barray", ".bcall",  ".bstar",  ".barrow",  ".bcomma",
-                                  ".blor",  ".bland",  ".bnot",   ".bor",    ".band",   ".bxor",   ".bcpl",   ".bnwa",    ".bdla",
-                                  ".blit",  ".badd",   ".bsub",   ".bmul",   ".band",
+const char* cpp_funcname_tab[] = {
+    ".bctr",   ".bdtr",   ".bcast",  ".bnew",   ".bdel",   ".badd",    ".bsub",   ".bmul",  ".bdiv",   ".bshl",
+    ".bshr",   ".bmod",   ".bequ",   ".bneq",   ".blt",    ".bleq",    ".bgt",    ".bgeq",  ".basn",   ".basadd",
+    ".bassub", ".basmul", ".basdiv", ".basmod", ".basshl", ".bsasshr", ".basand", ".basor", ".basxor", ".binc",
+    ".bdec",   ".barray", ".bcall",  ".bstar",  ".barrow", ".bcomma",  ".blor",   ".bland", ".bnot",   ".bor",
+    ".band",   ".bxor",   ".bcpl",   ".bnwa",   ".bdla",   ".blit",    ".badd",   ".bsub",  ".bmul",   ".band",
 
 };
 const char* xlate_tab[] = {
@@ -76,7 +76,7 @@ const char* xlate_tab[] = {
 
 static const char* unmangcpptype(char* buf, const char* name, const char* last);
 const char* unmang1(char* buf, const char* name, const char* last, bool tof);
-char* unmang2(char* val, const char *name);
+char* unmang2(char* val, const char* name);
 static const char* unmangTemplate(char* buf, const char* name, const char* last);
 char* unmangle(char* val, const char* name);
 
@@ -84,7 +84,7 @@ char* unmangle(char* val, const char* name);
 static int manglenamecount = -1;
 static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
-const char* LookupIntrinsicName(const char *mangled)
+const char* LookupIntrinsicName(const char* mangled)
 {
     int i;
     for (i = 0; i < IT_SIZE; i++)
@@ -94,14 +94,14 @@ const char* LookupIntrinsicName(const char *mangled)
     {
         switch (i)
         {
-        case 0:
-            return "constructor";
-        case 1:
-            return "destructor";
-        case 2:
-            return "cast operator";
-        default:
-            return "????";
+            case 0:
+                return "constructor";
+            case 1:
+                return "destructor";
+            case 2:
+                return "cast operator";
+            default:
+                return "????";
         }
     }
     else if (i < IT_SIZE)
@@ -618,7 +618,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
         }
         else
         {
-            while (*name && *name != '.')       
+            while (*name && *name != '.')
                 *buf++ = *name++;
         }
         *buf++ = '<';
@@ -1060,7 +1060,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 {
                     name = unmangTemplate(buf, name, last);
                 }
-                    else
+                else
                 {
                     name = unmang1(buf, name, last, false);
                 }
@@ -1257,7 +1257,7 @@ char* unmang2(char* val, const char* name)
                 }
                 else if (name[1] == 'x' && name[2] == 'c')
                 {
-                   *buf++ = *name++;
+                    *buf++ = *name++;
                 }
                 // discard the template params if they are there
                 else if (name[1] == 'b' || name[1] == 'o')

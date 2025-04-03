@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -444,7 +444,7 @@ void BuildLoopTree(void)
     bool skip = false;
     loopArray.clear();
     loopCount = 0;
-    loopItems = briggsAlloc((blockCount)*4);
+    loopItems = briggsAlloc((blockCount) * 4);
     loopArray.resize(blockCount);
     for (i = 0; i < blockCount; i++)
     {
@@ -466,7 +466,7 @@ void BuildLoopTree(void)
     memset(&bl, 0, sizeof(bl));
     bl.block = blockArray[exitBlock];
     FindBody(&bl, blockArray[0], LT_ROOT);
-    CalculateLoopedBlocks(loopArray[loopCount-1]);
+    CalculateLoopedBlocks(loopArray[loopCount - 1]);
     //   if (cparams.prm_icdfile)
     //   {
     //       fprintf(icdFile, "; loop dump\n");
@@ -661,7 +661,8 @@ static void CalculateInductionCandidates(Loop* l)
     LIST *blocks, *p;
     int i;
     briggsClear(candidates);
-    while (!inductionCandidateStack.empty()) inductionCandidateStack.pop();
+    while (!inductionCandidateStack.empty())
+        inductionCandidateStack.pop();
 
     /* done here just in case for some reason an induction set drills down
      * into a lower loop
@@ -1001,7 +1002,9 @@ void CalculateInduction(void)
             }
         }
     }
-    while (!strongStack.empty()) strongStack.pop();
-    while (!inductionCandidateStack.empty()) inductionCandidateStack.pop();
+    while (!strongStack.empty())
+        strongStack.pop();
+    while (!inductionCandidateStack.empty())
+        inductionCandidateStack.pop();
 }
 }  // namespace Optimizer

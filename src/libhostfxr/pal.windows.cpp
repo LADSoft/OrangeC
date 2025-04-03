@@ -29,12 +29,10 @@ bool GetModuleFileNameWrapper(HMODULE hModule, pal::string_t* recv)
     return true;
 }
 
-bool GetModuleHandleFromAddress(void *addr, HMODULE *hModule)
+bool GetModuleHandleFromAddress(void* addr, HMODULE* hModule)
 {
-    BOOL res = ::GetModuleHandleExW(
-        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        reinterpret_cast<LPCWSTR>(addr),
-        hModule);
+    BOOL res = ::GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                    reinterpret_cast<LPCWSTR>(addr), hModule);
 
     return (res != FALSE);
 }
@@ -64,7 +62,7 @@ bool pal::touch_file(const pal::string_t& path)
     return true;
 }
 
-static void* map_file(const pal::string_t& path, size_t *length, DWORD mapping_protect, DWORD view_desired_access)
+static void* map_file(const pal::string_t& path, size_t* length, DWORD mapping_protect, DWORD view_desired_access)
 {
     HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -95,7 +93,7 @@ static void* map_file(const pal::string_t& path, size_t *length, DWORD mapping_p
         return nullptr;
     }
 
-    void *address = MapViewOfFile(map, view_desired_access, 0, 0, 0);
+    void* address = MapViewOfFile(map, view_desired_access, 0, 0, 0);
 
     if (address == NULL)
     {
@@ -111,10 +109,7 @@ static void* map_file(const pal::string_t& path, size_t *length, DWORD mapping_p
     return address;
 }
 
-const void* pal::mmap_read(const string_t& path, size_t* length)
-{
-    return map_file(path, length, PAGE_READONLY, FILE_MAP_READ);
-}
+const void* pal::mmap_read(const string_t& path, size_t* length) { return map_file(path, length, PAGE_READONLY, FILE_MAP_READ); }
 
 void* pal::mmap_copy_on_write(const string_t& path, size_t* length)
 {
@@ -149,11 +144,9 @@ bool pal::getcwd(pal::string_t* recv)
     return false;
 }
 
-bool pal::get_loaded_library(
-    const char_t *library_name,
-    const char *symbol_name,
-    /*out*/ dll_t *dll,
-    /*out*/ pal::string_t *path)
+bool pal::get_loaded_library(const char_t* library_name, const char* symbol_name,
+                             /*out*/ dll_t* dll,
+                             /*out*/ pal::string_t* path)
 {
     dll_t dll_maybe = ::GetModuleHandleW(library_name);
     if (dll_maybe == nullptr)
@@ -180,7 +173,7 @@ bool pal::load_library(const string_t* in_path, dll_t* dll)
         }
     }
 
-    //Adding the assert to ensure relative paths which are not just filenames are not used for LoadLibrary Calls
+    // Adding the assert to ensure relative paths which are not just filenames are not used for LoadLibrary Calls
     assert(!LongFile::IsPathNotFullyQualified(path) || !LongFile::ContainsDirectorySeparator(path));
 
     *dll = ::LoadLibraryExW(path.c_str(), NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
@@ -224,8 +217,7 @@ void pal::unload_library(dll_t library)
     // No-op. On windows, we pin the library, so it can't be unloaded.
 }
 
-static
-bool get_wow_mode_program_files(pal::string_t* recv)
+static bool get_wow_mode_program_files(pal::string_t* recv)
 {
 #if defined(TARGET_AMD64)
     const pal::char_t* env_key = _X("ProgramFiles(x86)");
@@ -233,7 +225,7 @@ bool get_wow_mode_program_files(pal::string_t* recv)
     const pal::char_t* env_key = _X("ProgramFiles");
 #endif
 
-    return get_file_path_from_env(env_key,recv);
+    return get_file_path_from_env(env_key, recv);
 }
 
 bool pal::get_default_breadcrumb_store(string_t* recv)
@@ -266,24 +258,23 @@ bool pal::get_default_servicing_directory(string_t* recv)
 
 namespace
 {
-    bool is_supported_multi_arch_install(pal::architecture arch)
-    {
+bool is_supported_multi_arch_install(pal::architecture arch)
+{
 #if defined(TARGET_AMD64)
-        // x64, looking for x86 install or emulating x64, looking for arm64 install
-        return arch == pal::architecture::x86
-            || (arch == pal::architecture::arm64 && pal::is_emulating_x64());
+    // x64, looking for x86 install or emulating x64, looking for arm64 install
+    return arch == pal::architecture::x86 || (arch == pal::architecture::arm64 && pal::is_emulating_x64());
 #elif defined(TARGET_ARM64)
-        // arm64, looking for x64 install
-        return arch == pal::architecture::x64;
+    // arm64, looking for x64 install
+    return arch == pal::architecture::x64;
 #elif defined(TARGET_X86)
-        // x86 running in WoW64, looking for x64 install
-        return arch == pal::architecture::x64 && pal::is_running_in_wow64();
+    // x86 running in WoW64, looking for x64 install
+    return arch == pal::architecture::x64 && pal::is_running_in_wow64();
 #else
-        // Others do not support default install locations on a different architecture
-        return false;
+    // Others do not support default install locations on a different architecture
+    return false;
 #endif
-    }
 }
+}  // namespace
 
 bool pal::get_default_installation_dir(pal::string_t* recv)
 {
@@ -350,35 +341,36 @@ bool pal::get_default_installation_dir_for_arch(pal::architecture arch, pal::str
 
 namespace
 {
-    void get_dotnet_install_location_registry_path(pal::architecture arch, HKEY * key_hive, pal::string_t * sub_key, const pal::char_t ** value)
+void get_dotnet_install_location_registry_path(pal::architecture arch, HKEY* key_hive, pal::string_t* sub_key,
+                                               const pal::char_t** value)
+{
+    *key_hive = HKEY_LOCAL_MACHINE;
+    // The registry search occurs in the 32-bit registry in all cases.
+    pal::string_t dotnet_key_path = pal::string_t(_X("SOFTWARE\\dotnet"));
+
+    pal::string_t environmentRegistryPathOverride;
+    if (test_only_getenv(_X("_DOTNET_TEST_REGISTRY_PATH"), &environmentRegistryPathOverride))
     {
-        *key_hive = HKEY_LOCAL_MACHINE;
-        // The registry search occurs in the 32-bit registry in all cases.
-        pal::string_t dotnet_key_path = pal::string_t(_X("SOFTWARE\\dotnet"));
-
-        pal::string_t environmentRegistryPathOverride;
-        if (test_only_getenv(_X("_DOTNET_TEST_REGISTRY_PATH"), &environmentRegistryPathOverride))
+        pal::string_t hkcuPrefix = _X("HKEY_CURRENT_USER\\");
+        if (environmentRegistryPathOverride.substr(0, hkcuPrefix.length()) == hkcuPrefix)
         {
-            pal::string_t hkcuPrefix = _X("HKEY_CURRENT_USER\\");
-            if (environmentRegistryPathOverride.substr(0, hkcuPrefix.length()) == hkcuPrefix)
-            {
-                *key_hive = HKEY_CURRENT_USER;
-                environmentRegistryPathOverride = environmentRegistryPathOverride.substr(hkcuPrefix.length());
-            }
-
-            dotnet_key_path = environmentRegistryPathOverride;
+            *key_hive = HKEY_CURRENT_USER;
+            environmentRegistryPathOverride = environmentRegistryPathOverride.substr(hkcuPrefix.length());
         }
 
-        *sub_key = dotnet_key_path + pal::string_t(_X("\\Setup\\InstalledVersions\\")) + get_arch_name(arch);
-        *value = _X("InstallLocation");
+        dotnet_key_path = environmentRegistryPathOverride;
     }
 
-    pal::string_t registry_path_as_string(const HKEY& key_hive, const pal::string_t& sub_key, const pal::char_t* value)
-    {
-        assert(key_hive == HKEY_CURRENT_USER || key_hive == HKEY_LOCAL_MACHINE);
-        return (key_hive == HKEY_CURRENT_USER ? _X("HKCU\\") : _X("HKLM\\")) + sub_key + _X("\\") + value;
-    }
+    *sub_key = dotnet_key_path + pal::string_t(_X("\\Setup\\InstalledVersions\\")) + get_arch_name(arch);
+    *value = _X("InstallLocation");
 }
+
+pal::string_t registry_path_as_string(const HKEY& key_hive, const pal::string_t& sub_key, const pal::char_t* value)
+{
+    assert(key_hive == HKEY_CURRENT_USER || key_hive == HKEY_LOCAL_MACHINE);
+    return (key_hive == HKEY_CURRENT_USER ? _X("HKCU\\") : _X("HKLM\\")) + sub_key + _X("\\") + value;
+}
+}  // namespace
 
 pal::string_t pal::get_dotnet_self_registered_config_location(pal::architecture arch)
 {
@@ -414,7 +406,8 @@ bool pal::get_dotnet_self_registered_dir_for_arch(pal::architecture arch, pal::s
     get_dotnet_install_location_registry_path(arch, &hkeyHive, &sub_key, &value);
 
     if (trace::is_enabled())
-        trace::verbose(_X("Looking for architecture-specific registry value in '%s'."), registry_path_as_string(hkeyHive, sub_key, value).c_str());
+        trace::verbose(_X("Looking for architecture-specific registry value in '%s'."),
+                       registry_path_as_string(hkeyHive, sub_key, value).c_str());
 
     // Must use RegOpenKeyEx to be able to specify KEY_WOW64_32KEY to access the 32-bit registry in all cases.
     // The RegGetValue has this option available only on Win10.
@@ -445,7 +438,7 @@ bool pal::get_dotnet_self_registered_dir_for_arch(pal::architecture arch, pal::s
     }
 
     // Get the key's value
-    std::vector<pal::char_t> buffer(size/sizeof(pal::char_t));
+    std::vector<pal::char_t> buffer(size / sizeof(pal::char_t));
     result = ::RegGetValueW(hkey, nullptr, value, RRF_RT_REG_SZ, nullptr, &buffer[0], &size);
     if (result != ERROR_SUCCESS)
     {
@@ -487,7 +480,7 @@ bool pal::get_global_dotnet_dirs(std::vector<pal::string_t>* dirs)
 
 // To determine the OS version, we are going to use RtlGetVersion API
 // since GetVersion call can be shimmed on Win8.1+.
-typedef LONG (WINAPI *pFuncRtlGetVersion)(RTL_OSVERSIONINFOW *);
+typedef LONG(WINAPI* pFuncRtlGetVersion)(RTL_OSVERSIONINFOW*);
 
 pal::string_t pal::get_current_os_rid_platform()
 {
@@ -525,7 +518,7 @@ pal::string_t pal::get_current_os_rid_platform()
 
                 if (majorVer == 6)
                 {
-                    switch(minorVer)
+                    switch (minorVer)
                     {
                         case 1:
                             ridOS.append(_X("win7"));
@@ -553,10 +546,7 @@ pal::string_t pal::get_current_os_rid_platform()
     return ridOS;
 }
 
-bool pal::is_path_rooted(const string_t& path)
-{
-    return path.length() >= 2 && path[1] == L':';
-}
+bool pal::is_path_rooted(const string_t& path) { return path.length() >= 2 && path[1] == L':'; }
 
 // Returns true only if an env variable can be read successfully to be non-empty.
 bool pal::getenv(const char_t* name, string_t* recv)
@@ -590,17 +580,11 @@ bool pal::getenv(const char_t* name, string_t* recv)
     return true;
 }
 
-int pal::xtoi(const char_t* input)
-{
-    return ::_wtoi(input);
-}
+int pal::xtoi(const char_t* input) { return ::_wtoi(input); }
 
-bool pal::get_own_executable_path(string_t* recv)
-{
-    return GetModuleFileNameWrapper(NULL, recv);
-}
+bool pal::get_own_executable_path(string_t* recv) { return GetModuleFileNameWrapper(NULL, recv); }
 
-bool pal::get_current_module(dll_t *mod)
+bool pal::get_current_module(dll_t* mod)
 {
     HMODULE hmod = nullptr;
     if (!GetModuleHandleFromAddress(&get_current_module, &hmod))
@@ -628,11 +612,7 @@ bool pal::get_method_module_path(string_t* recv, void* method)
     return GetModuleFileNameWrapper(hmod, recv);
 }
 
-
-bool pal::get_module_path(dll_t mod, string_t* recv)
-{
-    return GetModuleFileNameWrapper(mod, recv);
-}
+bool pal::get_module_path(dll_t mod, string_t* recv) { return GetModuleFileNameWrapper(mod, recv); }
 
 bool get_extraction_base_parent_directory(pal::string_t& directory)
 {
@@ -668,10 +648,10 @@ bool pal::get_default_bundle_extraction_base_dir(pal::string_t& extraction_dir)
     }
 
     // Create the %TEMP%\.net directory
-    if (CreateDirectoryW(extraction_dir.c_str(), NULL) == 0 &&
-        GetLastError() != ERROR_ALREADY_EXISTS)
+    if (CreateDirectoryW(extraction_dir.c_str(), NULL) == 0 && GetLastError() != ERROR_ALREADY_EXISTS)
     {
-        trace::error(_X("Failed to create default extraction directory [%s]. %s, error code: %d"), extraction_dir.c_str(), pal::strerror(errno).c_str(), GetLastError());
+        trace::error(_X("Failed to create default extraction directory [%s]. %s, error code: %d"), extraction_dir.c_str(),
+                     pal::strerror(errno).c_str(), GetLastError());
         return false;
     }
 
@@ -689,7 +669,8 @@ static bool wchar_convert_helper(DWORD code_page, const char* cstr, size_t len, 
         return false;
     }
     out->resize(size, '\0');
-    return ::MultiByteToWideChar(code_page, 0, cstr, static_cast<uint32_t>(len), &(*out)[0], static_cast<uint32_t>(out->size())) != 0;
+    return ::MultiByteToWideChar(code_page, 0, cstr, static_cast<uint32_t>(len), &(*out)[0], static_cast<uint32_t>(out->size())) !=
+           0;
 }
 
 size_t pal::pal_utf8string(const pal::string_t& str, char* out_buffer, size_t len)
@@ -714,18 +695,13 @@ bool pal::pal_utf8string(const pal::string_t& str, std::vector<char>* out)
         return false;
     }
     out->resize(size, '\0');
-    return ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, out->data(), static_cast<uint32_t>(out->size()), nullptr, nullptr) != 0;
+    return ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, out->data(), static_cast<uint32_t>(out->size()), nullptr, nullptr) !=
+           0;
 }
 
-bool pal::pal_clrstring(const pal::string_t& str, std::vector<char>* out)
-{
-    return pal_utf8string(str, out);
-}
+bool pal::pal_clrstring(const pal::string_t& str, std::vector<char>* out) { return pal_utf8string(str, out); }
 
-bool pal::clr_palstring(const char* cstr, pal::string_t* out)
-{
-    return wchar_convert_helper(CP_UTF8, cstr, ::strlen(cstr), out);
-}
+bool pal::clr_palstring(const char* cstr, pal::string_t* out) { return wchar_convert_helper(CP_UTF8, cstr, ::strlen(cstr), out); }
 
 // Return if path is valid and file exists, return true and adjust path as appropriate.
 bool pal::realpath(string_t* path, bool skip_error_logging)
@@ -777,7 +753,7 @@ bool pal::realpath(string_t* path, bool skip_error_logging)
         }
 
         const string_t* prefix = &LongFile::ExtendedPrefix;
-        //Check if the resolved path is a UNC. By default we assume relative path to resolve to disk
+        // Check if the resolved path is a UNC. By default we assume relative path to resolve to disk
         if (str.compare(0, LongFile::UNCPathPrefix.length(), LongFile::UNCPathPrefix) == 0)
         {
             prefix = &LongFile::UNCExtendedPathPrefix;
@@ -824,7 +800,7 @@ static void readdir(const pal::string_t& path, const pal::string_t& pattern, boo
     pal::string_t search_string(normalized_path);
     append_path(&search_string, pattern.c_str());
 
-    WIN32_FIND_DATAW data = { 0 };
+    WIN32_FIND_DATAW data = {0};
 
     auto handle = ::FindFirstFileExW(search_string.c_str(), FindExInfoStandard, &data, FindExSearchNameMatch, NULL, 0);
     if (handle == INVALID_HANDLE_VALUE)
@@ -850,10 +826,7 @@ void pal::readdir(const string_t& path, const string_t& pattern, std::vector<pal
     ::readdir(path, pattern, false, list);
 }
 
-void pal::readdir(const string_t& path, std::vector<pal::string_t>* list)
-{
-    ::readdir(path, _X("*"), false, list);
-}
+void pal::readdir(const string_t& path, std::vector<pal::string_t>* list) { ::readdir(path, _X("*"), false, list); }
 
 void pal::readdir_onlydirectories(const pal::string_t& path, const string_t& pattern, std::vector<pal::string_t>* list)
 {
@@ -875,11 +848,7 @@ bool pal::is_running_in_wow64()
     return (fWow64Process != FALSE);
 }
 
-typedef BOOL (WINAPI* is_wow64_process2)(
-    HANDLE hProcess,
-    USHORT *pProcessMachine,
-    USHORT *pNativeMachine
-);
+typedef BOOL(WINAPI* is_wow64_process2)(HANDLE hProcess, USHORT* pProcessMachine, USHORT* pNativeMachine);
 
 bool pal::is_emulating_x64()
 {
@@ -921,27 +890,12 @@ bool pal::are_paths_equal_with_normalized_casing(const string_t& path1, const st
     return (strcasecmp(path1.c_str(), path2.c_str()) == 0);
 }
 
-pal::mutex_t::mutex_t()
-    : _impl{ }
-{
-    ::InitializeCriticalSection(&_impl);
-}
+pal::mutex_t::mutex_t() : _impl{} { ::InitializeCriticalSection(&_impl); }
 
-pal::mutex_t::~mutex_t()
-{
-    ::DeleteCriticalSection(&_impl);
-}
+pal::mutex_t::~mutex_t() { ::DeleteCriticalSection(&_impl); }
 
-void pal::mutex_t::lock()
-{
-    ::EnterCriticalSection(&_impl);
-}
+void pal::mutex_t::lock() { ::EnterCriticalSection(&_impl); }
 
-void pal::mutex_t::unlock()
-{
-    ::LeaveCriticalSection(&_impl);
-}
+void pal::mutex_t::unlock() { ::LeaveCriticalSection(&_impl); }
 
-void pal::initialize_createdump()
-{
-}
+void pal::initialize_createdump() {}

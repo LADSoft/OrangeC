@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -68,7 +68,7 @@
 #include <mutex>
 #include <memory>
 #include "JobServer.h"
-//#define DEBUG
+// #define DEBUG
 static std::mutex processIdMutex;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
 // all non-safe in multithreaded environments, in order to make this safe, we *MUST* lower ourselves into making these a mutex-gated
@@ -192,10 +192,7 @@ bool OS::TakeJob()
     localJobServer->TakeNewJob();
     return false;
 }
-bool OS::TryTakeJob()
-{
-    return localJobServer->TryTakeNewJob() != -1;
-}
+bool OS::TryTakeJob() { return localJobServer->TryTakeNewJob() != -1; }
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
@@ -238,7 +235,9 @@ void OS::InitJobServer()
     }
     else
     {
-        std::cerr << "An attempt to remake a job server has been performed, this should not happen, please contact the developers if this message appears" << std::endl;
+        std::cerr << "An attempt to remake a job server has been performed, this should not happen, please contact the developers "
+                     "if this message appears"
+                  << std::endl;
     }
 }
 bool OS::first = false;
@@ -707,7 +706,7 @@ std::string OS::NormalizeFileName(const std::string file)
         }
         else if (isSHEXE)
         {
-            if (name[i] == '\\' && (!i || name[i-1] != '='))
+            if (name[i] == '\\' && (!i || name[i - 1] != '='))
                 name[i] = '/';
         }
         else if (name[i] == '/' && i > 0 && !isspace(name[i - 1]))

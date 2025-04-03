@@ -1,40 +1,39 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #ifndef PEObject_H
 #define PEObject_H
 
 #ifdef TARGET_OS_WINDOWS
-#include <windows.h>
+#    include <windows.h>
 #else
-#include <stdint.h>
+#    include <stdint.h>
 typedef uint32_t DWORD;
 typedef void* FARPROC;
 typedef unsigned char BYTE;
 #endif
-
 
 #include "ObjTypes.h"
 #define PEHEADER_ONLY
@@ -149,7 +148,6 @@ struct DllImports
     bool unloadTable;
 };
 
-
 class PEObject
 {
   public:
@@ -174,11 +172,12 @@ class PEObject
     static void SetDelayLoadNames(std::string names);
 
     auto Regions()
-    { 
-         if (regions.size())
-             return regions;
-         return std::vector<std::pair<ObjInt, ObjInt>>{{virtual_addr, initSize}};
+    {
+        if (regions.size())
+            return regions;
+        return std::vector<std::pair<ObjInt, ObjInt>>{{virtual_addr, initSize}};
     }
+
   protected:
     std::string name;
     unsigned size;
@@ -201,7 +200,7 @@ class PEObject
     static DWORD delayLoadHandleRVA;
     static DWORD delayLoadThunkRVA;
     static ObjFile* file;
-    
+
     static const char* importThunk;
     static const char* delayLoadThunk;
     static const char* delayLoadModuleThunk;
@@ -232,7 +231,7 @@ class PEDataObject : public PEObject
 
 class PEImportObject : public PEObject
 {
-public:
+  public:
     enum
     {
         ImportThunkSize = 6,

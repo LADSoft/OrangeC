@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -43,7 +43,7 @@ namespace Optimizer
 {
 FunctionData* myfd;
 static std::vector<std::string> textRegion;
-static std::vector<std::pair<int,int>> textIndexRegion;
+static std::vector<std::pair<int, int>> textIndexRegion;
 
 static std::unordered_map<std::string, int> cachedText;
 static std::unordered_map<std::string, int> cachedText2;
@@ -58,7 +58,6 @@ static SharedMemory* sharedRegion;
 static int outputPos;
 static int outputSize;
 static unsigned char* streamPointer;
-
 
 // returns an index into the text region
 static size_t CacheText(const std::string& name)
@@ -86,8 +85,8 @@ static size_t TextName(const std::string& name)
     size_t pos = name.find_last_of("@");
     if (pos != std::string::npos && pos > 0)
     {
-        index1 = CacheText(name.substr(0, pos+1));
-        index2 = CacheText(name.substr(pos+1));
+        index1 = CacheText(name.substr(0, pos + 1));
+        index2 = CacheText(name.substr(pos + 1));
     }
     else
     {
@@ -1010,7 +1009,7 @@ void WriteText()
             StreamByte(c);
     }
     StreamIndex(textIndexRegion.size());
-    for (auto &&t : textIndexRegion)
+    for (auto&& t : textIndexRegion)
     {
         StreamIndex(t.first);
         StreamIndex(t.second);
@@ -1053,7 +1052,8 @@ static void NumberTypes()
     {
         s->typeIndex = 2 * i++ + 1;
         // static members
-        if (s->storage_class != scc_external && s->storage_class != scc_global && s->storage_class != scc_constant && s->storage_class != scc_enumconstant)
+        if (s->storage_class != scc_external && s->storage_class != scc_global && s->storage_class != scc_constant &&
+            s->storage_class != scc_enumconstant)
         {
             s->fileIndex = s->typeIndex;
         }

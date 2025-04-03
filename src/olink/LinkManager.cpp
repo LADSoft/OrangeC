@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "ObjSection.h"
@@ -53,55 +53,13 @@
 int LinkManager::errors;
 int LinkManager::warnings;
 
-std::set<std::string> ignoreLibs =
-{
-"advapi32.l",
-"avicap32.l",
-"avifil32.l",
-"comctl32.l",
-"comdlg32.l",
-"ctl3d32.l",
-"gdi32.l",
-"gdiplus.l",
-"glu32.l",
-"imagehlp.l",
-"imm32.l",
-"kernel32.l",
-"lz32.l",
-"mapi32.l",
-"mfcuia32.l",
-"mgmtapi.l",
-"mpr.l",
-"msacm32.l",
-"msimg32.l",
-"msvfw32.l",
-"netapi32.l",
-"odbc32.l",
-"odbccp32.l",
-"ole32.l",
-"oleaut32.l",
-"opengl32.l",
-"pkpd32.l",
-"rasapi32.l",
-"rpcns4.l",
-"rpcrt4.l",
-"shell32.l",
-"shfolder.l",
-"shlwapi.l",
-"tapi32.l",
-"url.l",
-"urlmon.l",
-"user32.l",
-"uxtheme.l",
-"vdmdbg.l",
-"version.l",
-"wininet.l",
-"winmm.l",
-"winspool.l",
-"wow32.l",
-"wsock32.l",
-"ws2_32.l"
-};
+std::set<std::string> ignoreLibs = {"advapi32.l", "avicap32.l", "avifil32.l", "comctl32.l", "comdlg32.l", "ctl3d32.l", "gdi32.l",
+                                    "gdiplus.l",  "glu32.l",    "imagehlp.l", "imm32.l",    "kernel32.l", "lz32.l",    "mapi32.l",
+                                    "mfcuia32.l", "mgmtapi.l",  "mpr.l",      "msacm32.l",  "msimg32.l",  "msvfw32.l", "netapi32.l",
+                                    "odbc32.l",   "odbccp32.l", "ole32.l",    "oleaut32.l", "opengl32.l", "pkpd32.l",  "rasapi32.l",
+                                    "rpcns4.l",   "rpcrt4.l",   "shell32.l",  "shfolder.l", "shlwapi.l",  "tapi32.l",  "url.l",
+                                    "urlmon.l",   "user32.l",   "uxtheme.l",  "vdmdbg.l",   "version.l",  "wininet.l", "winmm.l",
+                                    "winspool.l", "wow32.l",    "wsock32.l",  "ws2_32.l"};
 void HookError(int aa) {}
 
 LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile, bool CompleteLink,
@@ -250,7 +208,8 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
     {
         LinkSymbolData test(file, *it);
         auto itv = virtsections.find(&test);
-        if (publics.find(&test) != publics.end() || itv != virtsections.end() && strncmp(static_cast<ObjSection*>((*itv)->GetAuxData())->GetName().c_str(), "vsb@", 4) != 0)
+        if (publics.find(&test) != publics.end() ||
+            itv != virtsections.end() && strncmp(static_cast<ObjSection*>((*itv)->GetAuxData())->GetName().c_str(), "vsb@", 4) != 0)
         {
             if (toerr)
                 LinkError("Duplicate public " + (*it)->GetDisplayName() + " in module " + file->GetName());
@@ -669,7 +628,7 @@ void LinkManager::ScanLibraries()
                 {
                     if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
                     {
-                       bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
+                        bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
                         // not resolved?
                         if (found)
                         {
@@ -1006,9 +965,9 @@ void LinkManager::CreateOutputFile()
         delete file;
     }
 }
-void LinkManager::SetDelayParams() 
+void LinkManager::SetDelayParams()
 {
-    LinkExpression* value = new LinkExpression(4 * delayLoadNames.size() );
+    LinkExpression* value = new LinkExpression(4 * delayLoadNames.size());
     LinkExpressionSymbol* esym = new LinkExpressionSymbol("DELAYLOADHANDLESIZE", value);
     (void)LinkExpression::EnterSymbol(esym);
     int rv = 0;
@@ -1054,7 +1013,7 @@ void LinkManager::Link()
             {
                 ScanLibraries();
             } while (ScanVirtuals());
-            for (auto vs: virtsections)
+            for (auto vs : virtsections)
             {
                 if (strncmp(static_cast<ObjSection*>(vs->GetAuxData())->GetName().c_str(), "vsb@", 4) == 0)
                 {

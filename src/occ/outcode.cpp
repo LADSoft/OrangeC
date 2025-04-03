@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -435,7 +435,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                         fi->Add(s1);
                         l->SetObjSymbol(s1);
                         l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
-                        objGlobals[*l1] = s1;                    
+                        objGlobals[*l1] = s1;
                     }
                 }
             }
@@ -898,10 +898,7 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) 
-{ 
-    outcode_enterseg(oa_currentSeg); 
-}
+void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) { outcode_enterseg(oa_currentSeg); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -985,7 +982,8 @@ void AddFixup(std::shared_ptr<Instruction>& newIns, OCODE* ins, const std::list<
                 if (n < 0)
                     n = -n;
                 auto temp = std::make_shared<AsmExprNode>(*(AsmExprNode*)operand->node);
-                std::shared_ptr<Fixup> f = std::make_shared<Fixup>(temp, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                std::shared_ptr<Fixup> f =
+                    std::make_shared<Fixup>(temp, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
                 newIns->Add(f);
             }

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "InstructionParser.h"
@@ -82,7 +82,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     bool rv = false;
     if (tokenPos < inputTokens.size() && inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
-        val = std::make_shared<AsmExprNode>(*(AsmExprNode*) inputTokens[tokenPos]->val);
+        val = std::make_shared<AsmExprNode>(*(AsmExprNode*)inputTokens[tokenPos]->val);
         bool isConst = val->IsAbsolute();
         if (isConst)
         {
@@ -341,7 +341,7 @@ std::shared_ptr<Instruction> InstructionParser::Parse(const std::string& args, i
                                     n = -n;
                                 auto temp = std::make_shared<AsmExprNode>(*(AsmExprNode*)operand->node);
                                 auto f = std::make_shared<Fixup>(temp, (operand->size + 7) / 8, operand->relOfs != 0, n,
-                                                     operand->relOfs > 0);
+                                                                 operand->relOfs > 0);
                                 f->SetInsOffs((operand->pos + 7) / 8);
                                 f->SetFileName(errName);
                                 f->SetErrorLine(errLine);
@@ -442,39 +442,45 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
         m = n;
         while (m < line.size() && line[m] != ']')
         {
-            while (m < line.size() && isspace(line[m])) m++;
+            while (m < line.size() && isspace(line[m]))
+                m++;
             if (IsSymbolCharRoutine(line.c_str() + m, true))
             {
                 // registter candidate
-                size_t q = m+1;
+                size_t q = m + 1;
                 while (q < line.size() && IsSymbolCharRoutine(line.c_str() + q, false))
                     q++;
 
-                std::string potentialreg = line.substr(m, q-m);
+                std::string potentialreg = line.substr(m, q - m);
                 std::transform(potentialreg.begin(), potentialreg.end(), potentialreg.begin(), ::tolower);
                 auto it = tokenTable.find(potentialreg);
                 if (it != tokenTable.end() && it->second >= REGISTER_BASE)
                 {
                     // is registera
                     regs.push_back(potentialreg);
-                    while (q < line.size() && isspace(line[q])) q++;
+                    while (q < line.size() && isspace(line[q]))
+                        q++;
                     if (q < line.size() && line[q] == '*')
                     {
                         // scaled register, standard format
-                        size_t r = q+1;
-                        while (r < line.size() && isspace(line[r])) r++;
+                        size_t r = q + 1;
+                        while (r < line.size() && isspace(line[r]))
+                            r++;
                         if (r >= line.size() || !isdigit(line[r]))
                             throw new std::runtime_error("scale specifier required");
-                        while (r < line.size() && isdigit(line[r])) r++;
-                        regs.back() += line.substr(q, r-q);
-                        line.erase(m, r-m);
+                        while (r < line.size() && isdigit(line[r]))
+                            r++;
+                        regs.back() += line.substr(q, r - q);
+                        line.erase(m, r - m);
                         r = m - 1;
-                        while (r > n && isspace(line[r])) r--;
+                        while (r > n && isspace(line[r]))
+                            r--;
                         if (r >= n)
                         {
                             if (line[r] != '+' && !isspace(line[r]))
                                 throw new std::runtime_error("register math not allowed");
-                            if (line[r] == '+');
+                            if (line[r] == '+')
+                                ;
                             {
                                 line.erase(r, 1);
                                 m--;
@@ -483,30 +489,35 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
                     }
                     else
                     {
-                        size_t r = m-1;
-                        while (r >= n && isspace(line[r])) r--;
+                        size_t r = m - 1;
+                        while (r >= n && isspace(line[r]))
+                            r--;
                         if (r >= n && line[r] == '*')
                         {
                             // scaled register, reverse format
                             r--;
                             regs.back() += "*";
-                            while (r >= n && isspace(line[r])) r--;
+                            while (r >= n && isspace(line[r]))
+                                r--;
                             size_t s = r;
                             if (q < 0 || !isdigit(line[s]))
                                 throw new std::runtime_error("scale specifier required");
 
-                            while (s > 0 && isdigit(line[s - 1])) s--;
-                            regs.back() += line.substr(s, r -s + 1);
-                            line.erase(r, q-r);
+                            while (s > 0 && isdigit(line[s - 1]))
+                                s--;
+                            regs.back() += line.substr(s, r - s + 1);
+                            line.erase(r, q - r);
                             m = r;
 
                             r--;
-                            while (r > n && isspace(line[r])) r--;
+                            while (r > n && isspace(line[r]))
+                                r--;
                             if (r >= n)
                             {
                                 if (line[r] != '+')
                                     throw new std::runtime_error("register math not allowed");
-                                if (line[r] == '+');
+                                if (line[r] == '+')
+                                    ;
                                 {
                                     line.erase(r, 1);
                                     m--;
@@ -518,12 +529,14 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
                             // just a register
                             line.erase(m, q - m);
                             r = m - 1;
-                            while (r > n && isspace(line[r])) r--;
+                            while (r > n && isspace(line[r]))
+                                r--;
                             if (r >= n)
                             {
                                 if (line[r] != '+' && !isspace(line[r]))
                                     throw new std::runtime_error("register math not allowed");
-                                if (line[r] == '+');
+                                if (line[r] == '+')
+                                    ;
                                 {
                                     line.erase(r, 1);
                                     m--;
@@ -541,7 +554,8 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
             else
             {
                 if (isdigit(line[m]))
-                    while (isalnum(line[m])) m++;
+                    while (isalnum(line[m]))
+                        m++;
                 else
                     m++;
                 // any other character
@@ -583,13 +597,14 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
         if (m != n)
         {
             size_t q = n;
-            while (isspace(line[q])) q++;
+            while (isspace(line[q]))
+                q++;
             if (regs.size() && (line[q] != ']' && line[q] != '+' && line[q] != '-'))
             {
                 line.insert(n, "+");
                 m++;
             }
-            InsertTokens(std::move(line.substr(n, m- n)), PC);
+            InsertTokens(std::move(line.substr(n, m - n)), PC);
         }
         InsertTokens(std::move(line.substr(m)), PC);
     }
@@ -599,7 +614,7 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
 void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBrackets)
 {
     char lastChar = 0;
- 
+
     while (line.size())
     {
         int npos = line.find_first_not_of(" \t\r\n\v");
@@ -635,7 +650,8 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
             }
             else if (IsSymbolCharRoutine(line.c_str(), true))
             {
-                while (n < line.size() && IsSymbolCharRoutine(line.c_str()+ n, false)) n++;
+                while (n < line.size() && IsSymbolCharRoutine(line.c_str() + n, false))
+                    n++;
                 std::string id = line.substr(0, n);
                 std::transform(id.begin(), id.end(), id.begin(), ::tolower);
                 auto it = tokenTable.find(id);
@@ -700,7 +716,8 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                     next->type = InputToken::TOKEN;
                     next->val = new AsmExprNode(it->second);
                 }
-                else {
+                else
+                {
                     throw new std::runtime_error(std::string("Unexpected token: ") + std::string(token));
                 }
             }

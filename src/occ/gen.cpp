@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include <cstdio>
@@ -2681,7 +2681,8 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
         else
             apl->mode = am_direct;
     }
-    if (n <= 24 && (q->dc.left->mode == Optimizer::i_immed || (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)))
+    if (n <= 24 && (q->dc.left->mode == Optimizer::i_immed ||
+                    (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)))
     {
         if (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)
             apl->mode = am_indisp;
@@ -2730,18 +2731,18 @@ void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
     int i = beGetIcon(q->dc.left);
     if (i)
     {
-/*
-        if (i == 4)
-        {
-            gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
-        }
-        else if (i == 8)
-        {
-            gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
-            gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
-        }
-        else
-*/
+        /*
+                if (i == 4)
+                {
+                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
+                }
+                else if (i == 8)
+                {
+                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
+                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
+                }
+                else
+        */
         {
             gen_code(op_add, makedreg(ESP), aimmed(i));
         }
@@ -3890,21 +3891,21 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         else if (q->atomic && (q->ans->mode != Optimizer::i_direct || q->ans->offset->type != Optimizer::se_tempref))
         {
             // can't get here with floats...
-           if (apl->mode == am_immed)
-           {
-               int regflags = makeregflags(apa);
-               regflags |= apa->liveRegs;
-               bool pushed = false;
-               int reg = getreg(apl, regflags, pushed);
-               gen_codes(op_mov, sza, makedreg(reg), apl); 
-               gen_codes(op_xchg, sza, apa, makedreg(reg));
-               if (pushed)
-                   gen_codes(op_pop, ISZ_UINT, makedreg(reg), nullptr); 
-           }
-           else
-           {
-               gen_code(op_xchg, apa, apl);
-           }
+            if (apl->mode == am_immed)
+            {
+                int regflags = makeregflags(apa);
+                regflags |= apa->liveRegs;
+                bool pushed = false;
+                int reg = getreg(apl, regflags, pushed);
+                gen_codes(op_mov, sza, makedreg(reg), apl);
+                gen_codes(op_xchg, sza, apa, makedreg(reg));
+                if (pushed)
+                    gen_codes(op_pop, ISZ_UINT, makedreg(reg), nullptr);
+            }
+            else
+            {
+                gen_code(op_xchg, apa, apl);
+            }
         }
         else if (q->ans->retval && q->ans->size >= ISZ_FLOAT)
         {
@@ -5210,7 +5211,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
         }
     }
 }
-AMODE* base(AMODE *in, int offs)
+AMODE* base(AMODE* in, int offs)
 {
     AMODE* rv = Allocate<AMODE>();
     *rv = *in;
@@ -5224,7 +5225,7 @@ AMODE* base(AMODE *in, int offs)
 }
 void asm_excbegin(Optimizer::QUAD* q) /* function prologue */
 {
-    #if 0
+#if 0
     push eax
     push ecx
     push edx
@@ -5253,15 +5254,15 @@ static const int XCTAB_EBP_OFS = 3 * 4;
 static const int XCTAB_XCFUNC_OFS = 4 * 4;
 static const int XCTAB_INDEX_OFS = 5 * 4;
 
-        #endif
+#endif
     enum e_opcode opla, opra;
     AMODE *apll, *aplh, *aprl, *aprh;
-        getAmodes(q, &opla, q->dc.left, &apll, &aplh);
-        getAmodes(q, &opra, q->dc.right, &aprl, &aprh);
+    getAmodes(q, &opla, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opra, q->dc.right, &aprl, &aprh);
     auto fs0 = aimmed(0);
     fs0->seg = FS;
     fs0->mode = am_direct;
-    auto handler = setSymbol("___cppexceptionhandle"); // handler
+    auto handler = setSymbol("___cppexceptionhandle");  // handler
 
     auto eax = makedreg(EAX);
     gen_codes(op_push, ISZ_ADDR, eax, nullptr);

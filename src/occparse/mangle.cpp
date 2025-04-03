@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "compiler.h"
@@ -410,7 +410,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                         SYMBOL s = {};
                         s.name = find->name;
                         s.tp = &stdint;
-                        char* p = (char *)alloca(5000);
+                        char* p = (char*)alloca(5000);
                         mangleTemplate(p, &s, find->templateParams);
                         buf = lookupName(buf, p);
                     }
@@ -515,7 +515,7 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     bool bySpecial = false;
-    if (params &&  params->size() && params->front().second->type == TplType::new_ &&
+    if (params && params->size() && params->front().second->type == TplType::new_ &&
         ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->front().second->bySpecialization.types)))
     {
         params = params->front().second->bySpecialization.types;
@@ -550,107 +550,108 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
     {
         auto it = params->begin();
         auto ite = params->end();
-        for ( ;it != ite; )
+        for (; it != ite;)
         {
             switch (it->second->type)
             {
-            case TplType::typename_:
-                if (it->second->packed)
-                {
-                    if (it->second->byPack.pack)
+                case TplType::typename_:
+                    if (it->second->packed)
                     {
-                        for (auto pack : *it->second->byPack.pack)
-                            buf = mangleType(buf, pack.second->byClass.val, true);
+                        if (it->second->byPack.pack)
+                        {
+                            for (auto pack : *it->second->byPack.pack)
+                                buf = mangleType(buf, pack.second->byClass.val, true);
+                        }
+                        else
+                        {
+                            *buf++ = 'e';
+                            buf = getName(buf, it->first);
+                        }
                     }
-                    else
+                    else if (bySpecial)
                     {
-                        *buf++ = 'e';
-                        buf = getName(buf, it->first);
+                        if (it->second->byClass.val)
+                        {
+                            buf = mangleType(buf, it->second->byClass.val, true);
+                        }
+                        else if (it->second->byClass.dflt)
+                        {
+                            buf = mangleType(buf, it->second->byClass.dflt, true);
+                        }
+                        else
+                        {
+                            buf = getName(buf, it->first);
+                        }
                     }
-                }
-                else if (bySpecial)
-                {
-                    if (it->second->byClass.val)
+                    else if (sym->sb && sym->sb->instantiated && it->second->byClass.val)
                     {
                         buf = mangleType(buf, it->second->byClass.val, true);
                     }
-                    else if (it->second->byClass.dflt)
+                    else
                     {
-                        buf = mangleType(buf, it->second->byClass.dflt, true);
+                        if (it->second->byClass.dflt)
+                        {
+                            buf = mangleType(buf, it->second->byClass.dflt, true);
+                        }
+                        else
+                        {
+                            buf = getName(buf, it->first);
+                        }
+                    }
+                    break;
+                case TplType::template_:
+                    if (it->second->packed)
+                        *buf++ = 'e';
+                    /*
+                    if (bySpecial && it->second->byTemplate.dflt && it->second->byTemplate.val)
+                    {
+                        buf = mangleTemplate(buf, it->second->byTemplate.dflt, it->second->byTemplate.val->templateit);
                     }
                     else
+                    */
+                    if (sym->sb->instantiated && it->second->byTemplate.val)
+                    {
+                        buf = mangleTemplate(buf, it->second->byTemplate.val, it->second->byTemplate.val->templateParams);
+                    }
+                    else if (it->first)
                     {
                         buf = getName(buf, it->first);
                     }
-                }
-                else if (sym->sb && sym->sb->instantiated && it->second->byClass.val)
-                {
-                    buf = mangleType(buf, it->second->byClass.val, true);
-                }
-                else
-                {
-                    if (it->second->byClass.dflt)
+                    else
                     {
-                        buf = mangleType(buf, it->second->byClass.dflt, true);
+                        buf = getName(buf, it->second->byTemplate.dflt);
+                    }
+                    break;
+                case TplType::int_:
+                    if (it->second->packed)
+                    {
+                        *buf++ = 'e';
+                        if (it->second->byPack.pack)
+                        {
+                            tps.push(it);
+                            tps.push(ite);
+                            ite = it->second->byPack.pack->end();
+                            it = it->second->byPack.pack->begin();
+                            continue;
+                        }
                     }
                     else
                     {
-                        buf = getName(buf, it->first);
+                        buf = mangleType(buf, it->second->byNonType.tp, true);
+                        if ((bySpecial || sym->sb && sym->sb->instantiated) && it->second->byNonType.val)
+                        {
+                            EXPRESSION* exp =
+                                bySpecial && it->second->byNonType.dflt ? it->second->byNonType.dflt : it->second->byNonType.val;
+                            buf = mangleExpression(buf, exp);
+                        }
+                        else if (it->second->byNonType.dflt)
+                        {
+                            buf = mangleExpression(buf, it->second->byNonType.dflt);
+                        }
                     }
-                }
-                break;
-            case TplType::template_:
-                if (it->second->packed)
-                    *buf++ = 'e';
-                /*
-                if (bySpecial && it->second->byTemplate.dflt && it->second->byTemplate.val)
-                {
-                    buf = mangleTemplate(buf, it->second->byTemplate.dflt, it->second->byTemplate.val->templateit);
-                }
-                else
-                */
-                if (sym->sb->instantiated && it->second->byTemplate.val)
-                {
-                    buf = mangleTemplate(buf, it->second->byTemplate.val, it->second->byTemplate.val->templateParams);
-                }
-                else if (it->first)
-                {
-                    buf = getName(buf, it->first);
-                }
-                else
-                {
-                    buf = getName(buf, it->second->byTemplate.dflt);
-                }
-                break;
-            case TplType::int_:
-                if (it->second->packed)
-                {
-                    *buf++ = 'e';
-                    if (it->second->byPack.pack)
-                    {
-                        tps.push(it);
-                        tps.push(ite);
-                        ite = it->second->byPack.pack->end();
-                        it = it->second->byPack.pack->begin();
-                        continue;
-                    }
-                }
-                else
-                {
-                    buf = mangleType(buf, it->second->byNonType.tp, true);
-                    if ((bySpecial || sym->sb && sym->sb->instantiated) && it->second->byNonType.val)
-                    {
-                        EXPRESSION* exp = bySpecial && it->second->byNonType.dflt ? it->second->byNonType.dflt : it->second->byNonType.val;
-                        buf = mangleExpression(buf, exp);
-                    }
-                    else if (it->second->byNonType.dflt)
-                    {
-                        buf = mangleExpression(buf, it->second->byNonType.dflt);
-                    }
-                }
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
             }
             ++it;
             if (it == ite && !tps.empty())
@@ -940,7 +941,7 @@ char* mangleType(char* in, Type* tp, bool first)
                     *in++ = 'v';
                     break;
                 case BasicType::any_:
-                    *in++ = 'V'; // this needs to be distinct from void for internal matching....
+                    *in++ = 'V';  // this needs to be distinct from void for internal matching....
                     break;
                 case BasicType::templateparam_:
                     if (tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val &&
@@ -1017,70 +1018,68 @@ static bool validType(Type* tp, bool byVal)
     tp = tp->BaseType();
     switch (tp->type)
     {
-    case BasicType::templateselector_:
-        return byVal;
-    case BasicType::templateparam_:
-    case BasicType::any_:
-    case BasicType::aggregate_:
-        return false;
-    case BasicType::pointer_:
-        if (tp->array)
-        {
-            if (tp->size == 0)
-                return false;
-
-        }
-        if (tp->vla)
+        case BasicType::templateselector_:
+            return byVal;
+        case BasicType::templateparam_:
+        case BasicType::any_:
+        case BasicType::aggregate_:
             return false;
-    case BasicType::lref_:
-    case BasicType::rref_:
-    case BasicType::memberptr_:
-        return validType(tp->btp, byVal);
-    case BasicType::func_:
-    case BasicType::ifunc_:
-        if (!validType(tp->btp, byVal))
-            return false;
-        for (auto sp : *tp->syms)
-            if (!validType(sp->tp, byVal))
-                return false;
-        break;
-    case BasicType::struct_:
-    case BasicType::class_:
-    case BasicType::union_:
-        if (tp->sp->templateParams)
-        {
-            for (auto tpl : *tp->sp->templateParams)
+        case BasicType::pointer_:
+            if (tp->array)
             {
-                if (tpl.second->type == TplType::typename_)
+                if (tp->size == 0)
+                    return false;
+            }
+            if (tp->vla)
+                return false;
+        case BasicType::lref_:
+        case BasicType::rref_:
+        case BasicType::memberptr_:
+            return validType(tp->btp, byVal);
+        case BasicType::func_:
+        case BasicType::ifunc_:
+            if (!validType(tp->btp, byVal))
+                return false;
+            for (auto sp : *tp->syms)
+                if (!validType(sp->tp, byVal))
+                    return false;
+            break;
+        case BasicType::struct_:
+        case BasicType::class_:
+        case BasicType::union_:
+            if (tp->sp->templateParams)
+            {
+                for (auto tpl : *tp->sp->templateParams)
                 {
-                    if (tpl.second->packed)
+                    if (tpl.second->type == TplType::typename_)
                     {
-                        if (tpl.second->byPack.pack)
-                        for (auto tpl2 : *tpl.second->byPack.pack)
+                        if (tpl.second->packed)
                         {
-                            auto dflt = tpl2.second->byClass.dflt;
+                            if (tpl.second->byPack.pack)
+                                for (auto tpl2 : *tpl.second->byPack.pack)
+                                {
+                                    auto dflt = tpl2.second->byClass.dflt;
+                                    if (!dflt)
+                                        dflt = tpl2.second->byClass.val;
+                                    if (!dflt || !validType(dflt, byVal))
+                                        return false;
+                                }
+                        }
+                        else
+                        {
+                            auto dflt = tpl.second->byClass.dflt;
                             if (!dflt)
-                                dflt = tpl2.second->byClass.val;
+                                dflt = tpl.second->byClass.val;
                             if (!dflt || !validType(dflt, byVal))
                                 return false;
                         }
                     }
-                    else
-                    {
-                        auto dflt = tpl.second->byClass.dflt;
-                        if (!dflt)
-                            dflt = tpl.second->byClass.val;
-                        if (!dflt || !validType(dflt, byVal))
-                            return false;
-                    }
                 }
             }
+            break;
+        default: {
+            break;
         }
-        break;
-    default:
-    {
-	break;
-    }
     }
     return true;
 }
@@ -1217,7 +1216,8 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             if (sym->sb->storage_class != StorageClass::label_ && sym->sb->storage_class != StorageClass::parameter_ &&
                 sym->sb->storage_class != StorageClass::namespace_ && sym->sb->storage_class != StorageClass::namespace_alias_ &&
                 sym->sb->storage_class != StorageClass::ulabel_ &&
-                (sym->tp->IsFunction() || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
+                (sym->tp->IsFunction() || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass ||
+                 sym->sb->templateLevel))
                 linkage = Linkage::cpp_;
             else
                 linkage = Linkage::c_;
@@ -1334,7 +1334,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                             tmplCount--;
                     p[1] = 0;
                 }
-                else	
+                else
                 {
                     p = mangleType(p, sym->tp, true);  // otherwise functions get their parameter list in the name
                                                        //                    if (!sym->sb->templateLevel)

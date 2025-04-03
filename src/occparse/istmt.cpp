@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 /*
@@ -237,8 +237,7 @@ void SubProfilerData(void)
     }
 }
 
-
-EXPRESSION* tempVar(Type* tp, bool global) 
+EXPRESSION* tempVar(Type* tp, bool global)
 {
     if (global)
         anonymousNotAlloc++;
@@ -255,14 +254,14 @@ EXPRESSION* tempVar(Type* tp, bool global)
     Dereference(tp, &val);
     return val;
 }
-EXPRESSION *makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
+EXPRESSION* makeParamSubs(EXPRESSION* left, Optimizer::IMODE* im)
 {
     auto val = MakeExpression(ExpressionNode::paramsubstitute_, left);
     val->v.imode = im;
     return val;
 }
 
-    /*-------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 void count_cases(std::list<CASEDATA*>* casedata, struct Optimizer::cases* cs)
 {
     for (auto cd : *casedata)
@@ -430,30 +429,30 @@ static void gen___try(SYMBOL* funcsp, std::list<Statement*> stmts)
         Optimizer::IMODE* left = nullptr;
         switch (stmt->type)
         {
-        case StatementNode::seh_try_:
-            mode = 1;
-            break;
-        case StatementNode::seh_catch_:
-            mode = 2;
-            if (stmt->sp)
-            {
-                left = Allocate<Optimizer::IMODE>();
-                left->mode = Optimizer::i_direct;
-                left->size = ISZ_OBJECT;
-                left->offset = Allocate<Optimizer::SimpleExpression>();
-                left->offset->type = Optimizer::se_auto;
-                left->offset->sp = Optimizer::SymbolManager::Get(stmt->sp);
-            }
-            break;
-        case StatementNode::seh_fault_:
-            mode = 3;
-            break;
-        case StatementNode::seh_finally_:
-            mode = 4;
-            break;
-        default:
-            Optimizer::gen_label(label);
-            return;
+            case StatementNode::seh_try_:
+                mode = 1;
+                break;
+            case StatementNode::seh_catch_:
+                mode = 2;
+                if (stmt->sp)
+                {
+                    left = Allocate<Optimizer::IMODE>();
+                    left->mode = Optimizer::i_direct;
+                    left->size = ISZ_OBJECT;
+                    left->offset = Allocate<Optimizer::SimpleExpression>();
+                    left->offset->type = Optimizer::se_auto;
+                    left->offset->sp = Optimizer::SymbolManager::Get(stmt->sp);
+                }
+                break;
+            case StatementNode::seh_fault_:
+                mode = 3;
+                break;
+            case StatementNode::seh_finally_:
+                mode = 4;
+                break;
+            default:
+                Optimizer::gen_label(label);
+                return;
         }
         Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
         Optimizer::intermed_tail->alwayslive = true;
@@ -493,17 +492,17 @@ void gen_except(bool begin, xcept* xc)
 void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* allocaAP)
 {
     bool refbyval = false;
-    Optimizer::IMODE* ap = nullptr, * ap1 = nullptr, * ap3;
+    Optimizer::IMODE *ap = nullptr, *ap1 = nullptr, *ap3;
     EXPRESSION ep;
     int size;
     /* returns a value? */
-    if (stmt != 0 && stmt->select != 0 && (!(flags & F_NORETURNVALUE)  || expressionHasSideEffects(stmt->select) || HasIncDec()))
+    if (stmt != 0 && stmt->select != 0 && (!(flags & F_NORETURNVALUE) || expressionHasSideEffects(stmt->select) || HasIncDec()))
     {
         // the return type should NOT be an array at this point unless it is a managed one...
         if (funcsp->tp->BaseType()->btp &&
             (funcsp->tp->BaseType()->btp->IsStructured() || funcsp->tp->BaseType()->btp->IsBitInt() ||
-                                          (funcsp->tp->BaseType()->btp->IsArray() && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
-                                          funcsp->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_))
+             (funcsp->tp->BaseType()->btp->IsArray() && (Optimizer::architecture == ARCHITECTURE_MSIL)) ||
+             funcsp->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_))
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
@@ -519,7 +518,8 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             }
             else
             {
-                if (funcsp->tp->BaseType()->btp->IsStructured() && funcsp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
+                if (funcsp->tp->BaseType()->btp->IsStructured() &&
+                    funcsp->tp->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
                 {
                     EXPRESSION* exp = stmt->select;
                     size = natural_size(exp);
@@ -539,7 +539,7 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                                 auto tpx = exp1->v.sp->tp->BaseType()->btp->BaseType();
                                 if (!tpx->IsStructured() || !tpx->sp->sb->structuredAliasType)
                                 {
-                                    exp = stmt->select; 
+                                    exp = stmt->select;
                                 }
                             }
                         }
@@ -594,15 +594,15 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             auto tpr = (Type*)nullptr;
             if ((flags & F_RETURNREFBYVALUE) && funcsp->sb->retcount == 1 && funcsp->tp->BaseType()->btp->IsRef())
             {
-                 tpr = funcsp->tp->BaseType()->btp->BaseType()->btp;
-                 if (tpr->IsStructured())
-                 {
+                tpr = funcsp->tp->BaseType()->btp->BaseType()->btp;
+                if (tpr->IsStructured())
+                {
                     tpr = tpr->BaseType()->sp->sb->structuredAliasType;
-                 }
-                 else
-                 {
+                }
+                else
+                {
                     tpr = nullptr;
-                 }
+                }
             }
             if (tpr && tpr->IsInt() && tpr->size <= Optimizer::chosenAssembler->arch->word_size)
             {
@@ -633,7 +633,8 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 }
                 else
                 {
-                    if ((flags & F_RETURNSTRUCTBYVALUE) && inlineSymThisPtr.size() && funcsp->sb->isConstructor && funcsp->sb->parentClass->sb->structuredAliasType)
+                    if ((flags & F_RETURNSTRUCTBYVALUE) && inlineSymThisPtr.size() && funcsp->sb->isConstructor &&
+                        funcsp->sb->parentClass->sb->structuredAliasType)
                     {
                         exp = MakeExpression(ExpressionNode::structadd_, exp, MakeIntExpression(ExpressionNode::c_i_, 0));
                         Dereference(funcsp->sb->parentClass->sb->structuredAliasType, &exp);
@@ -690,7 +691,8 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
     if (flags & F_NEEDEPILOG)
     {
         int retsize = 0;
-        if (funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_ || funcsp->sb->attribs.inheritable.linkage == Linkage::stdcall_)
+        if (funcsp->sb->attribs.inheritable.linkage == Linkage::pascal_ ||
+            funcsp->sb->attribs.inheritable.linkage == Linkage::stdcall_)
         {
             retsize = funcsp->sb->paramsize;
         }
@@ -729,7 +731,8 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
             {
                 Optimizer::gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
             }
-            if (Optimizer::cparams.prm_xcept && Optimizer::SymbolManager::Get(funcsp)->xc && funcsp->sb->xc && funcsp->sb->xc->xclab)
+            if (Optimizer::cparams.prm_xcept && Optimizer::SymbolManager::Get(funcsp)->xc && funcsp->sb->xc &&
+                funcsp->sb->xc->xclab)
                 gen_except(false, funcsp->sb->xc);
             SubProfilerData();
             if (returnSym && !funcsp->tp->BaseType()->btp->IsVoid())
@@ -739,12 +742,13 @@ void genreturn(Statement* stmt, SYMBOL* funcsp, int flags, Optimizer::IMODE* all
                 Optimizer::gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
             }
             Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
-            if (funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_ || funcsp->sb->attribs.inheritable.linkage == Linkage::fault_)
+            if (funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_ ||
+                funcsp->sb->attribs.inheritable.linkage == Linkage::fault_)
             {
                 Optimizer::gen_icode(Optimizer::i_popcontext, 0, 0, 0);
-                Optimizer::gen_icode(Optimizer::i_rett, 0,
-                                     Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_),
-                                     0);
+                Optimizer::gen_icode(
+                    Optimizer::i_rett, 0,
+                    Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_), 0);
             }
             else
             {
@@ -854,7 +858,7 @@ Optimizer::IMODE* genstmt(std::list<Statement*>* stmts, SYMBOL* funcsp, int flag
                 case StatementNode::label_:
                     Optimizer::gen_label((int)stmt->label + codeLabelOffset);
                     if (stmt->purelabel)
-                       Optimizer::intermed_tail->alwayslive = true;
+                        Optimizer::intermed_tail->alwayslive = true;
                     break;
                 case StatementNode::goto_:
                     if (stmt->destexp)
@@ -879,8 +883,7 @@ Optimizer::IMODE* genstmt(std::list<Statement*>* stmts, SYMBOL* funcsp, int flag
                     gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
                             stmt->breaklabel + codeLabelOffset, stmt->lower);
                     break;
-                case StatementNode::catch_:
-                {
+                case StatementNode::catch_: {
                     int breaklab = 0;
                     while (stmt->type == StatementNode::catch_)
                     {
@@ -1096,7 +1099,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
  */
 {
     int flags = 0;
-    retLabs.clear();        
+    retLabs.clear();
     rttiStatements.clear();
     Optimizer::IMODE* oldReturnImode = returnImode;
     Optimizer::IMODE* allocaAP = nullptr;
@@ -1180,7 +1183,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         Optimizer::gen_strlab(Optimizer::SymbolManager::Get(funcsp)); /* name of function */
     }
     Optimizer::addblock(-1);
-    if (funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_ || funcsp->sb->attribs.inheritable.linkage == Linkage::fault_)
+    if (funcsp->sb->attribs.inheritable.linkage == Linkage::interrupt_ ||
+        funcsp->sb->attribs.inheritable.linkage == Linkage::fault_)
     {
         Optimizer::gen_icode(Optimizer::i_pushcontext, 0, 0, 0);
         /*		if (funcsp->sb->loadds) */
@@ -1207,7 +1211,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     AddProfilerData(funcsp);
     if (Optimizer::cparams.prm_xcept && Optimizer::SymbolManager::Get(funcsp)->xc && funcsp->sb->xc && funcsp->sb->xc->xclab)
     {
-         gen_except(true, funcsp->sb->xc);
+        gen_except(true, funcsp->sb->xc);
     }
     /*    if (funcsp->sb->loadds && funcsp->sb->farproc) */
     /*	        Optimizer::gen_icode(Optimizer::i_loadcontext, 0,0,0); */

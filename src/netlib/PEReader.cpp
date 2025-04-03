@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #ifdef TARGET_OS_WINDOWS
@@ -150,7 +150,7 @@ std::string PEReader::SearchOnPath(const std::string& fileName)
         split.push_back(path.substr(0, npos));
         if (npos < path.size() - 1)
         {
-            path = path.substr(npos+1);
+            path = path.substr(npos + 1);
         }
         else
         {
@@ -252,7 +252,6 @@ int PEReader::ManagedLoad(std::string assemblyName, std::string path)
     {
         return ERR_FILE_NOT_FOUND;
     }
-
 }
 int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
 
@@ -308,7 +307,8 @@ size_t PEReader::PELocation()
                 // load the objects table
                 num_objects_ = peHeader->num_objects;
                 objects_ = new PEObject[num_objects_];
-                get(objects_, *(DWord*)(mz + 0x3c) + sizeof(PEHeader) + PEPLUS_NT_HEADER_SIZE - PE_NT_HEADER_SIZE, num_objects_ * sizeof(PEObject));
+                get(objects_, *(DWord*)(mz + 0x3c) + sizeof(PEHeader) + PEPLUS_NT_HEADER_SIZE - PE_NT_HEADER_SIZE,
+                    num_objects_ * sizeof(PEObject));
                 // return the pe header offset
                 return *(DWord*)(mz + 0x3c);
             }
@@ -330,8 +330,8 @@ size_t PEReader::Cor20Location(size_t headerOffs)
     if (pe.magic == PEPLUS_MAGICNUM)
     {
         // in peplus file the .net stuff moved...
-        offs = *(unsigned *)((unsigned char*)&pe + sizeof(PEHeader));
-        size = *(unsigned *)((unsigned char*)&pe + sizeof(PEHeader) + 4);
+        offs = *(unsigned*)((unsigned char*)&pe + sizeof(PEHeader));
+        size = *(unsigned*)((unsigned char*)&pe + sizeof(PEHeader) + 4);
     }
     DotNetCOR20Header cor20;
     get(&cor20, RVAToFileLocation(offs), sizeof(cor20));

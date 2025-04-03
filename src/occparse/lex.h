@@ -1,39 +1,41 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
+ *
  */
+
 #pragma once
 
 #define MAX_LOOKBACK 1024
 namespace Parser
 {
-    /* error list */
-    struct errl
-    {
-        int errornumber;
-        void* data;
-    };
+/* error list */
+struct errl
+{
+    int errornumber;
+    void* data;
+};
 
-    /* used for error skimming */
+/* used for error skimming */
 #define BALANCE struct balance
 #define BAL_PAREN 0
 #define BAL_BRACKET 1
@@ -41,22 +43,22 @@ namespace Parser
 #define BAL_LT 3
 #define ERRORS struct errl
 
-    struct balance
-    {
-        struct balance* back;
-        short type;
-        short count;
-    };
+struct balance
+{
+    struct balance* back;
+    short type;
+    short count;
+};
 
-    // clang-format off
+// clang-format off
     enum _matchFlags : int
     {
         KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
         KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
         KW_386 = 128, KW_68K = 256, KW_C2X = 512, KW_ALL = 0x40000000
     };
-    // clang-format on
-    // clang-format off
+// clang-format on
+// clang-format off
 
     enum _tokenTypes
     {
@@ -94,20 +96,19 @@ namespace Parser
         TT_DECLARE = 0x80000000UL,
         TT_UNKNOWN = 0
     };
-    // clang-format on
+// clang-format on
 
-    struct KeywordData
-    {
-        const char* name;
-        int len;
-        Keyword key;
-        unsigned matchFlags;
-        unsigned tokenTypes;
-    };
+struct KeywordData
+{
+    const char* name;
+    int len;
+    Keyword key;
+    unsigned matchFlags;
+    unsigned tokenTypes;
+};
 
-
-    // must match the definition in msilprocess.cpp
-    // clang-format off
+// must match the definition in msilprocess.cpp
+// clang-format off
     enum class LexType : unsigned
     {
         none_,
@@ -119,52 +120,52 @@ namespace Parser
         l_id_, l_kw_, l_qualifiedName_,
         l_asmInstruction_, l_asmRegister_
     };
-    // clang-format on
+// clang-format on
 
-    struct StringData
-    {
-        LexType strtype;
-        int size;
-        int label;
-        int refCount;
-        char* suffix;
-        Optimizer::SLCHAR** pointers;
-    };
+struct StringData
+{
+    LexType strtype;
+    int size;
+    int label;
+    int refCount;
+    char* suffix;
+    Optimizer::SLCHAR** pointers;
+};
 
-    struct Lexeme
-    {
-        LexType type;
-        struct u_val value;
-        char* litaslit;
-        char* suffix;
-        Optimizer::LINEDATA* linedata;
-        int errline;
-        const char* errfile;
-        int charindex;
-        int charindexend;
-        int filenum;
-        KeywordData* kw;
-        SYMBOL* typequal;
-        int registered : 1;
-    };
+struct Lexeme
+{
+    LexType type;
+    struct u_val value;
+    char* litaslit;
+    char* suffix;
+    Optimizer::LINEDATA* linedata;
+    int errline;
+    const char* errfile;
+    int charindex;
+    int charindexend;
+    int filenum;
+    KeywordData* kw;
+    SYMBOL* typequal;
+    int registered : 1;
+};
 
-    struct LexList
-    {
-        LexList* next, * prev;
-        Lexeme* data;
-    };
-    struct LexContext
-    {
-        LexContext* next;
-        LexList* cur;
-        LexList* last;
-    };
+struct LexList
+{
+    LexList *next, *prev;
+    Lexeme* data;
+};
+struct LexContext
+{
+    LexContext* next;
+    LexList* cur;
+    LexList* last;
+};
 
 #define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
 #define ISID(lex) (lex && (lex)->data->type == LexType::l_id_)
 #define ISKW(lex) (lex && (lex)->data->type == LexType::l_kw_)
 #define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-    bool KWTYPE(LexList* lex, unsigned types);
+bool KWTYPE(LexList* lex, unsigned types);
 #define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
 
 extern Optimizer::LINEDATA nullLineData;

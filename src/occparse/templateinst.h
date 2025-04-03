@@ -1,31 +1,31 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 namespace Parser
 {
-    extern int templateDeclarationLevel;
+extern int templateDeclarationLevel;
 Type* SolidifyType(Type* tp);
 std::list<TEMPLATEPARAMPAIR>* SolidifyTemplateParams(std::list<TEMPLATEPARAMPAIR>* in);
 std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations, bool unique = false);
@@ -50,7 +50,7 @@ static bool SetTemplateParamValue(TEMPLATEPARAMPAIR* p, std::list<TEMPLATEPARAMP
 static void FillNontypeTemplateParamDefaults(std::list<TEMPLATEPARAMPAIR>* fills, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static bool checkNonTypeTypes(std::list<TEMPLATEPARAMPAIR>* params, std::list<TEMPLATEPARAMPAIR>* enclosing);
 SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func, std::list<Argument*>* args,
-                                     std::list<TEMPLATEPARAMPAIR>* nparams);
+                              std::list<TEMPLATEPARAMPAIR>* nparams);
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* args, std::list<TEMPLATEPARAMPAIR>* dest,
                               std::list<TEMPLATEPARAMPAIR>* src, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static void SetTemplateArgAccess(SYMBOL* sym, bool accessible);
@@ -65,11 +65,12 @@ static void TemplateConstOrdering(SYMBOL** spList, int n, std::list<TEMPLATEPARA
 static bool TemplateConstMatchingInternal(std::list<TEMPLATEPARAMPAIR>* P);
 static void TemplateConstMatching(SYMBOL** spList, int n, std::list<TEMPLATEPARAMPAIR>* params);
 void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list<TEMPLATEPARAMPAIR>* val,
-                                   std::list<TEMPLATEPARAMPAIR>* params);
+                            std::list<TEMPLATEPARAMPAIR>* params);
 static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* unspecialized, std::list<TEMPLATEPARAMPAIR>* args);
 static bool checkArgType(Type* tp, bool checkDeduced, bool checkDeclaring);
 static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool checkDeclaring);
-bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool checkDeduced = false, bool checkDeclaring = false);
+bool allTemplateArgsSpecified(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool checkDeduced = false,
+                              bool checkDeclaring = false);
 void TemplateArgsAdd(TEMPLATEPARAMPAIR* current, TEMPLATEPARAMPAIR* dflt, std::list<TEMPLATEPARAMPAIR>* basetpl);
 void TemplateArgsTemplateAdd(TEMPLATEPARAMPAIR* current, TEMPLATEPARAMPAIR* special, std::list<TEMPLATEPARAMPAIR>* base);
 void TemplateArgsScan(std::list<TEMPLATEPARAMPAIR>* currents, std::list<TEMPLATEPARAMPAIR>* base);

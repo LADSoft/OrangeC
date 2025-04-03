@@ -12,45 +12,44 @@
 
 // g_trace_verbosity is used to encode COREHOST_TRACE and COREHOST_TRACE_VERBOSITY to selectively control output of
 //    trace::warn(), trace::info(), and trace::verbose()
-//  COREHOST_TRACE=0 COREHOST_TRACE_VERBOSITY=N/A        implies g_trace_verbosity = 0.  // Trace "disabled". error() messages will be produced.
-//  COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=4 or unset implies g_trace_verbosity = 4.  // Trace "enabled".  verbose(), info(), warn() and error() messages will be produced
-//  COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=3          implies g_trace_verbosity = 3.  // Trace "enabled".  info(), warn() and error() messages will be produced
-//  COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=2          implies g_trace_verbosity = 2.  // Trace "enabled".  warn() and error() messages will be produced
-//  COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=1          implies g_trace_verbosity = 1.  // Trace "enabled".  error() messages will be produced
+//  COREHOST_TRACE=0 COREHOST_TRACE_VERBOSITY=N/A        implies g_trace_verbosity = 0.  // Trace "disabled". error() messages will
+//  be produced. COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=4 or unset implies g_trace_verbosity = 4.  // Trace "enabled". verbose(),
+//  info(), warn() and error() messages will be produced COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=3          implies
+//  g_trace_verbosity = 3.  // Trace "enabled".  info(), warn() and error() messages will be produced COREHOST_TRACE=1
+//  COREHOST_TRACE_VERBOSITY=2          implies g_trace_verbosity = 2.  // Trace "enabled".  warn() and error() messages will be
+//  produced COREHOST_TRACE=1 COREHOST_TRACE_VERBOSITY=1          implies g_trace_verbosity = 1.  // Trace "enabled".  error()
+//  messages will be produced
 static int g_trace_verbosity = 0;
-static FILE * g_trace_file = nullptr;
+static FILE* g_trace_file = nullptr;
 thread_local static trace::error_writer_fn g_error_writer = nullptr;
 
 namespace
 {
-    class spin_lock
+class spin_lock
+{
+  public:
+    spin_lock() = default;
+    spin_lock(const spin_lock&) = delete;
+    spin_lock& operator=(const spin_lock&) = delete;
+
+    void lock()
     {
-    public:
-        spin_lock() = default;
-        spin_lock(const spin_lock&) = delete;
-        spin_lock& operator=(const spin_lock&) = delete;
-
-        void lock()
+        uint32_t spin = 0;
+        while (flag.test_and_set(std::memory_order_acquire))
         {
-            uint32_t spin = 0;
-            while (flag.test_and_set(std::memory_order_acquire))
-            {
-                if (spin++ % 1024 == 0)
-                    std::this_thread::yield();
-            }
+            if (spin++ % 1024 == 0)
+                std::this_thread::yield();
         }
+    }
 
-        void unlock()
-        {
-            flag.clear(std::memory_order_release);
-        }
+    void unlock() { flag.clear(std::memory_order_release); }
 
-    private:
-        std::atomic_flag flag = ATOMIC_FLAG_INIT;
-    };
+  private:
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+};
 
-    spin_lock g_trace_lock;
-}
+spin_lock g_trace_lock;
+}  // namespace
 
 //
 // Turn on tracing for the corehost based on "COREHOST_TRACE" & "COREHOST_TRACEFILE" env.
@@ -91,7 +90,7 @@ bool trace::enable()
         g_trace_file = stderr;  // Trace to stderr by default
         if (pal::getenv(_X("COREHOST_TRACEFILE"), &tracefile_str))
         {
-            FILE *tracefile = pal::file_open(tracefile_str, _X("a"));
+            FILE* tracefile = pal::file_open(tracefile_str, _X("a"));
 
             if (tracefile)
             {
@@ -122,10 +121,7 @@ bool trace::enable()
     return true;
 }
 
-bool trace::is_enabled()
-{
-    return g_trace_verbosity;
-}
+bool trace::is_enabled() { return g_trace_verbosity; }
 
 void trace::verbose(const pal::char_t* format, ...)
 {
@@ -205,10 +201,7 @@ void trace::println(const pal::char_t* format, ...)
     va_end(args);
 }
 
-void trace::println()
-{
-    println(_X(""));
-}
+void trace::println() { println(_X("")); }
 
 void trace::warning(const pal::char_t* format, ...)
 {

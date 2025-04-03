@@ -357,6 +357,7 @@ static bool ignoreErrdefiningTemplate(int err)
         case ERR_ILL_STRUCTURE_OPERATION:
         case ERR_CALL_FUNCTION_NO_PROTO:
         case ERR_IMPROPER_USE_OF_TYPE:
+        case ERR_PACK_SPECIFIERS_SIZE_MISMATCH:
             return true;
     }
     return false;

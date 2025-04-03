@@ -2314,7 +2314,7 @@ static int gen_parm(Argument* a, SYMBOL* funcsp)
         }
         else
         {
-            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
+            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->BaseType()->size, a->valist ? a->exp : nullptr);
         }
     }
     else if (a->tp->IsStructured() && a->exp->type == ExpressionNode::thisref_)  // constructor

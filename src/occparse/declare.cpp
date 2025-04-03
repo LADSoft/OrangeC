@@ -150,13 +150,14 @@ const char* AnonymousTypeName(SYMBOL* sp, SymbolTable<SYMBOL>* table)
 {
     char buf[512];
     // type name will depend on file name
-    auto name = preProcessor->GetRealFile().c_str();
+    auto name = sp->sb->declfile;
     unsigned fileCRC = Utils::CRC32((const unsigned char *)name, strlen(name));
     // type name will also depend on the structure/elements defined for the type
     unsigned typeCRC = TypeCRC(sp);
 
     // generate type name
     sprintf(buf, "__anontype_%08x_%08x", fileCRC, typeCRC);
+
     // if it doesn't exist we are done...
     if (search(table, buf) == nullptr)
         return litlate(buf);

@@ -290,6 +290,7 @@ void dumpInlines(void)
                             }
                             else
                             {
+                                Optimizer::SymbolManager::Get(sym)->generated = true;
                                 inInsert(sym);
                                 Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), sym->sb->init ? Optimizer::vt_data : Optimizer::vt_bss);
                                 if (sym->sb->init)

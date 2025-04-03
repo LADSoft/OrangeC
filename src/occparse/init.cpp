@@ -3636,12 +3636,9 @@ static LexList* initialize_aggregate_type(LexList * lex, SYMBOL * funcsp, SYMBOL
                 }
                 else
                 {
-                    // conversion constructor params
                     CallSite* funcparams = Allocate<CallSite>();
                     lex = getArgs(lex, funcsp, funcparams, Keyword::closepa_, true, 0);
-                    if (funcparams->arguments && funcparams->arguments->size() > 1)
-                        error(ERR_EXPRESSION_SYNTAX);
-                    else if (funcparams->arguments && funcparams->arguments->size() &&
+                    if (funcparams->arguments && funcparams->arguments->size() == 1 &&
                              !itype->CompatibleType(funcparams->arguments->front()->tp))
                         error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                     else
@@ -4832,6 +4829,10 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     {
                         error(ERR_CONSTANT_EXPRESSION_EXPECTED);
                         break;
+                    }
+                    else if ((*it)->exp->type == ExpressionNode::thisref_ || (*it)->exp->type == ExpressionNode::callsite_)
+                    {
+                        sym->sb->constexpression = false;
                     }
             }
         }

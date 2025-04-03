@@ -1207,7 +1207,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
         }
     }
     expandingParams++;
-    if (arg.size())
+    if (arg.size() && (!definingTemplate || instantiatingTemplate))
     { 
         int i;
         int n = arg.front();

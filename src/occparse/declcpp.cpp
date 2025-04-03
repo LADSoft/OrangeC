@@ -2325,6 +2325,8 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                                 return lex;
                             }
                             auto sp1 = tp1->BaseType()->sp;
+                            sp = sp1;
+                                /*'
                             switch (mode)
                             {
                             case parseFirst:
@@ -2348,6 +2350,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                             break;
 
                             }
+                            */
                             if (!sp || strcmp(sp->name, sp1->name) != 0)
                             {
                                 error(ERR_TYPE_NAME_EXPECTED);

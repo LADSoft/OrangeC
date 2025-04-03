@@ -143,6 +143,11 @@ static char* mangleClasses(char* in, SYMBOL* sym)
         in += strlen(in);
         Optimizer::my_sprintf(in, "@%s", sym->sb->parent->name);
         in += strlen(in);
+        if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
+        {
+            in = mangleTemplate(in, sym->sb->parent, sym->sb->parent->templateParams);
+            in += strlen(in);
+        }
     }
     if (sym->sb->castoperator)
     {
@@ -633,7 +638,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>
                 else
                 {
                     buf = mangleType(buf, it->second->byNonType.tp, true);
-                    if (bySpecial || sym->sb && sym->sb->instantiated)
+                    if ((bySpecial || sym->sb && sym->sb->instantiated) && it->second->byNonType.val)
                     {
                         EXPRESSION* exp = bySpecial && it->second->byNonType.dflt ? it->second->byNonType.dflt : it->second->byNonType.val;
                         buf = mangleExpression(buf, exp);

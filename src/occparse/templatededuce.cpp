@@ -1450,7 +1450,10 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                         last->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
 
                         last->back().second->type = TplType::typename_;
-                        last->back().second->byClass.val = rewriteNonRef((*symArgs)->tp);
+                        if ((*symArgs)->tp->IsArray())
+                            last->back().second->byClass.val = (*symArgs)->tp;
+                        else
+                            last->back().second->byClass.val = rewriteNonRef((*symArgs)->tp);
                         if (TemplateConstExpr(last->back().second->byClass.val, (*symArgs)->exp))
                             last->back().second->byClass.val = Type::MakeType(BasicType::const_, last->back().second->byClass.val);
                         if (forward && !definingTemplate)
@@ -1805,7 +1808,7 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, Type* tpx, Typ
         std::list<TEMPLATEPARAMPAIR>* r = symr->templateParams->front().second->bySpecialization.types
                                               ? symr->templateParams->front().second->bySpecialization.types
                                               : symr->templateParams;
-        if (l && r)
+        if (l && r && l->size() == r->size())
         {
             int i;
             n = 0;

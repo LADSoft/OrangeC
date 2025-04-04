@@ -49,9 +49,10 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 CC=cl.exe
 ifneq "$(MSPDB)" ""
-CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++17
+#C++14 here is to take care of a problem where the current APPVEYOR locks up on this test
+CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++14
 else
-CCFLAGS = /O2 /EHsc /c /nologo /MT /std:c++17
+CCFLAGS = /O2 /EHsc /c /nologo /MT
 endif
 
 LINK=link.exe

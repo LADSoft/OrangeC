@@ -34,23 +34,23 @@ struct Type
     long size;             /* total size of type */
     Type* btp;             /* pointer to next type (pointers & arrays */
     Type* rootType;        /* pointer to base type of sequence */
-    int used : 1;          /* type has actually been used in a declaration or cast or expression */
-    int array : 1;         /* not a dereferenceable pointer */
-    int msil : 1;          /* allocate as an MSIL array */
-    int byRefArray : 1;    /* array base address is a reference type */
-    int vla : 1;           /* varriable length array */
-    int unsized : 1;       /* type doesn't need a size */
-    int hasbits : 1;       /* type is a bit type */
-    int anonymousbits : 1; /* type is a bit type without a name */
-    int scoped : 1;        /* c++ scoped enumeration */
-    int fixed : 1;         /* c++ fixed enumeration */
-    int nullptrType : 1;   /* c++: std::nullptr */
-    int templateTop : 1;
-    int enumConst : 1; /* is an enumeration constant */
-    int lref : 1;
-    int rref : 1;
-    int decltypeauto : 1;
-    int stringconst : 1;
+    unsigned used : 1;          /* type has actually been used in a declaration or cast or expression */
+    unsigned array : 1;         /* not a dereferenceable pointer */
+    unsigned msil : 1;          /* allocate as an MSIL array */
+    unsigned byRefArray : 1;    /* array base address is a reference type */
+    unsigned vla : 1;           /* varriable length array */
+    unsigned unsized : 1;       /* type doesn't need a size */
+    unsigned hasbits : 1;       /* type is a bit type */
+    unsigned anonymousbits : 1; /* type is a bit type without a name */
+    unsigned scoped : 1;        /* c++ scoped enumeration */
+    unsigned fixed : 1;         /* c++ fixed enumeration */
+    unsigned nullptrType : 1;   /* c++: std::nullptr */
+    unsigned templateTop : 1;
+    unsigned enumConst : 1; /* is an enumeration constant */
+    unsigned lref : 1;
+    unsigned rref : 1;
+    unsigned decltypeauto : 1;
+    unsigned stringconst : 1;
     char bits;     /* -1 for not a bit val, else bit field len */
     char startbit; /* start of bit field */
     int bitintbits;

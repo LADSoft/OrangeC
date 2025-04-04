@@ -72,7 +72,6 @@ class OS
     static void JobInit();
     static void JobRundown();
     static bool TakeJob();
-    static bool TryTakeJob();
     static void GiveJob();
     static void WriteToConsole(std::string string);
     static void ToConsole(std::deque<std::string>& strings);

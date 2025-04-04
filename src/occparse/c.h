@@ -888,20 +888,20 @@ typedef struct _templateParam
     // new = specialization
     // first in the list is always the specialization specifier
     TplType type;
-    int index : 8;
-    int packed : 1;
-    int usedAsUnpacked : 1;
-    int derivedFromUnpacked : 1;
-    int initialized : 1;
-    int lref : 1;
-    int rref : 1;
-    int resolved : 1;             // packed template has already been resolved.
-    int ellipsis : 1;             // ellipsis found after this item...
-    int replaced : 1;             // replaced during type alias substitution
-    int deduced : 1;              // filled in during deduction
-    int specializationParam : 1;  // specialization paramneter
-    int nopop : 1;
-    int flag : 1;  // utility flag
+    unsigned index : 8;
+    unsigned packed : 1;
+    unsigned usedAsUnpacked : 1;
+    unsigned derivedFromUnpacked : 1;
+    unsigned initialized : 1;
+    unsigned lref : 1;
+    unsigned rref : 1;
+    unsigned resolved : 1;             // packed template has already been resolved.
+    unsigned ellipsis : 1;             // ellipsis found after this item...
+    unsigned replaced : 1;             // replaced during type alias substitution
+    unsigned deduced : 1;              // filled in during deduction
+    unsigned specializationParam : 1;  // specialization paramneter
+    unsigned nopop : 1;
+    unsigned flag : 1;  // utility flag
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;

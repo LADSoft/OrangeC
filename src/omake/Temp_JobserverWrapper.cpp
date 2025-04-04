@@ -1,5 +1,5 @@
 #ifdef _WIN32
-#    include "os_specific/Windows/Win_Jobserver.cpp"
+#    include "os_specific/windows/Win_Jobserver.cpp"
 #elif HAVE_UNISTD_H
 #    include "os_specific/Linux/Linux_Jobserver.cpp"
 #else

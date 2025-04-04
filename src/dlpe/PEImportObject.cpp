@@ -295,7 +295,7 @@ void DllImports<DelayLoadDirectory>::WriteTables(std::vector<DWORD>& thunkFixups
 #ifdef TARGET_OS_WINDOWS
             if (bindPos)
             {
-                *bindPointer = (DWORD)std::get<3>(e);
+                *bindPointer = (DWORD)(unsigned long long)std::get<3>(e);
             }
 #endif
             thunkTableRVA += PEImportObject::DelayLoadThunkSize;

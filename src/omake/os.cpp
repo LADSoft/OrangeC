@@ -192,7 +192,6 @@ bool OS::TakeJob()
     localJobServer->TakeNewJob();
     return false;
 }
-bool OS::TryTakeJob() { return localJobServer->TryTakeNewJob() != -1; }
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {

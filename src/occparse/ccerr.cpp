@@ -538,6 +538,7 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
     if (cpp >= Dialect::c89 && cpp < Dialect::cpp11)
     {
         if (!Optimizer::cparams.prm_cplusplus)
+        {
             if (err == ERR_FEATURE_NOT_AVAILABLE_IN)
             {
                 if (Optimizer::cparams.c_dialect >= cpp)
@@ -554,11 +555,13 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
                     return true;
                 }
             }
+        }
     }
     else if (cpp >= Dialect::cpp11)
 
     {
         if (Optimizer::cparams.prm_cplusplus)
+        {
             if (err == ERR_FEATURE_NOT_AVAILABLE_IN)
             {
                 if (Optimizer::cparams.cpp_dialect >= cpp)
@@ -575,6 +578,7 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
                     return true;
                 }
             }
+        }
     }
     return false;
 }

@@ -396,8 +396,10 @@ void AllocateStackSpace(int begin)
     {
         int oldauto = lc_maxauto;
         // we dont do stack compression if we are doing runtime checks
-        if (!Optimizer::cparams.prm_stackprotect & (STACK_OBJECT_OVERFLOW | STACK_UNINIT_VARIABLE))
-            lc_maxauto = max;
+        // so the stack compression got completely broken at some point in the past, the if statement was never true
+        // im commenting it out for now since so much testing was done but leaving it in causes static analysis flags.
+//        if (!Optimizer::cparams.prm_stackprotect & (STACK_OBJECT_OVERFLOW | STACK_UNINIT_VARIABLE))
+//            lc_maxauto = max;
         for (auto&& sym : dq)
         {
             if (modes[sym] & 1)  // overlay?

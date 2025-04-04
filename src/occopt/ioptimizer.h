@@ -519,7 +519,7 @@ struct _basic_dag
         union
         {
             /* values for constant nodes */
-            unsigned i;
+            unsigned i; // should be unsigned long long but that broke the builds for the 32 bit compiler...   will have to revist when working on 64 bit compilers.
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
             long label;  // branches

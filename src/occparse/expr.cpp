@@ -1435,10 +1435,10 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 SYMBOL* sp2 = search(((*tp)->BaseType()->sp)->tp->syms, overloadNameTab[CI_DESTRUCTOR]);
                 if (sp2)
                 {
-                    if (flags && _F_IS_NOTHROW)
+                    if (flags & _F_IS_NOTHROW)
                         inNothrowHandler++;
                     CallDestructor((*tp)->BaseType()->sp, nullptr, exp, nullptr, true, false, false, !points);
-                    if (flags && _F_IS_NOTHROW)
+                    if (flags & _F_IS_NOTHROW)
                         inNothrowHandler--;
                 }
                 if (needkw(&lex, Keyword::openpa_))

@@ -59,5 +59,6 @@ const std::vector<unsigned>& LibManager::Lookup(const ObjString& name)
 {
     if (header.sig == LibHeader::LIB_SIG)
         return dictionary.Lookup(stream, header.dictionaryOffset, header.dictionaryBlocks, name);
-    return std::vector<unsigned>();
+    static std::vector<unsigned> empty;
+    return empty;
 }

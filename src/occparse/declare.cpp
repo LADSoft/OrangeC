@@ -1405,10 +1405,12 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
              storage_class == StorageClass::auto_) &&
             (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) ||
              MATCHKW(lex, Keyword::semicolon_)))
+        {
             if (storage_class == StorageClass::auto_)
                 sp->sb->parentClass = theCurrentFunc->sb->parentClass;
             else
                 sp->sb->parentClass = enclosingDeclarations.GetFirst();
+        }
         if (nsv)
             sp->sb->parentNameSpace = nsv->front()->name;
         else

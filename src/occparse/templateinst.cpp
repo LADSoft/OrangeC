@@ -4899,6 +4899,7 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
                                 }
                             }
                             if (x->back().second->type == TplType::typename_)
+                            {
                                 if (x->back().second->packed)
                                 {
                                     if (x->back().second->byPack.pack)
@@ -4909,6 +4910,7 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
                                 {
                                     x->back().second->byClass.dflt = ReplaceTemplateParam(x->back().second->byClass.dflt);
                                 }
+                            }
                         }
                         ++ittp;
                         if (ittp == itetp && !stk.empty())

@@ -587,7 +587,7 @@ bool pal::get_own_executable_path(string_t* recv) { return GetModuleFileNameWrap
 bool pal::get_current_module(dll_t* mod)
 {
     HMODULE hmod = nullptr;
-    if (!GetModuleHandleFromAddress(&get_current_module, &hmod))
+    if (!GetModuleHandleFromAddress((void *)&get_current_module, &hmod))
         return false;
 
     *mod = (pal::dll_t)hmod;
@@ -597,7 +597,7 @@ bool pal::get_current_module(dll_t* mod)
 bool pal::get_own_module_path(string_t* recv)
 {
     HMODULE hmod;
-    if (!GetModuleHandleFromAddress(&get_own_module_path, &hmod))
+    if (!GetModuleHandleFromAddress((void *)&get_own_module_path, &hmod))
         return false;
 
     return GetModuleFileNameWrapper(hmod, recv);

@@ -212,8 +212,8 @@ namespace DotNetPELib {
     struct PEResourceDirEntry
     {
         int rva_or_id;
-        int subdir_or_data : 31;
-        int escape : 1;
+        unsigned subdir_or_data : 31;
+        unsigned escape : 1;
     };
 
     struct PEResourceDataEntry

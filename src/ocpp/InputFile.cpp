@@ -36,7 +36,6 @@
 #    define _read read
 #else
 #    include <io.h>
-extern "C" char* _getcwd(char*, int);
 #endif
 
 std::set<std::string> InputFile::fileNameCache;

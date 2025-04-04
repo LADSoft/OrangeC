@@ -1357,20 +1357,26 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
             if (MATCHKW(lex, Keyword::begin_))
                 beg++;
             if (MATCHKW(lex, Keyword::closepa_))
+            {
                 if (pa)
                     pa--;
                 else
                     break;
+            }
             if (MATCHKW(lex, Keyword::gt_))
+            {
                 if (lt)
                     lt--;
                 else
                     break;
+            }
             if (MATCHKW(lex, Keyword::end_))
+            {
                 if (beg)
                     beg--;
                 else
                     break;
+            }
             if (!pa && !lt && !beg)
             {
                 if (MATCHKW(lex, Keyword::ellipse_) || MATCHKW(lex, Keyword::comma_))
@@ -1554,11 +1560,11 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
                         default:
                             if (dest->IsUnsigned())
                             {
-                                err = aa < 0 || aa > ULLONG_MAX;
+                                err = aa < 0 || aa > (double)ULLONG_MAX;
                             }
                             else
                             {
-                                err = aa < LLONG_MIN || aa > LLONG_MAX;
+                                err = aa < (double)LLONG_MIN || aa > (double)LLONG_MAX;
                             }
                             break;
                     }
@@ -4881,6 +4887,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                 auto it1 = it;
                 ++it1;
                 if (it1 != sym->sb->init->end() || (*it)->exp)
+                {
                     // this only checked the first item...
                     if (!IsConstantExpression((*it)->exp, false, true))
                     {
@@ -4891,6 +4898,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     {
                         sym->sb->constexpression = false;
                     }
+                }
             }
         }
         else if (!tp->IsFunction())

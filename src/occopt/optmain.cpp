@@ -108,7 +108,7 @@ void* operator new(size_t aa)
     rv->link = nullptr;
     return (void*)(rv + 1);
 }
-void operator delete(void* p)
+void operator delete(void* p) noexcept
 {
     if (!p)
         return;

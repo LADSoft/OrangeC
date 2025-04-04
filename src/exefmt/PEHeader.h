@@ -205,8 +205,8 @@ struct PEResourceDirTable
 struct PEResourceDirEntry
 {
     int rva_or_id;
-    int subdir_or_data: 31;
-    int escape: 1;
+    unsigned int subdir_or_data: 31;
+    unsigned int escape: 1;
 };
 
 struct PEResourceDataEntry

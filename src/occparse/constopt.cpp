@@ -3910,7 +3910,12 @@ void optimize_for_constants(EXPRESSION** expr)
     asidehead = 0;
     asidetail = &asidehead;
     while (rv && count--)
-        rv = typedconsts(*expr) | fold_const(*expr) | opt0(expr);
+    {
+        // this used to be one expression but MSVC reordered the elements in it in some configurtions, leading to subtle bugs...
+        rv = typedconsts(*expr);
+        rv |= fold_const(*expr);
+        rv |= opt0(expr);
+    }
     if (asidehead)
     {
         *asidetail = *expr;

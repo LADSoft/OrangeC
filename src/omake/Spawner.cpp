@@ -38,20 +38,31 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include "semaphores.h"
 #ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #    undef Yield
 #endif
 class OSTakeJobIfNotMake
 {
+    static const int MaxOmakeInstances = 2;
     bool take_job = false;
-
+    static Semaphore sem;
+    static int initted;
   public:
-    OSTakeJobIfNotMake(bool take_job = false) : take_job(take_job)
+    OSTakeJobIfNotMake(std::string& cmd, bool take_job = false) : take_job(take_job)
     {
         if (take_job)
         {
             OS::TakeJob();
+        }
+        else
+        {
+            if (initted++ == 0)
+            {
+                sem.Post(MaxOmakeInstances);
+            }
+            sem.Wait();
         }
     }
     ~OSTakeJobIfNotMake()
@@ -60,8 +71,14 @@ class OSTakeJobIfNotMake
         {
             OS::GiveJob();
         }
+        else
+        {
+            sem.Post();
+        }
     }
 };
+Semaphore OSTakeJobIfNotMake::sem(MaxOmakeInstances);
+int OSTakeJobIfNotMake::initted;
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 bool Spawner::stopAll;
@@ -213,7 +230,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     }
     if (oneShell)
     {
-        OSTakeJobIfNotMake lockJob(!make);
+        OSTakeJobIfNotMake lockJob(cmd, !make);
         int rv = OS::Spawn(cmd, environment, nullptr);
         return rv;
     }
@@ -228,7 +245,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         for (auto&& command : cmdList)
         {
             bool make1 = make;
-            OSTakeJobIfNotMake lockJob(!make1);
+            OSTakeJobIfNotMake lockJob(cmd, !make1);
 
             auto cmdList = Utils::split(command, '\n');
             for (auto&& cmd : cmdList)

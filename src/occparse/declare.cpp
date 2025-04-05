@@ -4370,7 +4370,10 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (sp->sb->storage_class == StorageClass::member_ && storage_class_in == StorageClass::member_)
                                     browse_variable(sp);
                                 if (sp->sb->storage_class == StorageClass::external_)
+                                {
                                     sp->sb->storage_class = StorageClass::global_;
+                                    sp->sb->wasExternal = true;
+                                }
                                 while (tp->type != BasicType::func_)
                                     tp = tp->btp;
                                 tp->type = BasicType::ifunc_;

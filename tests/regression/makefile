@@ -50,6 +50,12 @@ heap.tst: heap.exe
 	-$< 2> heap.out
 	fc /b heap.cmpx heap.out
 
+cppexterninline.o: cppexterninline.cpp
+	occ /c /ocppexterninline.out $<
+
+cppexterninline.tst: cppexterninline.o
+	-$ onm cppexterninline.o > cppexterninline.out
+	fc cppexterninline.cmpx cppexterninline.out
 
 %.tst: %.exe
 	$< > $*.out

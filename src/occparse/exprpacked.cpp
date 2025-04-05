@@ -80,22 +80,22 @@ void packed_init()
         oldUnpacking.pop();
     contexts.clear();
 }
-void PushPackIndex()
+extern inline void PushPackIndex()
 {
     oldIndexes.push(packIndex);
     oldUnpacking.push(unpackingTemplate);
     unpackingTemplate = 1;
 }
-void PopPackIndex()
+extern inline void PopPackIndex()
 {
     unpackingTemplate = oldUnpacking.top();
     oldUnpacking.pop();
     packIndex = oldIndexes.top();
     oldIndexes.pop();
 }
-int GetPackIndex() { return packIndex; }
-void SetPackIndex(int index) { packIndex = index; }
-void EnterPackedContext()
+extern inline int GetPackIndex() { return packIndex; }
+extern inline void SetPackIndex(int index) { packIndex = index; }
+extern inline void EnterPackedContext()
 {
     PushPackIndex();
     unpackingTemplate = 0;
@@ -110,7 +110,7 @@ void LeavePackedContext()
     }
     contexts.pop_back();
 }
-void EnterPackedSequence()
+extern inline void EnterPackedSequence()
 {
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -144,7 +144,7 @@ void LeavePackedSequence()
         }
     }
 }
-void ClearPackedSequence()
+extern inline void ClearPackedSequence()
 {
     if (Optimizer::cparams.prm_cplusplus)
     {

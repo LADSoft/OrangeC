@@ -4585,6 +4585,10 @@ void StatementGenerator::FunctionBody()
                     if (funcsp->tp->BaseType()->syms->back()->tp->type == BasicType::ellipse_)
                         funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
                 }
+                if (Optimizer::cparams.prm_cplusplus && funcsp->sb->attribs.inheritable.isInline && funcsp->sb->wasExternal)
+                {
+                    InsertInline(funcsp);
+                }
             }
         }
         if (IsCompiler() && funcNesting == 1)  // top level function

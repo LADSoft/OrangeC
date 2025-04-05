@@ -3341,7 +3341,7 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                 }
                 else
                 {
-                    implicit = true;
+                    implicit = !assn;
                     if (MATCHKW(lex, Keyword::begin_))
                     {
                         lex = getArgs(lex, funcsp, funcparams, Keyword::end_, true, 0);

@@ -1679,7 +1679,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                                 if (tp->type != fixedType->type)
                                 {
                                     long long v = 1;
-                                    long long n = ~((v << (fixedType->size * 8 - 1)) - 1);
+                                    long long n = ~((v << (fixedType->size * 8 - (fixedType->IsUnsigned() ? 0 : 1))) - 1);
                                     if ((exp->v.i & n) != 0 && (exp->v.i & n) != n)
                                         error(ERR_ENUMERATION_OUT_OF_RANGE_OF_BASE_TYPE);
                                     cast(fixedType, &exp);
@@ -1702,7 +1702,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                     if (fixedType)
                     {
                         long long v = 1;
-                        long long n = ~((v << (fixedType->size * 8 - 1)) - 1);
+                        long long n = ~((v << (fixedType->size * 8 - (fixedType->IsUnsigned() ? 0 : 1))) - 1);
                         if ((sp->sb->value.i & n) != 0 && (sp->sb->value.i & n) != n)
                             error(ERR_ENUMERATION_OUT_OF_RANGE_OF_BASE_TYPE);
                     }

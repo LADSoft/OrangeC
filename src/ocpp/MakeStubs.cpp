@@ -33,10 +33,15 @@ void MakeStubs::Run(std::ostream* out)
     bool toClose = false;
     if (!outputFile.empty())
     {
-        out = new std::fstream(outputFile, std::ios::out);
-        if (!out->good())
-            Utils::Fatal("Cannot open '%s' for write", outputFile.c_str());
-        toClose = true;
+        if (outputFile == "-")
+            out = &std::cout;
+        else
+        {
+            out = new std::fstream(outputFile, std::ios::out);
+            if (!out->good())
+                Utils::Fatal("Cannot open '%s' for write", outputFile.c_str());
+            toClose = true;
+        }
     }
     else if (!out)
         return;

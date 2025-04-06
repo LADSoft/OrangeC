@@ -755,6 +755,8 @@ int main(int argc, char* argv[])
             lexini();
             setglbdefs();
             statement_ini(true);
+            packed_init();
+            EnterPackedContext();
             while (getsym() != nullptr)
                 ;
         }
@@ -776,6 +778,10 @@ int main(int argc, char* argv[])
             if (!MakeStubsOutputFile.GetValue().empty())
             {
                 outFile = MakeStubsOutputFile.GetValue();
+            }
+            else if (MakeStubsOption.GetValue() || MakeStubsUser.GetValue())
+            {
+                outFile = "-";
             }
             else if (!prm_output.GetValue().empty())
             {

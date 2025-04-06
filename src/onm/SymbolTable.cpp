@@ -143,41 +143,46 @@ void SymbolTable::ProcessObjectFile(ObjFile* file)
 }
 void SymbolTable::Load(CmdFiles& files)
 {
+    bool first = true;
     for (auto name : files)
     {
-        LibManager librarian(name, false, true);
-        if (librarian.IsOpen())
+        if (!first)
         {
-            if (!librarian.LoadLibrary())
+            LibManager librarian(name, false, true);
+            if (librarian.IsOpen())
             {
-                FILE* stream = fopen(name.c_str(), "rb");
-                ObjIeeeIndexManager im1;
-                ObjFactory factory(&im1);
-                ObjIeee ieee(name.c_str(), true);
-                ObjFile* f = ieee.Read(stream, ObjIeee::eAll, &factory);
-                if (!f)
+                if (!librarian.LoadLibrary())
                 {
-                    std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
+                    FILE* stream = fopen(name.c_str(), "rb");
+                    ObjIeeeIndexManager im1;
+                    ObjFactory factory(&im1);
+                    ObjIeee ieee(name.c_str(), true);
+                    ObjFile* f = ieee.Read(stream, ObjIeee::eAll, &factory);
+                    if (!f)
+                    {
+                        std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
+                    }
+                    else
+                    {
+                        ProcessObjectFile(f);
+                    }
                 }
                 else
                 {
-                    ProcessObjectFile(f);
+                    for (int i = 0; i < librarian.Files().size(); ++i)
+                    {
+                        ObjIeeeIndexManager im1;
+                        ObjFactory factory(&im1);
+                        ProcessObjectFile(librarian.LoadModule(i, &factory));
+                    }
                 }
             }
             else
             {
-                for (int i = 0; i < librarian.Files().size(); ++i)
-                {
-                    ObjIeeeIndexManager im1;
-                    ObjFactory factory(&im1);
-                    ProcessObjectFile(librarian.LoadModule(i, &factory));
-                }
+                std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
             }
         }
-        else
-        {
-            std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
-        }
+        first = false;
     }
     ResolveExternalTypes();
     if (allSymbols)

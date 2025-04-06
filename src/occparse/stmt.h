@@ -87,6 +87,7 @@ struct StatementGenerator
     void FunctionBody();
     void BodyGen();
 
+    static void SetFunctionDefine(std::string name, bool set);
     static int GetLabelValue(LexList* lex, std::list<FunctionBlock*>* parent, Statement* st);
     static void AssignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
     static void ParseNoExceptClause(SYMBOL* sp);

@@ -73,7 +73,6 @@
 #include "overload.h"
 #include "exprpacked.h"
 #include "lambda.h"
-
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
@@ -81,7 +80,7 @@ namespace Parser
 void refreshBackendParams(SYMBOL* funcsp);
 
 static std::list<std::list<SYMBOL*>*> usingDirectives;
-
+static std::stack<std::string> nestedFuncNames;
 bool isCallNoreturnFunction;
 
 int inLoopOrConditional;
@@ -133,6 +132,9 @@ void statement_ini(bool global)
     while (!expressionStatements.empty())
         expressionStatements.pop();
     usingDirectives.clear();
+    while (!nestedFuncNames.empty())
+        nestedFuncNames.pop();
+    StatementGenerator::SetFunctionDefine("", true);
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -4443,6 +4445,18 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
         dontRegisterTemplate--;
     }
 }
+void StatementGenerator::SetFunctionDefine(std::string name, bool set)
+{
+    if (set)
+    {
+        nestedFuncNames.push("\"" + name + "\"");
+    }
+    else
+    {
+        nestedFuncNames.pop();
+    }
+    preProcessor->Define("__FUNCTION__", nestedFuncNames.top());
+}
 void StatementGenerator::FunctionBody()
 {
     int oldNoexcept = funcsp->sb->noExcept;
@@ -4490,6 +4504,7 @@ void StatementGenerator::FunctionBody()
     block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
     theCurrentFunc = funcsp;
 
+    SetFunctionDefine(funcsp->name, true);
     std::list<LAMBDA*> oldlambdas;
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -4602,6 +4617,7 @@ void StatementGenerator::FunctionBody()
             lambdas = std::move(oldlambdas);
         }
     }
+    SetFunctionDefine(funcsp->name, false);
     functionReturnType = oldReturnType;
     ellipsePos = oldEllipsePos;
     noExcept = oldNoExcept;

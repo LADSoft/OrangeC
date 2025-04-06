@@ -187,7 +187,7 @@ bool pal::load_library(const string_t* in_path, dll_t* dll)
     HMODULE dummy_module;
     if (!::GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_PIN, path.c_str(), &dummy_module))
     {
-        trace::error(_X("Failed to pin library [%s] in [%s]"), path.c_str(), _STRINGIFY("load_library" /*__FUNCTION__*/));
+        trace::error(_X("Failed to pin library [%s] in [%s]"), path.c_str(), _STRINGIFY(__FUNCTION__));
         return false;
     }
 

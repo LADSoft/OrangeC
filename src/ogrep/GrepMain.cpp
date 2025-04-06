@@ -59,31 +59,37 @@ CmdSwitchBool GrepMain::quiet(SwitchParser, 'q');
 
 const char* GrepMain::usageText = "[options] searchstring file[s]";
 const char* GrepMain::helpText =
-    "[options] searchstring file[s]"
-    "\n"
-    "   -c             Show Match Count only      -d   Recurse Subdirectories\n"
-    "   -i             Case Insensitive           -l   Show File Names only\n"
-    "   -n             Show Line Numbers          -o   UNIX Output Format\n"
-    "   -r-            No Regular Expressions     -v   Non Matching Lines\n"
-    "   -w             Complete Words Only        -z   Verbose\n"
-    "   -A:#           Show Lines After           -B:# Show Lines Before\n"
-    "   -C:#           Show Lines Both            -m:# Set Max Matches\n"
-    "   -V, --version  Show version and date      -? or --help  This help\n"
-    "\n"
-    "Regular expressions special characters:\n"
-    "   .  Match any character   \\  Quote next character\n"
-    "   *  Match zero or more    +  Match one or more   ?  Match zero or one\n"
-    "   ^  Start of line         $  End of line         \n"
-    "   \\b Word break            \\B Inside word         \\w Word beginning\n"
-    "   \\W Word end              \\< Word constituent    \\> Word non-constituent\n"
-    "\n"
-    "Use brackets to match one characters out of a set:\n"
-    "   [aeiou4-7]   match vowels or the numbers from 4 to 7 inclusive\n"
-    "   [^aeiou4-7]  match anything but vowels or the numbers from 4 to 7\n"
-    "Use \\( and \\) to set a match region, \\x where x is a digit to access it\n"
-    "Use \\{ and \\} to set an interval:\n"
-    "   a\\{2,4\\} matches from two to four 'a' characters\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] searchstring file[s]
+    
+This program is a standalone grep program
+grep programs perform a search for words or phrases
+within a file or set of files.
+
+    -c             Show Match Count only      -d   Recurse Subdirectories
+    -i             Case Insensitive           -l   Show File Names only
+    -n             Show Line Numbers          -o   UNIX Output Format
+    -r-            No Regular Expressions     -v   Non Matching Lines
+    -w             Complete Words Only        -z   Verbose
+    -A:#           Show Lines After           -B:# Show Lines Before
+    -C:#           Show Lines Both            -m:# Set Max Matches
+    -V, --version  Show version and date      -? or --help  This help
+    
+Regular expressions special characters:
+    .  Match any character   \\  Quote next character
+    *  Match zero or more    +  Match one or more   ?  Match zero or one
+    ^  Start of line         $  End of line         
+    \\b Word break            \\B Inside word         \\w Word beginning
+    \\W Word end              \\< Word constituent    \\> Word non-constituent
+    
+Use brackets to match one characters out of a set:
+    [aeiou4-7]   match vowels or the numbers from 4 to 7 inclusive
+    [^aeiou4-7]  match anything but vowels or the numbers from 4 to 7
+Use \\( and \\) to set a match region, \\x where x is a digit to access it
+Use \\{ and \\} to set an interval:
+    a\\{2,4\\} matches from two to four 'a' characters
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char** argv)
 {

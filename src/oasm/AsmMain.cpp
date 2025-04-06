@@ -59,26 +59,30 @@ CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32, 0, 100, {"processor-m
 CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, {"warningsaserrors"});
 CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, {"nogasdirectivewarning"});
 const char* AsmMain::helpText =
-    "[options] file"
-    "\n"
-    "  @filename                          Use response file\n"
-    "  /b, --binary                       Use binary output\n"
-    "  /e, --preprocess-only              Preprocess only\n"
-    "  /i, --case-insensitive             Case Insensitive Labels\n"
-    "  /l[m], --listing                   Listing file [macro expansions]\n"
-    "  /oxxx, --output-file               Set output file name\n"
-    "  /s:xxx, --processor-mode           Set processor mode (16,32,64)\n"
-    "  /Dxxx                              Define something\n"
-    "  /Ixxx, --include-path              Set include file path\n"
-    "  /V, --version                      Show version and date\n"
-    "  /!, --nologo                       Don't show logo\n"
-    "  /?, --help                         This text\n"
-    "  --intel                            Use intel syntax\n"
-    "  --gas                              Use extended AT&T syntax\n"
-    "  --warningsaserrors                 Warnings should be generated as errors\n"
-    "  --nogasdirectivewarning            Don't show warnings for missing GAS directives\n"
-    "\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] file
+    
+This program is an x86/x64 assembly language assembler.
+It emulates NASM and GAS to a considerable extent.
+
+@filename                          Use response file
+/b, --binary                       Use binary output
+/e, --preprocess-only              Preprocess only
+/i, --case-insensitive             Case Insensitive Labels
+/l[m], --listing                   Listing file [macro expansions]
+/oxxx, --output-file               Set output file name
+/s:xxx, --processor-mode           Set processor mode (16,32,64)
+/Dxxx                              Define something
+/Ixxx, --include-path              Set include file path
+/V, --version                      Show version and date
+/!, --nologo                       Don't show logo
+/?, --help                         This text
+--intel                            Use intel syntax
+--gas                              Use extended AT&T syntax
+--warningsaserrors                 Warnings should be generated as errors
+--nogasdirectivewarning            Don't show warnings for missing GAS directives
+    
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* AsmMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])

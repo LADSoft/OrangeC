@@ -45,21 +45,27 @@ CmdSwitchString dlHexMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlHexMain::DebugFile(SwitchParser, 'v');
 
 const char* dlHexMain::helpText =
-    "[options] relfile\n"
-    "\n"
-    "/cxxx          Specify sections\n"
-    "/mxxx          Set output file type\n"
-    "/oxxx          Set ouput file name\n"
-    "/p:xx          Set pad value\n"
-    "/V, --version  Show version and date\n"
-    "/!, --nologo   No logo\n"
-    "/?, --help     This text\n"
-    "\n"
-    "Available output file types:\n"
-    "   M# Motorola Hex (# = 1,2,3 sets srecord type)\n"
-    "   I# Intel Hex    (# = 1,2,4)\n"
-    "   B  Binary file  (default)\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] relfile
+
+This program converts a linker output file into
+an intel or motorola hex file.  These are often used for
+transfering program images or using a chip burner
+
+/cxxx          Specify sections
+/mxxx          Set output file type
+/oxxx          Set ouput file name
+/p:xx          Set pad value
+/V, --version  Show version and date
+/!, --nologo   No logo
+/?, --help     This text
+
+Available output file types:
+   M# Motorola Hex (# = 1,2,3 sets srecord type)
+   I# Intel Hex    (# = 1,2,4)
+   B  Binary file  (default)
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* dlHexMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)

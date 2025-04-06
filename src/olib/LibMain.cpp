@@ -60,18 +60,21 @@ CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, {"noexports"});
 const char* LibMain::helpText =
-    "[options] libfile [+ files] [- files] [* files]\n"
-    "\n"
-    "/c-            Case insensitive library\n"
-    "/oxxx          Set output file name\n"
-    "/V, --version  Show version and date\n"
-    "/!, --nologo   No logo\n"
-    "/?, --help     This text\n"
-    "@xxx           Read commands from file\n"
-    "\n"
-    "--noexports    Remove export records\n"
-    "\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] libfile [+ files] [- files] [* files]
+
+This program is a librarian.   It manages groups of object files.
+
+/c-            Case insensitive library
+/oxxx          Set output file name
+/V, --version  Show version and date
+/!, --nologo   No logo
+/?, --help     This text
+@xxx           Read commands from file
+
+--noexports    Remove export records
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* LibMain::usageText = "[options] libfile [+ files] [- files] [* files]";
 
 void LibMain::AddFile(LibManager& librarian, const char* arg)

@@ -33,11 +33,17 @@
 
 const char* IeeeMain::usageText = "input file[s]";
 const char* IeeeMain::helpText =
-    "input file[s]"
-    "\n"
-    ".o extension means read binary convert to ascii"
-    ".oa extension means read ascii convert to binary"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help(input file[s]"
+
+This program converts between the binary and ascii object file formats
+It can be useful for taking the binary format currently generated
+and turning it into a readable format.
+
+".o extension means read binary convert to ascii"
+".oa extension means read ascii convert to binary"
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 
 CmdSwitchParser IeeeMain::SwitchParser;
 

@@ -54,24 +54,28 @@ CmdSwitchString libocc::WarningsAsErrors(SwitchParser, 0, ';', {"wx"});
 ;
 
 const char* libocc::helpText =
-    "[options] library files...\n"
-    "\n"
-    "/EXTRACT:name     add file to extract\n"
-    "/LIBPATH:xxx      reserved for compatibility\n"
-    "/LIST:xxx         reserved for compatibility\n"
-    "/MACHINE:xxx      reserved for compatibility\n"
-    "/NAME:xxx         create import library from dll\n"
-    "/NODEFAULTLIB:xxx  reserved for compatibility\n"
-    "/OUT:xxx          specify output file name\n"
-    "/REMOVE:name      add file to remove\n"
-    "/SUBSYSTEM:xxx    reserved for compatibility\n"
-    "/VERBOSE          reserved for compatibility\n"
-    "/WX               reserved for compatibility\n"
-    "-V, --version     show version information\n"
-    "--nologo          no logo\n"
-    "/?, --help        This text\n"
-    "\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] library files...
+
+This program is a wrapper that converts ms/lib style
+librarian command line options into olib options
+
+/EXTRACT:name     add file to extract
+/LIBPATH:xxx      reserved for compatibility
+/LIST:xxx         reserved for compatibility
+/MACHINE:xxx      reserved for compatibility
+/NAME:xxx         create import library from dll
+/NODEFAULTLIB:xxx  reserved for compatibility
+/OUT:xxx          specify output file name
+/REMOVE:name      add file to remove
+/SUBSYSTEM:xxx    reserved for compatibility
+/VERBOSE          reserved for compatibility
+/WX               reserved for compatibility
+-V, --version     show version information
+--nologo          no logo
+/?, --help        This text
+    
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* libocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)

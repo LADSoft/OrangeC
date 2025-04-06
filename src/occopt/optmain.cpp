@@ -149,18 +149,28 @@ CmdSwitchString prm_verbosity(SwitchParser, 'y');
 CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
 
 const char* helpText =
-    "[options] inputfile\n"
-    "\n"
-    "-f{flag}     set or clear a flag\n"
-    "-o{file}     set output file (in file mode)\n"
-    "--single     don't open internal file list\n"
-    "-t           display timing info\n"
-    "-y[...]      set verbosity\n"
-    "Ox           optimization control\n"
-    "-S use shared memory\n"
-    "-Y output icd file\n"
-    "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION "\nTime: " __TIME__
-    "  Date: " __DATE__;
+R"help([options] inputfile
+
+This program is the optimizer for Orange C
+
+-f{flag}     set or clear a flag
+-o{file}     set output file (in file mode)
+--single     don't open internal file list
+-t           display timing info
+-y[...]      set verbosity
+Ox           optimization control
+-S use shared memory
+-Y output icd file
+
+Optimization control: 
+)help"
+OPTIMIZATION_DESCRIPTION
+R"help(
+Flags:\n"
+)help"
+OPTMODULES_DESCRIPTION 
+
+"\nTime: __TIME__  Date: " __DATE__;
 
 const char* usageText = "[options] inputfile";
 

@@ -89,25 +89,33 @@ CmdSwitchCombineString LinkerMain::DelayLoadFlags(SwitchParser, 0, ';', {"delay"
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::helpText =
-    "[options] inputfiles\n"
-    "\n"
-    "/Dxxx=val Define something           /Lpath         Set Library Path\n"
-    "/T:xxx    Target configuration       /V, --version  Show version and date\n"
-    "/c+       Case sensitive link        /g             pass debug info\n"
-    "/l        link only                  /lxxx          link against xxx\n"
-    "/m[x]     Generate Map file          /oxxx          Set output file\n"
-    "/r+       Relative output file       /sxxx          Read specification file\n"
-    "/y[...]   Verbose                    /!, --nologo   No logo\n"
-    "/?, --help This text\n"
-    "\n"
-    " --output-def filename    create a .def file for DLLs\n"
-    " --out-implib filename    specify name for import library when generating DLLs\n"
-    " --shared                 create a dll\n"
-    " -delayload dllname       specify a dll to add to the delay load table\n"
-    " -delay[nobind|unload]    specify a delay load flag\n"
+R"help([options] inputfiles
 
-    "@xxx      Read commands from file\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+This program is a linker, it combines compiler outputs (object files)
+and libraries, to create a program image.
+
+In OrangeC, the linker output is not directly executable.   The generated image
+must be run through a downloader such as dlpe ( for windows ) to create
+the os-specific executable.
+
+/Dxxx=val Define something           /Lpath         Set Library Path
+/T:xxx    Target configuration       /V, --version  Show version and date
+/c+       Case sensitive link        /g             pass debug info
+/l        link only                  /lxxx          link against xxx
+/m[x]     Generate Map file          /oxxx          Set output file
+/r+       Relative output file       /sxxx          Read specification file
+/y[...]   Verbose                    /!, --nologo   No logo
+/?, --help This text
+
+ --output-def filename    create a .def file for DLLs
+ --out-implib filename    specify name for import library when generating DLLs
+ --shared                 create a dll
+ -delayload dllname       specify a dll to add to the delay load table
+ -delay[nobind|unload]    specify a delay load flag
+
+@xxx      Read commands from file
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* LinkerMain::usageText = "[options] inputfiles";
 
 const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)

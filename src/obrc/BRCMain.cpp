@@ -51,14 +51,19 @@ int main(int argc, char** argv)
 
 CmdSwitchParser BRCMain::SwitchParser;
 const char* BRCMain::helpText =
-    "[options] outputfile filelist \n"
-    "\n"
-    "/V, --version  Show version and date\n"
-    "/!, --nologo   No logo\n"
-    "/?, --help     This text\n"
-    "@xxx           Read commands from file\n"
-    "\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] outputfile filelist
+    
+This program compiles browse information
+It isn't used right now but will become important
+When we try to support a debugger again.
+
+/V, --version  Show version and date
+/!, --nologo   No logo
+/?, --help     This text
+@xxx           Read commands from file
+    
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* BRCMain::usageText = "[options] outputfile filelist";
 
 int BRCMain::Run(int argc, char** argv)

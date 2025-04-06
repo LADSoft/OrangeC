@@ -46,17 +46,20 @@ CmdSwitchCombineString rcMain::includePath(SwitchParser, 'i', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
 const char* rcMain::helpText =
-    "[options] file"
-    "\n"
-    "  @filename  use response file\n"
-    "  /Dxxx  Define something             /ixxx             Set include file path\n"
-    "  /Lxx   Set default language id      /oxxx             Set output file name\n"
-    "  /r     reserved for compatability   /t                reserved for compatability\n"
-    "  /v     reserved for compatability   /V, --version     Show version and date\n"
-    "  /!, --nologo   No logo\n"
-    "  /?, --help     This text\n"
-    "\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] file
+
+This program creates win32 resource files from resource file scripts.
+
+  @filename  use response file
+  /Dxxx  Define something             /ixxx             Set include file path
+  /Lxx   Set default language id      /oxxx             Set output file name
+  /r     reserved for compatability   /t                reserved for compatability
+  /v     reserved for compatability   /V, --version     Show version and date
+  /!, --nologo   No logo
+  /?, --help     This text
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* rcMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])

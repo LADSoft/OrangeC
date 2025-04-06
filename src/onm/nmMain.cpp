@@ -54,27 +54,32 @@ CmdSwitchBool nmMain::reservedS(SwitchParser, 'S');
 CmdSwitchBool nmMain::reservedX(SwitchParser, 'X');
 
 const char* nmMain::helpText =
-    "[options] inputfile\n"
-    "\n"
-    "/a             Show all symbols\n"
-    "/g             Show all externals\n"
-    "/h             Show this text\n"
-    "/l             reserved\n"
-    "/n,/v          Sort By Address\n"
-    "/p             Don't sort\n"
-    "/r             Reverse sort\n"
-    "/s             Reserved\n"
-    "/tx            Select radix (d,o,x)\n"
-    "/u             Show undefined externals\n"
-    "/A,/o          Show file on each line\n"
-    "/C             Demangle symbol names\n"
-    "/P             reserved\n"
-    "/S             reserved\n"
-    "/X             reserved\n"
-    "/V, --version  Show version and date\n"
-    "/!, --nologo   No logo\n"
-    "/?, --help     This text\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] inputfile
+    
+This program shows information about object files,
+such as defined symbols/externals
+
+/a             Show all symbols
+/g             Show all externals
+/h             Show this text
+/l             reserved
+/n,/v          Sort By Address
+/p             Don't sort
+/r             Reverse sort
+/s             Reserved
+/tx            Select radix (d,o,x)
+/u             Show undefined externals
+/A,/o          Show file on each line
+/C             Demangle symbol names
+/P             reserved
+/S             reserved
+/X             reserved
+/V, --version  Show version and date
+/!, --nologo   No logo
+/?, --help     This text
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 
 const char* nmMain::usageText = "[options] inputfile";
 

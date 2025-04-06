@@ -65,37 +65,41 @@ CmdSwitchString linkocc::prm_version(SwitchParser, 0, ';', {"version"});
 CmdSwitchString linkocc::prm_wx(SwitchParser, 0, ';', {"wx"});
 
 const char* linkocc::helpText =
-    "[options] files...\n"
-    "\n"
-    "/BASE:{address[,size]}        suggest image base address\n"
-    "/DEBUG:{FULL, NONE}           enable debugging\n"
-    "/DEF:xxx                      reserved for compatibility\n"
-    "/DLL                          build a dll\n"
-    "/ENTRY:xxx                    reserved for compatibility\n"
-    "/EXPORT:xxx                   reserved for compatibility\n"
-    "/FILEALIGN:#                  set file alignment\n"
-    "/IMPLIB:name                  create an import library\n"
-    "/LIBPATH:xxx                  add to library path\n"
-    "/MACHINE:xxx                  reserved for compatibility\n"
-    "/MANIFESTFILE:xxx             reserved for compatibility\n"
-    "/MAP                          create a map file\n"
-    "/NODEFAULTLIB:xxx             removes default libraries\n"
-    "/OPT:xxx                      reserved for compatibility\n"
-    "/OUT:xxx                      set output file\n"
-    "/PROFILE                      reserved for compatibility\n"
-    "/RELEASE                      reserved for compatibility\n"
-    "/SAFESEH:xxx                  reserved for compatibility\n"
-    "/VERBOSE:xxx                  reserved for compatibility\n"
-    "/STACK:{reserve [,commit]}    set stack size\n"
-    "/STUB:xxx                     reserved for compatibility\n"
-    "/SUBSYSTEM:{CONSOLE, WINDOWS} set the subsystem\n"
-    "/WX:xxx                       reserved for compatibility\n"
-    "\n"
-    "-V, --version                 show version information\n"
-    "--nologo                      no logo\n"
-    "/?, --help                    this text\n"
-    "\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] files...
+  
+This program is a wrapper that converts MS/LINK style
+linker command line options to olink options
+ 
+/BASE:{address[,size]}        suggest image base address
+/DEBUG:{FULL, NONE}           enable debugging
+/DEF:xxx                      reserved for compatibility
+/DLL                          build a dll
+/ENTRY:xxx                    reserved for compatibility
+/EXPORT:xxx                   reserved for compatibility
+/FILEALIGN:#                  set file alignment
+/IMPLIB:name                  create an import library
+/LIBPATH:xxx                  add to library path
+/MACHINE:xxx                  reserved for compatibility
+/MANIFESTFILE:xxx             reserved for compatibility
+/MAP                          create a map file
+/NODEFAULTLIB:xxx             removes default libraries
+/OPT:xxx                      reserved for compatibility
+/OUT:xxx                      set output file
+/PROFILE                      reserved for compatibility
+/RELEASE                      reserved for compatibility
+/SAFESEH:xxx                  reserved for compatibility
+/VERBOSE:xxx                  reserved for compatibility
+/STACK:{reserve [,commit]}    set stack size
+/STUB:xxx                     reserved for compatibility
+/SUBSYSTEM:{CONSOLE, WINDOWS} set the subsystem
+/WX:xxx                       reserved for compatibility
+    
+-V, --version                 show version information
+--nologo                      no logo
+/?, --help                    this text
+
+)help"    
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* linkocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)

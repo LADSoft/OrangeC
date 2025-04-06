@@ -41,60 +41,65 @@
 namespace Optimizer
 {
 static char help_text[] =
-    "[options] [@response file] files\n"
-    "\n"
-    "/1        - C1x mode                  /2        - C2x mode\n"
-    "/8        - c89 mode                  /9        - C99 mode\n"
-    "/c        - compile only\n"
-    "-d        - don't allow extensions    +e        - dump errors to file\n"
-    "+i        - dump preprocessed file    +l        - dump listing file\n"
-    "/oxxx     - specify output file name\n"
-    "+A        - disable extensions        /Dxxx     - define something\n"
-    "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
-    "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
-    "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
-    "/O-       - disable optimizations     /P        - replace PInvokes\n"
-    "+Q        - quiet mode                /T        - translate trigraphs\n"
-    "/Vx.x.x.x - set assembly version      /!        - No logo\n"
-    "--netcore:x - use .net core version x.   x = 0 for latest version installed\n"
-    "--version - show version info\n"
-    "/?, --help  - This text\n"
-    "\nCodegen parameters: (/C[+][-][params])\n"
-    "  +a   - use delegate for func ptr    +d   - display diagnostics\n"
-    "  -b   - no BSS                       +f   - generated pinned addresses\n"
-    "  +I   - initialize scalars           -l   - no C source in ASM file\n"
-    "  -m   - no leading underscores       +s   - use native string literals\n"
-    "  +u   - 'char' type is unsigned\n"
-    "\nWarning Control:\n"
-    " /w      - display no warnings         /wx            - display warnings as errors\n"
-    " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
-    " /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx\n"
-    " /werror=xxx[,yyy] display specific warning as error by name\n"
-    "    valid warnings are:\n"
-    "        missing-prototypes\n"
-    "        unused-but-set-variables\n"
-    "        unused-parameter\n"
-    "        unused-variable\n"
-    "        shadow\n"
-    "        sign-compare\n"
-    "        return-local-addr\n"
-    "        jump-misses-init\n"
-    "        write-strings\n"
-    "        unused-function\n"
-    "\n--architecture <architecture>\n"
-    "    x86 - x86 code       msil - managed code\n"
-    "\nDependency generation:\n"
-    "  /M             - basic generation\n"
-    "  /MM            - basic generation, user files only\n"
-    "  /MF file       - specify output file\n"
-    "  /MG            - missing headers as dependencies\n"
-    "  /MP            - add phony targets\n"
-    "  /MT target     - add target\n"
-    "  /MQ target     - add target, quote special characters\n"
-    "  /MD            - basic generation and continue\n"
-    "  /MMD           - basic generation and continue, user files only\n"
-    "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] [@response file] files
+
+This program is the Orange C compiler for MSIL
+
+/1        - C1x mode                  /2        - C2x mode
+/8        - c89 mode                  /9        - C99 mode
+/c        - compile only
+-d        - don't allow extensions    +e        - dump errors to file
++i        - dump preprocessed file    +l        - dump listing file
+/oxxx     - specify output file name
++A        - disable extensions        /Dxxx     - define something
+/E[+]nn   - max number of errors      /Ipath    - specify include path
+/Kfile    - set strong name key       /Lxxx     - set dlls to import from
+/M        - generate make stubs       /Nns.cls  - set namespace and class
+/O-       - disable optimizations     /P        - replace PInvokes
++Q        - quiet mode                /T        - translate trigraphs
+/Vx.x.x.x - set assembly version      /!        - No logo
+--netcore:x - use .net core version x.   x = 0 for latest version installed
+--version - show version info
+/?, --help  - This text
+Codegen parameters: (/C[+][-][params])
+  +a   - use delegate for func ptr    +d   - display diagnostics
+  -b   - no BSS                       +f   - generated pinned addresses
+  +I   - initialize scalars           -l   - no C source in ASM file
+  -m   - no leading underscores       +s   - use native string literals
+  +u   - 'char' type is unsigned
+Warning Control:
+ /w      - display no warnings         /wx            - display warnings as errors
+ /woxxx  - only display warning once   /wexxx         - display warning xxx as error
+ /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx
+ /werror=xxx[,yyy] display specific warning as error by name
+    valid warnings are:
+        missing-prototypes
+        unused-but-set-variables
+        unused-parameter
+        unused-variable
+        shadow
+        sign-compare
+        return-local-addr
+        jump-misses-init
+        write-strings
+        unused-function
+--architecture <architecture>
+    x86 - x86 code       msil - managed code
+Dependency generation:
+  /M             - basic generation
+  /MM            - basic generation, user files only
+  /MF file       - specify output file
+  /MG            - missing headers as dependencies
+  /MP            - add phony targets
+  /MT target     - add target
+  /MQ target     - add target, quote special characters
+  /MD            - basic generation and continue
+  /MMD           - basic generation and continue, user files only
+
+Command line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 static char usage_text[] = "[options] [@response file] files";
 
 char msil_bltins[] =

@@ -65,20 +65,26 @@ CmdSwitchString ImpLibMain::CDLLSwitch(SwitchParser, 'C', 0);
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 const char* ImpLibMain::helpText =
-    "[options] outputfile [+ files] [- files] [* files]\n"
-    "\n"
-    "/c-            Case insensitive library\n"
-    "/oxxx          Set output file name\n"
-    "/C             Legacy, unused\n"
-    "/V, --version  Show version and date\n"
-    "/!, --nologo   No logo\n"
-    "/?, --help     This text\n"
-    "@xxx           Read commands from file\n"
-    "\n"
-    "outputfile can be a library, object, or def file\n"
-    "the input files can be objects, def files, or dll files\n"
-    "\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] outputfile [+ files] [- files] [* files]
+    
+This program is an import librarian for Win32.
+It is windows-specific
+it manages symbol lists for DLLs, creates associated libraries
+etc...
+
+/c-            Case insensitive library
+/oxxx          Set output file name
+/C             Legacy, unused
+/V, --version  Show version and date
+/!, --nologo   No logo
+/?, --help     This text
+@xxx           Read commands from file
+    
+outputfile can be a library, object, or def file
+the input files can be objects, def files, or dll files
+
+)help"    
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]";
 
 ImpLibMain::~ImpLibMain() {}

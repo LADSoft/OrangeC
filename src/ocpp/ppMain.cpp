@@ -72,27 +72,31 @@ CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
 CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
 const char* ppMain::helpText =
-    "[options] files\n"
-    "\n"
-    "/1             - C11 mode                  /2          - C2x mode\n"
-    "/9             - C99 mode                  /a          - Assembler mode\n"
-    "/A             - Disable extensions        /Dxxx       - Define something\n"
-    "/E[+]nn        - Max number of errors      /Ipath      - Specify include path\n"
-    "/T             - translate trigraphs       /Uxxx       - Undefine something\n"
-    "/V, --version  - Show version and date     /!,--nologo - No logo\n"
-    "/oxxx          - set output file           /zxxx,/Zxxx - set system path\n"
-    "/?, --help     - This text\n"
-    "\nDependency generation:\n"
-    "  /M             - basic generation\n"
-    "  /MM            - basic generation, user files only\n"
-    "  /MF file       - specify output file\n"
-    "  /MG            - missing headers as dependencies\n"
-    "  /MP            - add phony targets\n"
-    "  /MT target     - add target\n"
-    "  /MQ target     - add target, quote special characters\n"
-    "  /MD            - basic generation and continue\n"
-    "  /MMD           - basic generation and continue, user files only\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] files
+    
+This program is a standalone preprocessor for the C/C++ languages
+
+/1             - C11 mode                  /2          - C2x mode
+/9             - C99 mode                  /a          - Assembler mode
+/A             - Disable extensions        /Dxxx       - Define something
+/E[+]nn        - Max number of errors      /Ipath      - Specify include path
+/T             - translate trigraphs       /Uxxx       - Undefine something
+/V, --version  - Show version and date     /!,--nologo - No logo
+/oxxx          - set output file           /zxxx,/Zxxx - set system path
+/?, --help     - This text
+Dependency generation:
+    /M             - basic generation
+    /MM            - basic generation, user files only
+    /MF file       - specify output file
+    /MG            - missing headers as dependencies
+    /MP            - add phony targets
+    /MT target     - add target
+    /MQ target     - add target, quote special characters
+    /MD            - basic generation and continue
+    /MMD           - basic generation and continue, user files only
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* ppMain::usageText = "[options] files";
 
 int main(int argc, char* argv[])

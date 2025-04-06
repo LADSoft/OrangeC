@@ -41,18 +41,26 @@ CmdSwitchString dlMzMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlMzMain::DebugFile(SwitchParser, 'v');
 
 const char* dlMzMain::helpText =
-    "[options] relfile\n"
-    "\n"
-    "/oxxx          Set output file name\n"
-    "/mxxx          Set output file type\n"
-    "/V, --version  Show version and date\n"
-    "/!, --nologo   No logo\n"
-    "/?, --help     This text\n"
-    "\n"
-    "Available output file types:\n"
-    "    TINY\n"
-    "    REAL (segmented, default)\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] relfile
+
+This program takes a 16 bit x86 output file
+and converts it to the format used for MSDOS.
+
+The primary use within this system is to create
+The MSDOS stub that goes on WIN32 programs.
+    
+/oxxx          Set output file name
+/mxxx          Set output file type
+/V, --version  Show version and date
+/!, --nologo   No logo
+/?, --help     This text
+    
+Available output file types:
+    TINY
+    REAL (segmented, default)
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 
 const char* dlMzMain::usageText = "[options] relfile";
 

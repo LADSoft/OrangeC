@@ -48,111 +48,116 @@ static char BackendIntrinsicPrototypes[] =
 #include "../occ/beIntrinsicProtos.h"
     ;
 static char help_text[] =
-    "[options] [@response file] files\n"
-    "\n"
-    "/1        - C1x mode                  /2        - c2x mode\n"
-    "/8        - c89 mode                  /9        - C99 mode\n"
-    "/#        - compile then assemble then link\n"
-    "/axxx     - set assembler extension   /c        - compile only\n"
-    "+e        - dump errors to file       /f{flags} - set flags\n"
-    "/g        - enable debug symbols      +i        - dump preprocessed file\n"
-    "/lxxx     - include library           /oxxx     - specify output file name\n"
-    "/pxxx     - pass command to tool      /snn      - align stack\n"
-    "/t        - display timing info       /wxxx     - warning control\n"
-    "/x xxx    - specify language          /y[...]   - verbosity\n"
-    "/z        - set SYSTEM include path\n"
-    "+A        - disable extensions        /Dxxx     - define something\n"
-    "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
-    "/Lxxx     - set library path          /M        - generate make stubs\n"
-    "/Ox        - optimization control     /P        - set pipe for retrieving input files\n"
-    "+Q        - quiet mode                /Sasm;dbg - make ASM source file\n"
-    "/T        - translate trigraphs       /Uxxx     - undefine something\n"
-    "/V,/v,--version - show version/date   /Wxx      - set executable type\n"
-    "/X-       - don't include RTTI info   /Y        - output intermediate code\n"
-    "/!,--nologo - No logo\n"
-    "/?, --help  - This text\n"
-    "\nCodegen parameters: (/C[+][-][params])\n"
-    "  +d   - display diagnostics          -b        - no BSS\n"
-    "  +F   - flat model                   -l        - no C source in ASM file\n"
-    "  -m   - no leading underscores       +r        - reverse order of bit ops\n"
-    "  +R   - honor FAR keyword            +u        - 'char' type is unsigned\n"
-    "\nPassthrough behaviors:\n"
-    "  filename extensions are used to determine what tool a file needs to be processed\n"
-    "     supported tools:  compiler, assembler, resource compiler, linker\n"
-    "  /paxxx    pass switch to assembler\n"
-    "  /plxxx    pass switch to linker\n"
-    "  /prxxx    pass switch to resource compiler\n"
-    "   note that /lxxx passes the library on to the linker.\n"
-    "\nWarning Control:\n"
-    " /w      - display no warnings         /wx            - display warnings as errors\n"
-    " /w+     - display all warnings\n"
-    " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
-    " /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx\n"
-    " /werror=xxx[,yyy] display specific warning as error by name\n"
-    "    valid warnings are:\n"
-    "        missing-prototypes\n"
-    "        unused-but-set-variables\n"
-    "        unused-parameter\n"
-    "        unused-variable\n"
-    "        shadow\n"
-    "        sign-compare\n"
-    "        return-local-addr\n"
-    "        jump-misses-init\n"
-    "        write-strings\n"
-    "        unused-function\n"
-    "\nExecutable Mode:\n"
-    "  /Wxy\n"
-    "  x is executable type               y is library type\n"
-    "    c - console                         empty = static lib   l = lscrtl.dll\n"
-    "    d - dll                             c = crtdll.dll\n"
-    "    g - windowing                       m = msvcrtdll.dll\n"
-    "\n"
-    "\nOptimization control:\n" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION
-    "  -fsyntax-only                  compile only, don't produce an output file\n"
-    "  -funsigned-char                'char' type is unsigned\n"
-    " -std=xxxx                       specify the language standard to use\n"
-    "    note for C++, this only changes the definition of __cplusplus\n"
-    "    it doesn't check for conformity to the standard or deprecate things properly\n"
-    "    valid standards are:\n"
-    "       c89   1989 version of ansi c\n"
-    "       c99   1999 version of ansi c\n"
-    "       c11   2011 version of ansi c\n"
-    "       c24   2024 version of ansi c\n"
-    "       c++11 2011 version of C++\n"
-    "       c++14 2014 version of C++\n"
-    " -nostdinc, nostdinc++           disable system include file path\n"
-    " --output-def filename           output a .def file instead of a .lib file for DLLs\n"
-    " --out-implib filename           specify the name of the import library for DLLs\n"
-    " --export-all-symbols            reserved\n"
-    " -link                           reserved\n"
-    " -dll or -shared                 compile as DLL (same as /Wd)\n"
-    " -static                         build a static library\n"
-    " -dumpversion                    print(to stdout) the version of the compiler\n"
-    " -dumpmachine                    print(to stdout) a representation of the target architecture\n"
-    " -print-file-name=xxx            print(to stdout) the runtime library file path\n"
-    " -print-prog-name=xxx            print(to stdout) the executable path for the xxx executable\n"
-    "\n--architecture <architecture>\n"
-    "    x86 - x86 code       msil - managed code\n"
-    "\nStack Protection:\n"
-    "  -fstack-protector                - abort if a function with a buffer >= 8 bytes overwrites the return address\n"
-    "  -fstack-protector-all            - abort if any function in the compilation sequence overwrites the return address\n"
-    "  -fstack-protector-strong         - abort if a function with an array or address taken overwrites the return address\n"
-    "  -fstack-protector-explicit       - abort if a function attributed with 'stack_protect' overwrites the return address\n"
-    "  -fruntime-object-overflow        - abort if a buffer overflows\n"
-    "  -fruntime-uninitialized-variable - abort if an uninitialized variable is used\n"
-    "  -fruntime-heap-check             - abort if there is a buffer overflow in a heap variable\n"
-    "\nDependency generation:\n"
-    "  /M             - basic generation\n"
-    "  /MM            - basic generation, user files only\n"
-    "  /MF file       - specify output file\n"
-    "  /MG            - missing headers as dependencies\n"
-    "  /MP            - add phony targets\n"
-    "  /MT target     - add target\n"
-    "  /MQ target     - add target, quote special characters\n"
-    "  /MD            - basic generation and continue\n"
-    "  /MMD           - basic generation and continue, user files only\n"
-    "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
-    "Time: " __TIME__ "  Date: " __DATE__;
+R"help([options] [@response file] files
+ 
+This program is the Orange C compiler for x86   
+
+/1        - C1x mode                  /2        - c2x mode
+/8        - c89 mode                  /9        - C99 mode
+/#        - compile then assemble then link
+/axxx     - set assembler extension   /c        - compile only
++e        - dump errors to file       /f{flags} - set flags
+/g        - enable debug symbols      +i        - dump preprocessed file
+/lxxx     - include library           /oxxx     - specify output file name
+/pxxx     - pass command to tool      /snn      - align stack
+/t        - display timing info       /wxxx     - warning control
+/x xxx    - specify language          /y[...]   - verbosity
+/z        - set SYSTEM include path
++A        - disable extensions        /Dxxx     - define something
+/E[+]nn   - max number of errors      /Ipath    - specify include path
+/Lxxx     - set library path          /M        - generate make stubs
+/Ox        - optimization control     /P        - set pipe for retrieving input files
++Q        - quiet mode                /Sasm;dbg - make ASM source file
+/T        - translate trigraphs       /Uxxx     - undefine something
+/V,/v,--version - show version/date   /Wxx      - set executable type
+/X-       - don't include RTTI info   /Y        - output intermediate code
+/!,--nologo - No logo
+/?, --help  - This text
+Codegen parameters: (/C[+][-][params])
+    +d   - display diagnostics          -b        - no BSS
+    +F   - flat model                   -l        - no C source in ASM file
+    -m   - no leading underscores       +r        - reverse order of bit ops
+    +R   - honor FAR keyword            +u        - 'char' type is unsigned
+Passthrough behaviors:
+    filename extensions are used to determine what tool a file needs to be processed
+        supported tools:  compiler, assembler, resource compiler, linker
+    /paxxx    pass switch to assembler
+    /plxxx    pass switch to linker
+    /prxxx    pass switch to resource compiler
+    note that /lxxx passes the library on to the linker.
+Warning Control:
+    /w      - display no warnings         /wx            - display warnings as errors
+    /w+     - display all warnings
+    /woxxx  - only display warning once   /wexxx         - display warning xxx as error
+    /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx
+    /werror=xxx[,yyy] display specific warning as error by name
+    valid warnings are:
+        missing-prototypes
+        unused-but-set-variables
+        unused-parameter
+        unused-variable
+        shadow
+        sign-compare
+        return-local-addr
+        jump-misses-init
+        write-strings
+        unused-function
+Executable Mode:
+    /Wxy
+    x is executable type               y is library type
+    c - console                         empty = static lib   l = lscrtl.dll
+    d - dll                             c = crtdll.dll
+    g - windowing                       m = msvcrtdll.dll
+    
+Optimization control: OPTIMIZATION_DESCRIPTION Flags: OPTMODULES_DESCRIPTION
+    -fsyntax-only                  compile only, don't produce an output file
+    -funsigned-char                'char' type is unsigned
+    -std=xxxx                       specify the language standard to use
+    note for C++, this only changes the definition of __cplusplus
+    it doesn't check for conformity to the standard or deprecate things properly
+    valid standards are:
+        c89   1989 version of ansi c
+        c99   1999 version of ansi c
+        c11   2011 version of ansi c
+        c24   2024 version of ansi c
+        c++11 2011 version of C++
+        c++14 2014 version of C++
+    -nostdinc, nostdinc++           disable system include file path
+    --output-def filename           output a .def file instead of a .lib file for DLLs
+    --out-implib filename           specify the name of the import library for DLLs
+    --export-all-symbols            reserved
+    -link                           reserved
+    -dll or -shared                 compile as DLL (same as /Wd)
+    -static                         build a static library
+    -dumpversion                    print(to stdout) the version of the compiler
+    -dumpmachine                    print(to stdout) a representation of the target architecture
+    -print-file-name=xxx            print(to stdout) the runtime library file path
+    -print-prog-name=xxx            print(to stdout) the executable path for the xxx executable
+--architecture <architecture>
+    x86 - x86 code       msil - managed code
+Stack Protection:
+    -fstack-protector                - abort if a function with a buffer >= 8 bytes overwrites the return address
+    -fstack-protector-all            - abort if any function in the compilation sequence overwrites the return address
+    -fstack-protector-strong         - abort if a function with an array or address taken overwrites the return address
+    -fstack-protector-explicit       - abort if a function attributed with 'stack_protect' overwrites the return address
+    -fruntime-object-overflow        - abort if a buffer overflows
+    -fruntime-uninitialized-variable - abort if an uninitialized variable is used
+    -fruntime-heap-check             - abort if there is a buffer overflow in a heap variable
+Dependency generation:
+    /M             - basic generation
+    /MM            - basic generation, user files only
+    /MF file       - specify output file
+    /MG            - missing headers as dependencies
+    /MP            - add phony targets
+    /MT target     - add target
+    /MQ target     - add target, quote special characters
+    /MD            - basic generation and continue
+    /MMD           - basic generation and continue, user files only
+
+Command line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 static char usage_text[] = "[options] [@response file] files";
 
 void WinmodeSetup(const char* string);

@@ -103,81 +103,85 @@ CmdSwitchBool gccocc::StackProtectorStrong(SwitchParser, 0, 0, {"fstack-protecto
 CmdSwitchBool gccocc::StackProtectorExplicit(SwitchParser, 0, 0, {"fstack-protector-explicit"});
 
 const char* gccocc::helpText =
-    "[options] files...\n"
-    "\n"
-    "   -c              compile only\n"
-    "   -g              compile for debug\n"
-    "   -i              reserved for compatibility\n"
-    "   -lxxx           specify library\n"
-    "   -o xxx          set output file\n"
-    "   -s              ignored\n"
-    "   -v              ignored\n"
-    "   -D xxx          define something\n"
-    "   -E              preprocess\n"
-    "   -I xxx          specify include directory\n"
-    "   -L xxx          specify library directory\n"
-    "   -M              basic dependency generation\n"
-    "   -MM             basic dependency generation, user files only\n"
-    "   -MF file        basic dependency generation, specify output file\n"
-    "   -MG             missing headers as dependencies\n"
-    "   -MP             dependency generation, add phony targets\n"
-    "   -MT target      dependency generation, add target\n"
-    "   -MQ target      dependency generation, add target, quote special characters\n"
-    "   -MD             basic dependency generation and continue\n"
-    "   -MMD            basic dependency generation and continue, user files only\n"
-    "   -Ox             specify optimize level\n"
-    "   -S              generate assembler code\n"
-    "   -Uxxx           undefine something\n"
-    "   -w              don't show warnings\n"
-    "   -Wno            don't show warnings\n"
-    "   -Wall           show all warnings\n"
-    "   -Wextra         show all warnings\n"
-    "   -Werror         display warnings as errors\n"
-    "   -Wfatal-errors  stop after first error\n"
-    "   -Wxxxxxxxxxx    ignored\n"
-    "   -V, --version   show version information\n"
-    "   --nologo        no logo\n"
-    "   /?, --help      this text\n"
-    "Other options\n"
-    "   -dll                      generate a DLL\n"
-    "   -dumpmachine              dump machine string\n"
-    "   -dumpversion              dump compiler version\n"
-    "   -export-all-symbols       force export of symbols\n"
-    "   -fexceptions              ignored\n"
-    "   -fmax-errors=n            show a maximum of 'n' errors\n"
-    "   -fstack-protect           abort if a function with a buffer >= 8 bytes overwrites the return address\n"
-    "   -fstack-protect-all       abort if any function in the compilation sequence overwrites the return address\n"
-    "   -fstack-protect-strong    abort if a function with an array or address taken overwrites the return address\n"
-    "   -fstack-protect-explicit  abort if a function attributed with 'stack_protect' overwrites the return address\n"
-    "   -fsyntax-only             compile, don't generate output\n"
-    "   -funsigned-char           treat char as unsigned\n"
-    "   -link                     reserved for compitiblity\n"
-    "   -m32                      ignored\n"
-    "   -m64                      ignored\n"
-    "   -mconsole                 generate a console program\n"
-    "   -mdll                     generate a DLL\n"
-    "   -mwindows                 generate a gui program\n"
-    "   -municode                 use the unicode version of the headers\n"
-    "   -nostdinc                 disable c language system include files\n"
-    "   -nostdinc++               disable c++ language system include files\n"
-    "   -output-def xxxx          create a .def file\n"
-    "   -pedantic                 ignored\n"
-    "   -pedantic-errors          ignored\n"
-    "   -pipe                     ignored\n"
-    "   -print-file-name=xxx      print the full path of a library\n"
-    "   -print-prog-name=xxx      print the full path of one of the executables\n"
-    "   -pthread                  ignored\n"
-    "   -shared                   generate a DLL instead of an executable\n"
-    "   -static                   generate a static library instead of an executable\n"
-    "   -march=xxx                ignored\n"
-    "   -mtune=xxx                ignored\n"
-    "   --Wl,dll                  make a dll\n"
-    "   --Wl,--out-implib=xxx     generate an import library when creating a dll\n"
-    "   --Wl,--output-def=xxx     generate a def file when creating a dll\n"
-    "   --Wl,substem=xxx          set the windows subsystem\n"
-    "   other -Wl,xxx=yyy switches are ignored\n"
-    "\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] files...
+
+This program is a wrapper that converts gcc-style
+compiler command line options into OCC compiler options.
+
+   -c              compile only
+   -g              compile for debug
+   -i              reserved for compatibility
+   -lxxx           specify library
+   -o xxx          set output file
+   -s              ignored
+   -v              ignored
+   -D xxx          define something
+   -E              preprocess
+   -I xxx          specify include directory
+   -L xxx          specify library directory
+   -M              basic dependency generation
+   -MM             basic dependency generation, user files only
+   -MF file        basic dependency generation, specify output file
+   -MG             missing headers as dependencies
+   -MP             dependency generation, add phony targets
+   -MT target      dependency generation, add target
+   -MQ target      dependency generation, add target, quote special characters
+   -MD             basic dependency generation and continue
+   -MMD            basic dependency generation and continue, user files only
+   -Ox             specify optimize level
+   -S              generate assembler code
+   -Uxxx           undefine something
+   -w              don't show warnings
+   -Wno            don't show warnings
+   -Wall           show all warnings
+   -Wextra         show all warnings
+   -Werror         display warnings as errors
+   -Wfatal-errors  stop after first error
+   -Wxxxxxxxxxx    ignored
+   -V, --version   show version information
+   --nologo        no logo
+   /?, --help      this text
+Other options
+   -dll                      generate a DLL
+   -dumpmachine              dump machine string
+   -dumpversion              dump compiler version
+   -export-all-symbols       force export of symbols
+   -fexceptions              ignored
+   -fmax-errors=n            show a maximum of 'n' errors
+   -fstack-protect           abort if a function with a buffer >= 8 bytes overwrites the return address
+   -fstack-protect-all       abort if any function in the compilation sequence overwrites the return address
+   -fstack-protect-strong    abort if a function with an array or address taken overwrites the return address
+   -fstack-protect-explicit  abort if a function attributed with 'stack_protect' overwrites the return address
+   -fsyntax-only             compile, don't generate output
+   -funsigned-char           treat char as unsigned
+   -link                     reserved for compitiblity
+   -m32                      ignored
+   -m64                      ignored
+   -mconsole                 generate a console program
+   -mdll                     generate a DLL
+   -mwindows                 generate a gui program
+   -municode                 use the unicode version of the headers
+   -nostdinc                 disable c language system include files
+   -nostdinc++               disable c++ language system include files
+   -output-def xxxx          create a .def file
+   -pedantic                 ignored
+   -pedantic-errors          ignored
+   -pipe                     ignored
+   -print-file-name=xxx      print the full path of a library
+   -print-prog-name=xxx      print the full path of one of the executables
+   -pthread                  ignored
+   -shared                   generate a DLL instead of an executable
+   -static                   generate a static library instead of an executable
+   -march=xxx                ignored
+   -mtune=xxx                ignored
+   --Wl,dll                  make a dll
+   --Wl,--out-implib=xxx     generate an import library when creating a dll
+   --Wl,--output-def=xxx     generate a def file when creating a dll
+   --Wl,substem=xxx          set the windows subsystem
+   other -Wl,xxx=yyy switches are ignored
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* gccocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)

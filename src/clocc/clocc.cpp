@@ -66,48 +66,52 @@ CmdSwitchBool clocc::RuntimeObjectOverflow(SwitchParser, 0, 0, {"RTCs"});
 CmdSwitchBool clocc::RuntimeUninitializedVariable(SwitchParser, 0, 0, {"RTCu"});
 
 const char* clocc::helpText =
-    "[options] files...\n"
-    "\n"
-    "/c                   compile only\n"
-    "/Dxxx                define a macro\n"
-    "/E                   reserved for compatibility\n"
-    "/F#                  set stack size\n"
-    "/Fe{file}            link to exe and set executable file name\n"
-    "/Fm{file}            reserved for compatibility\n"
-    "/Fo{file}            compile only and set object file name\n"
-    "/Fi{file}            preprocess only and set preprocessor output name\n"
-    "/Fa{file}            generate assembly file only and set preprocessor output name\n"
-    "/Fe:{file}           link to exe and set executable file name\n"
-    "/Fm:{file}           reserved for compatibility\n"
-    "/Fo:{file}           compile only and set object file name\n"
-    "/Fi:{file}           preprocess only and set preprocessor output name\n"
-    "/Fa:{file}           generate assembly file only and set preprocessor output name\n"
-    "/Ixxx                add to include path\n"
-    "/J                   char is unsigned\n"
-    "/link option         set a linker option or library\n"
-    "/LD                  create dll\n"
-    "/MD                  link with msvcrt.lib\n"
-    "/MPx                 reserved for compatibility\n"
-    "/Ox                  set optimizer option\n"
-    "/P                   preprocess to file\n"
-    "/RTCs                runtime check for object overflow on stack\n"
-    "/RTCu                runtime check for uninitialized variables\n"
-    "/std:xxx             set C or C++ standard version\n"
-    "/Tcfile              reserved for compatibility\n"
-    "/Tpfile              reserved for compatibility\n"
-    "/TC                  compile all files as C\n"
-    "/TP                  compile all files as CXX\n"
-    "/Uxxx                undefine a macro\n"
-    "/wxxx                warning control\n"
-    "/Wxxx                warning control\n"
-    "/Za                  disable extensions\n"
-    "/Ze                  enable extensions\n"
-    "/Zi                  compile for debug\n"
-    "-V, --version        show version information\n"
-    "--nologo             no logo\n"
-    "/?, --help           this text\n"
-    "\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] files...
+    
+This program is a wrapper that converts ms/cl style
+C++ compiler command line options to occ compiler options
+    
+/c                   compile only
+/Dxxx                define a macro
+/E                   reserved for compatibility
+/F#                  set stack size
+/Fe{file}            link to exe and set executable file name
+/Fm{file}            reserved for compatibility
+/Fo{file}            compile only and set object file name
+/Fi{file}            preprocess only and set preprocessor output name
+/Fa{file}            generate assembly file only and set preprocessor output name
+/Fe:{file}           link to exe and set executable file name
+/Fm:{file}           reserved for compatibility
+/Fo:{file}           compile only and set object file name
+/Fi:{file}           preprocess only and set preprocessor output name
+/Fa:{file}           generate assembly file only and set preprocessor output name
+/Ixxx                add to include path
+/J                   char is unsigned
+/link option         set a linker option or library
+/LD                  create dll
+/MD                  link with msvcrt.lib
+/MPx                 reserved for compatibility
+/Ox                  set optimizer option
+/P                   preprocess to file
+/RTCs                runtime check for object overflow on stack
+/RTCu                runtime check for uninitialized variables
+/std:xxx             set C or C++ standard version
+/Tcfile              reserved for compatibility
+/Tpfile              reserved for compatibility
+/TC                  compile all files as C
+/TP                  compile all files as CXX
+/Uxxx                undefine a macro
+/wxxx                warning control
+/Wxxx                warning control
+/Za                  disable extensions
+/Ze                  enable extensions
+/Zi                  compile for debug
+-V, --version        show version information
+--nologo             no logo
+/?, --help           this text
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* clocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)

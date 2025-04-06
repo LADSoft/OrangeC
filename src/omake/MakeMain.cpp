@@ -73,28 +73,35 @@ CmdSwitchString MakeMain::jobServer(SwitchParser, 0, 0, {"jobserver-auth"});
 CmdSwitchCombineString MakeMain::jobOutputMode(SwitchParser, 'O');
 
 const char* MakeMain::helpText =
-    "[options] goals\n"
-    "\n"
-    "/B    Rebuild all             /C    Set directory\n"
-    "/Dxxx Define something        /Ixxx Set include path\n"
-    "/K    Keep response files     /O    Set output mode\n"
-    "/R    Ignore builtin vars     /S    Cancel keepgoing\n"
-    "/T    Tree Build              /V    Show version and date\n"
-    "/Wxxx WhatIf                  /d    Reserved\n"
-    "/e    Environment overrides   /fxxx Specify make file\n"
-    "/h    This text               /i    Ignore errors\n"
-    "/j:xx Set number of jobs      /k    Keep going\n"
-    "/n    Display only            /oxxx Specify old goals\n"
-    "/p    Print database          /q    Query\n"
-    "/r    Ignore builtin rules    /s    Don't print commands\n"
-    "/t    Touch                   /u    Debug warnings\n"
-    "/w    Print make status       --eval=STRING evaluate a statement\n"
-    "/!    No logo                 /? or --help  this help\n"
-    "--jobserver-auth=xxxx               Name a jobserver to use for getting jobs\n"
-    "--version                           Show version info\n"
-    "--no-builtin-rules                  Ignore builtin rules\n"
-    "--no-builtin-vars                   Ignore builtin variables\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+R"help([options] goals\n"
+
+This program is a make utility simiar to gnu make.
+It runs scripts which define how to create some type of output
+usually an executable program image or data for it.
+
+/B    Rebuild all             /C    Set directory
+/Dxxx Define something        /Ixxx Set include path
+/K    Keep response files     /O    Set output mode
+/R    Ignore builtin vars     /S    Cancel keepgoing
+/T    Tree Build              /V    Show version and date
+/Wxxx WhatIf                  /d    Reserved
+/e    Environment overrides   /fxxx Specify make file
+/h    This text               /i    Ignore errors
+/j:xx Set number of jobs      /k    Keep going
+/n    Display only            /oxxx Specify old goals
+/p    Print database          /q    Query
+/r    Ignore builtin rules    /s    Don't print commands
+/t    Touch                   /u    Debug warnings
+/w    Print make status       --eval=STRING evaluate a statement
+/!    No logo                 /? or --help  this help
+--jobserver-auth=xxxx               Name a jobserver to use for getting jobs
+--version                           Show version info
+--no-builtin-rules                  Ignore builtin rules
+--no-builtin-vars                   Ignore builtin variables
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
+
 const char* MakeMain::usageText = "[options] goals\n";
 
 const char* MakeMain::builtinVars =

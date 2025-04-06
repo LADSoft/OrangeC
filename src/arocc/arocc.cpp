@@ -47,21 +47,26 @@ CmdSwitchBool arocc::Verbose(arocc::SwitchParser, 'v');
 CmdSwitchBool arocc::Extract(arocc::SwitchParser, 'x');
 CmdSwitchBool arocc::Delete(arocc::SwitchParser, 'd');
 
-const char* arocc::helpText =
-    "[options] library files...\n"
-    "\n"
-    "-c             reserved for compatibility\n"
-    "-d             delete files from library\n"
-    "-r             replace files in library\n"
-    "-s             reserved for compatibility\n"
-    "-u             reserved for compatibility\n"
-    "-v             reserved for compatibility\n"
-    "-x             extract files from library\n"
-    "-V, --version  show version information\n"
-    "--nologo       no logo\n"
-    "/?, --help     This text\n"
-    "\n"
-    "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* arocc::helpText = 
+R"help([options] library files...
+    
+This program is wrapper that convert linux/ar style
+Librarian command line options to olib librarian options
+    
+-c             reserved for compatibility
+-d             delete files from library
+-r             replace files in library
+-s             reserved for compatibility
+-u             reserved for compatibility
+-v             reserved for compatibility
+-x             extract files from library
+
+-V, --version  show version information
+--nologo       no logo
+/?, --help     This text
+
+)help"
+"Time: " __TIME__ "  Date: " __DATE__;
 const char* arocc::usageText = "[options] library files...";
 
 int main(int argc, char** argv)

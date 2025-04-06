@@ -59,7 +59,7 @@ class PreProcessor
     }
 
     void InitHash();
-    bool GetLine(std::string& line);
+    bool GetLine(std::string& line, bool acceptEmpty = false);
     const std::string& GetOrigLine() { return origLine; }
     const std::string& GetErrFile() { return include.GetErrFile(); }
     const std::deque<ppDefine::TokenPos>& TokenPositions() { return define.TokenPositions(); }

@@ -901,7 +901,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                 {
                     if (!*p)
                     {
-                        if (!preProcessor->GetLine(currentLine))
+                        if (!preProcessor->GetLine(currentLine, true))
                         {
                             errorint(ERR_EOF_RAW_STRING, lineno);
                             *source = p;

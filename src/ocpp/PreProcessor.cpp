@@ -168,7 +168,7 @@ std::string PreProcessor::StripDigraphs(std::string line)
     return rv;
 }
 
-bool PreProcessor::GetLine(std::string& line)
+bool PreProcessor::GetLine(std::string& line, bool acceptEmpty)
 {
     std::string last;
     while (1)
@@ -293,6 +293,10 @@ bool PreProcessor::GetLine(std::string& line)
                 }
                 last = line;
             }
+        }
+        else if (acceptEmpty)
+        {
+            return true;
         }
     }
     return true;

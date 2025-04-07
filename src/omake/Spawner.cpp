@@ -48,7 +48,6 @@ class OSTakeJobIfNotMake
     static const int MaxOmakeInstances = 2;
     bool take_job = false;
     static Semaphore sem;
-    static int initted;
   public:
     OSTakeJobIfNotMake(std::string& cmd, bool take_job = false) : take_job(take_job)
     {
@@ -58,10 +57,6 @@ class OSTakeJobIfNotMake
         }
         else
         {
-            if (initted++ == 0)
-            {
-                sem.Post(MaxOmakeInstances);
-            }
             sem.Wait();
         }
     }
@@ -77,8 +72,7 @@ class OSTakeJobIfNotMake
         }
     }
 };
-Semaphore OSTakeJobIfNotMake::sem(MaxOmakeInstances);
-int OSTakeJobIfNotMake::initted;
+Semaphore OSTakeJobIfNotMake::sem(MaxOmakeInstances, MaxOmakeInstances);
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 bool Spawner::stopAll;

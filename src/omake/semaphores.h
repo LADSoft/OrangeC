@@ -71,6 +71,10 @@ class Semaphore
         }
 #endif
     }
+    Semaphore(int value, int init) : Semaphore(value)
+    {
+        Post(init);
+    }
     Semaphore(const string_type& name) : named(true), semaphoreName(name)
     {
 #ifdef TARGET_OS_WINDOWS

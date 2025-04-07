@@ -3230,7 +3230,10 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             linkage4 = Linkage::virtual_;
                         }
                         if (sp)
+                        {
+                            sp->sb->declaredAsInline = true;
                             sp->sb->attribs.inheritable.isInline = true;
+                        }
                     }
                     else if (!Optimizer::cparams.prm_profiler && Optimizer::cparams.prm_optimize_for_speed && tp1->IsFunction() &&
                              storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
@@ -4004,6 +4007,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             sp->sb->wasExternal = spi->sb->wasExternal =
                                                 spi->sb->storage_class == StorageClass::external_;
                                             spi->sb->storage_class = StorageClass::global_;
+                                            spi->sb->declaredAsInline |= sp->sb->declaredAsInline;
                                         }
                                         break;
                                     case StorageClass::mutable_:
@@ -4112,6 +4116,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
 
                             spi->sb->attribs.inheritable.isInline |= sp->sb->attribs.inheritable.isInline;
                             spi->sb->promotedToInline |= sp->sb->promotedToInline;
+                            spi->sb->declaredAsInline |= sp->sb->declaredAsInline;
 
                             spi->sb->parentClass = sp->sb->parentClass;
                             spi->sb->externShim = false;
@@ -4360,6 +4365,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
 
                             if (nameSpaceList.size())
                                 SetTemplateNamespace(sp);
+                            if (storage_class == StorageClass::external_)
+                                sp->sb->declaredAsExtern = true;
                             if (MATCHKW(lex, Keyword::begin_))
                             {
                                 if (asFriend)
@@ -4372,7 +4379,6 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (sp->sb->storage_class == StorageClass::external_)
                                 {
                                     sp->sb->storage_class = StorageClass::global_;
-                                    sp->sb->wasExternal = true;
                                 }
                                 while (tp->type != BasicType::func_)
                                     tp = tp->btp;

@@ -671,6 +671,8 @@ typedef struct sym
         unsigned assigned : 1;                                /* value has been assigned */
         unsigned altered : 1;
         unsigned wasExternal : 1; /* was originally declared as external */
+        unsigned declaredAsExtern : 1; /* external keyword was specified, inline needs a body in C++ */
+        unsigned declaredAsInline : 1; /* inline keyword was specified, inline needs a body in C++ */
         unsigned gentemplate : 1; /* template instantiation or reference generated */
         unsigned allocaUsed : 1;
         unsigned oldstyle : 1;                /* pointer to a names list if an old style function arg */

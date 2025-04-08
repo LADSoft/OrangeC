@@ -85,6 +85,12 @@ Warning Control:
         unused-function
 --architecture <architecture>
     x86 - x86 code       msil - managed code
+Executable Mode:
+    /Wxy
+    x is executable type               y is library type
+    c - console                         empty = msvcrt.dll
+    d - dll                             l = lscrtl.dll
+    g - windowing
 Dependency generation:
   /M             - basic generation
   /MM            - basic generation, user files only

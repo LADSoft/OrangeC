@@ -30,10 +30,7 @@
 #include <unordered_map>
 #include <memory>
 #include "Floating.h"
-
-enum class kw;
-
-typedef std::unordered_map<std::string, kw> KeywordHash;
+#include "forwarddecls.h"
 
 class Token
 {

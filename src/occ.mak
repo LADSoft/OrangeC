@@ -58,7 +58,7 @@ CCFLAGS = /S /E- /!
 endif
 
 ifeq "$(STD)" ""
-STD := --std:c++14
+STD := --std:c++17
 endif
 
 LINK=$(COMPILER_PATH)\bin\olink

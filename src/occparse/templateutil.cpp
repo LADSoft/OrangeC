@@ -2317,14 +2317,9 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
                                 if (newx->type == BasicType::templateselector_)
                                 {
                                     newx = sp->tp;
-                                    if (newx->IsStructured() && !definingTemplate && newx->BaseType()->sp->sb->templateLevel &&
-                                        !newx->BaseType()->sp->sb->instantiated)
-                                    {
-                                        SYMBOL* sp1 = newx->BaseType()->sp;
-                                        sp1 = GetClassTemplate((*tso)[1].sp, sp1->templateParams, false);
-                                    }
-                                }
-                            });
+                                 }
+                             });
+
 
                             (byVal ? rv->back().second->byClass.val : rv->back().second->byClass.dflt)->UpdateRootTypes();
                         }

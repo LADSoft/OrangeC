@@ -1482,7 +1482,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             iteratorType = iteratorType->BaseType();
                             Type* eqType = iteratorType;
                             compare = eBegin;
-                            if (!FindOperatorFunction(ovcl_unary_prefix, Keyword::eq_, funcsp, &eqType, &compare, iteratorType,
+                            if (!FindOperatorFunction(ovcl_binary_any, Keyword::eq_, funcsp, &eqType, &compare, iteratorType,
                                                       eEnd, nullptr, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_EQ_FORRANGE_ITERATOR);

@@ -4456,10 +4456,20 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
         if (sym->tp->IsDeferred())
         {
             sym->tp->InstantiateDeferred();
+            sp = sym->tp->BaseType()->sp;
         }
         else
         {
             sp->tp = sp->tp->InitializeDeferred();
+        }
+        if (!sym->tp->IsAtomic())
+        {
+            auto tp1 = sym->tp;
+            while (tp1 != tp1->BaseType())
+            {
+                tp1->size = tp1->BaseType()->size;
+                tp1 = tp1->btp;
+            }
         }
     }
     if (sp && sp->tp->IsStructured() && sp->sb && sp->sb->attribs.uninheritable.deprecationText)

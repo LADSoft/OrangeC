@@ -3385,13 +3385,6 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         bool checkReturn = true;
                         if (!definingTemplate && funcsp)
                             tp1 = ResolveTemplateSelectors(funcsp, tp1);
-                        if (storage_class != StorageClass::external_ && (storage_class != StorageClass::typedef_ || !structLevel) &&
-                            linkage != Linkage::inline_ && !tp1->IsFunction() &&
-                            ((!definingTemplate || instantiatingTemplate) && !structLevel))
-                        {
-                            tp1->InstantiateDeferred();
-                            tp1 = tp1->InitializeDeferred();
-                        }
                         ssp = enclosingDeclarations.GetFirst();
                         if (!asFriend &&
                             (((storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_) && ssp) ||

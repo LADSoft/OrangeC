@@ -35,8 +35,6 @@ void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
 SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
 std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing = false);
 SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly);
-LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly,
-                    StorageClass storage_class, bool isType, int flags);
 void searchNS(SYMBOL* sym, SYMBOL* nssp, std::list<SYMBOL*>& gather);
 SYMBOL* gsearch(const char* name);
 SYMBOL* tsearch(const char* name);

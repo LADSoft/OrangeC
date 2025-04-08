@@ -3715,7 +3715,7 @@ static bool checkArgType(Type* tp, bool checkDeduced, bool checkDeclaring)
                 return allTemplateArgsSpecified(tp->BaseType()->sp, tp->BaseType()->sp->templateParams, checkDeduced,
                                                 checkDeclaring);
             }
-            if (checkDeclaring && tp->BaseType()->sp->sb->declaringRecursive)
+            if (checkDeclaring && tp->BaseType()->sp->sb->declaringRecursive && tp->BaseType()->sp->sb->templateLevel)
                 return false;
         }
     }

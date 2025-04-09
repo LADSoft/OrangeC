@@ -48,19 +48,26 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 
 CC=cl.exe
+ifneq "$(SANITIZE)" ""
+CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++14 /fsanitize=address
+else
 ifneq "$(MSPDB)" ""
 #C++14 here is to take care of a problem where the current APPVEYOR locks up on this test
 CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++14
 else
 CCFLAGS = /O2 /EHsc /c /nologo /MT
 endif
-
+endif
 LINK=link.exe
 
+ifneq "$(SANITIZE)" ""
+LFLAGS=/LTCG:off /nologo /NXCOMPAT /MACHINE:x86 /TLBID:1 /SAFESEH /DEBUG
+else
 ifneq "$(MSPDB)" ""
 LFLAGS=/LTCG:off /nologo /NXCOMPAT /MACHINE:x86 /TLBID:1 /SAFESEH /DEBUG
 else
 LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
+endif
 endif
 LIBEXE=lib.exe
 LIBFLAGS=/MACHINE:x86 /LTCG /nologo

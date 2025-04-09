@@ -92,6 +92,8 @@
     <ClCompile Include="..\occparse\overload.cpp" />
     <ClCompile Include="..\occparse\namespace.cpp" />
     <ClCompile Include="..\occparse\exprpacked.cpp" />
+    <ClCompile Include="..\ocpp\TokenSettings.cpp" />
+    <ClCompile Include="..\ocpp\ppEmbed.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="db.h" />

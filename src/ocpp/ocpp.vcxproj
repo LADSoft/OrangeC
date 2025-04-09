@@ -32,6 +32,7 @@
     <ClCompile Include="ppCond.cpp" />
     <ClCompile Include="ppCtx.cpp" />
     <ClCompile Include="ppDefine.cpp" />
+    <ClCompile Include="ppEmbed.cpp" />
     <ClCompile Include="ppError.cpp" />
     <ClCompile Include="ppExpr.cpp" />
     <ClCompile Include="ppFile.cpp" />
@@ -42,10 +43,12 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="Token.cpp" />
+    <ClCompile Include="TokenSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Errors.h" />
     <ClInclude Include="Floating.h" />
+    <ClInclude Include="forwarddecls.h" />
     <ClInclude Include="InputFile.h" />
     <ClInclude Include="MakeStubs.h" />
     <ClInclude Include="PipeArbitrator.h" />
@@ -53,6 +56,7 @@
     <ClInclude Include="ppCond.h" />
     <ClInclude Include="ppCtx.h" />
     <ClInclude Include="ppDefine.h" />
+    <ClInclude Include="ppEmbed.h" />
     <ClInclude Include="ppError.h" />
     <ClInclude Include="ppExpr.h" />
     <ClInclude Include="ppFile.h" />
@@ -64,6 +68,7 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Token.h" />
+    <ClInclude Include="TokenSettings.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -172,6 +177,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\util</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

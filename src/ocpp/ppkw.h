@@ -50,6 +50,7 @@ enum class kw
     hook,
     colon,
     comma,
+    coloncolon,
     ellipses = 100,
 
     DEFINE = 200,
@@ -105,5 +106,6 @@ enum class kw
     IASSIGN,
     IMACRO,
     WARNING,
+    EMBED,
     UNKNOWN = 10000
 };

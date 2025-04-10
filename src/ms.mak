@@ -53,9 +53,9 @@ CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++14 /fsanitize=address
 else
 ifneq "$(MSPDB)" ""
 #C++14 here is to take care of a problem where the current APPVEYOR locks up on this test
-CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++14
+CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++17
 else
-CCFLAGS = /O2 /EHsc /c /nologo /MT
+CCFLAGS = /O2 /EHsc /c /nologo /MT /std:c++17
 endif
 endif
 LINK=link.exe

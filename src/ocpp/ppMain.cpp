@@ -298,7 +298,7 @@ int ppMain::Run(int argc, char* argv[])
 #ifdef TESTANNOTATE
             TestCharInfo(outstream, pp, working);
 #endif
-            working.erase(std::remove(working.begin(), working.end(), ppDefine::MACRO_PLACEHOLDER), working.end());
+            working.erase(std::remove(working.begin(), working.end(), MacroStates::MACRO_PLACEHOLDER), working.end());
             if (assembly.GetValue())
             {
                 int npos = working.find_first_not_of(" \t\r\n\v");

@@ -35,7 +35,7 @@
 #include "ppCtx.h"
 #include "ppExpr.h"
 #include "ppCommon.h"
-
+#include "ppEmbed.h"
 class PreProcessor
 {
   public:
@@ -45,17 +45,21 @@ class PreProcessor
         ppStart(PPStart),
         lineno(0),
         include(fullName, Trigraph, extensions, isunsignedchar, dialect, SrchPth, SysSrchPth, PPStart == '%', NoErr, pipeName),
-        define(extensions, &include, dialect, PPStart == '%'),
+        define(extensions, &include, &ppEmbed, dialect, PPStart == '%'),
         macro(include, define, dialect),
         ctx(define),
         trigraphs(Trigraph),
-        pragma(&include, &define)
+        pragma(&include, &define),
+        ppEmbed(include, define)
     {
         InitHash();
         Errors::SetInclude(&include);
         macro.SetPreProcessor(this);
         include.SetParams(FileName, &define, &ctx);
         define.SetParams(&ctx, &macro);
+        Define("__STDC_EMBED_EMPTY__", std::to_string(EmbedReturnValue::EMBED_EMPTY));
+        Define("__STDC_EMBED_FOUND__", std::to_string(EmbedReturnValue::EMBED_FOUND));
+        Define("__SDTC_EMBED_NOT_FOUND__", std::to_string(EmbedReturnValue::EMBED_NOT_FOUND));
     }
 
     void InitHash();
@@ -102,6 +106,7 @@ class PreProcessor
     std::string StripTrigraphs(std::string line);
     // this returns the state of the current input file, only means main file when no include files are opened.
     bool IsOpen() const { return include.IsOpen(); }
+    void SetEmbedCallback(std::function<void(std::vector<embeder_type>)> embed_func) { ppEmbed.set_embed_function(embed_func); }
 
   private:
     bool trigraphs;
@@ -113,6 +118,7 @@ class PreProcessor
     ppError ppErr;
     ppPragma pragma;
     KeywordHash hash;
+    embeder ppEmbed;
     int lineno;
     std::string preData;
     std::string origLine;

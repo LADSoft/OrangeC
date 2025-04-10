@@ -27,6 +27,7 @@
     <ClCompile Include="..\ocpp\ppCond.cpp" />
     <ClCompile Include="..\ocpp\ppCtx.cpp" />
     <ClCompile Include="..\ocpp\ppDefine.cpp" />
+    <ClCompile Include="..\ocpp\ppEmbed.cpp" />
     <ClCompile Include="..\ocpp\ppError.cpp" />
     <ClCompile Include="..\ocpp\ppExpr.cpp" />
     <ClCompile Include="..\ocpp\ppFile.cpp" />
@@ -36,6 +37,7 @@
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
+    <ClCompile Include="..\ocpp\TokenSettings.cpp" />
     <ClCompile Include="..\olib\FileDescriptor.cpp" />
     <ClCompile Include="..\olib\LibDictionaryLibrarian.cpp" />
     <ClCompile Include="..\olib\LibDictionaryLinker.cpp" />
@@ -130,6 +132,7 @@
       <PreprocessorDefinitions>WIN32;TARGET_OS_WINDOWS;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,6 +150,7 @@
       <PreprocessorDefinitions>WIN32;TARGET_OS_WINDOWS;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -166,6 +170,7 @@
       <PreprocessorDefinitions>WIN32;TARGET_OS_WINDOWS;NDEBUG;_CONSOLE;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -187,6 +192,7 @@
       <PreprocessorDefinitions>WIN32;TARGET_OS_WINDOWS;NDEBUG;_CONSOLE;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\olib;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

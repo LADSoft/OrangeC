@@ -108,6 +108,7 @@
     <ClCompile Include="..\ocpp\ppCond.cpp" />
     <ClCompile Include="..\ocpp\ppCtx.cpp" />
     <ClCompile Include="..\ocpp\ppDefine.cpp" />
+    <ClCompile Include="..\ocpp\ppEmbed.cpp" />
     <ClCompile Include="..\ocpp\ppError.cpp" />
     <ClCompile Include="..\ocpp\ppExpr.cpp" />
     <ClCompile Include="..\ocpp\ppFile.cpp" />
@@ -117,6 +118,7 @@
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
+    <ClCompile Include="..\ocpp\TokenSettings.cpp" />
     <ClCompile Include="beinterf.cpp" />
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
@@ -272,6 +274,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\xxHash;..\occ;..\occil</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -315,6 +318,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\xxHash;..\occ;..\occil</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

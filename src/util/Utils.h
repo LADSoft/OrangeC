@@ -36,7 +36,7 @@
 #ifdef TARGET_OS_WINDOWS
 #    include "io.h"
 #endif
-
+#include <sys/stat.h>
 class Utils
 {
   public:
@@ -65,6 +65,12 @@ class Utils
         Fatal(format.c_str(), arg...);
     }
     static bool HasLocalExe(const std::string& exeName);
+    static size_t file_size(const std::string& file)
+    {
+        struct stat stats;
+        stat(file.c_str(), &stats);
+        return stats.st_size;
+    }
     static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
@@ -84,6 +90,7 @@ class Utils
     static void StripExt(char* buffer);
     static bool HasExt(const char* buffer, const char* ext);
     static bool FileExists(const char* buffer);
+    static bool FileExists(const std::string& buffer) { return FileExists(buffer.c_str()); }
     static std::string FindOnPath(const std::string& name, const std::string& path);
     static std::vector<std::string> split(const std::string& strToSplit, char delimeter = ';');
     static void ReplaceAll(std::string& str, const std::string& from, const std::string& to);

@@ -70,7 +70,7 @@ DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file,$(addsuffix $(LIB_EXT),$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
 CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -z
-CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -z
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) --std=c++17 -z
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS:= $(LFLAGS) /SUBSYSTEM:WINDOWS

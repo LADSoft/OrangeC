@@ -42,7 +42,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 CCFLAGS = -c -D__MSVCRT__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -Wno-int-to-pointer-cast
 
-CPPFLAGS = -std=gnu++14
+CPPFLAGS = -std=gnu++17
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
 
@@ -68,7 +68,7 @@ DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
 CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DGNUC -std=c99
-CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES) -DGNUC -std=gnu++14
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES) -DGNUC -std=gnu++17
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows

@@ -88,6 +88,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,6 +124,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,6 +146,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

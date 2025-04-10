@@ -94,7 +94,7 @@ bool Type::Matches(Type* right)
         return false;
     return true;
 }
-bool Type::ILSrcDump(PELib& peLib) const
+bool Type::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     if (tp_ == cls)
     {
@@ -102,88 +102,88 @@ bool Type::ILSrcDump(PELib& peLib) const
         {
             if (typeRef_->Flags().Flags() & Qualifiers::Value)
             {
-                peLib.Out() << " valuetype ";
+                out << " valuetype ";
             }
             else
             {
-                peLib.Out() << " class ";
+                out << " class ";
             }
         }
         std::string name = Qualifiers::GetName("", typeRef_, true);
         if (name[0] != '[')
         {
-            peLib.Out() << "'" << name << "'";
-            peLib.Out() << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
+            out << "'" << name << "'";
+            out << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
         }
         else
         {
             int npos = name.find_first_of("]");
             if (npos != std::string::npos && npos != name.size() - 1)
             {
-                peLib.Out() << name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
-                peLib.Out() << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
+                out << name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
+                out << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
             }
             else
             {
-                peLib.Out() << "'" << name << "'";
+                out << "'" << name << "'";
             }
         }
     }
     else if (tp_ == var)
     {
-        peLib.Out() << "!" << VarNum();
+        out << "!" << VarNum();
     }
     else if (tp_ == mvar)
     {
-        peLib.Out() << "!!" << VarNum();
+        out << "!!" << VarNum();
     }
     else if (tp_ == method)
     {
-        peLib.Out() << "method ";
-        methodRef_->ILSrcDump(peLib, false, true, true);
+        out << "method ";
+        methodRef_->ILSrcDump(peLib, out, false, true, true);
     }
     else
     {
-        peLib.Out() << typeNames_[tp_];
+        out << typeNames_[tp_];
     }
     if (arrayLevel_ == 1)
     {
-        peLib.Out() << " []";
+        out << " []";
     }
     else if (arrayLevel_)
     {
-        peLib.Out() << " [";
+        out << " [";
         for (int i = 0; i < arrayLevel_; i++)
         {
             if (i != 0)
-                peLib.Out() << ", 0...";
+                out << ", 0...";
             else
-                peLib.Out() << "0...";
+                out << "0...";
         }
-        peLib.Out() << "]";
+        out << "]";
     }
     for (int i = 0; i < pointerLevel_; i++)
-        peLib.Out() << " *";
+        out << " *";
     if (byRef_)
-        peLib.Out() << "&";
+        out << "&";
     if (pinned_)
-        peLib.Out() << " pinned";
+        out << " pinned";
     return true;
 }
-void Type::ObjOut(PELib& peLib, int pass) const
+void Type::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl
+    out << std::endl
                 << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_ << "," << pinned_ << ","
                 << showType_;
     if (tp_ == cls)
     {
-        typeRef_->ObjOut(peLib, -1);
+        typeRef_->ObjOut(peLib, out, -1);
     }
     else if (tp_ == method)
     {
-        methodRef_->ObjOut(peLib, -1);
+        methodRef_->ObjOut(peLib, out, -1);
     }
-    peLib.Out() << std::endl << "$te";
+    out << std::endl << "$te";
 }
 Type* Type::ObjIn(PELib& peLib)
 {
@@ -315,13 +315,13 @@ size_t Type::Render(PELib& peLib, Byte* result)
     }
     return true;
 }
-bool BoxedType::ILSrcDump(PELib& peLib) const
+bool BoxedType::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     // no point in looking up the type name in the assembly for this...
-    peLib.Out() << "[" << peLib.GetRuntimeName() << "]System." << typeNames_[tp_];
+    out << "[" << peLib.GetRuntimeName() << "]System." << typeNames_[tp_];
     return true;
 }
-void BoxedType::ObjOut(PELib& peLib, int pass) const { peLib.Out() << std::endl << "$Bb" << tp_ << std::endl << "$Be"; }
+void BoxedType::ObjOut(PELib& peLib, std::ostream& out, int pass) const { out << std::endl << "$Bb" << tp_ << std::endl << "$Be"; }
 BoxedType* BoxedType::ObjIn(PELib& peLib)
 {
     Type::BasicType type = (Type::BasicType)peLib.ObjInt();

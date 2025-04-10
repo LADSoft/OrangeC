@@ -32,29 +32,29 @@
 namespace DotNetPELib
 {
 
-bool Class::ILSrcDump(PELib& peLib) const
+bool Class::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    ILSrcDumpClassHeader(peLib);
+    ILSrcDumpClassHeader(peLib, out);
     if (extendsFrom_)
     {
-        peLib.Out() << " extends " << Qualifiers::GetName("", extendsFrom_);
-        peLib.Out() << extendsFrom_->AdornGenerics(peLib);
+        out << " extends " << Qualifiers::GetName("", extendsFrom_);
+        out << extendsFrom_->AdornGenerics(peLib);
     }
-    peLib.Out() << " {";
+    out << " {";
     if (pack_ > 0 || size_ > 0)
     {
-        peLib.Out() << std::endl;
+        out << std::endl;
         if (pack_ > 0)
-            peLib.Out() << " .pack " << pack_;
+            out << " .pack " << pack_;
         if (size_ >= 0)
-            peLib.Out() << " .size " << size_;
+            out << " .size " << size_;
     }
-    peLib.Out() << std::endl;
-    bool rv = DataContainer::ILSrcDump(peLib);
-    peLib.Out() << std::endl;
+    out << std::endl;
+    bool rv = DataContainer::ILSrcDump(peLib, out);
+    out << std::endl;
     for (auto p : properties_)
-        rv &= p->ILSrcDump(peLib);
-    peLib.Out() << "}" << std::endl;
+        rv &= p->ILSrcDump(peLib, out);
+    out << "}" << std::endl;
     return rv;
 }
 int Class::TransferFlags() const
@@ -219,46 +219,46 @@ bool Class::PEDump(PELib& peLib)
     }
     return true;
 }
-void Class::ILSrcDumpClassHeader(PELib& peLib) const
+void Class::ILSrcDumpClassHeader(PELib& peLib, std::ostream& out) const
 {
-    peLib.Out() << ".class";
+    out << ".class";
     DataContainer* parent = Parent();
     if (parent && typeid(*parent) == typeid(Class))
-        peLib.Out() << " nested";
-    flags_.ILSrcDumpBeforeFlags(peLib);
-    flags_.ILSrcDumpAfterFlags(peLib);
-    peLib.Out() << " '" << name_ << "'";
-    peLib.Out() << AdornGenerics(peLib, true);
+        out << " nested";
+    flags_.ILSrcDumpBeforeFlags(peLib, out);
+    flags_.ILSrcDumpAfterFlags(peLib, out);
+    out << " '" << name_ << "'";
+    out << AdornGenerics(peLib, true);
 }
-void Class::ObjOut(PELib& peLib, int pass) const
+void Class::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     if (pass == -1)
     {
-        peLib.Out() << std::endl << "$cb" << peLib.FormatName(Qualifiers::GetObjName("", this));
+        out << std::endl << "$cb" << peLib.FormatName(Qualifiers::GetObjName("", this));
         if (generic_.size())
         {
-            peLib.Out() << std::endl << "$gb" << generic_.size();
-            genericParent_->ObjOut(peLib, pass);
+            out << std::endl << "$gb" << generic_.size();
+            genericParent_->ObjOut(peLib, out, pass);
             for (auto t : generic_)
             {
-                t->ObjOut(peLib, pass);
+                t->ObjOut(peLib, out, pass);
             }
-            peLib.Out() << std::endl << "$ge";
+            out << std::endl << "$ge";
         }
     }
     else
     {
-        peLib.Out() << std::endl << "$cb" << peLib.FormatName(name_) << external_ << ",";
-        peLib.Out() << pack_ << "," << size_ << ",";
-        flags_.ObjOut(peLib, pass);
-        DataContainer::ObjOut(peLib, pass);
+        out << std::endl << "$cb" << peLib.FormatName(name_) << external_ << ",";
+        out << pack_ << "," << size_ << ",";
+        flags_.ObjOut(peLib, out, pass);
+        DataContainer::ObjOut(peLib, out, pass);
         if (pass == 3)
         {
             for (auto p : properties_)
-                p->ObjOut(peLib, pass);
+                p->ObjOut(peLib, out, pass);
         }
     }
-    peLib.Out() << std::endl << "$ce";
+    out << std::endl << "$ce";
 }
 Class* Class::ObjIn(PELib& peLib, bool definition)
 {
@@ -472,33 +472,31 @@ bool Class::Traverse(Callback& callback) const
 }
 std::string Class::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::unique_ptr<std::iostream> hold(new std::stringstream());
-    peLib.Swap(hold);
+    std::unique_ptr<std::iostream> out(new std::stringstream());
     if (generic_.size())
     {
         int count = 0;
-        peLib.Out() << "<";
+        *out << "<";
         for (auto&& type : generic_)
         {
             if (names && type->GetBasicType() == Type::var)
             {
-                peLib.Out() << (char)(type->VarNum() / 26 + 'A');
-                peLib.Out() << (char)(type->VarNum() % 26 + 'A');
+                *out << (char)(type->VarNum() / 26 + 'A');
+                *out << (char)(type->VarNum() % 26 + 'A');
             }
             else
             {
                 Type tp = *type;
                 tp.ShowType();
-                tp.ILSrcDump(peLib);
+                tp.ILSrcDump(peLib, *out);
             }
             if (count++ != generic_.size() - 1)
-                peLib.Out() << ",";
+                *out << ",";
             else
-                peLib.Out() << ">";
+                *out << ">";
         }
     }
-    peLib.Swap(hold);
-    return static_cast<std::stringstream&>(*hold).str();
+    return static_cast<std::stringstream&>(*out).str();
 }
 bool Class::MatchesGeneric(std::deque<Type*>* generics) const
 {

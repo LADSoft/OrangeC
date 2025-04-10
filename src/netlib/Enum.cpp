@@ -35,29 +35,29 @@ Field* Enum::AddValue(Allocator& allocator, const std::string& Name, longlong Va
     Add(field);
     return field;
 }
-bool Enum::ILSrcDump(PELib& peLib) const
+bool Enum::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    ILSrcDumpClassHeader(peLib);
-    peLib.Out() << " {" << std::endl;
-    DataContainer::ILSrcDump(peLib);
-    peLib.Out() << " .field public specialname rtspecialname ";
-    Field::ILSrcDumpTypeName(peLib, size);
-    peLib.Out() << " value__" << std::endl;
-    peLib.Out() << "}" << std::endl;
+    ILSrcDumpClassHeader(peLib, out);
+    out << " {" << std::endl;
+    DataContainer::ILSrcDump(peLib, out);
+    out << " .field public specialname rtspecialname ";
+    Field::ILSrcDumpTypeName(peLib, out, size);
+    out << " value__" << std::endl;
+    out << "}" << std::endl;
     return true;
 }
-void Enum::ObjOut(PELib& peLib, int pass) const
+void Enum::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     if (pass == -1)
     {
-        peLib.Out() << std::endl << "$Eb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
-        peLib.Out() << std::endl << "$Ee";
+        out << std::endl << "$Eb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
+        out << std::endl << "$Ee";
     }
     else
     {
-        peLib.Out() << std::endl << "$Eb" << peLib.FormatName(name_) << size_ << "," << flags_.Flags();
-        DataContainer::ObjOut(peLib, pass);
-        peLib.Out() << std::endl << "$Ee";
+        out << std::endl << "$Eb" << peLib.FormatName(name_) << size_ << "," << flags_.Flags();
+        DataContainer::ObjOut(peLib, out, pass);
+        out << std::endl << "$Ee";
     }
 }
 Enum* Enum::ObjIn(PELib& peLib, bool definition)

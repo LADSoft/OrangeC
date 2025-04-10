@@ -314,7 +314,7 @@ void Instruction::AddCaseLabel(const std::string& label)
         switches_ = new std::list<std::string>();
     switches_->push_back(label);
 }
-bool Instruction::ILSrcDump(PELib& peLib) const
+bool Instruction::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     if (op_ == i_SEH)
     {
@@ -323,123 +323,123 @@ bool Instruction::ILSrcDump(PELib& peLib) const
             switch (sehType_)
             {
                 case seh_try:
-                    peLib.Out() << ".try {" << std::endl;
+                    out << ".try {" << std::endl;
                     break;
                 case seh_catch:
-                    peLib.Out() << "catch ";
+                    out << "catch ";
                     if (sehCatchType_)
-                        sehCatchType_->ILSrcDump(peLib);
+                        sehCatchType_->ILSrcDump(peLib, out);
                     else
-                        peLib.Out() << " [" + peLib.GetRuntimeName() + "]System.Object";
-                    peLib.Out() << " {" << std::endl;
+                        out << " [" + peLib.GetRuntimeName() + "]System.Object";
+                    out << " {" << std::endl;
                     break;
                 case seh_filter:
-                    peLib.Out() << "filter {" << std::endl;
+                    out << "filter {" << std::endl;
                     break;
                 case seh_filter_handler:
-                    peLib.Out() << "{" << std::endl;
+                    out << "{" << std::endl;
                     break;
                 case seh_fault:
-                    peLib.Out() << "fault {" << std::endl;
+                    out << "fault {" << std::endl;
                     break;
                 case seh_finally:
-                    peLib.Out() << "finally {" << std::endl;
+                    out << "finally {" << std::endl;
                     break;
             }
         }
         else
         {
-            peLib.Out() << "}" << std::endl;
+            out << "}" << std::endl;
         }
     }
     else if (op_ == i_label)
     {
-        peLib.Out() << Label() << ":" << std::endl;
+        out << Label() << ":" << std::endl;
     }
     else if (op_ == i_comment)
     {
-        peLib.Out() << "// " << Text() << std::endl;
+        out << "// " << Text() << std::endl;
     }
     else if (op_ == i_switch)
     {
         int i = 0;
-        peLib.Out() << "\tswitch (";
+        out << "\tswitch (";
         if (switches_)
         {
             for (auto it = switches_->begin(); it != switches_->end();)
             {
-                peLib.Out() << (*it);
+                out << (*it);
                 ++it;
                 if (it != switches_->end())
                 {
-                    peLib.Out() << ", ";
+                    out << ", ";
                     if (++i % 8 == 0)
-                        peLib.Out() << "\n\t\t";
+                        out << "\n\t\t";
                 }
             }
         }
-        peLib.Out() << "\t)" << std::endl;
+        out << "\t)" << std::endl;
     }
     else
     {
         if (operand_)
         {
-            peLib.Out() << "\t" << instructions_[op_].name << "\t";
-            operand_->ILSrcDump(peLib);
-            peLib.Out() << std::endl;
+            out << "\t" << instructions_[op_].name << "\t";
+            operand_->ILSrcDump(peLib, out);
+            out << std::endl;
         }
         else
         {
-            peLib.Out() << "\t" << instructions_[op_].name << std::endl;
+            out << "\t" << instructions_[op_].name << std::endl;
         }
     }
     return true;
 }
-void Instruction::ObjOut(PELib& peLib, int pass) const
+void Instruction::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$ib" << op_ << "," << offset_;
+    out << std::endl << "$ib" << op_ << "," << offset_;
     if (op_ == i_SEH)
     {
-        peLib.Out() << "," << sehType_ << "," << sehBegin_;
+        out << "," << sehType_ << "," << sehBegin_;
         if (sehCatchType_)
         {
-            peLib.Out() << ",";
-            sehCatchType_->ObjOut(peLib, pass);
+            out << ",";
+            sehCatchType_->ObjOut(peLib, out, pass);
         }
         else
         {
-            peLib.Out() << "@";
+            out << "@";
         }
     }
     else if (op_ == i_label)
     {
-        peLib.Out() << "," << peLib.FormatName(Label());
+        out << "," << peLib.FormatName(Label());
     }
     else if (op_ == i_comment)
     {
-        peLib.Out() << "," << peLib.FormatName(Text());
+        out << "," << peLib.FormatName(Text());
     }
     else if (op_ == i_switch)
     {
-        peLib.Out() << "," << switches_->size();
+        out << "," << switches_->size();
         for (auto sw : *switches_)
         {
-            peLib.Out() << "," << peLib.FormatName(sw);
+            out << "," << peLib.FormatName(sw);
         }
     }
     else
     {
         if (operand_)
         {
-            peLib.Out() << ",";
-            operand_->ObjOut(peLib, pass);
+            out << ",";
+            operand_->ObjOut(peLib, out, pass);
         }
         else
-            peLib.Out() << "$$";
+            out << "$$";
         {
         }
     }
-    peLib.Out() << std::endl << "$ie";
+    out << std::endl << "$ie";
 }
 Instruction* Instruction::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals)
 {

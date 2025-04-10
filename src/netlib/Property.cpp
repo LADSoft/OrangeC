@@ -131,40 +131,40 @@ void Property::CallSet(PELib& peLib, CodeContainer* code)
             peLib.AllocateInstruction(Instruction::i_call, peLib.AllocateOperand(peLib.AllocateMethodName(setter_->Signature()))));
     }
 }
-bool Property::ILSrcDump(PELib& peLib) const
+bool Property::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    peLib.Out() << ".property ";
+    out << ".property ";
     if (flags_ & SpecialName)
-        peLib.Out() << "specialname ";
+        out << "specialname ";
     if (instance_)
-        peLib.Out() << "instance ";
-    type_->ILSrcDump(peLib);
-    peLib.Out() << " " << name_ << "() {" << std::endl;
-    peLib.Out() << ".get ";
-    getter_->Signature()->ILSignatureDump(peLib);
-    peLib.Out() << std::endl;
+        out << "instance ";
+    type_->ILSrcDump(peLib, out);
+    out << " " << name_ << "() {" << std::endl;
+    out << ".get ";
+    getter_->Signature()->ILSignatureDump(peLib, out);
+    out << std::endl;
     if (setter_)
     {
-        peLib.Out() << ".set ";
-        setter_->Signature()->ILSignatureDump(peLib);
-        peLib.Out() << std::endl;
+        out << ".set ";
+        setter_->Signature()->ILSignatureDump(peLib, out);
+        out << std::endl;
     }
-    peLib.Out() << "}";
+    out << "}";
     return true;
 }
-void Property::ObjOut(PELib& peLib, int pass) const
+void Property::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$Pb" << peLib.FormatName(name_) << instance_ << ",";
-    peLib.Out() << flags_ << ",";
-    type_->ObjOut(peLib, pass);
-    getter_->ObjOut(peLib, -1);
+    out << std::endl << "$Pb" << peLib.FormatName(name_) << instance_ << ",";
+    out << flags_ << ",";
+    type_->ObjOut(peLib, out, pass);
+    getter_->ObjOut(peLib, out, -1);
     if (setter_)
     {
-        peLib.Out() << std::endl << "$Sb";
-        setter_->ObjOut(peLib, -1);
-        peLib.Out() << std::endl << "$Se";
+        out << std::endl << "$Sb";
+        setter_->ObjOut(peLib, out, -1);
+        out << std::endl << "$Se";
     }
-    peLib.Out() << std::endl << "$Pe";
+    out << std::endl << "$Pe";
 }
 Property* Property::ObjIn(PELib& peLib)
 {

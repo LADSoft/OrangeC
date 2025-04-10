@@ -59,21 +59,21 @@ const char* Qualifiers::qualifierNames_[] = {"public",
                                              "",
                                              ""};
 int Qualifiers::afterFlags_ = Qualifiers::PreserveSig | Qualifiers::CIL | Qualifiers::Managed | Qualifiers::Runtime;
-void Qualifiers::ILSrcDumpBeforeFlags(PELib& peLib) const
+void Qualifiers::ILSrcDumpBeforeFlags(PELib& peLib, std::ostream& out) const
 {
     int n = ~afterFlags_ & flags_;
     for (int i = 0; i < 32; i++)
         if (n & (1 << i))
-            peLib.Out() << " " << qualifierNames_[i];
+            out << " " << qualifierNames_[i];
 }
-void Qualifiers::ILSrcDumpAfterFlags(PELib& peLib) const
+void Qualifiers::ILSrcDumpAfterFlags(PELib& peLib, std::ostream& out) const
 {
     int n = afterFlags_ & flags_;
     for (int i = 0; i < 32; i++)
         if (n & (1 << i))
-            peLib.Out() << " " << qualifierNames_[i];
+            out << " " << qualifierNames_[i];
 }
-void Qualifiers::ObjOut(PELib& peLib, int pass) const { peLib.Out() << flags_; }
+void Qualifiers::ObjOut(PELib& peLib, std::ostream& out, int pass) const { out << flags_; }
 void Qualifiers::ObjIn(PELib& peLib, bool definition) { flags_ = peLib.ObjInt(); }
 void Qualifiers::ReverseNamePrefix(std::string& rv, const DataContainer* parent, int& pos, bool type)
 {

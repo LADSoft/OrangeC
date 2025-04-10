@@ -46,115 +46,115 @@ void Field::AddInitializer(Byte* bytes, int len)
         byteLength_ = len;
     }
 }
-bool Field::ILSrcDumpTypeName(PELib& peLib, Field::ValueSize size)
+bool Field::ILSrcDumpTypeName(PELib& peLib, std::ostream& out, Field::ValueSize size)
 {
     switch (size)
     {
         case Field::i8:
-            peLib.Out() << " int8";
+            out << " int8";
             break;
         case Field::i16:
-            peLib.Out() << " int16";
+            out << " int16";
             break;
         case Field::i32:
         default:
-            peLib.Out() << " int32";
+            out << " int32";
             break;
         case Field::i64:
-            peLib.Out() << " int64";
+            out << " int64";
             break;
     }
     return true;
 }
-bool Field::ILSrcDump(PELib& peLib) const
+bool Field::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    peLib.Out() << ".field";
+    out << ".field";
     if ((parent_->Flags().Flags() & Qualifiers::Explicit) ||
         ((parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_))
-        peLib.Out() << " [" << explicitOffset_ << "]";
-    flags_.ILSrcDumpBeforeFlags(peLib);
-    flags_.ILSrcDumpAfterFlags(peLib);
+        out << " [" << explicitOffset_ << "]";
+    flags_.ILSrcDumpBeforeFlags(peLib, out);
+    flags_.ILSrcDumpAfterFlags(peLib, out);
     if (FieldType()->GetBasicType() == Type::cls)
     {
         if (FieldType()->GetClass()->Flags().Flags() & Qualifiers::Value)
         {
-            peLib.Out() << " valuetype ";
-            type_->ILSrcDump(peLib);
+            out << " valuetype ";
+            type_->ILSrcDump(peLib, out);
         }
         else
         {
-            peLib.Out() << " class ";
-            type_->ILSrcDump(peLib);
+            out << " class ";
+            type_->ILSrcDump(peLib, out);
         }
     }
     else
     {
-        peLib.Out() << " ";
-        type_->ILSrcDump(peLib);
+        out << " ";
+        type_->ILSrcDump(peLib, out);
     }
-    peLib.Out() << " '" << name_ << "'";
+    out << " '" << name_ << "'";
     switch (mode_)
     {
         case None:
             break;
         case Enum:
-            peLib.Out() << " = ";
-            ILSrcDumpTypeName(peLib, size_);
-            peLib.Out() << "(" << (int)enumValue_ << ")";
+            out << " = ";
+            ILSrcDumpTypeName(peLib, out, size_);
+            out << "(" << (int)enumValue_ << ")";
 
             break;
         case Bytes:
             if (byteValue_ && byteLength_)
             {
-                peLib.Out() << " at $" << name_ << std::endl;
-                peLib.Out() << ".data cil $" << name_ << " = bytearray (" << std::endl << std::hex;
+                out << " at $" << name_ << std::endl;
+                out << ".data cil $" << name_ << " = bytearray (" << std::endl << std::hex;
                 int i;
                 for (i = 0; i < byteLength_; i++)
                 {
-                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)byteValue_[i] << " ";
+                    out << std::setw(2) << std::setfill('0') << (int)byteValue_[i] << " ";
                     if (i % 8 == 7 && i != byteLength_ - 1)
-                        peLib.Out() << std::endl << "\t";
+                        out << std::endl << "\t";
                 }
-                peLib.Out() << ")" << std::dec;
+                out << ")" << std::dec;
             }
             break;
     }
-    peLib.Out() << std::endl;
+    out << std::endl;
     return true;
 }
-void Field::ObjOut(PELib& peLib, int pass) const
+void Field::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     if (pass == -1)  // as a reference, we have to do a full signature because of overloads
                      // and here we need the fully qualified name
     {
-        peLib.Out() << std::endl << "$fb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
-        peLib.Out() << std::endl << "$fe";
+        out << std::endl << "$fb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
+        out << std::endl << "$fe";
     }
     else
     {
-        peLib.Out() << std::endl << "$fb" << peLib.FormatName(name_);
-        peLib.Out() << external_ << "," << size_ << ",";
-        flags_.ObjOut(peLib, pass);
-        peLib.Out() << ",";
-        type_->ObjOut(peLib, pass);
-        peLib.Out() << std::endl << "$fe";
+        out << std::endl << "$fb" << peLib.FormatName(name_);
+        out << external_ << "," << size_ << ",";
+        flags_.ObjOut(peLib, out, pass);
+        out << ",";
+        type_->ObjOut(peLib, out, pass);
+        out << std::endl << "$fe";
         switch (mode_)
         {
             case None:
-                peLib.Out() << std::endl << "$";
+                out << std::endl << "$";
                 break;
             case Enum:
-                peLib.Out() << std::endl << "=";
-                peLib.Out() << (longlong)enumValue_ << "," << (int)size_ << ")";
+                out << std::endl << "=";
+                out << (longlong)enumValue_ << "," << (int)size_ << ")";
 
                 break;
             case Bytes:
-                peLib.Out() << std::endl << "(" << std::hex;
+                out << std::endl << "(" << std::hex;
                 for (int i = 0; i < byteLength_; i++)
                 {
-                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)byteValue_[i];
+                    out << std::setw(2) << std::setfill('0') << (int)byteValue_[i];
                 }
-                peLib.Out() << ")" << std::dec;
+                out << ")" << std::dec;
         }
     }
 }

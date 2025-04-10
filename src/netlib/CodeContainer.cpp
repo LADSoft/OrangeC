@@ -35,20 +35,20 @@ void CodeContainer::AddInstruction(Instruction* instruction)
         instructions_.push_back(instruction);
 }
 
-bool CodeContainer::ILSrcDump(PELib& peLib) const
+bool CodeContainer::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     for (auto instruction : instructions_)
-        instruction->ILSrcDump(peLib);
+        instruction->ILSrcDump(peLib, out);
     return true;
 }
-void CodeContainer::ObjOut(PELib& peLib, int pass) const
+void CodeContainer::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     if (pass == 3 && instructions_.size())
     {
-        peLib.Out() << std::endl << "$Ib";
+        out << std::endl << "$Ib";
         for (auto instruction : instructions_)
-            instruction->ObjOut(peLib, pass);
-        peLib.Out() << std::endl << "$Ie";
+            instruction->ObjOut(peLib, out, pass);
+        out << std::endl << "$Ie";
     }
 }
 void CodeContainer::ObjIn(PELib& peLib, const std::vector<Local*>& locals)

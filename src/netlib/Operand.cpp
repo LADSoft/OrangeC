@@ -117,17 +117,17 @@ bool Operand::isnanorinf() const
     check &= 0x7ff00000;
     return check == 0x7ff00000 || check == 0;
 }
-bool Operand::ILSrcDump(PELib& peLib) const
+bool Operand::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     switch (type_)
     {
         case t_none:  // no operand, nothing to display
             break;
         case t_value:
-            refValue_->ILSrcDump(peLib);
+            refValue_->ILSrcDump(peLib, out);
             break;
         case t_int:
-            peLib.Out() << intValue_;
+            out << intValue_;
             break;
         case t_real:
             if (isnanorinf())
@@ -145,41 +145,41 @@ bool Operand::ILSrcDump(PELib& peLib) const
                     *(double*)buf = floatValue_;
                 }
 
-                peLib.Out() << "(" << std::hex;
+                out << "(" << std::hex;
                 for (i = 0; i < sz1; i++)
                 {
-                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)buf[i] << " ";
+                    out << std::setw(2) << std::setfill('0') << (int)buf[i] << " ";
                 }
-                peLib.Out() << ")" << std::dec;
+                out << ")" << std::dec;
             }
             else
             {
-                peLib.Out() << floatValue_;
+                out << floatValue_;
             }
             break;
         case t_string:
-            peLib.Out() << "\"" << EscapedString() << "\"";
+            out << "\"" << EscapedString() << "\"";
             break;
         case t_label:
-            peLib.Out() << stringValue_;
+            out << stringValue_;
             break;
     }
     return true;
 }
-void Operand::ObjOut(PELib& peLib, int pass) const
+void Operand::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$ob" << type_;
+    out << std::endl << "$ob" << type_;
     switch (type_)
     {
         case t_none:  // no operand, nothing to display
         default:
             break;
         case t_value:
-            peLib.Out() << ",";
-            refValue_->ObjOut(peLib, -1);
+            out << ",";
+            refValue_->ObjOut(peLib, out, -1);
             break;
         case t_int:
-            peLib.Out() << "," << sz_ << "," << intValue_;
+            out << "," << sz_ << "," << intValue_;
             break;
         case t_real: {
             Byte buf[8];
@@ -194,21 +194,21 @@ void Operand::ObjOut(PELib& peLib, int pass) const
                 sz1 = 8;
                 *(double*)buf = floatValue_;
             }
-            peLib.Out() << "," << sz_ << "," << std::hex;
+            out << "," << sz_ << "," << std::hex;
 
             for (i = 0; i < sz1; i++)
             {
-                peLib.Out() << std::setw(2) << std::setfill('0') << (int)buf[i];
+                out << std::setw(2) << std::setfill('0') << (int)buf[i];
             }
-            peLib.Out() << std::dec;
+            out << std::dec;
         }
         break;
         case t_string:
         case t_label:
-            peLib.Out() << "," << peLib.FormatName(stringValue_);
+            out << "," << peLib.FormatName(stringValue_);
             break;
     }
-    peLib.Out() << std::endl << "$oe";
+    out << std::endl << "$oe";
 }
 Operand* Operand::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals)
 {

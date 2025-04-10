@@ -27,13 +27,13 @@
 #include "PEFile.h"
 namespace DotNetPELib
 {
-bool Value::ILSrcDump(PELib& peLib) const
+bool Value::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     // used for types
-    type_->ILSrcDump(peLib);
+    type_->ILSrcDump(peLib, out);
     return true;
 }
-void Value::ObjOut(PELib& peLib, int pass) const { type_->ObjOut(peLib, pass); }
+void Value::ObjOut(PELib& peLib, std::ostream& out, int pass) const { type_->ObjOut(peLib, out, pass); }
 Value* Value::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals, bool definition)
 {
     switch (peLib.ObjBegin())
@@ -60,19 +60,19 @@ Value* Value::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& loc
     return nullptr;
 }
 size_t Value::Render(PELib& peLib, int opcode, int operandType, Byte* result) { return type_->Render(peLib, result); }
-bool Local::ILSrcDump(PELib& peLib) const
+bool Local::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    peLib.Out() << "'" << name_ << "/" << index_ << "'";
+    out << "'" << name_ << "/" << index_ << "'";
     return true;
 }
-void Local::ObjOut(PELib& peLib, int pass) const
+void Local::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$lb" << peLib.FormatName(name_) << index_;
+    out << std::endl << "$lb" << peLib.FormatName(name_) << index_;
     if (pass != -1)
     {
-        GetType()->ObjOut(peLib, pass);
+        GetType()->ObjOut(peLib, out, pass);
     }
-    peLib.Out() << std::endl << "$le";
+    out << std::endl << "$le";
 }
 Local* Local::ObjIn(PELib& peLib, const std::map<const std::string, Local*>& locals, bool definition)
 {
@@ -121,19 +121,19 @@ size_t Local::Render(PELib& peLib, int opcode, int operandType, Byte* result)
     }
     return sz;
 }
-bool Param::ILSrcDump(PELib& peLib) const
+bool Param::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    peLib.Out() << "'" << name_ << "'";
+    out << "'" << name_ << "'";
     return true;
 }
-void Param::ObjOut(PELib& peLib, int pass) const
+void Param::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$pb" << peLib.FormatName(name_) << index_;
+    out << std::endl << "$pb" << peLib.FormatName(name_) << index_;
     if (pass != -1)
     {
-        GetType()->ObjOut(peLib, pass);
+        GetType()->ObjOut(peLib, out, pass);
     }
-    peLib.Out() << std::endl << "$pe";
+    out << std::endl << "$pe";
 }
 Param* Param::ObjIn(PELib& peLib, bool definition)
 {
@@ -167,21 +167,21 @@ size_t Param::Render(PELib& peLib, int opcode, int operandType, Byte* result)
     }
     return sz;
 }
-bool FieldName::ILSrcDump(PELib& peLib) const
+bool FieldName::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     if (field_->FieldType()->GetBasicType() == Type::cls)
     {
         if (field_->FieldType()->GetClass()->Flags().Flags() & Qualifiers::Value)
-            peLib.Out() << "valuetype ";
+            out << "valuetype ";
         else
-            peLib.Out() << "class ";
+            out << "class ";
     }
-    field_->FieldType()->ILSrcDump(peLib);
-    peLib.Out() << " ";
-    peLib.Out() << Qualifiers::GetName(field_->Name(), field_->GetContainer());
+    field_->FieldType()->ILSrcDump(peLib, out);
+    out << " ";
+    out << Qualifiers::GetName(field_->Name(), field_->GetContainer());
     return true;
 }
-void FieldName::ObjOut(PELib& peLib, int pass) const { field_->ObjOut(peLib, -1); }
+void FieldName::ObjOut(PELib& peLib, std::ostream& out, int pass) const { field_->ObjOut(peLib, out, -1); }
 FieldName* FieldName::ObjIn(PELib& peLib, bool definition)
 {
     Field* fld = Field::ObjIn(peLib, false);
@@ -202,12 +202,12 @@ size_t FieldName::Render(PELib& peLib, int opcode, int operandType, Byte* result
     return 4;
 }
 MethodName::MethodName(MethodSignature* M) : signature_(M), Value("", nullptr) {}
-bool MethodName::ILSrcDump(PELib& peLib) const
+bool MethodName::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    signature_->ILSrcDump(peLib, false, false, false);
+    signature_->ILSrcDump(peLib, out, false, false, false);
     return true;
 }
-void MethodName::ObjOut(PELib& peLib, int pass) const { signature_->ObjOut(peLib, -1); }
+void MethodName::ObjOut(PELib& peLib, std::ostream& out, int pass) const { signature_->ObjOut(peLib, out, -1); }
 MethodName* MethodName::ObjIn(PELib& peLib, bool defintion)
 {
     MethodSignature* sig = MethodSignature::ObjIn(peLib, nullptr, false);

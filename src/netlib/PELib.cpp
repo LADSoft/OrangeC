@@ -38,7 +38,6 @@ PELib::PELib(const std::string& AssemblyName, int CoreFlags, NetCore* netCore) :
     netCore_(netCore),
     peWriter_(nullptr),
     inputStream_(nullptr),
-    outputStream_(nullptr),
     codeContainer_(nullptr),
     objInputBuf_(nullptr),
     objInputSize_(0),
@@ -60,29 +59,29 @@ AssemblyDef* PELib::EmptyWorkingAssembly(const std::string& AssemblyName)
 bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
 {
     bool rv;
-    outputStream_ = std::unique_ptr<std::iostream>(
+    auto out = std::unique_ptr<std::iostream>(
         new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
                                            (mode == ilasm || mode == object ? std::ios::in : std::ios::binary)));
 
     switch (mode)
     {
         case ilasm:
-            rv = ILSrcDump(*this);
+            rv = ILSrcDump(*this, *out);
             break;
         case peexe:
-            rv = DumpPEFile(file, true, gui);
+            rv = DumpPEFile(file, *out, true, gui);
             break;
         case pedll:
-            rv = DumpPEFile(file, false, gui);
+            rv = DumpPEFile(file, *out, false, gui);
             break;
         case object:
-            rv = ObjOut();
+            rv = ObjOut(*out);
             break;
         default:
             rv = false;
             break;
     }
-    static_cast<std::fstream&>(*outputStream_).close();
+    static_cast<std::fstream&>(*out).close();
     return rv;
 }
 void PELib::AddExternalAssembly(const std::string& assemblyName, Byte* publicKeyToken)
@@ -434,49 +433,49 @@ PELib::eFindType PELib::Find(std::string path, Method** result, std::vector<Type
         return s_method;
     }
 }
-bool PELib::ILSrcDumpHeader()
+bool PELib::ILSrcDumpHeader(std::ostream& out)
 {
-    *outputStream_ << ".corflags " << corFlags_ << std::endl << std::endl;
+    out << ".corflags " << corFlags_ << std::endl << std::endl;
     for (std::list<AssemblyDef*>::const_iterator it = assemblyRefs_.begin(); it != assemblyRefs_.end(); ++it)
     {
-        (*it)->ILHeaderDump(*this);
+        (*it)->ILHeaderDump(*this, out);
     }
-    *outputStream_ << std::endl;
+    out << std::endl;
     return true;
 }
-bool PELib::ILSrcDumpFile()
+bool PELib::ILSrcDumpFile(std::ostream& out)
 {
-    WorkingAssembly()->ILSrcDump(*this);
+    WorkingAssembly()->ILSrcDump(*this, out);
     for (auto sig : pInvokeSignatures_)
     {
-        sig.second->ILSrcDump(*this);
+        sig.second->ILSrcDump(*this, out);
     }
     return true;
 }
-bool PELib::ObjOut()
+bool PELib::ObjOut(std::ostream& out)
 {
-    *outputStream_ << "$qb" << OBJECT_FILE_VERSION << "," << corFlags_;
+    out << "$qb" << OBJECT_FILE_VERSION << "," << corFlags_;
     for (auto a : assemblyRefs_)
     {
         // classes and namespaces
-        a->ObjOut(*this, 1);
+        a->ObjOut(*this, out, 1);
     }
     for (auto p : pInvokeSignatures_)
     {
         // pinvoke signatures
-        p.second->ObjOut(*this, 2);
+        p.second->ObjOut(*this, out, 2);
     }
     for (auto a : assemblyRefs_)
     {
         // method definitions and fields
-        a->ObjOut(*this, 2);
+        a->ObjOut(*this, out, 2);
     }
     for (auto a : assemblyRefs_)
     {
         // method bodies
-        a->ObjOut(*this, 3);
+        a->ObjOut(*this, out, 3);
     }
-    *outputStream_ << "$qe";
+    out << "$qe";
     return true;
 }
 bool PELib::LoadObject(const std::string& name)
@@ -712,7 +711,7 @@ Class* PELib::LookupClass(PEReader& reader, const std::string& assemblyName, int
     return assembly->LookupClass(*this, nameSpace, name);
 }
 
-bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
+bool PELib::DumpPEFile(std::string file, std::iostream& out, bool isexe, bool isgui)
 {
     int n = 1;
     WorkingAssembly()->Number(n);  // give initial PE Indexes for field resolution..
@@ -804,7 +803,7 @@ bool PELib::DumpPEFile(std::string file, bool isexe, bool isgui)
     }
     bool rv = WorkingAssembly()->PEDump(*this);
     WorkingAssembly()->Compile(*this);
-    peWriter_->WriteFile(*this, *outputStream_);
+    peWriter_->WriteFile(*this, out);
     delete peWriter_;
     return rv;
 }

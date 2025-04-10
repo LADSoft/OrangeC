@@ -109,32 +109,32 @@ DataContainer* DataContainer::FindContainer(std::vector<std::string>& split, siz
     }
     return rv;
 }
-bool DataContainer::ILSrcDump(PELib& peLib) const
+bool DataContainer::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
     for (std::list<Field*>::const_iterator it = fields_.begin(); it != fields_.end(); ++it)
-        (*it)->ILSrcDump(peLib);
+        (*it)->ILSrcDump(peLib, out);
     for (std::list<CodeContainer*>::const_iterator it = methods_.begin(); it != methods_.end(); ++it)
-        (*it)->ILSrcDump(peLib);
+        (*it)->ILSrcDump(peLib, out);
     for (std::list<DataContainer*>::const_iterator it = children_.begin(); it != children_.end(); ++it)
-        (*it)->ILSrcDump(peLib);
+        (*it)->ILSrcDump(peLib, out);
     return true;
 }
-void DataContainer::ObjOut(PELib& peLib, int pass) const
+void DataContainer::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$db";
+    out << std::endl << "$db";
     if (pass == 2)
     {
         for (auto field : fields_)
-            field->ObjOut(peLib, pass);
+            field->ObjOut(peLib, out, pass);
     }
     if (pass >= 2)
     {
         for (auto method : methods_)
-            method->ObjOut(peLib, pass);
+            method->ObjOut(peLib, out, pass);
     }
     for (auto child : children_)
-        child->ObjOut(peLib, pass);
-    peLib.Out() << std::endl << "$de";
+        child->ObjOut(peLib, out, pass);
+    out << std::endl << "$de";
 }
 void DataContainer::ObjIn(PELib& peLib, bool definition)
 {

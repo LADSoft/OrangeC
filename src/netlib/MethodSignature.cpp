@@ -85,143 +85,143 @@ void MethodSignature::AddVarargParam(Param* param)
     param->Index(params.size() + varargParams_.size());
     varargParams_.push_back(param);
 }
-bool MethodSignature::ILSrcDump(PELib& peLib, bool names, bool asType, bool PInvoke) const
+bool MethodSignature::ILSrcDump(PELib& peLib, std::ostream& out, bool names, bool asType, bool PInvoke) const
 {
     // this usage of vararg is for C style varargs
     // occil uses C# style varags except in pinvoke and generates
     // the associated object array argument
     if ((flags_ & Vararg) && !(flags_ & Managed))
     {
-        peLib.Out() << "vararg ";
+        out << "vararg ";
     }
     if (flags_ & InstanceFlag)
     {
-        peLib.Out() << "instance ";
+        out << "instance ";
     }
     if (returnType_->GetBasicType() == Type::cls)
     {
         if (returnType_->GetClass()->Flags().Flags() & Qualifiers::Value)
-            peLib.Out() << "valuetype ";
+            out << "valuetype ";
         else
-            peLib.Out() << "class ";
+            out << "class ";
     }
-    returnType_->ILSrcDump(peLib);
-    peLib.Out() << " ";
+    returnType_->ILSrcDump(peLib, out);
+    out << " ";
     if (asType)
     {
-        peLib.Out() << " *";
+        out << " *";
     }
     else if (name_.size())
     {
         if (arrayObject_)
         {
-            arrayObject_->ILSrcDump(peLib);
-            peLib.Out() << "::'" << name_ << "'";
+            arrayObject_->ILSrcDump(peLib, out);
+            out << "::'" << name_ << "'";
         }
         else if (names)
         {
-            peLib.Out() << "'" << name_ << "'";
+            out << "'" << name_ << "'";
         }
         else
         {
             if (container_ && typeid(*container_) == typeid(Class) && static_cast<Class*>(container_)->Generic().size())
             {
                 if (container_->Flags().Flags() & Qualifiers::Value)
-                    peLib.Out() << "valuetype ";
+                    out << "valuetype ";
                 else
-                    peLib.Out() << "class ";
-                peLib.Out() << Qualifiers::GetName("", container_);
-                peLib.Out() << static_cast<Class*>(container_)->AdornGenerics(peLib);
-                peLib.Out() << "::'" << name_ << "'";
+                    out << "class ";
+                out << Qualifiers::GetName("", container_);
+                out << static_cast<Class*>(container_)->AdornGenerics(peLib);
+                out << "::'" << name_ << "'";
             }
             else
             {
-                peLib.Out() << Qualifiers::GetName(name_, container_);
+                out << Qualifiers::GetName(name_, container_);
             }
         }
     }
-    peLib.Out() << AdornGenerics(peLib) << "(";
+    out << AdornGenerics(peLib) << "(";
     for (std::list<Param*>::const_iterator it = params.begin(); it != params.end();)
     {
         if ((*it)->GetType()->GetBasicType() == Type::cls)
         {
             if ((*it)->GetType()->GetClass()->Flags().Flags() & Qualifiers::Value)
-                peLib.Out() << "valuetype ";
+                out << "valuetype ";
             else
-                peLib.Out() << "class ";
+                out << "class ";
         }
-        (*it)->GetType()->ILSrcDump(peLib);
+        (*it)->GetType()->ILSrcDump(peLib, out);
         if (names && (*it)->GetType()->GetBasicType() != Type::var && (*it)->GetType()->GetBasicType() != Type::mvar)
-            (*it)->ILSrcDump(peLib);
+            (*it)->ILSrcDump(peLib, out);
         ++it;
         if (it != params.end())
-            peLib.Out() << ", ";
+            out << ", ";
     }
     if (!PInvoke && (flags_ & Vararg))
     {
         if (!(flags_ & Managed))
         {
-            peLib.Out() << ", ...";
+            out << ", ...";
             if (varargParams_.size())
             {
-                peLib.Out() << ", ";
+                out << ", ";
                 for (std::list<Param*>::const_iterator it = varargParams_.begin(); it != varargParams_.end();)
                 {
-                    (*it)->GetType()->ILSrcDump(peLib);
+                    (*it)->GetType()->ILSrcDump(peLib, out);
                     ++it;
                     if (it != varargParams_.end())
-                        peLib.Out() << ", ";
+                        out << ", ";
                 }
             }
         }
     }
-    peLib.Out() << ")";
+    out << ")";
     return true;
 }
-void MethodSignature::ObjOut(PELib& peLib, int pass) const
+void MethodSignature::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     if (pass == -1)  // as a reference, we have to do a full signature because of overloads
                      // and here we need the fully qualified name
     {
         if (name_.size())
-            peLib.Out() << std::endl << "$sb" << peLib.FormatName(Qualifiers::GetObjName(name_, container_));
+            out << std::endl << "$sb" << peLib.FormatName(Qualifiers::GetObjName(name_, container_));
         else
-            peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
+            out << std::endl << "$sb" << peLib.FormatName(name_);
         if (container_ && typeid(*container_) == typeid(Class) && static_cast<Class*>(container_)->Generic().size())
         {
             Class* cls = static_cast<Class*>(container_);
-            peLib.Out() << std::endl << "$gb" << cls->Generic().size();
-            cls->GenericParent()->ObjOut(peLib, pass);
+            out << std::endl << "$gb" << cls->Generic().size();
+            cls->GenericParent()->ObjOut(peLib, out, pass);
             for (auto t : cls->Generic())
             {
-                t->ObjOut(peLib, pass);
+                t->ObjOut(peLib, out, pass);
             }
-            peLib.Out() << std::endl << "$ge";
+            out << std::endl << "$ge";
         }
     }
     else
     {
         // as a definition...
-        peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
-        peLib.Out() << external_ << ",";
+        out << std::endl << "$sb" << peLib.FormatName(name_);
+        out << external_ << ",";
     }
-    peLib.Out() << flags_ << ",";
-    peLib.Out() << genericParamCount_ << ",";
-    returnType_->ObjOut(peLib, pass);
+    out << flags_ << ",";
+    out << genericParamCount_ << ",";
+    returnType_->ObjOut(peLib, out, pass);
     for (auto p : params)
     {
-        p->ObjOut(peLib, 1);
+        p->ObjOut(peLib, out, 1);
     }
     if (varargParams_.size())
     {
-        peLib.Out() << std::endl << "$vb";
+        out << std::endl << "$vb";
         for (auto p : varargParams_)
         {
-            p->ObjOut(peLib, 1);
+            p->ObjOut(peLib, out, 1);
         }
-        peLib.Out() << std::endl << "$ve";
+        out << std::endl << "$ve";
     }
-    peLib.Out() << std::endl << "$se";
+    out << std::endl << "$se";
 }
 MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool definition)
 {
@@ -413,40 +413,40 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
     }
     return rv;
 }
-void MethodSignature::ILSignatureDump(PELib& peLib)
+void MethodSignature::ILSignatureDump(PELib& peLib, std::ostream& out)
 {
-    returnType_->ILSrcDump(peLib);
-    peLib.Out() << " ";
+    returnType_->ILSrcDump(peLib, out);
+    out << " ";
     if (typeid(*container_) == typeid(Class) && static_cast<Class*>(container_)->Generic().size())
     {
         if (container_->Flags().Flags() & Qualifiers::Value)
-            peLib.Out() << "valuetype ";
+            out << "valuetype ";
         else
-            peLib.Out() << "class ";
-        peLib.Out() << Qualifiers::GetName("", container_);
-        peLib.Out() << static_cast<Class*>(container_)->AdornGenerics(peLib);
-        peLib.Out() << "::'" << name_ << "'(";
+            out << "class ";
+        out << Qualifiers::GetName("", container_);
+        out << static_cast<Class*>(container_)->AdornGenerics(peLib);
+        out << "::'" << name_ << "'(";
     }
     else
     {
-        peLib.Out() << Qualifiers::GetName(name_, container_);
+        out << Qualifiers::GetName(name_, container_);
     }
-    peLib.Out() << "(";
+    out << "(";
     for (std::list<Param*>::const_iterator it = params.begin(); it != params.end();)
     {
         if ((*it)->GetType()->GetBasicType() == Type::cls)
         {
             if ((*it)->GetType()->GetClass()->Flags().Flags() & Qualifiers::Value)
-                peLib.Out() << "valuetype ";
+                out << "valuetype ";
             else
-                peLib.Out() << "class ";
+                out << "class ";
         }
-        (*it)->GetType()->ILSrcDump(peLib);
+        (*it)->GetType()->ILSrcDump(peLib, out);
         ++it;
         if (it != params.end())
-            peLib.Out() << ", ";
+            out << ", ";
     }
-    peLib.Out() << ")";
+    out << ")";
 }
 bool MethodSignature::PEDump(PELib& peLib, bool asType)
 {
@@ -585,32 +585,30 @@ void MethodSignature::Load(PELib& lib, AssemblyDef& assembly, PEReader& reader, 
 }
 std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::unique_ptr<std::iostream> hold(new std::stringstream());
-    peLib.Swap(hold);
+    std::unique_ptr<std::iostream> out(new std::stringstream());
     if (generic_.size())
     {
         int count = 0;
-        peLib.Out() << "<";
+        *out << "<";
         for (auto&& type : generic_)
         {
             if (names && type->GetBasicType() == Type::var)
             {
-                peLib.Out() << (char)(type->VarNum() / 26 + 'A');
-                peLib.Out() << (char)(type->VarNum() % 26 + 'A');
+                *out << (char)(type->VarNum() / 26 + 'A');
+                *out << (char)(type->VarNum() % 26 + 'A');
             }
             else
             {
                 Type tp = *type;
                 tp.ShowType();
-                tp.ILSrcDump(peLib);
+                tp.ILSrcDump(peLib, *out);
             }
             if (count++ != generic_.size() - 1)
-                peLib.Out() << ",";
+                *out << ",";
             else
-                peLib.Out() << ">";
+                *out << ">";
         }
     }
-    peLib.Swap(hold);
-    return static_cast<std::stringstream&>(*hold).str();
+    return static_cast<std::stringstream&>(*out).str();
 }
 }  // namespace DotNetPELib

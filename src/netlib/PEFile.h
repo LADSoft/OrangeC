@@ -365,7 +365,7 @@ namespace DotNetPELib {
         static void CreateGuid(Byte *Guid);
 
         size_t NextTableIndex(int table) const { return tables_[table].size() + 1; }
-        bool WriteFile(PELib &peLib, std::iostream &out);
+        bool WriteFile(PELib& peLib, std::iostream &out);
         void HashPartOfFile(SHA1Context &context, size_t offset, size_t len);
 
         // another thing that makes this lib not thread safe, the RVA for 
@@ -375,27 +375,27 @@ namespace DotNetPELib {
         // this calculates various addresses and offsets that will be used and referenced
         // when we actually generate the data.   This must be kept in sync with the code to
         // generate data
-        void CalculateObjects(PELib &peLib);
+        void CalculateObjects(PELib& peLib);
         // These functions put various information into the PE file
-        bool WriteMZData(PELib &peLib) const; //
-        bool WritePEHeader(PELib &peLib);//
-        bool WritePEObjects(PELib &peLib) const;//
-        bool WriteIAT(PELib &peLib) const;
-        bool WriteCoreHeader(PELib &peLib);//
-        bool WriteHashData(PELib &peLib);
-        bool WriteStaticData(PELib &peLib) const;
-        bool WriteMethods(PELib &peLib) const;
-        bool WriteMetadataHeaders(PELib &peLib) const;//
-        bool WriteTables(PELib &peLib) const;
-        bool WriteStrings(PELib &peLib) const;
-        bool WriteUS(PELib &peLib) const;
-        bool WriteGUID(PELib &peLib) const;
-        bool WriteBlob(PELib &peLib) const;
-        bool WriteImports(PELib &peLib) const;
-        bool WriteEntryPoint(PELib &peLib) const;
+        bool WriteMZData(PELib& peLib) const; //
+        bool WritePEHeader(PELib& peLib);//
+        bool WritePEObjects(PELib& peLib) const;//
+        bool WriteIAT(PELib& peLib) const;
+        bool WriteCoreHeader(PELib& peLib);//
+        bool WriteHashData(PELib& peLib);
+        bool WriteStaticData(PELib& peLib) const;
+        bool WriteMethods(PELib& peLib) const;
+        bool WriteMetadataHeaders(PELib& peLib) const;//
+        bool WriteTables(PELib& peLib) const;
+        bool WriteStrings(PELib& peLib) const;
+        bool WriteUS(PELib& peLib) const;
+        bool WriteGUID(PELib& peLib) const;
+        bool WriteBlob(PELib& peLib) const;
+        bool WriteImports(PELib& peLib) const;
+        bool WriteEntryPoint(PELib& peLib) const;
 
-        bool WriteVersionInfo(PELib &peLib) const;
-        bool WriteRelocs(PELib &peLib) const;
+        bool WriteVersionInfo(PELib& peLib) const;
+        bool WriteRelocs(PELib& peLib) const;
 
         // a helper to put a string into the string area of the version information
         void VersionString(const wchar_t *name, const char *value) const;

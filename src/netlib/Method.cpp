@@ -65,85 +65,85 @@ void Method::AddLocal(Local* local)
     varList_.push_back(local);
 }
 
-bool Method::ILSrcDump(PELib& peLib) const
+bool Method::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
-    peLib.Out() << ".method";
-    flags_.ILSrcDumpBeforeFlags(peLib);
+    out << ".method";
+    flags_.ILSrcDumpBeforeFlags(peLib, out);
     if (invokeMode_ == PInvoke)
     {
-        peLib.Out() << " pinvokeimpl(\"" << pInvokeName_ << "\" " << (pInvokeType_ == Cdecl ? "cdecl) " : "stdcall) ");
+        out << " pinvokeimpl(\"" << pInvokeName_ << "\" " << (pInvokeType_ == Cdecl ? "cdecl) " : "stdcall) ");
     }
     else
     {
-        peLib.Out() << " ";
+        out << " ";
     }
-    prototype_->ILSrcDump(peLib, invokeMode_ != PInvoke, false, invokeMode_ == PInvoke);
-    flags_.ILSrcDumpAfterFlags(peLib);
+    prototype_->ILSrcDump(peLib, out, invokeMode_ != PInvoke, false, invokeMode_ == PInvoke);
+    flags_.ILSrcDumpAfterFlags(peLib, out);
     if (invokeMode_ != PInvoke)
     {
-        peLib.Out() << "{" << std::endl;
+        out << "{" << std::endl;
         if ((prototype_->Flags() & MethodSignature::Vararg) && (prototype_->Flags() & MethodSignature::Managed))
         {
             // allow C# to use ...
-            peLib.Out() << "\t.param\t[" << prototype_->ParamCount() << "]" << std::endl;
-            peLib.Out() << "\t.custom instance void [" + peLib.GetRuntimeName() +
+            out << "\t.param\t[" << prototype_->ParamCount() << "]" << std::endl;
+            out << "\t.custom instance void [" + peLib.GetRuntimeName() +
                                "]System.ParamArrayAttribute::.ctor() = (01 00 00 00)"
                         << std::endl;
         }
         if (varList_.size())
         {
-            peLib.Out() << "\t.locals (" << std::endl;
+            out << "\t.locals (" << std::endl;
             for (auto it = varList_.begin(); it != varList_.end();)
             {
 
-                peLib.Out() << "\t\t[" << (*it)->Index() << "]\t";
+                out << "\t\t[" << (*it)->Index() << "]\t";
                 if ((*it)->GetType()->GetBasicType() == Type::cls)
                 {
                     if ((*it)->GetType()->GetClass()->Flags().Flags() & Qualifiers::Value)
-                        peLib.Out() << "valuetype ";
+                        out << "valuetype ";
                     else
-                        peLib.Out() << "class ";
+                        out << "class ";
                 }
-                (*it)->GetType()->ILSrcDump(peLib);
-                peLib.Out() << " ";
-                (*it)->ILSrcDump(peLib);
+                (*it)->GetType()->ILSrcDump(peLib, out);
+                out << " ";
+                (*it)->ILSrcDump(peLib, out);
                 ++it;
                 if (it != varList_.end())
-                    peLib.Out() << "," << std::endl;
+                    out << "," << std::endl;
                 else
-                    peLib.Out() << std::endl;
+                    out << std::endl;
             }
-            peLib.Out() << "\t)" << std::endl;
+            out << "\t)" << std::endl;
         }
         if (entryPoint_)
-            peLib.Out() << "\t.entrypoint" << std::endl;
-        peLib.Out() << "\t.maxstack " << maxStack_ << std::endl << std::endl;
-        CodeContainer::ILSrcDump(peLib);
-        peLib.Out() << "}" << std::endl;
+            out << "\t.entrypoint" << std::endl;
+        out << "\t.maxstack " << maxStack_ << std::endl << std::endl;
+        CodeContainer::ILSrcDump(peLib, out);
+        out << "}" << std::endl;
     }
     else
     {
-        peLib.Out() << "{}" << std::endl;
+        out << "{}" << std::endl;
     }
     return true;
 }
-void Method::ObjOut(PELib& peLib, int pass) const
+void Method::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$mb";
-    flags_.ObjOut(peLib, pass);
-    peLib.Out() << "," << maxStack_ << "," << invokeMode_ << "," << entryPoint_ << ",";
+    out << std::endl << "$mb";
+    flags_.ObjOut(peLib, out, pass);
+    out << "," << maxStack_ << "," << invokeMode_ << "," << entryPoint_ << ",";
     if (invokeMode_ == PInvoke)
-        peLib.Out() << peLib.FormatName(pInvokeName_) << pInvokeType_ << ",";
-    prototype_->ObjOut(peLib, pass);
+        out << peLib.FormatName(pInvokeName_) << pInvokeType_ << ",";
+    prototype_->ObjOut(peLib, out, pass);
     for (auto v : varList_)
     {
-        peLib.Out() << std::endl << "$vb";  // << peLib.FormatName(v->Name());
-        v->GetType()->ObjOut(peLib, pass);
-        v->ObjOut(peLib, pass);
-        peLib.Out() << std::endl << "$ve";
+        out << std::endl << "$vb";  // << peLib.FormatName(v->Name());
+        v->GetType()->ObjOut(peLib, out, pass);
+        v->ObjOut(peLib, out, pass);
+        out << std::endl << "$ve";
     }
-    CodeContainer::ObjOut(peLib, pass);
-    peLib.Out() << std::endl << "$me";
+    CodeContainer::ObjOut(peLib, out, pass);
+    out << std::endl << "$me";
 }
 Method* Method::ObjIn(PELib& peLib, bool definition, Method** rfound)
 {

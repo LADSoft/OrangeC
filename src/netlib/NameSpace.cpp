@@ -28,19 +28,19 @@
 namespace DotNetPELib
 {
 
-bool Namespace::ILSrcDump(PELib& peLib) const
+bool Namespace::ILSrcDump(PELib& peLib, std::ostream& out) const
 {
 
-    peLib.Out() << ".namespace '" << name_ << "' {" << std::endl;
-    DataContainer::ILSrcDump(peLib);
-    peLib.Out() << "}" << std::endl;
+    out << ".namespace '" << name_ << "' {" << std::endl;
+    DataContainer::ILSrcDump(peLib, out);
+    out << "}" << std::endl;
     return true;
 }
-void Namespace::ObjOut(PELib& peLib, int pass) const
+void Namespace::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
-    peLib.Out() << std::endl << "$nb" << peLib.FormatName(name_);
-    DataContainer::ObjOut(peLib, pass);
-    peLib.Out() << std::endl << "$ne";
+    out << std::endl << "$nb" << peLib.FormatName(name_);
+    DataContainer::ObjOut(peLib, out, pass);
+    out << std::endl << "$ne";
 }
 Namespace* Namespace::ObjIn(PELib& peLib, bool definition)
 {

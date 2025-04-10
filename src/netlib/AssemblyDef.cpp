@@ -29,28 +29,28 @@
 #include <climits>
 namespace DotNetPELib
 {
-bool AssemblyDef::ILHeaderDump(PELib& peLib)
+bool AssemblyDef::ILHeaderDump(PELib& peLib, std::ostream& out)
 {
-    peLib.Out() << ".assembly ";
+    out << ".assembly ";
     if (external_)
-        peLib.Out() << "extern ";
-    peLib.Out() << name_ << "{" << std::endl;
+        out << "extern ";
+    out << name_ << "{" << std::endl;
     if (major_ || minor_ || build_ || revision_)
-        peLib.Out() << "\t.ver " << major_ << ":" << minor_ << ":" << build_ << ":" << revision_ << std::endl;
+        out << "\t.ver " << major_ << ":" << minor_ << ":" << build_ << ":" << revision_ << std::endl;
     for (int i = 0; i < 8; i++)
     {
         if (publicKeyToken_[i])
         {
-            peLib.Out() << "\t.publickeytoken = (";
+            out << "\t.publickeytoken = (";
             for (int i = 0; i < 8; i++)
             {
-                peLib.Out() << std::hex << (int)(unsigned char)publicKeyToken_[i] << " ";
+                out << std::hex << (int)(unsigned char)publicKeyToken_[i] << " ";
             }
-            peLib.Out() << ")" << std::endl << std::dec;
+            out << ")" << std::endl << std::dec;
             break;
         }
     }
-    peLib.Out() << "}" << std::endl;
+    out << "}" << std::endl;
     return true;
 }
 bool AssemblyDef::PEHeaderDump(PELib& peLib)
@@ -234,22 +234,22 @@ void AssemblyDef::SetPublicKey(PEReader& reader, size_t index)
         }
     }
 }
-void AssemblyDef::ObjOut(PELib& peLib, int pass) const
+void AssemblyDef::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     if (loaded_)
     {
         if (pass == 1)
         {
-            peLib.Out() << std::endl << "$abr" << peLib.FormatName(name_);
-            peLib.Out() << std::endl << "$ae";
+            out << std::endl << "$abr" << peLib.FormatName(name_);
+            out << std::endl << "$ae";
         }
         return;
     }
     else
     {
-        peLib.Out() << std::endl << "$abb" << peLib.FormatName(name_) << external_;
-        DataContainer::ObjOut(peLib, pass);
-        peLib.Out() << std::endl << "$ae";
+        out << std::endl << "$abb" << peLib.FormatName(name_) << external_;
+        DataContainer::ObjOut(peLib, out, pass);
+        out << std::endl << "$ae";
     }
 }
 AssemblyDef* AssemblyDef::ObjIn(PELib& peLib, bool definition)

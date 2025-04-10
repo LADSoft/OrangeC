@@ -1342,7 +1342,7 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
     int noeval = 0;
     if (Optimizer::cparams.prm_cplusplus && definingTemplate && !instantiatingTemplate && sym && sym->sb->templateLevel)
     {
-        noeval = _F_NOEVAL;
+        noeval = _F_NOEVAL | _F_PACKABLE;
     }
     else if (Optimizer::cparams.prm_cplusplus && arrayElem)
     {
@@ -1387,7 +1387,7 @@ static LexList* init_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
             lex = getsym();
         } while (lex);
         if (lex && MATCHKW(lex, Keyword::ellipse_))
-            noeval = _F_NOEVAL;
+            noeval = _F_NOEVAL | _F_PACKABLE;
         lex = prevsym(start);
     }
     EnterPackedSequence();

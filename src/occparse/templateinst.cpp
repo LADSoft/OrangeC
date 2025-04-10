@@ -4190,6 +4190,10 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
                 return found1;
         }
     }
+    else
+    {
+        argumentName.clear();
+    }
     if (sp->sb->specializations)
         n += sp->sb->specializations->size();
     spList = Allocate<SYMBOL*>(n);
@@ -4376,7 +4380,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             parent->sb->instantiations->push_back(found1);
             if (!strchr(found1->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
             {
-                if (found1->templateParams->size() - 1 == (args ? args->size() : 0))
+                if (!argumentName.empty() && found1->templateParams->size() - 1 == (args ? args->size() : 0))
                 {
                     if (found1->sb->deferredCompile ||
                         (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile) ||

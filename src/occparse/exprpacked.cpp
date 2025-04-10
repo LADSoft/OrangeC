@@ -163,6 +163,16 @@ TEMPLATEPARAM* LookupPackedInstance(TEMPLATEPARAMPAIR& packed)
     return it->second;
 }
 
+bool IsPacking()
+{
+    auto t = contexts.back();
+    for (auto&& p : t)
+    {
+        if (p.size())
+            return true;
+    }
+    return false;
+}
 void checkPackedType(SYMBOL* sym)
 {
     if (sym->sb->storage_class != StorageClass::parameter_)

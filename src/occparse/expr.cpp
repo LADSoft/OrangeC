@@ -591,7 +591,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                 {
                     for (auto&& to : *lst)
                     {
-                        if (to.second->packed && (!to.second->derivedFromUnpacked || to.second->resolved))
+                        if (to.second->packed && (!to.second->derivedFromUnpacked && !to.second->resolved))
                         {
                             deferred = true;
                         }
@@ -1313,12 +1313,12 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                         find = find->next;
                     }
                     bool found = false;
-                    if (!(flags & _F_MEMBER))
+                    if (!(flags & _F_MEMBER) && !IsPacking())
                     {
                         // look up packed symbol that has been elided during synthesis.
                         if (theCurrentFunc && theCurrentFunc->sb->maintemplate)
                         {
-                            auto syms = theCurrentFunc->sb->maintemplate->tp->syms;
+                            auto syms = theCurrentFunc->sb->maintemplate->tp->BaseType()->syms;
                             auto sym1 = syms->Lookup(sym->name);
                             if (sym1 && sym1->packed)
                             {
@@ -1545,7 +1545,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             {
                 Type* tp = nullptr;
                 EXPRESSION* exp = nullptr;
-                lex = expression_pm(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+                lex = expression_pm(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_NOEVAL);
                 if (!MATCHKW(lex, Keyword::pointsto_) && !MATCHKW(lex, Keyword::dot_))
                     break;
                 lex = getsym();
@@ -1860,6 +1860,11 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
                         CompileInline(sp, false);
                     }
                 }
+                for (auto sym : *sp->tp->BaseType()->syms)
+                {
+                    CollapseReferences(sym->tp);
+                }
+                CollapseReferences(sp->tp->BaseType()->btp);
             }
             *exp = MakeExpression(ExpressionNode::pc_, sp);
             tp1 = Type::MakeType(BasicType::pointer_, sp->tp);

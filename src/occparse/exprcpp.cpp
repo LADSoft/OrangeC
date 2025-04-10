@@ -663,6 +663,10 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                 errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
                 errskim(&lex, skim_semi);
             }
+            else if (ISID(lex))
+            {
+                lex = getsym();
+            }
         }
     }
     else if (!Optimizer::cparams.prm_cplusplus &&

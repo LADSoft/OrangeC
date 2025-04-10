@@ -42,6 +42,7 @@ void ClearPackedSequence();
 void AddPackedEntityToSequence(SYMBOL* name, TEMPLATEPARAM* packed);
 TEMPLATEPARAM* LookupPackedInstance(TEMPLATEPARAMPAIR& packed);
 
+bool IsPacking();
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);

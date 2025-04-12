@@ -1,8 +1,0 @@
-Profile info: (time:    6824263, calls:     512567)
-
-                         _compre: 063% (time:   4312167) (count:    236946) (avg:        18)
-                           _outb: 022% (time:   1530784) (count:    198217) (avg:         7)
-                           _fget: 008% (time:    565849) (count:     77401) (avg:         7)
-                             _ma: 006% (time:    414643) (count:         1) (avg:    414643)
-                        _buildtr: 000% (time:       803) (count:         1) (avg:       803)
-                     $$$PROFILER: 000% (time:        17) (count:         1) (avg:        17)

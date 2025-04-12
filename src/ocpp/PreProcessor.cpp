@@ -48,6 +48,10 @@ void PreProcessor::InitHash()
     hash["endif"] = kw::ENDIF;
     hash["elifdef"] = kw::ELIFDEF;
     hash["elifndef"] = kw::ELIFNDEF;
+    if (ppStart == '#')
+    {
+        hash["embed"] = kw::EMBED;
+    }
     if (ppStart == '%')
     {
         hash["idefine"] = kw::IDEFINE;
@@ -107,6 +111,10 @@ bool PreProcessor::GetPreLine(std::string& line)
         return true;
     }
     if (ppStart == '%' && macro.GetLine(line, lineno))
+    {
+        return true;
+    }
+    if (ppEmbed.GetLine(line, lineno))
     {
         return true;
     }
@@ -235,7 +243,8 @@ bool PreProcessor::GetLine(std::string& line, bool acceptEmpty)
                                             if (!pragma.Check(token, line))
                                             {
                                                 if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
-                                                    Errors::Error("Unknown preprocessor directive");
+                                                    if (!ppEmbed.Check(token, line))
+                                                        Errors::Error("Unknown preprocessor directive");
                                             }
                                         }
                                     }

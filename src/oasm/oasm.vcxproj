@@ -88,6 +88,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,6 +105,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,6 +124,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,6 +146,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;x64;TARGET_OS_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,6 +166,7 @@
     <ClCompile Include="..\ocpp\ppCond.cpp" />
     <ClCompile Include="..\ocpp\ppCtx.cpp" />
     <ClCompile Include="..\ocpp\ppDefine.cpp" />
+    <ClCompile Include="..\ocpp\ppEmbed.cpp" />
     <ClCompile Include="..\ocpp\ppError.cpp" />
     <ClCompile Include="..\ocpp\ppExpr.cpp" />
     <ClCompile Include="..\ocpp\ppFile.cpp" />
@@ -170,6 +175,7 @@
     <ClCompile Include="..\ocpp\ppPragma.cpp" />
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
+    <ClCompile Include="..\ocpp\TokenSettings.cpp" />
     <ClCompile Include="AdlFunctions.cpp" />
     <ClCompile Include="AsmExpr.cpp" />
     <ClCompile Include="AsmFile.cpp" />

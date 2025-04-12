@@ -32,6 +32,7 @@
 #include "Errors.h"
 #include "ppInclude.h"
 #include "ppkw.h"
+#include "ppMacroStates.h"
 
 #include <cfloat>
 #include <climits>
@@ -692,11 +693,11 @@ void Tokenizer::Reset(const std::string& Line)
     int last = 0;
     for (int p = 0; p < Line.size(); p++)
     {
-        if (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+        if (Line[p] == MacroStates::MACRO_PLACEHOLDER)
         {
             if (p != last)
                 line += Line.substr(last, p - last);
-            while (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+            while (Line[p] == MacroStates::MACRO_PLACEHOLDER)
                 p++;
             last = p;
         }

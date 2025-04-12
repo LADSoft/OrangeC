@@ -36,6 +36,7 @@
 #include <ctime>
 #include <climits>
 #include <cstdlib>
+#include "ppMacroStates.h"
 
 KeywordHash ppDefine::defTokens = {
     {"(", kw::openpa},
@@ -78,9 +79,10 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     }
 }
 
-ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, Dialect dialect_, bool Asmpp) :
+ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, embeder* embed, Dialect dialect_, bool Asmpp) :
     expr(false, dialect_),
     include(Include),
+    embed(embed),
     dialect(dialect_),
     asmpp(Asmpp),
     ctx(nullptr),
@@ -920,7 +922,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             std::deque<Definition*> argDefinitions;
                             rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(),
                                                 argDefinitions, nullptr);
-                            if (rv < -MACRO_REPLACE_SIZE)
+                            if (rv < -MacroStates::MACRO_REPLACE_SIZE)
                             {
                                 return rv;
                             }

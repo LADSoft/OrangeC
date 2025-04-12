@@ -99,6 +99,7 @@
     <ClCompile Include="..\ocpp\ppCond.cpp" />
     <ClCompile Include="..\ocpp\ppCtx.cpp" />
     <ClCompile Include="..\ocpp\ppDefine.cpp" />
+    <ClCompile Include="..\ocpp\ppEmbed.cpp" />
     <ClCompile Include="..\ocpp\ppError.cpp" />
     <ClCompile Include="..\ocpp\ppExpr.cpp" />
     <ClCompile Include="..\ocpp\ppFile.cpp" />
@@ -108,6 +109,7 @@
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
+    <ClCompile Include="..\ocpp\TokenSettings.cpp" />
     <ClCompile Include="ccif.cpp" />
     <ClCompile Include="db.cpp" />
   </ItemGroup>
@@ -209,6 +211,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -227,6 +230,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -247,6 +251,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -269,6 +274,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash..\occ;..\occil</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

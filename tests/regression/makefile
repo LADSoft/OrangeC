@@ -12,11 +12,11 @@ CXXFLAGS= /! /DWIN32_LEAN_AND_MEAN
 ASFLAGS= /!
 LDFLAGS= /!
 	
-mpfrdll.dll: mpfr.c
+mpfrdll.l: mpfr.c
 	occ /! /Wd /ompfrdll.dll /DDLL mpfr.c
 	oimplib /! -C mpfrdll.l mpfrdll.dll
 
-mpfr.exe: mpfrdll.dll mpfr.c
+mpfr.exe: mpfrdll.l mpfr.c
 	occ /! /ompfr.exe mpfr.c -l mpfrdll.l
 
 fastcall1.exe: fastcall.c
@@ -56,6 +56,9 @@ cppexterninline.o: cppexterninline.cpp
 cppexterninline.tst: cppexterninline.o
 	-onm --nologo cppexterninline.o > cppexterninline.out
 	fc cppexterninline.cmpx cppexterninline.out
+
+boolc2x.exe:
+	occ /2 boolc2x.c -o boolc2x.exe
 
 %.tst: %.exe
 	$< > $*.out

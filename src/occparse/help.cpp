@@ -334,10 +334,39 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
         }
         else if (!pointerOrRef)
         {
-            if (canref && (*pat)->decltypeauto)
+            if ((*pat)->decltypeauto)
             {
                 if (!nt->IsVoid())
-                    *pat = Type::MakeType(BasicType::lref_, nt);
+                {
+                    if (!nt->IsRef())
+                    {
+                        if (nt->BaseType()->lref)
+                        {
+                            *pat = Type::MakeType(BasicType::lref_, nt);
+                        }
+                        else if (nt->BaseType()->rref)
+                        {
+                            *pat = Type::MakeType(BasicType::rref_, nt);
+                        }
+                        else
+                        {
+                            while (IsCastValue(exp)) exp = exp->left;
+                            if (IsLValue(exp) && exp->type != ExpressionNode::l_ref_) exp = exp->left;
+                            if (exp->type == ExpressionNode::l_ref_)
+                            {
+                                *pat = Type::MakeType(BasicType::lref_, nt);
+                            }
+                            else
+                            {
+                                *pat = nt;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        *pat = nt;
+                    }
+                }
             }
             else if (nt->IsRef())
             {

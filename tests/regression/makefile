@@ -51,7 +51,7 @@ heap.tst: heap.exe
 	fc /b heap.cmpx heap.out
 
 cppexterninline.o: cppexterninline.cpp
-	occ /c$<
+	occ /c $<
 
 cppexterninline.tst: cppexterninline.o
 	-onm --nologo cppexterninline.o > cppexterninline.out

@@ -3493,7 +3493,7 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
             else
             {
                 it = *init;
-                if (exp->type == ExpressionNode::comma_)
+                if (exp->type == ExpressionNode::comma_ && !(flags & _F_MEMBERINITIALIZER))
                 {
                     // constexpr support...
                     auto exp1 = exp;

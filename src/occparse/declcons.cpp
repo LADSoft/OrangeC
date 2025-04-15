@@ -2029,7 +2029,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             init->init = nullptr;
                             argumentNesting++;
                             lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, 0);
+                                           false, _F_MEMBERINITIALIZER);
                             argumentNesting--;
                             done = true;
                             needkw(&lex, bypa ? Keyword::closepa_ : Keyword::end_);
@@ -2050,7 +2050,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             init->init = nullptr;
                             argumentNesting++;
                             lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, 0);
+                                           false, _F_MEMBERINITIALIZER);
                             argumentNesting--;
                             done = true;
                             if (init->packed || MATCHKW(lex, Keyword::ellipse_))
@@ -2060,7 +2060,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         {
                             init->init = nullptr;
                             lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, 0);
+                                           false, _F_MEMBERINITIALIZER);
                             if (init->packed)
                                 error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                         }
@@ -2387,12 +2387,13 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
         if (sym->tp->type == BasicType::union_)
         {
             StatementGenerator::AllocateLocalContext(emptyBlockdata, cons, codeLabel++);
+            auto spMatch = cons->sb->memberInitializers && cons->sb->memberInitializers->size() == 1 ? cons->sb->memberInitializers->front()->sp : nullptr;
             for (auto sp : *sym->tp->BaseType()->syms)
             {
                 if ((sp->sb->storage_class == StorageClass::member_ || sp->sb->storage_class == StorageClass::mutable_) &&
                     sp->tp->type != BasicType::aggregate_)
                 {
-                    if (sp->sb->init)
+                    if (sp->sb->init && (spMatch == nullptr || sp == spMatch))
                     {
                         if (sp->tp->IsStructured())
                         {
@@ -3261,7 +3262,12 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             params->sp = cons1;
             params->ascall = true;
             if (cons1->sb->defaulted && !cons1->sb->inlineFunc.stmt)
-                createConstructor(sp, cons1);
+            {
+                // if this class has a constructor from a base class,
+                // the next access will take care of creating the base class constructor
+                // properly
+                createConstructor(cons1->sb->parentClass, cons1);
+            }
             noExcept &= cons1->sb->noExcept;
             if (arrayElms)
             {

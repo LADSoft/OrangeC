@@ -154,6 +154,7 @@ Statement* Statement::MakeStatement(LexList* lex, std::list<FunctionBlock*>& par
     st->charpos = 0;
     st->line = lex->data->errline;
     st->file = lex->data->errfile;
+
     st->parent = parent.size() ? parent.front() : nullptr;
     if (&parent != &emptyBlockdata)
     {
@@ -161,6 +162,7 @@ Statement* Statement::MakeStatement(LexList* lex, std::list<FunctionBlock*>& par
             parent.front()->statements = stmtListFactory.CreateList();
         parent.front()->statements->push_back(st);
     }
+
     switch (stype)
     {
         case StatementNode::return_:
@@ -4503,7 +4505,6 @@ void StatementGenerator::FunctionBody()
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
     theCurrentFunc = funcsp;
-
     SetFunctionDefine(funcsp->name, true);
     std::list<LAMBDA*> oldlambdas;
     if (Optimizer::cparams.prm_cplusplus)

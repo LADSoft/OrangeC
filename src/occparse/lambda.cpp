@@ -380,8 +380,10 @@ static void convertCallToTemplate(SYMBOL* func)
             second->type = TplType::typename_;
             second->index = index++;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{first, second});
-            arg->tp = Type::MakeType(BasicType::templateparam_);
-            arg->tp->templateParam = &func->templateParams->back();
+            auto* tpn = &arg->tp;
+            while((*tpn)->type != BasicType::auto_) tpn = &(*tpn)->btp;
+            *tpn = Type::MakeType(BasicType::templateparam_);
+            (*tpn)->templateParam = &func->templateParams->back();
         }
     }
     if (func->templateParams->size())

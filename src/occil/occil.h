@@ -48,5 +48,4 @@ void flush_peep(void);
 void ResolveMSILExterns(void);
 void outputfile(char* buf, const char* name, const char* ext);
 void global(Optimizer::SimpleSymbol* sym, int flags);
-int main(int argc, char* argv[]);
 }  // namespace occmsil

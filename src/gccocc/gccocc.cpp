@@ -185,10 +185,12 @@ Other options
 const char* gccocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     gccocc gcc;
     return gcc.Run(argc, argv);
 }
+MAINCATCH
 
 void gccocc::PutMultiple(FILE* fil, const char* switchName, std::string lst)
 {

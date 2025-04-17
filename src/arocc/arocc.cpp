@@ -70,10 +70,12 @@ Librarian command line options to olib librarian options
 const char* arocc::usageText = "[options] library files...";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     arocc ar;
     return ar.Run(argc, argv);
 }
+MAINCATCH
 
 int arocc::Run(int argc, char** argv)
 {

@@ -115,6 +115,7 @@ Available output file types:
 const char* dlPeMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     dlPeMain downloader;
     try
@@ -126,6 +127,7 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
+MAINCATCH
 void dlPeMain::ParseOutResourceFiles(CmdFiles& files)
 {
     std::deque<std::string> toRemove;

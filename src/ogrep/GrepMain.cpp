@@ -92,10 +92,12 @@ Use \\{ and \\} to set an interval:
 "Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char** argv)
+MAINTRY
 {
     GrepMain grepMain;
     return grepMain.Run(argc, argv);
 }
+MAINCATCH
 void GrepMain::SetModes(void)
 {
 

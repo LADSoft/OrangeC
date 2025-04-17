@@ -84,6 +84,7 @@ such as defined symbols/externals
 const char* nmMain::usageText = "[options] inputfile";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     nmMain downloader;
     try
@@ -101,6 +102,7 @@ int main(int argc, char** argv)
 
     return 1;
 }
+MAINCATCH
 int nmMain::Run(int argc, char** argv)
 {
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);

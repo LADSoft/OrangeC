@@ -86,6 +86,7 @@ It emulates NASM and GAS to a considerable extent.
 const char* AsmMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])
+MAINTRY
 {
     AsmMain rc;
     try
@@ -102,6 +103,7 @@ int main(int argc, char* argv[])
     }
     return 1;
 }
+MAINCATCH
 void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
 {
     int npos = line.find_first_not_of(" \t\r\n\v");

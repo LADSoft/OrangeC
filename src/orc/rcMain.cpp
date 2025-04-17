@@ -63,10 +63,12 @@ This program creates win32 resource files from resource file scripts.
 const char* rcMain::usageText = "[options] file";
 
 int main(int argc, char* argv[])
+MAINTRY
 {
     rcMain rc;
     return rc.Run(argc, argv);
 }
+MAINCATCH
 
 int rcMain::Run(int argc, char* argv[])
 {

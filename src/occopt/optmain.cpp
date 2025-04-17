@@ -475,6 +475,7 @@ void ParseParams(CmdFiles& files)
 }
 }  // namespace Optimizer
 int main(int argc, char* argv[])
+MAINTRY
 {
     using namespace Optimizer;
     unsigned startTime, stopTime;
@@ -581,3 +582,4 @@ int main(int argc, char* argv[])
     }
     return 0;
 }
+MAINCATCH

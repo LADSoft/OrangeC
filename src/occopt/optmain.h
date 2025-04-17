@@ -52,5 +52,4 @@ void FastcallColor(QUAD* head);
 void examine_icode(QUAD* head);
 int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass);
 void Optimize(SimpleSymbol* funcsp);
-int main(int argc, char* argv[]);
 }  // namespace Optimizer

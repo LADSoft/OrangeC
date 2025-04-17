@@ -115,10 +115,12 @@ C++ compiler command line options to occ compiler options
 const char* clocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     clocc cl;
     return cl.Run(argc, argv);
 }
+MAINCATCH
 
 int clocc::LinkOptions(std::string& args)
 {

@@ -42,10 +42,12 @@ CmdSwitchParser ADLMain::SwitchParser;
 CmdSwitchBool ADLMain::DumpDB(SwitchParser, 'd');
 
 int main(int argc, char **argv)
+MAINTRY
 {
     ADLMain Main;
     return Main.Run(argc, argv);
 }
+MAINCATCH
 ADLMain::~ADLMain()
 {
 }

@@ -65,6 +65,7 @@ Available output file types:
 const char* dlMzMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     dlMzMain downloader;
     try
@@ -76,7 +77,7 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
-
+MAINCATCH
 bool dlMzMain::GetMode()
 {
     mode = UNKNOWN;

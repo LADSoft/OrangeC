@@ -38,6 +38,7 @@
 #define EXTRACT_CHAR '\xa0'
 
 int main(int argc, char** argv)
+MAINTRY
 {
     LibMain librarian;
     try
@@ -54,6 +55,7 @@ int main(int argc, char** argv)
     }
     return 1;
 }
+MAINCATCH
 
 CmdSwitchParser LibMain::SwitchParser;
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);

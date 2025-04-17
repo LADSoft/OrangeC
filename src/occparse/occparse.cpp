@@ -478,6 +478,7 @@ void compile(bool global)
 void enter_filename(const char* name) { Optimizer::inputFiles.push_back(name); }
 }  // namespace Parser
 int main(int argc, char* argv[])
+MAINTRY
 {
     using namespace Parser;
     Optimizer::cparams = cparams_default;
@@ -882,3 +883,4 @@ int main(int argc, char* argv[])
         rv = 255;
     return rv;
 }
+MAINCATCH

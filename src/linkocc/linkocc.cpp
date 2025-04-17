@@ -103,10 +103,12 @@ linker command line options to olink options
 const char* linkocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     linkocc link;
     return link.Run(argc, argv);
 }
+MAINCATCH
 
 std::string linkocc::SanitizeExtension(std::string fileName, std::string ext)
 {

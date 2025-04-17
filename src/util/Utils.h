@@ -37,6 +37,20 @@
 #    include "io.h"
 #endif
 #include <sys/stat.h>
+
+#define MAINTRY try
+#define MAINCATCH                                              \
+catch (std::exception& e)                                      \
+{                                                              \
+     printf("Fatal: caught: %s\n", e.what());                  \
+     return 3;                                                 \
+}                                                              \
+catch (...)                                                    \
+{                                                              \
+    printf("Fatal: caught something...");                      \
+    return 3;                                                  \
+}
+
 class Utils
 {
   public:

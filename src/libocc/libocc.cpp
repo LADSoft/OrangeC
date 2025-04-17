@@ -79,10 +79,12 @@ librarian command line options into olib options
 const char* libocc::usageText = "[options] files...";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     libocc lib;
     return lib.Run(argc, argv);
 }
+MAINCATCH
 
 std::string libocc::SanitizeExtension(std::string fileName, std::string ext)
 {

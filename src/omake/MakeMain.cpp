@@ -126,10 +126,12 @@ const char* MakeMain::builtinRules =
 int MakeMain::makeLevel;
 
 int main(int argc, char** argv)
+MAINTRY
 {
     MakeMain Main;
     return Main.Run(argc, argv);
 }
+MAINCATCH
 
 void MakeMain::Dispatch(const char* data)
 {

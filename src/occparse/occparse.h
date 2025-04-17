@@ -57,5 +57,4 @@ int natural_size(EXPRESSION* exp);
 void MakeStubs(void);
 void compile(bool global);
 void enter_filename(const char* name);
-int main(int argc, char* argv[]);
 }  // namespace Parser

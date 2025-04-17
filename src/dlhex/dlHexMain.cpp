@@ -69,6 +69,7 @@ Available output file types:
 const char* dlHexMain::usageText = "[options] relfile";
 
 int main(int argc, char** argv)
+MAINTRY
 {
     dlHexMain downloader;
     try
@@ -80,6 +81,7 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
+MAINCATCH
 void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
 {
     if (sectionsSwitch.GetValue().size())

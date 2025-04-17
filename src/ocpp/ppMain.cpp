@@ -100,6 +100,7 @@ Dependency generation:
 const char* ppMain::usageText = "[options] files";
 
 int main(int argc, char* argv[])
+MAINTRY
 {
     ppMain preproc;
     try
@@ -112,6 +113,8 @@ int main(int argc, char* argv[])
     }
     return 1;
 }
+MAINCATCH
+
 #ifdef TESTANNOTATE
 static void PutCharInfo(std::ostream* outStream, const std::string& line, const std::deque<ppDefine::TokenPos>& positions,
                         bool origLine)

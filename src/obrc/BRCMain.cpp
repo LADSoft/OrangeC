@@ -37,6 +37,7 @@
 #include "BRCWriter.h"
 
 int main(int argc, char** argv)
+MAINTRY
 {
     BRCMain librarian;
     try
@@ -48,6 +49,7 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
+MAINCATCH
 
 CmdSwitchParser BRCMain::SwitchParser;
 const char* BRCMain::helpText =

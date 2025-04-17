@@ -405,6 +405,7 @@ int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 }
 }  // namespace occmsil
 int main(int argc, char* argv[])
+MAINTRY
 {
     using namespace occmsil;
     bool showBanner = true;
@@ -519,3 +520,4 @@ int main(int argc, char* argv[])
         rv = 0;
     return rv;
 }
+MAINCATCH

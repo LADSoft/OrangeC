@@ -41,5 +41,4 @@ extern char infile[260];
 
 void outputfile(char* buf, const char* name, const char* ext, bool obj);
 void global(Optimizer::SimpleSymbol* sym, int flags);
-int main(int argc, char* argv[]);
 }  // namespace occx86

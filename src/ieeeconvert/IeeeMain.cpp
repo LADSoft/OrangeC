@@ -48,6 +48,7 @@ and turning it into a readable format.
 CmdSwitchParser IeeeMain::SwitchParser;
 
 int main(int argc, char** argv)
+MAINTRY
 {
     IeeeMain ieeeMain;
     try
@@ -59,6 +60,7 @@ int main(int argc, char** argv)
         std::cout << e.what() << std::endl;
     }
 }
+MAINCATCH
 int IeeeMain::Run(int argc, char** argv)
 {
     int rv = 0;

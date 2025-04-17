@@ -43,6 +43,7 @@
 #define EXTRACT_CHAR '\xa0'
 
 int main(int argc, char** argv)
+MAINTRY
 {
     ImpLibMain librarian;
     try
@@ -59,6 +60,7 @@ int main(int argc, char** argv)
     }
     return 1;
 }
+MAINCATCH
 
 CmdSwitchParser ImpLibMain::SwitchParser;
 CmdSwitchString ImpLibMain::CDLLSwitch(SwitchParser, 'C', 0);

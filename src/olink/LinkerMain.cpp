@@ -50,6 +50,7 @@
 #endif
 
 int main(int argc, char** argv)
+MAINTRY
 {
     LinkerMain linker;
     try
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
     Utils::Fatal("Fatal Error...");
     return 1;
 }
+MAINCATCH
 
 CmdSwitchParser LinkerMain::SwitchParser;
 CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', true);

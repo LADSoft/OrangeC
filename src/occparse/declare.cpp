@@ -2412,7 +2412,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                             ++it1;
                         }
                         // this is kind of iffy the hr->p values were copied one by one
-                        if (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::begin_))
+                        if (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
                             spo->tp->BaseType()->syms = sp->tp->BaseType()->syms;
                         else
                             sp->tp->BaseType()->syms = spo->tp->BaseType()->syms;
@@ -2489,6 +2489,9 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
     int begin = 0;
     int brack = 0;
     int ltgt = 0;
+    bool viaTry = false;
+    if (braces) // theoretically we can only have a try at this point for function bodies...
+        viaTry = MATCHKW(lex, Keyword::try_);
     while (lex != nullptr)
     {
         Keyword kw = KW(lex);
@@ -2505,7 +2508,10 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
                 (*cur)->prev = last;
                 last = *cur;
                 lex = getsym();
-                break;
+                if (!viaTry || !MATCHKW(lex, Keyword::catch_))
+                {
+                    break;
+                }
             }
         }
         else
@@ -3505,26 +3511,16 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         {
                             inTemplateBody++;
                         }
-                        if (Optimizer::cparams.prm_cplusplus && sp->tp->IsFunction() &&
-                            (MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::colon_)))
+                        if (Optimizer::cparams.prm_cplusplus && sp->tp->IsFunction() && MATCHKW(lex, Keyword::colon_))
                         {
-                            bool viaTry = MATCHKW(lex, Keyword::try_);
-                            if (viaTry)
-                            {
-                                sp->sb->hasTry = true;
-                                lex = getsym();
-                            }
-                            if (MATCHKW(lex, Keyword::colon_))
-                            {
-                                lex = getsym();
-                                sp->sb->memberInitializers = GetMemberInitializers(&lex, funcsp, sp);
-                            }
+                            lex = getsym();
+                            sp->sb->memberInitializers = GetMemberInitializers(&lex, funcsp, sp);
                         }
                         if (storage_class == StorageClass::absolute_)
                             sp->sb->value.i = address;
                         if ((!Optimizer::cparams.prm_cplusplus || !enclosingDeclarations.GetFirst()) && !istype(sp) &&
                             sp->sb->storage_class != StorageClass::static_ && tp1->BaseType()->IsFunction() &&
-                            !MATCHKW(lex, Keyword::begin_))
+                            !MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::try_))
                             sp->sb->storage_class = StorageClass::external_;
                         if (tp1->IsVoid())
                             if (sp->sb->storage_class != StorageClass::parameter_ &&
@@ -3847,15 +3843,15 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     {
                                         spi->templateParams =
                                             TemplateMatching(lex, spi->sb->parentTemplate->templateParams, templateParams, spi,
-                                                             MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
+                                                             MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_));
                                     }
                                     else
                                     {
-                                        if (!asFriend || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_))
+                                        if (!asFriend || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
                                         {
                                             auto temp =
                                                 TemplateMatching(lex, spi->templateParams, templateParams, spi,
-                                                                 MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
+                                                                 MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_));
                                             spi->templateParams = temp;
                                         }
                                         else
@@ -3915,14 +3911,14 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     spi->tp->InstantiateDeferred();
                                 }
                                 if (spi->sb->pushedTemplateSpecializationDefinition &&
-                                    (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+                                    (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)))
                                 {
                                     spi->sb->pushedTemplateSpecializationDefinition = false;
                                     spi->sb->inlineFunc.stmt = nullptr;
                                     spi->sb->deferredCompile = nullptr;
                                 }
                                 if ((spi->tp->IsFunction() && (spi->sb->inlineFunc.stmt || spi->sb->deferredCompile) &&
-                                     (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)) &&
+                                     (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)) &&
                                      (!spi->sb->parentClass || !spi->sb->parentClass->sb->instantiated ||
                                       !spi->sb->copiedTemplateFunction)) &&
                                     spi->sb->parentClass &&
@@ -4082,11 +4078,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     }
                                 }
                                 if (Optimizer::cparams.prm_cplusplus &&
-                                    (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_)))
+                                    (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)))
                                 {
                                     spi->templateParams = sp->templateParams;
                                 }
-                                if (!asFriend || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_))
+                                if (!asFriend || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::begin_))
                                 {
                                     spi->tp = sp->tp;
                                     spi->tp->sp = spi;
@@ -4105,7 +4101,6 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 spi->sb->declfilenum = sp->sb->declfilenum;
                             }
                             spi->sb->memberInitializers = sp->sb->memberInitializers;
-                            spi->sb->hasTry = sp->sb->hasTry;
 
                             spi->sb->attribs.inheritable.isInline |= sp->sb->attribs.inheritable.isInline;
                             spi->sb->promotedToInline |= sp->sb->promotedToInline;
@@ -4136,7 +4131,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 else if (definingTemplate == 1)
                                 {
                                     TemplateMatching(lex, nullptr, templateParams, sp,
-                                                     MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
+                                                     MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_));
                                 }
                             }
                             if (sp->tp->IsFunction())
@@ -4157,7 +4152,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (!asFriend || !definingTemplate || instantiatingTemplate || inTemplate)
                                 {
                                     if (sp->sb->storage_class == StorageClass::external_ ||
-                                        (asFriend && !MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_)))
+                                        (asFriend && !MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::try_)))
                                     {
                                         InsertSymbol(sp, StorageClass::external_, linkage, false);
                                     }
@@ -4321,7 +4316,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (sp->tp->BaseType()->btp->IsAutoType())
                                 RequiresDialect::Feature(Dialect::cpp14, "Return value deduction");
                             if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate &&
-                                MATCHKW(lex, Keyword::begin_))
+                                (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)))
                                 errorsym(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == StorageClass::localstatic_)
                                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
@@ -4360,7 +4355,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 SetTemplateNamespace(sp);
                             if (storage_class == StorageClass::external_)
                                 sp->sb->declaredAsExtern = true;
-                            if (MATCHKW(lex, Keyword::begin_))
+                            if (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
                             {
                                 if (asFriend)
                                     sp->sb->friendContext = enclosingDeclarations.GetFirst();
@@ -4468,8 +4463,6 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 browse_variable(sp);
                                 if (sp->sb->memberInitializers)
                                     errorsym(ERR_CONSTRUCTOR_MUST_HAVE_BODY, sp);
-                                else if (sp->sb->hasTry)
-                                    error(ERR_EXPECTED_TRY_BLOCK);
                                 if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::assign_))
                                 {
                                     lex = getsym();

@@ -4910,8 +4910,18 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                                 TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_)->tp;
                     }
                 }
-                if ((!funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure)) && funcparams->sp &&
-                    funcparams->sp->sb->storage_class == StorageClass::virtual_)
+                bool dovirtual = false;
+                if (funcparams->sp && funcparams->sp->sb->storage_class == StorageClass::virtual_)
+                {
+                    dovirtual = !funcparams->novtab || (funcparams->sp && funcparams->sp->sb->ispure);
+                    if (!dovirtual && funcparams->thisptr->type == ExpressionNode::l_p_)
+                    {
+                        int offset = 0;
+                        auto node = relptr(funcparams->thisptr->left, offset);
+                        dovirtual = node && node->type == ExpressionNode::auto_ && node->v.sp->sb->isxctab;
+                    }
+                }
+                if (dovirtual)
                 {
                     exp_in = funcparams->thisptr;
                     Dereference(&stdpointer, &exp_in);

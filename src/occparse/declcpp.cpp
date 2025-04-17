@@ -830,19 +830,10 @@ void deferredCompileOne(SYMBOL* cur)
         }
         dontRegisterTemplate++;
         lex = SetAlternateLex(cur->sb->deferredCompile);
-        if (MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::colon_))
+        if (MATCHKW(lex, Keyword::colon_))
         {
-            bool viaTry = MATCHKW(lex, Keyword::try_);
-            if (viaTry)
-            {
-                cur->sb->hasTry = true;
-                lex = getsym();
-            }
-            if (MATCHKW(lex, Keyword::colon_))
-            {
-                lex = getsym();
-                cur->sb->memberInitializers = GetMemberInitializers(&lex, nullptr, cur);
-            }
+            lex = getsym();
+            cur->sb->memberInitializers = GetMemberInitializers(&lex, nullptr, cur);
         }
         oldLambdas = lambdas;
         lambdas.clear();

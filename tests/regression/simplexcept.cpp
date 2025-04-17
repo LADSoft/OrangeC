@@ -316,6 +316,19 @@ void rethrow_if_nested_catch()
 		printf("unnested: %s\n", aa.what());
 	}
 }
+int rr()
+try
+{
+	throw 5;
+}
+catch (int a)
+{
+	printf("%d\n", a);
+}
+catch (...)
+{
+	printf("caught");
+}
 int main()
 {
 printf(":basic\n");
@@ -338,4 +351,6 @@ printf(":rethrow_catch_unwind\n");
 	rethrow_catch_unwind_catch();
 printf(":rethrow_if_nested\n");
         rethrow_if_nested_catch();
+
+rr();
 }

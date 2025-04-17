@@ -3958,8 +3958,11 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
                 thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, funcsp->tp->BaseType()->syms, true, false, false);
         }
     }
-    lex = getsym(); /* past { */
-
+    bool viaTry = MATCHKW(lex, Keyword::try_);
+    if (!viaTry)
+    {
+        lex = getsym(); /* past { */
+    }
     if (blockstmt->statements)
         st = blockstmt->statements->back();
     else
@@ -4027,24 +4030,31 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     currentLineData(parent, lex, -1);
     blockstmt->nosemi = true; /* in case it is an empty body */
-    while (lex && !MATCHKW(lex, Keyword::end_))
+    if (viaTry)
     {
-        if (!blockstmt->hassemi && !blockstmt->nosemi)
-            errorint(ERR_NEEDY, ';');
-        if (MATCHKW(lex, Keyword::semicolon_))
+        SingleStatement(parent, false);
+    }
+    else
+    {
+        while (lex && !MATCHKW(lex, Keyword::end_))
         {
-            lex = getsym();  // helps in error processing to not do default statement processing here...
-        }
-        else
-        {
-            SingleStatement(parent, false);
+            if (!blockstmt->hassemi && !blockstmt->nosemi)
+                errorint(ERR_NEEDY, ';');
+            if (MATCHKW(lex, Keyword::semicolon_))
+            {
+                lex = getsym();  // helps in error processing to not do default statement processing here...
+            }
+            else
+            {
+                SingleStatement(parent, false);
+            }
         }
     }
     if (first)
     {
         browse_endfunc(funcsp, funcsp->sb->endLine = lex ? lex->data->errline : endline);
     }
-    if (!lex)
+    if (!lex && !viaTry)
     {
         parent.pop_front();
         needkw(&lex, Keyword::end_);
@@ -4053,8 +4063,11 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
 
         return;
     }
-    browse_blockend(endline = lex->data->errline);
-    currentLineData(parent, lex, -!first);
+    if (!viaTry)
+    {
+        browse_blockend(endline = lex->data->errline);
+        currentLineData(parent, lex, -!first);
+    }
     if (before->type == Keyword::begin_ || before->type == Keyword::switch_ || before->type == Keyword::try_ ||
         before->type == Keyword::catch_ || before->type == Keyword::do_)
         before->needlabel = blockstmt->needlabel;
@@ -4137,26 +4150,9 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
                 ThunkReturnInMain(parent, true);
         }
     }
-    needkw(&lex, Keyword::end_);
-    if (first && Optimizer::cparams.prm_cplusplus)
+    if (!viaTry)
     {
-        if (funcsp->sb->hasTry)
-        {
-            Statement::MakeStatement(nullptr, parent, StatementNode::return_);
-            auto it = blockstmt->statements->end();
-            --it;
-            ParseCatch(parent, retlab, startlab, 0);
-            if (++it != blockstmt->statements->end())
-            {
-                int label = (*it)->altlabel;
-                do
-                {
-                    (*it)->endlabel = label;
-                } while (++it != blockstmt->statements->end());
-            }
-            hasXCInfo = true;
-            funcsp->sb->anyTry = true;
-        }
+        needkw(&lex, Keyword::end_);
     }
     if (before->type == Keyword::catch_)
     {
@@ -4503,7 +4499,7 @@ void StatementGenerator::FunctionBody()
     Optimizer::setjmp_used = false;
     functionReturnType = funcsp->tp->BaseType()->btp;
     declareAndInitialize = false;
-    block->type = funcsp->sb->hasTry ? Keyword::try_ : Keyword::begin_;
+    block->type = Keyword::begin_;
     theCurrentFunc = funcsp;
     SetFunctionDefine(funcsp->name, true);
     std::list<LAMBDA*> oldlambdas;

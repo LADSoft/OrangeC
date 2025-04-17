@@ -108,6 +108,7 @@ void makeXCTab(SYMBOL* funcsp)
     if (!funcsp->sb->xc->xctab)
     {
         sym = makeID(StorageClass::auto_, &stdXC, nullptr, "$$xctab");
+        sym->sb->isxctab = true;
         sym->sb->decoratedName = sym->name;
         sym->sb->allocate = true;
         sym->sb->attribs.inheritable.used = sym->sb->assigned = true;

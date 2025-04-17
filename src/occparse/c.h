@@ -706,7 +706,6 @@ typedef struct sym
         unsigned noinline : 1;                // don't inline an inline qualified function
         unsigned didinline : 1;               // already genned an inline func for this symbol
         unsigned simpleFunc : 1;              // simple enough to override the max_nesting inline requirement
-        unsigned hasTry : 1;                  // function surrounded by try statement
         unsigned anyTry : 1;                  // function has either external or internal try statement
                                               // or variable is used within a try statement
         unsigned canThrow : 1;                // function throws directly
@@ -728,8 +727,7 @@ typedef struct sym
         unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1;                       // temporary boolean...
-        unsigned
-            pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
+        unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
                                                          // specialization was pushed from the generalized version of the template
         unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
         unsigned va_typeof : 1;                          // MSIL: a va_typeof symbol
@@ -750,6 +748,7 @@ typedef struct sym
         unsigned deleteCopyCons : 1;                     // check if copy constructor needs deletion
         unsigned deleteCopyAssign : 1;                   // check if copy assignment operator needs deleteion
         unsigned deleteMove : 1;                         // check if move constructor/assignment ops need deleteion
+        unsigned isxctab : 1;                                 // is xception table stack block
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

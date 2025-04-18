@@ -23,8 +23,12 @@
 # 
 
 ifndef _TREEROOT
+ifeq "$(COMPILER)" "gcc-linux"
+CURRENT := $(CURDIR)
+else
 CURRENT := $(subst /,\,$(CURDIR))
-_TREEROOT := $(CURRENT)\..\treetop.mak
+endif
+_TREEROOT := $(CURRENT)$(PATHEXT2)..$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURRENT)
 export _TREEROOT
 export _TREETARGET

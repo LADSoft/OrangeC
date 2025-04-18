@@ -35,7 +35,7 @@ H_FILES=$(wildcard *.h)
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
-	copy *.app $(DISTBIN)
-	copy target.cfg $(DISTBIN)$(PATHEXT2)olink.cfg
+	$(COPY) *.app $(DISTBIN)
+	$(COPY) target.cfg $(DISTBIN)$(PATHEXT2)olink.cfg
 
 

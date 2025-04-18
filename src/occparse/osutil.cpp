@@ -1089,7 +1089,7 @@ void setfile(char* buf, const char* orgbuf, const char* ext)
 void outputfile(char* buf, const char* orgbuf, const char* ext)
 {
 
-    if (buf[strlen(buf) - 1] == '\\')
+    if (buf[0] != '\0' && buf[strlen(buf) - 1] == '\\')
     {
         const char* p = (char*)strrchr(orgbuf, '\\');
         if (p)

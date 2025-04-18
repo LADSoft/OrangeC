@@ -739,10 +739,12 @@ static void InitClasses(void)
             if (!tempInfo[i]->liveAcrossFunctionCall)
             {
                 tempInfo[i]->regClass = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2];
+                tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
             }
             else
             {
                 tempInfo[i]->regClass = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2 + 1];
+                tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
             }
         }
         if (!tempInfo[i]->regClass)
@@ -1230,11 +1232,13 @@ static int Combine(int u, int v)
     if (tempInfo[v]->liveAcrossFunctionCall)
     {
         tempInfo[u]->regClass = tempInfo[v]->regClass;
+        tempInfo[u]->regCount = tempInfo[v]->regCount;
         tempInfo[u]->liveAcrossFunctionCall = true;
     }
     else if (tempInfo[u]->liveAcrossFunctionCall)
     {
         tempInfo[v]->regClass = tempInfo[u]->regClass;
+        tempInfo[u]->regCount = tempInfo[v]->regCount;
         tempInfo[v]->liveAcrossFunctionCall = true;
     }
     if (tempInfo[u]->precolored)

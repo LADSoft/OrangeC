@@ -146,7 +146,7 @@ void ResolveMSILExterns()
 void outputfile(char* buf, const char* name, const char* ext)
 {
     strcpy(buf, Optimizer::outputFileName.c_str());
-    if (buf[strlen(buf) - 1] == '\\')
+    if (buf[0] && buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
         // just add our name and ext

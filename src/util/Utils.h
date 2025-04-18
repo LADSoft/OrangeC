@@ -126,8 +126,11 @@ class Utils
 
     static char* StrCpy(char* data, size_t len, const char* source)
     {
-        strncpy(data, source, len);
-        data[len - 1] = '\0';
+        int n = strlen(source);
+        if (n > len-1)
+            n = len-1;
+        memcpy(data, source, n);
+        data[n] = '\0';
         return data;
     }
     template <size_t len>

@@ -40,6 +40,7 @@
 #include "memory.h"
 #include "stdarg.h"
 #include "symfuncs.h"
+#include "Utils.h"
 #define IEEE
 
 namespace occx86
@@ -1746,8 +1747,8 @@ char asmfile[256];
 char compilerversion[256];
 void oa_header(const char* filename, const char* compiler_version)
 {
-    strcpy(asmfile, filename);
-    strcpy(compilerversion, compiler_version);
+    Utils::StrCpy(asmfile, filename);
+    Utils::StrCpy(compilerversion, compiler_version);
     oa_nl();
     AsmOutput(";File %s\n", filename);
     AsmOutput(";Compiler version %s\n", compiler_version);

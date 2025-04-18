@@ -62,7 +62,7 @@ STD := --std:c++17
 endif
 
 LINK=$(COMPILER_PATH)\bin\olink
-LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG)
+LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG) $(MEMFLAGS)
 
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l

@@ -31,6 +31,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 H_FILES=$(wildcard *.h)
 
+MEMFLAGS=/DHEAPSIZE=0x400000
 include ../redirect.mak
 
 DISTRIBUTE: copyexe

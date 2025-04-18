@@ -64,7 +64,7 @@
 	<Define Name="STACKSIZE" Value="0x100000" />
 	<Define Name="STACKCOMMIT" Value="0x2000" />
 	<Define Name="HEAPSIZE" Value="0x100000" />
-	<Define Name="HEAPCOMMIT" Value="0x0" />
+	<Define Name="HEAPCOMMIT" Value="0x1000" />
 	<Define Name="OSMAJOR" Value="0x4" />
         <Define Name="OSMINOR" Value="0x0" />
 	<Define Name="SUBSYSMAJOR" Value="0x4" />

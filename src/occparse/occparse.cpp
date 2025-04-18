@@ -85,7 +85,8 @@
 #include <cstdlib>
 #include <cstdio>
 
-// #define x64_compiler
+//#define x64_compiler
+#ifndef __SANITIZE_ADDRESS__
 #ifndef x64_compiler
 // if you compile with the runtime being a shared library/DLL other than LSCRTL.DLL
 // this block of code just isn't going to work....
@@ -162,6 +163,7 @@ void operator delete(void* p) noexcept
 }
 
 #    endif
+#endif
 #endif
 #ifndef ORANGE_NO_MSIL
 using namespace DotNetPELib;

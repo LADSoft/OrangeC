@@ -61,6 +61,7 @@
 #include "localprotect.h"
 
 // #define x64_compiler
+#ifndef __SANITIZE_ADDRESS__
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
 // it basically caches small allocations for reuse
@@ -125,6 +126,7 @@ void operator delete(void* p) noexcept
     }
 }
 
+#endif
 #endif
 
 int usingEsp;

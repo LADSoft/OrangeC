@@ -74,7 +74,6 @@ std::shared_ptr<AsmExprNode> AsmExpr::Build(std::string& line)
     else
         line = "";
 
-    tokenizer.release();
     return rv;
 }
 std::shared_ptr<AsmExprNode> AsmExpr::ConvertToBased(std::shared_ptr<AsmExprNode>& n, int pc)
@@ -116,13 +115,13 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
         case AsmExprNode::IVAL:
         case AsmExprNode::FVAL:
         default:
-            rv = n;
+            rv = std::move(n);
             break;
         case AsmExprNode::LABEL: {
             std::shared_ptr<AsmExprNode> num = GetEqu(n->label);
             if (num)
             {
-                rv = Eval(num, pc);
+                rv = std::move(Eval(num, pc));
             }
             else if (pc != -1)
             {
@@ -133,18 +132,18 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
                 }
                 else
                 {
-                    rv = n;
+                    rv = std::move(n);
                 }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         }
         case AsmExprNode::PC:
             if (pc == -1)
-                rv = n;
+                rv = std::move(n);
             else
                 rv = std::make_shared<AsmExprNode>(pc);
             break;
@@ -157,8 +156,10 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
         }
         break;
         case AsmExprNode::ADD:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
                 case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
                     rv = std::make_shared<AsmExprNode>(xleft->ival + xright->ival);
                     break;
@@ -176,343 +177,481 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
                     rv = std::make_shared<AsmExprNode>(fv);
                     break;
                 default:
-                    rv = n;
+                    rv = std::move(n);
                     break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::SUB:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival - xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    fv -= xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    fv = xleft->fval - fv;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->fval - xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival - xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        fv -= xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        fv = xleft->fval - fv;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->fval - xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::MUL:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival * xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    fv *= xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    fv *= xleft->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->fval * xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival * xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        fv *= xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        fv *= xleft->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->fval * xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::DIV:
         case AsmExprNode::SDIV:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    if (xright->ival == 0)
-                        rv = std::make_shared<AsmExprNode>(INT_MAX);
-                    else if (n->GetType() == AsmExprNode::SDIV)
-                        rv = std::make_shared<AsmExprNode>(xleft->ival / xright->ival);
-                    else
-                        rv = std::make_shared<AsmExprNode>((unsigned)xleft->ival / (unsigned)xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    fv /= xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    fv = xleft->fval / fv;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->fval / xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        if (xright->ival == 0)
+                            rv = std::make_shared<AsmExprNode>(INT_MAX);
+                        else if (n->GetType() == AsmExprNode::SDIV)
+                            rv = std::make_shared<AsmExprNode>(xleft->ival / xright->ival);
+                        else
+                            rv = std::make_shared<AsmExprNode>((unsigned)xleft->ival / (unsigned)xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        fv /= xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        fv = xleft->fval / fv;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->fval / xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::GT:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival > xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    rv = std::make_shared<AsmExprNode>(fv > xright->fval);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    rv = std::make_shared<AsmExprNode>(xleft->fval > fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->fval > xright->fval);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival > xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        rv = std::make_shared<AsmExprNode>(fv > xright->fval);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        rv = std::make_shared<AsmExprNode>(xleft->fval > fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->fval > xright->fval);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::LT:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival < xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    rv = std::make_shared<AsmExprNode>(fv < xright->fval);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    rv = std::make_shared<AsmExprNode>(xleft->fval < fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->fval < xright->fval);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival < xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        rv = std::make_shared<AsmExprNode>(fv < xright->fval);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        rv = std::make_shared<AsmExprNode>(xleft->fval < fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->fval < xright->fval);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::GE:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival >= xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    rv = std::make_shared<AsmExprNode>(fv >= xright->fval);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    rv = std::make_shared<AsmExprNode>(xleft->fval >= fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->fval >= xright->fval);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival >= xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        rv = std::make_shared<AsmExprNode>(fv >= xright->fval);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        rv = std::make_shared<AsmExprNode>(xleft->fval >= fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->fval >= xright->fval);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::LE:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival <= xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    rv = std::make_shared<AsmExprNode>(fv <= xright->fval);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    rv = std::make_shared<AsmExprNode>(xleft->fval <= fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->fval <= xright->fval);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival <= xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        rv = std::make_shared<AsmExprNode>(fv <= xright->fval);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        rv = std::make_shared<AsmExprNode>(xleft->fval <= fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->fval <= xright->fval);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::EQ:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival == xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    rv = std::make_shared<AsmExprNode>(fv == xright->fval);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    rv = std::make_shared<AsmExprNode>(xleft->fval == fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->fval == xright->fval);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival == xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        rv = std::make_shared<AsmExprNode>(fv == xright->fval);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        rv = std::make_shared<AsmExprNode>(xleft->fval == fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->fval == xright->fval);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::NE:
-            switch ((xleft->GetType() << 8) + xright->GetType())
+            if (xleft && xright)
             {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival != xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    rv = std::make_shared<AsmExprNode>(fv != xright->fval);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    rv = std::make_shared<AsmExprNode>(xleft->fval != fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->fval != xright->fval);
-                    break;
-                default:
-                    rv = n;
-                    break;
+                switch ((xleft->GetType() << 8) + xright->GetType())
+                {
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival != xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        rv = std::make_shared<AsmExprNode>(fv != xright->fval);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        rv = std::make_shared<AsmExprNode>(xleft->fval != fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->fval != xright->fval);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
+                }
+            }
+            else
+            {
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::NEG:
-            if (xleft->GetType() == AsmExprNode::IVAL)
+            if (xleft)
             {
-                rv = std::make_shared<AsmExprNode>(-xleft->ival);
-            }
-            else if (xleft->GetType() == AsmExprNode::FVAL)
-            {
-                rv = std::make_shared<AsmExprNode>(xleft->fval);
-                rv->fval.Negate();
+                if (xleft->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(-xleft->ival);
+                }
+                else if (xleft->GetType() == AsmExprNode::FVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->fval);
+                    rv->fval.Negate();
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::CMPL:
-            if (xleft->GetType() == AsmExprNode::IVAL)
+            if (xleft)
             {
-                rv = std::make_shared<AsmExprNode>(~xleft->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(~xleft->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::MOD:
         case AsmExprNode::SMOD:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                if (xright->ival == 0)
-                    rv = std::make_shared<AsmExprNode>(INT_MAX);
-                else if (n->GetType() == AsmExprNode::SMOD)
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
                 {
-                    rv = std::make_shared<AsmExprNode>(xleft->ival % xright->ival);
+                    if (xright->ival == 0)
+                        rv = std::make_shared<AsmExprNode>(INT_MAX);
+                    else if (n->GetType() == AsmExprNode::SMOD)
+                    {
+                        rv = std::make_shared<AsmExprNode>(xleft->ival % xright->ival);
+                    }
+                    else
+                    {
+                        rv = std::make_shared<AsmExprNode>((unsigned)xleft->ival % (unsigned)xright->ival);
+                    }
                 }
                 else
                 {
-                    rv = std::make_shared<AsmExprNode>((unsigned)xleft->ival % (unsigned)xright->ival);
+                    rv = std::move(n);
                 }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::LSHIFT:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>(xleft->ival << xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->ival << xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::RSHIFT:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>((unsigned)xleft->ival >> xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>((unsigned)xleft->ival >> xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::OR:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>(xleft->ival | xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->ival | xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::XOR:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>(xleft->ival ^ xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->ival ^ xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::AND:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>(xleft->ival & xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->ival & xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::LAND:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>(xleft->ival && xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->ival && xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
         case AsmExprNode::LOR:
-            if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+            if (xleft && xright)
             {
-                rv = std::make_shared<AsmExprNode>(xleft->ival || xright->ival);
+                if (xleft->GetType() == AsmExprNode::IVAL && xright->GetType() == AsmExprNode::IVAL)
+                {
+                    rv = std::make_shared<AsmExprNode>(xleft->ival || xright->ival);
+                }
+                else
+                {
+                    rv = std::move(n);
+                }
             }
             else
             {
-                rv = n;
+                rv = std::move(n);
             }
             break;
     }
     if (rv && rv->GetLeft())
     {
-        rv->SetLeft(xleft);
-        rv->SetRight(xright);
+        rv->SetLeft(std::move(xleft));
+        rv->SetRight(std::move(xright));
     }
     return rv;
 }

@@ -86,7 +86,7 @@ ObjString ObjIeeeAscii::ToTime(std::tm tms)
 void ObjIeeeAscii::RenderFile(ObjSourceFile* File)
 {
     ObjString data(ObjUtil::ToDecimal(File->GetIndex()) + "," + ToString(File->GetName()) + "," + ToTime(File->GetFileTime()));
-    RenderComment(eSourceFile, data);
+    RenderComment(eSourceFile, std::move(data));
 }
 ObjString ObjIeeeAscii::GetTypeIndex(ObjType* Type)
 {
@@ -227,7 +227,7 @@ void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)
     {
         ObjDefinitionSymbol* dsym = static_cast<ObjDefinitionSymbol*>(Symbol);
         ObjString data = ToString(dsym->GetName()) + "," + ObjUtil::ToDecimal(dsym->GetValue());
-        RenderComment(eDefinition, data);
+        RenderComment(eDefinition,std::move(data));
     }
     else if (Symbol->GetType() == ObjSymbol::eImport)
     {
@@ -238,7 +238,7 @@ void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)
                    ToString(isym->GetDllName());
         else
             data = "N," + ToString(isym->GetName()) + "," + ToString(isym->GetExternalName()) + "," + ToString(isym->GetDllName());
-        RenderComment(eImport, data);
+        RenderComment(eImport, std::move(data));
     }
     else if (Symbol->GetType() == ObjSymbol::eExport)
     {
@@ -250,7 +250,7 @@ void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)
             data = "N," + ToString(esym->GetName()) + "," + ToString(esym->GetExternalName());
         if (!esym->GetDllName().empty())
             data = data + "," + esym->GetDllName();
-        RenderComment(eExport, data);
+        RenderComment(eExport, std::move(data));
     }
     else if (Symbol->GetType() != ObjSymbol::eLabel)
     {
@@ -338,27 +338,27 @@ void ObjIeeeAscii::RenderDebugTag(ObjDebugTag* Tag)
             if (!Tag->GetSymbol()->IsSectionRelative() && Tag->GetSymbol()->GetType() != ObjSymbol::eExternal)
             {
                 data = GetSymbolName(Tag->GetSymbol());
-                RenderComment(eVar, data);
+                RenderComment(eVar, std::move(data));
             }
             break;
         case ObjDebugTag::eBlockStart:
         case ObjDebugTag::eBlockEnd:
-            RenderComment(Tag->GetType() == ObjDebugTag::eBlockStart ? eBlockStart : eBlockEnd, ObjString(""));
+            RenderComment(Tag->GetType() == ObjDebugTag::eBlockStart ? eBlockStart : eBlockEnd, std::move(ObjString("")));
             break;
         case ObjDebugTag::eFunctionStart:
         case ObjDebugTag::eFunctionEnd:
             data = GetSymbolName(Tag->GetSymbol());
-            RenderComment(Tag->GetType() == ObjDebugTag::eFunctionStart ? eFunctionStart : eFunctionEnd, data);
+            RenderComment(Tag->GetType() == ObjDebugTag::eFunctionStart ? eFunctionStart : eFunctionEnd, std::move(data));
             break;
         case ObjDebugTag::eVirtualFunctionStart:
         case ObjDebugTag::eVirtualFunctionEnd:
             data = "R" + ObjUtil::ToHex(Tag->GetSection()->GetIndex());
-            RenderComment(Tag->GetType() == ObjDebugTag::eVirtualFunctionStart ? eFunctionStart : eFunctionEnd, data);
+            RenderComment(Tag->GetType() == ObjDebugTag::eVirtualFunctionStart ? eFunctionStart : eFunctionEnd, std::move(data));
             break;
         case ObjDebugTag::eLineNo:
             data = ObjUtil::ToDecimal(Tag->GetLineNo()->GetFile()->GetIndex()) + "," +
                    ObjUtil::ToDecimal(Tag->GetLineNo()->GetLineNumber());
-            RenderComment(eLineNo, data);
+            RenderComment(eLineNo, std::move(data));
             break;
         default:
             break;
@@ -484,7 +484,7 @@ void ObjIeeeAscii::RenderBrowseInfo(ObjBrowseInfo* BrowseInfo)
            ObjUtil::ToDecimal(BrowseInfo->GetLineNo()->GetFile()->GetIndex()) + "," +
            ObjUtil::ToDecimal(BrowseInfo->GetLineNo()->GetLineNumber()) + "," + ObjUtil::ToDecimal(BrowseInfo->GetCharPos()) + "," +
            ToString(BrowseInfo->GetData());
-    RenderComment(eBrowseInfo, data);
+    RenderComment(eBrowseInfo, std::move(data));
 }
 void ObjIeeeAscii::RenderExpression(ObjExpression* Expression)
 {
@@ -575,7 +575,7 @@ bool ObjIeeeAscii::HandleWrite()
     RenderCS();
     ResetCS();
     WriteFiles();
-    RenderComment(eMakePass, ObjString("Make Pass Separator"));
+    RenderComment(eMakePass, std::move(ObjString("Make Pass Separator")));
     RenderCS();
     ResetCS();
     WriteTypes();
@@ -588,11 +588,11 @@ bool ObjIeeeAscii::HandleWrite()
     WriteStartAddress();
     RenderCS();
     ResetCS();
-    RenderComment(eLinkPass, ObjString("Link Pass Separator"));
+    RenderComment(eLinkPass,std::move( ObjString("Link Pass Separator")));
     WriteSections();
     RenderCS();
     ResetCS();
-    RenderComment(eBrowsePass, ObjString("Browse Pass Separator"));
+    RenderComment(eBrowsePass, std::move(ObjString("Browse Pass Separator")));
     WriteBrowseInfo();
     RenderCS();
     ResetCS();
@@ -616,7 +616,7 @@ void ObjIeeeAscii::WriteHeader()
     }
     if (absolute)
     {
-        RenderComment(eAbsolute, ObjString("Absolute file"));
+        RenderComment(eAbsolute,std::move(ObjString("Absolute file")));
     }
 }
 void ObjIeeeAscii::WriteFiles()

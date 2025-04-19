@@ -42,7 +42,7 @@ class Label
     int GetLabel() { return label; }
     std::string& GetName() { return name; }
     std::shared_ptr<AsmExprNode> GetOffset() { return node; }
-    void SetOffset(std::shared_ptr<AsmExprNode> Offset) { node = Offset; }
+    void SetOffset(std::shared_ptr<AsmExprNode> Offset) { node = std::move(Offset); }
     void SetOffset(int offs) { SetOffset(std::make_shared<AsmExprNode>(offs)); }
     int GetSect() { return sect; }
     void SetSect(int Sect) { sect = Sect; }

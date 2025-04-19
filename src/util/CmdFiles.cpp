@@ -126,7 +126,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
                 if (strcmp(find.name, ".") != 0 && strcmp(find.name, "..") != 0)
                 {
                     std::string file(path + std::string(find.name));
-                    names.push_back(file);
+                    names.push_back(std::move(file));
                     rv = true;
                 }
             }
@@ -187,7 +187,7 @@ bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
         curpath += internalName;
         if (_access(curpath.c_str(), 0) == 0)
         {
-            names.push_back(curpath);
+            names.push_back(std::move(curpath));
             rv = true;
             break;
         }

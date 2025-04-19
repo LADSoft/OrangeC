@@ -129,7 +129,7 @@ int libocc::Run(int argc, char** argv)
             if (d.size() > 4 && (d.substr(d.size() - 4) == ".dll" || d.substr(d.size() - 4) == ".DLL"))
                 d = d.substr(0, d.size() - 4);
             d += ".l";
-            outputFile = d;
+            outputFile = std::move(d);
         }
         toolName = "oimplib.exe";
     }
@@ -167,8 +167,8 @@ int libocc::Run(int argc, char** argv)
     if (Remove.GetExists())
     {
         args += " - ";
-        auto names = Utils::split(Remove.GetValue(), ';');
-        for (auto n : names)
+        const auto& names = Utils::split(Remove.GetValue(), ';');
+        for (auto&& n : names)
         {
             args += "\"";
             args += SanitizeExtension(n, "");
@@ -179,7 +179,7 @@ int libocc::Run(int argc, char** argv)
     {
         args += "* ";
         auto names = Utils::split(Extract.GetValue(), ';');
-        for (auto n : names)
+        for (const auto& n : names)
         {
             args += "\"";
             args += SanitizeExtension(n, "");

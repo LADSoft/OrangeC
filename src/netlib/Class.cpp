@@ -334,13 +334,13 @@ Class* Class::ObjIn(PELib& peLib, bool definition)
             }
             else
             {
-                rv->genericParent_ = genericParent;
+                rv->genericParent_ = std::move(genericParent);
             }
         }
         else
         {
             void* result = nullptr;
-            if (peLib.Find(name, &result) == PELib::s_class)
+            if (peLib.Find(std::move(name), &result) == PELib::s_class)
             {
                 rv = static_cast<Class*>(result);
             }

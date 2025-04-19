@@ -487,7 +487,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             if (m == nullptr)
             {
                 modules[s->GetDllName()] = m = new Module;
-                m->name = name;
+                m->name = std::move(name);
             }
             if (s->GetExternalName().size() == 0)
             {
@@ -511,7 +511,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         LoadHandles(delayLoad);
         LoadBindingInfo(delayLoad, delayLoad.Modules());
     }
-    int delayLoadImportSize = delayLoad.ModuleSize(externs);
+    int delayLoadImportSize = delayLoad.ModuleSize(std::move(externs));
     initSize = size = importSize + delayLoadImportSize;
     data = std::shared_ptr<unsigned char>(new unsigned char[size]);
     std::fill(data.get(), data.get() + size, 0);
@@ -530,7 +530,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             publics[(*it)->GetName()] = (*it);
         }
 
-        WriteThunks(delayLoad, modules, publics);
+        WriteThunks(delayLoad, std::move(modules),std::move( publics));
     }
     regions.push_back(std::pair<ObjInt, ObjInt>(virtual_addr, importSize));
     if (delayLoadImportSize)

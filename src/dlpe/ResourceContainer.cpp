@@ -35,23 +35,23 @@ ResourceContainer::~ResourceContainer()
 {
     for (auto type : numberedTypes)
     {
-        for (auto nt : type.second.numberedIds)
+        for (const auto & nt : type.second.numberedIds)
             delete[] nt.second.data;
-        for (auto nt : type.second.namedIds)
+        for (const auto& nt : type.second.namedIds)
             delete[] nt.second.data;
     }
     for (auto type : namedTypes)
     {
-        for (auto nt : type.second.numberedIds)
-            delete[] nt.second.data;
-        for (auto nt : type.second.namedIds)
+        for (const auto& nt : type.second.numberedIds)
+             delete[] nt.second.data;
+        for (const auto& nt : type.second.namedIds)
             delete[] nt.second.data;
     }
 }
 bool ResourceContainer::LoadFiles()
 {
     bool rv = true;
-    for (auto name : names)
+    for (const auto& name : names)
     {
         if (!LoadFile(name))
         {
@@ -132,7 +132,7 @@ bool ResourceContainer::LoadFile(const std::string& name)
             n += 4 - (n & 3);
             in.seekg(n);
         }
-        InsertResource(typeId, type, nameId, name, data, hdr[0], lang);
+        InsertResource(typeId, std::move(type), nameId, std::move(name), data, hdr[0], lang);
     }
     return true;
 }

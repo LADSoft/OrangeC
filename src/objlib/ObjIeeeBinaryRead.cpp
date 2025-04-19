@@ -253,12 +253,13 @@ bool ObjIeeeBinary::Parse(const ObjByte* buffer, eParseType ParseType)
 }
 void ObjIeeeBinary::getline(ObjByte* buf, size_t size)
 {
-    if (!fread(buf, 1, 3, sfile))
+    int len;
+    if (!(len = fread(buf, 1, 3, sfile)) || len < 3)
     {
         memset(buf, 0, 3);
         return;
     }
-    int len = (buf[1] << 8) + buf[2];
+    len = (buf[1] << 8) + buf[2];
     if (len > BUFFERSIZE)
         ThrowSyntax(buf, eAll);
     if (fread(buf + 3, 1, len - 3, sfile) != len - 3)
@@ -815,7 +816,7 @@ bool ObjIeeeBinary::Comment(const ObjByte* buffer, eParseType ParseType)
                 for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
             }
-            ObjExportSymbol* sym = factory->MakeExportSymbol(name);
+            ObjExportSymbol* sym = factory->MakeExportSymbol(std::move(name));
             sym->SetByOrdinal(byOrdinal);
             sym->SetOrdinal(ordinal);
             sym->SetExternalName(externalName);
@@ -1098,7 +1099,7 @@ bool ObjIeeeBinary::ModuleStart(const ObjByte* buffer, eParseType ParseType)
     ObjString fileName = ParseString(buffer, &pos);
     CheckTerm(buffer, pos);
 
-    file = factory->MakeFile(fileName);
+    file = factory->MakeFile(std::move(fileName));
     SetTranslatorName(std::string(translator));
     return false;
 }

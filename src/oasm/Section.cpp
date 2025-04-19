@@ -259,7 +259,7 @@ ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node,
                     {
                         auto offs = label->GetOffset();
                         ObjExpression* left = factory.MakeExpression(label->GetObjectSection());
-                        ObjExpression* right = ConvertExpression(offs, Lookup, SectLookup, factory);
+                        ObjExpression* right = ConvertExpression(offs, std::move(Lookup), std::move(SectLookup), factory);
                         t = factory.MakeExpression(ObjExpression::eAdd, left, right);
                     }
                     return t;
@@ -458,7 +458,7 @@ int Section::GetNext(Fixup& f, unsigned char* buf, int len)
         if (instructionPos >= instructions.size())
             return 0;
     }
-    if (blen == -1)
+    if (blen == -1 || blen >= sizeof(buf2))
     {
         blen = 0;
         return -1;

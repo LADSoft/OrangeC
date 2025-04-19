@@ -138,10 +138,18 @@ std::string PEReader::SearchOnPath(const std::string& fileName)
     }
     // else look on the path
     std::string path = libPath_;
-    if (path.empty())
-        path = getenv("PATH");
-    else
-        path = path + ";" + getenv("PATH");
+    const auto& pathVal = getenv("PATH");
+    if (pathVal != nullptr)
+    {
+        if (path.empty())
+        {
+            path = getenv("PATH");
+        }
+        else
+        {
+            path = path + ";" + getenv("PATH");
+        }
+    }
     std::string rv;
     std::vector<std::string> split;
     size_t npos = path.find(";");
@@ -159,14 +167,16 @@ std::string PEReader::SearchOnPath(const std::string& fileName)
         npos = path.find(";");
     }
     if (path.size())
-        split.push_back(path);
-    for (auto s : split)
+    {
+        split.push_back(std::move(path));
+    }
+    for (const auto& s : split)
     {
         std::string name = s + DIR_SEP + fileName;
         std::fstream find(name.c_str(), std::ios::in);
         if (find.is_open())
         {
-            rv = name;
+            rv = std::move(name);
             break;
         }
     }
@@ -261,7 +271,7 @@ int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int bu
     {
         path = SearchOnPath(assemblyName + ".dll");
     }
-    return ManagedLoad(assemblyName, path);
+    return ManagedLoad(std::move(assemblyName), std::move(path));
 }
 
 void PEReader::get(void* buffer, size_t offset, size_t len)
@@ -330,6 +340,8 @@ size_t PEReader::Cor20Location(size_t headerOffs)
     if (pe.magic == PEPLUS_MAGICNUM)
     {
         // in peplus file the .net stuff moved...
+        // FIXME the PEHEADER doesn't have the peplus records
+        // so static analysis complains about this, but it is correct...
         offs = *(unsigned*)((unsigned char*)&pe + sizeof(PEHeader));
         size = *(unsigned*)((unsigned char*)&pe + sizeof(PEHeader) + 4);
     }

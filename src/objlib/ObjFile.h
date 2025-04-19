@@ -79,7 +79,7 @@ class ObjFile : public ObjWrapper
     void SetBigEndian(bool BigEndian) { bigEndian = BigEndian; }
 
     std::string GetInputName() const { return inputName; }
-    void SetInputName(const std::string name) { inputName = name; }
+    void SetInputName(const std::string name) { inputName = std::move(name); }
     std::tm GetFileTime() { return fileTime; }
     void SetFileTime(struct std::tm& FileTime) { fileTime = FileTime; }
 

@@ -53,7 +53,7 @@ extern "C" void _RTL_FUNC __excepthook()
 #endif
 
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames) :
-    exists(false), switchChar(SwitchChar), longNames(LongNames)
+    exists(false), switchChar(SwitchChar), longNames(std::move(LongNames))
 {
     parser += this;
 }
@@ -186,7 +186,7 @@ int CmdSwitchDefine::Parse(const char* data)
         }
         if (*data)
             data++;
-        newDefine->value = name;
+        newDefine->value = std::move(name);
     }
     else
     {
@@ -245,7 +245,8 @@ void CmdSwitchFile::Dispatch(char* data)
 char* CmdSwitchFile::GetStr(char* data)
 {
     int size = 30000 + 1;
-    char *buf = (char*)malloc(size), *p = buf;
+    auto buf = std::make_unique<char[]>(size);
+    char *p = buf.get();
     bool quote = false;
     while (isspace(*data))
         data++;
@@ -258,7 +259,7 @@ char* CmdSwitchFile::GetStr(char* data)
     *p = 0;
     if (quote && *data)
         data++;
-    while ((p = (char*)strstr(buf, "%")))
+    while ((p = (char*)strstr(buf.get(), "%")))
     {
         char* q = (char*)strchr(p + 1, '%');
         if (q)
@@ -274,7 +275,7 @@ char* CmdSwitchFile::GetStr(char* data)
                 int len2 = strlen(env);
                 if (len > len2)
                 {
-                    Utils::StrCpy(p + len2, size - (p + len2 - buf), p + len);
+                    Utils::StrCpy(p + len2, size - (p + len2 - buf.get()), p + len);
                 }
                 else if (len < len2)
                 {
@@ -284,17 +285,16 @@ char* CmdSwitchFile::GetStr(char* data)
             }
             else
             {
-                Utils::StrCpy(p, size - (p - buf), q + 1);
+                Utils::StrCpy(p, size - (p - buf.get()), q + 1);
             }
         }
         else
             break;
     }
-    int len = strlen(buf) + 1;
+    int len = strlen(buf.get()) + 1;
     char* x = new char[len];
-    Utils::StrCpy(x, len, buf);
+    Utils::StrCpy(x, len, buf.get());
     argv[argc++] = x;
-    free(buf);
     return data;
 }
 CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool toErr = true, bool longErr = false)
@@ -320,7 +320,7 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
                     if (s1.size() == max)
                         return s;
                     else if (!bigmatch.size())
-                        bigmatch = s1;
+                        bigmatch = std::move(s1);
                 }
             }
         }

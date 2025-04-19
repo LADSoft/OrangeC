@@ -98,7 +98,7 @@ void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
                     q = buf;
                     std::string name = buf;
                     if (file->FindSection(name))
-                        names.push_back(name);
+                        names.push_back(std::move(name));
                     else
                         std::cout << "Warning: Section '" << name << "' not in .rel file" << std::endl;
                 }
@@ -127,7 +127,7 @@ void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
 }
 void dlHexMain::GetInputSections(const std::vector<std::string>& names, ObjFile* file, ObjFactory* factory)
 {
-    for (auto name : names)
+    for (const auto& name : names)
     {
         ObjSection* s = file->FindSection(name);
         ObjInt size = s->GetSize()->Eval(0);

@@ -73,7 +73,7 @@ class AsmExprNode : public AdlExprNode
         REG
     };
     AsmExprNode(Type xType, std::shared_ptr<AsmExprNode> Left = nullptr, std::shared_ptr<AsmExprNode> Right = nullptr) :
-        AdlExprNode(0), type(xType), left(Left), right(Right), sect(nullptr)
+        AdlExprNode(0), type(xType), left(std::move(Left)), right(std::move(Right)), sect(nullptr)
     {
     }
     AsmExprNode(PPINT Ival, bool reg = false) :
@@ -81,7 +81,7 @@ class AsmExprNode : public AdlExprNode
     {
     }
     AsmExprNode(const FPF& Fval) : AdlExprNode(0), type(FVAL), fval(Fval), sect(nullptr), left(nullptr), right(nullptr) {}
-    AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(lbl), sect(nullptr), left(nullptr), right(nullptr) {}
+    AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(std::move(lbl)), sect(nullptr), left(nullptr), right(nullptr) {}
     AsmExprNode(std::shared_ptr<Section>& Sect, int offs) :
         AdlExprNode(offs), type(BASED), sect(Sect), left(nullptr), right(nullptr)
     {
@@ -99,9 +99,9 @@ class AsmExprNode : public AdlExprNode
     FPF fval;
     std::string label;
     std::shared_ptr<AsmExprNode> GetLeft() { return left; }
-    void SetLeft(std::shared_ptr<AsmExprNode> n) { left = n; }
+    void SetLeft(std::shared_ptr<AsmExprNode> n) { left =std::move( n); }
     std::shared_ptr<AsmExprNode> GetRight() { return right; }
-    void SetRight(std::shared_ptr<AsmExprNode> n) { right = n; };
+    void SetRight(std::shared_ptr<AsmExprNode> n) { right = std::move(n); };
     std::shared_ptr<Section> GetSection() { return sect; }
     Type GetType() { return type; }
     void SetType(Type tType) { type = tType; }
@@ -126,7 +126,7 @@ class AsmExpr
     static void ReInit();
     static std::shared_ptr<AsmExprNode> Eval(std::shared_ptr<AsmExprNode> n, int PC);
     std::string GetString() { return tokenizer->GetString(); }
-    static void SetCurrentLabel(std::string lbl) { currentLabel = lbl; }
+    static void SetCurrentLabel(std::string lbl) { currentLabel = std::move(lbl); }
     static void SetSection(std::shared_ptr<Section>& Sect) { section = Sect; }
     static std::shared_ptr<Section> GetSection() { return section; }
     static void SetEqu(std::string name, std::shared_ptr<AsmExprNode>& n) { equs[name] = n; }

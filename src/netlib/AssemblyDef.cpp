@@ -262,10 +262,10 @@ AssemblyDef* AssemblyDef::ObjIn(PELib& peLib, bool definition)
         std::string name = peLib.UnformatName();
 #ifdef TARGET_OS_WINDOWS
         if (peLib.NetCoreInstance())
-            peLib.NetCoreInstance()->LoadAssembly(name);
+            peLib.NetCoreInstance()->LoadAssembly(std::move(name));
         else
 #endif
-            peLib.LoadAssembly(name);
+            peLib.LoadAssembly(std::move(name));
     }
     else if (ch == 'b')
     {
@@ -335,7 +335,7 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
                     val = n + "." + val;
                 reader.ReadFromString(buf, 256, entry->typeNameIndex_.index_);
                 val += (char*)buf;
-                refClasses.push_back(val);
+                refClasses.push_back(std::move(val));
             }
         }
         std::unordered_map<std::string, Namespace*, StringHash> nameSpaces;
@@ -606,7 +606,7 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
         // load the namespaces.
         // Note: classes fields and functions not in a namespace will NOT
         // be imported, as per the C# rules.
-        for (auto a : nameSpaces)
+        for (const auto& a : nameSpaces)
         {
             if (!a.second->Parent())
                 Add(a.second);

@@ -59,6 +59,8 @@ void PKCS1Formatter::Calculate(ByteArray& result)
 size_t RSAEncoder::LoadStrongNameKeys(const std::string& file)
 {
     int rv = 0;
+    // fixme this 2048 is a magic number related to cryptography bits...   make it readable...
+    memset(keyPair, 0, 2048);
     FILE* fil = fopen(file.c_str(), "rb");
     if (fil)
     {
@@ -66,22 +68,26 @@ size_t RSAEncoder::LoadStrongNameKeys(const std::string& file)
         Byte buf[0x14];
         if (fread(buf, 1, 0x14, fil) == 0x14 && !memcmp(buf, test, sizeof(test)))
         {
-            modulusBits = *(int*)(buf + sizeof(test));
-            modulus = new Byte[2048];
-            privateExponent = new Byte[2048];
-            keyPair = new Byte[2048];
-            publicExponent = *(DWord*)(buf + sizeof(test) + 4);
-            if (fread(modulus, 1, modulusBits / 8, fil) == modulusBits / 8)
+            int n = *(int*)(buf + sizeof(test));
+            if (n <= 16384)
             {
-                if (!fseek(fil, 5 * modulusBits / 16, SEEK_CUR))
+                modulusBits = n;
+                modulus = new Byte[2048];
+                privateExponent = new Byte[2048];
+                keyPair = new Byte[2048];
+                publicExponent = *(DWord*)(buf + sizeof(test) + 4);
+                if (fread(modulus, 1, modulusBits / 8, fil) == modulusBits / 8)
                 {
-                    if (fread(privateExponent, 1, modulusBits / 8, fil) == modulusBits / 8)
+                    if (!fseek(fil, 5 * modulusBits / 16, SEEK_CUR))
                     {
-                        if (!fseek(fil, 0, SEEK_SET))
+                        if (fread(privateExponent, 1, modulusBits / 8, fil) == modulusBits / 8)
                         {
-                            if (fread(keyPair, 1, modulusBits / 8 + 0x14, fil) == modulusBits / 8 + 0x14)
+                            if (!fseek(fil, 0, SEEK_SET))
                             {
-                                rv = modulusBits / 8;
+                                if (fread(keyPair, 1, modulusBits / 8 + 0x14, fil) == modulusBits / 8 + 0x14)
+                                {
+                                    rv = modulusBits / 8;
+                                }
                             }
                         }
                     }

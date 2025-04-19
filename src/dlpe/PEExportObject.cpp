@@ -132,7 +132,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     std::fill(pdata, pdata + initSize, 0);
     Header* header = (Header*)pdata;
 
-    header->time = dlPeMain::TimeStamp();
+    header->time = (int)dlPeMain::TimeStamp();
     header->ord_base = minOrd;
     header->n_eat_entries = count;
     header->n_name_ptrs = names.size();

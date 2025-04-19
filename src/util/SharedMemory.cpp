@@ -38,10 +38,10 @@
 #define USE_PAGING_FILE
 
 SharedMemory::SharedMemory(unsigned max, std::string name, unsigned window) :
-    max_(max), windowSize_(window), current_(0), regionStart(0), regionHandle(nullptr), fileHandle_(nullptr)
+    max_(max), windowSize_(window), current_(0), regionStart(0), regionHandle(nullptr), fileHandle_(nullptr), memHandle_(nullptr)
 {
     if (!name.empty())
-        name_ = name;
+        name_ = std::move(name);
     else
         SetName();
 }
@@ -53,6 +53,10 @@ SharedMemory::~SharedMemory()
     CloseMapping();
     CloseHandle(regionHandle);
     CloseHandle(fileHandle_);
+    if (memHandle_)
+    {
+        VirtualFree(memHandle_, 0, MEM_RELEASE);
+    }
 #else
     if (regionHandle)
         free(regionHandle);
@@ -129,6 +133,7 @@ bool SharedMemory::EnsureCommitted(int size)
     if (end > current_)
     {
         unsigned char* temp = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, current_, end - current_);
+
         if (!VirtualAlloc(temp, end - current_, MEM_COMMIT, PAGE_READWRITE))
         {
             UnmapViewOfFile(temp);

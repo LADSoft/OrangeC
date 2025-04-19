@@ -296,7 +296,7 @@ class PInvokeWeeder : public Callback
                     }
                 }
             }
-            for (auto p : pinvokeCounters)
+            for (const auto& p : pinvokeCounters)
             {
                 if (!p.second)
                 {

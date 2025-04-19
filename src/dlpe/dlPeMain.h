@@ -75,7 +75,7 @@ class dlPeMain
         GUI,
         DLL
     };
-    static unsigned TimeStamp() { return (unsigned)timeStamp; }
+    static time_t TimeStamp() { return timeStamp; }
 
   protected:
     void ReadValues();

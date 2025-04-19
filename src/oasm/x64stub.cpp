@@ -723,7 +723,7 @@ void Instruction::RepRemoveCancellations(std::shared_ptr<AsmExprNode> exp, bool 
             }
         }
         else
-            RepRemoveCancellations(num, commit, count, sect, sign, plus);
+            RepRemoveCancellations(std::move(num), commit, count, sect, sign, plus);
     }
     else if (exp->GetType() == AsmExprNode::BASED)
     {
@@ -1254,7 +1254,7 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
     // split arguments out into multiple strings
     Split(line, splt);
     // process each arg
-    for (auto s : splt)
+    for (const auto& s : splt)
     {
         splt2.push_back(RewriteATTArg(s));
     }

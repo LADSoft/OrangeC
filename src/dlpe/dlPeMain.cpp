@@ -131,7 +131,7 @@ MAINCATCH
 void dlPeMain::ParseOutResourceFiles(CmdFiles& files)
 {
     std::deque<std::string> toRemove;
-    for (auto name : files)
+    for (const auto& name : files)
     {
         int npos = std::string(name).find_last_of(".");
         if (npos != std::string::npos)
@@ -151,7 +151,7 @@ void dlPeMain::ParseOutResourceFiles(CmdFiles& files)
 bool dlPeMain::ParseOutDefFile(CmdFiles& files)
 {
     std::deque<std::string> toRemove;
-    for (auto name : files)
+    for (const auto& name : files)
     {
         int npos = std::string(name).find_last_of(".");
         if (npos != std::string::npos)

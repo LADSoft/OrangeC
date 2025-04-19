@@ -162,11 +162,11 @@ void PELib::SplitPath(std::vector<std::string>& split, std::string path)
     }
     if (path.size())
     {
-        split.push_back(path);
+        split.push_back(std::move(path));
     }
     if (last.size())
     {
-        split.push_back(last);
+        split.push_back(std::move(last));
     }
     if (split.size() > 2)
     {
@@ -191,7 +191,7 @@ PELib::eFindType PELib::Find(std::string path, void** result, std::deque<Type*>*
         }
     }
     std::vector<std::string> split;
-    SplitPath(split, path);
+    SplitPath(split, std::move(path));
     std::vector<DataContainer*> found;
     std::vector<Field*> foundField;
     std::vector<Method*> foundMethod;
@@ -313,7 +313,7 @@ Class* PELib::FindOrCreateGeneric(std::string name, std::deque<Type*>& generics)
     {
         return static_cast<Class*>(result);
     }
-    if (Find(name, &result) == s_class)
+    if (Find(std::move(name), &result) == s_class)
     {
         Class* rv = AllocateClass(static_cast<Class*>(result));
         rv->Generic() = generics;
@@ -446,7 +446,7 @@ bool PELib::ILSrcDumpHeader(std::ostream& out)
 bool PELib::ILSrcDumpFile(std::ostream& out)
 {
     WorkingAssembly()->ILSrcDump(*this, out);
-    for (auto sig : pInvokeSignatures_)
+    for (const auto& sig : pInvokeSignatures_)
     {
         sig.second->ILSrcDump(*this, out);
     }
@@ -455,22 +455,22 @@ bool PELib::ILSrcDumpFile(std::ostream& out)
 bool PELib::ObjOut(std::ostream& out)
 {
     out << "$qb" << OBJECT_FILE_VERSION << "," << corFlags_;
-    for (auto a : assemblyRefs_)
+    for (const auto& a : assemblyRefs_)
     {
         // classes and namespaces
         a->ObjOut(*this, out, 1);
     }
-    for (auto p : pInvokeSignatures_)
+    for (const auto& p : pInvokeSignatures_)
     {
         // pinvoke signatures
         p.second->ObjOut(*this, out, 2);
     }
-    for (auto a : assemblyRefs_)
+    for (const auto& a : assemblyRefs_)
     {
         // method definitions and fields
         a->ObjOut(*this, out, 2);
     }
-    for (auto a : assemblyRefs_)
+    for (const auto& a : assemblyRefs_)
     {
         // method bodies
         a->ObjOut(*this, out, 3);
@@ -496,6 +496,7 @@ bool PELib::ObjIn()
 
     std::string buf((std::istreambuf_iterator<char>(*inputStream_)), std::istreambuf_iterator<char>());
     objInputPos_ = 0;
+    // this next would be bad except objInputBuf_ isn't used after we exit this function...
     objInputBuf_ = buf.c_str();
     objInputSize_ = buf.size();
 
@@ -797,7 +798,7 @@ bool PELib::DumpPEFile(std::string file, std::iostream& out, bool isexe, bool is
     table = new ModuleTableEntry(nameIndex, guidIndex);
     peWriter_->AddTableEntry(table);
 
-    for (auto signature : pInvokeSignatures_)
+    for (const auto& signature : pInvokeSignatures_)
     {
         signature.second->PEDump(*this);
     }

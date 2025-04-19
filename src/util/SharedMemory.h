@@ -47,6 +47,7 @@ class SharedMemory
     const unsigned windowSize_;
     unsigned current_;
     void* fileHandle_;
+    void* memHandle_;           // result of virtualAlloc
     void* regionHandle;          // result of OpenFileMapping/CreateFileMapping
     unsigned char* regionStart;  // result of MapViewOfFile(regionHandle,regionBase_,windowSize_)
 };

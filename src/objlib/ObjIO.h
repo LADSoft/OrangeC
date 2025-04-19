@@ -58,7 +58,7 @@ class ObjIOBase
     virtual ObjFile* Read(FILE* fil, eParseType ParseType, ObjFactory* Factory) = 0;
     ObjString GetTranslatorName() { return translatorName; }
     void SetTranslatorName(ObjString& TranslatorName) { translatorName = TranslatorName; }
-    void SetTranslatorName(ObjString&& TranslatorName) { translatorName = TranslatorName; }
+    void SetTranslatorName(ObjString&& TranslatorName) { translatorName =std::move( TranslatorName); }
     ObjInt GetBitsPerMAU() { return bitsPerMAU; }
     void SetBitsPerMAU(ObjInt BitsPerMAU) { bitsPerMAU = BitsPerMAU; }
     ObjInt GetMAUS() { return MAUS; }

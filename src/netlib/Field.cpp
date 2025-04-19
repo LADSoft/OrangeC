@@ -254,7 +254,7 @@ Field* Field::ObjIn(PELib& peLib, bool definition)
     else
     {
         void* result;
-        if (peLib.Find(name, &result) == PELib::s_field)
+        if (peLib.Find(std::move(name), &result) == PELib::s_field)
         {
             rv = f = static_cast<Field*>(result);
         }

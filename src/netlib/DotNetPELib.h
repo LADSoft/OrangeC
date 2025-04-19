@@ -1132,7 +1132,7 @@ namespace DotNetPELib
         ///** return name
         const std::string &Name() const { return name_; }
         ///** set name
-        void Name(const std::string name) { name_ = name; }
+        void Name(const std::string name) { name_ = std::move(name); }
 
         ///** internal functions
         virtual bool ILSrcDump(PELib& , std::ostream& ) const;

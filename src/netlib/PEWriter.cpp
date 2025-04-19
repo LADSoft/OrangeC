@@ -362,7 +362,7 @@ void PEWriter::CalculateObjects(PELib& peLib)
     {
         peHeader_->header_size += (fileAlign_ - peHeader_->header_size % fileAlign_);
     }
-    peHeader_->time = time(0);
+    peHeader_->time = (int)time(0);
 
     peObjects_ = new PEObject[MAX_PE_OBJECTS];
     memset(peObjects_, 0, sizeof(PEObject) * MAX_PE_OBJECTS);

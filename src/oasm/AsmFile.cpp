@@ -115,7 +115,7 @@ bool AsmFile::Read()
                 lexer.SkipPastEol();
         }
     }
-    for (auto exp : exports)
+    for (const auto& exp : exports)
     {
         if (labels[exp.first] == nullptr)
         {
@@ -127,7 +127,7 @@ bool AsmFile::Read()
             labels[exp.first]->SetPublic(true);
         }
     }
-    for (auto global : globals)
+    for (const auto& global : globals)
     {
         if (labels[global] == nullptr)
         {
@@ -215,7 +215,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         //		if (lineno >= 0)
         //			listing.Add(thisLabel, lineno, preProcessor.InMacro());
         if (realName == "..start")
-            startupLabel = label;
+            startupLabel = std::move(label);
     }
     if (GetKeyword() == kw::colon)
     {
@@ -283,7 +283,7 @@ void AsmFile::DoDB()
             f->SetInsOffs(size);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
-            fixups.push_back(f);
+            fixups.push_back(std::move(f));
             buf[size++] = 0;
             if (!byte)
                 buf[size++] = 0;
@@ -338,7 +338,7 @@ void AsmFile::DoDD()
             f->SetInsOffs(size);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
-            fixups.push_back(f);
+            fixups.push_back(std::move(f));
             *((unsigned*)(buf + size)) = 0;
             size += 4;
         }
@@ -373,7 +373,7 @@ void AsmFile::DoDQ()
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
-        fixups.push_back(f);
+        fixups.push_back(std::move(f));
         *((unsigned long long*)(buf + size)) = 0;
         size += 8;
     } while (GetKeyword() == kw::comma);
@@ -420,7 +420,7 @@ void AsmFile::DoFloat()
     {
         std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
-        ins->Add(f);
+        ins->Add(std::move(f));
     }
 }
 void AsmFile::ReserveDirective(int n)
@@ -453,7 +453,7 @@ void AsmFile::ReserveDirective(int n)
             std::shared_ptr<Fixup> f = std::make_shared<Fixup>(num, n, false, 0);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
-            ins->Add(f);
+            ins->Add(std::move(f));
         }
         currentSection->InsertInstruction(ins);
         added = true;
@@ -789,7 +789,7 @@ void AsmFile::TimesDirective()
             for (auto& f : *ins->GetFixups())
             {
                 auto expr = f->GetExpr();
-                auto expr2 = AsmExpr::Eval(expr, currentSection->GetPC());
+                auto expr2 = AsmExpr::Eval(std::move(expr), currentSection->GetPC());
                 f->SetExpr(expr2);
             }
             currentSection->InsertInstruction(ins);
@@ -877,7 +877,7 @@ void AsmFile::InsertExtern(const std::string& name1)
         }
         std::shared_ptr<Label> label = labels[name];
         label->SetExtern(true);
-        numericLabels.push_back(label);
+        numericLabels.push_back(std::move(label));
     }
 }
 void AsmFile::ResolveAttExterns(const std::set<std::string>& externs)
@@ -914,8 +914,8 @@ void AsmFile::ImportDirective()
         external = internal;
     imports[internal] = std::make_unique<Import>();
     Import* imp = imports[internal].get();
-    imp->dll = dll;
-    imp->extname = external;
+    imp->dll = std::move(dll);
+    imp->extname = std::move(external);
 }
 void AsmFile::ExportDirective()
 {
@@ -926,7 +926,7 @@ void AsmFile::ExportDirective()
         external = GetId();
     else
         external = internal;
-    exports[internal] = external;
+    exports[internal] = std::move(external);
 }
 void AsmFile::SectionDirective()
 {
@@ -939,7 +939,7 @@ void AsmFile::SectionDirective()
         ;
         numericSections.push_back(section);
         section->Parse(this);
-        currentSection = section;
+        currentSection = std::move(section);
     }
     else
     {
@@ -1028,7 +1028,7 @@ void AsmFile::SingleDirective()
     {
         std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
-        ins->Add(f);
+        ins->Add(std::move(f));
     }
 }
 void AsmFile::DoubleDirective()
@@ -1056,7 +1056,7 @@ void AsmFile::DoubleDirective()
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
-        fixups.push_back(f);
+        fixups.push_back(std::move(f));
         size += 8;
     } while (GetKeyword() == kw::comma);
     std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
@@ -1270,7 +1270,7 @@ void AsmFile::GnuSectionDirective()
         ;
         numericSections.push_back(section);
         section->Parse(this);
-        currentSection = section;
+        currentSection = std::move(section);
     }
     else
     {
@@ -1330,7 +1330,7 @@ void AsmFile::PushsectionDirective()
         ;
         numericSections.push_back(section);
         section->Parse(this);
-        currentSection = section;
+        currentSection = std::move(section);
     }
     else
     {
@@ -1363,7 +1363,7 @@ void AsmFile::TextDirective()
         ;
         numericSections.push_back(section);
         section->Parse(this);
-        currentSection = section;
+        currentSection = std::move(section);
     }
     else
     {
@@ -1386,7 +1386,7 @@ void AsmFile::DataDirective()
         ;
         numericSections.push_back(section);
         section->Parse(this);
-        currentSection = section;
+        currentSection = std::move(section);
     }
     else
     {
@@ -1425,7 +1425,7 @@ void AsmFile::NeedSection()
         Section::sections["text"] = std::make_shared<Section>("text", 1);
         auto section = Section::sections["text"];
         numericSections.push_back(section);
-        currentSection = section;
+        currentSection = std::move(section);
         AsmExpr::SetSection(currentSection);
         parser->Setup(currentSection.get());
         currentLabel = nullptr;
@@ -1550,7 +1550,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
                 }
             }
         }
-        for (auto exp : exports)
+        for (const auto& exp : exports)
         {
             ObjExportSymbol* p = factory.MakeExportSymbol(exp.first);
             p->SetExternalName(exp.second);
@@ -1614,8 +1614,8 @@ unsigned AsmFile::GetValue()
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    auto temp = AsmExpr::Eval(num, n);
-    std::shared_ptr<AsmExprNode> num1(temp);
+    auto temp = AsmExpr::Eval(std::move(num), n);
+    std::shared_ptr<AsmExprNode> num1(std::move(temp));
     if (num1->GetType() != AsmExprNode::IVAL)
         throw new std::runtime_error("Integer constant expected");
     return num1->ival;

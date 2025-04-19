@@ -422,7 +422,7 @@ void Instruction::ObjOut(PELib& peLib, std::ostream& out, int pass) const
     else if (op_ == i_switch)
     {
         out << "," << switches_->size();
-        for (auto sw : *switches_)
+        for (const auto& sw : *switches_)
         {
             out << "," << peLib.FormatName(sw);
         }

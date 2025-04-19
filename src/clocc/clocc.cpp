@@ -345,13 +345,13 @@ int clocc::Run(int argc, char** argv)
                     outputFile = Utils::QualifiedFile(val.c_str(), ".exe");
                     break;
                 case 'c':
-                    outputFile = SanitizeExtension(val, ".o");
+                    outputFile = SanitizeExtension(std::move(val), ".o");
                     break;
                 case 'i':
                     outputFile = Utils::QualifiedFile(val.c_str(), ".i");
                     break;
                 case 'S':
-                    outputFile = SanitizeExtension(val, ".s");
+                    outputFile = SanitizeExtension(std::move(val), ".s");
                     break;
             }
         }
@@ -452,7 +452,7 @@ int clocc::Run(int argc, char** argv)
         args += " /I" + prm_cinclude.GetValue();
     if (prmStandard.GetExists())
     {
-        auto a = prmStandard.GetValue();
+        const auto& a = prmStandard.GetValue();
         if (a == "c++11")
         {
         }

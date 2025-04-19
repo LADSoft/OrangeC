@@ -169,7 +169,7 @@ bool NetCore::SupportsRuntime(int svers)
         return false;
     if (svers == DummyChooseLatest)
         svers = version_;
-    auto values = frameworks[NETCORE_APP];
+    const auto& values = frameworks[NETCORE_APP];
     return initted && !values.second.empty() && (svers == DummyChooseLatest || (LookupDir(values.second, svers) != ""));
 }
 
@@ -273,7 +273,7 @@ bool NetCore::CreateExecutable(std::string fileName, std::string dllName)
     {
         out.write((char*)data, size);
         rv = out.good();
-        WriteRuntimeConfig(fileName);
+        WriteRuntimeConfig(std::move(fileName));
     }
     delete[] data;
     return rv;
@@ -287,11 +287,11 @@ std::string NetCore::LookupDir(std::string path, int version)
     swprintf(ver, sizeof(ver) / sizeof(wchar_t), L"%d.", version);
     std::wstring match;
     std::wstring last;
-    for (auto t : dirs)
+    for (const auto& t : dirs)
     {
         if (!wcsncmp(t.c_str(), ver, wcslen(ver)))
         {
-            match = t;
+            match = std::move(t);
             break;
         }
         last = t;
@@ -316,7 +316,7 @@ bool NetCore::LoadAssembly(AssemblyDef* assembly, std::string assemblyName, int 
         PEReader r;
         if (created)
         {
-            auto values = frameworks[NETCORE_APP];
+            const auto& values = frameworks[NETCORE_APP];
             if (values.first != "" && values.second != "")
             {
                 std::string path;
@@ -327,7 +327,7 @@ bool NetCore::LoadAssembly(AssemblyDef* assembly, std::string assemblyName, int 
                 }
                 if (n)
                 {
-                    n = r.ManagedLoad(assemblyName, major, minor, build, revision);
+                    n = r.ManagedLoad(std::move(assemblyName), major, minor, build, revision);
                 }
             }
         }
@@ -365,7 +365,7 @@ bool NetCore::LoadAssembly(std::string assemblyName, int major, int minor, int b
             if (assembly->IsLoaded())
                 return 1;
         }
-        auto rv = LoadAssembly(assembly, assemblyName, major, minor, build, revision, created);
+        auto rv = LoadAssembly(assembly, std::move(assemblyName), major, minor, build, revision, created);
         if (rv)
         {
             peLib->RemoveAssembly(assembly);
@@ -399,7 +399,7 @@ bool NetCore::DumpOutputFile(const std::string& file, PELib::OutputMode mode)
             {
                 outputFile = outputFile.substr(index + 1);
             }
-            CreateExecutable(file, outputFile);
+            CreateExecutable(file, std::move(outputFile));
         }
         return rv;
     }

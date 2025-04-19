@@ -331,7 +331,6 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
     sections.clear();
     files.clear();
     factory->GetIndexManager()->LoadIndexes(file);
-    currentTags.release();
     ioBuffer = nullptr;
     return file;
 }
@@ -881,7 +880,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
                 for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
             }
-            ObjExportSymbol* sym = factory->MakeExportSymbol(name);
+            ObjExportSymbol* sym = factory->MakeExportSymbol(std::move(name));
             sym->SetByOrdinal(byOrdinal);
             sym->SetOrdinal(ordinal);
             sym->SetExternalName(externalName);

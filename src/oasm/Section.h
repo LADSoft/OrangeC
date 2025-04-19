@@ -44,7 +44,7 @@ class Section
 {
   public:
     Section(std::string Name, int Sect) :
-        name(Name), sect(Sect), align(1), pc(0), isVirtual(false), instructionPos(0), objectSection(nullptr)
+        name(std::move(Name)), sect(Sect), align(1), pc(0), isVirtual(false), instructionPos(0), objectSection(nullptr)
     {
         memset(beValues, 0, sizeof(beValues));
     }

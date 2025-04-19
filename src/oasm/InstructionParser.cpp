@@ -345,7 +345,7 @@ std::shared_ptr<Instruction> InstructionParser::Parse(const std::string& args, i
                                 f->SetInsOffs((operand->pos + 7) / 8);
                                 f->SetFileName(errName);
                                 f->SetErrorLine(errLine);
-                                s->Add(f);
+                                s->Add(std::move(f));
                             }
                         }
                     }
@@ -457,7 +457,7 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
                 if (it != tokenTable.end() && it->second >= REGISTER_BASE)
                 {
                     // is registera
-                    regs.push_back(potentialreg);
+                    regs.push_back(std::move(potentialreg));
                     while (q < line.size() && isspace(line[q]))
                         q++;
                     if (q < line.size() && line[q] == '*')
@@ -500,7 +500,7 @@ bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
                             while (r >= n && isspace(line[r]))
                                 r--;
                             size_t s = r;
-                            if (q < 0 || !isdigit(line[s]))
+                            if (q == std::string::npos || !isdigit(line[s]))
                                 throw new std::runtime_error("scale specifier required");
 
                             while (s > 0 && isdigit(line[s - 1]))
@@ -681,7 +681,7 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                     auto temp = asmexpr.Build(line);
                     next->val = new AsmExprNode(*temp.get());
                     if (temp->IsAbsolute())
-                        next->val = new AsmExprNode(*asmexpr.Eval(temp, PC).get());
+                        next->val = new AsmExprNode(*asmexpr.Eval(std::move(temp), PC).get());
                 }
             }
             else if (isdigit(line[0]) || line[0] == '+' || line[0] == '-' || line[0] == '(' || line[0] == '$' || line[0] == '~')
@@ -718,7 +718,7 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                 }
                 else
                 {
-                    throw new std::runtime_error(std::string("Unexpected token: ") + std::string(token));
+                    throw new std::runtime_error(std::string("Unexpected token: ") + std::string(std::move(token)));
                 }
             }
             else

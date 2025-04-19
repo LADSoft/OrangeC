@@ -128,7 +128,7 @@ int CodeContainer::CompileSEH(std::vector<Instruction*> tags, int offset, std::v
         switch (tags[offset]->SEHType())
         {
             case Instruction::seh_try:
-                return CompileSEH(tags, offset, sehData);
+                return CompileSEH(std::move(tags), offset, sehData);
             case Instruction::seh_filter:
                 // assumes there are no try catch block within a filter expression
                 current.filterOffset = tags[offset]->Offset();
@@ -177,7 +177,7 @@ void CodeContainer::CompileSEH(PELib&, std::vector<SEHData>& sehData)
     }
     if (tags.size())
     {
-        CompileSEH(tags, 0, sehData);
+        CompileSEH(std::move(tags), 0, sehData);
     }
 }
 void CodeContainer::BaseTypes(int& types) const

@@ -400,7 +400,7 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
             (void)peLib.FindOrCreateGeneric(name.substr(0, n), generics);
         }
         Method* m;
-        if (peLib.Find(name, &m, targs, nullptr, generics.size() ? &generics : nullptr) == PELib::s_method)
+        if (peLib.Find(std::move(name), &m, std::move(targs), nullptr, generics.size() ? &generics : nullptr) == PELib::s_method)
         {
             rv = m->Signature();
             if (found)

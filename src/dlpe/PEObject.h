@@ -91,7 +91,8 @@ struct DllImports
   public:
     DllImports(std::map<std::string, Module*>& Modules, const std::vector<std::string>& delayLoadModules, ObjInt Offset,
                bool bind = false, bool unload = false) :
-        modules(Modules), offset(Offset), bindTable(bind), unloadTable(unload)
+        modules(Modules), offset(Offset), bindTable(bind), unloadTable(unload), directory(0),
+        directoryNames(0), iatAddr(0), names(0), nameAddr(0), bindAddr(0), unloadAddr(0)
     {
         TrimModules(delayLoadModules);
     }
@@ -155,7 +156,7 @@ class PEObject
     {
         HeaderSize = 40
     };
-    PEObject(std::string Name) : name(Name), size(0), initSize(0), virtual_addr(0), raw_addr(0), flags(0) {}
+    PEObject(std::string Name) : name(std::move(Name)), size(0), initSize(0), virtual_addr(0), raw_addr(0), flags(0) {}
     virtual ~PEObject() {}
     virtual void Setup(ObjInt& endVa, ObjInt& endPhys) = 0;
     virtual void Patch() {}
@@ -171,6 +172,7 @@ class PEObject
     static void SetFile(ObjFile* File);
     static void SetDelayLoadNames(std::string names);
 
+    // we tried to make this const auto& but...   that doesn't work because of the explicit return at the end...
     auto Regions()
     {
         if (regions.size())

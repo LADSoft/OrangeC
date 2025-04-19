@@ -217,7 +217,7 @@ void gccocc::PutWarnings(FILE* fil)
             fputs(" /w+", fil);
         else
         {
-            for (auto w : warnings)
+            for (const auto& w : warnings)
             {
                 if (w == "no")
                     fputs(" /w", fil);
@@ -315,14 +315,14 @@ int gccocc::Run(int argc, char** argv)
         subsystem = PE_SUBSYS_WINDOWS;
     if (prmDll.GetValue())
         subsystem = XPE_SUBSYS_DLL;
-    auto ldstrings = prmLdCommand.GetValue();
+    const auto& ldstrings = prmLdCommand.GetValue();
     for (auto&& ld : Utils::split(ldstrings))
     {
         auto eq = ld.find_first_of('=');
         std::string key, val;
         if (eq == std::string::npos)
         {
-            key = ld;
+            key = std::move(ld);
         }
         else
         {
@@ -330,7 +330,7 @@ int gccocc::Run(int argc, char** argv)
             val = ld.substr(eq + 1);
         }
         if (key == "--output-def")
-            prm_output_def_file.SetValue(val);
+            prm_output_def_file.SetValue(std::move(val));
         else if (key == "--out-implib")
             fprintf(fil, " --out-implib %s", val.c_str());
         else if (key == "--dll")
@@ -377,13 +377,13 @@ int gccocc::Run(int argc, char** argv)
     if (MakeStubsTargets.GetExists())
     {
         auto strings = Utils::split(MakeStubsTargets.GetValue());
-        for (auto a : strings)
+        for (const auto& a : strings)
             fprintf(fil, " -MT %s", a.c_str());
     }
     if (MakeStubsQuotedTargets.GetExists())
     {
         auto strings = Utils::split(MakeStubsQuotedTargets.GetValue());
-        for (auto a : strings)
+        for (const auto & a : strings)
             fprintf(fil, " -MQ %s", a.c_str());
     }
     if (MakeStubsContinue.GetValue())

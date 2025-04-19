@@ -95,7 +95,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 dataSize += (number.second.length + 3) & ~3;
             }
         }
-        for (auto name : type.second.namedIds)
+        for (const auto& name : type.second.namedIds)
         {
             dirCount++;
             entryCount += 2;
@@ -117,7 +117,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     unsigned short* name = (unsigned short*)(((char*)pdata) + dirCount * sizeof(Dir) + entryCount * sizeof(Entry));
     DataEntry* dataEntries = (DataEntry*)(((char*)name) + nameSize * 2);
     unsigned char* dataPos = (unsigned char*)(dataEntries + dataCount);
-    dir->time = dlPeMain::TimeStamp();
+    dir->time = (int)dlPeMain::TimeStamp();
     dir->name_entry = resources.namedTypes.size();
     dir->ident_entry = resources.numberedTypes.size();
     Entry* types = (Entry*)(dir + 1);
@@ -134,13 +134,13 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             *name++ = *p++;
         }
         *name++ = *p++;
-        dir->time = dlPeMain::TimeStamp();
+        dir->time = (int)dlPeMain::TimeStamp();
         dir->name_entry = type.second.namedIds.size();
         dir->ident_entry = type.second.numberedIds.size();
         Entry* ids = (Entry*)(dir + 1);
         dir = (Dir*)(ids + dir->name_entry + dir->ident_entry);
         int j = 0;
-        for (auto nameId : type.second.namedIds)
+        for (const auto& nameId : type.second.namedIds)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = RVA | ((unsigned char*)name - pdata);
@@ -151,7 +151,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 *name++ = *p++;
             }
             *name++ = *p++;
-            dir->time = dlPeMain::TimeStamp();
+            dir->time = (int)dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
@@ -169,7 +169,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = number.first;
-            dir->time = dlPeMain::TimeStamp();
+            dir->time = (int)dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
@@ -188,13 +188,13 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     {
         types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - pdata);
         types[i++].rva_or_id = type.first;
-        dir->time = dlPeMain::TimeStamp();
+        dir->time = (int)dlPeMain::TimeStamp();
         dir->name_entry = type.second.namedIds.size();
         dir->ident_entry = type.second.numberedIds.size();
         Entry* ids = (Entry*)(dir + 1);
         dir = (Dir*)(ids + dir->name_entry + dir->ident_entry);
         int j = 0;
-        for (auto namedId : type.second.namedIds)
+        for (const auto& namedId : type.second.namedIds)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = RVA | ((unsigned char*)name - pdata);
@@ -205,7 +205,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 *name++ = *p++;
             }
             *name++ = *p++;
-            dir->time = dlPeMain::TimeStamp();
+            dir->time = (int)dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
@@ -223,7 +223,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = number.first;
-            dir->time = dlPeMain::TimeStamp();
+            dir->time = (int)dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);

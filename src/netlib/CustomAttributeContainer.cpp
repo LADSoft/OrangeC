@@ -30,11 +30,11 @@ namespace DotNetPELib
 {
 CustomAttributeContainer::~CustomAttributeContainer()
 {
-    for (auto a : attributes)
+    for (const auto& a : attributes)
     {
         delete a.first;
     }
-    for (auto s : descriptors)
+    for (const auto& s : descriptors)
     {
         delete s;
     }
@@ -191,16 +191,20 @@ void CustomAttributeContainer::Load(PELib& peLib, AssemblyDef& assembly, PEReade
                 }
                 // should succeed now
                 it = descriptors.find(&a);
-                auto ita = attributes.find(&attribute);
-                if (ita == attributes.end())
+                // but we have to check to make static analysis happy...
+                if (it != descriptors.end())
                 {
-                    CustomAttribute* newAttribute = new CustomAttribute(attribute.tag_, attribute.index_);
-                    std::vector<CustomAttributeDescriptor*> desc = {*it};
-                    attributes[newAttribute] = desc;
-                }
-                else
-                {
-                    ita->second.push_back(*it);
+                    auto ita = attributes.find(&attribute);
+                    if (ita == attributes.end())
+                    {
+                        CustomAttribute* newAttribute = new CustomAttribute(attribute.tag_, attribute.index_);
+                        std::vector<CustomAttributeDescriptor*> desc = { *it };
+                        attributes[newAttribute] = std::move(desc);
+                    }
+                    else
+                    {
+                        ita->second.push_back(*it);
+                    }
                 }
                 // for the destructor at the end of the block...
                 a.data = nullptr;

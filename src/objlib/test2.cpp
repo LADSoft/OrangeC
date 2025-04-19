@@ -45,6 +45,7 @@
 #include <iostream>
 
 int main()
+MAINTRY
 {
     try
     {
@@ -69,3 +70,5 @@ int main()
         std::cout << e.what() << std::endl;
     }
 }
+MAINCATCH
+

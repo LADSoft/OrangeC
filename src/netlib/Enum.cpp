@@ -89,7 +89,7 @@ Enum* Enum::ObjIn(PELib& peLib, bool definition)
     {
         // if we get here it is as an operand
         void* result;
-        if (peLib.Find(name, &result) == PELib::s_enum)
+        if (peLib.Find(std::move(name), &result) == PELib::s_enum)
         {
             rv = static_cast<Enum*>(result);
         }

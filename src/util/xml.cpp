@@ -446,7 +446,7 @@ void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
     {
         if ((*it).get() == attrib)
         {
-            attribs.erase(it);
+            it = attribs.erase(it);
         }
     }
 }
@@ -456,7 +456,7 @@ void xmlNode::RemoveChild(const xmlNode* child)
     {
         if ((*it).get() == child)
         {
-            children.erase(it);
+            it = children.erase(it);
         }
     }
 }

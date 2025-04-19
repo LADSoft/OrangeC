@@ -20,7 +20,7 @@ class fnv1a_class
         for (size_t i = 0; arr[i] != '\0';
              i++)  // This optimizes away a call to strlen since our optimizer isn't smart enough to perform this IIRC
         {
-            hash = (hash * FNV_prime) ^ arr2[i];
+            hash = T((hash * FNV_prime) ^ arr2[i]);
         }
         return hash;
     }
@@ -42,7 +42,7 @@ class fnv1a_binary
         T hash = FNV_offset;
         for (size_t i = 0; i < N; i++)
         {
-            hash = (hash * FNV_prime) ^ arr2[i];
+            hash = T((hash * FNV_prime) ^ arr2[i]);
         }
         return hash;
     }

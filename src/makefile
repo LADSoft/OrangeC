@@ -30,8 +30,10 @@ include pathext2.mak
 
 ifeq "$(COMPILER)" "gcc-linux"
 NULLDEV := /dev/null
+COPY := cp
 else
 NULLDEV := NUL
+COPY := copy
 endif
 
 ifndef _TREEROOT

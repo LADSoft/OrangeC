@@ -16,9 +16,6 @@ that there has to be acknowledgement of use.   These header files remain under t
 and LCC licenses and are not covered by the GNU license that the rest of the runtime library
 abides by.
 
-Additionally, the OCL program was originally written by Kirill Joss.
-Licensing terms can be found in the 'license' directory.
-
 Additionally, this package redistributes the runtimes for several MSDOS extenders.
 Licensing terms can be found in the 'license' directory.
 

@@ -29,7 +29,7 @@ DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlmz dlpe o
        oimplib omake onm orc occparse occpr occ occil gccocc arocc clocc linkocc libocc ieeeconvert
 else
 DIRS := sqlite3 util objlib libhostfxr netlib occopt obrc ocpp ogrep oasm dlhex dlmz dlpe olib olink \
-       oimplib omake onm orc ocl occparse occpr occ occil ieeeconvert \
+       oimplib omake onm orc occparse occpr occ occil ieeeconvert \
        gccocc arocc clocc linkocc libocc \
        help
 endif

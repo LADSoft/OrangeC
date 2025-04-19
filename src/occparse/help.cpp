@@ -311,6 +311,7 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
                 while ((*pat)->type != BasicType::auto_)
                     pat = &(*pat)->btp;
                 *pat = nt;
+                patin->UpdateRootTypes();
                 return;
             }
             else if (nt->type == BasicType::aggregate_)
@@ -322,6 +323,7 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
                 {
                     *pat = exp->v.sp->tp;
                 }
+                patin->UpdateRootTypes();
                 return;
             }
         }
@@ -366,6 +368,7 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
                     {
                         *pat = nt;
                     }
+                    patin->UpdateRootTypes();
                 }
             }
             else if (nt->IsRef())
@@ -376,16 +379,19 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
             {
                 *pat = nt;
             }
+            patin->UpdateRootTypes();
         }
         else if (in->IsPtr())
         {
             *pat = nt;
+            patin->UpdateRootTypes();
         }
         else
         {
             while ((*pat)->type != BasicType::auto_)
                 pat = &(*pat)->btp;
             *pat = nt;
+            patin->UpdateRootTypes();
         }
     }
 }

@@ -35,4 +35,4 @@ H_FILES=$(wildcard *.h)
 include ..$(PATHEXT2)redirect.mak
 
 DISTRIBUTE: copyexe
-	copy *.spc $(DISTBIN)
+	$(COPY) *.spc $(DISTBIN)

@@ -37,10 +37,10 @@ x64Parser.cpp: ..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
 	cp $< $@
 else
 x64Parser.cpp: ..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
-	copy $< $@
+	$(COPY) $< $@
 endif
 
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
-	copy target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg
+	$(COPY) target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg

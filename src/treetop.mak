@@ -35,9 +35,11 @@ endif
 ifeq "$(COMPILER)" "gcc-linux"
 MKDIR := mkdir -p
 DEL := rm
+COPY := cp
 else
 MKDIR := mkdir
 DEL := del /Q
+COPY := copy
 endif
 all:
 
@@ -51,7 +53,6 @@ ifeq "$(COMPILER)" "gcc-linux"
 CURRENT := $(CURDIR)
 else
 CURRENT := $(subst /,\,$(CURDIR))
-
 endif
 
 _TARGETDIR:= $(CURRENT)
@@ -181,7 +182,7 @@ DISTMAKE := $(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dist.mak)
 export DISTMAKE
 
 cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
-	-$(DEL) $(DISTBIN)\*.pdb 2> $(NULLDEV)
+	-$(DEL) $(DISTBIN)$(PATHEXT2)*.pdb 2> $(NULLDEV)
 ifndef NOMAKEDIR
 	-$(MKDIR) $(DISTROOT) 2> $(NULLDEV)
 #	-$(DEL) $(DISTROOT) 2> $(NULLDEV)
@@ -304,7 +305,7 @@ $(DISTS1): %.dist1 : $(DISTS)
 compare_exe:
 ifneq "$(MAIN_FILE)" ""
 ifeq "$(NO_COMPARE)" ""
-	$(COMPARER) $(DISTBIN)\..\temp2\$(DISTNAME).exe $(DISTBIN)\$(DISTNAME).exe
+	$(COMPARER) $(DISTBIN)$(PATHEXT2)..$(PATHEXT2)temp2$(PATHEXT2)$(DISTNAME).exe $(DISTBIN)$(PATHEXT2)$(DISTNAME).exe
 endif
 endif
 
@@ -353,15 +354,15 @@ localfiles: createdirs
 
 %.xcppf: %.cpp
 	clang-format -style=file $< > $@
-	copy $@ $<
+	$(COPY) $@ $<
 
 %.xcf: %.c
 	clang-format -style=file $< > $@
-	copy $@ $<
+	$(COPY) $@ $<
 
 %.xhf: %.h
 	clang-format -style=file $< > $@
-	copy $@ $<
+	$(COPY) $@ $<
 
 
 $(FORMATS): %.format :

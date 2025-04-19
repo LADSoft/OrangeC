@@ -253,7 +253,7 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                         }
                         else
                         {
-                            symbol = sym;
+                            symbol = std::move(sym);
                             token = eSymbol;
                         }
                         return token;

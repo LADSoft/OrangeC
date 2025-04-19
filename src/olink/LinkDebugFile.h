@@ -39,7 +39,7 @@ class LinkDebugFile
   public:
     LinkDebugFile(std::string OutputFile, ObjFile* File, std::vector<ObjSection*>& sections,
                   std::map<ObjSection*, ObjSection*>& parentSections) :
-        Sections(sections), ParentSections(parentSections), outputFile(OutputFile), file(File), dbPointer(nullptr)
+        Sections(sections), ParentSections(parentSections), outputFile(std::move(OutputFile)), file(File), dbPointer(nullptr)
     {
     }
     virtual ~LinkDebugFile();

@@ -98,7 +98,7 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
     bool sh = exe.find("sh.exe") != std::string::npos || exe.find("bash.exe") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
-        rv = command;
+        rv = std::move(command);
     }
     else
     {
@@ -166,9 +166,9 @@ void OS::WriteToConsole(std::string string)
 void OS::ToConsole(std::deque<std::string>& strings)
 {
     std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
-    for (auto&& s : strings)
+    for (const auto & s : strings)
     {
-        WriteToConsole(s);
+        WriteToConsole(std::move(s));
     }
     strings.clear();
 }
@@ -228,7 +228,7 @@ void OS::InitJobServer()
         {
             localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
             name = localJobServer->PassThroughCommandString();
-            MakeMain::jobServer.SetValue(name);
+            MakeMain::jobServer.SetValue(std::move(name));
             first = true;
         }
     }
@@ -348,7 +348,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
-        if (v->GetValue().find_first_of("\\") != std::string::npos)
+        if (v && v->GetValue().find_first_of("\\") != std::string::npos)
         {
             size_t n = command1.find(v->GetValue());
             while (n != std::string::npos)
@@ -516,7 +516,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 std::string OS::SpawnWithRedirect(const std::string command)
 {
 #ifdef TARGET_OS_WINDOWS
-    std::string command1 = command;
+    std::string command1 = std::move(command);
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
@@ -532,7 +532,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
         cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
-        if (v->GetValue().find_first_of("\\") != std::string::npos)
+        if (v && v->GetValue().find_first_of("\\") != std::string::npos)
         {
             size_t n = command1.find(v->GetValue());
             while (n != std::string::npos)
@@ -546,7 +546,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     {
         cmd += " /c ";
     }
-    cmd += QuoteCommand(cmd, command1);
+    cmd += QuoteCommand(cmd, std::move(command1));
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
     memset(&startup, 0, sizeof(startup));
@@ -683,7 +683,7 @@ bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
 void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
 std::string OS::NormalizeFileName(const std::string file)
 {
-    std::string name = file;
+    std::string name = std::move(file);
     // slash at the beginning of a word could be a command line switch so we don't replace it, otherwise replace '/'
     // with '\\' when not in a string
     int stringchar = 0;

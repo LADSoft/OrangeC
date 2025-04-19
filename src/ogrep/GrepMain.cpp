@@ -135,6 +135,7 @@ void GrepMain::SetModes(void)
 }
 void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char* startpos, const char* text)
 {
+    std::ios_base::fmtflags f(std::cout.flags());
     if (quiet.GetValue())
     {
         return;
@@ -192,7 +193,7 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
         }
     }
     matchCount++;
-    std::cout.clear();
+    std::cout.flags(f);
 }
 void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char* startpos, char* curpos,
                         bool matched)
@@ -318,7 +319,7 @@ int GrepMain::Run(int argc, char** argv)
         for (int i = 1; i < files.size(); i++)
         {
             std::string name = files[i];
-            std::fstream fil(name, std::ios::in | std::ios::binary);
+            std::fstream fil(std::move(name), std::ios::in | std::ios::binary);
             if (fil.is_open())
                 matchCount += OneFile(regexp, name, fil, openCount);
         }

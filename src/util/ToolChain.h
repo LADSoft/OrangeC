@@ -52,7 +52,7 @@ class ToolChain
                                         const char* helpText, std::function<bool()> noBanner = nullptr);
     static void ShowBanner();
     static void ShowVersion();
-    static void Usage(const char* text, int exitVal = 1);
+    [[noreturn]] static void Usage(const char* text, int exitVal = 1);
     template <typename... Args>
     static int ToolInvoke(const std::string& exeName, const char* with, const char* fmt, const Args... arg)
     {

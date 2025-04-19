@@ -82,7 +82,7 @@ void StringVerInfo::ReadRC(RCFile& rcFile)
         while (rcFile.IsString())
             value += rcFile.GetString();
         rcFile.NeedEol();
-        Add(key, value);
+        Add(std::move(key), std::move(value));
     }
     rcFile.NeedEnd();
 }
@@ -132,7 +132,7 @@ void VarVerInfo::ReadRC(RCFile& rcFile)
         std::wstring key = rcFile.GetString();
         if (rcFile.GetToken()->GetKeyword() != kw::comma)
             throw std::runtime_error("Comma expected");
-        Info v(key);
+        Info v(std::move(key));
         while (rcFile.GetToken()->GetKeyword() == kw::comma)
         {
             rcFile.NextToken();

@@ -271,7 +271,7 @@ bool SwitchConfig::InterceptFile(const std::string& file)
         {
             if (data->selected)
             {
-                for (auto extension : data->extensions)
+                for (const auto& extension : data->extensions)
                 {
                     if (ext == extension)
                     {
@@ -303,7 +303,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     std::string sverbose = verbose ? "/y" : "/!";
     std::string sdebug = debugFile.empty() ? "" : "\"/g" + debugFile + "\"";
     std::string sfiles;
-    for (auto name : files)
+    for (const auto& name : files)
         sfiles = sfiles + " \"" + name + "\"";
     std::string outdef;
     std::string outimp;

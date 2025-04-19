@@ -181,7 +181,7 @@ int LibMain::Run(int argc, char** argv)
         }
     for (int i = 1; i < files.size(); i++)
         AddFile(librarian, files[i].c_str());
-    for (auto&& name : addFiles)
+    for (const auto& name : addFiles)
     {
         librarian.AddFile(name);
     }

@@ -58,15 +58,15 @@ class StringVerInfo : public InternalVerInfo
     struct Info
     {
         Info() {}
-        Info(std::wstring Key, std::wstring Value) : key(Key), value(Value) {}
+        Info(std::wstring Key, std::wstring Value) : key(std::move(Key)), value(std::move(Value)) {}
         std::wstring key;
         std::wstring value;
     };
-    StringVerInfo(std::wstring Language) : InternalVerInfo(String), language(Language) {}
+    StringVerInfo(std::wstring Language) : InternalVerInfo(String), language(std::move(Language)) {}
     virtual void WriteRes(ResFile& resFile);
     virtual void ReadRC(RCFile& rcFile);
     std::wstring GetLanguage() const { return language; }
-    void Add(std::wstring key, std::wstring value) { strings.push_back(Info(key, value)); }
+    void Add(std::wstring key, std::wstring value) { strings.push_back(Info(std::move(key), std::move(value))); }
     typedef std::deque<Info>::iterator iterator;
     iterator begin() { return strings.begin(); }
     iterator end() { return strings.end(); }

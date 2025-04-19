@@ -192,7 +192,7 @@ bool LinkRegion::ParseRegionSpec(LinkManager* manager, CmdFiles& files, LinkToke
 }
 bool LinkRegion::HoldsFile(const ObjString& fileName)
 {
-    for (auto name : sourceFiles)
+    for (const auto& name : sourceFiles)
     {
         if (name == fileName)
             return true;
@@ -266,7 +266,7 @@ void LinkRegion::AddSection(LinkManager* manager)
         if (sourceFiles.empty())
             AddFile(file);
         else
-            for (auto srcFile : sourceFiles)
+            for (const auto& srcFile : sourceFiles)
             {
                 if (srcFile == file->GetInputName())
                 {

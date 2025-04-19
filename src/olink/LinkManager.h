@@ -109,7 +109,7 @@ class LinkManager
     typedef std::vector<ObjFile*> FileData;
 
   public:
-    LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile = "", bool CompleteLink = false,
+    LinkManager(ObjString Specification, bool CaseSensitive, ObjString OutputFile = "", bool CompleteLink = false,
                 bool DebugPassThrough = false, ObjString DebugFile = "");
 
     ~LinkManager();

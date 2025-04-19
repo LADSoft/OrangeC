@@ -144,7 +144,7 @@ void SymbolTable::ProcessObjectFile(ObjFile* file)
 void SymbolTable::Load(CmdFiles& files)
 {
     bool first = true;
-    for (auto name : files)
+    for (const auto& name : files)
     {
         if (!first)
         {
@@ -218,7 +218,7 @@ void SymbolTable::CullExterns()
     for (auto e : externals)
         if (e->type == Symbol::Undefined)
             cached.insert(e);
-    externals = cached;
+    externals = std::move(cached);
 }
 void SymbolTable::LoadExterns()
 {

@@ -38,8 +38,8 @@ class Time
 {
   public:
     Time() : seconds(0), ms(0) {}
-    Time(unsigned S, unsigned MS) : seconds(S), ms(MS) {}
-    unsigned seconds;
+    Time(time_t S, unsigned MS) : seconds(S), ms(MS) {}
+    time_t seconds;
     unsigned ms;
     bool operator>(const Time& last);
     bool operator>=(const Time& last);
@@ -53,7 +53,7 @@ class Time
 struct EnvEntry
 {
     EnvEntry() {}
-    EnvEntry(const std::string Name, const std::string Value) : name(Name), value(Value) {}
+    EnvEntry(const std::string Name, const std::string Value) : name(std::move(Name)), value(std::move(Value)) {}
     std::string name;
     std::string value;
 };

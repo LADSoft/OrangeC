@@ -51,16 +51,19 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
     touch(Touch),
     rebuildAll(RebuildAll),
     keepResponseFiles(KeepResponseFiles),
-    newFiles(NewFiles),
-    oldFiles(OldFiles),
+    newFiles(std::move(NewFiles)),
+    oldFiles(std::move(OldFiles)),
     outputType(Type),
     lowResolutionTime(false),
     dependsNesting(0)
 {
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    std::string shtest = v->GetValue();
-    std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
-    OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos || shtest.find("BASH.EXE") != std::string::npos);
+    if (v)
+    {
+        std::string shtest = v->GetValue();
+        std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
+        OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos || shtest.find("BASH.EXE") != std::string::npos);
+    }
 }
 Maker::~Maker() {}
 void Maker::SetFirstGoal(const std::string& name)
@@ -267,7 +270,7 @@ std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std:
         {
             if (SearchImplicitRules(goal, preferredPath, true, timeval))
             {
-                rv = Dependencies(goal, preferredPath, timeval, err, false, file, line);
+                rv = Dependencies(goal, preferredPath, timeval, err, false, std::move(file), line);
             }
             else if (err)
             {
@@ -357,9 +360,9 @@ std::string Maker::GetFileTime(const std::string& goal, const std::string& prefe
             rv = cur;  // return value is the path, with a slash on the end
             if (rv == "./")
                 rv = "";
-            timeval = OS::GetFileTime(name);
+            timeval = OS::GetFileTime(std::move(name));
             if (rv != "")
-                filePaths[internalGoal] = cur;
+                filePaths[internalGoal] = std::move(cur);
             break;
         }
     }
@@ -629,7 +632,7 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
         if (exportAll || var.second->GetExport())
         {
             EnvEntry a((var.first), var.second->GetValue());
-            env.push_back(a);
+            env.push_back(std::move(a));
         }
     }
 }

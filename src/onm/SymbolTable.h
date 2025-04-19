@@ -57,7 +57,7 @@ class Symbol
     };
     Symbol() : fileName(""), symbolName(""), offset(0), type(Undefined) {}
     Symbol(std::string file, std::string name, ObjInt Offset, SymbolType Type) :
-        fileName(file), symbolName(name), offset(Offset), type(Type)
+        fileName(std::move(file)), symbolName(std::move(name)), offset(Offset), type(Type)
     {
     }
 

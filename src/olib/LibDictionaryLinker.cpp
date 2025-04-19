@@ -75,17 +75,25 @@ const std::vector<unsigned>& LibDictionary::Lookup(FILE* stream, ObjInt dictiona
         {
             int len;
             q += 4;
+            if (q >= buf.get() + end)
+                return dummy;
             len = *(short*)q;
             while (len)
             {
                 q += 2;
+                if (q >= buf.get() + end)
+                    return dummy;
                 std::string name = std::string((char*)q, len);
                 q += len;
+                if (q >= buf.get() + end)
+                    return dummy;
                 unsigned fileNum;
                 do
                 {
                     fileNum = *(unsigned*)(q);
                     q += sizeof(unsigned);
+                    if (q >= buf.get() + end)
+                        return dummy;
                     dictionary[name].push_back(fileNum & ~DictionaryContinuationFlag);
                 } while (fileNum & DictionaryContinuationFlag);
                 len = *(short*)q;

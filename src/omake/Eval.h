@@ -42,7 +42,7 @@ class Variable;
 class Eval
 {
   public:
-    Eval(const std::string name, bool expandWildcards, std::shared_ptr<RuleList> ruleList = nullptr,
+    Eval(std::string name, bool expandWildcards, std::shared_ptr<RuleList> ruleList = nullptr,
          std::shared_ptr<Rule> rule = nullptr);
     ~Eval() {}
     std::string Evaluate();

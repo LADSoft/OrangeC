@@ -63,7 +63,7 @@ class BRCDictionary
     void Clear()
     {
         dictionary.clear();
-        data.release();
+        data.reset();
         blockCount = 0;
     }
     ObjInt GetBlockCount() const { return blockCount; }

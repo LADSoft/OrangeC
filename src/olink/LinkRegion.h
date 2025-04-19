@@ -56,7 +56,7 @@ class LinkRegion
     typedef std::vector<OneSection>::iterator OneSectionIterator;
     struct NamedSection
     {
-        NamedSection(std::string Name) : name(Name) {}
+        NamedSection(std::string Name) : name(std::move(Name)) {}
         std::string name;
         std::vector<OneSection> sections;
     };

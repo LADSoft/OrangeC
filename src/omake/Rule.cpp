@@ -54,7 +54,7 @@ Rule::Rule(const std::string& Target, const std::string& Prerequisites, const st
     target(Target),
     prerequisites(Prerequisites),
     orderPrerequisites(OrderPrerequisites),
-    commands(Commands),
+    commands(std::move(Commands)),
     file(File),
     lineno(Lineno),
     secondExpansion(SecondExpansion),
@@ -73,7 +73,7 @@ void Rule::SecondaryEval(std::shared_ptr<RuleList> ruleList, std::shared_ptr<Rul
     {
         Eval a(prerequisites, true, ruleList, rule);
         prerequisites = a.Evaluate();
-        Eval b(orderPrerequisites, true, ruleList, rule);
+        Eval b(orderPrerequisites, true, std::move(ruleList), std::move(rule));
         orderPrerequisites = b.Evaluate();
     }
 }

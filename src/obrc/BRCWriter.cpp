@@ -431,11 +431,11 @@ bool BRCWriter::WriteFileList()
 {
     Begin();
     std::map<std::string, int>& unsorted = loader.GetFileNames();
-    for (auto item : unsorted)
+    for (const auto& item : unsorted)
     {
         std::string myString = item.first;
         std::transform(myString.begin(), myString.end(), myString.begin(), easytolower);
-        if (!Insert(myString, item.second))
+        if (!Insert(std::move(myString), item.second))
             return false;
     }
     End();
@@ -500,7 +500,7 @@ void BRCWriter::PushCPPNames(std::string name, SymData* orig, Symbols& syms, Sym
             if (first != 0)
             {
                 simpleName = name.substr(0, last);
-                InsertMappingSym(simpleName, orig, syms, newSyms);
+                InsertMappingSym(std::move(simpleName), orig, syms, newSyms);
             }
         }
     }

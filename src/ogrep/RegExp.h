@@ -172,7 +172,7 @@ class RegExpContext
     void Clear();
 
   private:
-    std::deque<std::unique_ptr<RegExpMatch>> matches;
+    std::deque<std::shared_ptr<RegExpMatch>> matches;
     const char* beginning;
     int m_so;
     int m_eo;

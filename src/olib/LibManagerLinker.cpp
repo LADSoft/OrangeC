@@ -33,6 +33,9 @@ void LibManager::InitHeader()
 }
 bool LibManager::LoadLibrary()
 {
+    if (fseek(stream, 0, SEEK_END))
+        return false;
+    size_t len = ftell(stream);
     memset(&header, 0, sizeof(header));
     if (fseek(stream, 0, SEEK_SET))
         return false;
@@ -45,11 +48,11 @@ bool LibManager::LoadLibrary()
         return false;
     if (header.sig != LibHeader::LIB_SIG)
         return false;
-    if (fseek(stream, header.namesOffset, SEEK_SET))
+    if (header.namesOffset >= len || fseek(stream, header.namesOffset, SEEK_SET))
         return false;
     if (!files.ReadNames(stream, header.filesInModule))
         return false;
-    if (fseek(stream, header.offsetsOffset, SEEK_SET))
+    if (header.offsetsOffset >= len || fseek(stream, header.offsetsOffset, SEEK_SET))
         return false;
     if (!files.ReadOffsets(stream, header.filesInModule))
         return false;

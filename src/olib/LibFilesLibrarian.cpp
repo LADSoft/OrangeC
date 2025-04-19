@@ -143,7 +143,7 @@ void LibFiles::Replace(ObjFile& obj)
                 file->data = nullptr;
             }
             file->data = &obj;
-            file->name = Name;
+            file->name = std::move(Name);
             file->offset = 0;
             return;
         }

@@ -72,6 +72,7 @@ class LibManager
     {
         if (stream)
             fclose(stream);
+        stream = nullptr;
     }
     enum
     {

@@ -32,8 +32,8 @@
 std::map<int, StringTable*> StringTable::stringTables;
 ResourceInfo StringTable::currentInfo(0);
 
-StringTable::StringTable(const ResourceInfo& info) : loadedInfo(info), Resource(eString, 0, info) {}
-StringTable::StringTable(int Id, const ResourceInfo& info) : Resource(eString, ResourceId((Id >> 4) + 1), info), loadedInfo(0)
+StringTable::StringTable(const ResourceInfo& info) : loadedInfo(info), Resource(eString, 0, info), tblNum(0) {}
+StringTable::StringTable(int Id, const ResourceInfo& info) : Resource(eString, ResourceId((Id >> 4) + 1), info), loadedInfo(0), tblNum(0)
 {
     stringTables[(Id >> 4) + 1] = this;
 }

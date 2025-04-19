@@ -63,7 +63,7 @@ class LinkMap
     struct MapSymbolData
     {
         MapSymbolData(ObjString DisplayName, bool Used, ObjInt Abs, ObjInt Base, int Group) :
-            displayName(DisplayName), used(Used), base(Base), abs(Abs), group(Group)
+            displayName(std::move(DisplayName)), used(Used), base(Base), abs(Abs), group(Group)
         {
         }
         ObjString displayName;

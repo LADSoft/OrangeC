@@ -100,17 +100,17 @@ ObjInt BRCLoader::InsertVariable(ObjBrowseInfo& p, bool func)
     ldata->startLine = p.GetLine()->GetLineNumber();
     ldata->qual = p.GetQual();
     ldata->charPos = p.GetCharPos();
-    ldata->hint = hint;
+    ldata->hint = std::move(hint);
     ldata->blockLevel = blocks.size() - blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
     // functions can be nested in C++ browse info..
     if (blocks.size() - blockHead == 0)
     {
-        InsertSymData(name, ldata, func);
+        InsertSymData(std::move(name), ldata, func);
     }
     else
     {
-        InsertBlockData(name, ldata);
+        InsertBlockData(std::move(name), ldata);
     }
     return p.GetLine()->GetLineNumber();
 }
@@ -128,7 +128,7 @@ void BRCLoader::Usages(ObjBrowseInfo& p)
     ldata->startLine = p.GetLine()->GetLineNumber();
     ldata->qual = p.GetQual();
     ldata->charPos = p.GetCharPos();
-    ldata->hint = hint;
+    ldata->hint = std::move(hint);
     ldata->blockLevel = blocks.size() - blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
     SymData* sym;
@@ -190,7 +190,7 @@ void BRCLoader::EndBlock(int line)
         blocks.pop_back();
 
         b->end = line;
-        for (auto sym : b->syms)
+        for (const auto& sym : b->syms)
         {
             InsertSymData(sym.first, sym.second);
         }

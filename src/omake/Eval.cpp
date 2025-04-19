@@ -93,8 +93,8 @@ std::unordered_map<std::string, Eval::StringFunc> Eval::builtins = {{"subst", &E
                                                                     {"info", &Eval::info},
                                                                     {"exists", &Eval::exists}};
 
-Eval::Eval(const std::string name, bool ExpandWildcards, std::shared_ptr<RuleList> RuleList, std::shared_ptr<Rule> Rule) :
-    str(name), expandWildcards(ExpandWildcards), ruleList(RuleList), rule(Rule)
+Eval::Eval(std::string name, bool ExpandWildcards, std::shared_ptr<RuleList> RuleList, std::shared_ptr<Rule> Rule) :
+    str(std::move(name)), expandWildcards(ExpandWildcards), ruleList(std::move(RuleList)), rule(std::move(Rule))
 {
 }
 void Eval::Clear()
@@ -472,7 +472,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                         set.insert(temp);
                         if (!rv.empty())
                             rv += " ";
-                        rv += Maker::GetFullName(temp);
+                        rv += Maker::GetFullName(std::move(temp));
                     }
                 }
             }
@@ -527,7 +527,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
             }
         }
     }
-    if (found && rv.find_first_of(SpaceThunk))
+    if (found && rv.find_first_of(SpaceThunk) != std::string::npos)
     {
         auto extra = rv;
         rv = "";
@@ -560,10 +560,13 @@ std::string Eval::ExpandMacro(const std::string& name)
     else if (name[0] == '$')
     {
         size_t n = MacroSpan(name, 1);
-        rv = name.substr(0, n + 1);
-        extra = std::string(name.substr(n + 1));
-        Eval a(rv, false, ruleList, rule);
-        rv = a.Evaluate();
+        if (n != std::string::npos)
+        {
+            rv = name.substr(0, n + 1);
+            extra = std::string(name.substr(n + 1));
+            Eval a(rv, false, ruleList, rule);
+            rv = a.Evaluate();
+        }
     }
     else
     {
@@ -636,32 +639,35 @@ std::string Eval::ExpandMacro(const std::string& name)
         else
         {
             m++;
-            int m1 = extra.find_first_of('=');
+            unsigned m1 = extra.find_first_of('=');
             if (m1 != std::string::npos)
             {
                 std::string pat = extra.substr(m, m1 - m);
                 std::string rep = extra.substr(m1 + 1);
-                int n = pat.find_first_not_of(' ');
-                if (pat[n] == '.')
-                    pat.replace(0, n, "%");
-                else if (n)
-                    pat.replace(0, n, "");
-                n = rep.find_first_not_of(' ');
-                if (n == std::string::npos)
+                unsigned n = pat.find_first_not_of(' ');
+                if (n != std::string::npos)
                 {
-                    pat = extra.substr(m, m1 - m);
-                    while ((n = rv.find(pat)) != std::string::npos)
+                    if (pat[n] == '.')
+                        pat.replace(0, n, "%");
+                    else if (n)
+                        pat.replace(0, n, "");
+                    n = rep.find_first_not_of(' ');
+                    if (n == std::string::npos)
                     {
-                        rv.replace(n, pat.size(), "");
+                        pat = extra.substr(m, m1 - m);
+                        while ((n = rv.find(pat)) != std::string::npos)
+                        {
+                            rv.replace(n, pat.size(), "");
+                        }
                     }
-                }
-                else
-                {
-                    if (rep[n] == '.')
-                        rep.replace(0, n, "%");
                     else
-                        rep.replace(0, n, "");
-                    rv = patsubst(pat + "," + rep + "," + rv);
+                    {
+                        if (rep[n] == '.')
+                            rep.replace(0, n, "%");
+                        else
+                            rep.replace(0, n, "");
+                        rv = patsubst(pat + "," + rep + "," + rv);
+                    }
                 }
             }
             else
@@ -949,7 +955,7 @@ std::string Eval::findstring(const std::string& arglist)
         Eval i(in, false, ruleList, rule);
         in = i.Evaluate();
         if (in.find(find) != std::string::npos)
-            rv = find;
+            rv = std::move(find);
     }
     return rv;
 }
@@ -1172,7 +1178,7 @@ std::string Eval::notdir(const std::string& names)
         if (n != std::string::npos)
             intermed = p.substr(n + 1);
         else
-            intermed = p;
+            intermed = std::move(p);
         if (!rv.empty() && !intermed.empty())
             rv += " ";
         rv += intermed;
@@ -1387,14 +1393,14 @@ std::string Eval::condIf(const std::string& arglist)
         ifst = i.Evaluate();
         if (ifst != "")
         {
-            Eval t(then, false, ruleList, rule);
+            Eval t(std::move(then), false, ruleList, rule);
             rv = t.Evaluate();
         }
         else
         {
             if (!els.empty())
             {
-                Eval e(els, false, ruleList, rule);
+                Eval e(std::move(els), false, ruleList, rule);
                 rv = e.Evaluate();
             }
         }
@@ -1417,7 +1423,7 @@ std::string Eval::condOr(const std::string& arglist)
             return left;
         n = arglist.find_first_of(',');
     }
-    Eval r(right, false, ruleList, rule);
+    Eval r(std::move(right), false, ruleList, rule);
     return r.Evaluate();
 }
 
@@ -1436,7 +1442,7 @@ std::string Eval::condAnd(const std::string& arglist)
             return left;
         n = right.find_first_of(',');
     }
-    Eval r(right, false, ruleList, rule);
+    Eval r(std::move(right), false, ruleList, rule);
     return r.Evaluate();
 }
 
@@ -1502,11 +1508,12 @@ std::string Eval::call(const std::string& arglist)
         }
         else
         {
+            // copy is intended here...
             auto oldArgs = callArgs;
             callArgs.clear();
             sub = "$(" + sub + ")";
             Eval l(sub, false, ruleList, rule);
-            l.PushCallArg(sub);
+            l.PushCallArg(std::move(sub));
             n = args.find_first_of(',');
             while (n != std::string::npos)
             {
@@ -1514,19 +1521,19 @@ std::string Eval::call(const std::string& arglist)
                 args.replace(0, n + 1, "");
                 Eval l1(left, false, ruleList, rule);
                 left = l1.Evaluate();
-                l.PushCallArg(left);
+                l.PushCallArg(std::move(left));
                 n = args.find_first_of(',');
             }
             if (!args.empty())
             {
                 Eval l1(args, false, ruleList, rule);
                 args = l1.Evaluate();
-                l.PushCallArg(args);
+                l.PushCallArg(std::move(args));
             }
             rv = l.Evaluate();
             Eval l2(rv, false);
             rv = l2.Evaluate();
-            callArgs = oldArgs;
+            callArgs = std::move(oldArgs);
         }
     }
     return rv;

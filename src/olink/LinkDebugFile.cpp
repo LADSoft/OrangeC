@@ -232,7 +232,7 @@ bool LinkDebugFile::WriteFileNames()
 
         std::transform(name.begin(), name.end(), name.begin(), tolower);
         v.push_back(index);
-        n.push_back(name);
+        n.push_back(std::move(name));
     }
     LinkerColumnsWithNameVirtualTable fns(v, n, 2, true);
     fns.Start(dbPointer);

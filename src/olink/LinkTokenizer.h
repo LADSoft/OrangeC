@@ -40,7 +40,7 @@ class LinkTokenizer
                 eAddr, eSize, eMaxSize, eRoundSize, eAlign, eVirtual, eFill,
                 eAdd, eSub, eMul, eDiv, eNeg, eCmpl, eEOF } ;
     // clang-format on
-    LinkTokenizer(ObjString spec) : data(spec), token(eUnknown), value(0), lineNo(1) { NextToken(); }
+    LinkTokenizer(ObjString spec) : data(std::move(spec)), token(eUnknown), value(0), lineNo(1) { NextToken(); }
     ~LinkTokenizer() {}
 
     eTokenType NextToken();

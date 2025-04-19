@@ -127,7 +127,7 @@ int rcMain::Run(int argc, char* argv[])
             pp.Define(v->name, v->value, false);
         }
         std::string s("");
-        pp.Define("RC_INVOKED", s, false);
+        pp.Define("RC_INVOKED", std::move(s), false);
         std::string outName;
         if (!OutputFile.GetValue().empty())
             outName = OutputFile.GetValue();

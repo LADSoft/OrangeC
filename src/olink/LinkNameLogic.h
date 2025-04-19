@@ -31,7 +31,7 @@
 class LinkNameLogic
 {
   public:
-    LinkNameLogic(std::string spec) : top(nullptr) { ParseOut(spec); }
+    LinkNameLogic(std::string spec) : top(nullptr) { ParseOut(std::move(spec)); }
     virtual ~LinkNameLogic();
 
     bool Matches(const std::string& name);

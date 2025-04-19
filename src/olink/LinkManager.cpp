@@ -62,18 +62,18 @@ std::set<std::string> ignoreLibs = {"advapi32.l", "avicap32.l", "avifil32.l", "c
                                     "winspool.l", "wow32.l",    "wsock32.l",  "ws2_32.l"};
 void HookError(int aa) {}
 
-LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile, bool CompleteLink,
+LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, ObjString OutputFile, bool CompleteLink,
                          bool DebugPassThrough, ObjString DebugFile) :
     specification(Specification),
-    outputFile(OutputFile),
-    specName(Specification),
+    outputFile(std::move(OutputFile)),
+    specName(std::move(Specification)),
     factory(nullptr),
     indexManager(nullptr),
     completeLink(CompleteLink),
     ioBase(nullptr),
     caseSensitive(CaseSensitive),
     debugPassThrough(DebugPassThrough),
-    debugFile(DebugFile)
+    debugFile(std::move(DebugFile))
 {
 }
 
@@ -483,7 +483,7 @@ void LinkManager::LoadFiles()
     {
         return;
     }
-    for (auto name : objectFiles)
+    for (const auto& name : objectFiles)
     {
         std::string path;
         FILE* infile = GetLibraryPath(name, path);
@@ -498,7 +498,7 @@ void LinkManager::LoadFiles()
             }
             else
             {
-                file->SetInputName(name);
+                file->SetInputName(std::move(name));
                 if (internalBase.GetBitsPerMAU() < ioBase->GetBitsPerMAU())
                     ioBase->SetBitsPerMAU(internalBase.GetBitsPerMAU());
                 if (internalBase.GetMAUS() > ioBase->GetMAUS())
@@ -530,19 +530,19 @@ std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
         {
             if (!rv->Load())
             {
-                rv.release();
+                rv.reset(nullptr);
             }
         }
         else
         {
-            rv.release();
+            rv.reset(nullptr);
         }
     }
     return rv;
 }
 void LinkManager::LoadLibraries()
 {
-    for (auto name : libFiles)
+    for (const auto& name : libFiles)
     {
         LinkDll checker(name, libPath, true);
         if (checker.IsDll())

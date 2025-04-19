@@ -42,7 +42,7 @@ struct TempFileDeleter
 {
     ~TempFileDeleter()
     {
-        for (auto q : list)
+        for (const auto& q : list)
             unlink(q.c_str());
     }
     void Add(const std::string& name) { list.push_back(name); }
@@ -75,7 +75,7 @@ void LinkDll::LoadDll()
                 if (nm.size() == 0)
                     return;
             }
-            name = nm;
+            name = std::move(nm);
         }
         std::fstream in(name, std::ios::in | std::ios::binary);
         if (!in.is_open())

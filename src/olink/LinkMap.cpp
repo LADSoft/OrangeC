@@ -250,7 +250,7 @@ void LinkMap::Publics(std::fstream& stream)
                                             sectionName =
                                                 ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
                                         byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
-                                        byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                        byValue.insert(MapSymbolData(std::move(sectionName), true, ofs + base, base, group));
                                     }
                                 }
                                 for (auto it = region->GetRegion()->NormalDataBegin(); it != region->GetRegion()->NormalDataEnd();
@@ -292,10 +292,10 @@ void LinkMap::Publics(std::fstream& stream)
         }
     }
     stream << std::endl << "Publics By Name" << std::endl << std::endl;
-    for (auto sym : byName)
+    for (const auto& sym : byName)
         ShowSymbol(stream, sym);
     stream << std::endl << "Publics By Value" << std::endl << std::endl;
-    for (auto sym : byValue)
+    for (const auto& sym : byValue)
         ShowSymbol(stream, sym);
 }
 void LinkMap::WriteMap()

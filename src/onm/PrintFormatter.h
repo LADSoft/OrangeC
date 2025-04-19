@@ -32,7 +32,7 @@ class PrintFormatter
 {
   public:
     PrintFormatter(bool FilePerLine, bool Demangle, bool LineNumbers, bool ArchiveIndex, std::string Radix) :
-        filePerLine(FilePerLine), demangle(Demangle), lineNumbers(LineNumbers), archiveIndex(ArchiveIndex), radix(Radix)
+        filePerLine(FilePerLine), demangle(Demangle), lineNumbers(LineNumbers), archiveIndex(ArchiveIndex), radix(std::move(Radix))
     {
     }
     void Print(SymbolTable& symbols);

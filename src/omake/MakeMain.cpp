@@ -152,7 +152,6 @@ void MakeMain::Dispatch(const char* data)
     }
     argvx[argcx] = 0;
     SwitchParser.Parse(&argcx, argvx.get());
-    argvx.release();
 }
 const char* MakeMain::GetStr(const char* data)
 {
@@ -363,6 +362,7 @@ void MakeMain::SetupImplicit()
 }
 void MakeMain::ShowRule(RuleList* ruleList)
 {
+    std::ios_base::fmtflags f(std::cout.flags());
     for (auto& rule : *ruleList)
     {
         std::cout << ruleList->GetTarget() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
@@ -390,7 +390,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
             std::cout << " := ";
         std::cout << it->second->GetValue() << std::endl;
     }
-    std::cout.clear();
+    std::cout.flags(f);
 }
 void MakeMain::ShowDatabase()
 {
@@ -444,7 +444,7 @@ void MakeMain::SetTreePath(std::string& files)
         } while (!found && pos != std::string::npos);
         if (!path.empty())
         {
-            files = path;
+            files = std::move(path);
             SetVariable("_TREEROOT", files, Variable::o_command_line, false);
             SetVariable("_TREETARGET", OS::GetWorkingDir(), Variable::o_command_line, false);
         }
@@ -630,7 +630,7 @@ int MakeMain::Run(int argc, char** argv)
         for (auto& rule : *rl)
         {
             std::string v = rule->GetPrerequisites();
-            Eval r(v, false);
+            Eval r(std::move(v), false);
             std::string cmdLine = r.Evaluate();
             Dispatch(cmdLine.c_str());
         }

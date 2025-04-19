@@ -108,7 +108,7 @@ class RuleList
     void operator+=(Variable*);
     void SetNewerPrerequisites(const std::string& val) { newerPrerequisites = val; }
     std::string GetNewerPrerequisites() { return newerPrerequisites; }
-    void SetTargetPatternStem(const std::string stem) { targetPatternStem = stem; }
+    void SetTargetPatternStem(const std::string stem) { targetPatternStem = std::move(stem); }
     std::string GetTargetPatternStem() const { return targetPatternStem; }
     const std::string& GetName() const { return target; }
     void SetIntermediate(bool flag) { intermediate = flag; }

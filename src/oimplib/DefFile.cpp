@@ -282,7 +282,7 @@ void DefFile::ReadExports()
                     }
                     else
                     {
-                        oneExport->module = line;
+                        oneExport->module = std::move(line);
                         tokenizer.Reset("");
                     }
                     tokenizer.Next();
@@ -612,7 +612,7 @@ void DefFile::WriteSectionBits(unsigned value)
 }
 void DefFile::WriteCode()
 {
-    for (auto section : sectionMap)
+    for (const auto& section : sectionMap)
     {
         if (section.first == "CODE")
         {
@@ -624,7 +624,7 @@ void DefFile::WriteCode()
 }
 void DefFile::WriteData()
 {
-    for (auto section : sectionMap)
+    for (const auto& section : sectionMap)
     {
         if (section.first == "DATA")
         {
@@ -637,7 +637,7 @@ void DefFile::WriteData()
 void DefFile::WriteSections()
 {
     bool first = true;
-    for (auto section : sectionMap)
+    for (const auto& section : sectionMap)
     {
         if (section.first != "CODE" && section.first != "DATA")
         {

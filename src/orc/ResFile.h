@@ -36,7 +36,7 @@
 class ResFile
 {
   public:
-    ResFile() {}
+    ResFile() : base(0), hdrSize(0), size(0) {}
     virtual ~ResFile();
     void Mark();
     void MarkHeader();

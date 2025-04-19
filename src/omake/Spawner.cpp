@@ -68,7 +68,11 @@ class OSTakeJobIfNotMake
         }
         else
         {
-            sem.Post();
+            try
+            {
+                sem.Post();
+            }
+            catch (std::runtime_error) { /* don't care */ }
         }
     }
 };
@@ -82,8 +86,8 @@ void Spawner::Run(std::shared_ptr<Command>& Commands, OutputType Type, std::shar
 {
     commands = Commands;
     outputType = Type;
-    ruleList = RuleListx;
-    rule = Rulex;
+    ruleList = std::move(RuleListx);
+    rule = std::move(Rulex);
     retVal = InternalRun();
 }
 int Spawner::InternalRun()
@@ -158,7 +162,7 @@ int Spawner::InternalRun()
                                 tail = current.substr(n + 1);
                             current.erase(n);
                         }
-                        Eval ce(current, false, ruleList, rule);
+                        Eval ce(std::move(current), false, ruleList, rule);
                         fil << ce.Evaluate() << std::endl;
                     } while (!done);
                     fil.close();
@@ -203,8 +207,8 @@ int Spawner::InternalRun()
     }
     if (!stopAll)
         OS::ToConsole(output);
-    for (auto&& f : tempFiles)
-        OS::RemoveFile(f);
+    for (const auto& f : tempFiles)
+        OS::RemoveFile(std::move(f));
     return rv;
 }
 int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
@@ -254,10 +258,10 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
                     if (!dontrun)
                     {
                         std::string str;
-                        rv1 = OS::Spawn(cmd, environment,
+                        rv1 = OS::Spawn(std::move(cmd), environment,
                                         outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
                         if (outputType != o_none && !str.empty())
-                            output.push_back(str);
+                            output.push_back(std::move(str));
                         if (!rv)
                             rv = rv1;
                     }

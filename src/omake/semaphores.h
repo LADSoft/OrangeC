@@ -34,8 +34,8 @@ class Semaphore
     string_type semaphoreName;
 
   public:
-    Semaphore() : null(true), semaphoreName() {}
-    Semaphore(string_type name, int value) : named(true), semaphoreName(name)
+    Semaphore() : null(true), semaphoreName(), handle(nullptr) {}
+    Semaphore(string_type name, int value) : named(true), semaphoreName(std::move(name))
     {
 #ifdef TARGET_OS_WINDOWS
         handle = CreateSemaphore(nullptr, value, value, semaphoreName.c_str());
@@ -130,7 +130,7 @@ class Semaphore
             if (!null)
             {
 #ifdef TARGET_OS_WINDOWS
-                CloseHandle(other.handle);
+                CloseHandle(handle);
 #else
                 if (named)
                 {

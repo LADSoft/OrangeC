@@ -331,6 +331,8 @@ int RegExpMatch::Matches(RegExpContext& context, const char* str)
             n = MatchOne(context, str + m);
             count++;
         }
+        if (m < 0)
+            return -m;
         if (count >= rl && count <= rh)
         {
             if (count != 0 || MatchOne(context, str - 1) == -1)
@@ -380,25 +382,25 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
     Clear();
     if (matchesWord)
     {
-        matches.push_back(std::make_unique<RegExpMatch>(RegExpMatch::RE_M_BWORD, caseSensitive));
+        matches.push_back(std::make_shared<RegExpMatch>(RegExpMatch::RE_M_BWORD, caseSensitive));
     }
     if (regular)
     {
-        RegExpMatch* lastMatch;
+        std::shared_ptr<RegExpMatch>  lastMatch(nullptr);
         while (!invalid && *exp)
         {
-            std::unique_ptr<RegExpMatch> currentMatch;
+            std::shared_ptr<RegExpMatch> currentMatch;
             switch (*exp)
             {
                 case '.':
-                    currentMatch = std::make_unique<RegExpMatch>(true);
+                    currentMatch = std::make_shared<RegExpMatch>(true);
                     exp++;
                     break;
                 case '*':
                     if (lastMatch)
                     {
                         lastMatch->SetInterval(0, INT_MAX);
-                        lastMatch = nullptr;
+                        lastMatch.reset();
                     }
                     else
                         invalid = true;
@@ -408,7 +410,7 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                     if (lastMatch)
                     {
                         lastMatch->SetInterval(1, INT_MAX);
-                        lastMatch = nullptr;
+                        lastMatch.reset();
                     }
                     else
                         invalid = true;
@@ -418,22 +420,22 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                     if (lastMatch)
                     {
                         lastMatch->SetInterval(0, 1);
-                        lastMatch = nullptr;
+                        lastMatch.reset();
                     }
                     else
                         invalid = true;
                     exp++;
                     break;
                 case '[':
-                    currentMatch = std::make_unique<RegExpMatch>(&exp, caseSensitive);
+                    currentMatch = std::make_shared<RegExpMatch>(&exp, caseSensitive);
                     invalid = !currentMatch->IsValid();
                     break;
                 case '^':
-                    currentMatch = std::make_unique<RegExpMatch>(RegExpMatch::RE_M_SOL, caseSensitive);
+                    currentMatch = std::make_shared<RegExpMatch>(RegExpMatch::RE_M_SOL, caseSensitive);
                     exp++;
                     break;
                 case '$':
-                    currentMatch = std::make_unique<RegExpMatch>(RegExpMatch::RE_M_EOL, caseSensitive);
+                    currentMatch = std::make_shared<RegExpMatch>(RegExpMatch::RE_M_EOL, caseSensitive);
                     exp++;
                     break;
                 case '\\':
@@ -479,7 +481,7 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                             else
                             {
                                 matchStack[matchStackTop++] = matchCount;
-                                currentMatch = std::make_unique<RegExpMatch>(RegExpMatch::M_START, matchCount++);
+                                currentMatch = std::make_shared<RegExpMatch>(RegExpMatch::M_START, matchCount++);
                             }
                             break;
                         case ')':
@@ -490,17 +492,17 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                             }
                             else
                             {
-                                currentMatch = std::make_unique<RegExpMatch>(RegExpMatch::M_END, matchStack[-matchStackTop]);
+                                currentMatch = std::make_shared<RegExpMatch>(RegExpMatch::M_END, matchStack[-matchStackTop]);
                             }
                             break;
                         default:
                             if (isdigit(*exp))
                             {
-                                currentMatch = std::make_unique<RegExpMatch>(RegExpMatch::M_MATCH, *exp++ - '0', caseSensitive);
+                                currentMatch = std::make_shared<RegExpMatch>(RegExpMatch::M_MATCH, *exp++ - '0', caseSensitive);
                             }
                             else
                             {
-                                currentMatch = std::make_unique<RegExpMatch>(GetSpecial(*exp++), caseSensitive);
+                                currentMatch = std::make_shared<RegExpMatch>(GetSpecial(*exp++), caseSensitive);
                             }
                             break;
                     }
@@ -517,7 +519,7 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                             case '\\':
                                 exp++;
                                 lastMatch->SetChar(GetSpecial(*exp++), caseSensitive);
-                                lastMatch = nullptr;
+                                lastMatch.reset();
                                 break;
                             case '[':
                                 exp++;
@@ -533,12 +535,10 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                     lastMatch = nullptr;
                     break;
                 default:
-                    currentMatch = std::make_unique<RegExpMatch>(*exp++, caseSensitive);
-                    if (!currentMatch)
-                        invalid = true;
+                    currentMatch = std::make_shared<RegExpMatch>(*exp++, caseSensitive);
                     break;
             }
-            lastMatch = currentMatch.get();
+            lastMatch = currentMatch;
             if (currentMatch)
                 matches.push_back(std::move(currentMatch));
         }
@@ -547,12 +547,12 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
     {
         while (*exp)
         {
-            matches.push_back(std::make_unique<RegExpMatch>(*exp++, caseSensitive));
+            matches.push_back(std::make_shared<RegExpMatch>(*exp++, caseSensitive));
         }
     }
     if (!invalid && matchesWord)
     {
-        matches.push_back(std::make_unique<RegExpMatch>(RegExpMatch::RE_M_EWORD, caseSensitive));
+        matches.push_back(std::make_shared<RegExpMatch>(RegExpMatch::RE_M_EWORD, caseSensitive));
     }
 }
 int RegExpContext::MatchOne(const char* str)

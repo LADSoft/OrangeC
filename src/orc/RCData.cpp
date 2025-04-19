@@ -72,7 +72,6 @@ void RCData::ReadRC(RCFile& rcFile)
                 }
                 else
                 {
-                    ResourceData* rd = new ResourceData((unsigned char*)&n, 4);
                     data.push_back(std::make_unique<ResourceData>((unsigned char*)&n, 4));
                 }
             }

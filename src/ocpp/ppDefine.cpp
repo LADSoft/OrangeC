@@ -58,7 +58,7 @@ ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition
     {
         argList.reset(new DefinitionArgList());
         for (auto&& a : *old.argList)
-            argList->push_back(a);
+            argList->push_back(std::move(a));
     }
     return *this;
 }
@@ -75,7 +75,7 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     {
         argList.reset(new DefinitionArgList());
         for (auto&& a : *old.argList)
-            argList->push_back(a);
+            argList->push_back(std::move(a));
     }
 }
 
@@ -166,7 +166,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
         }
     }
     x += value.substr(last, pos - last);
-    value = x;
+    value = std::move(x);
     static char tk[2] = {REPLACED_TOKENIZING, 0};
 
     n = value.find("##");
@@ -543,7 +543,7 @@ void ppDefine::Stringize(std::string& macro)
     }
     if (last < macro.size())
         repl += macro.substr(last);
-    macro = repl;
+    macro = std::move(repl);
 }
 bool ppDefine::Tokenize(std::string& macro)
 {
@@ -622,7 +622,7 @@ int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, st
             }
             else
             {
-                text = etext;
+                text = std::move(etext);
             }
         }
     }
@@ -846,7 +846,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                 d = static_cast<Definition*>(sym);
                 if (d && d->IsCaseInsensitive())
                 {
-                    name = name1;
+                    name = std::move(name1);
                 }
                 else
                 {
@@ -917,7 +917,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                                 q1--;
                             std::string temp = line.substr(pb, q1 - pb);
                             args.push_back(temp);
-                            expandedargs.push_back(temp);
+                            expandedargs.push_back(std::move(temp));
                             int sv;
                             std::deque<Definition*> argDefinitions;
                             rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(),
@@ -977,7 +977,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
 
                     macro = d->GetValue();
                     if (count != 0 || !varargs.empty() || d->HasVarArgs())
-                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, definitions, varargs))
+                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, definitions, std::move(varargs)))
                             return INT_MIN;
                     tokenized = Tokenize(macro);
                     Stringize(macro);
@@ -1019,7 +1019,6 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                 insize = rv1 - (p - q);
                 end += insize;
                 p += insize;
-                insize = 0;
                 tokenPos.newEnd += rv1;
                 rv = ReplaceSegment(line, q, p, p, false, definitions, nullptr);
                 if (!tokenized)
@@ -1034,7 +1033,6 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                 }
                 tokenPos.newEnd += rv;
                 end += rv;
-                insize = 0;
                 if (positions)
                     positions->push_back(tokenPos);
             }
@@ -1046,7 +1044,6 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     insize = n - (p - q);
                     end += insize;
                     p += insize;
-                    insize = 0;
                     tokenPos.newEnd += n;
                     if (positions)
                         positions->push_back(tokenPos);
@@ -1325,7 +1322,7 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
         it->newEnd -= offset;
         it = ++it;
     }
-    line = rv;
+    line = std::move(rv);
     if (asmpp)
     {
         ReplaceAsmMacros(line);

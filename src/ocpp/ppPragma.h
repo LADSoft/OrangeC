@@ -451,7 +451,7 @@ class ppPragma
     std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
     const char* LookupAlias(const char* name) const { return Aliases::Instance()->Lookup(name); }
 
-    void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback) { catchAll = callback; }
+    void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback) { catchAll = std::move(callback); }
     void Mark()
     {
         FenvAccess::Instance()->Mark();

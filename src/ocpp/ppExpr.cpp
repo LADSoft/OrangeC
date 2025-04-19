@@ -65,7 +65,7 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
         line = token->GetChars() + tokenizer->GetString();
     else
         line = "";
-    tokenizer.release();
+    tokenizer.reset();
     return rv;
 }
 void ppExpr::ReplaceIncludeExpressions(std::string& line)

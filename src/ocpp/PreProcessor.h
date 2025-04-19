@@ -86,7 +86,7 @@ class PreProcessor
     void ReleaseStdPragma() { pragma.Release(); }
     void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback)
     {
-        pragma.SetPragmaCatchall(callback);
+        pragma.SetPragmaCatchall(std::move(callback));
     }
     void SetExpressionHandler(ppExpr::CompilerExpression* handler) { ppExpr::SetExpressionHandler(handler); }
     int GetCppPrio() { return pragma.CppPrio(); }

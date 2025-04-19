@@ -70,7 +70,7 @@ bool ppMacro::GetLine(std::string& line, int& lineno)
 {
     while (!stack.empty())
     {
-        MacroData* p = stack.back().get();
+        auto p = stack.back();
         if (p->offset >= p->lines.size())
         {
             p->offset = 0;
@@ -96,14 +96,19 @@ bool ppMacro::HandleRep(std::string& line)
     define.Process(line);
     PPINT n = expr.Eval(line);
     int level = 1;
-    std::unique_ptr<MacroData> p;
+    std::shared_ptr<MacroData> p;
     if (n < 0 || n > INT_MAX)
     {
         Errors::Error("Invalid range in %rep expression");
+        return false;
     }
-    else if (n > 0)
+    else if (n == 0)
     {
-        p.reset(new MacroData());
+        return true;
+    }
+    else
+    {
+        p.reset(new MacroData);
         p->repsLeft = (int)n;
         p->offset = 0;
         p->id = -1;
@@ -134,12 +139,11 @@ bool ppMacro::HandleRep(std::string& line)
                     if (!--level)
                         break;
             }
-            if (p)
-                p->lines.push_back(ll);
+            p->lines.push_back(ll);
         }
     }
     include.SetInProc("");
-    if (level == 0 && p)
+    if (level == 0)
     {
         include.Mark();
         stack.push_back(std::move(p));
@@ -148,10 +152,7 @@ bool ppMacro::HandleRep(std::string& line)
 }
 bool ppMacro::HandleExitRep()
 {
-    MacroData* p = stack.back().release();
     stack.pop_back();
-    if (p->id < 0)
-        delete p;
     return true;
 }
 bool ppMacro::HandleEndRep()
@@ -208,7 +209,7 @@ void ppMacro::GetArgs(int max, std::string& line, std::vector<std::string>& vals
         }
         line.erase(0, npos);
         std::string temp = ExtractArg(line);
-        vals.push_back(temp);
+        vals.push_back(std::move(temp));
     }
     int npos = line.find_first_not_of(" \t\r\n\v");
     if (npos != std::string::npos)
@@ -229,7 +230,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     bool plussign;
     Tokenizer tk(line, ppExpr::GetHash());
     const Token* next = tk.Next();
-    MacroData* p = nullptr;
+    std::shared_ptr<MacroData> p(nullptr);
     bool bailed = false;
     if (next->IsIdentifier())
     {
@@ -305,7 +306,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     }
     if (!bailed)
     {
-        p = new MacroData;
+        p.reset(new MacroData);
         p->repsLeft = 0;
         p->offset = 0;
         p->id = 0;  // macro
@@ -351,7 +352,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     }
     include.SetInProc("");
     if (p)
-        macros[name] = p;
+        macros[name] = std::move(p);
     return true;
 }
 bool ppMacro::HandleEndMacro()
@@ -368,7 +369,7 @@ void ppMacro::reverse(std::vector<std::string>& x, int offs, int len)
 }
 bool ppMacro::HandleRotate(std::string& line)
 {
-    MacroData* p = GetTopMacro();
+    std::shared_ptr<MacroData> p = GetTopMacro();
     if (!p)
     {
         Errors::Error("%rotate outside of macro invocation");
@@ -411,9 +412,9 @@ bool ppMacro::Invoke(std::string name, std::string line)
         if (it == macros.end() || it->second->caseInsensitive == false)
             return false;
         else
-            name = name1;
+            name = std::move(name1);
     }
-    MacroData* p = it->second;
+    std::shared_ptr<MacroData> p = it->second;
     if (p->repsLeft != 0)
     {
         return false;
@@ -440,18 +441,18 @@ bool ppMacro::Invoke(std::string name, std::string line)
         p->args.push_back(p->defaults[p->args.size() - p->argmin]);
     }
     if (!line.empty())
-        p->args.push_back(line);
+        p->args.push_back(std::move(line));
     p->id = nextMacro++;
     p->repsLeft = 1;
     include.Mark();
-    std::unique_ptr<MacroData> temp(p);
+    std::shared_ptr<MacroData> temp(p);
     stack.push_back(std::move(temp));
     return true;
 }
-MacroData* ppMacro::GetTopMacro()
+std::shared_ptr<MacroData> ppMacro::GetTopMacro()
 {
     for (int i = stack.size() - 1; i >= 0; i--)
         if (stack[i]->id != -1)
-            return stack[i].get();
+            return stack[i];
     return nullptr;
 }

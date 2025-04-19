@@ -442,7 +442,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
                         }
                         else
                         {
-                            Libraries::Instance()->Add(Utils::ConvertWStringToString(myString));
+                            Libraries::Instance()->Add(Utils::ConvertWStringToString(std::move(myString)));
                         }
                     }
                     else

@@ -432,9 +432,9 @@ static void DumpUsing(void)
     while (lusing)
     {
         char name1[4096], name2[4096];
-        strcpy(name1, GetSymName(lusing->sym, lusing->sym));
+        Utils::StrCpy(name1, GetSymName(lusing->sym, lusing->sym));
         if (lusing->parent)
-            strcpy(name2, GetSymName(lusing->parent, lusing->parent));
+            Utils::StrCpy(name2, GetSymName(lusing->parent, lusing->parent));
         else
             name2[0] = 0;
         ccWriteUsingRecord(name1, name2, lusing->file, lusing->line, main_id);

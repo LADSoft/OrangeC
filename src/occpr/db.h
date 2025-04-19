@@ -37,7 +37,7 @@ int ccDBDeleteForFile(sqlite3_int64 id);
 int ccWriteName(const char* name, sqlite_int64* id, sqlite_int64 main_id);
 int ccWriteStructName(const char* name, sqlite_int64* id);
 int ccWriteFileName(const char* name, sqlite_int64* id);
-int ccWriteFileTime(const char* name, int time, sqlite_int64* id);
+int ccWriteFileTime(const char* name, time_t time, sqlite_int64* id);
 int ccWriteLineNumbers(const char* symname, const char* nameoftype, const char* filename, int indirectCount, sqlite_int64 struct_id,
                        sqlite3_int64 main_id, int start, int end, int altend, int flags, sqlite_int64* id);
 int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, const char* data, int len, int lines);

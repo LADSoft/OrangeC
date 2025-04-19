@@ -59,7 +59,7 @@ class ppMacro
     bool Invoke(std::string name, std::string line);
     int GetMacroId()
     {
-        MacroData* p = GetTopMacro();
+        auto p = GetTopMacro();
         if (p)
             return p->id;
         else
@@ -67,7 +67,7 @@ class ppMacro
     }
     int GetMacroMax()
     {
-        MacroData* p = GetTopMacro();
+        auto p = GetTopMacro();
         if (p)
             return p->argmax;
         else
@@ -75,7 +75,7 @@ class ppMacro
     }
     std::vector<std::string>* GetMacroArgs()
     {
-        MacroData* p = GetTopMacro();
+        auto p = GetTopMacro();
         if (p)
             return &p->args;
         else
@@ -93,7 +93,7 @@ class ppMacro
     bool HandleMacro(std::string& line, bool caseInsensitive);
     bool HandleEndMacro();
     bool HandleRotate(std::string& line);
-    MacroData* GetTopMacro();
+    std::shared_ptr<MacroData> GetTopMacro();
     void reverse(std::vector<std::string>& x, int offs, int len);
 
   private:
@@ -102,8 +102,8 @@ class ppMacro
     ppExpr expr;
     PreProcessor* pp;
 
-    std::vector<std::unique_ptr<MacroData>> stack;
-    std::unordered_map<std::string, MacroData*> macros;
+    std::vector<std::shared_ptr<MacroData>> stack;
+    std::unordered_map<std::string, std::shared_ptr<MacroData>> macros;
     int nextMacro;
 };
 

@@ -116,15 +116,18 @@ bool ppInclude::has_include(const std::string& args)
 }
 void ppInclude::EnterGccSystemHeader()
 {
-    std::string name = current->GetName();
+    if (current)
+    {
+        std::string name = current->GetName();
 #ifdef TARGET_OS_WINDOWS
-    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 #endif
-    gccSystemHeaders.insert(name);
+        gccSystemHeaders.insert(name);
+    }
 }
 bool ppInclude::CheckLine(kw token, const std::string& args)
 {
-    if (token == kw::LINE)
+    if (token == kw::LINE && current)
     {
         std::string line1 = args;
         define->Process(line1);
@@ -299,7 +302,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
     }
     // if not there get the file path of the last included file, and search there
     // #include_next cannot search in the same directory as the current file by definition, so skip the last included dir too
-    if (rv.empty() && !skipFirst)
+    if (rv.empty() && !skipFirst && current)
     {
         int throwaway = 0;
         rv = current->GetRealFile();
@@ -322,7 +325,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
     }
     // if not there search in local directory
     // #include_next does not search this, skip it.
-    if (rv.empty() && !skipFirst)
+    if (rv.empty() && !skipFirst && current)
     {
         int throwaway = 0;
         rv = SrchPath(false, name, ".", skipFirst, throwaway);
@@ -363,12 +366,12 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
                                 int& filesSkipped)
 {
     const char* path = searchPath.c_str();
-    if (path != nullptr && *path == '\0' && !system && skipUntilDepth)
+    if (    *path == '\0' && !system && skipUntilDepth)
     {
         filesSkipped++;
     }
     char buf[260];
-    const int totalNumberofSkipsNeeded = current->getDirsTravelled();
+    const int totalNumberofSkipsNeeded = current ? current->getDirsTravelled() : 0;
     do
     {
         if (skipUntilDepth && (filesSkipped <= totalNumberofSkipsNeeded + 1))

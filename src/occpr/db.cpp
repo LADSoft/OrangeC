@@ -308,7 +308,7 @@ int ccDBOpen(const char* name)
         if (dbPointer)
             sqlite3_close(dbPointer);
         dbPointer = NULL;
-        remove(name);
+        (void)remove(name);
         if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK)
         {
 #ifdef TEST
@@ -586,7 +586,7 @@ int ccWriteFileName(const char* name, sqlite_int64* id)
     name = litlate(buf);
     return ccWriteNameInTable(&whndlf, &shndlf, name, "FileNames", id, listf) == SQLITE_OK;
 }
-int ccWriteFileTime(const char* name, int time, sqlite3_int64* id)
+int ccWriteFileTime(const char* name, time_t time, sqlite3_int64* id)
 {
     int rc = SQLITE_OK;
     static const char* query = "UPDATE FileNames SET fileDate = ? WHERE id = ?";
@@ -602,7 +602,7 @@ int ccWriteFileTime(const char* name, int time, sqlite3_int64* id)
         {
             int done = false;
             sqlite3_reset(handle);
-            sqlite3_bind_int(handle, 1, time);
+            sqlite3_bind_int64(handle, 1, time);
             sqlite3_bind_int64(handle, 2, *id);
             while (!done)
             {

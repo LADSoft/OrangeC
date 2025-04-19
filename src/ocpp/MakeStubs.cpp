@@ -84,9 +84,9 @@ void MakeStubs::Run(std::ostream* out)
     {
         *out << std::endl;
         if (!userOnly)
-            for (auto t : preProcessor.GetSysIncludes())
+            for (const auto& t : preProcessor.GetSysIncludes())
                 *out << Escape(t) << ":\n";
-        for (auto t : preProcessor.GetUserIncludes())
+        for (const auto& t : preProcessor.GetUserIncludes())
             *out << Escape(t) << ":\n";
     }
     *out << "\n";

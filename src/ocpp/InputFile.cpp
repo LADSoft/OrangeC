@@ -44,7 +44,11 @@ InputFile::~InputFile()
 {
     if (streamid >= 3)
         _close(streamid);
-    CheckErrors();
+    try
+    {
+        CheckErrors();
+    }
+    catch (std::exception) { /* don't care */ }
 }
 bool InputFile::Open()
 {

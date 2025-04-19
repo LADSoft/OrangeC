@@ -195,22 +195,22 @@ int ppMain::Run(int argc, char* argv[])
         if (c2xMode.GetValue())
         {
             std::string ver = "202311L";
-            pp.Define("__STDC_VERSION__", ver, true);
+            pp.Define("__STDC_VERSION__", std::move(ver), true);
         }
         else if (c11Mode.GetValue())
         {
             std::string ver = "201112L";
-            pp.Define("__STDC_VERSION__", ver, true);
+            pp.Define("__STDC_VERSION__", std::move(ver), true);
         }
         else if (c99Mode.GetValue())
         {
             std::string ver = "199901L";
-            pp.Define("__STDC_VERSION__", ver, true);
+            pp.Define("__STDC_VERSION__", std::move(ver), true);
         }
         else
         {
             std::string ver = "199404L";
-            pp.Define("__STDC_VERSION__", ver, true);
+            pp.Define("__STDC_VERSION__", std::move(ver), true);
         }
         sprintf(buffer, "%d", BITINTMAXWIDTH);
         pp.Define("__bitint_max_width", buffer);

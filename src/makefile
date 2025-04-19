@@ -39,7 +39,6 @@ ifeq "$(COMPILER)" "gcc-linux"
 CURRENT := $(CURDIR)
 else
 CURRENT := $(subst /,\,$(CURDIR))
-
 endif
 
 _TREEROOT := $(CURRENT)$(PATHEXT2)treetop.mak
@@ -99,11 +98,11 @@ copyexes:
 envbuild:
 	@$(MAKE) -f $(_TREEROOT) distribute_self
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
-	-copy orc.exe ..\bin
+	-$(COPY) orc.exe ..$(PATHEXT2)bin
 
 exebuild:
 	@$(MAKE) -f $(_TREEROOT) distribute_self
-	-copy orc.exe ..\bin
+	-$(COPY) orc.exe ..$(PATHEXT2)bin
 	@$(MAKE) -f $(_TREEROOT) createdirs
 	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
@@ -122,7 +121,7 @@ zip7z:
 fullbuild:
 	@$(MAKE) -f $(_TREEROOT) distribute_self
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
-	-copy orc.exe ..\bin
+	-$(COPY) orc.exe ..$(PATHEXT2)bin
 	@$(MAKE) -f $(_TREEROOT) createdirs
 	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
@@ -142,18 +141,18 @@ else
 # when called from TREETOP.MAK do the below
 
 DISTRIBUTE:
-	$(COPYDIR) examples\*.* $(DISTEXAM) 2> $(NULLDEV)
-	$(COPYDIR) examples\msdos\*.* $(DISTEXAM)\msdos 2> $(NULLDEV)
-	$(COPYDIR) examples\system\*.* $(DISTEXAM)\system 2> $(NULLDEV)
-	$(COPYDIR) examples\win32\*.* $(DISTEXAM)\win32 2> $(NULLDEV)
-	$(COPYDIR) examples\win32\atc\*.* $(DISTEXAM)\win32\atc 2> $(NULLDEV)
-	$(COPYDIR) examples\win32\listview\*.* $(DISTEXAM)\win32\listview 2> $(NULLDEV)
-	$(COPYDIR) examples\win32\xmlview\*.* $(DISTEXAM)\win32\xmlview 2> $(NULLDEV)
-	$(COPYDIR) examples\win32\RCDemo\*.* $(DISTEXAM)\win32\RCDemo 2> $(NULLDEV)
-	$(COPYDIR) examples\win32\Huff\*.* $(DISTEXAM)\win32\Huff 2> $(NULLDEV)
-	copy license.txt $(DISTROOT) 2> $(NULLDEV)
-	copy readme.txt $(DISTROOT) 2> $(NULLDEV)
-	copy occil.txt $(DISTROOT) 2> $(NULLDEV)
-	copy relnotes.txt $(DISTROOT) 2> $(NULLDEV)
-	copy addon.txt $(DISTADDON) 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)*.* $(DISTEXAM) 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)msdos$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)msdos 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)system$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)system 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)win32$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)win32 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)win32$(PATHEXT2)atc$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)atc 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)win32$(PATHEXT2)listview$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)listview 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)win32$(PATHEXT2)xmlview$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)xmlview 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)win32$(PATHEXT2)RCDemo$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)RCDemo 2> $(NULLDEV)
+	$(COPYDIR) examples$(PATHEXT2)win32$(PATHEXT2)Huff$(PATHEXT2)*.* $(DISTEXAM)$(PATHEXT2)win32$(PATHEXT2)Huff 2> $(NULLDEV)
+	$(COPY) license.txt $(DISTROOT) 2> $(NULLDEV)
+	$(COPY) readme.txt $(DISTROOT) 2> $(NULLDEV)
+	$(COPY) occil.txt $(DISTROOT) 2> $(NULLDEV)
+	$(COPY) relnotes.txt $(DISTROOT) 2> $(NULLDEV)
+	$(COPY) addon.txt $(DISTADDON) 2> $(NULLDEV)
 endif

@@ -31,10 +31,10 @@ stubexe:
 #	upx $(DISTBIN)\$(DISTNAME).exe
 #	$(RENSEG) $(DISTBIN)\$(DISTNAME).exe
 distcopy:
-	copy $(RELEASEPATH)\$(NAME).exe $(DISTBIN)\$(DISTNAME).exe
+	$(COPY) $(RELEASEPATH)$(PATHEXT2)$(NAME).exe $(DISTBIN)$(PATHEXT2)$(DISTNAME).exe
 ifeq "$(COMPILER)" "MS"
 ifneq "$(MSPDB)" ""
-	-copy $(RELEASEPATH)\$(NAME).pdb $(DISTBIN)\$(DISTNAME).pdb
+	-$(COPY) $(RELEASEPATH)$(PATHEXT2)$(NAME).pdb $(DISTBIN)$(PATHEXT2)$(DISTNAME).pdb
 endif
 endif
 copyexe: distcopy stubexe

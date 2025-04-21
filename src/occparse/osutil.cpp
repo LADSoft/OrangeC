@@ -976,7 +976,7 @@ void InsertOneFile(const char* filename, char* path, int drive)
     }
     if (path)
     {
-        Utils::StrCpy(p, sizeof(buffer)-2, path);
+        Utils::StrCpy(p, sizeof(buffer)-(p - buffer), path);
     }
     else
         *p = 0;

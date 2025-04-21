@@ -1412,6 +1412,7 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
 char* unmangle(char *val, const char* name)
 {
     char(&buf)[UNMANGLE_BUFFER_SIZE] = (char(&)[UNMANGLE_BUFFER_SIZE])*val;
+    manglenamecount = 0;
     return unmang2(buf, buf, name);
 }
 

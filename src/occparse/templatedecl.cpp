@@ -1522,7 +1522,7 @@ static SYMBOL* templateParamId(Type* tp, const char* name, int tag)
     SYMBOL* rv = Allocate<SYMBOL>();
     rv->tp = tp;
     int len = strlen(name);
-    char* buf = Allocate<char>(len + 1);
+    char* buf = Allocate<char>(len + 5);
     Utils::StrCpy(buf, len+1, name);
     *(int*)(buf + len + 1) = tag;
     rv->name = buf;

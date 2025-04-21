@@ -4858,7 +4858,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 p++;
                             else
                                 p = buf;
-                            Utils::StrCpy(buf + n + 2, sizeof(buf) - n - 2, p);
+                            Utils::StrCpy(buf + (p - buf), sizeof(buf) - (p - buf), p);
                             buf[n] = buf[n + 1] = ':';
                             Utils::StrCat(buf, sizeof(buf), "(");
                             if (args->arguments && args->arguments->size())

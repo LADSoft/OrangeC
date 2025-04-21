@@ -1252,6 +1252,16 @@ bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* 
         {
             if (!checkconst || tpn->IsConst() || !tpo->IsConst())
             {
+                if (tpn->IsArray())
+                {
+                    //conversion to reference to array....
+                    EXPRESSION* exp1 = *exp;
+                    while (IsCastValue(exp1)) exp1 = exp1->left;
+                    if (IsLValue(exp1))
+                    {
+                        *exp = exp1->left;
+                    }
+                }
                 return true;
             }
         }

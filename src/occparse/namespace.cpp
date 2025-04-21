@@ -59,6 +59,8 @@
 #include "constopt.h"
 #include "occparse.h"
 #include "crc32.h"
+#include "Utils.h"
+
 namespace Parser
 {
 SymbolTable<SYMBOL>* labelSyms;
@@ -284,7 +286,7 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
     *linked = false;
     if (ISID(lex))
     {
-        strcpy(buf, lex->data->value.s.a);
+        Utils::StrCpy (buf, lex->data->value.s.a);
         lex = getsym();
         if (MATCHKW(lex, Keyword::assign_))
         {
@@ -292,7 +294,7 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
             if (ISID(lex))
             {
                 char buf1[512];
-                strcpy(buf1, lex->data->value.s.a);
+                Utils::StrCpy(buf1, lex->data->value.s.a);
                 lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
                 if (sym)
                 {
@@ -382,7 +384,7 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
             while ((p = (char*)strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';
         }
-        strcpy(buf, anonymousNameSpaceName);
+        Utils::StrCpy(buf, anonymousNameSpaceName);
     }
     if (storage_class != StorageClass::global_)
     {

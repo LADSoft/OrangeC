@@ -124,8 +124,10 @@ class Utils
 
     static unsigned Random(unsigned);
 
-    static char* StrCpy(char* data, size_t len, const char* source)
+    static char* StrCpy(char* data, int len, const char* source)
     {
+        if (len <= 0)
+            return data;
         int n = strlen(source);
         if (n > len-1)
             n = len-1;
@@ -133,19 +135,21 @@ class Utils
         data[n] = '\0';
         return data;
     }
-    template <size_t len>
+    template <int len>
     static char* StrCpy(char (&data)[len], const char* source)
     {
         return StrCpy(data, len, source);
     }
-    static char* StrCat(char* data, size_t len, const char* source)
+    static char* StrCat(char* data, int len, const char* source)
     {
+        if (len <= 0)
+            return data;
         int num = (int)len - (int)strlen(data) - 1;
         if (num > 0)
             strncat(data, source, num);
         return data;
     }
-    template <size_t len>
+    template <int len>
     static char* StrCat(char (&data)[len], const char* source)
     {
         return StrCat(data, len, source);

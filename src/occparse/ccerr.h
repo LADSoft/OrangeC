@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Utils.h"
 #define CE_ERROR 1
 #define CE_WARNING 2
 #define CE_TRIVIALWARNING 4
@@ -98,6 +99,7 @@ extern ErrorNamesAndLevels errors[];
 extern int diagcount;
 extern int currentErrorLine;
 
+
 extern SYMBOL* theCurrentFunc;
 extern Keyword skim_end[];
 extern Keyword skim_closepa[];
@@ -129,8 +131,6 @@ void preverror(int err, const char* name, const char* origFile, int origLine);
 void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine);
 void errorat(int err, const char* name, const char* file, int line);
 void errorcurrent(int err);
-void getns(char* buf, SYMBOL* nssym);
-void getcls(char* buf, SYMBOL* clssym);
 void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
 void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
 void error(int err);
@@ -169,4 +169,38 @@ void checkscope(Type* tp1, Type* tp2);
 void CheckThroughConstObject(Type* tp, EXPRESSION* exp);
 void EnterInstantiation(LexList* lex, SYMBOL* sp);
 void LeaveInstantiation();
+
+template <size_t n>
+void getns(char(&buf)[n], SYMBOL* nssym)
+{
+    if (!nssym)
+    {
+        Utils::StrCpy(buf, "<globals>");
+    }
+    else
+    {
+        if (nssym->sb->parentNameSpace)
+        {
+            getns(buf, nssym->sb->parentNameSpace);
+            Utils::StrCat(buf, "::");
+        }
+        Utils::StrCat(buf, nssym->name);
+    }
+}
+template <size_t n>
+void getcls(char(&buf)[n], SYMBOL* clssym)
+{
+    if (clssym->sb->parentClass)
+    {
+        getcls(buf, clssym->sb->parentClass);
+        Utils::StrCat(buf, "::");
+    }
+    else if (clssym->sb->parentNameSpace)
+    {
+        getns(buf, clssym->sb->parentNameSpace);
+        Utils::StrCat(buf, "::");
+    }
+    Utils::StrCat(buf, clssym->name);
+}
+
 }  // namespace Parser

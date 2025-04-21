@@ -27,7 +27,6 @@
 
 namespace Parser
 {
-void abspath(char* name);
 void browse_init(void);
 void browsedata(Optimizer::BROWSEINFO* bi);
 void browsefile(Optimizer::BROWSEFILE* bf);

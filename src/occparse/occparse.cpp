@@ -521,9 +521,9 @@ MAINTRY
     SharedMemory* parserMem = nullptr;
     if (!IsCompiler())
     {
-        strcpy(buffer, (char*)clist->data);
-        strcpy(realOutFile, prm_output.GetValue().c_str());
-        outputfile(realOutFile, buffer, ".ods");
+        Utils::StrCpy(buffer, (char*)clist->data);
+        Utils::StrCpy(realOutFile, prm_output.GetValue().c_str());
+        outputfile(realOutFile, sizeof(realOutFile), buffer, ".ods");
         if (!CompletionCompiler::ccDBOpen(realOutFile))
             Utils::Fatal("Cannot open database file %s", realOutFile);
     }
@@ -571,16 +571,16 @@ MAINTRY
         first = false;
         Errors::Reset();
         Optimizer::cparams.prm_cplusplus = false;
-        strcpy(buffer, (char*)clist->data);
+        Utils::StrCpy(buffer, (char*)clist->data);
         if (IsCompiler())
         {
             if (buffer[0] == '-')
-                strcpy(buffer, "a.c");
+                Utils::StrCpy(buffer, "a.c");
             if (!MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
-                strcpy(realOutFile, prm_output.GetValue().c_str());
+                Utils::StrCpy(realOutFile, prm_output.GetValue().c_str());
             else
-                strcpy(realOutFile, "");
-            outputfile(realOutFile, buffer, ".icf");
+                Utils::StrCpy(realOutFile, "");
+            outputfile(realOutFile, sizeof(realOutFile), buffer, ".icf");
         }
         else
         {
@@ -667,7 +667,7 @@ MAINTRY
         preProcessor->SetExpressionHandler(ParseExpression);
         preProcessor->SetPragmaCatchall([](const std::string& kw, const std::string& tag) { Optimizer::bePragma[kw] = tag; });
 
-        strcpy(infile, buffer);
+        Utils::StrCpy(infile, buffer);
         if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
                                                      (!prm_error.GetExists() || !prm_error.GetValue().empty()))
         {
@@ -675,14 +675,14 @@ MAINTRY
             {
                 if (prm_output.GetExists())
                 {
-                    strcpy(buffer, prm_output.GetValue().c_str());
+                    Utils::StrCpy(buffer, prm_output.GetValue().c_str());
                 }
                 else
                 {
                     Utils::StripExt(buffer);
                     Utils::AddExt(buffer, ".i");
                 }
-                strcpy(cppfile, buffer);
+                Utils::StrCpy(cppfile, buffer);
 
                 cppFile = fopen(buffer, "w");
                 if (!cppFile)
@@ -856,9 +856,9 @@ MAINTRY
     {
         // compile to file
         if (Optimizer::outputFileName.empty())
-            strcpy(realOutFile, firstFile);
+            Utils::StrCpy(realOutFile, firstFile);
         else
-            strcpy(realOutFile, Optimizer::outputFileName.c_str());
+            Utils::StrCpy(realOutFile, Optimizer::outputFileName.c_str());
         Utils::StripExt(realOutFile);
         Utils::AddExt(realOutFile, ".icf");
         int size = Optimizer::GetOutputSize();

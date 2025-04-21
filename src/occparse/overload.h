@@ -42,7 +42,7 @@ extern int matchOverloadLevel;
 #define F_GOFERR 1
 #define F_GOFDELETEDERR 2
 
-bool matchOverload(Type* tnew, Type* told, bool argsOnly);
+bool matchOverload(Type* tnew, Type* told);
 SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table);
 SYMBOL* lookupGenericConversion(SYMBOL* sym, Type* tp);
 SYMBOL* lookupSpecificCast(SYMBOL* sym, Type* tp);

@@ -1053,10 +1053,7 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
                     {
                         item.second->packed = !!defaults.front();
                         defaults.pop_front();
-                        if (dflt)
-                            item.second->byClass.dflt = defaults.front();
-                        else
-                            item.second->byClass.val = defaults.front();
+                        item.second->byClass.dflt = defaults.front();
                     }
                     else
                     {
@@ -1314,11 +1311,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     return nullptr;
                 exp = exp->right;
             }
-            if (exp)
-            {
-                return LookupTypeFromExpression(exp, enclosing, alt);
-            }
-            return nullptr;
+            return LookupTypeFromExpression(exp, enclosing, alt);
         case ExpressionNode::not__lvalue_:
         case ExpressionNode::lvalue_:
         case ExpressionNode::argnopush_:
@@ -1595,21 +1588,28 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     }
                     else if (rve->IsFunction())
                     {
-                        bool ascall = exp->v.func->ascall;
-                        exp->v.func->ascall = true;
-                        Type* tp1 = nullptr;
-                        SYMBOL* sym = rve->BaseType()->sp;
-                        if (sym->tp->type != BasicType::aggregate_)
-                            sym = sym->sb->overloadName;
-                        rv = rve->BaseType()->btp;
-                        auto oldnoExcept = noExcept;
-                        sym = GetOverloadedFunction(&tp1, &exp1, sym, exp->v.func, nullptr, false, false, 0);
-                        noExcept = oldnoExcept;
-                        if (!sym)
-                            rv = &stdany;
+                        if (exp->v.func)
+                        {
+                            bool ascall = exp->v.func->ascall;
+                            exp->v.func->ascall = true;
+                            Type* tp1 = nullptr;
+                            SYMBOL* sym = rve->BaseType()->sp;
+                            if (sym->tp->type != BasicType::aggregate_)
+                                sym = sym->sb->overloadName;
+                            rv = rve->BaseType()->btp;
+                            auto oldnoExcept = noExcept;
+                            sym = GetOverloadedFunction(&tp1, &exp1, sym, exp->v.func, nullptr, false, false, 0);
+                            noExcept = oldnoExcept;
+                            if (!sym)
+                                rv = &stdany;
+                            else
+                                rv = sym->tp->BaseType()->btp;
+                            exp->v.func->ascall = ascall;
+                        }
                         else
-                            rv = sym->tp->BaseType()->btp;
-                        exp->v.func->ascall = ascall;
+                        {
+                            rv = &stdany;
+                        }
                     }
                     else
                     {

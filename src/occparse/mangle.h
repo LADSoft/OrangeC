@@ -37,7 +37,8 @@ extern int mangledNamesCount;
 
 void mangleInit(void);
 char* mangleNameSpaces(char* in, SYMBOL* sym);
-char* mangleType(char* in, Type* tp, bool first);
+
+char* mangleType(char* in, int len, Type* tp, bool first);
 bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& result, bool byVal);
 void GetClassKey(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition = false);

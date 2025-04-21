@@ -51,18 +51,19 @@ namespace Parser
 static int currentFile = 0;
 
 // this function isn't very portable..
-void abspath(char* name)
+template <size_t n>
+void abspath(char (&name)[n])
 {
-    char projname[256], *p, *nname = name;
+    char projname[256], *p;
     _getcwd(projname, 256);
     if (name[1] == ':')
         return;
     if (!strchr(name, '\\'))
     {
         _getcwd(projname, 256);
-        strcat(projname, "\\");
-        strcat(projname, name);
-        strcpy(name, projname);
+        Utils::StrCat(projname, "\\");
+        Utils::StrCat(projname, name);
+        Utils::StrCpy(name, projname);
     }
     else if (strstr(name, "..\\"))
     {
@@ -72,24 +73,25 @@ void abspath(char* name)
         if (!p)
             return;
         p--;
-        while (!strncmp(name, "..\\", 3))
+        char* nname = name;
+        while (!strncmp(nname, "..\\", 3))
         {
             while (p > projname && *p-- != '\\')
                 ;
-            name += 3;
+            nname += 3;
         }
         *++p = '\\';
         p++;
-        strcpy(p, name);
-        strcpy(nname, projname);
+        Utils::StrCpy(p, sizeof(projname) - (p - projname), nname);
+        Utils::StrCpy(name, projname);
     }
 #ifdef WIN32
     else
     {
         projname[0] = _getdrive() + 'A' - 1;
         projname[1] = ':';
-        strcpy(projname + 2, name);
-        strcpy(name, projname);
+        Utils::StrCpy(projname + 2, sizeof(projname)-2, name);
+        Utils::StrCpy(name, projname);
     }
 #endif
 }
@@ -168,7 +170,7 @@ void browse_startfile(const char* name, int index)
             return;
     }
 
-    strcpy(exname, name);
+    Utils::StrCpy(exname, name);
     abspath(exname);
 
     bf = Allocate<Optimizer::BROWSEFILE>();

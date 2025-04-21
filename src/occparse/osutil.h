@@ -144,7 +144,6 @@ extern CmdSwitchBool MakeStubsContinueUser;
 extern const char* getUsageText(void);
 extern const char* getHelpText(void);
 
-void EXEPath(char* buffer, char* filename);
 void optimize_setup(char select, const char* string);
 void codegen_setup(char select, const char* string);
 void warning_setup(char select, const char* string);
@@ -153,8 +152,8 @@ void setglbdefs(void);
 int insert_noncompile_file(const char* buf);
 void InsertOneFile(const char* filename, char* path, int drive);
 void InsertAnyFile(const char* filename, char* path, int drive);
-void setfile(char* buf, const char* orgbuf, const char* ext);
-void outputfile(char* buf, const char* orgbuf, const char* ext);
+void setfile(char* buf, int len, const char* orgbuf, const char* ext);
+void outputfile(char* buf, int len, const char* orgbuf, const char* ext);
 void addinclude(void);
 void dumperrs(FILE* file);
 void internalError(int a);

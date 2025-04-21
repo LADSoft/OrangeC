@@ -613,16 +613,6 @@ static Type* FixConsts(Type* P, Type* A)
         for (i = 0; i < pn - an; i++)
             P = P->BaseType()->btp;
     }
-    if (0 && A->IsArray())
-    {
-        while (A->IsArray())
-        {
-            *last = A->CopyType();
-            last = &(*last)->btp;
-            *last = nullptr;
-            A = A->btp;
-        }
-    }
     while (P && A)
     {
         bool constant = false;
@@ -1097,7 +1087,7 @@ static bool TemplateDeduceFromArg(Type* orig, Type* sym, EXPRESSION* exp, bool a
             }
         }
     }
-    if (P->IsFunctionPtr() || (P->IsRef() && P->BaseType()->btp->IsFunction()))
+    if (exp && (P->IsFunctionPtr() || (P->IsRef() && P->BaseType()->btp->IsFunction())))
     {
         if (exp->type == ExpressionNode::callsite_)
         {
@@ -1283,7 +1273,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
         thistp = (*ita)->tp;
         ++ita;
     }
-    if (args && thistp && sym->sb->parentClass && !nparams)
+    if (thistp && sym->sb->parentClass && !nparams)
     {
         Type* tp = thistp->BaseType()->btp->BaseType();
         std::list<TEMPLATEPARAMPAIR>* src = tp->sp->templateParams;
@@ -1598,21 +1588,6 @@ static bool TemplateDeduceFromConversionType(Type* orig, Type* tp)
     A = RemoveCVQuals(A);
     if (TemplateDeduceFromType(P, A))
         return true;
-    if (P->IsPtr())
-    {
-        bool doit = false;
-        while (P->IsPtr() && A->IsPtr())
-        {
-            if ((P->IsConst() && !A->IsConst()) || (P->IsVolatile() && !A->IsVolatile()))
-                return false;
-            P = P->BaseType()->btp;
-            A = A->BaseType()->btp;
-        }
-        P = P->BaseType();
-        A = A->BaseType();
-        if (doit && TemplateDeduceFromType(P, A))
-            return true;
-    }
     return false;
 }
 SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, Type* tp)
@@ -1706,12 +1681,7 @@ int TemplatePartialDeduce(Type* origl, Type* origr, Type* syml, Type* symr, bool
     {
         if (origl->BaseType()->type == BasicType::lref_)
         {
-            if (origr->BaseType()->type != BasicType::lref_)
-                return -1;
-            else
-                return -1;  // originally checked n & m but since that's already checked just do this, pointing this out since
-                            // it's GAURENTEED to return -1
-            return 1;
+            return -1;
         }
         else if (origr->BaseType()->type == BasicType::lref_)
         {
@@ -1962,6 +1932,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, CallSite* funcparams, Ty
                 if (typetab[i]->type == BasicType::any_)
                     table[i] = nullptr;
                 j++;
+            }
+            else
+            {
+                typetab[i] = &stdany;
             }
         }
         for (i = 0; i < count - 1; i++)

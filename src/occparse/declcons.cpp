@@ -58,6 +58,7 @@
 #include "class.h"
 #include "stmt.h"
 #include "exprpacked.h"
+#include "Utils.h"
 namespace Parser
 {
 std::set<SYMBOL*> defaultRecursionMap;
@@ -82,7 +83,7 @@ LexList* FindClass(LexList* lex, SYMBOL* funcsp, SYMBOL** sym)
     if (MATCHKW(lex, Keyword::classsel_))
         namespaceOnly = true;
     lex = nestedPath(lex, &encloser, &ns, &throughClass, true, StorageClass::global_, false, 0);
-    lex = getIdName(lex, funcsp, buf, &ov, &castType);
+    lex = getIdName(lex, funcsp, buf, sizeof(buf), & ov, &castType);
     if (buf[0])
     {
         *sym = finishSearch(buf, encloser, ns, false, throughClass, namespaceOnly);  // undefined in local context
@@ -112,7 +113,7 @@ std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList** lex2, SYMBOL* fu
             name[0] = 0;
             if (ISID(lex))
             {
-                strcpy(name, lex->data->value.s.a);
+                Utils::StrCpy(name, lex->data->value.s.a);
                 lex = getsym();
             }
             v->name = litlate(name);
@@ -1892,7 +1893,7 @@ SYMBOL* findClassName(const char* name, SYMBOL* cls, std::list<BASECLASS*>* bc, 
     char *p = str, *c;
     SYMBOL* sp = nullptr;
     int vcount = 0, ccount = 0;
-    strcpy(str, name);
+    Utils::StrCpy(str, name);
     while ((c = (char*)strstr(p, "::")))
     {
         clslst[n++] = p;

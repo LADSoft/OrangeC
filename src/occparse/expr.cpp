@@ -540,7 +540,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
     if (Optimizer::cparams.prm_cplusplus ||
         ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions))
     {
-        lex = id_expression(lex, funcsp, &sym, &strSym, &nsv, nullptr, false, false, idname, flags);
+        lex = id_expression(lex, funcsp, &sym, &strSym, &nsv, nullptr, false, false, idname, sizeof(idname), flags);
     }
     else
     {
@@ -1304,11 +1304,11 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                     {
                         if (ISKW(find))
                         {
-                            strcat(buf, find->data->kw->name);
+                            Utils::StrCat(buf, find->data->kw->name);
                         }
                         else if (ISID(find))
                         {
-                            strcat(buf, find->data->value.s.a);
+                            Utils::StrCat(buf, find->data->value.s.a);
                         }
                         find = find->next;
                     }
@@ -1570,7 +1570,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
             if (Optimizer::cparams.prm_cplusplus)
             {
                 enclosingDeclarations.Add((*tp)->BaseType()->sp);
-                lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr, 0);
+                lex = id_expression(lex, funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr, 0, 0);
                 enclosingDeclarations.Drop();
             }
             else
@@ -5063,8 +5063,8 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
             SymbolTable<SYMBOL>* table;
             SYMBOL* strSym;
             std::list<NAMESPACEVALUEDATA*>* nsv;
-            strcpy(name, lex->data->value.s.a);
-            lex = tagsearch(lex, name, &sym, &table, &strSym, &nsv, StorageClass::global_);
+            Utils::StrCpy(name, lex->data->value.s.a);
+            lex = tagsearch(lex, name, sizeof(name), &sym, &table, &strSym, &nsv, StorageClass::global_);
             if (!sym)  // might be a typedef
             {
 

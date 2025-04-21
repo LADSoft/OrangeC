@@ -108,13 +108,13 @@ struct Type
     bool IsSmallInt();
     bool IsLargeEnum();
     bool IsDiffered();
-    void ToString(char* buf);
+    void ToString(char* top, char* buf);
     bool SameExceptionType(Type* typ);
     bool SameCharType(Type* tp);
     bool SameType(Type* other) { return CompareTypes(this, other, 0); }
     bool CompatibleType(Type* other) { return CompareTypes(this, other, 1); }
     bool CompatibleTypeNoQualifiers(Type* other) { return CompareTypes(this, other, 2); }
-    inline void BasicTypeToString(char* buf) { BasicTypeToString(buf, this); }
+    inline void BasicTypeToString(char *top, char* buf) { BasicTypeToString(top, buf, this); }
     Type* CopyType(bool deep = false, std::function<void(Type*&, Type*&)> callback = nullptr);
     bool IsConstWithArr();
     bool SameIntegerType(Type* t2);
@@ -127,12 +127,12 @@ struct Type
     static bool CompareTypes(Type* typ1, Type* typ2, int exact);
 
   protected:
-    static void ToString(char* buf, Type* typ);
-    static char* PutPointer(char* p, Type* tp);
-    static void PointerToString(char* buf, Type* tp);
-    static Type* QualifierToString(char* buf, Type* tp);
-    static Type* BasicTypeToString(char* buf, Type* tp);
-    static void RenderExpr(char* buf, EXPRESSION* exp);
+    static void ToString(char* top, char* buf, Type* typ);
+    static char* PutPointer(char* top, char* p, Type* tp);
+    static void PointerToString(char *top, char* buf, Type* tp);
+    static Type* QualifierToString(char* top, char* buf, Type* tp);
+    static Type* BasicTypeToString(char *top, char* buf, Type* tp);
+    static void RenderExpr(char* top, char* buf, EXPRESSION* exp);
 };
 struct TypeGenerator
 {

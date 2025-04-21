@@ -367,7 +367,7 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                             if (strcmp(pq1->name, pi->name) == 0)
                             {
                                 InitializeFunctionArguments(pq1);
-                                if (matchOverload(pq1->tp, pi->tp, false))
+                                if (matchOverload(pq1->tp, pi->tp))
                                 {
                                     if (!pq1->sb->ispure)
                                     {
@@ -1327,11 +1327,11 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
 
     if (!searched)
     {
-        strcpy(newName, tagname);
+        Utils::StrCpy(newName, tagname);
         if (inTemplate)
             inTemplateSpecialization++;
 
-        lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+        lex = tagsearch(lex, newName, sizeof(newName), & sp, &table, &strSym, &nsv, storage_class);
 
         if (inTemplate)
             inTemplateSpecialization--;
@@ -1363,8 +1363,8 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             {
                 charindex = lex->data->charindex;
                 tagname = litlate(lex->data->value.s.a);
-                strcpy(newName, tagname);
-                lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+                Utils::StrCpy(newName, tagname);
+                lex = tagsearch(lex, newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
             }
         }
         else
@@ -1801,9 +1801,9 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
         anonymous = true;
     }
 
-    strcpy(newName, tagname);
+    Utils::StrCpy(newName, tagname);
 
-    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+    lex = tagsearch(lex, newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
 
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (funcsp && (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_)))

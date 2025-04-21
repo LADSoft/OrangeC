@@ -184,13 +184,13 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                     switch (tp->BaseType()->type)
                     {
                         case BasicType::struct_:
-                            strcat(type_name, "struct ");
+                            Utils::StrCat(type_name, "struct ");
                             break;
                         case BasicType::class_:
-                            strcat(type_name, "class ");
+                            Utils::StrCat(type_name, "class ");
                             break;
                         case BasicType::union_:
-                            strcat(type_name, "union ");
+                            Utils::StrCat(type_name, "union ");
                             break;
                         default:
                             break;
@@ -198,9 +198,9 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 }
                 else if (tp->BaseType()->type == BasicType::enum_)
                 {
-                    strcat(type_name, "enum ");
+                    Utils::StrCat(type_name, "enum ");
                 }
-                st->tp->BasicTypeToString(type_name + strlen(type_name));
+                st->tp->BasicTypeToString(type_name + sizeof(type_name), type_name + strlen(type_name));
 
                 ccWriteStructField(struct_id, GetSymName(st, parent), litlate(type_name), indirectCount, rel_id, file_id, main_id,
                                    flags, &order, &id);
@@ -336,13 +336,13 @@ static void DumpSymbol(SYMBOL* sym)
             switch (tp->BaseType()->type)
             {
                 case BasicType::struct_:
-                    strcat(type_name, "struct ");
+                    Utils::StrCat(type_name, "struct ");
                     break;
                 case BasicType::class_:
-                    strcat(type_name, "class ");
+                    Utils::StrCat(type_name, "class ");
                     break;
                 case BasicType::union_:
-                    strcat(type_name, "union ");
+                    Utils::StrCat(type_name, "union ");
                     break;
                 default:
                     break;
@@ -350,9 +350,9 @@ static void DumpSymbol(SYMBOL* sym)
         }
         else if (tp->BaseType()->type == BasicType::enum_)
         {
-            strcat(type_name, "enum ");
+            Utils::StrCat(type_name, "enum ");
         }
-        (tp->type == BasicType::typedef_ ? tp->btp : tp)->BasicTypeToString(type_name + strlen(type_name));
+        (tp->type == BasicType::typedef_ ? tp->btp : tp)->BasicTypeToString(type_name + sizeof(type_name), type_name + strlen(type_name));
         type_name[40] = 0;
         while (tp->IsRef())
             tp = tp->BaseType()->btp;
@@ -387,7 +387,7 @@ static void DumpSymbol(SYMBOL* sym)
                     if (strstr(argName, "++"))
                         argName = " ";
                     type_name[0] = 0;
-                    st->tp->BasicTypeToString(type_name);
+                    st->tp->BasicTypeToString(type_name + sizeof(type_name), type_name);
                     type_name[40] = 0;
                     if (argName[0] == 'U' && strstr(argName, "++"))
                         argName = "{unnamed} ";  // the ide depends on the first char being '{'

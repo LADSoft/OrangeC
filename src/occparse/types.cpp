@@ -56,6 +56,7 @@
 #include "class.h"
 #include <cassert>
 #include "exprpacked.h"
+#include "Utils.h"
 namespace Parser
 {
 static Type* RootType(Type* tp)
@@ -743,8 +744,7 @@ Type* Type::InitializeDeferred()
             sym->templateParams = tpl;
             sym = TemplateClassInstantiateInternal(sym, nullptr, false);
             sym->templateParams = nullptr;
-            if (sym)
-                *tpx = sym->tp;
+            *tpx = sym->tp;
         }
         else if (!sym->sb->instantiated || ((*tpx)->size < sym->tp->size && sym->tp->size != 0))
         {
@@ -913,7 +913,7 @@ bool Type::CompareTypes(Type* typ1, Type* typ2, int exact)
             typ2 = typ2->BaseType()->btp;
         if (typ1->btp->IsRef() != typ2->btp->IsRef() || !CompareTypes(typ1->btp, typ2->btp, exact))
             return false;
-        if (!matchOverload(typ1, typ2, true))
+        if (!matchOverload(typ1, typ2))
             return false;
         return true;
     }
@@ -1094,7 +1094,7 @@ bool Type::IsConstWithArr()
     }
     return tp->IsConst();
 }
-char* Type::PutPointer(char* p, Type* tp)
+char* Type::PutPointer(char *top, char* p, Type* tp)
 {
     *p = 0;
     if (tp->type == BasicType::far_)
@@ -1116,27 +1116,27 @@ char* Type::PutPointer(char* p, Type* tp)
     return p + strlen(p);
 }
 
-Type* Type::QualifierToString(char* buf, Type* tp)
+Type* Type::QualifierToString(char* top, char* buf, Type* tp)
 {
     while (tp && (tp->IsConst() || tp->IsVolatile() || tp->IsRestrict() || tp->type == BasicType::derivedfromtemplate_))
     {
         switch (tp->type)
         {
             case BasicType::lrqual_:
-                strcat(buf, "& ");
+                Utils::StrCat(buf, top-buf, "& ");
                 break;
             case BasicType::rrqual_:
-                strcat(buf, "&& ");
+                Utils::StrCat(buf, top-buf, "&& ");
                 break;
             case BasicType::const_:
-                strcat(buf, tn_const);
+                Utils::StrCat(buf, top-buf, tn_const);
                 break;
             case BasicType::volatile_:
-                strcat(buf, tn_volatile);
+                Utils::StrCat(buf, top-buf, tn_volatile);
                 break;
             case BasicType::restrict_:
             case BasicType::derivedfromtemplate_:
-                /*				strcat(buf, tn_restrict); */
+                /*				Utils::StrCat(buf, tn_restrict); */
                 break;
             default:
                 break;
@@ -1145,31 +1145,30 @@ Type* Type::QualifierToString(char* buf, Type* tp)
     }
     return tp;
 }
-void Type::PointerToString(char* buf, Type* tp)
+void Type::PointerToString(char *top, char* buf, Type* tp)
 {
     char bf[256], *p = bf;
-    p = PutPointer(p, tp);
-    tp = QualifierToString(buf, tp->btp);
+    p = PutPointer(top, bf, tp);
+    tp = QualifierToString(top, buf, tp->btp);
     if (!tp)
         return;
     while (tp->IsPtr())
     {
-        p = PutPointer(p, tp);
-        tp = QualifierToString(buf, tp->btp);
-        //		tp = tp->btp;
+        p = PutPointer(top, p, tp);
+        tp = QualifierToString(top, buf, tp->btp);
     }
-    BasicTypeToString(buf, tp);
-    strcat(buf, bf);
+    BasicTypeToString(top, buf, tp);
+    Utils::StrCat(buf, top - buf, bf);
 }
-void Type::RenderExpr(char* buf, EXPRESSION* exp)
+void Type::RenderExpr(char *top, char* buf, EXPRESSION* exp)
 {
     (void)exp;
-    strcpy(buf, "decltype(...)");
+    Utils::StrCpy(buf, top - buf, "decltype(...)");
 }
-Type* Type::BasicTypeToString(char* buf, Type* tp)
+Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
 {
     SYMBOL* sym;
-    char name[4096];
+    char name[UNMANGLE_BUFFER_SIZE];
     if (tp == nullptr)
     {
         diag("Type::Enum - nullptr type");
@@ -1177,14 +1176,14 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
     }
     if (tp->type == BasicType::derivedfromtemplate_)
         tp = tp->btp;
-    tp = QualifierToString(buf, tp);
+    tp = QualifierToString(top, buf, tp);
     if (!tp)
         return nullptr;
     buf += strlen(buf);
     switch (tp->type)
     {
         case BasicType::typedef_:
-            return BasicTypeToString(buf, tp->btp);
+            return BasicTypeToString(top, buf, tp->btp);
             break;
         case BasicType::aggregate_:
             if (!tp->syms)
@@ -1193,14 +1192,14 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
             if (tp->syms->size() > 1 ||
                 !strcmp(sym->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
             {
-                strcpy(buf, " (*)(\?\?\?)");
+                Utils::StrCpy(buf, top - buf, " (*)(\?\?\?)");
                 break;
             }
             tp = sym->tp;
             /* fall through */
         case BasicType::func_:
         case BasicType::ifunc_:
-            BasicTypeToString(buf, tp->btp);
+            BasicTypeToString(top, buf, tp->btp);
             buf = buf + strlen(buf);
             if (tp->syms)
             {
@@ -1212,20 +1211,22 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
                         SYMBOL* thisptr = *it;
                         *buf++ = ' ';
                         *buf++ = '(';
-                        getcls(buf, thisptr->tp->BaseType()->btp->BaseType()->sp);
-                        strcat(buf, "::*)(");
+                        char temp[4000];
+                        getcls(temp, thisptr->tp->BaseType()->btp->BaseType()->sp);
+                        Utils::StrCat(buf, top - buf, temp);
+                        Utils::StrCat(buf, top - buf, "::*)(");
                         buf += strlen(buf);
                         ++it;
                     }
                     else
                     {
-                        strcat(buf, " (*)(");
+                        Utils::StrCat(buf, top - buf, " (*)(");
                         buf += strlen(buf);
                     }
                 }
                 else
                 {
-                    strcat(buf, " (*)(");
+                    Utils::StrCat(buf, top - buf, " (*)(");
                     buf += strlen(buf);
                 }
                 bool cleanup = it != tp->syms->end();
@@ -1233,7 +1234,7 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
                 {
                     sym = *it;
                     *buf = 0;
-                    BasicTypeToString(buf, sym->tp);
+                    BasicTypeToString(top, buf, sym->tp);
                     buf = buf + strlen(buf);
                     *buf++ = ',';
                     ++it;
@@ -1243,142 +1244,154 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
             }
             else
             {
-                strcat(buf, " (*)(");
+                Utils::StrCat(buf, top-buf, " (*)(");
                 buf += strlen(buf);
             }
             *buf++ = ')';
             *buf = 0;
             break;
         case BasicType::float__complex_:
-            strcpy(buf, tn_floatcomplex);
+            Utils::StrCpy(buf, top-buf, tn_floatcomplex);
             break;
         case BasicType::double__complex_:
-            strcpy(buf, tn_doublecomplex);
+            Utils::StrCpy(buf, top-buf, tn_doublecomplex);
             break;
         case BasicType::long_double_complex_:
-            strcpy(buf, tn_longdoublecomplex);
+            Utils::StrCpy(buf, top-buf, tn_longdoublecomplex);
             break;
         case BasicType::float__imaginary_:
-            strcpy(buf, tn_floatimaginary);
+            Utils::StrCpy(buf, top-buf, tn_floatimaginary);
             break;
         case BasicType::double__imaginary_:
-            strcpy(buf, tn_doubleimaginary);
+            Utils::StrCpy(buf, top-buf, tn_doubleimaginary);
             break;
         case BasicType::long_double_imaginary_:
-            strcpy(buf, tn_longdoubleimaginary);
+            Utils::StrCpy(buf, top-buf, tn_longdoubleimaginary);
             break;
         case BasicType::float_:
-            strcpy(buf, tn_float);
+            Utils::StrCpy(buf, top-buf, tn_float);
             break;
         case BasicType::double_:
-            strcpy(buf, tn_double);
+            Utils::StrCpy(buf, top-buf, tn_double);
             break;
         case BasicType::long_double_:
-            strcpy(buf, tn_longdouble);
+            Utils::StrCpy(buf, top-buf, tn_longdouble);
             break;
         case BasicType::unsigned_:
-            strcpy(buf, tn_unsigned);
+            Utils::StrCpy(buf, top-buf, tn_unsigned);
             buf = buf + strlen(buf);
+            Utils::StrCpy(buf, top-buf, tn_int);
+            break;
         case BasicType::int_:
-            strcpy(buf, tn_int);
+            Utils::StrCpy(buf, top-buf, tn_int);
             break;
         case BasicType::char8_t_:
-            strcpy(buf, tn_char8_t);
+            Utils::StrCpy(buf, top-buf, tn_char8_t);
             break;
         case BasicType::char16_t_:
-            strcpy(buf, tn_char16_t);
+            Utils::StrCpy(buf, top-buf, tn_char16_t);
             break;
         case BasicType::char32_t_:
-            strcpy(buf, tn_char32_t);
+            Utils::StrCpy(buf, top-buf, tn_char32_t);
             break;
         case BasicType::unsigned_long_long_:
-            strcpy(buf, tn_unsigned);
+            Utils::StrCpy(buf, top-buf, tn_unsigned);
             buf = buf + strlen(buf);
+            Utils::StrCpy(buf, top-buf, tn_longlong);
+            break;
         case BasicType::long_long_:
-            strcpy(buf, tn_longlong);
+            Utils::StrCpy(buf, top-buf, tn_longlong);
             break;
         case BasicType::unsigned_long_:
-            strcpy(buf, tn_unsigned);
+            Utils::StrCpy(buf, top-buf, tn_unsigned);
             buf = buf + strlen(buf);
+            Utils::StrCpy(buf, top-buf, tn_long);
+            break;
         case BasicType::long_:
-            strcpy(buf, tn_long);
+            Utils::StrCpy(buf, top-buf, tn_long);
             break;
         case BasicType::wchar_t_:
-            strcpy(buf, tn_wchar_t);
+            Utils::StrCpy(buf, top-buf, tn_wchar_t);
             break;
         case BasicType::unsigned_short_:
-            strcpy(buf, tn_unsigned);
+            Utils::StrCpy(buf, top-buf, tn_unsigned);
             buf = buf + strlen(buf);
+            Utils::StrCpy(buf, top-buf, tn_short);
+            break;
         case BasicType::short_:
-            strcpy(buf, tn_short);
+            Utils::StrCpy(buf, top-buf, tn_short);
             break;
         case BasicType::signed_char_:
-            strcpy(buf, tn_signed);
+            Utils::StrCpy(buf, top-buf, tn_signed);
             buf = buf + strlen(buf);
-            strcpy(buf, tn_char);
+            Utils::StrCpy(buf, top-buf, tn_char);
             break;
         case BasicType::unsigned_char_:
-            strcpy(buf, tn_unsigned);
+            Utils::StrCpy(buf, top-buf, tn_unsigned);
             buf = buf + strlen(buf);
+            Utils::StrCpy(buf, top-buf, tn_char);
+            break;
         case BasicType::char_:
-            strcpy(buf, tn_char);
+            Utils::StrCpy(buf, top-buf, tn_char);
             break;
         case BasicType::bool_:
-            strcpy(buf, tn_bool);
+            Utils::StrCpy(buf, top-buf, tn_bool);
             break;
         case BasicType::bit_:
-            strcpy(buf, "bit");
+            Utils::StrCpy(buf, top-buf, "bit");
             break;
         case BasicType::inative_:
-            strcpy(buf, "native int");
+            Utils::StrCpy(buf, top-buf, "native int");
             break;
         case BasicType::unative_:
-            strcpy(buf, "native unsigned int");
+            Utils::StrCpy(buf, top-buf, "native unsigned int");
             break;
         case BasicType::bitint_:
-            strcpy(buf, "_Bitint");
+            Utils::StrCpy(buf, top-buf, "_Bitint");
             sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
             break;
         case BasicType::unsigned_bitint_:
-            strcpy(buf, "unsigned _Bitint");
+            Utils::StrCpy(buf, top-buf, "unsigned _Bitint");
             sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
             break;
         case BasicType::void_:
-            strcpy(buf, tn_void);
+            Utils::StrCpy(buf, top-buf, tn_void);
             break;
         case BasicType::string_:
-            strcpy(buf, "__string");
+            Utils::StrCpy(buf, top-buf, "__string");
             break;
         case BasicType::object_:
-            strcpy(buf, "__object");
+            Utils::StrCpy(buf, top-buf, "__object");
             break;
         case BasicType::pointer_:
             if (tp->nullptrType)
             {
-                strcpy(buf, "nullptr_t");
+                Utils::StrCpy(buf, top-buf, "nullptr_t");
             }
             else
             {
-                PointerToString(buf, tp);
+                PointerToString(top, buf, tp);
             }
             break;
         case BasicType::memberptr_:
             if (tp->BaseType()->btp->IsFunction())
             {
                 Type* func = tp->BaseType()->btp;
-                BasicTypeToString(buf, func->BaseType()->btp);
-                strcat(buf, " (");
+                BasicTypeToString(top, buf, func->BaseType()->btp);
+                Utils::StrCat(buf, top-buf, " (");
                 buf += strlen(buf);
-                getcls(buf, tp->sp);
+                char temp[4000];
+                getcls(temp, tp->sp);
+                Utils::StrCpy(buf, top-buf, temp);
                 buf += strlen(buf);
-                strcpy(buf, "::*)(");
+                Utils::StrCpy(buf, top-buf, "::*)(");
                 buf += strlen(buf);
                 if (func->BaseType()->syms)
                 {
                     for (auto sym : *func->BaseType()->syms)
                     {
                         *buf = 0;
-                        BasicTypeToString(buf, sym->tp);
+                        BasicTypeToString(top, buf, sym->tp);
                         buf = buf + strlen(buf);
                     }
                     if (func->BaseType()->syms->size())
@@ -1389,28 +1402,30 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
             }
             else
             {
-                BasicTypeToString(buf, tp->btp);
-                strcat(buf, " ");
+                BasicTypeToString(top, buf, tp->btp);
+                Utils::StrCat(buf, top-buf, " ");
                 buf += strlen(buf);
-                getcls(buf, tp->sp);
+                char temp[4000];
+                getcls(temp, tp->sp);
+                Utils::StrCpy(buf, top - buf, temp);
                 buf += strlen(buf);
-                strcpy(buf, "::*");
+                Utils::StrCpy(buf, top-buf, "::*");
             }
             break;
         case BasicType::seg_:
-            BasicTypeToString(buf, tp->btp);
+            BasicTypeToString(top, buf, tp->btp);
             buf += strlen(buf);
-            strcpy(buf, " _seg *");
+            Utils::StrCpy(buf, top-buf, " _seg *");
             break;
         case BasicType::lref_:
-            BasicTypeToString(buf, tp->btp);
+            BasicTypeToString(top, buf, tp->btp);
             buf += strlen(buf);
             *buf++ = ' ';
             *buf++ = '&';
             *buf = 0;
             break;
         case BasicType::rref_:
-            BasicTypeToString(buf, tp->btp);
+            BasicTypeToString(top, buf, tp->btp);
             buf += strlen(buf);
             *buf++ = ' ';
             *buf++ = '&';
@@ -1418,57 +1433,57 @@ Type* Type::BasicTypeToString(char* buf, Type* tp)
             *buf = 0;
             break;
         case BasicType::ellipse_:
-            strcpy(buf, tn_ellipse);
+            Utils::StrCpy(buf, top-buf, tn_ellipse);
             break;
         case BasicType::any_:
-            strcpy(buf, "???");
+            Utils::StrCpy(buf, top-buf, "???");
             break;
         case BasicType::class_:
-            /*                strcpy(buf, tn_class); */
+            /*                Utils::StrCpy(buf, top-buf, tn_class); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            strcpy(buf, name);
+            Utils::StrCpy(buf, top-buf, name);
             break;
         case BasicType::struct_:
-            /*                strcpy(buf, tn_struct); */
+            /*                Utils::StrCpy(buf, top-buf, tn_struct); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            strcpy(buf, name);
+            Utils::StrCpy(buf, top-buf, name);
             break;
         case BasicType::union_:
-            /*                strcpy(buf, tn_union); */
+            /*                Utils::StrCpy(buf, top-buf, tn_union); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            strcpy(buf, name);
+            Utils::StrCpy(buf, top-buf, name);
             break;
         case BasicType::enum_:
-            /*                strcpy(buf, tn_enum);  */
+            /*                Utils::StrCpy(buf, top-buf, tn_enum);  */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            strcpy(buf, name);
+            Utils::StrCpy(buf, top-buf, name);
             break;
         case BasicType::templateselector_: {
             auto itts = tp->sp->sb->templateSelector->begin();
             ++itts;
             if (itts->sp)
             {
-                strcpy(buf, itts->sp->name);
+                Utils::StrCpy(buf, top-buf, itts->sp->name);
                 for (++itts; itts != tp->sp->sb->templateSelector->end(); ++itts)
                 {
-                    strcat(buf, "::");
-                    strcat(buf, itts->name);
+                    Utils::StrCat(buf, top-buf, "::");
+                    Utils::StrCat(buf, top-buf, itts->name);
                 }
             }
             break;
         }
         case BasicType::templatedecltype_:
-            RenderExpr(buf, tp->templateDeclType);
+            RenderExpr(top, buf, tp->templateDeclType);
             break;
         case BasicType::auto_:
-            strcpy(buf, "auto ");
+            Utils::StrCpy(buf, top-buf, "auto ");
             break;
         default:
-            strcpy(buf, "\?\?\?");
+            Utils::StrCpy(buf, top-buf, "\?\?\?");
     }
     return 0;
 }
-void Type::ToString(char* buf, Type* typ)
+void Type::ToString(char *top, char* buf, Type* typ)
 {
     if (typ && (typ->IsFunction() || typ->IsFunctionPtr()))
     {
@@ -1478,33 +1493,33 @@ void Type::ToString(char* buf, Type* typ)
         switch (typ->sp->sb->xcMode)
         {
             case xc_all:
-                strcpy(buf, " noexcept(false)");
+                Utils::StrCpy(buf, top - buf, " noexcept(false)");
                 break;
             case xc_none:
-                strcpy(buf, " noexcept");
+                Utils::StrCpy(buf, top - buf, " noexcept");
                 break;
             case xc_dynamic:
-                strcpy(buf, " throw(...)");
+                Utils::StrCpy(buf, top - buf, " throw(...)");
                 break;
             case xc_unspecified:
                 break;
         }
     }
 }
-void Type::ToString(char* buf)
+void Type::ToString(char* top, char* buf)
 {
     Type* typ = this;
     auto typ2 = typ;
     *buf = 0;
     while (typ)
     {
-        typ = BasicTypeToString(buf, typ);
+        typ = BasicTypeToString(top, buf, typ);
         buf = buf + strlen(buf);
         if (typ)
             *buf++ = ',';
     }
     *buf = 0;
-    ToString(buf, typ2);
+    ToString(top, buf, typ2);
 }
 
 void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class)
@@ -1857,8 +1872,11 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
         }
         else
         {
-            tpp->size = tpp->btp->size;
-            tpp->esize = MakeIntExpression(ExpressionNode::c_i_, tpp->btp->size);
+            if (tpp->btp)
+            {
+                tpp->size = tpp->btp->size;
+                tpp->esize = MakeIntExpression(ExpressionNode::c_i_, tpp->btp->size);
+            }
             tp = tpp;
         }
         if (typein && typein->IsStructured())
@@ -1909,7 +1927,12 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
             case Keyword::openbr_:
                 tp = TypeGenerator::ArrayType(lex, funcsp, tp, (*sp) ? (*sp)->sb->storage_class : storage_class, &isvla, &quals,
                                               true, false);
-                if (isvla)
+                if (!tp)
+                {
+                    error(ERR_TYPE_NAME_EXPECTED);
+                    tp = &stdint;
+                }
+                else if (isvla)
                 {
                     TypeGenerator::ResolveVLAs(tp);
                 }
@@ -1966,7 +1989,8 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
                     }
                     else
                     {
-                        tp->bits = 1;
+                        if (tp)
+                            tp->bits = 1;
                         error(ERR_CONSTANT_VALUE_EXPECTED);
                         errskim(&lex, skim_semi_declare);
                     }
@@ -2126,14 +2150,14 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     }
                     else
                     {
-                        strcpy(buf, overloadNameTab[CI_DESTRUCTOR]);
+                        Utils::StrCpy(buf, overloadNameTab[CI_DESTRUCTOR]);
                         consdest = CT_DEST;
                         tp = &stdvoid;
                     }
                 }
                 else
                 {
-                    lex = getIdName(lex, funcsp, buf, &ov, &castType);
+                    lex = getIdName(lex, funcsp, buf, sizeof(buf), & ov, &castType);
                 }
                 if (!buf[0])
                 {
@@ -2298,7 +2322,6 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                 }
                 else
                 {
-                    Type* quals = nullptr;
                     /* stdcall et.al. before the ptr means one thing in borland,
                      * stdcall after means another
                      * we are treating them both the same, e.g. the resulting
@@ -2318,17 +2341,8 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     {
                         // if here is not a potential pointer to func
                         if (!ptype)
-                            tp = ptype;
+                            tp = nullptr;
                         ptype = nullptr;
-                        if (quals)
-                        {
-                            Type* atype = tp;
-                            tp = quals;
-                            while (quals->btp)
-                                quals = quals->btp;
-                            quals->btp = atype;
-                            tp->UpdateRootTypes();
-                        }
                     }
                     if (!needkw(&lex, Keyword::closepa_))
                     {
@@ -2358,17 +2372,6 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                         ptype->rootType = atype->rootType;
                         tp->UpdateRootTypes();
 
-                        if (quals)
-                        {
-                            atype = tp;
-                            tp = quals;
-                            while (quals->btp)
-                                quals = quals->btp;
-                            quals->btp = atype;
-                            quals->rootType = atype->rootType;
-                            tp->UpdateRootTypes();
-                            sizeQualifiers(tp);
-                        }
                         atype = tp->BaseType();
                         if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
                             atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
@@ -3624,10 +3627,13 @@ exit:
         if (needsAtomicLockFromType(tp))
         {
             int n = getAlign(StorageClass::global_, &stdchar32tptr);
-            n = n - tp->size % n;
-            if (n != 4)
+            if (n)
             {
-                sz += n;
+                n = n - tp->size % n;
+                if (n != getSize(BasicType::int_))
+                {
+                    sz += n;
+                }
             }
             sz += ATOMIC_FLAG_SPACE;
         }

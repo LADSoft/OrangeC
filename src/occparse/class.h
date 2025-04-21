@@ -33,16 +33,16 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
 SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, bool tagsOnly);
 SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* arg);
 TEMPLATEPARAMPAIR* getTemplateStruct(char* name);
-LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
+LexList* tagsearch(LexList* lex, char* name, int len, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
                    std::list<NAMESPACEVALUEDATA*>** nsv_out, StorageClass storage_class);
 SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, bool toErr);
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALUEDATA*>* ns, bool tagsOnly, bool throughClass,
                      bool namespaceOnly);
 LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor,
                       bool* isTemplate, bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType);
-LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType);
+LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType);
 LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
-                       bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int flags);
+                       bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int len, int flags);
 SYMBOL* LookupSym(char* name);
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress);
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress);

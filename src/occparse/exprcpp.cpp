@@ -56,6 +56,8 @@
 #include "ListFactory.h"
 #include "overload.h"
 #include "class.h"
+#include "Utils.h"
+
 namespace Parser
 {
 
@@ -340,11 +342,11 @@ void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Typ
                 char tbuf[4096];
                 memset(tbuf, 0, sizeof(tbuf));
                 tbuf[0] = 0;
-                (*tp)->BaseType()->ToString(tbuf);
+                (*tp)->BaseType()->ToString(tbuf + sizeof(tbuf), tbuf);
                 if (other)
                 {
-                    strcat(tbuf, ", ");
-                    other->BaseType()->ToString(tbuf + strlen(tbuf));
+                    Utils::StrCat(tbuf, ", ");
+                    other->BaseType()->ToString(tbuf + sizeof(tbuf), tbuf + strlen(tbuf));
                 }
                 Optimizer::my_sprintf(buf, "operator %s(%s)", overloadXlateTab[(int)kw - (int)Keyword::new_ + CI_NEW], tbuf);
                 errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);

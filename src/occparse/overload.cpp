@@ -58,6 +58,7 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "constopt.h"
+#include "Utils.h"
 
 namespace Parser
 {
@@ -82,7 +83,7 @@ static int GetHashValue(const char* string)
     return i;
 }
 
-bool matchOverload(Type* tnew, Type* told, bool argsOnly)
+bool matchOverload(Type* tnew, Type* told)
 {
     auto hnew = tnew->BaseType()->syms->begin();
     auto hnewe = tnew->BaseType()->syms->end();
@@ -90,8 +91,6 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
     auto holde = told->BaseType()->syms->end();
     unsigned tableOld[100], tableNew[100];
     int tCount = 0;
-    if (!Optimizer::cparams.prm_cplusplus)
-        argsOnly = true;
     if (tnew->IsConst() != told->IsConst())
         return false;
     if (tnew->IsVolatile() != told->IsVolatile())
@@ -125,8 +124,8 @@ bool matchOverload(Type* tnew, Type* told, bool argsOnly)
         told->InstantiateDeferred();
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
-            if ((told->type != tnew->type || (!told->CompatibleType(tnew) && !SameTemplatePointedTo(told, tnew, true))) &&
-                !SameTemplateSelector(told, tnew))
+            if ((told->type != tnew->type || (!told->CompatibleType(tnew) && !SameTemplatePointedTo(tnew, told, true))) &&
+                !SameTemplateSelector(tnew, told))
                 break;
             else
             {
@@ -490,12 +489,12 @@ SYMBOL* searchOverloads(SYMBOL* sym, SymbolTable<SYMBOL>* table)
     {
         for (auto spp : *table)
         {
-            if (matchOverload(sym->tp, spp->tp, false))
+            if (matchOverload(sym->tp, spp->tp))
             {
                 if (!spp->templateParams)
                     return spp;
                 if (sym->sb->templateLevel == spp->sb->templateLevel ||
-                    (sym->sb->templateLevel && !spp->sb->templateLevel && sym->templateParams->size() == 1))
+                    (sym->sb->templateLevel && !spp->sb->templateLevel && sym->templateParams && sym->templateParams->size() == 1))
                     return spp;
 
                 if (!!spp->templateParams == !!sym->templateParams)
@@ -1684,7 +1683,7 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                         else
                         {
                             Type *tpl, *tpr;
-                            if (funcparams->thisptr)
+                            if (funcparams && funcparams->thisptr)
                             {
                                 if (itl != itlend && (*itl)->sb->thisPtr)
                                 {
@@ -2431,7 +2430,7 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
                 {
                     if (tpa->IsPtr())
                         seq[(*n)++] = CV_POINTERCONVERSION;
-                    else if (!tpp->BaseType()->nullptrType && !isconstzero(tpa->BaseType(), exp) &&
+                    else if (!tpp->BaseType()->nullptrType && exp  && !isconstzero(tpa->BaseType(), exp) &&
                              exp->type != ExpressionNode::nullptr_)
                         seq[(*n)++] = CV_NONE;
                 }
@@ -2448,7 +2447,6 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
 void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 {
     bool func = false;
-    bool func2 = false;
     bool notlval = false;
     if (expa && expa->type == ExpressionNode::comma_ && expa->left->type == ExpressionNode::blockclear_)
         expa = expa->right;
@@ -2493,22 +2491,11 @@ void GetRefs(Type* tpp, Type* tpa, EXPRESSION* expa, bool& lref, bool& rref)
             if (expa->type == ExpressionNode::not__lvalue_)
                 notlval = true;
         }
-        else if (tpa->IsFunction() || tpa->IsFunctionPtr())
-        {
-            EXPRESSION* expb = expa;
-            if (expb->type == ExpressionNode::thisref_)
-                expb = expb->left;
-            if (expb->type == ExpressionNode::callsite_)
-                func2 = !expb->v.func->ascall;
-            else if (expb->type == ExpressionNode::pc_)
-                func2 = true;
-            func2 = false;
-        }
     }
     lref = (tpa->BaseType()->type == BasicType::lref_ || tpa->lref || (tpa->IsStructured() && !notlval && !func) ||
             (expa && IsLValue(expa))) &&
            !tpa->rref;
-    rref = (tpa->BaseType()->type == BasicType::rref_ || tpa->rref || notlval || func || func2 ||
+    rref = (tpa->BaseType()->type == BasicType::rref_ || tpa->rref || notlval || func ||
             (expa && (isarithmeticconst(expa) || !IsLValue(expa) && !ismem(expa) && !ismath(expa) && !IsCastValue(expa)))) &&
            !lref && !tpa->lref;
 }
@@ -2546,7 +2533,7 @@ void arg_compare_bitint(Type* tpp, Type* tpa, int* n, e_cvsrn* seq)
         }
         else
         {
-            tpab = CHAR_BIT * getSize(tpp->type);
+            tpab = CHAR_BIT * getSize(tpa->type);
         }
         if (tppb == tpab)
         {
@@ -2708,8 +2695,6 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                 if (!tppp->IsConst())
                     seq[(*n)++] = CV_LVALUETORVALUE;
             }
-            if (tppp->IsConst() && !tppp->IsVolatile() && !rref)
-                seq[(*n)++] = CV_QUALS;
         }
         tpa = tpa->BaseType();
         if (tpa->IsStructured())
@@ -3398,7 +3383,8 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
         pos += m;
         ++it;
         tpp = argsym->tp;
-        Type::MakeType(tpx, BasicType::pointer_, f->arguments->front()->tp);
+        // f shouldn't be null here but just in case...
+        Type::MakeType(tpx, BasicType::pointer_, f ? f->arguments->front()->tp : &stdint);
         m = 0;
         seq[m++] = CV_USER;
         getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, true);
@@ -3831,7 +3817,7 @@ SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp)
                 sym = nullptr;
             else if (atp)
                 sym = TemplateDeduceArgsFromType(sym, atp);
-            else if (args->ascall)
+            else if (args && args->ascall)
                 sym = TemplateDeduceArgsFromArgs(sym, args);
             else
             {
@@ -3951,6 +3937,10 @@ static void WeedTemplates(SYMBOL** table, int count, CallSite* args, Type* atp)
 
                 if (counts[i] < argCount)
                     argCount = counts[i];
+            }
+            else
+            {
+                counts[i] = 0;
             }
         }
         for (int i = 0; i < count; i++)
@@ -4074,7 +4064,6 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
             {
                 auto it1 = sym->tp->BaseType()->syms->begin();
                 auto it1end = sym->tp->BaseType()->syms->end();
-                auto arg = args->arguments;
                 bool ellipse = false;
                 bool found = false;
                 if (sym->name[0] == '.' || sym->sb->templateLevel)
@@ -4859,7 +4848,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     {
                         if (*tp && (*tp)->IsStructured())
                         {
-                            char *buf = (char*)alloca(4096), *p;
+                            char buf[UNMANGLE_BUFFER_SIZE], *p;
                             int n;
                             buf[0] = 0;
                             unmangle(buf, (*tp)->BaseType()->sp->sb->decoratedName);
@@ -4869,19 +4858,19 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 p++;
                             else
                                 p = buf;
-                            strcpy(buf + n + 2, p);
+                            Utils::StrCpy(buf + n + 2, sizeof(buf) - n - 2, p);
                             buf[n] = buf[n + 1] = ':';
-                            strcat(buf, "(");
+                            Utils::StrCat(buf, sizeof(buf), "(");
                             if (args->arguments && args->arguments->size())
                             {
                                 for (auto a : *args->arguments)
                                 {
-                                    a->tp->ToString(buf + strlen(buf));
-                                    strcat(buf, ",");
+                                    a->tp->ToString(buf + sizeof(buf), buf + strlen(buf));
+                                    Utils::StrCat(buf, sizeof(buf), ",");
                                 }
                                 buf[strlen(buf) - 1] = 0;
                             }
-                            strcat(buf, ")");
+                            Utils::StrCat(buf, sizeof(buf), ")");
                             errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
                         }
                         else
@@ -5140,7 +5129,7 @@ SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** 
             ++itp;
         }
     }
-    if (exp2 && exp2->type == ExpressionNode::callsite_)
+    if (exp2->type == ExpressionNode::callsite_)
         fpargs.templateParams = exp2->v.func->templateParams;
     fpargs.ascall = true;
     return GetOverloadedFunction(mtp, exp, sym, &fpargs, nullptr, true, false, flags);

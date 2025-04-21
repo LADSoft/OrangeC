@@ -25,6 +25,7 @@
 
 #pragma once
 
+#define UNMANGLE_BUFFER_SIZE 10000
 namespace Parser
 {
 
@@ -62,7 +63,6 @@ extern const char* xlate_tab[];
 
 const char* LookupIntrinsicName(const char* mangled);
 const char* unmang_intrins(char* buf, const char* name, const char* last);
-char* unmangleExpression(char* dest, const char** name);
 const char* unmang1(char* buf, const char* name, const char* last, bool tof);
 char* unmangle(char* val, const char* name);
 }  // namespace Parser

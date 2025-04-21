@@ -191,19 +191,6 @@ Linkage getDefaultLinkage()
     }
 }
 
-/*
- * Return path of EXE file
- */
-void EXEPath(char* buffer, char* filename)
-{
-    char* temp;
-    strcpy(buffer, filename);
-    if ((temp = (char*)strrchr(buffer, '\\')) != 0)
-        *(temp + 1) = 0;
-    else
-        buffer[0] = 0;
-}
-
 /*-------------------------------------------------------------------------*/ /*
                                                                                * Pull the next path off the path search list
                                                                                */
@@ -395,10 +382,14 @@ static int DisplayerParams()
     if (prmPrintFileName.GetExists())
     {
         char* orangec = getenv("ORANGEC");
-        std::string cmd = std::string(orangec) + "\\bin\\olink --print-file-name " + prmPrintFileName.GetValue();
-        if (prm_libpath.GetExists())
-            cmd += " /L " + prm_libpath.GetValue();
-        mysystem(cmd.c_str());
+        // well really orangec will always be there...
+        if (orangec)
+        {
+            std::string cmd = std::string(orangec) + "\\bin\\olink --print-file-name " + prmPrintFileName.GetValue();
+            if (prm_libpath.GetExists())
+                cmd += " /L " + prm_libpath.GetValue();
+            mysystem(cmd.c_str());
+        }
         rv = 1;
     }
     if (prmPrintProgName.GetExists())
@@ -414,9 +405,9 @@ static int DisplayerParams()
             auto splitval = Utils::split(tool);
             if (splitval.size() != 1)
             {
-                for (auto v : splitval)
+                for (auto& v : splitval)
                     if (v == "cpp")
-                        tool = v;
+                        tool = std::move(v);
             }
             char* orangec = getenv("ORANGEC");
             std::string path;
@@ -627,9 +618,9 @@ static void ParamTransfer(const char* name)
         DisableTrivialWarnings();
     }
     checks = Utils::split(prm_tool.GetValue());
-    for (auto&& v : checks)
+    for (auto& v : checks)
     {
-        Optimizer::toolArgs.push_back(v);
+        Optimizer::toolArgs.push_back(std::move(v));
     }
     checks = Utils::split(prm_define.GetValue(), DEFINES_DELIMITER);
     for (auto&& v : checks)
@@ -925,7 +916,7 @@ void setglbdefs(void)
             a++;
         }
     }
-    for (auto d : defines)
+    for (const auto& d : defines)
     {
         size_t n = d.name.find_first_of("=");
         std::string name, val;
@@ -941,9 +932,9 @@ void setglbdefs(void)
             val = "1";
         }
         if (d.undef)
-            preProcessor->Undefine(name);
+            preProcessor->Undefine(std::move(name));
         else
-            preProcessor->Define(name.c_str(), val);
+            preProcessor->Define(name.c_str(), std::move(val));
     }
 }
 
@@ -985,11 +976,11 @@ void InsertOneFile(const char* filename, char* path, int drive)
     }
     if (path)
     {
-        strcpy(p, path);
+        Utils::StrCpy(p, sizeof(buffer)-2, path);
     }
     else
         *p = 0;
-    strcat(buffer, filename);
+    Utils::StrCat(buffer, filename);
     if (buffer[0] == '-')
     {
         a = buffer[0];
@@ -1012,7 +1003,7 @@ void InsertOneFile(const char* filename, char* path, int drive)
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return;
-        strcpy(newbuffer, buffer);
+        Utils::StrCpy(newbuffer, strlen(buffer)+1, buffer);
 
         while ((*r))
             r = &(*r)->next;
@@ -1064,7 +1055,7 @@ void InsertAnyFile(const char* filename, char* path, int drive)
 /*-------------------------------------------------------------------------*/
 
 void dumperrs(FILE* file);
-void setfile(char* buf, const char* orgbuf, const char* ext)
+void setfile(char* buf, int len, const char* orgbuf, const char* ext)
 /*
  * Get rid of a file path an add an extension to the file name
  */
@@ -1079,14 +1070,14 @@ void setfile(char* buf, const char* orgbuf, const char* ext)
         p = orgbuf;
     else
         p++;
-    strcpy(buf, p);
+    Utils::StrCpy(buf, len, p);
     Utils::StripExt(buf);
-    strcat(buf, ext);
+    Utils::StrCat(buf, len, ext);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void outputfile(char* buf, const char* orgbuf, const char* ext)
+void outputfile(char* buf, int len, const char* orgbuf, const char* ext)
 {
 
     if (buf[0] != '\0' && buf[strlen(buf) - 1] == '\\')
@@ -1096,7 +1087,7 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
             p++;
         else
             p = orgbuf;
-        strcat(buf, p);
+        Utils::StrCat(buf, len, p);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
@@ -1106,7 +1097,7 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
     }
     else
     {
-        setfile(buf, orgbuf, ext);
+        setfile(buf, len, orgbuf, ext);
     }
 }
 
@@ -1161,7 +1152,7 @@ int ccinit(int argc, char* argv[])
 #ifdef TARGET_OS_WINDOWS
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
-    strcpy(buffer, argv[0]);
+    Utils::StrCpy(buffer, argv[0]);
 #endif
     std::string architecture;
     Optimizer::doBackendInit = true;
@@ -1224,10 +1215,10 @@ int ccinit(int argc, char* argv[])
         Utils::Fatal("Could not initialize back Keyword::end_");
 
     static char temp[260];
-    strcpy(temp, argv[0]);
+    Utils::StrCpy(temp, argv[0]);
     if (Optimizer::chosenAssembler->cfgname)
     {
-        strcpy(temp, buffer);
+        Utils::StrCpy(temp, buffer);
         char *p1 = (char*)strrchr(temp, '/'), *p2 = (char*)strrchr(temp, '\\');
         if (p2 > p1)
             p1 = p2;
@@ -1237,7 +1228,7 @@ int ccinit(int argc, char* argv[])
             p1++;
         else
             p1 = temp;
-        strcpy(p1, Optimizer::chosenAssembler->progname);
+        Utils::StrCpy(p1, sizeof(temp) - (p1 - temp), Optimizer::chosenAssembler->progname);
     }
     auto old = argv[0];
     argv[0] = temp;

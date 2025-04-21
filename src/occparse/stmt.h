@@ -80,7 +80,7 @@ struct FunctionBlock
 };
 struct StatementGenerator
 {
-    StatementGenerator(LexList*& lex_in, SYMBOL* funcsp_in) : lex(lex_in), funcsp(funcsp_in) {}
+    StatementGenerator(LexList*& lex_in, SYMBOL* funcsp_in) : lex(lex_in), funcsp(funcsp_in), functionReturnType(nullptr) {}
 
     bool ParseAsm(std::list<FunctionBlock*>& parent);
     void Compound(std::list<FunctionBlock*>& parent, bool first);

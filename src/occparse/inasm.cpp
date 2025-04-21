@@ -247,7 +247,7 @@ static EXPRESSION* inasm_ident(void)
     {
         SYMBOL* sym;
         char nm[256];
-        strcpy(nm, lex->data->value.s.a);
+        Utils::StrCpy(nm, lex->data->value.s.a);
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */

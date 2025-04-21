@@ -138,7 +138,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                             {
                                 char buf[512];
                                 SYMBOL* localsp;
-                                strcpy(buf, sym->sb->decoratedName);
+                                Utils::StrCpy(buf, sym->sb->decoratedName);
                                 Optimizer::my_sprintf(buf + strlen(buf), "_@%c%d", count % 26 + 'A', count / 26);
 
                                 thunks[count].entry = entry;
@@ -298,7 +298,7 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
         return true;
     InitializeFunctionArguments(oldFunc);
     InitializeFunctionArguments(newFunc);
-    rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp, false);
+    rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp);
     if (rv && !oldFunc->sb->isDestructor)
     {
         Type *tp1 = oldFunc->tp->BaseType()->btp, *tp2 = newFunc->tp->BaseType()->btp;
@@ -1129,7 +1129,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             char name[512];
             name[0] = 0;
             if (ISID(lex))
-                strcpy(name, lex->data->value.s.a);
+                Utils::StrCpy(name, lex->data->value.s.a);
             bcsym = nullptr;
             lex = nestedSearch(lex, &bcsym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
             if (bcsym && bcsym->sb && bcsym->sb->storage_class == StorageClass::typedef_)
@@ -1555,11 +1555,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         char buf[256];
         if (sp->sb->castoperator)
         {
-            strcpy(buf, "typedef()");
+            Utils::StrCpy(buf, "typedef()");
         }
         else
         {
-            strcpy(buf, overloadXlateTab[sp->sb->operatorId]);
+            Utils::StrCpy(buf, overloadXlateTab[sp->sb->operatorId]);
         }
         errorstr(ERR_OPERATOR_MUST_BE_FUNCTION, buf);
     }
@@ -1983,7 +1983,7 @@ LexList* handleStaticAssert(LexList* lex)
         }
         else
         {
-            strcpy(buf, "(unspecified)");
+            Utils::StrCpy(buf, "(unspecified)");
         }
         if (!needkw(&lex, Keyword::closepa_))
         {
@@ -2100,7 +2100,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
                     bool throughClass = false;
                     parsingTrailingReturnOrUsing++;
-                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr, 0);
+                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr, 0, 0);
                     if (sym)
                     {
                         tp = sym->tp;
@@ -2241,7 +2241,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             char buf[512];
             int ov;
             Type* castType;
-            lex = getIdName(lex, theCurrentFunc, buf, &ov, &castType);
+            lex = getIdName(lex, theCurrentFunc, buf, sizeof(buf), & ov, &castType);
             lex = getsym();
             LexList* start = nullptr;
             if (MATCHKW(lex, Keyword::lt_))

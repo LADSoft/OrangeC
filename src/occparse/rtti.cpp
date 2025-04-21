@@ -51,7 +51,7 @@
 #include "stmt.h"
 #include "cppbltin.h"
 #include "overload.h"
-
+#include "Utils.h"
 namespace Parser
 {
 SymbolTable<SYMBOL>* rttiSyms;
@@ -152,7 +152,7 @@ static char* addParent(char* buf, SYMBOL* sym)
     Optimizer::my_sprintf(buf, "%s", sym->name);
     return buf + strlen(buf);
 }
-static char* RTTIGetDisplayName(char* buf, Type* tp)
+static char* RTTIGetDisplayName(char *top, char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
@@ -176,37 +176,37 @@ static char* RTTIGetDisplayName(char* buf, Type* tp)
     }
     else if (tp->IsPtr())
     {
-        buf = RTTIGetDisplayName(buf, tp->btp);
+        buf = RTTIGetDisplayName(top, buf, tp->btp);
         *buf++ = '*';
         *buf++ = ' ';
         *buf = 0;
     }
     else if (tp->IsRef())
     {
-        buf = RTTIGetDisplayName(buf, tp->btp);
+        buf = RTTIGetDisplayName(top,buf, tp->btp);
         *buf++ = '&';
         *buf = 0;
     }
     else if (tp->type == BasicType::templateparam_)
     {
-        strcpy(buf, "*templateParam");
+        Utils::StrCpy(buf,  top - buf, "*templateParam");
         buf += strlen(buf);
     }
     else if (tp->type == BasicType::any_)
     {
-        strcpy(buf, "any");
+        Utils::StrCpy(buf, top - buf, "any");
         buf += strlen(buf);
     }
     else if (tp->IsFunction())
     {
-        buf = RTTIGetDisplayName(buf, tp->btp);
+        buf = RTTIGetDisplayName(top, buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
         *buf++ = ')';
         *buf++ = '(';
         for (auto sym : *tp->BaseType()->syms)
         {
-            buf = RTTIGetDisplayName(buf, sym->tp);
+            buf = RTTIGetDisplayName(top, buf, sym->tp);
             *buf++ = ',';
             *buf++ = ' ';
         }
@@ -217,12 +217,12 @@ static char* RTTIGetDisplayName(char* buf, Type* tp)
     }
     else
     {
-        strcpy(buf, typeNames[(int)tp->type]);
+        Utils::StrCpy(buf, top - buf, typeNames[(int)tp->type]);
         buf += strlen(buf);
     }
     return buf;
 }
-static char* RTTIGetName(char* buf, Type* tp)
+static char* RTTIGetName(char *top, char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
@@ -230,9 +230,9 @@ static char* RTTIGetName(char* buf, Type* tp)
             tp = tp->templateParam->second->byClass.val;
     }
     mangledNamesCount = 0;
-    strcpy(buf, "@.xt@");
+    Utils::StrCpy(buf, top - buf, "@.xt@");
     buf += strlen(buf);
-    buf = mangleType(buf, tp, true);
+    buf = mangleType(buf, top - buf,  tp, true);
     return buf;
 }
 static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
@@ -302,7 +302,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
     }
     Optimizer::genint(tp->size);
     Optimizer::genint(flags);
-    RTTIGetDisplayName(name, tp);
+    RTTIGetDisplayName(name + sizeof(name), name, tp);
     for (p = name; *p; p++)
         Optimizer::genbyte(*p);
     Optimizer::genbyte(0);
@@ -325,7 +325,7 @@ static void DumpEnclosedStructs(Type* tp, bool genXT)
                 {
                     SYMBOL* xtSym;
                     char name[4096];
-                    RTTIGetName(name, vbase->cls->tp);
+                    RTTIGetName(name + sizeof(name), name, vbase->cls->tp);
                     xtSym = search(rttiSyms, name);
                     if (!xtSym)
                     {
@@ -353,7 +353,7 @@ static void DumpEnclosedStructs(Type* tp, bool genXT)
                 {
                     SYMBOL* xtSym;
                     char name[4096];
-                    RTTIGetName(name, bc->cls->tp);
+                    RTTIGetName(name + sizeof(name), name, bc->cls->tp);
                     xtSym = search(rttiSyms, name);
                     Optimizer::genint(XD_CL_BASE);
                     Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
@@ -429,7 +429,7 @@ SYMBOL* RTTIDumpType(Type* tp, bool symOnly)
         {
             char name[4096];
             tp->InstantiateDeferred();
-            RTTIGetName(name, tp);
+            RTTIGetName(name + sizeof(name), name, tp);
             xtSym = search(rttiSyms, name);
             if (!xtSym || !Optimizer::SymbolManager::Get(xtSym)->generated)
             {
@@ -476,7 +476,7 @@ SYMBOL* RTTIDumpType(Type* tp, bool symOnly)
                 {
                     SYMBOL* xtSym2;
                     // xtSym *should* be there.
-                    RTTIGetName(name, tp->BaseType());
+                    RTTIGetName(name + sizeof(name), name, tp->BaseType());
                     xtSym2 = search(rttiSyms, name);
                     if (xtSym2 && xtSym2->sb->dontinstantiate)
                     {
@@ -672,6 +672,8 @@ static void XCExpression(EXPRESSION* node, std::list<XCENTRY*>& lst)
         case ExpressionNode::check_nz_:
             /*		case ExpressionNode::array_: */
             XCExpression(node->right, lst);
+            XCExpression(node->left, lst);
+            break;
         case ExpressionNode::mp_as_bool_:
         case ExpressionNode::blockclear_:
         case ExpressionNode::argnopush_:

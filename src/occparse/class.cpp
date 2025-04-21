@@ -57,10 +57,12 @@
 #include "ListFactory.h"
 #include "constopt.h"
 #include "symtab.h"
+#include "Utils.h"
 namespace Parser
 {
 
-static void GetUsingName(char* buf)
+template <size_t n>
+static void GetUsingName(char (&buf)[n])
 {
     auto sym = enclosingDeclarations.GetFirst();
     if (sym)
@@ -71,7 +73,7 @@ static void GetUsingName(char* buf)
         if (sp && sp->sb && sp->sb->usingTypedef)
         {
             if (sp->tp->IsStructured())
-                strcpy(buf, sp->tp->BaseType()->sp->name);
+                Utils::StrCpy(buf, sp->tp->BaseType()->sp->name);
         }
     }
 }
@@ -146,7 +148,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
         }
         else if (templateSelector)
         {
-            lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
+            lex = getIdName(lex, nullptr, buf, sizeof(buf), & ovdummy, nullptr);
             lex = getsym();
 
             GetUsingName(buf);
@@ -182,7 +184,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
         else
         {
             SYMBOL* sp_orig;
-            lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
+            lex = getIdName(lex, nullptr, buf, sizeof(buf), &ovdummy, nullptr);
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;
@@ -823,7 +825,7 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
     }
     return nullptr;
 }
-LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
+LexList* tagsearch(LexList* lex, char* name, int len, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
                    std::list<NAMESPACEVALUEDATA*>** nsv_out, StorageClass storage_class)
 {
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
@@ -835,7 +837,7 @@ LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
         lex = nestedSearch(lex, rsp, &strSym, &nsv, nullptr, nullptr, true, storage_class, false, false);
         if (*rsp)
         {
-            strcpy(name, (*rsp)->name);
+            Utils::StrCpy(name, len, (*rsp)->name);
             lex = getsym();
             if (MATCHKW(lex, Keyword::begin_))
             {
@@ -864,7 +866,7 @@ LexList* tagsearch(LexList* lex, char* name, SYMBOL** rsp, SymbolTable<SYMBOL>**
         }
         else if (ISID(lex))
         {
-            strcpy(name, lex->data->value.s.a);
+            Utils::StrCpy(name, len, lex->data->value.s.a);
             lex = getsym();
             if (MATCHKW(lex, Keyword::begin_))
             {
@@ -1146,7 +1148,7 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
             if (!ISID(lex))
             {
                 int ovdummy;
-                lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
+                lex = getIdName(lex, nullptr, buf, sizeof(buf), & ovdummy, nullptr);
                 *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                 if (!*sym)
                     encloser = nullptr;
@@ -1166,7 +1168,7 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
                 {
                     if (encloser)
                     {
-                        strcpy(buf, lex->data->value.s.a);
+                        Utils::StrCpy(buf, lex->data->value.s.a);
                         GetUsingName(buf);
                         *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                     }
@@ -1226,12 +1228,12 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         lex = prevsym(placeholder);
     return lex;
 }
-LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** castType)
+LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
 {
     buf[0] = 0;
     if (ISID(lex))
     {
-        strcpy(buf, lex->data->value.s.a);
+        Utils::StrCpy(buf, len, lex->data->value.s.a);
     }
     else if (MATCHKW(lex, Keyword::operator_))
     {
@@ -1278,7 +1280,7 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** cast
                 default:
                     break;
             }
-            strcpy(buf, overloadNameTab[*ov = (int)kw - (int)Keyword::new_ + CI_NEW]);
+            Utils::StrCpy(buf, len, overloadNameTab[*ov = (int)kw - (int)Keyword::new_ + CI_NEW]);
         }
         else if (ISID(lex) || TypeGenerator::StartOfType(lex, nullptr, false))  // potential cast operator
         {
@@ -1295,7 +1297,7 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** cast
                 if (tp->IsAutoType() & !lambdas.size())  // make an exception so we can compile templates for lambdas
                     error(ERR_AUTO_NOT_ALLOWED_IN_CONVERSION_FUNCTION);
             }
-            strcpy(buf, overloadNameTab[*ov = CI_CAST]);
+            Utils::StrCpy(buf, len, overloadNameTab[*ov = CI_CAST]);
         }
         else if (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_u8str_)
         {
@@ -1336,7 +1338,7 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int* ov, Type** cast
     return lex;
 }
 LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
-                       bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int flags)
+                       bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int len, int flags)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
@@ -1357,7 +1359,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
         if (ISID(lex))
         {
             if (idname)
-                strcpy(idname, lex->data->value.s.a);
+                Utils::StrCpy(idname, len, lex->data->value.s.a);
             if (tagsOnly)
                 *sym = tsearch(lex->data->value.s.a);
             else
@@ -1402,7 +1404,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
             hasTemplate = true;
             lex = getsym();
         }
-        lex = getIdName(lex, funcsp, buf, &ov, &castType);
+        lex = getIdName(lex, funcsp, buf, sizeof(buf), &ov, &castType);
         if (buf[0])
         {
             if (!encloser && membersOnly)
@@ -1443,7 +1445,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
         lex = prevsym(placeholder);
     if (!*sym && idname)
     {
-        strcpy(idname, buf);
+        Utils::StrCpy(idname, len, buf);
     }
     return lex;
 }

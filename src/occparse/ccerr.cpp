@@ -427,7 +427,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
             file = "unknown";
         }
     }
-    strcpy(nameb, file);
+    Utils::StrCpy(nameb, file);
     if (strchr(infile, '\\') != 0 || strchr(infile, ':') != 0)
     {
         name = Utils::FullQualify(nameb);
@@ -597,56 +597,26 @@ void preverror(int err, const char* name, const char* origFile, int origLine)
 }
 void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
-    char buf[10000];
+    char buf[UNMANGLE_BUFFER_SIZE];
     unmangle(buf, sp->sb->decoratedName);
     if (origFile && origLine)
         preverror(err, buf, origFile, origLine);
 }
 void errorat(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 void errorcurrent(int err) { printerr(err, nullptr, 0); }
-void getns(char* buf, SYMBOL* nssym)
-{
-    if (!nssym)
-    {
-        strcpy(buf, "<globals>");
-    }
-    else
-    {
-        if (nssym->sb->parentNameSpace)
-        {
-            getns(buf, nssym->sb->parentNameSpace);
-            strcat(buf, "::");
-        }
-        strcat(buf, nssym->name);
-    }
-}
-void getcls(char* buf, SYMBOL* clssym)
-{
-    if (clssym->sb->parentClass)
-    {
-        getcls(buf, clssym->sb->parentClass);
-        strcat(buf, "::");
-    }
-    else if (clssym->sb->parentNameSpace)
-    {
-        getns(buf, clssym->sb->parentNameSpace);
-        strcat(buf, "::");
-    }
-    strcat(buf, clssym->name);
-}
 void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
     char buf[4096];
-    char unopped[10000];
+    char unopped[UNMANGLE_BUFFER_SIZE];
     const char* last = "typename";
-    char lastb[10000];
+    char lastb[UNMANGLE_BUFFER_SIZE];
     memset(buf, 0, sizeof(buf));
     if (strSym)
     {
         if (strSym->sb->decoratedName)
             unmangle(lastb, strSym->sb->decoratedName);
         else
-            strcpy(lastb, strSym->name);
+            Utils::StrCpy(lastb, strSym->name);
         last = strrchr(lastb, ':');
         if (last)
             last++;
@@ -672,20 +642,20 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
     }
     else
     {
-        strcpy(unopped, name);
+        Utils::StrCpy(unopped, name);
     }
     Optimizer::my_sprintf(buf, "'%s' is not a member of '", unopped);
     if (strSym)
     {
-        strSym->tp->ToString(buf + strlen(buf));
+        strSym->tp->ToString(buf + sizeof(buf), buf + strlen(buf));
     }
     else if (nsv)
     {
         getns(buf, nsv->name);
     }
-    strcat(buf, "'");
+    Utils::StrCat(buf, "'");
     if (strSym && !strSym->tp->syms)
-        strcat(buf, " because the type is not defined");
+        Utils::StrCat(buf, " because the type is not defined");
     printerr(err, nullptr, 0, buf);
 }
 void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
@@ -704,7 +674,7 @@ void errorstr(int err, const char* val)
 void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
 void errorsym(int err, SYMBOL* sym)
 {
-    char buf[5000];
+    char buf[UNMANGLE_BUFFER_SIZE];
     if (sym->sb)
     {
         if (!sym->sb->decoratedName)
@@ -715,13 +685,13 @@ void errorsym(int err, SYMBOL* sym)
     }
     else
     {
-        strcpy(buf, sym->name);
+        Utils::StrCpy(buf, sym->name);
     }
     printerr(err, nullptr, 0, buf);
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
-    char buf[10000];
+    char buf[UNMANGLE_BUFFER_SIZE];
     if (!sym->sb->decoratedName)
     {
         SetLinkerNames(sym, Linkage::cdecl_);
@@ -731,14 +701,14 @@ void errorsym(int err, SYMBOL* sym, int line, const char* file)
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
-    char one[10000], two[10000];
+    char one[UNMANGLE_BUFFER_SIZE], two[UNMANGLE_BUFFER_SIZE];
     unmangle(one, sym1->sb->decoratedName);
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, one, two);
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
-    char two[10000];
+    char two[UNMANGLE_BUFFER_SIZE];
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
 }
@@ -746,7 +716,7 @@ void errorstringtype(int err, char* str, Type* tp1)
 {
     char tpb1[4096];
     memset(tpb1, 0, sizeof(tpb1));
-    tp1->ToString(tpb1);
+    tp1->ToString(tpb1 + sizeof(tpb1), tpb1);
     printerr(err, nullptr, 0, str, tpb1);
 }
 
@@ -755,9 +725,9 @@ void errortype(int err, Type* tp1, Type* tp2)
     char tpb1[4096], tpb2[4096];
     memset(tpb1, 0, sizeof(tpb1));
     memset(tpb2, 0, sizeof(tpb2));
-    tp1->ToString(tpb1);
+    tp1->ToString(tpb1 + sizeof(tpb1), tpb1);
     if (tp2)
-        tp2->ToString(tpb2);
+        tp2->ToString(tpb2 +sizeof(tpb2), tpb2);
     printerr(err, nullptr, 0, tpb1, tpb2);
 }
 void errorConversionOrCast(bool convert, Type* tp1, Type* tp2)
@@ -787,8 +757,8 @@ void errorabstract(int error, SYMBOL* sp)
 }
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 {
-    char argbuf[10000];
-    char buf[10000];
+    char argbuf[UNMANGLE_BUFFER_SIZE];
+    char buf[UNMANGLE_BUFFER_SIZE];
     if (declsp->sb->anonymous)
         Optimizer::my_sprintf(argbuf, "%d", argnum);
     else if (declsp->sb->decoratedName)
@@ -797,7 +767,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     }
     else
     {
-        strcpy(argbuf, declsp->name);
+        Utils::StrCpy(argbuf, declsp->name);
     }
     unmangle(buf, funcsp->sb->decoratedName);
     currentErrorLine = 0;

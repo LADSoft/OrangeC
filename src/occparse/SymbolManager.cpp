@@ -672,18 +672,18 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
     buf[0] = 0;
     if (old->sb->parent)
     {
-        strcat(buf, old->sb->parent->sb->decoratedName);
+        Utils::StrCat(buf, old->sb->parent->sb->decoratedName);
         my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
     }
-    strcat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
+    Utils::StrCat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
     if (old->sb->storage_class == StorageClass::static_ && !old->sb->parent)
     {
         my_sprintf(buf + strlen(buf), ".%d", old->sb->uniqueID);
     }
     if (old->sb->storage_class == StorageClass::type_)
-        strcat(buf, "#");
+        Utils::StrCat(buf, "#");
     if (old->sb->attribs.inheritable.linkage == Linkage::stdcall_)
-        strcat(buf, ".");
+        Utils::StrCat(buf, ".");
     std::hash<std::string> hasher;
     std::string aa(buf);
     size_t key = hasher(aa);

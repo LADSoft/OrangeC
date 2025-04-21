@@ -59,6 +59,7 @@
 #include "ListFactory.h"
 #include "overload.h"
 #include "class.h"
+#include "expr.h"
 #include "exprpacked.h"
 namespace Parser
 {
@@ -595,6 +596,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                 SynthesizeQuals(&last, &qual, &lastQual);
                 rv->UpdateRootTypes();
                 return rv;
+                break;
             case BasicType::templateselector_: {
                 SYMBOL* sp;
                 auto rvsit = tp->sp->sb->templateSelector->begin();
@@ -1467,7 +1469,7 @@ static bool ValidArg(Type* tp)
                         return false;
                     return ValidArg(tp);
                 }
-                if (!tp || tp->IsRef())
+                if (tp->IsRef())
                     return false;
                 break;
             case BasicType::memberptr_: {
@@ -2127,8 +2129,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                 }
                 case TplType::template_: {
                     char buf[256];
-                    strcpy(buf, lex->data->value.s.a);
-                    lex = id_expression(lex, nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf,
+                    Utils::StrCpy(buf, lex->data->value.s.a);
+                    lex = id_expression(lex, nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf, sizeof(buf),
                                         0);
 
                     if (!itDest->second->byTemplate.val)
@@ -2454,7 +2456,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             parsingUsing = oldParsingUsing;
             noTypeNameError = oldTypeNameError;
             inTypedef = oldintypedef;
-            lambdas = oldLambdas;
+            lambdas = std::move(oldLambdas);
             instantiatingTemplate--;
             inTemplateType = oldTemplateType;
             deferred = oldDeferred;
@@ -2530,7 +2532,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
     bool found = false;
     for (auto data : *sym->sb->overloadName->tp->syms)
     {
-        if (data->sb->instantiated && TemplateInstantiationMatch(data, sym, true) && matchOverload(sym->tp, data->tp, true))
+        if (data->sb->instantiated && TemplateInstantiationMatch(data, sym, true) && matchOverload(sym->tp, data->tp))
         {
             if (data->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
             {
@@ -2572,13 +2574,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
             auto set = false;
             Type* tp2 = nullptr;
             ;
-            if (0 && sym->tp->BaseType()->btp->type == BasicType::auto_)
-            {
-                set = true;
-                tp2 = sp1->tp->BaseType()->btp;
-                sp1->tp->BaseType()->btp = sym->tp->BaseType()->btp;
-            }
-            if (matchOverload(sym->tp, sp1->tp, true))
+            if (matchOverload(sym->tp, sp1->tp))
             {
                 if (set)
                     sp1->tp->BaseType()->btp = tp2;
@@ -3106,18 +3102,21 @@ void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list<TEMPLA
                     }
                 }
             }
-            for (auto param : *params)
+            if (itval != val->end())
             {
-                if (param.first && !strcmp(itdflt->first->name, param.first->name))
+                for (auto param : *params)
                 {
-                    if (itdflt->second->type == param.second->type && itdflt->second->packed == param.second->packed)
+                    if (param.first && !strcmp(itdflt->first->name, param.first->name))
                     {
-                        if (itdflt->second->packed && !param.second->byPack.pack)
-                            param.second->byPack.pack = itval->second->byPack.pack;
-                        if (!param.second->byClass.val)
-                            param.second->byClass.val = itval->second->byClass.val;
+                        if (itdflt->second->type == param.second->type && itdflt->second->packed == param.second->packed)
+                        {
+                            if (itdflt->second->packed && !param.second->byPack.pack)
+                                param.second->byPack.pack = itval->second->byPack.pack;
+                            if (!param.second->byClass.val)
+                                param.second->byClass.val = itval->second->byClass.val;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -3381,7 +3380,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             case TplType::int_: {
                                 EXPRESSION* exp = copy_expression(itParams->second->byNonType.val);
                                 optimize_for_constants(&exp);
-                                if (itParams->second->byNonType.val && !equalTemplateMakeIntExpression(exp, (EXPRESSION*)dflt))
+                                if (itParams->second->byNonType.val && (!dflt || !equalTemplateMakeIntExpression(exp, (EXPRESSION*)dflt)))
                                     rv = nullptr;
                             }
                             break;
@@ -3763,8 +3762,10 @@ static bool checkArgSpecified(TEMPLATEPARAMPAIR* arg, bool checkDeduced, bool ch
                         working.push(exp->left);
                     if (exp->right)
                         working.push(exp->right);
-                    while (IsCastValue(exp) || IsLValue(exp))
+                    while (exp->left && (IsCastValue(exp) || IsLValue(exp)))
+                    {
                         exp = exp->left;
+                    }
                     if (!isarithmeticconst(exp))
                     {
                         switch (exp->type)
@@ -4177,7 +4178,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
         args1->insert(args1->begin(), it, args->end());
         args = args1;
     }
-    if (sp->sb->parentTemplate && sp)
+    if (sp->sb->parentTemplate)
         sp = sp->sb->parentTemplate;
 
     std::string argumentName;
@@ -5072,18 +5073,25 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, std::list<TEMPLAT
         {
             EXPRESSION *exp1 = nullptr, **last = &exp1;
             ;
-            while (exp->type == ExpressionNode::funcret_)
+            while (exp && exp->type == ExpressionNode::funcret_)
             {
                 *last = Allocate<EXPRESSION>();
                 **last = *exp;
                 exp = exp->left;
                 last = &(*last)->left;
             }
-            *last = Allocate<EXPRESSION>();
-            **last = *exp;
-            (*last)->v.func = Allocate<CallSite>();
-            *(*last)->v.func = *exp->v.func;
-
+            if (exp)
+            {
+                *last = Allocate<EXPRESSION>();
+                **last = *exp;
+                (*last)->v.func = Allocate<CallSite>();
+                *(*last)->v.func = *exp->v.func;
+            }
+            else
+            {
+                diag("SpecifyArgInt: nullptr"); 
+                return MakeIntExpression(ExpressionNode::c_i_, 0);
+            }
             std::list<TEMPLATEPARAMPAIR>* tpxx = (*last)->v.func->templateParams;
             if (tpxx)
             {
@@ -5584,7 +5592,7 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMPAIR* temp, std::list<TEMPLA
 {
     SYMBOL* syms[200];
     int count = 0, n = 0;
-    if (temp && temp->second->ellipsis && temp->second->type != TplType::template_)
+    if (temp->second->ellipsis && temp->second->type != TplType::template_)
     {
         if (temp->second->type == TplType::typename_)
         {

@@ -460,21 +460,24 @@ EXPRESSION* StatementGenerator::DestructorsForExpression(EXPRESSION* exp)
         }
         if (e->type == ExpressionNode::thisref_)
             e = e->left;
-        if (e->type == ExpressionNode::callsite_)
+        if (e)
         {
-            if (e->v.func->arguments)
-                for (auto il : *e->v.func->arguments)
-                    stk.push(il->exp);
-        }
-        if (e->type == ExpressionNode::auto_ && e->v.sp->sb->allocate && !e->v.sp->sb->destructed)
-        {
-            Type* tp = e->v.sp->tp;
-            while (tp->IsArray())
-                tp = tp->BaseType()->btp;
-            if (tp->IsStructured() && !tp->IsRef())
+            if (e->type == ExpressionNode::callsite_)
             {
-                e->v.sp->sb->destructed = true;
-                destructList.push(e->v.sp);
+                if (e->v.func->arguments)
+                    for (auto il : *e->v.func->arguments)
+                        stk.push(il->exp);
+            }
+            if (e->type == ExpressionNode::auto_ && e->v.sp->sb->allocate && !e->v.sp->sb->destructed)
+            {
+                Type* tp = e->v.sp->tp;
+                while (tp->IsArray())
+                    tp = tp->BaseType()->btp;
+                if (tp->IsStructured() && !tp->IsRef())
+                {
+                    e->v.sp->sb->destructed = true;
+                    destructList.push(e->v.sp);
+                }
             }
         }
     }
@@ -997,6 +1000,8 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 {
                     diag("statement_for: Cannot get range based range variable");
                     declExp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                    errskim(&lex, skim_end);
+                    return;
                 }
                 else
                 {
@@ -1850,8 +1855,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         addedBlock--;
                         FreeLocalContext(parent, funcsp, codeLabel++);
                     }
-                    if (before)
-                        assignmentUsages(incrementer, false);
+                    assignmentUsages(incrementer, false);
                     st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                     st->label = parent.front()->continuelabel;
                     st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
@@ -2576,6 +2580,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             {
 
                 returnexp = exp1;
+                if (!returnexp)
+                    returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);
                 if (!functionReturnType->CompatibleType(tp1) && (!functionReturnType->IsBitInt() || !tp1->IsBitInt()) &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !functionReturnType->IsStructured() ||
                      !isconstzero(&stdint, returnexp)))
@@ -2662,7 +2668,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         else
                         {
                             EXPRESSION** expx = &returnexp;
-                            if (*expx && (*expx)->type == ExpressionNode::comma_)
+                            if ((*expx)->type == ExpressionNode::comma_)
                             {
                                 while ((*expx)->right && (*expx)->right->type == ExpressionNode::comma_)
                                     expx = &(*expx)->right;

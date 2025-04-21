@@ -526,65 +526,34 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
         }
         if (arg.size())
         {
-            if (0 && argsyms[0]->sb && argsyms[0]->packed && argsyms[0]->sb->parent)
+            expandingParams++;
+            PushPackIndex();
+            int i;
+            int n = arg.front();
+            if (n > 1 || n == 1 && (!packedExp || packedExp->type != ExpressionNode::callsite_ ||
+                                    !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() ||
+                                    packedExp->v.func->arguments->front()->tp->type != BasicType::void_))
             {
                 if (!*lptr)
                     *lptr = argumentListFactory.CreateList();
-                auto it = argsyms[0]->sb->parent->tp->BaseType()->syms->begin();
-                auto itend = argsyms[0]->sb->parent->tp->BaseType()->syms->end();
-                for (; it != itend && (*it) != argsyms[0]; ++it)
-                    ;
-                if (it != itend)
-                {
-                    while (it != itend)
-                    {
-                        SYMBOL* sym = *it;
-                        Argument* p = Allocate<Argument>();
-                        p->tp = sym->tp;
-                        p->exp = MakeExpression(ExpressionNode::auto_, sym);
-                        if (p->tp->IsRef())
-                        {
-                            p->exp = MakeExpression(ExpressionNode::l_ref_, p->exp);
-                            p->tp = p->tp->BaseType()->btp;
-                        }
-                        if (!p->tp->IsStructured())
-                            Dereference(p->tp, &p->exp);
-                        (*lptr)->push_back(p);
-                        ++it;
-                    }
-                }
-            }
-            else
-            {
-                expandingParams++;
-                PushPackIndex();
-                int i;
-                int n = arg.front();
-                if (n > 1 || n == 1 && (!packedExp || packedExp->type != ExpressionNode::callsite_ ||
-                                        !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() ||
-                                        packedExp->v.func->arguments->front()->tp->type != BasicType::void_))
-                {
-                    if (!*lptr)
-                        *lptr = argumentListFactory.CreateList();
 
-                    for (i = 0; i < n; i++)
-                    {
-                        Argument* p = Allocate<Argument>();
-                        LexList* lex = SetAlternateLex(start);
-                        SetPackIndex(i);
-                        expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
-                        optimize_for_constants(&p->exp);
-                        SetAlternateLex(nullptr);
-                        if (p->tp->type != BasicType::void_)
-                            if (p->tp)
-                            {
-                                (*lptr)->push_back(p);
-                            }
-                    }
+                for (i = 0; i < n; i++)
+                {
+                    Argument* p = Allocate<Argument>();
+                    LexList* lex = SetAlternateLex(start);
+                    SetPackIndex(i);
+                    expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                    optimize_for_constants(&p->exp);
+                    SetAlternateLex(nullptr);
+                    if (p->tp->type != BasicType::void_)
+                        if (p->tp)
+                        {
+                            (*lptr)->push_back(p);
+                        }
                 }
-                PopPackIndex();
-                expandingParams--;
             }
+            PopPackIndex();
+            expandingParams--;
         }
     }
 }
@@ -596,7 +565,7 @@ static int GetBaseClassList(const char* name, SYMBOL* cls, std::list<BASECLASS*>
     char* clslst[100];
     char *p = str, *c;
     int ccount = 0;
-    strcpy(str, name);
+    Utils::StrCpy(str, name);
     while ((c = (char*)strstr(p, "::")))
     {
         clslst[n++] = p;
@@ -634,7 +603,7 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, std::list<VBASEENTRY
     char* clslst[100];
     char *p = str, *c;
     int vcount = 0;
-    strcpy(str, name);
+    Utils::StrCpy(str, name);
     while ((c = (char*)strstr(p, "::")))
     {
         clslst[n++] = p;

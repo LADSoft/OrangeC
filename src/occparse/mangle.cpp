@@ -572,7 +572,7 @@ static char* mangleTemplate(char (&orig)[n], char* buf, SYMBOL* sym, std::list<T
 {
     bool bySpecial = false;
     if (params && params->size() && params->front().second->type == TplType::new_ &&
-        ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->front().second->bySpecialization.types)))
+        ((sym->sb && (sym->sb->instantiated && !sym->sb->templateLevel)) || (params && params->front().second->bySpecialization.types)))
     {
         params = params->front().second->bySpecialization.types;
         bySpecial = true;
@@ -661,7 +661,7 @@ static char* mangleTemplate(char (&orig)[n], char* buf, SYMBOL* sym, std::list<T
                     if (it->second->packed)
                         PUTCH(buf, 'e');
                     PUTZERO(buf);
-                    if (sym->sb->instantiated && it->second->byTemplate.val)
+                    if (sym->sb && sym->sb->instantiated && it->second->byTemplate.val)
                     {
                         buf = mangleTemplate(orig, buf, it->second->byTemplate.val, it->second->byTemplate.val->templateParams);
                     }
@@ -1079,28 +1079,29 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                         p = getName(nm, nm, s->sp);
                     PUTZERO(p);
                     if (strlen(nm) > sizeof(nm))
-                        p = mangleTemplate(nm, nm, s->sp, s->templateParams);
+                        p = mangleTemplate(nm, p, s->sp, s->templateParams);
                     for (++s; s != se; ++s)
                     {
-                        Utils::StrCat(nm, "@");
+                        Utils::StrCpy(p, sizeof(nm) - (p - nm), "@");
+                        p += strlen(p);
                         if (s->isTemplate && s->templateParams)
                         {
                             SYMBOL s2 = {};
                             s2.name = s->name;
                             s2.tp = &stdint;
-                            mangleTemplate(nm, nm, &s2, s->templateParams);
+                            p = mangleTemplate(nm, p, &s2, s->templateParams);
                         }
                         else
                         {
-                            Utils::StrCat(nm, s->name);
+                            Utils::StrCpy(p, sizeof(nm) - (p - nm), s->name);
+                            p += strlen(p);
                         }
                     }
                     p = nm;
                     while (isdigit(*p))
                         p++;
                     Optimizer::my_sprintf(in, "%d%s", strlen(p), p);
-                    while (*in)
-                        in++;
+                    in += strlen(in);
                     return in;
                 }
                 break;

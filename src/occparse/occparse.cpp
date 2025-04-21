@@ -514,14 +514,14 @@ MAINTRY
     {
         startTime = clock();
     }
-    /* loop through and preprocess all the files on the file list */
+    /* loop through and preprocess all the fles on the file list */
     if (clist && clist->next)
         multipleFiles = true;
     const char* firstFile = clist ? (const char*)clist->data : "temp";
     SharedMemory* parserMem = nullptr;
     if (!IsCompiler())
     {
-        Utils::StrCpy(buffer, (char*)clist->data);
+        Utils::StrCpy(buffer, clist ? (const char*)clist->data : "temp");
         Utils::StrCpy(realOutFile, prm_output.GetValue().c_str());
         outputfile(realOutFile, sizeof(realOutFile), buffer, ".ods");
         if (!CompletionCompiler::ccDBOpen(realOutFile))

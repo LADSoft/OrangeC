@@ -1207,7 +1207,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
 {
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
-    EXPRESSION *exp = nullptr, **expp;
+    EXPRESSION *exp = nullptr;
     EXPRESSION *expsymin = expsym, *base;
     bool noClear = false;
     if (sym)
@@ -1433,6 +1433,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                                 expsym = AnonymousVar(StorageClass::auto_, initItem->basetp);
                                 sym = expsym->v.sp;
                             }
+                            EXPRESSION** expp;
                             if (!btp->IsStructured() || btp->sp->sb->trivialCons)
                             {
                                 exp = MakeExpression(ExpressionNode::blockclear_, copy_expression(expsym));
@@ -1444,33 +1445,31 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                             {
                                 expp = &exp;
                             }
+                            EXPRESSION* right = initItem->exp;
+                            if (!btp->IsStructured())
                             {
-                                EXPRESSION* right = initItem->exp;
-                                if (!btp->IsStructured())
+                                EXPRESSION* asn;
+                                if (Optimizer::architecture == ARCHITECTURE_MSIL)
                                 {
-                                    EXPRESSION* asn;
-                                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
-                                    {
-                                        int n = initItem->offset / btp->size;
-                                        asn = MakeExpression(ExpressionNode::sizeof_, MakeExpression(btp));
-                                        EXPRESSION* exp4 = MakeIntExpression(ExpressionNode::c_i_, n);
-                                        asn = MakeExpression(ExpressionNode::umul_, exp4, asn);
-                                    }
-                                    else
-                                    {
-                                        asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym),
-                                                             MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
-                                    }
-                                    Dereference(initItem->basetp, &asn);
-                                    cast(initItem->basetp, &right);
-                                    right = MakeExpression(ExpressionNode::assign_, asn, right);
+                                    int n = initItem->offset / btp->size;
+                                    asn = MakeExpression(ExpressionNode::sizeof_, MakeExpression(btp));
+                                    EXPRESSION* exp4 = MakeIntExpression(ExpressionNode::c_i_, n);
+                                    asn = MakeExpression(ExpressionNode::umul_, exp4, asn);
                                 }
-                                if (*expp)
-                                    *expp = MakeExpression(ExpressionNode::comma_, *expp, right);
                                 else
-                                    *expp = right;
-                                expp = &(*expp)->right;
+                                {
+                                    asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym),
+                                                            MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                }
+                                Dereference(initItem->basetp, &asn);
+                                cast(initItem->basetp, &right);
+                                right = MakeExpression(ExpressionNode::assign_, asn, right);
                             }
+                            if (*expp)
+                                *expp = MakeExpression(ExpressionNode::comma_, *expp, right);
+                            else
+                                *expp = right;
+                            expp = &(*expp)->right;
                         }
                         else
                         {
@@ -1759,6 +1758,8 @@ bool assignDiscardsConst(Type* dest, Type* source)
             {
                 case BasicType::const_:
                     destc = true;
+                    dest = dest->btp;
+                    break;
                 case BasicType::va_list_:
                 case BasicType::objectArray_:
                 case BasicType::restrict_:
@@ -1782,6 +1783,8 @@ bool assignDiscardsConst(Type* dest, Type* source)
             {
                 case BasicType::const_:
                     sourcc = true;
+                    source = source->btp;
+                    break;
                 case BasicType::va_list_:
                 case BasicType::objectArray_:
                 case BasicType::restrict_:
@@ -1993,14 +1996,7 @@ Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         }
         else if (iscx2)
         {
-            if (iscx1)
-            {
-                if (tp1->type > tp2->type)
-                    tp = tp1;
-                else
-                    tp = tp2;
-            }
-            else if (isim1)
+            if (isim1)
             {
                 if ((int)tp1->type - (int)BasicType::float__imaginary_ <= (int)tp2->type - (int)BasicType::float__complex_)
                     tp = tp2;
@@ -2072,10 +2068,13 @@ Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             tp = tp1;
         else
             tp = tp2;
-        if (exp1 && tp->type != tp1->type && exp1 && tp2->type != BasicType::pointer_)
-            cast(tp, exp1);
-        if (exp2 && tp->type != tp2->type && exp1 && tp1->type != BasicType::pointer_)
-            cast(tp, exp2);
+        if (exp1 && exp2)
+        {
+            if (tp->type != tp1->type && tp1->type != BasicType::pointer_)
+                cast(tp, exp1);
+            if (tp->type != tp2->type && tp2->type != BasicType::pointer_)
+                cast(tp, exp2);
+        }
         return tp;
     }
     if (isctp1 && isctp2)

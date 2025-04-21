@@ -928,7 +928,10 @@ bool eval_binary_add(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, E
                     castToPointer(&righttp, &rightexp, kw, &stdpointer);
             }
             LookupSingleAggregate(*resulttp, resultexp);
-            LookupSingleAggregate(righttp, &rightexp);
+            if (righttp)
+            {
+                LookupSingleAggregate(righttp, &rightexp);
+            }
         }
     }
     bool msil = false;
@@ -2105,7 +2108,7 @@ bool eval_binary_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp
         {
             exp2->v.func->returnSP->sb->allocate = false;
             exp2->v.func->returnEXP = *resultexp;
-            *resultexp = rightexp;
+            *resultexp = exp2;
         }
         else
         {

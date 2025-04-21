@@ -34,7 +34,7 @@ class Semaphore
     string_type semaphoreName;
 
   public:
-    Semaphore() : null(true), semaphoreName(), handle(nullptr) {}
+    Semaphore() : null(true), semaphoreName(), handle(semaphore_type(0)) {}
     Semaphore(string_type name, int value) : named(true), semaphoreName(std::move(name))
     {
 #ifdef TARGET_OS_WINDOWS

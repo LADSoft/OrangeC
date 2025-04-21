@@ -49,8 +49,14 @@ namespace Parser
 #    define imin(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
-#define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_') || (x) == '$')
-#define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_') || (x) == '$')
+    inline bool issymchar(unsigned char x)
+    {
+        return isalnum(x) || (x) == '_' || (x) == '$';
+    }
+    inline bool isstartchar(unsigned char x)
+    {
+        return isalpha(x) || (x) == '_' || (x) == '$';
+    }
 
 bool IsCompiler();
 
@@ -81,6 +87,7 @@ template <class T>
 class SymbolTable
 {
   public:
+    SymbolTable() : blockLevel_(0) {}
     typedef typename std::list<T*>::iterator iterator;
     typedef typename std::list<T*>::reverse_iterator reverse_iterator;
     iterator begin() { return inOrder_.begin(); }

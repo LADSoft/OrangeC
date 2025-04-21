@@ -530,7 +530,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
             PushPackIndex();
             int i;
             int n = arg.front();
-            if (n > 1 || n == 1 && (!packedExp || packedExp->type != ExpressionNode::callsite_ ||
+            if (n > 1 || n == 1 && (packedExp->type != ExpressionNode::callsite_ ||
                                     !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() ||
                                     packedExp->v.func->arguments->front()->tp->type != BasicType::void_))
             {
@@ -545,11 +545,8 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                     expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
                     optimize_for_constants(&p->exp);
                     SetAlternateLex(nullptr);
-                    if (p->tp->type != BasicType::void_)
-                        if (p->tp)
-                        {
-                            (*lptr)->push_back(p);
-                        }
+                    if (p->tp && p->tp->type != BasicType::void_)
+                        (*lptr)->push_back(p);
                 }
             }
             PopPackIndex();
@@ -862,14 +859,9 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
                     lex = getsym();
                     if (MATCHKW(lex, Keyword::closepa_))
                     {
-                        lex = getsym();
                         mi->init = nullptr;
                         InsertInitializer(&mi->init, nullptr, nullptr, mi->sp->sb->offset, false);
                         done = true;
-                    }
-                    else
-                    {
-                        lex = backupsym();
                     }
                 }
                 if (!done)

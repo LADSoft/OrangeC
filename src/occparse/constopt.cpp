@@ -2026,7 +2026,9 @@ int opt0(EXPRESSION** node)
                                 default:
                                     break;
                             }
+                        break;
                     }
+                    break;
                     default:
                         rv |= opt0(&(ep->right));
                         break;
@@ -3158,6 +3160,8 @@ int fold_const(EXPRESSION* node)
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
             rv |= fold_const(node->right);
+            rv |= fold_const(node->left);
+            break;
         case ExpressionNode::blockclear_:
         case ExpressionNode::argnopush_:
         case ExpressionNode::not__lvalue_:
@@ -3254,6 +3258,7 @@ int fold_const(EXPRESSION* node)
             if (its != itse && (*its)->type == StatementNode::block_)
             {
                 its = (*its)->lower->begin();
+                itse = (*its)->lower->end();
                 while ((*its)->type == StatementNode::varstart_)
                     ++its;
                 auto its1 = its;
@@ -3375,6 +3380,8 @@ int typedconsts(EXPRESSION* node1)
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
             rv |= typedconsts(node1->right);
+            rv |= typedconsts(node1->left);
+            break;
         case ExpressionNode::trapcall_:
         case ExpressionNode::shiftby_:
         case ExpressionNode::substack_:
@@ -3639,7 +3646,6 @@ int typedconsts(EXPRESSION* node1)
                 node1->left = nullptr;
             }
             break;
-            /*#ifdef XXXXX */
         case ExpressionNode::x_f_:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
@@ -3890,7 +3896,7 @@ void RemoveSizeofOperators(EXPRESSION* constant)
         RemoveSizeofOperators(constant->left);
     if (constant->right)
         RemoveSizeofOperators(constant->right);
-    if (constant->type == ExpressionNode::sizeof_)
+    if (constant->type == ExpressionNode::sizeof_ && constant->left)
     {
         Type* tp = constant->left->v.tp;
         constant->type = ExpressionNode::c_ui_;

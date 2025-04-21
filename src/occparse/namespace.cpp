@@ -186,7 +186,7 @@ static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::li
             }
         }
     }
-    gather = rv;
+    gather = std::move(rv);
 }
 static std::list<SYMBOL*> namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified,
                                                   bool tagsOnly, bool allowUsing)

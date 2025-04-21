@@ -67,10 +67,10 @@ void abspath(char (&name)[n])
     }
     else if (strstr(name, "..\\"))
     {
+        projname[0] = 0;
         _getcwd(projname, 256);
-        //   p = strrchr(projname,'\\') ;
         p = projname + strlen(projname);
-        if (!p)
+        if (p == projname)
             return;
         p--;
         char* nname = name;

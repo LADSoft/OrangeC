@@ -1090,7 +1090,7 @@ int dumpInit(SYMBOL* sym, Initializer* init)
                 }
                 if (i < words)
                 {
-                    auto fill = tp->type == BasicType::bitint_ && (src[-1] & 0x80000000) ? 0xff : 0;
+                    auto fill = tp->type == BasicType::bitint_ && (src[-1] & 0x80) ? 0xff : 0;
                     for (; i < words; i++)
                     {
                         Optimizer::genbyte(fill);
@@ -1531,18 +1531,22 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
             long long val;
             if (isfloatconst(exp))
             {
+                val = (long long)exp->v.f;
+                FPF max;
+                FPF min;
                 if (dest->IsInt())
                 {
-                    val = (long long)exp->v.f;
                     if (dest->IsUnsigned())
                     {
-                        unsigned long long val2 = (unsigned long long)val;
-                        err = val2 < 0 || val2 > ULLONG_MAX;
+                        max = ULLONG_MAX;
+                        min = 0;
                     }
                     else
                     {
-                        err = val < LLONG_MIN || val > LLONG_MAX;
+                        max = LLONG_MAX;
+                        min = LLONG_MIN;
                     }
+                    err = *exp->v.f > max || *exp->v.f < min;
                 }
                 else
                 {
@@ -1552,6 +1556,8 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
                     switch (dest->type)
                     {
                         case BasicType::float_:
+                            max = LLONG_MAX;
+                            min = LLONG_MIN;
                             err = aa < FLT_MIN || aa > FLT_MAX;
                             break;
                         case BasicType::double_:
@@ -1560,14 +1566,17 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
                         default:
                             if (dest->IsUnsigned())
                             {
-                                err = aa < 0 || aa > (double)ULLONG_MAX;
+                                max = ULLONG_MAX;
+                                min = 0;
                             }
                             else
                             {
-                                err = aa < (double)LLONG_MIN || aa > (double)LLONG_MAX;
+                                max = LLONG_MAX;
+                                min = LLONG_MIN;
                             }
                             break;
                     }
+                    err = *exp->v.f > max || *exp->v.f < min;
                 }
             }
             else
@@ -1724,6 +1733,7 @@ static LexList* initialize_string(LexList* lex, SYMBOL* funcsp, Type** rtype, EX
             break;
         case LexType::l_msilstr_:
             *rtype = &std__string;
+            break;
         case LexType::l_ustr_:
             *rtype = &stdchar16tptr;
             break;
@@ -3392,7 +3402,7 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                                                 if (exp1->left->v.func->sp->sb->constexpression)
                                                 {
                                                     auto xx = relptr(exp1->left->v.func->returnEXP, offs);
-                                                    if (xx->type == ExpressionNode::auto_ && xx->v.sp->sb->anonymous)
+                                                    if (xx && xx->type == ExpressionNode::auto_ && xx->v.sp->sb->anonymous)
                                                         xx->v.sp->sb->constexpression = true;
                                                 }
                                                 constructed = true;
@@ -4063,12 +4073,6 @@ static LexList* initialize_auto(LexList* lex, SYMBOL* funcsp, int offset, Storag
                 InsertInitializer(&dest, sym->tp, expl, offset, true);
                 insertDynamicDestructor(sym, dest);
             }
-            else if (dest)
-            {
-                CallDestructor(sym->tp->BaseType()->sp, nullptr, &expl, nullptr, true, false, false, true);
-                InsertInitializer(&dest, sym->tp, expl, offset, true);
-                sym->sb->dest = dest;
-            }
         }
         else
         {
@@ -4535,7 +4539,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     {
         if (tp->IsStructured())
             tp = tp->BaseType()->sp->tp;
-        int sz = sym->tp->IsArray() ? sym->tp->size / tp->size : -1;
+        int sz = sym->tp->IsArray() && tp->size ? sym->tp->size / tp->size : -1;
         tp->InstantiateDeferred();
         if (tp->IsStructured())
         {

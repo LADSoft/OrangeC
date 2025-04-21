@@ -623,11 +623,12 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
         case '?':
             return '?';
         case 'U':
-            bytes = 4;
         case 'u':
+        case 'x': {
             if (i == 'u')
                 bytes = 2;
-        case 'x': {
+            else if (i == 'U')
+                bytes = 4;
             int n = 0;
             while (isxdigit(*(*source)))
             {
@@ -699,6 +700,7 @@ int getChar(const unsigned char** source, LexType* tp)
     if (*p == '\'')
     {
         int i;
+        unsigned cache;
         do
             p++;
         while (*p == MacroStates::MACRO_PLACEHOLDER);
@@ -710,7 +712,11 @@ int getChar(const unsigned char** source, LexType* tp)
         if (i == INT_MIN)
         {
             error(ERR_INVALID_CHAR_CONSTANT);
-            i = '0';
+            cache = '0';
+        }
+        else
+        {
+            cache = i & 0xff;
         }
         if (*p != '\'')
         {
@@ -721,31 +727,43 @@ int getChar(const unsigned char** source, LexType* tp)
             else
             {
                 int j;
-                j = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : 2, &p);
+                j = getsch(v == LexType::l_wchr_ ? 4 : 2, &p);
                 if (j == INT_MIN)
                 {
                     error(ERR_INVALID_CHAR_CONSTANT);
                     j = '0';
                 }
-                i = (i << 8) + j;
+                else
+                {
+                    cache = j & 0xff;
+                }
+                cache = (cache << 8) + j;
                 if (*p != '\'')
                 {
-                    j = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : 2, &p);
+                    j = getsch(v == LexType::l_wchr_ ? 4 : 2, &p);
                     if (j == INT_MIN)
                     {
                         error(ERR_INVALID_CHAR_CONSTANT);
                         j = '0';
                     }
-                    i = (i << 8) + j;
+                    else
+                    {
+                        cache = j & 0xff;
+                    }
+                    cache = (cache << 8) + j;
                     if (*p != '\'')
                     {
-                        j = getsch(v == LexType::l_Uchr_ ? 8 : v == LexType::l_wchr_ || v == LexType::l_uchr_ ? 4 : 2, &p);
+                        j = getsch(v == LexType::l_wchr_ ? 4 : 2, &p);
                         if (j == INT_MIN)
                         {
                             error(ERR_INVALID_CHAR_CONSTANT);
                             j = '0';
                         }
-                        i = (i << 8) + j;
+                        else
+                        {
+                            cache = j & 0xff;
+                        }
+                        cache = (cache << 8) + j;
                         if (*p != '\'')
                         {
                             error(ERR_UNTERM_CHAR_CONSTANT);
@@ -772,7 +790,7 @@ int getChar(const unsigned char** source, LexType* tp)
             while (*p == MacroStates::MACRO_PLACEHOLDER);
         *tp = v;
         *source = p;
-        return i;
+        return (int)cache;
     }
     return INT_MIN;
 }
@@ -843,7 +861,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
         {
             // fixme utf8 raw strings...
             char preamble[256];
-            int pcount = 0, qcount;
+            int pcount = 0, qcount = 0;
             LCHAR* qpos = 0;
             int lineno = preProcessor->GetErrLineNo();
             unsigned char st[2];
@@ -1514,7 +1532,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
                         if ((unsigned long long)*ival > ULONG_MAX)
                         {
                             lastst = LexType::ll_;
-                            if (radix != 10 || *ival > LLONG_MAX || *ival < LLONG_MIN)
+                            if (radix != 10 || (unsigned long long)*ival > LLONG_MAX || *ival < LLONG_MIN)
                             {
                                 lastst = LexType::ull_;
                             }
@@ -1716,10 +1734,7 @@ void CompilePragma(const unsigned char** linePointer)
     {
         err = Keyword::openpa_;
     }
-    if (err != Keyword::none_)
-        needkw(nullptr, (Keyword)err);
-    else
-        error(ERR_NEEDSTRING);
+    needkw(nullptr, (Keyword)err);
 }
 void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std::pair<int, int>> positions)
 {
@@ -1811,7 +1826,7 @@ std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, LexLis
     if (rv.size())
     {
         auto rva = stmtListFactory.CreateList();
-        *rva = rv;
+        *rva = std::move(rv);
         return rva;
     }
     return nullptr;
@@ -2269,6 +2284,6 @@ long long ParseExpression(std::string& line)
     SetAlternateParse(false, "");
     context = oldContext;
     FreeContext(newContext);
-    return exp->v.i;
+    return exp ? exp->v.i : 0;
 }
 }  // namespace Parser

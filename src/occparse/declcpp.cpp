@@ -284,9 +284,12 @@ int classRefCount(SYMBOL* base, SYMBOL* derived)
 
     if (base && base->sb && base->sb->mainsym)
         base = base->sb->mainsym;
-    if (derived && derived->sb && derived->sb->mainsym)
-        derived = derived->sb->mainsym;
-    internalClassRefCount(base, derived, &vcount, &ccount, false);
+    if (derived)
+    {
+        if (derived->sb && derived->sb->mainsym)
+            derived = derived->sb->mainsym;
+        internalClassRefCount(base, derived, &vcount, &ccount, false);
+    }
     if (vcount)
         ccount++;
     return ccount;
@@ -846,7 +849,7 @@ void deferredCompileOne(SYMBOL* cur)
         sg.FunctionBody();
         SetAlternateLex(nullptr);
         dontRegisterTemplate--;
-        lambdas = oldLambdas;
+        lambdas = std::move(oldLambdas);
         openStructs = oldOpen;
         structLevel = oldStructLevel;
         enclosingDeclarations.Release();
@@ -966,7 +969,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                         tp2 = tp2->BaseType()->btp;
                                     if (!tp2->IsStructured())
                                     {
-                                        lex = initialize(lex, theCurrentFunc, sp2, StorageClass::member_, false, false, false, 0);
+                                        initialize(lex, theCurrentFunc, sp2, StorageClass::member_, false, false, false, 0);
                                         sp2->sb->deferredCompile = nullptr;
                                     }
                                     SetAlternateLex(nullptr);
@@ -1966,6 +1969,8 @@ LexList* handleStaticAssert(LexList* lex)
             if (lex->data->type != LexType::l_astr_)
             {
                 error(ERR_NEEDSTRING);
+                buf[0] = 0;
+                v = true; // don't generate the static assert
             }
             else
             {
@@ -2441,7 +2446,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                     {
                         if (!definingTemplate)
                         {
-                            if (sp->sb->storage_class == StorageClass::overloads_)
+                            if (sp->sb && sp->sb->storage_class == StorageClass::overloads_)
                             {
                                 for (auto sp2 : *sp->tp->syms)
                                 {
@@ -2882,7 +2887,7 @@ void ParseOut___attribute__(LexList** lex, SYMBOL* funcsp)
                                 needkw(lex, Keyword::openpa_);
                                 while (*lex && !MATCHKW(*lex, Keyword::closepa_))
                                     *lex = getsym();
-                                if (lex)
+                                if (*lex)
                                     *lex = getsym();
                                 break;
                             case 28:  // internal_linkage
@@ -3762,7 +3767,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                         }
                     }
                     int i = 0;
-                    for (auto id : identifiers)
+                    for (const auto& id : identifiers)
                     {
                         auto sym = makeID(StorageClass::alias_, btp, nullptr, litlate(id.c_str()));
                         InsertSymbol(sym, storage_class, linkage, false);
@@ -3879,7 +3884,7 @@ LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage
                     }
 
                     auto it = one->tp->syms->begin();
-                    for (auto id : identifiers)
+                    for (const auto& id : identifiers)
                     {
                         while (!ismember(*it))
                             ++it;

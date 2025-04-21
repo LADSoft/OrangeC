@@ -176,26 +176,17 @@ Optimizer::IMODE* LookupExpression(Optimizer::i_ops op, int size, Optimizer::IMO
         if (!left->offset->unionoffset && (!right || !right->offset->unionoffset))
             if (!left->bits && (!right || !right->bits))
                 name_value_hash[Optimizer::intermed_tail] = ap;
-        if (left->offset)
-            if (right && right->offset)
-            {
-                vol = left->vol | right->vol;
-                rest = left->restricted & right->restricted;
-                pragmas = left->offset->pragmas & right->offset->pragmas;
-            }
-            else
-            {
-                vol = left->vol;
-                rest = left->restricted;
-            }
-        else if (right && right->offset)
+        if (right && right->offset)
         {
-            vol = right->vol;
-            rest = right->restricted;
+            vol = left->vol | right->vol;
+            rest = left->restricted & right->restricted;
+            pragmas = left->offset->pragmas & right->offset->pragmas;
         }
         else
         {
-            vol = rest = 0;
+            vol = left->vol;
+            rest = left->restricted;
+            pragmas = left->offset->pragmas;
         }
         ap->vol = vol;
         ap->restricted = rest;
@@ -1173,9 +1164,7 @@ Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
                 ChooseMultiplier(d >> pre, N - pre, &m, &post, &ld);
             }
 
-            if (d == 1)
-                return num;
-            else if (d == 1 << l)
+            if (d == 1 << l)
             {
                 if (mod)
                 {
@@ -2344,7 +2333,7 @@ static int gen_parm(Argument* a, SYMBOL* funcsp)
             if (!ret || ret->type != ExpressionNode::auto_ || !ret->v.sp->sb->stackblock)
             {
                 Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
-                Optimizer::intermed_tail->valist = a->valist ? (a->exp && a->exp->type == ExpressionNode::l_p_) : 0;
+                Optimizer::intermed_tail->valist = a->valist ? a->exp->type == ExpressionNode::l_p_ : 0;
             }
             rv = a->tp->size;
         }
@@ -4221,10 +4210,6 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             rv = ap1;
         }
         break;
-            gen_void_(node->left, funcsp);
-            ap1 = Optimizer::make_immed(size, 0);
-            rv = ap1;
-            break;
         case ExpressionNode::constexprconstructor_:
             ap1 = gen_expr(funcsp, node->left, flags, size);
             rv = ap1;
@@ -4416,10 +4401,10 @@ int natural_size(EXPRESSION* node)
         case ExpressionNode::stmt_:
             return natural_size(node->left);
         case ExpressionNode::funcret_:
-            while (node->type == ExpressionNode::funcret_)
-                node = node->left;
         case ExpressionNode::callsite_:
         case ExpressionNode::intcall_:
+            while (node->type == ExpressionNode::funcret_)
+                node = node->left;
             if (!node->v.func->functp || !node->v.func->functp->IsFunction())
                 return 0;
             if (node->v.func->functp->BaseType()->btp->IsStructured() ||

@@ -304,6 +304,9 @@ static EXPRESSION* inasm_ident(void)
                 case StorageClass::auto_:
                 case StorageClass::register_:
                     sym->sb->allocate = true;
+                    node = MakeExpression(ExpressionNode::auto_, sym);
+                    sym->sb->inasm = true;
+                    break;
                 case StorageClass::parameter_:
                     node = MakeExpression(ExpressionNode::auto_, sym);
                     sym->sb->inasm = true;
@@ -570,62 +573,66 @@ static AMODE* inasm_mem(void)
             switch (lex->data->type)
             {
                 case LexType::l_asmRegister_:
-                    if (subtract)
+                    // well regimage != null but...
+                    if (regimage)
                     {
-                        inasm_err(ERR_INVALID_INDEX_MODE);
-                        return 0;
-                    }
-                    if (regimage->regtype == am_seg)
-                    {
-                        if (seg)
+                        if (subtract)
                         {
                             inasm_err(ERR_INVALID_INDEX_MODE);
                             return 0;
                         }
-                        seg = rg;
-                        inasm_getsym();
-                        if (!MATCHKW(lex, Keyword::colon_))
+                        if (regimage->regtype == am_seg)
                         {
-                            inasm_err(ERR_INVALID_INDEX_MODE);
-                            return 0;
-                        }
-                        inasm_getsym();
-                        continue;
-                    }
-                    if (regimage->regtype != am_dreg || regimage->size != ISZ_UINT)
-                    {
-                        inasm_err(ERR_INVALID_INDEX_MODE);
-                        return 0;
-                    }
-                    if (reg1 >= 0)
-                    {
-                        if (reg2 >= 0)
-                        {
-                            inasm_err(ERR_INVALID_INDEX_MODE);
-                            return 0;
-                        }
-                        reg2 = rg;
-                        inasm_getsym();
-                        getscale(&scale);
-                        if (scale == -1)
-                            return 0;
-                    }
-                    else
-                    {
-                        inasm_getsym();
-                        if (getscale(&scale))
-                        {
-                            if (scale == -1)
+                            if (seg)
+                            {
+                                inasm_err(ERR_INVALID_INDEX_MODE);
                                 return 0;
+                            }
+                            seg = rg;
+                            inasm_getsym();
+                            if (!MATCHKW(lex, Keyword::colon_))
+                            {
+                                inasm_err(ERR_INVALID_INDEX_MODE);
+                                return 0;
+                            }
+                            inasm_getsym();
+                            continue;
+                        }
+                        if (regimage->regtype != am_dreg || regimage->size != ISZ_UINT)
+                        {
+                            inasm_err(ERR_INVALID_INDEX_MODE);
+                            return 0;
+                        }
+                        if (reg1 >= 0)
+                        {
                             if (reg2 >= 0)
                             {
-                                reg1 = reg2;
+                                inasm_err(ERR_INVALID_INDEX_MODE);
+                                return 0;
                             }
                             reg2 = rg;
+                            inasm_getsym();
+                            getscale(&scale);
+                            if (scale == -1)
+                                return 0;
                         }
                         else
                         {
-                            reg1 = rg;
+                            inasm_getsym();
+                            if (getscale(&scale))
+                            {
+                                if (scale == -1)
+                                    return 0;
+                                if (reg2 >= 0)
+                                {
+                                    reg1 = reg2;
+                                }
+                                reg2 = rg;
+                            }
+                            else
+                            {
+                                reg1 = rg;
+                            }
                         }
                     }
                     break;
@@ -665,7 +672,6 @@ static AMODE* inasm_mem(void)
                     }
                     node = inasm_ident();
                     gotident = true;
-                    inasm_structsize();
                     switch (inasm_enterauto(node, &reg1, &reg2))
                     {
                         case 0:

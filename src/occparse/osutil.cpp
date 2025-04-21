@@ -1010,7 +1010,10 @@ void InsertOneFile(const char* filename, char* path, int drive)
         (*r) = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
         s = (*r);
         if (!s)
+        {
+            free(newbuffer);
             return;
+        }
         s->next = 0;
         s->data = newbuffer;
     }

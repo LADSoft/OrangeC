@@ -1346,6 +1346,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
     Type* castType = nullptr;
     LexList* placeholder = lex;
     char buf[512];
+    buf[0] = 0;
     int ov = 0;
     bool hasTemplate = false;
     bool namespaceOnly = false;

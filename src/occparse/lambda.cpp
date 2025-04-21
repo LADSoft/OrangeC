@@ -921,7 +921,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                 {
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
-                e_cm localMode = cmNone;
+                e_cm localMode;
                 if (MATCHKW(lex, Keyword::and_))
                 {
                     localMode = cmRef;
@@ -933,23 +933,16 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                 }
                 if (ISID(lex))
                 {
-                    if (localMode != cmNone)
+                    if (self->captureMode == localMode)
                     {
-                        if (self->captureMode == localMode)
+                        if (localMode != cmRef)
                         {
-                            if (localMode != cmRef)
-                            {
-                                errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, lex->data->value.s.a);
-                            }
-                            else
-                            {
-                                errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, lex->data->value.s.a);
-                            }
+                            errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, lex->data->value.s.a);
                         }
-                    }
-                    else
-                    {
-                        localMode = self->captureMode;
+                        else
+                        {
+                            errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, lex->data->value.s.a);
+                        }
                     }
                     LexList* idlex = lex;
                     SYMBOL* sp;

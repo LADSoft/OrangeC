@@ -114,7 +114,7 @@ void DumpErrorNameMap()
 void DumpErrorNumToHelpMap()
 {
     printf("Error number to help map:\n");
-    for (auto a : error_help_map)
+    for (const auto& a : error_help_map)
     {
         printf("%d: %s\n", a.first, a.second.c_str());
     }
@@ -123,7 +123,7 @@ void DumpErrorNumToHelpMap()
 void DumpErrorNameToHelpMap()
 {
     printf("Error name to help map:\n");
-    for (auto a : error_name_help_map)
+    for (const auto& a : error_name_help_map)
     {
         printf("%s: %s\n", a.first, a.second.c_str());
     }
@@ -193,8 +193,11 @@ void WarningAsError(const char* str)
 {
     if (ValidateWarning(str))
     {
-        int val = error_name_map.find(str)->second;
-        Warning::Instance()->SetFlag(val, Warning::AsError);
+        auto val = error_name_map.find(str);
+        if (val != error_name_map.end())
+        {
+            Warning::Instance()->SetFlag(val->second, Warning::AsError);
+        }
     }
 }
 void EnableWarning(int num)
@@ -382,6 +385,7 @@ bool IsNothrowError(int err)
 }
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
+    const int maxErrors = sizeof(errors) / sizeof(errors[0]);
     if (prm_cppfile.GetValue())
         return false;
     if (inNothrowHandler && IsNothrowError(err))
@@ -434,13 +438,13 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (!(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && currentErrorFile[0] && currentErrorLine &&
+    if (err < maxErrors && !(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && currentErrorFile[0] && currentErrorLine &&
         !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) && preProcessor->GetRealLineNo() == currentErrorLine)
     {
         disabledNote = true;
         return false;
     }
-    if (err >= sizeof(errors) / sizeof(errors[0]))
+    if (err >= maxErrors)
     {
         Optimizer::my_sprintf(buf, "Error %d", err);
     }
@@ -448,7 +452,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         vsprintf(buf, errors[err].name, args);
     }
-    if (errors[err].level & CE_NOTE)
+    if (err < maxErrors && (errors[err].level & CE_NOTE))
     {
         if (!disabledNote)
         {
@@ -458,7 +462,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
                 fprintf(errFile, "note:   ");
         }
     }
-    else if (IsReturnErr(err) || (errors[err].level & CE_ERROR) ||
+    else if (err >= maxErrors || IsReturnErr(err) || (errors[err].level & CE_ERROR) ||
              (Optimizer::cparams.prm_ansi && (errors[err].level & CE_ANSIERROR)) ||
              (Optimizer::cparams.prm_cplusplus && (errors[err].level & CE_CPLUSPLUSERROR)))
     {
@@ -513,7 +517,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         error(ERR_TOO_MANY_ERRORS);
         exit(IsCompiler() ? 1 : 0);
     }
-    if (!(errors[err].level & CE_NOTE))
+    if (err >= maxErrors || !(errors[err].level & CE_NOTE))
     {
         DumpInstantiations();
     }
@@ -747,11 +751,11 @@ void errorConversionOrCast(bool convert, Type* tp1, Type* tp2)
 }
 void errorabstract(int error, SYMBOL* sp)
 {
-    SYMBOL* sp1;
-    errorsym(error, sp);
-    sp1 = calculateStructAbstractness(sp, sp);
     if (sp)
     {
+        SYMBOL* sp1;
+        errorsym(error, sp);
+        sp1 = calculateStructAbstractness(sp, sp);
         errorsym2(ERR_ABSTRACT_BECAUSE, sp, sp1);
     }
 }
@@ -1216,7 +1220,7 @@ static void declError(VLASHIM* gotoShim, VLASHIM* errShim)
 }
 static bool scanGoto(VLASHIM* shim, VLASHIM* gotoshim, VLASHIM* matchshim, int* currentLevel)
 {
-    if (shim == matchshim || shim->level < matchshim->level)
+    if (shim && (shim == matchshim || shim->level < matchshim->level))
         return true;
     if (shim && !shim->mark && shim != gotoshim)
     {
@@ -1889,6 +1893,8 @@ static int checkDefaultExpression(EXPRESSION* node)
         case ExpressionNode::mp_compare_:
             /*		case ExpressionNode::array_: */
             rv |= checkDefaultExpression(node->right);
+            rv |= checkDefaultExpression(node->left);
+            break;
         case ExpressionNode::mp_as_bool_:
         case ExpressionNode::blockclear_:
         case ExpressionNode::argnopush_:

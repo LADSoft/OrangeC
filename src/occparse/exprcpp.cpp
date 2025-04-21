@@ -138,7 +138,6 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
             }
             if (stk.size() && stk.front().first != stk.front().second)
             {
-                int i = 0;
                 for (auto it = stk.begin(); it != stk.end(); ++it)
                 {
                     auto entry = *(*it).first;
@@ -146,16 +145,8 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
                     {
                         int offset;
                         std::list<VBASEENTRY*>::iterator itl, itle = itl, itx;
-                        if (i == 0)
-                        {
-                            itl = derived->sb->vbaseEntries->begin();
-                            itle = derived->sb->vbaseEntries->end();
-                        }
-                        else
-                        {
-                            itl = entry->cls->sb->vbaseEntries->begin();
-                            itle = entry->cls->sb->vbaseEntries->end();
-                        }
+                        itl = derived->sb->vbaseEntries->begin();
+                        itle = derived->sb->vbaseEntries->end();
                         for (itx = itl; itx != itl && (*itx)->cls != entry->cls; ++itx)
                             ;
                         offset = (*itx)->pointerOffset;
@@ -1252,7 +1243,7 @@ bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* 
         {
             if (!checkconst || tpn->IsConst() || !tpo->IsConst())
             {
-                if (tpn->IsArray())
+                 if (tpn->IsArray())
                 {
                     //conversion to reference to array....
                     EXPRESSION* exp1 = *exp;
@@ -1391,7 +1382,7 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
                 }
                 *exp = MakeExpression(funcparams);
                 sym = namespacesearch("std", globalNameSpace, false, false);
-                if (sym->sb->storage_class == StorageClass::namespace_)
+                if (sym && sym->sb->storage_class == StorageClass::namespace_)
                 {
                     sym = namespacesearch("type_info", sym->sb->nameSpaceValues, true, false);
                     if (sym)
@@ -1469,34 +1460,36 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
 }
 bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, Type* tp1, EXPRESSION* exp1,
                           std::list<Argument*>* args, int flags)
-{
-    SYMBOL *s1 = nullptr, *s2 = nullptr, *s3, *s4 = nullptr, *s5 = nullptr;
-    SYMLIST **hrd, *hrs;
-    CallSite* funcparams;
-    const char* name = overloadNameTab[(int)kw - (int)Keyword::new_ + CI_NEW];
-    Type* tpin = *tp;
-    Type* tpx;
-    if (!*tp)
-        return false;
-    Type* tpClean = *tp;
-    if (tpClean->IsRef())
-        tpClean = tpClean->BaseType()->btp;
-    Type* tp1Clean = tp1;
-    if (tp1Clean && tp1Clean->IsRef())
-        tp1Clean = tp1Clean->BaseType()->btp;
-    if (tpClean && tpClean->scoped && tpClean->BaseType()->type != BasicType::enum_)
-        tpClean = tpClean->btp;
-    if (tp1Clean && tp1Clean->scoped && tp1Clean->BaseType()->type != BasicType::enum_)
-        tp1Clean = tp1Clean->btp;
-    if (!tpClean->IsStructured() && tpClean->BaseType()->type != BasicType::enum_ &&
-        ((!tp1Clean && !args) || (tp1Clean && !tp1Clean->IsStructured() && tp1Clean->BaseType()->type != BasicType::enum_)))
-        return false;
-
-    (*tp)->InstantiateDeferred();
-    // first find some occurrance either in the locals or in the extant global namespace
-    // but only if it is binary or unary...
-    switch (cls)
+{ 
+    if ((int)kw >= (int)Keyword::new_ && (int)kw <= (int)Keyword::unary_and_)
     {
+        SYMBOL* s1 = nullptr, * s2 = nullptr, * s3, * s4 = nullptr, * s5 = nullptr;
+        SYMLIST** hrd, * hrs;
+        CallSite* funcparams;
+        const char* name = overloadNameTab[(int)kw - (int)Keyword::new_ + CI_NEW];
+        Type* tpin = *tp;
+        Type* tpx;
+        if (!*tp)
+            return false;
+        Type* tpClean = *tp;
+        if (tpClean->IsRef())
+            tpClean = tpClean->BaseType()->btp;
+        Type* tp1Clean = tp1;
+        if (tp1Clean && tp1Clean->IsRef())
+            tp1Clean = tp1Clean->BaseType()->btp;
+        if (tpClean && tpClean->scoped && tpClean->BaseType()->type != BasicType::enum_)
+            tpClean = tpClean->btp;
+        if (tp1Clean && tp1Clean->scoped && tp1Clean->BaseType()->type != BasicType::enum_)
+            tp1Clean = tp1Clean->btp;
+        if (!tpClean->IsStructured() && tpClean->BaseType()->type != BasicType::enum_ &&
+            ((!tp1Clean && !args) || (tp1Clean && !tp1Clean->IsStructured() && tp1Clean->BaseType()->type != BasicType::enum_)))
+            return false;
+
+        (*tp)->InstantiateDeferred();
+        // first find some occurrance either in the locals or in the extant global namespace
+        // but only if it is binary or unary...
+        switch (cls)
+        {
         case ovcl_unary_numeric:
         case ovcl_unary_numericptr:
         case ovcl_unary_int:
@@ -1523,139 +1516,139 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             break;
         default:
             break;
-    }
-    enclosingDeclarations.Mark();
-    // next find some occurrance in the class or struct
-    if ((*tp)->IsStructured())
-    {
-        int n;
-        enclosingDeclarations.Add((*tp)->BaseType()->sp);
-        s2 = classsearch(name, false, false, true);
-        n = PushTemplateNamespace((*tp)->BaseType()->sp);  // used for more than just templates here
-        s4 = namespacesearch(name, globalNameSpace, false, false);
-        PopTemplateNamespace(n);
-    }
-    else
-    {
-        if (tpClean->BaseType()->type == BasicType::enum_ && tpClean->sp)
+        }
+        enclosingDeclarations.Mark();
+        // next find some occurrance in the class or struct
+        if ((*tp)->IsStructured())
         {
-            std::list<SYMBOL*> aa{tpClean->sp->sb->parentNameSpace};
-            tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
-            int n = PushTemplateNamespace(tpClean->BaseType()->sp);  // used for more than just templates here
+            int n;
+            enclosingDeclarations.Add((*tp)->BaseType()->sp);
+            s2 = classsearch(name, false, false, true);
+            n = PushTemplateNamespace((*tp)->BaseType()->sp);  // used for more than just templates here
             s4 = namespacesearch(name, globalNameSpace, false, false);
             PopTemplateNamespace(n);
-            tpClean->sp->sb->templateNameSpace = nullptr;
         }
-    }
-    if (tp1)
-    {
-        if (tp1->IsStructured())
+        else
         {
-            int n = PushTemplateNamespace(tp1->BaseType()->sp);  // used for more than just templates here
-            s5 = namespacesearch(name, globalNameSpace, false, false);
-            PopTemplateNamespace(n);
-            auto exp3 = exp1;
-            while (exp3->type == ExpressionNode::comma_)
-                exp3 = exp3->right;
-            if (exp3->type == ExpressionNode::thisref_)
+            if (tpClean->BaseType()->type == BasicType::enum_ && tpClean->sp)
             {
-                tp1 = tp1->CopyType();
-                tp1->lref = false;
-                tp1->rref = true;
+                std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
+                tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
+                int n = PushTemplateNamespace(tpClean->BaseType()->sp);  // used for more than just templates here
+                s4 = namespacesearch(name, globalNameSpace, false, false);
+                PopTemplateNamespace(n);
+                tpClean->sp->sb->templateNameSpace = nullptr;
             }
         }
-        else if (tp1->BaseType()->type == BasicType::enum_)  // enum
+        if (tp1)
         {
-            std::list<SYMBOL*> aa{tp1->BaseType()->sp->sb->parentNameSpace};
-            tp1->BaseType()->sp->sb->templateNameSpace = tp1->BaseType()->sp->sb->parentNameSpace ? &aa : nullptr;
-            int n = PushTemplateNamespace(tp1->BaseType()->sp);  // used for more than just templates here
-            s5 = namespacesearch(name, globalNameSpace, false, false);
-            PopTemplateNamespace(n);
-            tp1->BaseType()->sp->sb->templateNameSpace = nullptr;
+            if (tp1->IsStructured())
+            {
+                int n = PushTemplateNamespace(tp1->BaseType()->sp);  // used for more than just templates here
+                s5 = namespacesearch(name, globalNameSpace, false, false);
+                PopTemplateNamespace(n);
+                auto exp3 = exp1;
+                while (exp3->type == ExpressionNode::comma_)
+                    exp3 = exp3->right;
+                if (exp3->type == ExpressionNode::thisref_)
+                {
+                    tp1 = tp1->CopyType();
+                    tp1->lref = false;
+                    tp1->rref = true;
+                }
+            }
+            else if (tp1->BaseType()->type == BasicType::enum_)  // enum
+            {
+                std::list<SYMBOL*> aa{ tp1->BaseType()->sp->sb->parentNameSpace };
+                tp1->BaseType()->sp->sb->templateNameSpace = tp1->BaseType()->sp->sb->parentNameSpace ? &aa : nullptr;
+                int n = PushTemplateNamespace(tp1->BaseType()->sp);  // used for more than just templates here
+                s5 = namespacesearch(name, globalNameSpace, false, false);
+                PopTemplateNamespace(n);
+                tp1->BaseType()->sp->sb->templateNameSpace = nullptr;
+            }
         }
-    }
-    // quit if there are no matches because we will use the default...
-    if (!s1 && !s2 && !s4 && !s5)
-    {
-        enclosingDeclarations.Release();
-        return false;
-    }
-    // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = Type::MakeType(BasicType::aggregate_);
-    s3 = makeID(StorageClass::overloads_, tpx, nullptr, name);
-    tpx->sp = s3;
-    SetLinkerNames(s3, Linkage::c_);
-    tpx->syms = symbols->CreateSymbolTable();
-    auto itd = tpx->syms->begin();
-    if (s1)
-    {
-        for (auto sp : *s1->tp->syms)
+        // quit if there are no matches because we will use the default...
+        if (!s1 && !s2 && !s4 && !s5)
         {
-            itd = tpx->syms->insert(itd, sp);
-            ++itd;
+            enclosingDeclarations.Release();
+            return false;
         }
-    }
-    if (s2)
-    {
-        for (auto sp : *s2->tp->syms)
+        // finally make a shell to put all this in and add shims for any builtins we want to try
+        tpx = Type::MakeType(BasicType::aggregate_);
+        s3 = makeID(StorageClass::overloads_, tpx, nullptr, name);
+        tpx->sp = s3;
+        SetLinkerNames(s3, Linkage::c_);
+        tpx->syms = symbols->CreateSymbolTable();
+        auto itd = tpx->syms->begin();
+        if (s1)
         {
-            itd = tpx->syms->insert(itd, sp);
-            ++itd;
+            for (auto sp : *s1->tp->syms)
+            {
+                itd = tpx->syms->insert(itd, sp);
+                ++itd;
+            }
         }
-    }
-    if (s4)
-    {
-        for (auto sp : *s4->tp->syms)
+        if (s2)
         {
-            itd = tpx->syms->insert(itd, sp);
-            ++itd;
+            for (auto sp : *s2->tp->syms)
+            {
+                itd = tpx->syms->insert(itd, sp);
+                ++itd;
+            }
         }
-    }
-    if (s5)
-    {
-        for (auto sp : *s5->tp->syms)
+        if (s4)
         {
-            itd = tpx->syms->insert(itd, sp);
-            ++itd;
+            for (auto sp : *s4->tp->syms)
+            {
+                itd = tpx->syms->insert(itd, sp);
+                ++itd;
+            }
         }
-    }
-    funcparams = Allocate<CallSite>();
-    {
-        Argument *one = nullptr, *two = nullptr;
-        if (*tp)
+        if (s5)
         {
-            one = Allocate<Argument>();
-            one->exp = *exp;
-            one->tp = *tp;
+            for (auto sp : *s5->tp->syms)
+            {
+                itd = tpx->syms->insert(itd, sp);
+                ++itd;
+            }
         }
-        if (args)
+        funcparams = Allocate<CallSite>();
         {
-            Argument* one = Allocate<Argument>();
-            one->nested = args;
+            Argument* one = nullptr, * two = nullptr;
+            if (*tp)
+            {
+                one = Allocate<Argument>();
+                one->exp = *exp;
+                one->tp = *tp;
+            }
+            if (args)
+            {
+                Argument* one = Allocate<Argument>();
+                one->nested = args;
+            }
+            else if (tp1)
+            {
+                two = Allocate<Argument>();
+                two->exp = exp1;
+                two->tp = tp1;
+            }
+            else if (cls == ovcl_unary_postfix)
+            {
+                two = Allocate<Argument>();
+                two->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                two->tp = &stdint;
+            }
+            if (one || two)
+            {
+                funcparams->arguments = argumentListFactory.CreateList();
+                if (one)
+                    funcparams->arguments->push_back(one);
+                if (two)
+                    funcparams->arguments->push_back(two);
+            }
         }
-        else if (tp1)
+        switch (cls)
         {
-            two = Allocate<Argument>();
-            two->exp = exp1;
-            two->tp = tp1;
-        }
-        else if (cls == ovcl_unary_postfix)
-        {
-            two = Allocate<Argument>();
-            two->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-            two->tp = &stdint;
-        }
-        if (one || two)
-        {
-            funcparams->arguments = argumentListFactory.CreateList();
-            if (one)
-                funcparams->arguments->push_back(one);
-            if (two)
-                funcparams->arguments->push_back(two);
-        }
-    }
-    switch (cls)
-    {
         case ovcl_unary_any:
         case ovcl_unary_prefix:
         case ovcl_unary_numericptr:
@@ -1684,19 +1677,19 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             break;
         case ovcl_comma:
             break;
-    }
-    funcparams->ascall = true;
-    Type* ctype = *tp;
-    s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, flags);
-    if (s3)
-    {
-        if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
-            errorsym(ERR_CANNOT_ACCESS, s3);
-        // if both parameters are non-struct, we do a check that enums map to enums
-        // if they don't we want to select the builtin function
-        // which we do by returning false...
-        switch (cls)
+        }
+        funcparams->ascall = true;
+        Type* ctype = *tp;
+        s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, flags);
+        if (s3)
         {
+            if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
+                errorsym(ERR_CANNOT_ACCESS, s3);
+            // if both parameters are non-struct, we do a check that enums map to enums
+            // if they don't we want to select the builtin function
+            // which we do by returning false...
+            switch (cls)
+            {
             case ovcl_unary_any:
             case ovcl_unary_prefix:
             case ovcl_unary_numeric:
@@ -1721,32 +1714,33 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
                         arg2 = arg2->BaseType()->btp;
                     if (((tpClean->BaseType()->type == BasicType::enum_) != (arg1->BaseType()->type == BasicType::enum_)) ||
                         (tp1Clean &&
-                         ((tp1Clean->BaseType()->type == BasicType::enum_) != (arg2->BaseType()->type == BasicType::enum_))))
+                            ((tp1Clean->BaseType()->type == BasicType::enum_) != (arg2->BaseType()->type == BasicType::enum_))))
                         return false;
                     break;
                 }
+            }
+            *tp = ctype;
+            if (ismember(s3))
+            {
+                funcparams->arguments->pop_front();
+                funcparams->thistp = Type::MakeType(BasicType::pointer_, tpin);
+                funcparams->thisptr = *exp;
+            }
+            s3->sb->throughClass = s3->sb->parentClass != nullptr;
+            funcparams->sp = s3;
+            funcparams->functp = s3->tp;
+            *exp = MakeExpression(funcparams);
+            *tp = s3->tp;
+            expression_arguments(nullptr, funcsp, tp, exp, 0);
+            if (s3->sb->defaulted && kw == Keyword::assign_)
+                createAssignment(s3->sb->parentClass, s3);
+            enclosingDeclarations.Release();
+            CheckCalledException(s3, funcparams->thisptr);
+            StatementGenerator::DestructorsForArguments(funcparams->arguments);
+            return true;
         }
-        *tp = ctype;
-        if (ismember(s3))
-        {
-            funcparams->arguments->pop_front();
-            funcparams->thistp = Type::MakeType(BasicType::pointer_, tpin);
-            funcparams->thisptr = *exp;
-        }
-        s3->sb->throughClass = s3->sb->parentClass != nullptr;
-        funcparams->sp = s3;
-        funcparams->functp = s3->tp;
-        *exp = MakeExpression(funcparams);
-        *tp = s3->tp;
-        expression_arguments(nullptr, funcsp, tp, exp, 0);
-        if (s3->sb->defaulted && kw == Keyword::assign_)
-            createAssignment(s3->sb->parentClass, s3);
         enclosingDeclarations.Release();
-        CheckCalledException(s3, funcparams->thisptr);
-        StatementGenerator::DestructorsForArguments(funcparams->arguments);
-        return true;
     }
-    enclosingDeclarations.Release();
     return false;
 }
 LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags)

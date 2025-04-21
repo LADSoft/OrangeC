@@ -77,10 +77,11 @@ void displayLexeme(LexList* lex)
             fputc('\n', stdout);
             break;
         case LexType::l_achr_:
-            printf("ascii char: ");
         case LexType::l_wchr_:
             if (lex->data->type == LexType::l_wchr_)
                 printf("wide char: ");
+            else
+                printf("ascii char: ");
             fputc((int)lex->data->value.i, stdout);
             break;
         case LexType::l_id_:

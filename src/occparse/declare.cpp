@@ -173,8 +173,7 @@ const char* AnonymousTypeName(SYMBOL* sp, SymbolTable<SYMBOL>* table)
         if (search(table, buf) == nullptr)
             return litlate(buf);
     }
-    // should never get here...
-    return nullptr;
+    // never gets here...
 }
 SYMBOL* SymAlloc()
 {
@@ -1450,9 +1449,12 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         {
             sp = sp->tp->templateParam->second->byTemplate.val;
         }
-        if (asfriend && sp->sb && sp->sb->templateLevel)
+        if (sp->sb)
         {
-            sp = sp->sb->parentTemplate;
+            if (asfriend && sp->sb->templateLevel)
+            {
+                sp = sp->sb->parentTemplate;
+            }
         }
         // primarily for the type_info definition when building LSCRTL.DLL
         if (linkage1 != Linkage::none_ && linkage1 != sp->sb->attribs.inheritable.linkage)
@@ -2421,7 +2423,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
             }
         }
     }
-    if (!asFriend)
+    if (spo && !asFriend)
     {
         if ((spo->sb->xc && spo->sb->xc->xcDynamic) || (sp->sb->xc && sp->sb->xc->xcDynamic))
         {
@@ -3283,7 +3285,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 {
                                     if (nsv->size() > 1)
                                         nameSpaceList.front()->sb->value.i--;
-                                    nameSpaceList = oldNameSpaceList;
+                                    nameSpaceList = std::move(oldNameSpaceList);
                                     globalNameSpace = oldGlobals;
                                     oldGlobals = nullptr;
                                 }
@@ -3371,7 +3373,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                 if (nsv->size() > 1)
                                     nameSpaceList.front()->sb->value.i--;
-                                nameSpaceList = oldNameSpaceList;
+                                nameSpaceList = std::move(oldNameSpaceList);
                                 globalNameSpace = oldGlobals;
                                 oldGlobals = nullptr;
                             }
@@ -4774,7 +4776,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     {
                         if (nsv->size() > 1)
                             nameSpaceList.front()->sb->value.i--;
-                        nameSpaceList = oldNameSpaceList;
+                        nameSpaceList = std::move(oldNameSpaceList);
                         globalNameSpace = oldGlobals;
                         oldGlobals = nullptr;
                     }

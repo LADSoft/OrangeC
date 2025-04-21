@@ -210,7 +210,7 @@ static unsigned long long LoadBitInt(EXPRESSION* node)
     unsigned long long a = 0;
     for (int i = 0; i < sz && i < sizeof(a); i++)
     {
-        a |= node->v.b.value[i] << (i * 8);
+        a |= ((unsigned long long)node->v.b.value[i]) << (i * 8);
     }
     return a;
 }

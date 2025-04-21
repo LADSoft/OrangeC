@@ -131,10 +131,17 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Test(struct Parser::sym* sym)
 
 Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* e)
 {
+    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     while (e && (e->type == ExpressionNode::lvalue_ || e->type == ExpressionNode::not__lvalue_ ||
                  e->type == ExpressionNode::x_string_ || e->type == ExpressionNode::x_object_))
         e = e->left;
-    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
+    if (!e)
+    {
+        rv->sizeFromType = ISZ_UINT;
+        rv->type = Optimizer::se_ui;
+        rv->i = 0;
+        return rv;
+    }
     rv->sizeFromType = natural_size(e);
     if (e->altdata)
         rv->altData = Get((EXPRESSION*)e->altdata);

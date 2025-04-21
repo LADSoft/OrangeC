@@ -843,6 +843,10 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     }
                 }
             }
+            else
+            {
+                i = 0;
+            }
             if (fp->sp->sb->attribs.inheritable.isInline && !fp->sp->sb->noinline && i >= inlinesp_count)
             {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
@@ -1283,8 +1287,6 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
             break;
-            /*		case ExpressionNode::array_: */
-            rv = sideEffects(node->right);
         case ExpressionNode::mp_as_bool_:
         case ExpressionNode::blockclear_:
         case ExpressionNode::argnopush_:
@@ -1292,7 +1294,7 @@ static bool sideEffects(EXPRESSION* node)
         case ExpressionNode::funcret_:
         case ExpressionNode::select_:
         case ExpressionNode::constexprconstructor_:
-            rv |= sideEffects(node->left);
+            rv = sideEffects(node->left);
             break;
         case ExpressionNode::atomic_:
             rv = sideEffects(node->v.ad->flg);

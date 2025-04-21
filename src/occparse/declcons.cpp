@@ -1459,7 +1459,7 @@ void createDefaultConstructors(SYMBOL* sp)
     // no copy assignment, no move assignment, no destructor
     // and wouldn't be defined as deleted
     // declare a move constructor and assignment operator
-    if (!dest && !hasCopy(cons, false) && !hasCopy(cons, true) && !hasCopy(asgn, false) && (!asgn || !hasCopy(asgn, true)))
+    if (!dest && !hasCopy(cons, false) && !hasCopy(cons, true) && (!asgn || (!hasCopy(asgn, false) && !hasCopy(asgn, true))))
     {
         bool b = isMoveConstructorDeleted(sp);
         SYMBOL* newcons;
@@ -1638,13 +1638,16 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             {
                 for (auto mi2 : *mi)
                 {
-                    mi2->sp->tp->InstantiateDeferred();
-                    if (mi2->sp && mi2->sp->tp->IsStructured() &&
-                        (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate ||
-                         SameTemplate(mi2->sp->tp, member->tp)))
+                    if (mi2->sp)
                     {
-                        mix = mi2;
-                        break;
+                        mi2->sp->tp->InstantiateDeferred();
+                        if (mi2->sp->tp->IsStructured() &&
+                            (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate ||
+                                SameTemplate(mi2->sp->tp, member->tp)))
+                                {
+                                    mix = mi2;
+                                    break;
+                    }
                     }
                 }
             }
@@ -3007,6 +3010,7 @@ bool CallDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     sym = sp->tp->BaseType()->sp;
     if (!*exp)
     {
+        *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         diag("CallDestructor: no this pointer");
     }
     params->thisptr = *exp;
@@ -3254,7 +3258,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                     !params->arguments->front()->initializer_list)
                 {
                     temp = *params->arguments->front()->nested;
-                    *params->arguments = temp;
+                    *params->arguments = std::move(temp);
                 }
                 AdjustParams(cons1, cons1->tp->BaseType()->syms->begin(), cons1->tp->BaseType()->syms->end(), &params->arguments,
                              false, implicit && !cons1->sb->isExplicit);

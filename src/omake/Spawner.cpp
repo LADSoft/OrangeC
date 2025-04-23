@@ -47,10 +47,20 @@ class OSTakeJobIfNotMake
 {
     static const int MaxOmakeInstances = 2;
     bool take_job = false;
+    static bool initted;
     static Semaphore sem;
   public:
-    OSTakeJobIfNotMake(std::string& cmd, bool take_job = false) : take_job(take_job)
+    OSTakeJobIfNotMake(bool take_job = false) : take_job(take_job)
     {
+        if (!initted)
+        {
+            initted = true;
+            if (OS::JobCount() == 1)
+            {
+                for (int i=0; i < MaxOmakeInstances - 1; i++)
+                    sem.Wait();
+            }
+        }
         if (take_job)
         {
             OS::TakeJob();
@@ -76,11 +86,30 @@ class OSTakeJobIfNotMake
         }
     }
 };
+bool OSTakeJobIfNotMake::initted;
 Semaphore OSTakeJobIfNotMake::sem(MaxOmakeInstances, MaxOmakeInstances);
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 bool Spawner::stopAll;
 
+static bool HasMake(const std::string& cmd, const std::string& make)
+{
+    size_t n = cmd.find(make);
+    if (n != std::string::npos)
+    {
+        size_t m = cmd.find_first_not_of(" \n\t\v\r");
+        if (cmd[m] == '"')
+        {
+            m = cmd.find_first_of('"', m+1);
+        }
+        else
+        {
+            m = cmd.find_first_of(" \n\t\r\v", m + 1);
+        }
+        return m != std::string::npos && m > n;
+    }
+    return false;
+}
 void Spawner::Run(std::shared_ptr<Command>& Commands, OutputType Type, std::shared_ptr<RuleList> RuleListx,
                   std::shared_ptr<Rule> Rulex)
 {
@@ -101,7 +130,6 @@ int Spawner::InternalRun()
     int rv = 0;
     std::string longstr;
     std::deque<std::string> tempFiles;
-    bool make = false;
     for (auto it = commands->begin(); it != commands->end() && (!rv || !posix); ++it)
     {
         bool curSilent = silent;
@@ -110,7 +138,6 @@ int Spawner::InternalRun()
         const std::string& a = (*it);
         if (a.find("$(MAKE)") != std::string::npos || a.find("${MAKE}") != std::string::npos)
         {
-            make = true;
             curDontRun = false;
         }
         std::string cmd = a;
@@ -177,10 +204,9 @@ int Spawner::InternalRun()
         }
         else
         {
-            int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
+            int rv1 = Run(cmd, curIgnore, curSilent, curDontRun);
             if (stopAll)
                 break;
-            make = false;
             if (!rv)
             {
                 if (rv1)
@@ -200,7 +226,7 @@ int Spawner::InternalRun()
     }
     if (oneShell && !stopAll)
     {
-        rv = Run(longstr, ignoreErrors, silent, dontRun, false);
+        rv = Run(longstr, ignoreErrors, silent, dontRun);
         if (rv)
             MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv, ruleList->GetTarget().c_str(), commands->GetLine(),
                                   ignoreErrors ? " (Ignored)" : "");
@@ -211,7 +237,7 @@ int Spawner::InternalRun()
         OS::RemoveFile(std::move(f));
     return rv;
 }
-int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
+int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool dontrun)
 {
     if (stopAll)
         return 0;
@@ -226,9 +252,21 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
             cmd = OS::NormalizeFileName(cmdin);
         }
     }
+    std::string make;
+    Variable* v1 = VariableContainer::Instance()->Lookup("MAKE");
+    if (v1)
+    {
+        make = v1->GetValue();
+        size_t i = make.find_last_of('/');
+        if (i == std::string::npos);
+            i = make.find_last_of	('\\');
+        if (i != std::string::npos)
+            make = make.substr(i+1);
+    }
     if (oneShell)
     {
-        OSTakeJobIfNotMake lockJob(cmd, !make);
+        bool make1 = !HasMake(cmd, make);
+        OSTakeJobIfNotMake lockJob(make1);
         int rv = OS::Spawn(cmd, environment, nullptr);
         return rv;
     }
@@ -242,12 +280,11 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         int rv = 0;
         for (auto&& command : cmdList)
         {
-            bool make1 = make;
-            OSTakeJobIfNotMake lockJob(cmd, !make1);
-
             auto cmdList = Utils::split(command, '\n');
             for (auto&& cmd : cmdList)
             {
+                bool make1 = !HasMake(cmd, make);
+                OSTakeJobIfNotMake lockJob(make1);
                 if (!stopAll)
                 {
                     if (!silent)
@@ -259,7 +296,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
                     {
                         std::string str;
                         rv1 = OS::Spawn(std::move(cmd), environment,
-                                        outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                                        outputType != o_none && (outputType != o_recurse || !make1) ? &str : nullptr);
                         if (outputType != o_none && !str.empty())
                             output.push_back(std::move(str));
                         if (!rv)

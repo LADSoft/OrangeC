@@ -68,6 +68,7 @@ class OS
     static void SetSHEXE(bool flag) { isSHEXE = flag; }
     static void PushJobCount(int jobs);
     static void PopJobCount();
+    static int JobCount() { return jobsLeft; }
     static std::string JobName();
     static void JobInit();
     static void JobRundown();
@@ -94,7 +95,6 @@ class OS
     }
     static void InitJobServer();
     static std::string GetFullPath(const std::string& filename);
-    static int JobCount() { return jobsLeft; }
     static int GetProcessId();
     static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
 

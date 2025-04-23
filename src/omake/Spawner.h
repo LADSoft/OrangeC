@@ -105,7 +105,7 @@ class Spawner
     static const char escapeEnd;
 
   protected:
-    int Run(const std::string& cmd, bool ignoreErrors, bool silent, bool dontrun, bool make = false);
+    int Run(const std::string& cmd, bool ignoreErrors, bool silent, bool dontrun);
     bool split(const std::string& cmd);
     std::string QualifyFiles(const std::string& cmd);
     void RetVal(int val) { retVal = val; }

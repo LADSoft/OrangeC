@@ -128,16 +128,23 @@ void mangleInit()
         memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
     }
 }
-char* mangleNameSpaces(char* in, SYMBOL* sym)
+template <int n>
+char* mangleNameSpaces(char(&orig)[n], char* in, SYMBOL* sym)
 {
     if (!sym)
         return in;
-    in = mangleNameSpaces(in, sym->sb->parentNameSpace);
+    in = mangleNameSpaces(orig, in, sym->sb->parentNameSpace);
     if (sym->sb->parentNameSpace && !strcmp(sym->name, "__1") && !strcmp(sym->sb->parentNameSpace->name, "std"))
         return in;
-    Optimizer::my_sprintf(in, "@%s", sym->name);
+    Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->name);
     return in + strlen(in);
 }
+char* mangleNameSpaces(char* in, SYMBOL* sym)
+{
+    char(&buf)[4096] = (char(&)[4096])in;
+    return mangleNameSpaces(buf, in, sym);
+}
+
 template <int n>
 static char* mangleTemplate(char (&orig)[n], char *buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 template <int n>
@@ -152,7 +159,7 @@ static char* mangleClasses(char (&orig)[n], char* in, SYMBOL* sym)
     if (sym->sb->parent)
     {
         in += strlen(in);
-        Optimizer::my_sprintf(in, "@%s", sym->sb->parent->name);
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
         in += strlen(in);
         if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
         {
@@ -172,7 +179,7 @@ static char* mangleClasses(char (&orig)[n], char* in, SYMBOL* sym)
     }
     else
     {
-        Optimizer::my_sprintf(in, "@%s", sym->name);
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->name);
     }
     return in + strlen(in);
 }
@@ -185,11 +192,11 @@ static char* mangleExpressionInternal(char (&orig)[n], char* buf, EXPRESSION* ex
     {
         if (exp->type == ExpressionNode::const_)
         {
-            Optimizer::my_sprintf(buf, "%lld?", exp->v.sp->sb->value.i);
+            Optimizer::my_sprintf(buf, MANGLE_SIZE(buf), "%lld?", exp->v.sp->sb->value.i);
         }
         else
         {
-            Optimizer::my_sprintf(buf, "%lld?", exp->v.i);
+            Optimizer::my_sprintf(buf, MANGLE_SIZE(buf), "%lld?", exp->v.i);
         }
         if (buf[0] == '-')
             buf[0] = '_';
@@ -730,13 +737,13 @@ static char* lookupName(char (&orig)[n], char* in, const char* name)
             break;
     if (i < mangledNamesCount)
     {
-        Optimizer::my_sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "n%c", i < 10 ? i + '0' : i - 10 + 'A');
     }
     else
     {
         if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
             Utils::StrCpy(mangledNames[mangledNamesCount++], name);
-        Optimizer::my_sprintf(in, "%d%s", strlen(name), name);
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d%s", strlen(name), name);
     }
     return in;
 }
@@ -755,7 +762,7 @@ static char* getName(char (&orig)[n], char* in, SYMBOL* sym)
     {
         int i;
         char buf[4096], *p;
-        p = mangleNameSpaces(buf, sym->sb->parentNameSpace);
+        p = mangleNameSpaces(buf, buf, sym->sb->parentNameSpace);
         p = mangleClasses(buf, p, sym->sb->parentClass);
         if (p != buf)
             PUTCH(p, '@');
@@ -787,7 +794,7 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
     int i;
     if (!tp)
     {
-        Optimizer::my_sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d%s", strlen("initializer-list"), "initializer-list");
         while (*in)
             in++;
         return in;
@@ -930,12 +937,12 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                 case BasicType::unsigned_bitint_:
                     PUTCH(in,  'u');
                     PUTCH(in, 'B');
-                    Optimizer::my_sprintf(in, "%d?", tp->bitintbits);
+                    Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d?", tp->bitintbits);
                     in += strlen(in);
                     break;
                 case BasicType::bitint_:
                     PUTCH(in,  'B');
-                    Optimizer::my_sprintf(in, "%d?", tp->bitintbits);
+                    Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d?", tp->bitintbits);
                     in += strlen(in);
                     break;
                 case BasicType::unative_:
@@ -1100,7 +1107,7 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     p = nm;
                     while (isdigit(*p))
                         p++;
-                    Optimizer::my_sprintf(in, "%d%s", strlen(p), p);
+                    Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d%s", strlen(p), p);
                     in += strlen(in);
                     return in;
                 }
@@ -1316,7 +1323,7 @@ void GetClassKey(char* buf, int len, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* 
     while (lastParent->sb->parentClass)
         lastParent = lastParent->sb->parentClass;
     char* p = orig;
-    p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
+    p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
     p = mangleClasses(orig, p, sym->sb->parentClass);
     PUTCH(p, '@');
     PUTZERO(p);
@@ -1375,7 +1382,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                 if (sym->sb->uniqueID == 0)
                     sym->sb->uniqueID = uniqueID++;
             p = mangleClasses(orig, p, theCurrentFunc);
-            Optimizer::my_sprintf(p, "@%s", sym->name);
+            Optimizer::my_sprintf(p, MANGLE_SIZE(p), "@%s", sym->name);
 
             break;
         case Linkage::pascal_:
@@ -1426,11 +1433,11 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             lastParent = sym;
             while (lastParent->sb->parentClass)
                 lastParent = lastParent->sb->parentClass;
-            p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
+            p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
             p = mangleClasses(orig, p, sym->sb->parentClass);
             if (sym->sb->parent)
             {
-                Optimizer::my_sprintf(p, "@%s", sym->sb->parent->name);
+                Optimizer::my_sprintf(p, MANGLE_SIZE(p), "@%s", sym->sb->parent->name);
                 p += strlen(p);
             }
             PUTCH(p, '@');

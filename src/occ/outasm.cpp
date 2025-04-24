@@ -322,7 +322,7 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
                 linepos++;
             }
             sym = offset->sp;
-            strcpy(buf, sym->outputName);
+            Utils::StrCpy(buf, sym->outputName);
             AsmOutput("%s", buf);
             break;
         case Optimizer::se_add:
@@ -783,7 +783,7 @@ void oa_gen_strlab(Optimizer::SimpleSymbol* sym)
  */
 {
     char buf[4096];
-    strcpy(buf, sym->outputName);
+    Utils::StrCpy(buf, sym->outputName);
     if (Optimizer::cparams.prm_asmfile)
     {
         if (sym && sym->tp->type == Optimizer::st_func)
@@ -832,7 +832,7 @@ void oa_genfloat(enum Optimizer::e_gt type, FPF* val)
     if (Optimizer::cparams.prm_asmfile)
     {
         char buf[256];
-        strcpy(buf, ((std::string)*val).c_str());
+        Utils::StrCpy(buf, ((std::string)*val).c_str());
         switch (type)
         {
             case Optimizer::floatgen:
@@ -1042,7 +1042,7 @@ void oa_gensrref(Optimizer::SimpleSymbol* sym, int val, int type)
     char buf[4096];
     if (Optimizer::cparams.prm_asmfile)
     {
-        strcpy(buf, sym->outputName);
+        Utils::StrCpy(buf, sym->outputName);
         oa_nl();
         ColumnPosition(8);
         AsmOutput("db");
@@ -1076,7 +1076,7 @@ void oa_genref(Optimizer::SimpleSymbol* sym, int offset)
         }
         else
             sign = '+';
-        strcpy(buf, sym->outputName);
+        Utils::StrCpy(buf, sym->outputName);
         sprintf(buf1, "%s%c%d", buf, sign, offset);
         if (Optimizer::cparams.prm_asmfile)
         {
@@ -1842,7 +1842,7 @@ void oa_globaldef(Optimizer::SimpleSymbol* sym)
     if (Optimizer::cparams.prm_asmfile)
     {
         char buf[5000];
-        strcpy(buf, sym->outputName);
+        Utils::StrCpy(buf, sym->outputName);
         oa_nl();
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
@@ -1892,7 +1892,7 @@ void oa_put_extern(Optimizer::SimpleSymbol* sym, int code)
     {
         oa_nl();
         char buf[5000];
-        strcpy(buf, sym->outputName);
+        Utils::StrCpy(buf, sym->outputName);
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
         {
@@ -1921,7 +1921,7 @@ void oa_put_impfunc(Optimizer::SimpleSymbol* sym, const char* file)
     if (Optimizer::cparams.prm_asmfile)
     {
         char buf[5000];
-        strcpy(buf, sym->outputName);
+        Utils::StrCpy(buf, sym->outputName);
         ColumnPosition(8);
         AsmOutput("import %s %s\n", buf, file);
     }
@@ -1938,7 +1938,7 @@ void oa_put_expfunc(Optimizer::SimpleSymbol* sym)
     char buf[4096];
     if (Optimizer::cparams.prm_asmfile)
     {
-        strcpy(buf, sym->outputName);
+        Utils::StrCpy(buf, sym->outputName);
         ColumnPosition(8);
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)

@@ -444,7 +444,7 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
     if (WriteIcdFile.GetValue() || (cparams.prm_icdfile && !name.empty()))
     {
         char buf[260];
-        strcpy(buf, name.c_str());
+        Utils::StrCpy(buf, name.c_str());
         Utils::StripExt(buf);
         Utils::AddExt(buf, ".icd2");
         icdFile = fopen(buf, "w");
@@ -508,9 +508,9 @@ MAINTRY
         else
         {
             char buf[260];
-            strcpy(buf, files[1].c_str());
+            Utils::StrCpy(buf, files[1].c_str());
             Utils::StripExt(buf);
-            strcat(buf, "_1");
+            Utils::StrCat(buf, "_1");
             Utils::AddExt(buf, ".icf");
             outputFile = buf;
         }

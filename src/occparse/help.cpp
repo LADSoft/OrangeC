@@ -172,7 +172,7 @@ void deprecateMessage(SYMBOL* sym)
     char buf[1024];
     Optimizer::my_sprintf(buf, "%s deprecated", sym->name);
     if (sym->sb->attribs.uninheritable.deprecationText && sym->sb->attribs.uninheritable.deprecationText != (char*)-1)
-        Optimizer::my_sprintf(buf + strlen(buf), "; %s", sym->sb->attribs.uninheritable.deprecationText);
+        Optimizer::my_sprintf(buf + strlen(buf), sizeof(buf)-strlen(buf), "; %s", sym->sb->attribs.uninheritable.deprecationText);
     errorstr(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...

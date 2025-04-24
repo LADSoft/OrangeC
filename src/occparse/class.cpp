@@ -686,10 +686,11 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
 
             while (placeholder != finalPos->next)
             {
+                int l = strlen(buf);
                 if (ISKW(placeholder))
-                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->data->kw->name);
+                    Optimizer::my_sprintf(buf + l , sizeof(buf)-l, "%s", placeholder->data->kw->name);
                 else if (ISID(placeholder))
-                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->data->value.s.a);
+                    Optimizer::my_sprintf(buf + l, sizeof(buf) - l, "%s", placeholder->data->value.s.a);
                 placeholder = placeholder->next;
             }
 
@@ -1307,7 +1308,7 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Ty
                 error(ERR_OPERATOR_LITERAL_EMPTY_STRING);
             if (lex->data->suffix)
             {
-                Optimizer::my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->data->suffix);
+                Optimizer::my_sprintf(buf, len, "%s@%s", overloadNameTab[CI_LIT], lex->data->suffix);
                 *ov = CI_LIT;
             }
             else
@@ -1316,7 +1317,7 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Ty
 
                 if (ISID(lex))
                 {
-                    Optimizer::my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->data->value.s.a);
+                    Optimizer::my_sprintf(buf, len, "%s@%s", overloadNameTab[CI_LIT], lex->data->value.s.a);
                     *ov = CI_LIT;
                 }
                 else

@@ -163,9 +163,9 @@ void ReleaseGlobalFlag(bool old) { globalFlag = old; }
 bool GetGlobalFlag(void) { return globalFlag; }
 char* litlate(const char* name)
 {
-    int l;
-    char* rv = nzAllocate<char>((l = strlen(name)) + 1);
-    strcpy(rv, name);
+    int l = strlen(name) + 1;
+    char* rv = nzAllocate<char>(l);
+    memcpy(rv, name, l);
     return rv;
 }
 LCHAR* wlitlate(const LCHAR* name)

@@ -108,7 +108,7 @@ void browse_init(void)
 void browsedata(Optimizer::BROWSEINFO* bi) { Optimizer::browseInfo.push_back(bi); }
 void browsefile(Optimizer::BROWSEFILE* bf) { Optimizer::browseFiles.push_back(bf); }
 
-static void getBrowseName(char* buf, SYMBOL* sp) { Optimizer::my_sprintf(buf, "%s", sp->sb->decoratedName); }
+static void getBrowseName(char* buf, int len, SYMBOL* sp) { Optimizer::my_sprintf(buf, len, "%s", sp->sb->decoratedName); }
 static void addBrowseRecord(Optimizer::BROWSEINFO* bri) { browsedata(bri); }
 /*-------------------------------------------------------------------------*/
 
@@ -120,7 +120,7 @@ void browse_startfunc(SYMBOL* func, int lineno)
         return;
     bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_STARTFUNC;
-    getBrowseName(name, func);
+    getBrowseName(name, sizeof(name), func);
     bri->name = litlate(name);
     bri->lineno = lineno;
     bri->charpos = 0;
@@ -139,7 +139,7 @@ void browse_endfunc(SYMBOL* func, int lineno)
         return;
     bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_ENDFUNC;
-    getBrowseName(name, func);
+    getBrowseName(name, sizeof(name), func);
     bri->name = litlate(name);
     bri->lineno = lineno;
     bri->charpos = 0;
@@ -209,7 +209,7 @@ void browse_variable(SYMBOL* var)
     }
     bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = var->tp->IsFunction() ? BRS_PROTOTYPE : BRS_VARIABLE;
-    getBrowseName(name, var);
+    getBrowseName(name, sizeof(name), var);
     bri->name = litlate(name);
     bri->lineno = var->sb->declline;
     bri->charpos = var->sb->declcharpos >= 0 ? var->sb->declcharpos : 0;
@@ -234,7 +234,7 @@ void browse_usage(SYMBOL* var, int file)
         return;
     bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_USAGE;
-    getBrowseName(name, var);
+    getBrowseName(name, sizeof(name), var);
     bri->name = litlate(name);
     bri->lineno = preProcessor->GetRealLineNo();
     bri->charpos = charIndex - strlen(bri->name);

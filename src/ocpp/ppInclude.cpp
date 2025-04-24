@@ -401,7 +401,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
         {
             return "";
         }
-        AddName(buf, name);
+        AddName(buf, sizeof(buf), name);
 
 #ifdef TARGET_OS_WINDOWS
         while (char* p = (char*)strchr(buf, '/'))
@@ -438,7 +438,7 @@ const char* ppInclude::RetrievePath(char* buf, const char* path)
     }
     return nullptr;
 }
-void ppInclude::AddName(char* buf, const std::string& name)
+void ppInclude::AddName(char* buf, int len, const std::string& name)
 {
     int n = strlen(buf);
     if (n)
@@ -449,7 +449,7 @@ void ppInclude::AddName(char* buf, const std::string& name)
             buf[++n] = 0;
         }
     }
-    strcat(buf, name.c_str());
+    Utils::StrCat(buf, len, name.c_str());
 }
 void ppInclude::StripAsmComment(std::string& line)
 {

@@ -145,7 +145,7 @@ class ppInclude
                   int dirs_traversed = 0);
     bool popFile();
     const char* RetrievePath(char* buf, const char* path);
-    void AddName(char* buf, const std::string& name);
+    void AddName(char* buf, int len, const std::string& name);
 
   private:
     static bool system;

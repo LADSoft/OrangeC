@@ -143,26 +143,26 @@ void ResolveMSILExterns()
             ++it;
     }
 }
-void outputfile(char* buf, const char* name, const char* ext)
+void outputfile(char* buf, int len, const char* name, const char* ext)
 {
-    strcpy(buf, Optimizer::outputFileName.c_str());
+    Utils::StrCpy(buf, len, Optimizer::outputFileName.c_str());
     if (buf[0] && buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
         // just add our name and ext
-        strcat(buf, name);
+        Utils::StrCat(buf, len, name);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
     else if (buf[0] == 0)  // no output file specified, put the output wherever the input was...
     {
-        strcpy(buf, name);
+        Utils::StrCpy(buf, len, name);
         char* p = (char*)strrchr(buf, '\\');
         char* q = (char*)strrchr(buf, '/');
         if (q > p)
             p = q;
         if (p)
-            strcpy(buf, p + 1);
+            Utils::StrCpy(buf, len, p + 1);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
@@ -343,9 +343,9 @@ bool LoadFile(SharedMemory* parserMem, std::string fileName)
         if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
         {
             if (!Optimizer::outputFileName.empty())
-                outputfile(outFile, Optimizer::outputFileName.c_str(), Optimizer::chosenAssembler->objext);
+                outputfile(outFile, sizeof(outFile), Optimizer::outputFileName.c_str(), Optimizer::chosenAssembler->objext);
             else
-                outputfile(outFile, Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
+                outputfile(outFile, sizeof(outFile), Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
             InsertExternalFile(outFile, false);
             fileName = outFile;
         }
@@ -362,8 +362,8 @@ bool SaveFile(const char* name)
 {
     if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
-        strcpy(infile, name);
-        outputfile(outFile, name, Optimizer::chosenAssembler->objext);
+        Utils::StrCpy(infile, name);
+        outputfile(outFile, sizeof(outFile), name, Optimizer::chosenAssembler->objext);
         InsertExternalFile(outFile, false);
         Optimizer::outputFile = fopen(outFile, "wb");
         if (!Optimizer::outputFile)

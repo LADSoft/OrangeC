@@ -47,17 +47,17 @@ static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext)
 
     char buf[256], *newbuffer;
     Optimizer::LIST* lst;
-    strcpy(buf, name);
+    Utils::StrCpy(buf, name);
     if (!outFileName[0])
     {
-        strcpy(outFileName, name);
+        Utils::StrCpy(outFileName, name);
         Utils::StripExt(outFileName);
-        strcat(outFileName, Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe");
+        Utils::StrCat(outFileName, Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe");
     }
     if (ext)
     {
         Utils::StripExt(buf);
-        strcat(buf, ext);
+        Utils::StrCat(buf, ext);
     }
     lst = *r;
     while (lst)
@@ -69,7 +69,7 @@ static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext)
     newbuffer = (char*)malloc(strlen(buf) + 1);
     if (!newbuffer)
         return;
-    strcpy(newbuffer, buf);
+    Utils::StrCpy(newbuffer, strlen(buf) + 1, buf);
 
     /* Insert file */
     while (*r)
@@ -109,7 +109,7 @@ int InsertExternalFile(const char* name, bool)
         p = name;
     else
         p++;
-    strcpy(buf, p);
+    Utils::StrCpy(buf, p);
     InsertFile(&objlist, buf, ".ilo");
 
     return 0; /* compiler should process it*/
@@ -117,11 +117,11 @@ int InsertExternalFile(const char* name, bool)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOutputFileName(const char* name) { strcpy(outFileName, name); }
+void InsertOutputFileName(const char* name) { Utils::StrCpy(outFileName, name); }
 
 /*-------------------------------------------------------------------------*/
 static Optimizer::LIST* objPosition;
-void GetOutputFileName(char* name, char* path, bool obj)
+void GetOutputFileName(char* name, int len, char* path, int len2, bool obj)
 {
     if (obj)
     {
@@ -130,25 +130,25 @@ void GetOutputFileName(char* name, char* path, bool obj)
             objPosition = objlist;
         if (!objPosition)
             Utils::Fatal("Cannot get object file name");
-        strcpy(name, outFileName);
+        Utils::StrCpy(name, len, outFileName);
         p = (char*)strrchr(name, '\\');
         if (!p)
             p = name;
         else
             p++;
-        strcpy(p, (char*)objPosition->data);
-        strcpy(path, name);
+        Utils::StrCpy(p, len - (p - name), (char*)objPosition->data);
+        Utils::StrCpy(path, len2, name);
     }
     else
     {
         path[0] = 0;
-        strcpy(name, outFileName);
+        Utils::StrCpy(name, len, outFileName);
         if (objlist && name[0] && name[strlen(name) - 1] == '\\')
         {
-            strcat(name, (char*)objlist->data);
+            Utils::StrCat(name, len, (char*)objlist->data);
             Utils::StripExt(name);
-            strcat(name, ".exe");
-            strcpy(path, outFileName);
+            Utils::StrCat(name, len, ".exe");
+            Utils::StrCpy(path, len2, outFileName);
         }
     }
 }
@@ -166,7 +166,7 @@ int RunExternalFiles()
     char temp[260];
     return 0;
 
-    GetOutputFileName(outName, temp, false);
+    GetOutputFileName(outName, sizeof(outName), temp, sizeof(temp), false);
     Utils::StripExt(outName);
     Utils::AddExt(outName, ".il");
     while (rclist)

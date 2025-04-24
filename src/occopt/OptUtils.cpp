@@ -36,6 +36,7 @@
 #include "memory.h"
 #include "iblock.h"
 #include "OptUtils.h"
+#include "Utils.h"
 
 namespace Optimizer
 {
@@ -609,7 +610,7 @@ long long mod_mask(int i)
     return shifts[i] - 1;
 }
 
-static char* write_llong(char* dest, unsigned long long val)
+static void write_llong(char* dest, int len, unsigned long long val)
 {
     char obuf[256], *p = obuf + sizeof(obuf);
     *--p = 0;
@@ -626,10 +627,9 @@ static char* write_llong(char* dest, unsigned long long val)
     {
         *--p = '0';
     }
-    strcpy(dest, p);
-    return dest + strlen(dest);
+    Utils::StrCat(dest, len, p);
 }
-static char* write_int(char* dest, unsigned val)
+static void write_int(char* dest, int len, unsigned val)
 {
     char obuf[256], *p = obuf + sizeof(obuf);
     *--p = 0;
@@ -646,11 +646,14 @@ static char* write_int(char* dest, unsigned val)
     {
         *--p = '0';
     }
-    strcpy(dest, p);
-    return dest + strlen(dest);
+    Utils::StrCat(dest, len, p);
 }
-void my_sprintf(char* dest, const char* fmt, ...)
+void my_sprintf(char* dest, int len, const char* fmt, ...)
 {
+const char *in = fmt;
+    if (len <= 0)
+        return;	
+    dest[0] = '\0';
     va_list aa;
     va_start(aa, fmt);
     while (*fmt)
@@ -658,9 +661,12 @@ void my_sprintf(char* dest, const char* fmt, ...)
         const char* q = strchr(fmt, '%');
         if (!q)
             q = fmt + strlen(fmt);
-        memcpy(dest, fmt, q - fmt);
-        dest += q - fmt;
-        fmt += q - fmt;
+        int l = strlen(dest);
+        while (fmt < q && len - l > 1)
+        {
+           dest[l++] = *fmt++;
+        }
+        dest[l] = '\0';
         if (*fmt)
         {
             fmt++;
@@ -673,21 +679,26 @@ void my_sprintf(char* dest, const char* fmt, ...)
                     while (*fmt == 'd' || *fmt == 'l')
                         fmt++;
                     val = va_arg(aa, unsigned long long);
-                    dest = write_llong(dest, val);
+                    write_llong(dest, len, val);
                     break;
                 case 'd':
                 case 'u':
                     val1 = va_arg(aa, unsigned);
-                    dest = write_int(dest, val1);
+                    write_int(dest, len, val1);
                     break;
                 case 'c':
                     val1 = va_arg(aa, unsigned);
-                    *dest++ = val1;
+                    l = strlen(dest);
+                    if (len-l >= 2)
+                    {
+                     
+                       dest[l++] = val1;
+                       dest[l] = '\0';
+                    }
                     break;
                 case 's':
                     str = va_arg(aa, char*);
-                    strcpy(dest, str);
-                    dest += strlen(dest);
+                    Utils::StrCat(dest, len, str);
                     break;
                 default:
                     fmt++;
@@ -695,7 +706,6 @@ void my_sprintf(char* dest, const char* fmt, ...)
             }
         }
     }
-    *dest = 0;
 }
 
 void cacheTempSymbol(Optimizer::SimpleSymbol* sym)

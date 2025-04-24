@@ -1030,8 +1030,9 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
         calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
         if (sp->sb->vtabEntries && sp->sb->vtabEntries->size())
         {
-            char* buf = (char*)alloca(4096);
-            Optimizer::my_sprintf(buf, "%s@_.vt", sp->sb->decoratedName);
+            const int bufsize = 4096;
+            char* buf = (char*)alloca(bufsize);
+            Optimizer::my_sprintf(buf, bufsize, "%s@_.vt", sp->sb->decoratedName);
             sp->sb->vtabsp = makeID(StorageClass::static_, &stdvoid, nullptr, litlate(buf));
             sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
             sp->sb->vtabsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;

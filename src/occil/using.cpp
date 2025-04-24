@@ -48,7 +48,7 @@ void _using_init() {}
 bool _using_(const char* file)
 {
     char name[260], *p;
-    strcpy(name, file);
+    Utils::StrCpy(name, file);
     p = (char*)strrchr(name, '.');
     if (p && Utils::iequal(p, ".dll"))
         *p = 0;
@@ -59,9 +59,9 @@ bool _using_(const char* file)
         char* a = getenv("ORANGEC");
         if (a)
         {
-            strcpy(name, a);
-            strcat(name, "\\bin\\");
-            strcat(name, file);
+            Utils::StrCpy(name, a);
+            Utils::StrCat(name, "\\bin\\");
+            Utils::StrCat(name, file);
             if (!peLib->LoadUnmanaged(name))
                 return true;
         }
@@ -93,7 +93,7 @@ void _apply_global_using(void)
     if (!Optimizer::cparams.managed_library)
     {
         char buf[256];
-        strcpy(buf, Optimizer::pinvoke_dll);
+        Utils::StrCpy(buf, Optimizer::pinvoke_dll);
         char* p = (char*)strrchr(buf, '.');
         if (p)
             *p = 0;

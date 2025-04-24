@@ -279,7 +279,7 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
             (*name)++;
             if (minus)
                 PUTCH(dest,  '-');
-            Optimizer::my_sprintf(dest, "%d", n);
+            Optimizer::my_sprintf(dest, UNMANGLE_SIZE(dest), "%d", n);
         }
         else
         {
@@ -1069,11 +1069,11 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                 }
                 if (buf3[0])
                 {
-                    Optimizer::my_sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
+                    Optimizer::my_sprintf(buf, UNMANGLE_SIZE(buf), "%s((%s)%s)", buf1, buf2, buf3);
                 }
                 else
                 {
-                    Optimizer::my_sprintf(buf, "%s %s", buf1, buf2);
+                    Optimizer::my_sprintf(buf, UNMANGLE_SIZE(buf), "%s %s", buf1, buf2);
                 }
                 break;
             case 'n':

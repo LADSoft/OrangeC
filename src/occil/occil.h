@@ -46,6 +46,6 @@ extern int dbgblocknum;
 extern int usingEsp;
 void flush_peep(void);
 void ResolveMSILExterns(void);
-void outputfile(char* buf, const char* name, const char* ext);
+void outputfile(char* buf, int len, const char* name, const char* ext);
 void global(Optimizer::SimpleSymbol* sym, int flags);
 }  // namespace occmsil

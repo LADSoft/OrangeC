@@ -57,6 +57,12 @@ SimpleExpression* simpleIntNode(enum se_type type, unsigned long long i);
 IMODE* indnode(IMODE* ap1, int size);
 int pwrof2(long long i);
 long long mod_mask(int i);
-void my_sprintf(char* dest, const char* fmt, ...);
+void my_sprintf(char* dest, int len, const char* fmt, ...);
+
+template <class ...T, int n>
+void my_sprintf(char (&dest)[n], const char *fmt, T...args)
+{
+    my_sprintf(dest,n, fmt, args...);
+}
 void cacheTempSymbol(SimpleSymbol* sym);
 }  // namespace Optimizer

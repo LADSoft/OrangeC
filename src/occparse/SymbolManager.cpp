@@ -680,12 +680,14 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
     if (old->sb->parent)
     {
         Utils::StrCat(buf, old->sb->parent->sb->decoratedName);
-        my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
+        int l = strlen(buf);
+        my_sprintf(buf + l, sizeof(buf) - l, "%d", old->sb->uniqueID);
     }
     Utils::StrCat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
     if (old->sb->storage_class == StorageClass::static_ && !old->sb->parent)
     {
-        my_sprintf(buf + strlen(buf), ".%d", old->sb->uniqueID);
+        int l = strlen(buf);
+        my_sprintf(buf + l, sizeof(buf) - l, "%d", old->sb->uniqueID);
     }
     if (old->sb->storage_class == StorageClass::type_)
         Utils::StrCat(buf, "#");

@@ -91,29 +91,29 @@ static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
 /*-------------------------------------------------------------------------*/
 
-void outputfile(char* buf, const char* name, const char* ext, bool obj)
+void outputfile(char* buf,  int len, const char* name, const char* ext, bool obj)
 {
-    strcpy(buf, Optimizer::outputFileName.c_str());
+    Utils::StrCpy(buf, len, Optimizer::outputFileName.c_str());
     if (buf[0] && buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
         // just add our name and ext
-        strcat(buf, name);
+        Utils::StrCat(buf, len, name);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
     else if (buf[0] == 0 || (obj && !Optimizer::cparams.prm_compileonly &&
                              !Optimizer::assembling))  // no output file specified, put the output wherever the input was...
     {
-        strcpy(buf, name);
+        Utils::StrCpy(buf, len, name);
         char* p = (char*)strrchr(buf, '\\');
         char* q = (char*)strrchr(buf, '/');
         if (q > p)
             p = q;
         if (p)
-            strcpy(buf, p + 1);
+            Utils::StrCpy(buf, len, p + 1);
         Utils::StripExt(buf);
-        strcat(buf, ext);
+        Utils::StrCat(buf, len, ext);
     }
     else
     {
@@ -268,7 +268,7 @@ bool ProcessData(const char* name)
     if (Optimizer::cparams.prm_asmfile)
     {
         char buf[260];
-        outputfile(buf, name, Optimizer::assemblerFileExtension.c_str(), true);
+        outputfile(buf, sizeof(buf), name, Optimizer::assemblerFileExtension.c_str(), true);
         InsertExternalFile(buf, false);
         Optimizer::outputFile = fopen(buf, "w");
         if (!Optimizer::outputFile)
@@ -344,15 +344,15 @@ bool SaveFile(const char* name)
 {
     if (!Optimizer::cparams.prm_asmfile)
     {
-        strcpy(infile, name);
-        outputfile(Parser::outFile, name, Optimizer::chosenAssembler->objext, true);
+        Utils::StrCpy(infile, name);
+        outputfile(Parser::outFile, sizeof(Parser::outFile), name, Optimizer::chosenAssembler->objext, true);
         InsertExternalFile(Parser::outFile, false);
         Optimizer::outputFile = fopen(Parser::outFile, "wb");
         if (!Optimizer::outputFile)
             return false;
         if (Optimizer::cparams.prm_browse)
         {
-            outputfile(Parser::outFile, name, ".cbr", true);
+            outputfile(Parser::outFile, sizeof(Parser::outFile), name, ".cbr", true);
             // have to readd the extension in case /o was specified
             Utils::StripExt(Parser::outFile);
             Utils::AddExt(Parser::outFile, ".cbr");

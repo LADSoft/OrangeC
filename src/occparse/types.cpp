@@ -1098,21 +1098,21 @@ char* Type::PutPointer(char *top, char* p, Type* tp)
 {
     *p = 0;
     if (tp->type == BasicType::far_)
-        Optimizer::my_sprintf(p, "far ");
+        Optimizer::my_sprintf(p, top - p, "far ");
     p = p + strlen(p);
     if (tp->array)
         if (tp->btp->size && (!tp->esize || tp->esize->type == ExpressionNode::c_i_))
         {
-            Optimizer::my_sprintf(p, "[%d]", tp->size / tp->btp->size);
+            Optimizer::my_sprintf(p, top - p, "[%d]", tp->size / tp->btp->size);
         }
         else
         {
-            Optimizer::my_sprintf(p, "[]");
+            Optimizer::my_sprintf(p, top - p, "[]");
         }
     else if (tp->vla)
-        Optimizer::my_sprintf(p, "[*]");
+        Optimizer::my_sprintf(p, top - p, "[*]");
     else
-        Optimizer::my_sprintf(p, " *");
+        Optimizer::my_sprintf(p, top - p, " *");
     return p + strlen(p);
 }
 

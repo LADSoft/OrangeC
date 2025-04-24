@@ -256,8 +256,7 @@ int msil_main_preprocess(char* fileName)
     if (Optimizer::prm_namespace_and_class[0])
         corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
     char path[260];
-    strcpy(path, fileName);
-    //    GetOutputFileName(fileName, path, cparams.prm_compileonly && !cparams.prm_asmfile);
+    Utils::StrCpy(path, fileName);
     uniqueId = Utils::CRC32((unsigned char*)fileName, strlen(fileName));
     char* p = (char*)strrchr(path, '.');
     char* q = (char*)strrchr(path, '\\');

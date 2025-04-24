@@ -77,21 +77,21 @@ bool InsertOption(const char* name)
     int len = 0;
     if (*p)
         len = strlen(*p);
-    *p = (char*)realloc(*p, 2 + len + strlen(name + 1));
+    *p = (char*)realloc(*p, 2 + len + strlen(name) + 1);
     (*p)[len] = 0;
-    strcat(*p, " ");
-    strcat(*p, name + 1);
+    Utils::StrCat(*p, strlen(name) + 1, " ");
+    Utils::StrCat(*p, strlen(name) + 1, name + 1);
     return true;
 }
 static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext, bool primary)
 {
     Optimizer::LIST* lst;
     char buf[256], *newbuffer;
-    strcpy(buf, name);
+    Utils::StrCpy(buf, name);
     if (ext)
     {
         Utils::StripExt(buf);
-        strcat(buf, ext);
+        Utils::StrCat(buf, ext);
     }
     lst = *r;
     while (lst)
@@ -103,7 +103,7 @@ static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext, b
     newbuffer = (char*)malloc(strlen(buf) + 1);
     if (!newbuffer)
         return;
-    strcpy(newbuffer, buf);
+    Utils::StrCpy(newbuffer, strlen(buf) + 1, buf);
 
     /* Insert file */
     while (*r)
@@ -155,7 +155,7 @@ int InsertExternalFile(const char* name, bool primary)
         p = name;
     else
         p++;
-    strcpy(buf, p);
+    Utils::StrCpy(buf, p);
     InsertFile(&objlist, buf, 0,
                primary);  // don't add an extension if we don't know what it is, let the linker deal with the file as it will
 
@@ -189,11 +189,11 @@ int RunExternalFiles()
     }
     temp[0] = 0;
     if (Optimizer::inputFiles.size())
-        outputfile(outName, Optimizer::inputFiles.front().c_str(), ".exe", false);
+        outputfile(outName, sizeof(outName), Optimizer::inputFiles.front().c_str(), ".exe", false);
     else if (objlist)
-        outputfile(outName, (const char*)objlist->data, ".exe", false);
+        outputfile(outName, sizeof(outName), (const char*)objlist->data, ".exe", false);
     else
-        strcpy(outName, "");
+        Utils::StrCpy(outName, "");
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;
@@ -253,11 +253,11 @@ int RunExternalFiles()
                     while (fgets(with + strlen(with), 1000, fil) != 0)
                         ;
                     fclose(fil);
-                    strcat(with, "\n");
+                    Utils::StrCat(with, "\n");
                 }
             }
             Utils::StripExt(outName);
-            strcat(outName, ".l");
+            Utils::StrCat(outName, ".l");
             rv = ToolChain::ToolInvoke("olib.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s \"%s\" +- @%s",
                                        !Optimizer::showBanner ? "-!" : "", outName, tempName.c_str());
         }
@@ -268,18 +268,17 @@ int RunExternalFiles()
                 fprintf(fil, "\"/L%s\" ", Optimizer::prm_libPath.c_str());
             }
 
-            strcpy(args, winflags[Optimizer::cparams.prm_targettype]);
+            Utils::StrCpy(args, winflags[Optimizer::cparams.prm_targettype]);
 
             c0 = winc0[Optimizer::cparams.prm_targettype + Optimizer::cparams.prm_lscrtdll * 8];
             if (Optimizer::cparams.prm_debug)
             {
-                //            strcat(args, " /DEB");
                 if (Optimizer::cparams.prm_targettype == DOS)
                     c0 = "c0pmd.o";
                 else if (Optimizer::cparams.prm_targettype == DOS32A)
                     c0 = "c0watd.o";
                 if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
-                    strcat(args, " /g");
+                    Utils::StrCat(args, " /g");
             }
             fprintf(fil, "  %s", c0);
             while (objlist)
@@ -327,7 +326,7 @@ int RunExternalFiles()
                     while (fgets(with + strlen(with), 1000, fil) != 0)
                         ;
                     fclose(fil);
-                    strcat(with, "\n");
+                    Utils::StrCat(with, "\n");
                 }
             }
             rv = ToolChain::ToolInvoke(

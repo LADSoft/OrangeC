@@ -402,7 +402,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (g != globals.end())
                 {
                     ObjSymbol* s1;
-                    strcpy(buf, (*g)->outputName);
+                    Utils::StrCpy(buf, (*g)->outputName);
                     if ((*g)->storage_class == Optimizer::scc_localstatic || (*g)->storage_class == Optimizer::scc_static)
                         s1 = factory.MakeLocalSymbol(buf);
                     else
@@ -424,7 +424,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                     if (l1 != locals.end())
                     {
                         ObjSymbol* s1;
-                        strcpy(buf, (*l1)->outputName);
+                        Utils::StrCpy(buf, (*l1)->outputName);
                         s1 = factory.MakeLocalSymbol(buf);
                         ObjExpression* left = factory.MakeExpression(objSectionsByNumber[GETSECT(l, sectofs)]);
                         ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
@@ -441,7 +441,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             }
             for (auto e : externs)
             {
-                strcpy(buf, e->outputName);
+                Utils::StrCpy(buf, e->outputName);
                 ObjSymbol* s1 = factory.MakeExternalSymbol(buf);
                 fi->Add(s1);
                 objExterns[e] = s1;
@@ -451,7 +451,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             }
             for (auto e : autotab)
             {
-                strcpy(buf, e->outputName);
+                Utils::StrCpy(buf, e->outputName);
                 ObjSymbol* s1 = factory.MakeAutoSymbol(buf);
                 if (Optimizer::cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
@@ -478,14 +478,14 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
 
         for (auto exp : expfuncs)
         {
-            strcpy(buf, exp->outputName);
+            Utils::StrCpy(buf, exp->outputName);
             ObjExportSymbol* p = factory.MakeExportSymbol(buf);
             p->SetExternalName(exp->outputName);
             fi->Add(p);
         }
         for (auto import : impfuncs)
         {
-            strcpy(buf, import->outputName);
+            Utils::StrCpy(buf, import->outputName);
             ObjImportSymbol* p = factory.MakeImportSymbol(buf);
             p->SetExternalName(import->outputName);
             if (import->importfile)
@@ -579,7 +579,7 @@ void compile_start(char* name)
 {
     Optimizer::LIST* newItem = beGlobalAllocate<Optimizer::LIST>();
     newItem->data = beGlobalAllocate<char>(strlen(name) + 1);
-    strcpy((char*)newItem->data, name);
+    Utils::StrCpy((char*)newItem->data, strlen(name) + 1, name);
 
     oa_ini();
     o_peepini();
@@ -868,22 +868,22 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
     {
         case Optimizer::vt_code:
         default:
-            strcpy(buf, "vsc@");
+            Utils::StrCpy(buf, "vsc@");
             break;
         case Optimizer::vt_data:
-            strcpy(buf, "vsd@");
+            Utils::StrCpy(buf, "vsd@");
             break;
         case Optimizer::vt_bss:
-            strcpy(buf, "vsb@");
+            Utils::StrCpy(buf, "vsb@");
             break;
         case Optimizer::vt_startup:
-            strcpy(buf, "vss@");
+            Utils::StrCpy(buf, "vss@");
             break;
         case Optimizer::vt_rundown:
-            strcpy(buf, "vsr@");
+            Utils::StrCpy(buf, "vsr@");
             break;
     }
-    strcpy(buf + 3 + (sym->outputName[0] != '@'), sym->outputName);
+    Utils::StrCpy(buf + 3 + (sym->outputName[0] != '@'), sizeof(buf)-4, sym->outputName);
     std::shared_ptr<Section> virtsect = std::make_shared<Section>(buf, virtualSegmentNumber++);
     virtualSyms[virtsect] = sym;
     virtuals.push_back(virtsect);

@@ -29,7 +29,7 @@ namespace occmsil
 {
 int InsertExternalFile(const char* name, bool);
 void InsertOutputFileName(const char* name);
-void GetOutputFileName(char* name, char* path, bool obj);
+void GetOutputFileName(char* name, int len, char* path,int len2, bool obj);
 void NextOutputFileName(void);
 int RunExternalFiles(void);
 }  // namespace occmsil

@@ -4900,7 +4900,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 for (auto a : *args->arguments)
                                 {
                                     SYMBOL* sym1 = SymAlloc();
-                                    char nn[10];
+                                    char nn[100];
                                     Optimizer::my_sprintf(nn, "%d", v++);
                                     sym1->name = litlate(nn);
                                     sym1->tp = a->tp;

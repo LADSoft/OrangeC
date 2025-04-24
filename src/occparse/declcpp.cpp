@@ -139,7 +139,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 char buf[512];
                                 SYMBOL* localsp;
                                 Utils::StrCpy(buf, sym->sb->decoratedName);
-                                Optimizer::my_sprintf(buf + strlen(buf), "_@%c%d", count % 26 + 'A', count / 26);
+                                Optimizer::my_sprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "_@%c%d", count % 26 + 'A', count / 26);
 
                                 thunks[count].entry = entry;
                                 if (func->sb->attribs.inheritable.linkage2 == Linkage::import_)

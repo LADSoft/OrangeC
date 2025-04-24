@@ -39,6 +39,6 @@ namespace occx86
 {
 extern char infile[260];
 
-void outputfile(char* buf, const char* name, const char* ext, bool obj);
+void outputfile(char* buf, int len, const char* name, const char* ext, bool obj);
 void global(Optimizer::SimpleSymbol* sym, int flags);
 }  // namespace occx86

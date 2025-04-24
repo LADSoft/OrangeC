@@ -41,6 +41,7 @@
 #include "using.h"
 #include "invoke.h"
 #include "memory.h"
+#include "OptUtils.h"
 
 // must match the definition in lex.h
 // clang-format off
@@ -427,17 +428,17 @@ std::string GetArrayName(Optimizer::SimpleType* tp, bool byRef, bool pinned)
     while (tp->isarray)
     {
         if (tp->isvla)
-            strcat(end, "_vla");
+            Utils::StrCat(end, "_vla");
         else if (tp->size == 0)
-            strcat(end, "_empty");
+            Utils::StrCat(end, "_empty");
         else
-            sprintf(end + strlen(end), "_array_%d", (int)tp->size);
+            Optimizer::my_sprintf(end + strlen(end), sizeof(end)- strlen(end), "_array_%d", (int)tp->size);
         tp = tp->btp;
     }
     if (byRef)
-        strcat(end, "\xfe_br");
+        Utils::StrCat(end, "\xfe_br");
     if (pinned)
-        strcat(end, "\xfe_pin");
+        Utils::StrCat(end, "\xfe_pin");
     if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_enum)
     {
         return std::string(tp->sp->name) + end;
@@ -827,10 +828,11 @@ static Optimizer::SimpleSymbol* clone(Optimizer::SimpleSymbol* sp, bool ctype)
     // shallow copy
     Optimizer::SimpleSymbol* rv = (Optimizer::SimpleSymbol*)peLib->AllocateBytes(sizeof(Optimizer::SimpleSymbol));
     *rv = *sp;
-    rv->name = (char*)peLib->AllocateBytes(strlen(rv->name) + 1);
+    int l = strlen(rv->name);
+    rv->name = (char*)peLib->AllocateBytes(l + 1);
     if (ctype)
         rv->tp = cloneType(rv->tp);
-    strcpy((char*)rv->name, sp->name);
+    Utils::StrCpy((char*)rv->name, l+1, sp->name);
     return rv;
 }
 void CacheExtern(Optimizer::SimpleSymbol* sp)
@@ -1986,7 +1988,7 @@ void msil_main_postprocess(bool errors)
     {
         char path[260];
         char ilName[260];
-        GetOutputFileName(ilName, path, false);
+        GetOutputFileName(ilName, sizeof(ilName), path, sizeof(path), false);
         Utils::StripExt(ilName);
         LoadDynamics();
         AddRTLThunks();

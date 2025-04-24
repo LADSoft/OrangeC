@@ -133,23 +133,23 @@ void insertXCInfo(SYMBOL* funcsp)
     funcsp->sb->xc->xclab = sym;
 }
 
-static char* addNameSpace(char* buf, SYMBOL* sym)
+static char* addNameSpace(char *top, char* buf, SYMBOL* sym)
 {
     if (!sym)
         return buf;
-    buf = addNameSpace(buf, sym->sb->parentNameSpace);
-    Optimizer::my_sprintf(buf, "%s::", sym->name);
+    buf = addNameSpace(top, buf, sym->sb->parentNameSpace);
+    Optimizer::my_sprintf(buf, top - buf, "%s::", sym->name);
     return buf + strlen(buf);
 }
-static char* addParent(char* buf, SYMBOL* sym)
+static char* addParent(char *top, char* buf, SYMBOL* sym)
 {
     if (!sym)
         return buf;
     if (sym->sb->parentClass)
-        buf = addParent(buf, sym->sb->parentClass);
+        buf = addParent(top, buf, sym->sb->parentClass);
     else
-        buf = addNameSpace(buf, sym->sb->parentNameSpace);
-    Optimizer::my_sprintf(buf, "%s", sym->name);
+        buf = addNameSpace(top, buf, sym->sb->parentNameSpace);
+    Optimizer::my_sprintf(buf, top - buf, "%s", sym->name);
     return buf + strlen(buf);
 }
 static char* RTTIGetDisplayName(char *top, char* buf, Type* tp)
@@ -161,18 +161,18 @@ static char* RTTIGetDisplayName(char *top, char* buf, Type* tp)
     }
     if (tp->IsConst())
     {
-        Optimizer::my_sprintf(buf, "%s ", "const");
+        Optimizer::my_sprintf(buf, top - buf, "%s ", "const");
         buf += strlen(buf);
     }
     if (tp->IsVolatile())
     {
-        Optimizer::my_sprintf(buf, "%s ", "volatile");
+        Optimizer::my_sprintf(buf, top - buf, "%s ", "volatile");
         buf += strlen(buf);
     }
     tp = tp->BaseType();
     if (tp->IsStructured() || tp->type == BasicType::enum_)
     {
-        buf = addParent(buf, tp->sp);
+        buf = addParent(top, buf, tp->sp);
     }
     else if (tp->IsPtr())
     {

@@ -2216,7 +2216,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                 }
                 if (!decl && !hasEllipse && (Optimizer::architecture == ARCHITECTURE_MSIL))
                     toolong = true;
-                if (decl)
+                if (decl && itp != itpe)
                     CheckThroughConstObject(decl->tp, (*itp)->exp);
                 if (matching)
                 {

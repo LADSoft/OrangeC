@@ -233,15 +233,15 @@ static void CreateExternalCSharpReferences()
     toStrArgs.push_back(&objectType);
 
     Method* result;
-    if (peLib->Find("System.String::Concat", &result, strArgs) == PELib::s_method)
+    if (peLib->Find("System.String::Concat", &result, std::move(strArgs)) == PELib::s_method)
     {
         concatStr = result->Signature();
     }
-    if (peLib->Find("System.String::Concat", &result, objArgs) == PELib::s_method)
+    if (peLib->Find("System.String::Concat", &result, std::move(objArgs)) == PELib::s_method)
     {
         concatObj = result->Signature();
     }
-    if (peLib->Find("System.Convert::ToString", &result, toStrArgs) == PELib::s_method)
+    if (peLib->Find("System.Convert::ToString", &result, std::move(toStrArgs)) == PELib::s_method)
     {
         toStr = result->Signature();
     }

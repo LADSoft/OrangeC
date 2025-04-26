@@ -99,11 +99,11 @@ static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::ma
                         if (head->fwd->dc.opcode == i_add && head->fwd->dc.right->offset->type == se_structelem)
                         {
                             name = name + head->fwd->dc.right->offset->sp->outputName;
-                            Register(head->fwd, head->fwd->dc.right, name, map, automap);
+                            Register(head->fwd, head->fwd->dc.right, std::move(name), map, automap);
                         }
                         else
                         {
-                            Register(head, head->dc.left, name, map, automap);
+                            Register(head, head->dc.left, std::move(name), map, automap);
                         }
                     }
                 }
@@ -408,7 +408,7 @@ static std::deque<std::deque<QUAD*>> Sort(std::deque<QUAD*>& addresses)
         {
             std::deque<QUAD*> hold;
             hold.push_back(a);
-            aa.push_back(hold);
+            aa.push_back(std::move(hold));
         }
     }
     return aa;

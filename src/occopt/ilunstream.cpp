@@ -43,6 +43,7 @@
 #include "iblock.h"
 #include "memory.h"
 #include "OptUtils.h"
+#include "Utils.h"
 
 namespace Optimizer
 {
@@ -426,7 +427,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
         switch (rv->dc.opcode)
         {
             case i_icon:
-                UnstreamIntValue(&rv->dc.v.i, 8);
+                UnstreamIntValue(&rv->dc.v.i, sizeof(rv->dc.v.i));
                 break;
             case i_imcon:
             case i_fcon:
@@ -623,7 +624,7 @@ static void UnstreamXParams()
         std::string key, val;
         UnstreamString(key);
         UnstreamString(val);
-        bePragma[key] = val;
+        bePragma[key] = std::move(val);
     }
     UnstreamBlockType(SBT_XPARAMS, true);
 }
@@ -952,7 +953,7 @@ void ReadText(std::vector<std::string>& texts)
             val = itext[index1];
         if (index2)
             val += itext[index2];
-        texts.push_back(val);
+        texts.push_back(std::move(val));
     }
     UnstreamBlockType(SBT_TEXT, true);
 }
@@ -1281,9 +1282,11 @@ bool InputIntermediate(SharedMemory* inputMem)
 void ReadMappingFile(SharedMemory* mem, FILE* fil)
 {
     int pos = 0;
-    fseek(fil, 0, SEEK_END);
+    if (fseek(fil, 0, SEEK_END) == -1)
+        Utils::Fatal("Internal Error");
     int end = ftell(fil);
-    fseek(fil, 0, SEEK_SET);
+    if (fseek(fil, 0, SEEK_SET) == -1)
+        Utils::Fatal("Internal Error");
     mem->EnsureCommitted(end);
     unsigned char* p = mem->GetMapping();
     while (end > 0)
@@ -1292,7 +1295,8 @@ void ReadMappingFile(SharedMemory* mem, FILE* fil)
         int n = mem->ViewWindowSize();
         if (n > end)
             n = end;
-        fread(p + pos, n, 1, fil);
+        if (fread(p + pos, n, 1, fil) != n)
+            Utils::Fatal("Internal Error");
         pos += n;
         end -= n;
         p = mem->GetMapping(pos);

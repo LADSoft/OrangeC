@@ -1755,43 +1755,34 @@ int x86_examine_icode(QUAD* head)
                 }
                 break;
             case i_sub:
-                if (head->dc.left->mode == i_immed && (head->dc.left->offset->type == se_auto))
+            case i_and:
+            case i_or:
+            case i_eor:
+            case i_add:
+            case i_array:
+            case i_struct:
+                if (head->dc.opcode == i_sub)
                 {
-                    IMODE* temp;
-                    QUAD* q;
-                    temp = AllocateTemp(ISZ_ADDR);
-                    //						tempInfo[tempCount-1] = temp->offset;
-                    q = beLocalAllocate<QUAD>();
-                    q->dc.opcode = i_assn;
-                    q->ans = temp;
-                    q->dc.left = head->dc.left;
-                    head->dc.left = temp;
-                    head->temps |= TEMP_LEFT;
-                    InsertInstruction(head->back, q);
-                    changed = true;
-                }
-                if (head->dc.right->mode == i_immed && (head->dc.right->offset->type == se_auto))
-                {
-                    IMODE* temp;
-                    QUAD* q;
-                    temp = AllocateTemp(ISZ_ADDR);
-                    //						tempInfo[tempCount-1] = temp->offset;
-                    q = beLocalAllocate<QUAD>();
-                    q->dc.opcode = i_assn;
-                    q->ans = temp;
-                    q->dc.left = head->dc.right;
-                    head->dc.right = temp;
-                    head->temps |= TEMP_RIGHT;
-                    InsertInstruction(head->back, q);
-                    changed = true;
-                }
-                if (head->dc.right->mode == i_ind)
-                {
-                    if (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG)
+                    if (head->dc.left->mode == i_immed && (head->dc.left->offset->type == se_auto))
                     {
                         IMODE* temp;
                         QUAD* q;
-                        temp = AllocateTemp(head->dc.right->size);
+                        temp = AllocateTemp(ISZ_ADDR);
+                        //						tempInfo[tempCount-1] = temp->offset;
+                        q = beLocalAllocate<QUAD>();
+                        q->dc.opcode = i_assn;
+                        q->ans = temp;
+                        q->dc.left = head->dc.left;
+                        head->dc.left = temp;
+                        head->temps |= TEMP_LEFT;
+                        InsertInstruction(head->back, q);
+                        changed = true;
+                    }
+                    if (head->dc.right->mode == i_immed && (head->dc.right->offset->type == se_auto))
+                    {
+                        IMODE* temp;
+                        QUAD* q;
+                        temp = AllocateTemp(ISZ_ADDR);
                         //						tempInfo[tempCount-1] = temp->offset;
                         q = beLocalAllocate<QUAD>();
                         q->dc.opcode = i_assn;
@@ -1800,19 +1791,32 @@ int x86_examine_icode(QUAD* head)
                         head->dc.right = temp;
                         head->temps |= TEMP_RIGHT;
                         InsertInstruction(head->back, q);
-                        if (head == b->tail)
-                            b->tail = head->fwd;
                         changed = true;
                     }
+                    if (head->dc.right->mode == i_ind)
+                    {
+                        if (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG)
+                        {
+                            IMODE* temp;
+                            QUAD* q;
+                            temp = AllocateTemp(head->dc.right->size);
+                            //						tempInfo[tempCount-1] = temp->offset;
+                            q = beLocalAllocate<QUAD>();
+                            q->dc.opcode = i_assn;
+                            q->ans = temp;
+                            q->dc.left = head->dc.right;
+                            head->dc.right = temp;
+                            head->temps |= TEMP_RIGHT;
+                            InsertInstruction(head->back, q);
+                            if (head == b->tail)
+                                b->tail = head->fwd;
+                            changed = true;
+                        }
+                    }
                 }
-            case i_and:
-            case i_or:
-            case i_eor:
-            case i_add:
-            case i_array:
-            case i_struct:
                 /* make sure one of the ops is in a register  if necessary*/
             binary_join:
+
                 if (head->ans->mode != i_direct || head->ans->offset->type != se_tempref)
                 {
                     if ((!equalimode(head->dc.left, head->ans) || head->dc.right->mode != i_immed) &&
@@ -2345,18 +2349,22 @@ void x86InternalConflict(QUAD* head)
         case i_smod:
         case i_muluh:
         case i_mulsh:
-            /* for divs we have to make sure the answer node conflicts with anything
-             * that was used to load the numerator...
-             */
-            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
-                head->dc.left->offset->type == se_tempref)
-            {
-                int t1 = head->ans->offset->sp->i;
-                IterateConflict(t1, head->dc.left->offset->sp->i);
-            }
         case i_lsl:
         case i_lsr:
         case i_asr:
+            if (head->dc.opcode != i_lsl && head->dc.opcode != i_lsr && head->dc.opcode != i_asr)
+            {
+                /* for divs we have to make sure the answer node conflicts with anything
+                  * that was used to load the numerator...
+                  */
+                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
+                    head->dc.left->offset->type == se_tempref)
+                {
+                    int t1 = head->ans->offset->sp->i;
+                    IterateConflict(t1, head->dc.left->offset->sp->i);
+                }
+
+            }
             /* make sure that when regs are allocated, the right- hand argument is in a different
              * reg than the result.  For shifts this is the count value, for divs this is the denominator
              */
@@ -2382,6 +2390,7 @@ void x86InternalConflict(QUAD* head)
                     insertConflict(t1, t2);
                 }
             }
+            break;
         case i_assn:
             if (head->genConflict)
             {

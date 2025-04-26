@@ -202,7 +202,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
 
         bool dofastcall = false;
 
-        if (sym->storage_class == scc_parameter)
+        if (sym->storage_class == scc_parameter && sym->imvalue)
         {
             if (fastcallAlias)
             {

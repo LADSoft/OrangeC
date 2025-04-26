@@ -149,11 +149,14 @@ void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
                 break;
             case op_push:
                 addsize = true;
-                if (!aps->length)
-                    aps->length = ISZ_UINT;
-                if (aps->mode == am_immed && (aps->offset->type == Optimizer::se_i || aps->offset->type == Optimizer::se_ui) &&
-                    aps->offset->i >= CHAR_MIN && aps->offset->i <= CHAR_MAX)
-                    aps->length = ISZ_UCHAR;
+                if (aps)
+                {
+                    if (!aps->length)
+                        aps->length = ISZ_UINT;
+                    if (aps->mode == am_immed && (aps->offset->type == Optimizer::se_i || aps->offset->type == Optimizer::se_ui) &&
+                        aps->offset->i >= CHAR_MIN && aps->offset->i <= CHAR_MAX)
+                        aps->length = ISZ_UCHAR;
+                }
                 break;
             case op_add:
             case op_sub:
@@ -177,7 +180,7 @@ void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
                 else
                 {
                     addsize = true;
-                    if (!aps->length)
+                    if (aps && !aps->length)
                         aps->length = ISZ_UINT;
                 }
                 break;
@@ -218,7 +221,7 @@ void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
             }
         }
     }
-    if (op > sizeof(opcodeTable) / sizeof(opcodeTable[0]))
+    if (op >= sizeof(opcodeTable) / sizeof(opcodeTable[0]))
         diag("illegal opcode.");
     else
         outop(opcodeTable[op]);
@@ -786,7 +789,7 @@ void oa_gen_strlab(Optimizer::SimpleSymbol* sym)
     Utils::StrCpy(buf, sym->outputName);
     if (Optimizer::cparams.prm_asmfile)
     {
-        if (sym && sym->tp->type == Optimizer::st_func)
+        if (sym->tp->type == Optimizer::st_func)
             AsmOutput("; %s\n", ObjSymbol(sym->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
         if (oa_currentSeg == Optimizer::dataseg || oa_currentSeg == Optimizer::bssxseg)
         {
@@ -1502,7 +1505,7 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
         {
             oa_globaldef(sym);
         }
-        if (sym && sym->tp->type == Optimizer::st_func)
+        if (sym->tp->type == Optimizer::st_func)
             AsmOutput("; %s\n", ObjSymbol(sym->outputName, ObjSymbol::eGlobal, 0).GetDisplayName().c_str());
         AsmOutput("%s:\n", sym->outputName);
     }
@@ -1647,6 +1650,7 @@ long queue_large_const(unsigned constant[], int count)
         p->value = constant[i];
         if (i == 0)
             p->label = lbl;
+        *q = p;
     }
     return lbl;
 }
@@ -1655,18 +1659,21 @@ long queue_large_const(unsigned constant[], int count)
 long queue_floatval(FPF* number, int size)
 {
     MULDIV *p = muldivlink, **q = &muldivlink;
-    if (Optimizer::cparams.prm_mergestrings)
+    if (Optimizer::cparams.prm_mergestrings && number)
     {
         while (p)
         {
-            if (p->size == size && (number != nullptr) && p->floatvalue == *number)
+            if (p->size == size && p->floatvalue == *number)
                 return p->label;
             p = p->next;
         }
     }
     p = beGlobalAllocate<MULDIV>();
     p->next = 0;
-    p->floatvalue = *number;
+    if (number)
+        p->floatvalue = *number;
+    else
+        p->floatvalue = 0;
     p->size = size;
     while (*q)
         q = &(*q)->next;

@@ -353,6 +353,7 @@ static void CalculateTransparent(void)
     tail = intermed_tail;
     while (!tail->transparent)
         tail = tail->back;
+    head = tail; // not really necessary, but, placate the static analyzer
     while (tail)
     {
         setmap(tail->transparent, !tail->moveBarrier);
@@ -1322,7 +1323,7 @@ static void SortOCP(QUAD* head)
             {
                 processing |= PlaceOCP(working, current);
             }
-            queue = working;
+            queue = std::move(working);
         }
         for (auto current : queue)
         {

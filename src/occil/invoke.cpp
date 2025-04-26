@@ -75,7 +75,7 @@ static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext)
     while (*r)
         r = &(*r)->next;
     *r = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
-    if (!r)
+    if (!*r)
         return;
     (*r)->next = 0;
     (*r)->data = newbuffer;
@@ -159,42 +159,6 @@ void NextOutputFileName()
 }
 int RunExternalFiles()
 {
-    char args[1024], *c0;
-    char spname[2048];
-    char outName[260], *p;
-    int rv;
-    char temp[260];
-    return 0;
-
-    GetOutputFileName(outName, sizeof(outName), temp, sizeof(temp), false);
-    Utils::StripExt(outName);
-    Utils::AddExt(outName, ".il");
-    while (rclist)
-    {
-        rv = ToolChain::ToolInvoke("orc.exe", nullptr, " -r %s \"%s\"", !Optimizer::showBanner ? "-!" : "", (char*)rclist->data);
-        if (rv)
-            return rv;
-        rclist = rclist->next;
-    }
-    if (objlist)
-    {
-        std::string sdebug = Optimizer::cparams.prm_debug ? "/DEBUG" : "";
-        std::string starget = Optimizer::cparams.prm_targettype == DLL ? "/DLL" : "";
-        std::string resources;
-        while (reslist)
-        {
-            resources += std::string(" /Resource:\"") + (char*)reslist->data + "\"";
-            reslist = reslist->next;
-        }
-        sprintf(spname, "ilasm.exe /QUIET %s %s \"%s%s\" %s", sdebug.c_str(), starget.c_str(), temp, outName, resources.c_str());
-        rv = system(spname);
-
-        if (rv)
-        {
-            printf("assembly failed");
-            return rv;
-        }
-    }
     return 0;
 }
 }  // namespace occmsil

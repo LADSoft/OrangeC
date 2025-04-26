@@ -156,15 +156,18 @@ static void OverflowInit(QUAD* head)
         it = it->fwd;
     auto init = rwSetSymbol("___buffer_overflow_init", true);
 
-    QUAD* ins = Allocate<QUAD>();
-    ins->dc.opcode = i_parm;
-    InsertInstruction(it, ins);
-    ins->dc.left = make_immed(ISZ_UINT, -lc_maxauto);
-    ins = Allocate<QUAD>();
-    ins->dc.opcode = i_gosub;
-    ins->dc.left = init;
-    InsertInstruction(it->fwd, ins);
-    insert_nullparmadj(it->fwd->fwd, 0);
+    if (it)
+    {
+        QUAD* ins = Allocate<QUAD>();
+        ins->dc.opcode = i_parm;
+        InsertInstruction(it, ins);
+        ins->dc.left = make_immed(ISZ_UINT, -lc_maxauto);
+        ins = Allocate<QUAD>();
+        ins->dc.opcode = i_gosub;
+        ins->dc.left = init;
+        InsertInstruction(it->fwd, ins);
+        insert_nullparmadj(it->fwd->fwd, 0);
+    }
 }
 
 void CreateUninitializedVariableStubs(QUAD* head, QUAD* tail)

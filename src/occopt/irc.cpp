@@ -1948,7 +1948,7 @@ static void SpillCoalesce(BriggsSet* C, BriggsSet* S)
                 GetSpillVar(ml->a);
                 tempInfo[ml->b]->spillVar = tempInfo[ml->a]->spillVar;
             }
-            JoinConflictLists(ml->a, ml->b);
+//            JoinConflictLists(ml->a, ml->b);
         }
     }
 }
@@ -1989,7 +1989,7 @@ static unsigned lscost(int size)
     switch (size)
     {
         case ISZ_BIT:
-            return 0;
+            return 1;
         case ISZ_UCHAR:
         case -ISZ_UCHAR:
             return p->a_char;

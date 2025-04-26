@@ -585,7 +585,7 @@ OCODE* peep_neg(OCODE* ip)
                     if (ipf->oper2->sreg == ip->oper1->preg)
                         break;
             }
-            if (ipf->oper3)
+            if (ipf->oper3 && ipf->oper1)
             {
                 if (ipf->oper3->mode == am_dreg || ipf->oper3->mode == am_indisp || ipf->oper3->mode == am_indispscale)
                     if (ipf->oper3->preg == ip->oper1->preg)
@@ -1061,6 +1061,7 @@ void peep_mov(OCODE* ip)
 void peep_movzx(OCODE* ip)
 {
     if (ip->back->opcode == op_mov)
+    {
         if (ip->oper2->mode == am_dreg)
         {
             if (ip->oper2->preg == ip->oper1->preg)
@@ -1102,104 +1103,6 @@ void peep_movzx(OCODE* ip)
                 }
             }
         }
-}
-void peep_movzx2(OCODE* ip)
-{
-    return;
-    if (ip->opcode == op_movzx)
-    {
-
-        if (ip->oper2->mode == am_dreg)
-        {
-            if (ip->oper2->length == ISZ_UCHAR)
-            {
-                if (ip->oper2->preg == ip->oper1->preg && ip->oper1->preg <= EBX)
-                {
-                    if (ip->oper2->length == ISZ_UCHAR)
-                        ip->oper2 = aimmed(0xff);
-                    else
-                        ip->oper2 = aimmed(0xffff);
-                    ip->opcode = op_and;
-                }
-                else if (ip->oper1->preg <= EBX && (ip->oper2->preg & 3) != ip->oper1->preg)
-                {
-                    OCODE* c1 = beLocalAllocate<OCODE>();
-                    c1->opcode = op_xor;
-                    c1->oper1 = makedreg(ip->oper1->preg);
-                    c1->oper2 = makedreg(ip->oper1->preg);
-                    c1->back = ip->back;
-                    c1->fwd = ip;
-                    ip->back->fwd = c1;
-                    ip->back = c1;
-                    ip->opcode = op_mov;
-                    ip->oper1->length = ip->oper2->length;
-                    ip->noopt = true;
-                }
-            }
-            else
-            {
-                if (ip->oper2->preg == ip->oper1->preg)
-                {
-                    if (ip->oper2->length == ISZ_UCHAR)
-                        ip->oper2 = aimmed(0xff);
-                    else
-                        ip->oper2 = aimmed(0xffff);
-                    ip->opcode = op_and;
-                }
-                else
-                {
-                    OCODE* c1 = beLocalAllocate<OCODE>();
-                    c1->opcode = op_xor;
-                    c1->oper1 = makedreg(ip->oper1->preg);
-                    c1->oper2 = makedreg(ip->oper1->preg);
-                    c1->back = ip->back;
-                    c1->fwd = ip;
-                    ip->back->fwd = c1;
-                    ip->back = c1;
-                    ip->opcode = op_mov;
-                    ip->oper1->length = ip->oper2->length;
-                    ip->noopt = true;
-                }
-            }
-        }
-        else
-        {
-            if (ip->oper1->preg <= EBX)
-            {
-                if (((ip->oper2->mode != am_indisp && ip->oper2->mode != am_indispscale) || ip->oper2->preg != ip->oper1->preg) &&
-                    (ip->oper2->mode != am_indispscale || ip->oper2->sreg != ip->oper1->preg))
-                {
-                    OCODE* c1 = beLocalAllocate<OCODE>();
-                    c1->opcode = op_xor;
-                    c1->oper1 = makedreg(ip->oper1->preg);
-                    c1->oper2 = makedreg(ip->oper1->preg);
-                    c1->back = ip->back;
-                    c1->fwd = ip;
-                    ip->back->fwd = c1;
-                    ip->back = c1;
-                    ip->opcode = op_mov;
-                    ip->oper1->length = ip->oper2->length;
-                    ip->noopt = true;
-                }
-                else
-                {
-                    OCODE* c1 = beLocalAllocate<OCODE>();
-                    c1->opcode = op_and;
-                    c1->oper1 = makedreg(ip->oper1->preg);
-                    if (ip->oper2->length == ISZ_UCHAR)
-                        c1->oper2 = aimmed(0xff);
-                    else
-                        c1->oper2 = aimmed(0xffff);
-                    c1->fwd = ip->fwd;
-                    c1->back = ip;
-                    ip->fwd->back = c1;
-                    ip->fwd = c1;
-                    ip->opcode = op_mov;
-                    ip->oper1->length = ip->oper2->length;
-                    ip->noopt = true;
-                }
-            }
-        }
     }
 }
 void peep_tworeg(OCODE* ip)
@@ -1234,30 +1137,33 @@ void peep_tworeg(OCODE* ip)
 }
 void peep_mathdirect(OCODE* ip)
 {
-    if (ip->oper1 && ip->oper2 && ip->oper1->mode == am_dreg && ip->fwd->opcode == op_mov)
+    if (ip->oper1 && ip->oper2)
     {
-        if (!live(ip->fwd->oper1->liveRegs, ip->oper1->preg))
+        if (ip->oper1->mode == am_dreg && ip->fwd->opcode == op_mov)
         {
-            if (equal_address(ip->fwd->oper1, ip->oper2))
+            if (!live(ip->fwd->oper1->liveRegs, ip->oper1->preg))
             {
-                if (equal_address(ip->oper1, ip->fwd->oper2))
+                if (equal_address(ip->fwd->oper1, ip->oper2))
                 {
-                    ip->fwd->opcode = ip->opcode;
-                    remove_peep_entry(ip);
+                    if (equal_address(ip->oper1, ip->fwd->oper2))
+                    {
+                        ip->fwd->opcode = ip->opcode;
+                        remove_peep_entry(ip);
+                    }
                 }
             }
         }
-    }
-    if (ip->oper2 && ip->oper2->mode == am_immed)
-    {
-        if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == -ISZ_USHORT || ip->oper1->length == ISZ_U16 ||
-            ip->oper1->length == ISZ_WCHAR)
+        if (ip->oper2->mode == am_immed)
         {
-            ip->oper2->offset->i &= 0xffff;
-        }
-        if (ip->oper1->length == ISZ_UCHAR || ip->oper1->length == -ISZ_UCHAR)
-        {
-            ip->oper2->offset->i &= 0xff;
+            if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == -ISZ_USHORT || ip->oper1->length == ISZ_U16 ||
+                ip->oper1->length == ISZ_WCHAR)
+            {
+                ip->oper2->offset->i &= 0xffff;
+            }
+            if (ip->oper1->length == ISZ_UCHAR || ip->oper1->length == -ISZ_UCHAR)
+            {
+                ip->oper2->offset->i &= 0xff;
+            }
         }
     }
 }
@@ -1463,11 +1369,14 @@ int equal_address(AMODE* ap1, AMODE* ap2)
         case am_immed:
             return equalnode(ap1->offset, ap2->offset);
         case am_indispscale:
-            if (ap1->scale != ap2->scale || ap1->sreg != ap2->sreg)
-                return (false);
-            if (ap1->sreg != ap2->sreg)
-                return false;
         case am_indisp:
+            if (ap1->mode == am_indispscale)
+            {
+                if (ap1->scale != ap2->scale || ap1->sreg != ap2->sreg)
+                    return (false);
+                if (ap1->sreg != ap2->sreg)
+                    return false;
+            }
             if (ap1->offset)
                 if (ap2->offset)
                 {
@@ -1478,6 +1387,9 @@ int equal_address(AMODE* ap1, AMODE* ap2)
                     return (false);
             else if (ap2->offset)
                 return (false);
+            if (ap1->preg != ap2->preg)
+                return (false);
+            return true;
         case am_dreg:
             if (ap1->preg != ap2->preg)
                 return (false);
@@ -1821,6 +1733,10 @@ void oa_peep(void)
                     break;
                 case op_xor:
                     peep_xor(ip);
+                    peep_tworeg(ip);
+                    peep_mathdirect(ip);
+                    peep_or(ip);
+                    break;
                 case op_or:
                     peep_tworeg(ip);
                     peep_mathdirect(ip);
@@ -1840,7 +1756,6 @@ void oa_peep(void)
                     break;
                 case op_movzx:
                     peep_movzx(ip);
-                    peep_movzx2(ip);
                     break;
                 case op_mov:
                     if (equal_address(ip->oper1, ip->oper2))

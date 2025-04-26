@@ -74,20 +74,6 @@ void insertConflict(int i, int j)
     setbit(ti->conflicts, j);
     setbit(tj->conflicts, i);
 }
-static void JoinOneList(int T0, int T1)
-{
-    int i;
-    BITINT* t0 = tempInfo[T0]->conflicts;
-    BITINT* t1 = tempInfo[T1]->conflicts;
-    return;
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-        *t1 = *t0 |= *t1;
-}
-void JoinConflictLists(int T0, int T1)
-{
-    JoinOneList(T0, T1);
-    JoinOneList(T1, T0);
-}
 bool isConflicting(int T0, int T1)
 {
     int bucket;

@@ -144,19 +144,6 @@ Optimizer::IMODE* liveout2(Optimizer::QUAD* q)
     if (!q)
         return nullptr;
     return q->ans;
-#ifdef XXXXX
-    if (q->dc.opcode == i_assn)
-        if (q->livein & IM_LIVELEFT)
-            if (q->dc.left->retval)
-                rv = q->ans;
-            else
-                rv = q->dc.left;
-        else
-            rv = liveout2((Optimizer::QUAD*)q->dc.left);
-    else
-        rv = q->ans;
-    return rv;
-#endif
 }
 /*-------------------------------------------------------------------------*/
 
@@ -184,8 +171,7 @@ int ToQuadConst(Optimizer::IMODE** im)
 {
     if (*im && (*im)->mode == i_immed)
     {
-        Optimizer::QUAD *rv, temp;
-        memset(&temp, 0, sizeof(temp));
+        Optimizer::QUAD *rv, temp {};
         if (isintconst((*im)->offset))
         {
             temp.dc.opcode = i_icon;

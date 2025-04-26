@@ -491,11 +491,11 @@ MAINTRY
             {
                 startTime = clock();
             }
-            for (auto v : Optimizer::toolArgs)
+            for (const auto& v : Optimizer::toolArgs)
             {
                 InsertOption(v.c_str());
             }
-            for (auto f : Optimizer::backendFiles)
+            for (const auto& f : Optimizer::backendFiles)
             {
                 InsertExternalFile(f.c_str(), false);
             }
@@ -506,7 +506,7 @@ MAINTRY
                     Utils::Fatal("File I/O error");
                 files.pop_front();
             }
-            for (auto p : files)
+            for (const auto& p : files)
             {
                 if (!LoadFile(optimizerMem))
                     Utils::Fatal("internal error: could not load intermediate file");

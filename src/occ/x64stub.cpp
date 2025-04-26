@@ -160,7 +160,9 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
 {
 
     unsigned char* pdata = data.get();
-    if (pdata && size >= 3 && pdata[0] == 0x0f && pdata[1] == 0x0f && (pdata[2] == 0x9a || pdata[2] == 0xea))
+    if (!pdata)
+        return;
+    if (size >= 3 && pdata[0] == 0x0f && pdata[1] == 0x0f && (pdata[2] == 0x9a || pdata[2] == 0xea))
     {
         if (fixups.size() != 1)
         {
@@ -174,7 +176,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
             std::shared_ptr<AsmExprNode> expr = AsmExpr::Eval(f->GetExpr(), pc);
             if (expr->IsAbsolute())
             {
-                memcpy(pdata, pdata + 1, size - 1);
+                memmove(pdata, pdata + 1, size - 1);
                 size -= 3;
                 f->SetInsOffs(f->GetInsOffs() - 1);
                 pdata[0] = 0x0e;  // push cs
@@ -213,7 +215,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                 int p = fixup->GetInsOffs();
                 if (fixup->GetSize() < 4 || (expr->GetType() == AsmExprNode::IVAL && fixup->GetSize() == 4))
                 {
-                    int o;
+                    long long o;
                     bool error = false;
                     if (expr->GetType() == AsmExprNode::IVAL)
                         o = expr->ival;

@@ -85,7 +85,7 @@ std::string ParseOptimizerParams(std::string in)
 {
     std::string rv;
     auto xx = Utils::split(in);
-    for (auto a : xx)
+    for (const auto & a : xx)
     {
         bool working = false;
         bool icd = false;
@@ -106,7 +106,7 @@ std::string ParseOptimizerParams(std::string in)
             auto test = a.substr(offs);
             bool found = false;
 
-            for (auto&& v : icd ? IcdParams : Params)
+            for (auto && v : icd ? IcdParams : Params)
             {
                 if (v.paramName && test == v.paramName)
                 {

@@ -789,24 +789,30 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         if (im->size >= ISZ_CFLOAT)
         {
             *aph = beLocalAllocate<AMODE>();
-            **aph = **apl;
-            (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
-                                                             Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
-            if ((*apl)->preg >= 0)
-                (*apl)->liveRegs |= 1 << (*apl)->preg;
-            if ((*apl)->sreg >= 0)
-                (*apl)->liveRegs |= 1 << (*apl)->sreg;
+            if (*apl)
+            {
+                **aph = **apl;
+                (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
+                    Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
+                if ((*apl)->preg >= 0)
+                    (*apl)->liveRegs |= 1 << (*apl)->preg;
+                if ((*apl)->sreg >= 0)
+                    (*apl)->liveRegs |= 1 << (*apl)->sreg;
+            }
         }
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
             *aph = beLocalAllocate<AMODE>();
-            **aph = **apl;
-            (*aph)->offset =
-                Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
-            if ((*apl)->preg >= 0)
-                (*apl)->liveRegs |= 1 << (*apl)->preg;
-            if ((*apl)->sreg >= 0)
-                (*apl)->liveRegs |= 1 << (*apl)->sreg;
+            if (*apl)
+            {
+                **aph = **apl;
+                (*aph)->offset =
+                    Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
+                if ((*apl)->preg >= 0)
+                    (*apl)->liveRegs |= 1 << (*apl)->preg;
+                if ((*apl)->sreg >= 0)
+                    (*apl)->liveRegs |= 1 << (*apl)->sreg;
+            }
         }
     }
     else if (im->mode == Optimizer::i_immed)
@@ -837,14 +843,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
             *apl = aimmed(im->offset->i);
-#ifdef USE_LONGLONG
-            *aph = aimmed((im->offset->i >> 32));
-#else
-            if (im->size < 0 && im->offset->i < 0)
-                *aph = aimmed(-1);
-            else
-                *aph = aimmed(0);
-#endif
+            *aph = aimmed(im->offset->i >> 32);
         }
         else
         {
@@ -876,14 +875,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
                 else if (im->offset->sizeFromType == ISZ_ULONGLONG || im->offset->sizeFromType == -ISZ_ULONGLONG)
                 {
                     *apl = aimmed(im->offset->i);
-#ifdef USE_LONGLONG
-                    *aph = aimmed((im->offset->i >> 32));
-#else
-                    if (im->size < 0 && im->offset->i < 0)
-                        *aph = aimmed(-1);
-                    else
-                        *aph = aimmed(0);
-#endif
+                    *aph = aimmed(im->offset->i >> 32);
                 }
                 else
                 {
@@ -896,14 +888,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
                         (*apl)->mode = am_immed;
                     }
                     // in case of a int const being used with a long long
-#ifdef USE_LONGLONG
                     *aph = aimmed((im->offset->i >> 32));
-#else
-                    if (im->size < 0 && im->offset->i < 0)
-                        *aph = aimmed(-1);
-                    else
-                        *aph = aimmed(0);
-#endif
                 }
             }
         }
@@ -1019,7 +1004,7 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
                 gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
             }
             dest->liveRegs = l;
-            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((1 << bits) - 1)) << startbit));
+            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits))  - 1)) << startbit));
         }
     }
     else
@@ -1799,11 +1784,7 @@ static void compactSwitchHeader(long long bottom)
         if (bottom)
         {
             int golab = beGetLabel;
-#ifdef USE_LONGLONG
             gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed(bottom >> 32));
-#else
-            gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed((switch_ip->size < 9 && bottom < 0) ? -1 : 0));
-#endif
             if (size < 0)
             {
                 gen_branch(op_jl, switch_deflab);
@@ -1964,7 +1945,6 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
     bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
     int reg1 = 0, reg2 = 0, reg3 = 0;
     int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
-    bool pushpair = false;
     gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
     gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
     pushlevel += 8;
@@ -2093,7 +2073,7 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
     }
     if (pushreg3)
     {
-        if (equal_address(apal, makedreg(reg3)) || equal_address(apah, makedreg(reg3)))
+        if (equal_address(apal, makedreg(reg3)) || apah && equal_address(apah, makedreg(reg3)))
             gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
         else
             gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
@@ -2113,13 +2093,6 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
             gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
         else
             gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
-        pushlevel -= 4;
-    }
-    else if (pushpair)
-    {
-        gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
-        pushlevel -= 4;
-        gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
         pushlevel -= 4;
     }
     if (apal->preg != EBX && (!apah || apah->preg != EBX))
@@ -3745,14 +3718,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         {
 
             apl = aimmed(q->dc.v.i);
-#ifdef USE_LONGLONG
-            apl1 = aimmed((q->dc.v.i >> 32));
-#else
-            if (q->dc.i < 0)
-                apl1 = aimmed(-1);
-            else
-                apl1 = aimmed(0);
-#endif
+            apl1 = aimmed(0);
         }
         else
         {
@@ -3769,7 +3735,10 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         make_floatconst(apl, apl->offset->sizeFromType);
     }
     else
+    {
+        apl = aimmed(0);
         diag("asm_assn: unknown opcode");
+    }
     if (sza == szl || q->dc.left->mode == Optimizer::i_immed)
     {
         if (q->atomic && (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG))
@@ -3781,7 +3750,6 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             bool pushreg1 = false, pushreg2 = false;
             int reg1 = 0, reg2 = 0;
             int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
-            bool pushpair = false;
             AMODE *aplhold = apl1, *apllold = apl;
             gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
             gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
@@ -3866,11 +3834,6 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             {
                 gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
                 pushlevel -= 4;
-            }
-            else if (pushpair)
-            {
-                gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
-                pushlevel -= 8;
             }
             if (apa->mode != am_dreg)
             {
@@ -4451,6 +4414,8 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             }
             if (sza == ISZ_ULONGLONG)
             {
+                if (!apa1)
+                    apa1 = aimmed(0);
                 if (q->dc.left->size < 0)
                 {
                     if (apa1->mode == am_dreg && apa->mode == am_dreg && apa1->preg == EDX && apa->preg == EAX)
@@ -4538,14 +4503,7 @@ void asm_swbranch(Optimizer::QUAD* q) /* case characteristics */
                 gen_codes(op_cmp, ISZ_UINT, switch_apl, aimmed(swcase));
                 gen_branch(op_jne, nxlab);
                 peep_tail->oper1->liveRegs = switch_live;
-#ifdef USE_LONGLONG
                 gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed(swcase >> 32));
-#else
-                if (switch_ip->size < 0 && swcase < 0)
-                    gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed(-1));
-                else
-                    gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed(0));
-#endif
                 gen_branch(op_je, lab);
                 peep_tail->oper1->liveRegs = switch_live;
                 oa_gen_label(nxlab);

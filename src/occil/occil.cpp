@@ -110,12 +110,12 @@ void ResolveMSILExterns()
                 LoadParams(sp, params, paramList);
 
                 std::vector<Type*> types;
-                for (auto v : paramList)
+                for (const auto& v : paramList)
                 {
                     types.push_back(v.second->GetType());
                 }
                 Method* rv = nullptr;
-                peLib->Find(sp->msil, &rv, types, nullptr, nullptr, nullptr, true);
+                (void)peLib->Find(sp->msil, &rv, std::move(types), nullptr, nullptr, nullptr, true);
                 if (rv)
                     sp->msil = (const char*)rv;
                 else
@@ -481,7 +481,7 @@ MAINTRY
         {
             startTime = clock();
         }
-        for (auto f : Optimizer::backendFiles)
+        for (const auto& f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
         }
@@ -494,7 +494,7 @@ MAINTRY
         }
         if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
         {
-            for (auto p : files)
+            for (const auto& p : files)
             {
                 if (!LoadFile(optimizerMem, p))
                     Utils::Fatal("internal error: could not load intermediate file");

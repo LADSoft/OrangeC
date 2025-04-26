@@ -959,6 +959,7 @@ static void HandleAssnBlock(QUAD* head)
     else
     {
         diag("HandleAssnBlock: invalid dest type");
+        return;
     }
 
     if (head->dc.right->mode == i_direct && ((head->temps & TEMP_RIGHT) || head->dc.right->retval))
@@ -1182,7 +1183,7 @@ void AliasStruct(BITINT* bits, IMODE* ans, IMODE* left, IMODE* right)
                     ALIASADDRESS* aa2 = LookupAddress(an, 0);
                     while (aa2->merge)
                         aa2 = aa2->merge;
-                    if (aa2 && aa2->modifiedBy)
+                    if (aa2->modifiedBy)
                     {
                         ormap(bits, aa2->modifiedBy);
                     }
@@ -1205,7 +1206,7 @@ void AliasStruct(BITINT* bits, IMODE* ans, IMODE* left, IMODE* right)
                 aa = LookupAddress(an2, 0);
                 while (aa->merge)
                     aa = aa->merge;
-                if (aa && aa->modifiedBy)
+                if (aa->modifiedBy)
                 {
                     ormap(bits, aa->modifiedBy);
                 }
@@ -1255,7 +1256,7 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
                         {
                             while (aa->merge)
                                 aa = aa->merge;
-                            if (aa && aa->modifiedBy)
+                            if (aa->modifiedBy)
                             {
                                 ormap(parms, aa->modifiedBy);
                             }

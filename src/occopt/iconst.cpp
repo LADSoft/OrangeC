@@ -252,13 +252,8 @@ static int xgetmode(QUAD* d, SimpleExpression** left, SimpleExpression** right)
         else
         {
             if (isintconst((*left)))
-                mode = icln;
-            else if (isconstaddress((*left)))
             {
-                if (isintconst((*right)))
-                    mode = ical;
-                else if (isconstaddress((*right)))
-                    mode = icaa;
+                mode = icln;
             }
             else if (!((*left)->pragmas & STD_PRAGMA_FENV))
             {
@@ -1600,18 +1595,24 @@ static void emulBlock(Block* b)
     bool br = false;
     while (head && (head->ignoreMe || head->dc.opcode == i_label))
         head = head->fwd;
-    while (head->dc.opcode == i_phi)  // possible null pointer deref
+    if (head)
     {
-        emulInstruction(head, b);
-        head = head->fwd;
+        while (head->dc.opcode == i_phi)  // possible null pointer deref
+        {
+            emulInstruction(head, b);
+            head = head->fwd;
+        }
     }
     if (!briggsTest(visited, b->blocknum))
     {
         briggsSet(visited, b->blocknum);
-        while (head != b->tail->fwd)
+        if (head)
         {
-            br |= emulInstruction(head, b);
-            head = head->fwd;
+            while (head != b->tail->fwd)
+            {
+                br |= emulInstruction(head, b);
+                head = head->fwd;
+            }
         }
         if (!br)
         {
@@ -1755,73 +1756,6 @@ static void removeForward(Block* start)
                 // not doing this optimization, because GOTO statements  in the cases cause a crash
                 // look at dtoa.c if you want to try to resolve it..
                 break;
-                if (tail->dc.left->mode == i_immed)
-                {
-                    con = tail->dc.left->offset->i;
-                }
-                else if ((tail->temps & TEMP_LEFT) && tail->dc.left->mode == i_direct)
-                {
-                    int t = tail->dc.left->offset->sp->i;
-                    if (tempInfo[t]->value.type == vo_constant)
-                    {
-                        con = tail->dc.left->offset->i;
-                    }
-                    else
-                        break;
-                }
-                else
-                    break;
-                {
-                    Block* b = nullptr;
-                    BLOCKLIST** succ = &tail->block->succ->next;
-                    if (*succ)
-                    {
-                        QUAD* find = tail->fwd;
-                        while (find && find->dc.opcode == i_swbranch)
-                        {
-                            if (find->dc.left->offset->i == con)
-                            {
-                                tail->dc.v.label = find->dc.v.label;
-                                succ = &(*succ)->next;
-                                b = tail->block;
-                            }
-                            else
-                            {
-                                BLOCKLIST* bl1 = (*succ)->block->succ;
-                                while (bl1)
-                                {
-                                    BLOCKLIST** bl = &bl1->block->pred;
-                                    int n = 0;
-                                    while (*bl)
-                                    {
-                                        if ((*bl)->block == (*succ)->block)
-                                        {
-                                            (*bl) = (*bl)->next;
-                                            removePhiEntry(bl1->block, n);
-                                            break;
-                                        }
-                                        n++;
-                                        bl = &(*bl)->next;
-                                    }
-                                    bl1 = bl1->next;
-                                }
-                                (*succ)->block->pred = nullptr;
-                                (*succ) = (*succ)->next;
-                            }
-                            find = find->fwd;
-                        }
-                    }
-                    tail->dc.opcode = i_goto; /* normally this branch will be
-                                               * to next and will itself
-                                               * be optimized away later
-                                               * we also will let the dead code elimination
-                                               * clear out the garbage...
-                                               */
-
-                    tail->ans = tail->dc.left = tail->dc.right = nullptr;
-                    tail->temps = 0;
-                }
-                return;
             default:
                 break;
         }

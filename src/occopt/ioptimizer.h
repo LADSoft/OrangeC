@@ -520,6 +520,9 @@ struct _basic_dag
         {
             /* values for constant nodes */
             unsigned i; // should be unsigned long long but that broke the builds for the 32 bit compiler...   will have to revist when working on 64 bit compilers.
+                        // as more on this story, later coverity pointed out that using dc.v.i in iconst.cpp was broken,
+                        // because all the conversions were from long long...  but just adding a new long long member
+                        // to this union so i could attempt to fix it, again broke the builds...
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
             long label;  // branches

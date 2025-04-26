@@ -241,7 +241,7 @@ Operand* getOperand(Optimizer::IMODE* oper)
     switch (oper->mode)
     {
         case Optimizer::i_immed:
-            if (oper && oper->mode == Optimizer::i_immed && oper->offset->type == Optimizer::se_msil_array_access)
+            if (oper->mode == Optimizer::i_immed && oper->offset->type == Optimizer::se_msil_array_access)
             {
                 Type* tp = GetType(oper->offset->msilArrayTP, true);
                 if (tp->ArrayLevel() == 1)
@@ -412,7 +412,8 @@ void load_ind(Optimizer::IMODE* im)
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
-            break;
+            diag("LoadInd: complex");
+            return;
         case ISZ_OBJECT:
             op = Instruction::i_ldobj;
             operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->sp->tp, true, 0, 0)));
@@ -421,6 +422,8 @@ void load_ind(Optimizer::IMODE* im)
             op = Instruction::i_ldobj;
             operand = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::string, 0)));
             break;
+        default:
+            return;
     }
     gen_code(op, operand);
 }
@@ -474,7 +477,8 @@ void store_ind(Optimizer::IMODE* im)
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
-            break;
+            diag("store_ind: complex");
+            return;
         case ISZ_STRING:
             op = Instruction::i_stobj;
             operand = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::string, 0)));
@@ -483,6 +487,9 @@ void store_ind(Optimizer::IMODE* im)
             op = Instruction::i_stobj;
             operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->sp->tp, true, 0, 0)));
             break;
+        default:
+            diag("store_ind: unknown size");
+            return;
     }
     gen_code(op, operand);
     decrement_stack();
@@ -533,7 +540,11 @@ void load_arithmetic_constant(int sz, Operand* operand)
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
-            break;
+            diag("load_arithmetic_constant: complex");
+            return;
+        default:
+            diag("load_arithmetic_constant: unknown size");
+            return;
     }
     gen_code(op, operand);
     increment_stack();
@@ -586,7 +597,8 @@ void load_constant(int sz, Optimizer::SimpleExpression* exp)
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
-            break;
+            diag("load_const: complex");
+            return;
     }
     gen_code(op, operand);
     increment_stack();
@@ -853,7 +865,8 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
-            break;
+            diag("gen_convert: conversion to complex"); 
+            return;
         case ISZ_OBJECT:
             box(im);
             return;
@@ -863,7 +876,10 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
             Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_call, ap);
             return;
-        }
+       }
+         default:
+            diag("gen_convert: unknown conversion");
+            return;
     }
     gen_code(op, NULL);
 }
@@ -1101,7 +1117,7 @@ static bool bltin_gosub(Optimizer::QUAD* q)
                 Operand* operand = peLib->AllocateOperand(peLib->AllocateMethodName(ptrUnbox));
                 gen_code(Instruction::i_call, operand);
             }
-            else if (tp->type != Optimizer::st_struct && tp->type != Optimizer::st_union && !tp->isarray)
+            else if (tp->type != Optimizer::st_struct && tp->type != Optimizer::st_union && !tp->isarray && args->next)
             {
                 Optimizer::SimpleExpression* exp = args->next->exp;
                 unbox(exp->sp->tp->sizeFromType);
@@ -1309,7 +1325,8 @@ void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */ { set_xxx(Instruct
 void asm_assn(Optimizer::QUAD* q) /* assignment */
 {
     Operand* ap;
-
+    if (!q->ans || !q->dc.left)
+        return;
     if (q->ans && q->ans->mode == Optimizer::i_immed && q->ans->offset->type == Optimizer::se_msil_array_access)
     {
         Type* tp = GetType(q->ans->offset->msilArrayTP, true);

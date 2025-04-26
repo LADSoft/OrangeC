@@ -109,7 +109,7 @@ static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext, b
     while (*r)
         r = &(*r)->next;
     *r = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
-    if (!r)
+    if (!*r)
         return;
     (*r)->next = 0;
     (*r)->data = newbuffer;

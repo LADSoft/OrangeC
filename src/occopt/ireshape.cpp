@@ -255,7 +255,7 @@ static void CreateExpressionLists(void)
                 {
                     enum i_ops op = tempInfo[i]->instructionDefines->dc.opcode;
                     tempInfo[i]->expression.op = op;
-                    GatherExpression(i, &tempInfo[i]->expression, 0);
+                    (void)GatherExpression(i, &tempInfo[i]->expression, 0);
                 }
                 else
                 {
@@ -486,16 +486,6 @@ static IMODE* InsertAddInstruction(Block* b, int size, QUAD* insertBefore, int f
         insn->dc.left = iml;
         iml = insn->ans;
     }
-    /*
-    if (flagsr & (RF_NEG | RF_NOT))
-    {
-        insn2 = Allocate<QUAD>();
-        insn2->ans = InitTempOpt(size,size);
-        insn2->dc.opcode = flagsr & RF_NEG ? i_neg : i_not;
-        insn2->dc.left = imr;
-        imr = insn2->ans;
-    }
-    */
     ins = Allocate<QUAD>();
     ins->dc.opcode = flagsr & RF_NEG ? i_sub : i_add;
     ins->dc.left = iml;
@@ -512,10 +502,6 @@ static IMODE* InsertAddInstruction(Block* b, int size, QUAD* insertBefore, int f
         if (insn)
         {
             InsertInstruction(insertBefore->back, insn);
-        }
-        if (insn2)
-        {
-            InsertInstruction(insertBefore->back, insn2);
         }
         InsertInstruction(insertBefore->back, ins);
         in_hash[ins] = ins->ans;
@@ -844,8 +830,8 @@ static void RewriteInvariantExpressions(Block* b)
         RewriteInvariantExpressions(bl->block);
         bl = bl->next;
     }
-    in_hash = old_in_hash;
-    nm_hash = old_nm_hash;
+    in_hash = std::move(old_in_hash);
+    nm_hash = std::move(old_nm_hash);
 }
 void RewriteInnerExpressions(void)
 {

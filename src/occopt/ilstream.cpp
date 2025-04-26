@@ -442,7 +442,7 @@ static void StreamInstruction(QUAD* q)
         switch (q->dc.opcode)
         {
             case i_icon:
-                StreamIntValue(&q->dc.v.i, 8);
+                StreamIntValue(&q->dc.v.i, sizeof(q->dc.v.i));
                 break;
             case i_imcon:
             case i_fcon:
@@ -640,7 +640,7 @@ static void StreamXParams()
     StreamStringList(toolArgs);
     StreamStringList(prm_Using);
     StreamIndex(bePragma.size());
-    for (auto s : bePragma)
+    for (const auto& s : bePragma)
     {
         StreamString(s.first);
         StreamString(s.second);

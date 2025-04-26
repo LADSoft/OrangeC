@@ -120,6 +120,8 @@ static void scan_gotos(QUAD* head)
                             RemoveInstruction(head);
                     }
                 }
+                golist[head->dc.v.label - firstLabel] = head;
+                break;
             case i_swbranch:
             case i_coswitch:
             case i_goto:
@@ -157,9 +159,9 @@ static void kill_brtonext(Block* b, QUAD* head)
             case i_jle:
             case i_jl:
             case i_cmpblock:
-                if (architecture == ARCHITECTURE_MSIL)
-                    return;
             case i_goto:
+                if (head->dc.opcode != i_goto && architecture == ARCHITECTURE_MSIL)
+                    return;
                 temp = head->fwd;
                 while (temp && (temp->dc.opcode == i_label || temp->ignoreMe || temp->dc.opcode == i_block ||
                                 temp->dc.opcode == i_blockend))
@@ -305,7 +307,7 @@ void kill_jumpover(Block* b, QUAD* head)
     {
         QUAD* fwd = newhead->fwd;
         while (fwd->dc.opcode == i_block || fwd->dc.opcode == i_blockend || newhead->dc.opcode == i_dbgblock ||
-               newhead->dc.opcode == i_dbgblockend || fwd->dc.opcode == i_label || fwd->ignoreMe)
+            newhead->dc.opcode == i_dbgblockend || fwd->dc.opcode == i_label || fwd->ignoreMe)
         {
             if (fwd->dc.opcode == i_label && head->dc.v.label == fwd->dc.v.label)
                 break;
@@ -320,54 +322,59 @@ void kill_jumpover(Block* b, QUAD* head)
          */
         head->dc.v.label = newhead->dc.v.label;
         RemoveInstruction(newhead);
+        bool dontProcess = false;
         switch (head->dc.opcode)
         {
-            case i_jc:
-                newtype = i_jnc;
-                break;
-            case i_jnc:
-                newtype = i_jc;
-                break;
-            case i_jbe:
-                newtype = i_ja;
-                break;
-            case i_ja:
-                newtype = i_jbe;
-                break;
-            case i_je:
-                newtype = i_jne;
-                break;
-            case i_jne:
-                newtype = i_je;
-                break;
-            case i_jge:
-                newtype = i_jl;
-                break;
-            case i_jg:
-                newtype = i_jle;
-                break;
-            case i_jle:
-                newtype = i_jg;
-                break;
-            case i_jl:
-                newtype = i_jge;
-                break;
-            default:
-                break;
+        case i_jc:
+            newtype = i_jnc;
+            break;
+        case i_jnc:
+            newtype = i_jc;
+            break;
+        case i_jbe:
+            newtype = i_ja;
+            break;
+        case i_ja:
+            newtype = i_jbe;
+            break;
+        case i_je:
+            newtype = i_jne;
+            break;
+        case i_jne:
+            newtype = i_je;
+            break;
+        case i_jge:
+            newtype = i_jl;
+            break;
+        case i_jg:
+            newtype = i_jle;
+            break;
+        case i_jle:
+            newtype = i_jg;
+            break;
+        case i_jl:
+            newtype = i_jge;
+            break;
+        default:
+            dontProcess = true;
+            break;
         }
-        /* remove the goto */
-        head->dc.opcode = newtype;
-        while (1)
+        if (!dontProcess)
         {
-            while (newhead && (newhead->dc.opcode == i_block || newhead->ignoreMe || newhead->dc.opcode == i_dbgblock ||
-                               newhead->dc.opcode == i_dbgblockend || newhead->dc.opcode == i_blockend))
+            /* remove the goto */
+            head->dc.opcode = newtype;
+            while (1)
             {
+                while (newhead && (newhead->dc.opcode == i_block || newhead->ignoreMe || newhead->dc.opcode == i_dbgblock ||
+                    newhead->dc.opcode == i_dbgblockend || newhead->dc.opcode == i_blockend))
+                {
+                    newhead = newhead->fwd;
+                }
+                if (!newhead || newhead->dc.opcode != i_goto)
+                    break;
+                RemoveInstruction(newhead);
                 newhead = newhead->fwd;
             }
-            if (!newhead || newhead->dc.opcode != i_goto)
-                break;
-            RemoveInstruction(newhead);
-            newhead = newhead->fwd;
         }
     }
 }
@@ -632,7 +639,10 @@ static void scan_abnormal(void)
                 while (pb && pb->block != blockArray[i])
                     pb = pb->next;
                 setbit(occursInAbnormal, pd->T0);
-                setbit(occursInAbnormal, pb->Tn);
+                if (pb) // should never be null...
+                {
+                    setbit(occursInAbnormal, pb->Tn);
+                }
                 head = head->fwd;
             }
         }

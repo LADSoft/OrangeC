@@ -98,8 +98,10 @@ void parse_pragma(const char* kw, const char* tag)
             {
                 temp = temp.substr(0, npos + 1);
             }
-            LoadAssembly(temp.c_str());
-            Import();
+            if (LoadAssembly(temp.c_str()))
+            {
+                Import();
+            }
         }
     }
 }
@@ -349,8 +351,9 @@ MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::ite
 MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp)
 {
     bool pinvoke = false;
-    if (sp)
-        pinvoke = !msil_managed(sp);
+    if (!sp)
+        return nullptr;
+    pinvoke = !msil_managed(sp);
     std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
     if (it != globalMethods.end())
     {
@@ -417,7 +420,9 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp)
     {
         CacheGlobal(sp);
         it = globalMethods.find(sp);
-        return static_cast<MethodName*>(it->second)->Signature();
+        if (it != globalMethods.end())
+            return static_cast<MethodName*>(it->second)->Signature();
+        return nullptr;
     }
 }
 std::string GetArrayName(Optimizer::SimpleType* tp, bool byRef, bool pinned)
@@ -476,14 +481,18 @@ Value* GetStructField(Optimizer::SimpleSymbol* sp)
     if (sp->msil)
     {
         void* result;
-        peLib->Find(sp->msil, &result);
-        return peLib->AllocateFieldName(static_cast<Field*>(result));
+        if (peLib->Find(sp->msil, &result) == PELib::s_field)
+        {
+            return peLib->AllocateFieldName(static_cast<Field*>(result));
+        }
     }
     auto it = fieldList.find(sp);
     if (it == fieldList.end() && sp->parentClass)
         GetType(sp->parentClass->tp, true);
     it = fieldList.find(sp);
-    return it->second;
+    if (it != fieldList.end())
+        return it->second;
+    return nullptr;
 }
 void msil_create_property(Optimizer::SimpleSymbol* property, Optimizer::SimpleSymbol* getter, Optimizer::SimpleSymbol* setter)
 {
@@ -547,6 +556,8 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
                 tp->sp->msil = GetName(type->GetClass());
                 type = peLib->AllocateType(type->GetClass());
             }
+            if (!type)
+                return nullptr;
             if (!type->GetClass()->InAssemblyRef())
             {
                 if (tp->size != 0)
@@ -961,13 +972,19 @@ Value* GetParamData(std::string name)
 {
     Optimizer::SimpleSymbol sp = {0};
     sp.name = (char*)name.c_str();
-    return paramList.find(&sp)->second;
+    auto it = paramList.find(&sp);
+    if (it != paramList.end())
+        return it->second;
+    return nullptr;
 }
 Value* GetLocalData(Optimizer::SimpleSymbol* sp)
 {
     if (sp->storage_class == Optimizer::scc_parameter)
     {
-        return paramList.find(sp)->second;
+        auto it = paramList.find(sp);
+        if (it != paramList.end())
+            return paramList.find(sp)->second;
+        return nullptr;
     }
     else
     {
@@ -1515,7 +1532,7 @@ class PInvokeWeeder : public Callback
                     }
                 }
             }
-            for (auto p : pinvokeCounters)
+            for (const auto& p : pinvokeCounters)
             {
                 if (!p.second)
                 {
@@ -1874,12 +1891,15 @@ static void LoadDynamics()
                 static Optimizer::SimpleSymbol sp;
                 sp.name = (char*)sym->name;
                 std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp);
-                MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
-                lst->data = (void*)peLib->AllocateMethodName(signature);
-                if (initializersHead)
-                    initializersTail = initializersTail->next = lst;
-                else
-                    initializersHead = initializersTail = lst;
+                if (it != globalMethods.end())
+                {
+                    MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
+                    lst->data = (void*)peLib->AllocateMethodName(signature);
+                    if (initializersHead)
+                        initializersTail = initializersTail->next = lst;
+                    else
+                        initializersHead = initializersTail = lst;
+                }
             }
             else
             {
@@ -1892,7 +1912,7 @@ static void LoadDynamics()
                 if (deinitializersHead)
                     deinitializersTail = deinitializersTail->next = lst;
                 else
-                    deinitializersHead = initializersTail = lst;
+                    deinitializersHead = deinitializersTail = lst;
             }
         }
     }

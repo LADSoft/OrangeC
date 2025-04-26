@@ -463,7 +463,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 fi->Add(s1);
                 autovector.push_back(s1);
             }
-            for (auto e : labelMap)
+            for (const auto& e : labelMap)
             {
                 std::shared_ptr<Label> l = e.second;
                 l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
@@ -569,7 +569,7 @@ void output_obj_file(void)
         ObjIeeeIndexManager im1;
         ObjFactory f1(&im1);
         name = infile;
-        fi = MakeBrowseFile(f1, name);
+        fi = MakeBrowseFile(f1, std::move(name));
         DumpFile(f1, fi, Optimizer::browseFile);
     }
     Release();
@@ -628,32 +628,32 @@ void outcode_gen_strlab(Optimizer::SimpleSymbol* sym)
     std::shared_ptr<Label> l = std::make_shared<Label>(name, strlabs.size(), currentSection->GetSect());
     strlabs.push_back(l);
     InsertInstruction(std::make_shared<Instruction>(l));
-    lblpubs[name] = l;
+    lblpubs[name] = std::move(l);
 }
 void InsertLabel(int lbl)
 {
     std::shared_ptr<Label> l = GetLabel(lbl);
     l->SetSect(currentSection->GetSect());
     std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(l);
-    InsertInstruction(newIns);
+    InsertInstruction(std::move(newIns));
 }
 
 void emit(void* data, int len)
 {
     std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>((unsigned char*)data, len, true);
-    InsertInstruction(newIns);
+    InsertInstruction(std::move(newIns));
 }
 void emit(void* data, int len, std::shared_ptr<Fixup> fixup, int fixofs)
 {
     std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>((unsigned char*)data, len, true);
     newIns->Add(fixup);
     fixup->SetInsOffs(fixofs);
-    InsertInstruction(newIns);
+    InsertInstruction(std::move(newIns));
 }
 void emit(std::shared_ptr<Label> label)
 {
     std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(label);
-    InsertInstruction(newIns);
+    InsertInstruction(std::move(newIns));
 }
 
 void emit(int size)
@@ -662,7 +662,7 @@ void emit(int size)
     if (size > 0)
     {
         std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(size, 1);
-        InsertInstruction(newIns);
+        InsertInstruction(std::move(newIns));
     }
     else
     {
@@ -756,7 +756,7 @@ void outcode_genref(Optimizer::SimpleSymbol* sym, int offset)
 {
     std::shared_ptr<Fixup> f = gen_symbol_fixup(sym, offset, false);
     int i = 0;
-    emit(&i, 4, f, 0);
+    emit(&i, 4, std::move(f), 0);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -765,7 +765,7 @@ void outcode_gen_labref(int n)
 {
     std::shared_ptr<Fixup> f = gen_label_fixup(n, 0, false);
     int offset = 0;
-    emit(&offset, 4, f, 0);
+    emit(&offset, 4, std::move(f), 0);
 }
 
 /* the labels will already be resolved well enough by this point */
@@ -773,7 +773,7 @@ void outcode_gen_labdifref(int n1, int n2)
 {
     std::shared_ptr<Fixup> f = gen_diff_fixup(n1, n2);
     int offset = 0;
-    emit(&offset, 4, f, 0);
+    emit(&offset, 4, std::move(f), 0);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -784,7 +784,7 @@ void outcode_gensrref(Optimizer::SimpleSymbol* sym, int val)
     char buf[8] = {};
     buf[1] = val;
 
-    emit(&buf, 6, f, 2);
+    emit(&buf, 6, std::move(f), 2);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -893,7 +893,7 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
     std::string name = sym->outputName;
     std::shared_ptr<Label> l = std::make_shared<Label>(name, lblvirt.size(), virtualSegmentNumber - 1);
     l->SetOffset(0);
-    lblvirt[name] = l;
+    lblvirt[name] = std::move(l);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -985,7 +985,7 @@ void AddFixup(std::shared_ptr<Instruction>& newIns, OCODE* ins, const std::list<
                 std::shared_ptr<Fixup> f =
                     std::make_shared<Fixup>(temp, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
-                newIns->Add(f);
+                newIns->Add(std::move(f));
             }
         }
     }
@@ -1076,7 +1076,7 @@ void outcode_AssembleIns(OCODE* ins)
                 break;
             case op_align: {
                 std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(ins->oper1->offset->i);
-                InsertInstruction(newIns);
+                InsertInstruction(std::move(newIns));
                 break;
             }
             case op_dd: {

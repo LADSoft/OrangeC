@@ -910,7 +910,7 @@ void putconst(Optimizer::SimpleExpression* offset, int color)
             }
             else
             {
-                oprintf(icdFile, "T%d", (offset->sp)->i);
+                oprintf(icdFile, "TUnknown");
                 if (registersAssigned && color != -1)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
             }
@@ -1118,7 +1118,7 @@ void putamode(Optimizer::QUAD* q, Optimizer::IMODE* ap)
                 putconst(ap->offset, color);
             else
                 oputc('#', icdFile);
-            if (ap->offset2)
+            if (ap->offset2 && q)
             {
                 oprintf(icdFile, " + ");
                 putconst(ap->offset2, q->scaleColor);

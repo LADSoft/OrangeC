@@ -468,7 +468,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 std::shared_ptr<Label> l = e.second;
                 l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
             }
-            for (auto e : lblvirt)
+            for (const auto& e : lblvirt)
             {
                 std::shared_ptr<Label> l = e.second;
                 auto o = objSectionsByNumber[GETSECT(l, sectofs)];
@@ -670,7 +670,7 @@ void emit(int size)
         {
             size = -size;
             std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(size);
-            InsertInstruction(newIns);
+            InsertInstruction(std::move(newIns));
         }
     }
 }
@@ -964,7 +964,7 @@ void AddFixup(std::shared_ptr<Instruction>& newIns, OCODE* ins, const std::list<
             memcpy(newIns->GetBytes(), &n, 4);
             std::shared_ptr<AsmExprNode> expr = MakeFixup(ins->oper1->offset);
             std::shared_ptr<Fixup> f = std::make_shared<Fixup>(expr, 4, false);
-            newIns->Add(f);
+            newIns->Add(std::move(f));
         }
     }
     else
@@ -1084,7 +1084,7 @@ void outcode_AssembleIns(OCODE* ins)
                 std::shared_ptr<Instruction> newIns = std::make_shared<Instruction>(&i, 4, true);
                 const std::list<Numeric*> operands;
                 AddFixup(newIns, ins, operands);
-                InsertInstruction(newIns);
+                InsertInstruction(std::move(newIns));
                 // reserve 4
                 break;
             }

@@ -923,6 +923,7 @@ Type* SynthesizeType(Type* tp, std::list<TEMPLATEPARAMPAIR>* enclosing, bool alt
                     }
                     return &stdany;
                 }
+                return &stdany;
             }
             case BasicType::rref_:
                 if (qual == nullptr && tp->btp->type == BasicType::templateparam_ && tp->btp->templateParam->second->byClass.val &&
@@ -2571,20 +2572,12 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
         bool ok = true;
         for (auto sp1 : *sym->sb->overloadName->tp->syms)
         {
-            auto set = false;
             Type* tp2 = nullptr;
-            ;
+
             if (matchOverload(sym->tp, sp1->tp))
             {
-                if (set)
-                    sp1->tp->BaseType()->btp = tp2;
                 ok = false;
                 break;
-            }
-            else
-            {
-                if (set)
-                    sp1->tp->BaseType()->btp = tp2;
             }
         }
         if (ok)
@@ -3278,7 +3271,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                             iteInitial = itInitial->second->byPack.pack->end();
                             itInitial = itInitial->second->byPack.pack->begin();
                         }
-                        if (itmax != max->end())
+                        if (max && itmax != max->end())
                             ++itmax;
                     }
                     auto it1 = itParams;
@@ -3652,7 +3645,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                 if (itParams->second->packed || !itParams->second->byClass.txtdflt || (spsyms && itParams->second->byClass.dflt))
                     rv = nullptr;
             }
-            else if (itArgs != args->end() && !packed)
+            else if (args && itArgs != args->end() && !packed)
             {
                 rv = nullptr;
             }

@@ -15,7 +15,8 @@ enum EmbedReturnValue
 {
     EMBED_NOT_FOUND,
     EMBED_FOUND,
-    EMBED_EMPTY
+    EMBED_EMPTY,
+    EMBED_IO_ERROR
 };
 
 struct embeder_info
@@ -27,7 +28,7 @@ struct embeder_info
     bool is_system;
     unsigned long long offset = 0;
     int bytes = 1;
-    EmbedReturnValue ret_value;
+    EmbedReturnValue ret_value = EMBED_EMPTY;
     std::unordered_map<std::string, std::vector<embed_token_type>> mapped_values;
 };
 class embeder

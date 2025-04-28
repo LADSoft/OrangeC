@@ -112,7 +112,7 @@ void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
             *q = 0;
             std::string name = buf;
             if (file->FindSection(name))
-                names.push_back(name);
+                names.push_back(std::move(name));
             else
                 std::cout << "Warning: Section '" << name << "' not in .rel file" << std::endl;
         }

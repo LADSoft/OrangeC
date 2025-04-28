@@ -414,7 +414,9 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp)
     {
         CacheStatic(sp);
         std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
-        return static_cast<MethodName*>(it->second)->Signature();
+        if (it != staticMethods.end())
+            return static_cast<MethodName*>(it->second)->Signature();
+        return nullptr;
     }
     else
     {
@@ -1907,6 +1909,8 @@ static void LoadDynamics()
                 static Optimizer::SimpleSymbol sp1;
                 sp1.name = (char*)sym->name;
                 std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
+                if (it != globalMethods.end())
+                    return;
                 MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
                 lst->data = (void*)peLib->AllocateMethodName(signature);
                 if (deinitializersHead)

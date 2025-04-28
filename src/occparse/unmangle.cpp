@@ -191,7 +191,7 @@ static const char* unmang_intrins(char (&orig)[n], char *buf, const char* name, 
 const char* unmang_intrins(char* val, const char* name, const char* last)
 {
     char(&buf)[UNMANGLE_BUFFER_SIZE] = (char(&)[UNMANGLE_BUFFER_SIZE]) * val;
-    return unmang_intrins(buf, name, last);
+    return unmang_intrins(buf, buf, name, last);
 }
 
 /* Argument unmangling for C++ */
@@ -224,7 +224,6 @@ static const char* unmangptr(char (&orig)[n], char *buf, const char* name, const
         {
             while (*name == 'A')
             {
-                int n = 0;
                 name++;
                 Utils::StrCat(buf, UNMANGLE_SIZE(buf), "[]");
             }
@@ -262,7 +261,7 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
 {
     if (isdigit(*(*name)) || *(*name) == '_')
     {
-        int n = 0;
+        int n1 = 0;
         bool minus = false;
         if (*(*name) == '_')
         {
@@ -271,23 +270,23 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
         }
         while (isdigit(*(*name)))
         {
-            n *= 10;
-            n += *(*name)++ - '0';
+            n1 *= 10;
+            n1 += *(*name)++ - '0';
         }
         if (**name == '?')
         {
             (*name)++;
             if (minus)
                 PUTCH(dest,  '-');
-            Optimizer::my_sprintf(dest, UNMANGLE_SIZE(dest), "%d", n);
+            Optimizer::my_sprintf(dest, UNMANGLE_SIZE(dest), "%d", n1);
         }
         else
         {
             char* buf = (char*)alloca(10000);
-            memcpy(buf, *name, n);
-            buf[n] = 0;
+            memcpy(buf, *name, n1);
+            buf[n1] = 0;
             unmang2(orig, dest, buf);
-            *name += n;
+            *name += n1;
         }
         return dest + strlen(dest);
     }
@@ -1022,6 +1021,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     while (isdigit(*name))
                         v = v * 10 + *name++ - '0';
                     p = buf3;
+                    PUTZERO(p);
                     while (v--)
                     {
                         if (*name == '@')

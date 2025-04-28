@@ -601,7 +601,7 @@ int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, st
     {
         if (begin == 0)
         {
-            text = etext;
+            text = std::move(etext);
         }
         else
         {

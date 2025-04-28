@@ -698,7 +698,7 @@ void InstructionParser::InsertTokens(std::string&& line, int PC, bool hasBracket
                 next->type = InputToken::NUMBER;
                 auto temp = asmexpr.Build(line);
                 if (temp->IsAbsolute())
-                    next->val = new AsmExprNode(*asmexpr.Eval(temp, PC).get());
+                    next->val = new AsmExprNode(*asmexpr.Eval(std::move(temp), PC).get());
                 else
                     next->val = new AsmExprNode(*temp.get());
             }

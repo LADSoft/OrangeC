@@ -460,7 +460,10 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
                 rv->block = currentBlock;
                 break;
             case i_blockend:
-                rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
+                if (currentBlock)
+                {
+                    rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
+                }
                 break;
             case i_dbgblock:
             case i_dbgblockend:
@@ -940,7 +943,7 @@ void ReadText(std::vector<std::string>& texts)
 
         for (auto&& c : val)
             c = UnstreamByte();
-        itext[i] = val;
+        itext[i] = std::move(val);
         i += len;
     }
     int count = UnstreamIndex();

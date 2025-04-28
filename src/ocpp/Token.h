@@ -68,7 +68,7 @@ class Token
         return aa;
     }
     static bool Start(const std::string& line) { return false; }
-    void SetChars(const std::string str) { chars = str; }
+    void SetChars(const std::string str) { chars = std::move(str); }
     std::string GetChars() const { return chars; }
     virtual ~Token() {}
 

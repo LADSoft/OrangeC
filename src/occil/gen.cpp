@@ -599,6 +599,9 @@ void load_constant(int sz, Optimizer::SimpleExpression* exp)
         case ISZ_CLDOUBLE:
             diag("load_const: complex");
             return;
+        default:
+            diag("load_const: unknown size");
+            return;
     }
     gen_code(op, operand);
     increment_stack();

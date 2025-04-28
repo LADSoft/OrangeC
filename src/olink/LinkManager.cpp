@@ -446,9 +446,18 @@ bool LinkManager::ScanVirtuals()
     }
     return rv;
 }
+struct FileDeleter {
+    void operator()(FILE* file) const {
+        if (file) {
+            if (fclose(file) != 0) {
+
+            }
+        }
+    }
+};
 FILE* LinkManager::GetLibraryPath(const std::string& stem, std::string& name)
 {
-    FILE* infile = fopen(name.c_str(), "rb");
+    std::unique_ptr<FILE, FileDeleter> infile(fopen(name.c_str(), "rb"));
     if (!infile)
     {
         std::string hold = libPath;
@@ -470,12 +479,12 @@ FILE* LinkManager::GetLibraryPath(const std::string& stem, std::string& name)
                     hold = "";
             }
             name = Utils::FullPath(next, stem);
-            infile = fopen(name.c_str(), "rb");
+            infile.reset(fopen(name.c_str(), "rb"));
             if (infile)
                 hold = "";
         }
     }
-    return infile;
+    return infile.release();
 }
 void LinkManager::LoadFiles()
 {
@@ -521,7 +530,7 @@ std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
     std::unique_ptr<LinkLibrary> rv = std::make_unique<LinkLibrary>(name, caseSensitive);
     if (!rv || !rv->IsOpen())
     {
-        rv.release();
+        rv.reset();
         rv = std::make_unique<LinkLibrary>(Utils::FindOnPath(name, libPath), caseSensitive);
     }
     if (rv)

@@ -121,7 +121,7 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
             std::shared_ptr<AsmExprNode> num = GetEqu(n->label);
             if (num)
             {
-                rv = std::move(Eval(num, pc));
+                rv = std::move(Eval(std::move(num), pc));
             }
             else if (pc != -1)
             {

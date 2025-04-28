@@ -731,6 +731,7 @@ int getChar(const unsigned char** source, LexType* tp)
                 if (j == INT_MIN)
                 {
                     error(ERR_INVALID_CHAR_CONSTANT);
+                    cache = 0;
                     j = '0';
                 }
                 else
@@ -915,6 +916,9 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
             if (st[0] != '(')
                 error(ERR_RAW_STRING_INVALID_CHAR);
             else
+            {
+                qcount = 0;
+                qpos = nullptr;
                 while (true)
                 {
                     if (!*p)
@@ -950,12 +954,11 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                             count++;
                         }
 #endif
-                        *dest++ = st[0];
+                        * dest++ = st[0];
                         len--;
                         count++;
                         if (st[0] == ')')
                         {
-                            qcount = 0;
                             qpos = dest;
                         }
                         else if (qpos)
@@ -976,6 +979,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                         }
                     }
                 }
+            }
             *dest = 0;
             found = true;
             while (isspace(*p) || *p == MacroStates::MACRO_PLACEHOLDER)

@@ -1574,9 +1574,9 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
                                 max = LLONG_MAX;
                                 min = LLONG_MIN;
                             }
+                            err = *exp->v.f > max || *exp->v.f < min;
                             break;
                     }
-                    err = *exp->v.f > max || *exp->v.f < min;
                 }
             }
             else

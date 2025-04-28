@@ -301,7 +301,7 @@ int GrepMain::Run(int argc, char** argv)
             ToolChain::Usage(usageText, 2);
     }
     SetModes();
-    RegExpContext regexp(argv[1], regularExpressions.GetValue(), !caseInSensitive.GetValue(), completeWords.GetValue());
+    RegExpContext regexp(files[1].c_str(), regularExpressions.GetValue(), !caseInSensitive.GetValue(), completeWords.GetValue());
 
     if (!regexp.IsValid())
     {
@@ -319,9 +319,9 @@ int GrepMain::Run(int argc, char** argv)
         for (int i = 1; i < files.size(); i++)
         {
             std::string name = files[i];
-            std::fstream fil(std::move(name), std::ios::in | std::ios::binary);
+            std::fstream fil(name, std::ios::in | std::ios::binary);
             if (fil.is_open())
-                matchCount += OneFile(regexp, name, fil, openCount);
+                matchCount += OneFile(regexp, std::move(name), fil, openCount);
         }
     if (openCount == 0)
     {

@@ -81,7 +81,7 @@ const std::vector<unsigned>& LibDictionary::Lookup(FILE* stream, ObjInt dictiona
             while (len)
             {
                 q += 2;
-                if (q >= buf.get() + end)
+                if (q >= buf.get() + end || len >= end)
                     return dummy;
                 std::string name = std::string((char*)q, len);
                 q += len;

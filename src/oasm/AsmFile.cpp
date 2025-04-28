@@ -297,7 +297,7 @@ void AsmFile::DoDB()
     {
         std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
-        ins->Add(f);
+        ins->Add(std::move(f));
     }
 }
 void AsmFile::DoDD()
@@ -351,7 +351,7 @@ void AsmFile::DoDD()
     {
         std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
-        ins->Add(f);
+        ins->Add(std::move(f));
     }
 }
 void AsmFile::DoDQ()
@@ -385,7 +385,7 @@ void AsmFile::DoDQ()
     {
         std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
-        ins->Add(f);
+        ins->Add(std::move(f));
     }
 }
 void AsmFile::DoFloat()
@@ -409,7 +409,7 @@ void AsmFile::DoFloat()
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
-        fixups.push_back(f);
+        fixups.push_back(std::move(f));
         size += tbyte ? 10 : 8;
     } while (GetKeyword() == kw::comma);
     std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
@@ -1017,7 +1017,7 @@ void AsmFile::SingleDirective()
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
-        fixups.push_back(f);
+        fixups.push_back(std::move(f));
         size += 4;
     } while (GetKeyword() == kw::comma);
     std::shared_ptr<Instruction> ins = std::make_shared<Instruction>((unsigned char*)buf, size, true);
@@ -1067,7 +1067,7 @@ void AsmFile::DoubleDirective()
     {
         std::shared_ptr<Fixup> f = fixups.front();
         fixups.pop_front();
-        ins->Add(f);
+        ins->Add(std::move(f));
     }
 }
 void AsmFile::EqvDirective()

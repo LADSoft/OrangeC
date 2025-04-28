@@ -408,7 +408,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                     std::string temp = ExtractFirst(extra, " ");
                     if (!rv.empty())
                         rv += " ";
-                    rv += Maker::GetFullName(temp);
+                    rv += Maker::GetFullName(std::move(temp));
                 }
             }
             found = true;
@@ -1493,7 +1493,7 @@ std::string Eval::call(const std::string& arglist)
         else
         {
             sub = "$(" + sub + ")";
-            Eval l(sub, false, ruleList, rule);
+            Eval l(std::move(sub), false, ruleList, rule);
             rv = l.Evaluate();
         }
     }

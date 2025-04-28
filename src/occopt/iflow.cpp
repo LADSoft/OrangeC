@@ -139,7 +139,7 @@ static void basicFlowInfo(void)
     labels = oAllocate<Block*>(high - low);
     firstLabel = low;
     head = intermed_head;
-    block = nullptr;
+    block = head;
     while (head)
     {
         if (head->dc.opcode == i_block)

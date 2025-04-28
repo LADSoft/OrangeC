@@ -2139,6 +2139,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             else
             {
                 char buf[512];
+                buf[0] = '\0';
                 int ov = 0;
                 Type* castType = nullptr;
                 if (MATCHKW(lex, Keyword::complx_))
@@ -2341,7 +2342,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     {
                         // if here is not a potential pointer to func
                         if (!ptype)
-                            tp = nullptr;
+                            tp = &stdint;
                         ptype = nullptr;
                     }
                     if (!needkw(&lex, Keyword::closepa_))

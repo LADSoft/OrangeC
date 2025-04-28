@@ -327,7 +327,7 @@ int clocc::Run(int argc, char** argv)
                     Utils::Fatal("Expected output file name");
                 val = val.substr(1);
             }
-            outputFile = val;
+            outputFile = std::move(val);
         }
         else
         {

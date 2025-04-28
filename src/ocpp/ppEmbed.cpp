@@ -57,7 +57,15 @@ std::string reconstruct_string(const std::vector<embed_token_type>& embed_vec)
     }
     return start;
 }
+struct FileDeleter {
+    void operator()(FILE* file) const {
+        if (file) {
+            if (fclose(file) != 0) {
 
+            }
+        }
+    }
+};
 std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info info)
 {
     std::vector<uintmax_t> next_thing = {};
@@ -96,16 +104,23 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         push_back_values(info.suffix, info.mapped_values, "suffix");
         builder.insert(builder.end(), info.prefix.begin(), info.prefix.end());
 
-        FILE* file = fopen(fil.c_str(), "rb");
+        std::unique_ptr<FILE,FileDeleter> file(fopen(fil.c_str(), "rb"));
         // we need to actually get the real file in here
         size_t resval = info.limit < 0 ? size : info.limit;
         next_thing.resize(resval);
-        fseek(file, info.offset, SEEK_SET);
+        if (fseek(file.get(), info.offset, SEEK_SET) < 0)
+        {
+            return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, EmbedReturnValue::EMBED_IO_ERROR};
+        }
         // We will always correctly get the number of bytes based on the size given for us...
         auto data_loc = next_thing.data();
         for (int i = 0; i < resval; i++)
         {
-            size_t numread = fread(&data_loc[i], info.bytes, 1, file);
+            size_t numread = fread(&data_loc[i], info.bytes, 1, file.get());
+            if (numread != info.bytes)
+            {
+                return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, EmbedReturnValue::EMBED_IO_ERROR};
+            }
         }
 
         push_back_values(builder, next_thing);
@@ -114,7 +129,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(std::move(info))};
     }
     else if (fil != "" && (info.limit == 0 || size == 0))
     {
@@ -127,9 +142,9 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(std::move(info))};
     }
-    return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
+    return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(std::move(info))};
 }
 
 EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
@@ -199,16 +214,21 @@ bool embeder::Check(kw token, std::string& args)
     {
         // comment to check line info
         embeder_info info = GetEmbedFromLine(args);
-        auto return_val = EmbedFile(args, info);
-        auto vec = std::get<0>(return_val);
+        auto return_val = EmbedFile(args, std::move(info));
+        auto& vec = std::get<0>(return_val);
         auto ret = std::get<1>(return_val);
         if (ret == EmbedReturnValue::EMBED_NOT_FOUND)
         {
             Errors::ErrorWithLine("The embedded file was not found", Errors::GetFileName(), Errors::GetErrorLine());
             return true;
         }
-        std::string thing = tokens_to_inject(vec);
-        this->nextLine = thing;
+        if (ret == EmbedReturnValue::EMBED_IO_ERROR)
+        {
+            Errors::ErrorWithLine("File I/O error while reading the embedded file", Errors::GetFileName(), Errors::GetErrorLine());
+            return true;
+        }
+        std::string thing = tokens_to_inject(std::move(vec));
+        this->nextLine = std::move(thing);
         return true;
     }
     return false;
@@ -269,8 +289,11 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
     std::string int_line = line;
     definer.Process(int_line);
     info.filename = this->includer.ParseName(int_line, info.is_system);
-
-    std::string temp_string_for_tokenizer(int_line);
+    if (info.filename == "")
+    {
+        return info;
+    }
+    std::string temp_string_for_tokenizer(std::move(int_line));
     auto loc = temp_string_for_tokenizer.find(info.filename);
     // Grabs the < or " characters,
     char to_find = info.is_system ? '<' : '"';

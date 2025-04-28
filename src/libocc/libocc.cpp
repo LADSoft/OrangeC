@@ -168,7 +168,7 @@ int libocc::Run(int argc, char** argv)
     {
         args += " - ";
         const auto& names = Utils::split(Remove.GetValue(), ';');
-        for (auto&& n : names)
+        for (const auto& n : names)
         {
             args += "\"";
             args += SanitizeExtension(n, "");

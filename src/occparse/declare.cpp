@@ -359,7 +359,7 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                     enclosingDeclarations.Add(top);
                     pq = classsearch(pi->name, false, false, true);
                     enclosingDeclarations.Drop();
-                    if (pq)
+                    if (pq && pq->tp->syms)
                     {
                         for (auto pq1 : *pq->tp->syms)
                         {
@@ -1272,6 +1272,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
     bool searched = false;
     *defd = false;
+    newName[0] = '\0';
     switch (KW(lex))
     {
         case Keyword::class_:
@@ -1563,7 +1564,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
                 }
             }
         }
-        else if (sp->sb->templateLevel && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+        else if (sp->sb && sp->sb->templateLevel && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
         {
             errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
         }
@@ -4549,8 +4550,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);
                             }
-                            if (inTemplate)
-                                RequiresDialect::Feature(Dialect::cpp14, "Variable Templates");
+//                            if (inTemplate)
+//                                RequiresDialect::Feature(Dialect::cpp14, "Variable Templates");
                             if (sp->sb->storage_class == StorageClass::virtual_)
                             {
                                 errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);

@@ -207,7 +207,10 @@ size_t Parser::UnfetteredChar(const std::string& line, char ch) const
         }
         else if (line[i] == '$')
         {
-            i += Eval::MacroSpan(line, i + 1);
+            size_t v = Eval::MacroSpan(line, i + 1);
+            if (v == std::string::npos)
+                return v;
+            i += v;
             if (i > line.size())
             {
                 return std::string::npos;
@@ -747,7 +750,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 }
                 else
                 {
-                    orderPrereqs = iline;
+                    orderPrereqs = std::move(iline);
                 }
             }
             else

@@ -68,7 +68,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 dataSize += (number.second.length + 3) & ~3;
             }
         }
-        for (auto name : type.second.namedIds)
+        for (const auto& name : type.second.namedIds)
         {
             dirCount++;
             entryCount += 2;

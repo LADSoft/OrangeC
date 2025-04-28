@@ -1279,90 +1279,66 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
         }
         else
         {
-            if (Optimizer::cparams.prm_cplusplus && atp && atp->IsFunctionPtr())
+            sym->sb->storage_class = funcsp ? StorageClass::auto_ : StorageClass::global_;
+            sym->tp = Type::MakeType(BasicType::any_);
+            sym->sb->parentClass = strSym;
+            *tp = sym->tp;
+            Dereference(&stdint, exp);
+            SetLinkerNames(sym, Linkage::c_);
+            if (!nsv && (!strSym || !definingTemplate ||
+                            (!strSym->sb->templateLevel && strSym->tp->type != BasicType::templateselector_ &&
+                            strSym->tp->type != BasicType::templatedecltype_)))
             {
-                SYMBOL* sym = nullptr;
-                // this code was written this way before I fixed the unitialized variable.   Did we really never get here?
-                sym->sb->storage_class = StorageClass::overloads_;
-                (*tp) = Type::MakeType(BasicType::aggregate_);
-                (*tp)->UpdateRootTypes();
-                (*tp)->sp = sym;
-                funcparams = Allocate<CallSite>();
-                funcparams->ascall = true;
-                sym = GetOverloadedFunction(tp, &funcparams->fcall, sym, nullptr, atp, true, false, flags);
-                if (sym)
+                char buf[4000];
+                buf[0] = 0;
+                LexList* find = placeholder;
+                while (lex != find)
                 {
-                    if (!isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
-                        errorsym(ERR_CANNOT_ACCESS, sym);
+                    if (ISKW(find))
+                    {
+                        Utils::StrCat(buf, find->data->kw->name);
+                    }
+                    else if (ISID(find))
+                    {
+                        Utils::StrCat(buf, find->data->value.s.a);
+                    }
+                    find = find->next;
                 }
-                funcparams->sp = sym;
-                funcparams->functp = funcparams->sp->tp;
-                funcparams->nameSpace = nsv->front();
-                *exp = MakeExpression(funcparams);
+                bool found = false;
+                if (!(flags & _F_MEMBER) && !IsPacking())
+                {
+                    // look up packed symbol that has been elided during synthesis.
+                    if (theCurrentFunc && theCurrentFunc->sb->maintemplate)
+                    {
+                        auto syms = theCurrentFunc->sb->maintemplate->tp->BaseType()->syms;
+                        auto sym1 = syms->Lookup(sym->name);
+                        if (sym1 && sym1->packed)
+                        {
+                            sym = sym1;
+                            *tp = sym->tp;
+                            found = true;
+                        }
+                    }
+                    if (!found)
+                        errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
+                }
+                if (!found && sym->sb->storage_class != StorageClass::overloads_ &&
+                    (localNameSpace->front()->syms || sym->sb->storage_class != StorageClass::auto_))
+                    InsertSymbol(sym, sym->sb->storage_class, Linkage::none_, false);
+            }
+            if (nsv)
+            {
+                errorNotMember(strSym, nsv->front(), sym->sb->decoratedName);
+            }
+            if (sym->sb->storage_class != StorageClass::overloads_)
+            {
+                *exp = MakeExpression(ExpressionNode::global_, sym);
             }
             else
             {
-                sym->sb->storage_class = funcsp ? StorageClass::auto_ : StorageClass::global_;
-                sym->tp = Type::MakeType(BasicType::any_);
-                sym->sb->parentClass = strSym;
-                *tp = sym->tp;
-                Dereference(&stdint, exp);
-                SetLinkerNames(sym, Linkage::c_);
-                if (!nsv && (!strSym || !definingTemplate ||
-                             (!strSym->sb->templateLevel && strSym->tp->type != BasicType::templateselector_ &&
-                              strSym->tp->type != BasicType::templatedecltype_)))
-                {
-                    char buf[4000];
-                    buf[0] = 0;
-                    LexList* find = placeholder;
-                    while (lex != find)
-                    {
-                        if (ISKW(find))
-                        {
-                            Utils::StrCat(buf, find->data->kw->name);
-                        }
-                        else if (ISID(find))
-                        {
-                            Utils::StrCat(buf, find->data->value.s.a);
-                        }
-                        find = find->next;
-                    }
-                    bool found = false;
-                    if (!(flags & _F_MEMBER) && !IsPacking())
-                    {
-                        // look up packed symbol that has been elided during synthesis.
-                        if (theCurrentFunc && theCurrentFunc->sb->maintemplate)
-                        {
-                            auto syms = theCurrentFunc->sb->maintemplate->tp->BaseType()->syms;
-                            auto sym1 = syms->Lookup(sym->name);
-                            if (sym1 && sym1->packed)
-                            {
-                                sym = sym1;
-                                *tp = sym->tp;
-                                found = true;
-                            }
-                        }
-                        if (!found)
-                            errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
-                    }
-                    if (!found && sym->sb->storage_class != StorageClass::overloads_ &&
-                        (localNameSpace->front()->syms || sym->sb->storage_class != StorageClass::auto_))
-                        InsertSymbol(sym, sym->sb->storage_class, Linkage::none_, false);
-                }
-                if (nsv)
-                {
-                    errorNotMember(strSym, nsv->front(), sym->sb->decoratedName);
-                }
-                if (sym->sb->storage_class != StorageClass::overloads_)
-                {
-                    *exp = MakeExpression(ExpressionNode::global_, sym);
-                }
-                else
-                {
-                    funcparams = Allocate<CallSite>();
-                    funcparams->nameSpace = nsv->front();
-                    *exp = MakeExpression(funcparams);
-                }
+                funcparams = Allocate<CallSite>();
+                funcparams->nameSpace = nsv->front();
+                *exp = MakeExpression(funcparams);
             }
         }
     }
@@ -2909,7 +2885,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
         std::deque<EXPRESSION*> listOfScalars;
         for (i = 0; i < count; i++, ++itl)
         {
-            EXPRESSION* node;
+            EXPRESSION* node = nullptr;
             dest = MakeExpression(ExpressionNode::add_, data,
                                   MakeIntExpression(ExpressionNode::c_i_, i * (initializerListType->size)));
             if (initializerListType->IsStructured())
@@ -2917,7 +2893,6 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                 initializerListType = initializerListType->BaseType();
                 if (initializerListType->sp->sb->trivialCons && itl != itle )
                 {
-                    node = nullptr;
                     auto list = &node;
                     auto ita = (*itl)->nested ? (*itl)->nested->begin() : itl;
                     auto itae = (*itl)->nested ? (*itl)->nested->end() : initial->end();
@@ -3063,7 +3038,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     node = cdest;
                 }
             }
-            else
+            else if (itl != initial->end())
             {
                 auto ita = (*itl)->nested ? (*itl)->nested->begin() : itl;
                 auto itae = (*itl)->nested ? (*itl)->nested->end() : initial->end();
@@ -4092,6 +4067,11 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
         }
         else if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
+            if (!p->exp)
+            {
+                diag("adjust_params, empty expression");
+                p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+            }
             if (sym->tp->IsRef())
             {
                 if (sym->tp->CompatibleType(p->tp))
@@ -4136,7 +4116,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             }
             else
             {
-                if (sym->tp->BaseType()->type == BasicType::string_)
+                if (p && sym->tp->BaseType()->type == BasicType::string_)
                 {
                     if ((p->tp->BaseType()->type == BasicType::string_) ||
                         (p->exp->type == ExpressionNode::labcon_ && p->exp->string))
@@ -4157,7 +4137,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         p->tp = &std__string;
                     }
                 }
-                else if (sym->tp->BaseType()->type == BasicType::object_)
+                else if (p && sym->tp->BaseType()->type == BasicType::object_)
                 {
                     if (p->tp->BaseType()->type != BasicType::object_ && !p->tp->IsStructured() &&
                         (!p->tp->IsArray() || !p->tp->BaseType()->msil))
@@ -5541,8 +5521,8 @@ static bool getSuffixedNumber(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
         for (auto sp : *sym->tp->syms)
         {
             sym1 = sp;
-            sym2 = sym2->tp->syms->front();
-            if (sym1->tp->syms->size() == 1 && sym2->tp->type == tpb)
+            sym2 = sym1->tp->syms->front();
+            if (sym1->tp->syms->size() == 1 && sym1->tp->type == tpb)
             {
                 found = true;
                 break;

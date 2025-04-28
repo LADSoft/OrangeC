@@ -164,7 +164,8 @@ void outputfile(char* buf, int len, const char* name, const char* ext)
         if (p)
             Utils::StrCpy(buf, len, p + 1);
         Utils::StripExt(buf);
-        Utils::AddExt(buf, ext);
+        if (len - 1 - strlen(buf) >= strlen(ext))
+            Utils::AddExt(buf, ext);
     }
     else
     {

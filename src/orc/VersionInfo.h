@@ -82,7 +82,7 @@ class VarVerInfo : public InternalVerInfo
     {
         Info() {}
 
-        Info(std::wstring Key) : key(Key) {}
+        Info(std::wstring Key) : key(std::move(Key)) {}
         Info(const Info& Old);
         std::wstring key;
         std::deque<int> languages;

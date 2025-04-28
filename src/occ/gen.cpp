@@ -789,16 +789,13 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         if (im->size >= ISZ_CFLOAT)
         {
             *aph = beLocalAllocate<AMODE>();
-            if (*apl)
-            {
-                **aph = **apl;
-                (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
-                    Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
-                if ((*apl)->preg >= 0)
-                    (*apl)->liveRegs |= 1 << (*apl)->preg;
-                if ((*apl)->sreg >= 0)
-                    (*apl)->liveRegs |= 1 << (*apl)->sreg;
-            }
+            **aph = **apl;
+            (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
+                Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
+            if ((*apl)->preg >= 0)
+                (*apl)->liveRegs |= 1 << (*apl)->preg;
+            if ((*apl)->sreg >= 0)
+                (*apl)->liveRegs |= 1 << (*apl)->sreg;
         }
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
@@ -962,26 +959,39 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
                                                                  Optimizer::simpleIntNode(Optimizer::se_i, 4));
             }
         }
-        else if (im->offset->type == Optimizer::se_tempref)
+        else if (im->offset)
         {
-            int l = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
-            *apl = makedreg(l);
-            if (im->size < ISZ_FLOAT)
-                (*apl)->length = im->size;
+            if (im->offset->type == Optimizer::se_tempref)
+            {
+                int l = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
+                *apl = makedreg(l);
+                if (im->size < ISZ_FLOAT)
+                    (*apl)->length = im->size;
+            }
+            else
+            {
+                *apl = make_offset(im->offset);
+                if (im->size < ISZ_FLOAT)
+                    (*apl)->length = im->size;
+            }
+
         }
         else
         {
-            *apl = make_offset(im->offset);
-            if (im->size < ISZ_FLOAT)
-                (*apl)->length = im->size;
+            *apl = aimmed(0);
         }
     }
-    if (!(*aph))
-        if ((*apl)->liveRegs == -1)
-            (*apl)->liveRegs = 0;
-    (*apl)->liveRegs |= q->liveRegs;
+    if (*apl)
+    {
+        if (!(*aph))
+            if ((*apl)->liveRegs == -1)
+                (*apl)->liveRegs = 0;
+        (*apl)->liveRegs |= q->liveRegs;
+    }
     if (*aph)
+    {
         (*aph)->liveRegs |= q->liveRegs;
+    }
 }
 void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
 {
@@ -3955,7 +3965,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                 if (q->dc.left->size >= ISZ_IFLOAT)
                 {
                     moveFP(apa1, q->ans->size, apl, q->dc.left->size);
-                    moveFP(apa, q->ans->size, floatzero(apl1), q->dc.left->size);
+                    moveFP(apa, q->ans->size, floatzero(apa), q->dc.left->size);
                 }
                 else
                 {

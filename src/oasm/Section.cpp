@@ -242,7 +242,7 @@ ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node,
             std::shared_ptr<AsmExprNode> num = AsmExpr::GetEqu(node->label);
             if (num)
             {
-                return ConvertExpression(num, Lookup, SectLookup, factory);
+                return ConvertExpression(num, std::move(Lookup), std::move(SectLookup), factory);
             }
             else
             {
@@ -259,8 +259,15 @@ ObjExpression* Section::ConvertExpression(std::shared_ptr<AsmExprNode>& node,
                     {
                         auto offs = label->GetOffset();
                         ObjExpression* left = factory.MakeExpression(label->GetObjectSection());
-                        ObjExpression* right = ConvertExpression(offs, std::move(Lookup), std::move(SectLookup), factory);
-                        t = factory.MakeExpression(ObjExpression::eAdd, left, right);
+                        if (offs)
+                        {
+                            ObjExpression* right = ConvertExpression(offs, std::move(Lookup), std::move(SectLookup), factory);
+                            t = factory.MakeExpression(ObjExpression::eAdd, left, right);
+                        }
+                        else
+                        {
+                            t = left;
+                        }
                     }
                     return t;
                 }

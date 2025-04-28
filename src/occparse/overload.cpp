@@ -1261,7 +1261,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                 return 1;
         }
         int l = 0, r = 0, llvr = 0, rlvr = 0;
-        if (seql[l] == CV_DERIVEDFROMBASE && seqr[r] == CV_DERIVEDFROMBASE)
+        if (funcl && seql[l] == CV_DERIVEDFROMBASE && seqr[r] == CV_DERIVEDFROMBASE)
         {
             auto it = funcl->tp->BaseType()->syms->begin();
             if (!funcl->sb->castoperator)
@@ -4068,8 +4068,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                 bool found = false;
                 if (sym->name[0] == '.' || sym->sb->templateLevel)
                 {
-                    it1 = it1end;
-                }
+                    it1 = it1end;                }
                 else
                 {
                     if ((*it1)->sb->thisPtr)
@@ -4099,7 +4098,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                     {
                         if (sym->sb->castoperator)
                         {
-                            spList[n] = detemplate(sym, nullptr, args->thistp->BaseType()->btp);
+                            spList[n] = args ?  detemplate(sym, nullptr, args->thistp->BaseType()->btp) : nullptr;
                         }
                         else
                         {

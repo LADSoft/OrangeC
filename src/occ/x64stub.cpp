@@ -167,7 +167,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
         if (fixups.size() != 1)
         {
             std::cout << "Far branch cannot be resolved" << std::endl;
-            memcpy(pdata, pdata + 2, size - 2);
+            memmove(pdata, pdata + 2, size - 2);
             size -= 2;
         }
         else
@@ -192,7 +192,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
             }
             else
             {
-                memcpy(pdata, pdata + 2, size - 2);
+                memmove(pdata, pdata + 2, size - 2);
                 size -= 2;
                 f->SetInsOffs(f->GetInsOffs() - 2);
                 std::shared_ptr<AsmExprNode> n =

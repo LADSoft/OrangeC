@@ -233,7 +233,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
             ep->isrestrict = sym->imvalue->offset->isrestrict;
             sym->imvalue->offset = ep;
         }
-        if (sym->imaddress)
+        if (sym->imaddress && sym->imvalue)
         {
             ep->isvolatile = sym->imvalue->offset->isvolatile;
             ep->isrestrict = sym->imvalue->offset->isrestrict;

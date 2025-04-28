@@ -819,7 +819,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                 int p = fixup->GetInsOffs();
                 if (fixup->GetSize() < 4 || (expr->GetType() == AsmExprNode::IVAL && fixup->GetSize() == 4))
                 {
-                    int o;
+                    long long o;
                     bool error = false;
                     if (expr->GetType() == AsmExprNode::IVAL)
                         o = expr->ival;

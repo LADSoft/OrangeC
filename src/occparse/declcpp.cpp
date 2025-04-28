@@ -2442,11 +2442,11 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 }
                 else
                 {
-                    if (sp)
+                    if (sp && sp->sb)
                     {
                         if (!definingTemplate)
                         {
-                            if (sp->sb && sp->sb->storage_class == StorageClass::overloads_)
+                            if (sp->sb->storage_class == StorageClass::overloads_)
                             {
                                 for (auto sp2 : *sp->tp->syms)
                                 {

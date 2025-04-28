@@ -503,7 +503,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
                             Errors::WarningWithLine(
                                 "Pragma user is currently unsupported, other warnings are generated for MSVC compat",
                                 Errors::GetFileName(), Errors::GetErrorLine());
-                            ObjectComment::Instance()->Add(Utils::ConvertWStringToString(myString));
+                            ObjectComment::Instance()->Add(Utils::ConvertWStringToString(std::move(myString)));
                         }
                     }
                     else

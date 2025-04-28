@@ -59,7 +59,7 @@ void MakeStubs::Run(std::ostream* out)
     {
         auto splitTargets = Utils::split(targets);
         auto splitQuotedTargets = Utils::split(quotedTargets);
-        for (auto t : splitTargets)
+        for (const auto& t : splitTargets)
             outTargets += t + " ";
         for (auto t : splitQuotedTargets)
         {

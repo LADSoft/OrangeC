@@ -445,7 +445,7 @@ bool ppMacro::Invoke(std::string name, std::string line)
     p->id = nextMacro++;
     p->repsLeft = 1;
     include.Mark();
-    std::shared_ptr<MacroData> temp(p);
+    std::shared_ptr<MacroData> temp(std::move(p));
     stack.push_back(std::move(temp));
     return true;
 }

@@ -808,8 +808,6 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case ExpressionNode::pointsto_:
         case ExpressionNode::construct_:
             break;
-            /*		case ExpressionNode::array_: */
-            temp->right = inlineexpr(node->right, nullptr);
         case ExpressionNode::mp_as_bool_:
         case ExpressionNode::blockclear_:
         case ExpressionNode::argnopush_:

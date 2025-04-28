@@ -98,15 +98,18 @@ static bool HasMake(const std::string& cmd, const std::string& make)
     if (n != std::string::npos)
     {
         size_t m = cmd.find_first_not_of(" \n\t\v\r");
-        if (cmd[m] == '"')
+        if (m >= 0)
         {
-            m = cmd.find_first_of('"', m+1);
+            if (cmd[m] == '"')
+            {
+                m = cmd.find_first_of('"', m + 1);
+            }
+            else
+            {
+                m = cmd.find_first_of(" \n\t\r\v", m + 1);
+            }
+            return m != std::string::npos && m > n;
         }
-        else
-        {
-            m = cmd.find_first_of(" \n\t\r\v", m + 1);
-        }
-        return m != std::string::npos && m > n;
     }
     return false;
 }
@@ -258,7 +261,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     {
         make = v1->GetValue();
         size_t i = make.find_last_of('/');
-        if (i == std::string::npos);
+        if (i == std::string::npos)
             i = make.find_last_of	('\\');
         if (i != std::string::npos)
             make = make.substr(i+1);
@@ -267,7 +270,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     {
         bool make1 = !HasMake(cmd, make);
         OSTakeJobIfNotMake lockJob(make1);
-        int rv = OS::Spawn(cmd, environment, nullptr);
+        int rv = OS::Spawn(std::move(cmd), environment, nullptr);
         return rv;
     }
     else if (!split(cmd))

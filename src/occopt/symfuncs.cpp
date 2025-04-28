@@ -48,8 +48,6 @@ bool CompareTypes(Optimizer::SimpleType* typ1, Optimizer::SimpleType* typ2, int 
             int arr = false;
             while (typ1->type == st_pointer && typ2->type == st_pointer)
             {
-                if (typ1->type != typ2->type)
-                    return false;
                 if (typ1->msil != typ2->msil)
                     return false;
                 if (arr && (typ1->isarray != typ2->isarray))

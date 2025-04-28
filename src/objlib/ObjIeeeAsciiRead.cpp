@@ -917,7 +917,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
                 for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
             }
-            ObjImportSymbol* sym = factory->MakeImportSymbol(name);
+            ObjImportSymbol* sym = factory->MakeImportSymbol(std::move(name));
             sym->SetByOrdinal(byOrdinal);
             sym->SetOrdinal(ordinal);
             sym->SetExternalName(externalName);

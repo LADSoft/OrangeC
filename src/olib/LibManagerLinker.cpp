@@ -48,9 +48,10 @@ bool LibManager::LoadLibrary()
         return false;
     if (header.sig != LibHeader::LIB_SIG)
         return false;
-    if (header.namesOffset >= len || fseek(stream, header.namesOffset, SEEK_SET))
+    if (header.namesOffset >= len || (header.namesOffset < 0) || fseek(stream, header.namesOffset, SEEK_SET))
         return false;
-    if (!files.ReadNames(stream, header.filesInModule))
+    // this next is a random value to keep coverity happy...
+    if (header.filesInModule > 100000 || !files.ReadNames(stream, header.filesInModule))
         return false;
     if (header.offsetsOffset >= len || fseek(stream, header.offsetsOffset, SEEK_SET))
         return false;

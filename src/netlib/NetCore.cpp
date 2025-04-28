@@ -333,7 +333,7 @@ bool NetCore::LoadAssembly(AssemblyDef* assembly, std::string assemblyName, int 
         }
         else
         {
-            n = r.ManagedLoad(assemblyName, major, minor, build, revision);
+            n = r.ManagedLoad(std::move(assemblyName), major, minor, build, revision);
         }
         if (!n)
         {

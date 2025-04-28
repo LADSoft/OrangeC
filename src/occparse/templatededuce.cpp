@@ -417,10 +417,10 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
             tas.pop();
         if (itTP != itTPe && itTP->second->packed)
         {
-            if (isspecialized != itTPe && itTP->first)
+            if (isspecialized != isespecialized && itTP->first)
             {
                 auto il = isspecialized;
-                for (++il; il != itTPe; ++il)
+                for (++il; il != isespecialized; ++il)
                 {
                     if (il->first && !strcmp(il->first->name, itTP->first->name))
                     {

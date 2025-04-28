@@ -2418,6 +2418,8 @@ int opt0(EXPRESSION** node)
         case ExpressionNode::initblk_:
         case ExpressionNode::cpblk_:
             rv |= opt0(&(ep->right));
+            rv |= opt0(&(ep->left));
+            break;
         case ExpressionNode::trapcall_:
         case ExpressionNode::substack_:
         case ExpressionNode::alloca_:

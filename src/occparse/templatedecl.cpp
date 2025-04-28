@@ -866,7 +866,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     if (MATCHKW(lex, Keyword::ellipse_))
                                     {
                                         std::list<TEMPLATEPARAMPAIR> a(itorig, iteorig);
-                                        lst = expandTemplateSelector(lst, &a, tp);
+                                        lst = expandTemplateSelector(lst, &a, name->tp);
                                         (*lst)->back().second->ellipsis = true;
                                         if ((*lst)->back().second->packed && (*lst)->back().second->byPack.pack)
                                         {
@@ -1115,7 +1115,7 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     if (!*lst)
                                         *lst = templateParamPairListFactory.CreateList();
                                     (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                    if (parsingTrailingReturnOrUsing && exp->type == ExpressionNode::templateparam_ && exp && exp->v.sp)
+                                    if (exp && parsingTrailingReturnOrUsing && exp->type == ExpressionNode::templateparam_ && exp->v.sp)
                                     {
                                         (*lst)->back().first = exp->v.sp;
                                     }
@@ -2817,7 +2817,7 @@ void propagateTemplateDefinition(SYMBOL* sym)
                 {
                     for (auto cur : *p->tp->BaseType()->syms)
                     {
-                        if (sym && sym->sb->origdeclline == cur->sb->origdeclline &&
+                        if (sym->sb->origdeclline == cur->sb->origdeclline &&
                             !strcmp(sym->sb->origdeclfile, cur->sb->origdeclfile) && cur->sb->deferredCompile)
                         {
                             if (matchesCopy(cur, false) == matchesCopy(sym, false) &&

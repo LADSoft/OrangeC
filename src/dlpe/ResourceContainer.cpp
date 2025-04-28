@@ -33,20 +33,24 @@ unsigned char ResourceContainer::resourceHeader[32] = {0, 0, 0, 0, 0x20, 0, 0, 0
                                                        0, 0, 0, 0, 0,    0, 0, 0, 0,    0,    0, 0, 0,    0,    0, 0};
 ResourceContainer::~ResourceContainer()
 {
-    for (auto type : numberedTypes)
+    try
     {
-        for (const auto & nt : type.second.numberedIds)
-            delete[] nt.second.data;
-        for (const auto& nt : type.second.namedIds)
-            delete[] nt.second.data;
+        for (auto type : numberedTypes)
+        {
+            for (const auto& nt : type.second.numberedIds)
+                delete[] nt.second.data;
+            for (const auto& nt : type.second.namedIds)
+                delete[] nt.second.data;
+        }
+        for (auto type : namedTypes)
+        {
+            for (const auto& nt : type.second.numberedIds)
+                delete[] nt.second.data;
+            for (const auto& nt : type.second.namedIds)
+                delete[] nt.second.data;
+        }
     }
-    for (auto type : namedTypes)
-    {
-        for (const auto& nt : type.second.numberedIds)
-             delete[] nt.second.data;
-        for (const auto& nt : type.second.namedIds)
-            delete[] nt.second.data;
-    }
+    catch (std::bad_array_new_length) { /* don't care */ }
 }
 bool ResourceContainer::LoadFiles()
 {

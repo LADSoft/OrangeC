@@ -327,7 +327,7 @@ Class* Class::ObjIn(PELib& peLib, bool definition)
         }
         if (generics.size())
         {
-            rv = peLib.FindOrCreateGeneric(name, generics);
+            rv = peLib.FindOrCreateGeneric(std::move(name), generics);
             if (!rv)
             {
                 peLib.ObjError(oe_noclass);

@@ -69,7 +69,7 @@ size_t RSAEncoder::LoadStrongNameKeys(const std::string& file)
         if (fread(buf, 1, 0x14, fil) == 0x14 && !memcmp(buf, test, sizeof(test)))
         {
             int n = *(int*)(buf + sizeof(test));
-            if (n <= 16384)
+            if (n >= 0 && n <= 16384)
             {
                 modulusBits = n;
                 modulus = new Byte[2048];

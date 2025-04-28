@@ -287,7 +287,7 @@ struct SimpleString
 };
 struct SimpleExpression
 {
-    SimpleExpression() {}  // don't care about init, we just want the memory functions to compile
+    SimpleExpression()  {}  // don't care about init, we just want the memory functions to compile
     se_type type;
     union
     {

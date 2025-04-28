@@ -143,11 +143,11 @@ std::string PEReader::SearchOnPath(const std::string& fileName)
     {
         if (path.empty())
         {
-            path = getenv("PATH");
+            path = pathVal;
         }
         else
         {
-            path = path + ";" + getenv("PATH");
+            path = path + ";" + pathVal;
         }
     }
     std::string rv;

@@ -260,7 +260,7 @@ void ObjIeeeBinary::getline(ObjByte* buf, size_t size)
         return;
     }
     len = (buf[1] << 8) + buf[2];
-    if (len > BUFFERSIZE)
+    if (len >= size)
         ThrowSyntax(buf, eAll);
     if (fread(buf + 3, 1, len - 3, sfile) != len - 3)
         ThrowSyntax(buf, eAll);

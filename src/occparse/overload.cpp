@@ -4075,7 +4075,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                         ++it1;
                     if ((*it1)->tp->type == BasicType::void_)
                         ++it1;
-                    if (args->arguments && args->arguments->size())
+                    if (args && args->arguments && args->arguments->size())
                     {
                         auto ita = args->arguments->begin();
                         auto itae = args->arguments->end();

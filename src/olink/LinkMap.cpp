@@ -265,7 +265,7 @@ void LinkMap::Publics(std::fstream& stream)
                                             sectionName =
                                                 ObjSymbol(sectionName.c_str() + 3, ObjSymbol::eGlobal, 0).GetDisplayName();
                                         byName.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
-                                        byValue.insert(MapSymbolData(sectionName, true, ofs + base, base, group));
+                                        byValue.insert(MapSymbolData(std::move(sectionName), true, ofs + base, base, group));
                                     }
                                 }
                                 for (auto it = region->GetRegion()->PostponeDataBegin();

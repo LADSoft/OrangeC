@@ -548,6 +548,13 @@ bool PELib::ObjIn()
     catch (ObjectError&)
     {
     }
+    catch (...)
+    {
+        objInputBuf_ = nullptr;
+        objInputSize_ = 0;
+        objInputPos_ = 0;
+        throw;
+    }
     objInputBuf_ = nullptr;
     objInputSize_ = 0;
     objInputPos_ = 0;

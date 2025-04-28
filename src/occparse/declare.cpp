@@ -1457,34 +1457,34 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             {
                 sp = sp->sb->parentTemplate;
             }
-        }
-        // primarily for the type_info definition when building LSCRTL.DLL
-        if (linkage1 != Linkage::none_ && linkage1 != sp->sb->attribs.inheritable.linkage)
-        {
-            if (sp->sb->attribs.inheritable.linkage != Linkage::none_)
-                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-            else
-                sp->sb->attribs.inheritable.linkage = linkage1;
-        }
-        if (linkage2 != Linkage::none_ && linkage2 != sp->sb->attribs.inheritable.linkage2)
-        {
-            if (sp->sb->attribs.inheritable.linkage2 != Linkage::none_)
-                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-            else
-                sp->sb->attribs.inheritable.linkage2 = linkage2;
-        }
-        if (linkage3 != Linkage::none_ && linkage3 != sp->sb->attribs.inheritable.linkage3)
-        {
-            if (sp->sb->attribs.inheritable.linkage3 != Linkage::none_)
-                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-            else
-                sp->sb->attribs.inheritable.linkage3 = linkage3;
+            // primarily for the type_info definition when building LSCRTL.DLL
+            if (linkage1 != Linkage::none_ && linkage1 != sp->sb->attribs.inheritable.linkage)
+            {
+                if (sp->sb->attribs.inheritable.linkage != Linkage::none_)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                else
+                    sp->sb->attribs.inheritable.linkage = linkage1;
+            }
+            if (linkage2 != Linkage::none_ && linkage2 != sp->sb->attribs.inheritable.linkage2)
+            {
+                if (sp->sb->attribs.inheritable.linkage2 != Linkage::none_)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                else
+                    sp->sb->attribs.inheritable.linkage2 = linkage2;
+            }
+            if (linkage3 != Linkage::none_ && linkage3 != sp->sb->attribs.inheritable.linkage3)
+            {
+                if (sp->sb->attribs.inheritable.linkage3 != Linkage::none_)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                else
+                    sp->sb->attribs.inheritable.linkage3 = linkage3;
+            }
         }
         if (type != sp->tp->type && (type == BasicType::union_ || sp->tp->type == BasicType::union_))
         {
             errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
         }
-        else if (inTemplate && definingTemplate)
+        else if (inTemplate && definingTemplate && sp->sb)
         {
             // definition or declaration
             if (!sp->sb->templateLevel)
@@ -1541,7 +1541,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
         }
-        else if (MATCHKW(lex, Keyword::lt_))
+        else if (sp->sb && MATCHKW(lex, Keyword::lt_))
         {
             if (inTemplate)
             {

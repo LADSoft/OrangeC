@@ -1047,6 +1047,11 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                 while (exp->type == ExpressionNode::comma_ && exp->right)
                                     exp = exp->right;
                             }
+                            else
+                            {
+                                exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                                diag("GetTemplateArguments: null expression");
+                            }
                             if (tp && (int)tp->type == (int)ExpressionNode::templateparam_)
                             {
                                 if (!*lst)

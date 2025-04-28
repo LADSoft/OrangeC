@@ -705,7 +705,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
 {
     *op = op_mov;
     *aph = 0;
-    if (im->offset && im->offset->type == Optimizer::se_threadlocal)
+    if (im->mode ==  Optimizer::i_direct && im->offset->type == Optimizer::se_threadlocal)
     {
         AMODE* temp = setSymbol("__TLSINITSTART");
         temp->mode = am_immed;
@@ -727,23 +727,21 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         else
             mode = am_direct;
         *apl = beLocalAllocate<AMODE>();
+        int reg = Optimizer::chosenAssembler->arch->regMap[beRegFromTempInd(q, im, 1)][0];
+        if (im->offset)
         {
-            int reg = Optimizer::chosenAssembler->arch->regMap[beRegFromTempInd(q, im, 1)][0];
-            if (im->offset)
-            {
-                (*apl)->preg = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
-                (*apl)->sreg = im->offset2 ? reg : -1;
-            }
-            else if (mode == am_indisp && im->offset2)
-            {
-                (*apl)->preg = reg;
-                (*apl)->sreg = -1;
-            }
-            else
-            {
-                (*apl)->preg = -1;
-                (*apl)->sreg = im->offset2 ? reg : -1;
-            }
+            (*apl)->preg = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
+            (*apl)->sreg = im->offset2 ? reg : -1;
+        }
+        else if (mode == am_indisp && im->offset2)
+        {
+            (*apl)->preg = reg;
+            (*apl)->sreg = -1;
+        }
+        else
+        {
+            (*apl)->preg = -1;
+            (*apl)->sreg = im->offset2 ? reg : -1;
         }
         (*apl)->scale = im->scale;
         (*apl)->offset = im->offset3 ? im->offset3 : Optimizer::simpleIntNode(Optimizer::se_i, 0);
@@ -800,16 +798,13 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
             *aph = beLocalAllocate<AMODE>();
-            if (*apl)
-            {
-                **aph = **apl;
-                (*aph)->offset =
-                    Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
-                if ((*apl)->preg >= 0)
-                    (*apl)->liveRegs |= 1 << (*apl)->preg;
-                if ((*apl)->sreg >= 0)
-                    (*apl)->liveRegs |= 1 << (*apl)->sreg;
-            }
+            **aph = **apl;
+            (*aph)->offset =
+                Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
+            if ((*apl)->preg >= 0)
+                (*apl)->liveRegs |= 1 << (*apl)->preg;
+            if ((*apl)->sreg >= 0)
+                (*apl)->liveRegs |= 1 << (*apl)->sreg;
         }
     }
     else if (im->mode == Optimizer::i_immed)
@@ -892,13 +887,6 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
     }
     else if (im->mode == Optimizer::i_direct)
     {
-        /*
-            if (im->offset->type == Optimizer::se_reg)
-            {
-                *apl = makedreg(im->offset->i);
-            }
-            else
-        */
         if (im->size >= ISZ_FLOAT)
         {
             if (im->size >= ISZ_CFLOAT)
@@ -974,20 +962,21 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
                 if (im->size < ISZ_FLOAT)
                     (*apl)->length = im->size;
             }
-
         }
         else
         {
             *apl = aimmed(0);
         }
     }
-    if (*apl)
+    else
     {
-        if (!(*aph))
-            if ((*apl)->liveRegs == -1)
-                (*apl)->liveRegs = 0;
-        (*apl)->liveRegs |= q->liveRegs;
+        *apl = aimmed(0);
     }
+    if (!(*aph))
+        if ((*apl)->liveRegs == -1)
+            (*apl)->liveRegs = 0;
+    (*apl)->liveRegs |= q->liveRegs;
+
     if (*aph)
     {
         (*aph)->liveRegs |= q->liveRegs;

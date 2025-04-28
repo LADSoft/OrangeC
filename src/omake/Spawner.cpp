@@ -97,7 +97,7 @@ static bool HasMake(const std::string& cmd, const std::string& make)
     size_t n = cmd.find(make);
     if (n != std::string::npos)
     {
-        size_t m = cmd.find_first_not_of(" \n\t\v\r");
+        int m = cmd.find_first_not_of(" \n\t\v\r");
         if (m >= 0)
         {
             if (cmd[m] == '"')

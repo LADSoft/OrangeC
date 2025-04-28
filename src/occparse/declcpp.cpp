@@ -2431,10 +2431,10 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
             if (!skipProcess)
             {
                 if (!sp || sp->tp->type == BasicType::templateparam_ ||
-                    (!ismemberdata(sp) && !istype(sp) && sp->sb->storage_class != StorageClass::overloads_ &&
+                     (sp->sb && (!ismemberdata(sp) && !istype(sp) && sp->sb->storage_class != StorageClass::overloads_ &&
                      sp->sb->storage_class != StorageClass::global_ && sp->sb->storage_class != StorageClass::external_ &&
                      sp->sb->storage_class != StorageClass::static_ && sp->sb->storage_class != StorageClass::localstatic_ &&
-                     sp->sb->storage_class != StorageClass::constant_))
+                     sp->sb->storage_class != StorageClass::constant_)))
                 {
                     if (!definingTemplate || instantiatingTemplate)
                         error(ERR_TYPE_OR_VARIABLE_EXPECTED);

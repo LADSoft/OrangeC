@@ -862,6 +862,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
         {
             // fixme utf8 raw strings...
             char preamble[256];
+            preamble[0] = '{';
             int pcount = 0, qcount = 0;
             LCHAR* qpos = 0;
             int lineno = preProcessor->GetErrLineNo();

@@ -1001,6 +1001,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
             }
             case 'M':
                 buf2[0] = 0;
+                buf3[0] = 0;
                 if (*name == '#')
                 {
                     name = unmangTemplate(orig, buf2, name, last);

@@ -2883,7 +2883,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
             ildest = exp;
         }
         std::deque<EXPRESSION*> listOfScalars;
-        for (i = 0; i < count; i++, ++itl)
+        for (i = 0; i < count && itl != itle; i++, ++itl)
         {
             EXPRESSION* node = nullptr;
             dest = MakeExpression(ExpressionNode::add_, data,
@@ -2891,7 +2891,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
             if (initializerListType->IsStructured())
             {
                 initializerListType = initializerListType->BaseType();
-                if (initializerListType->sp->sb->trivialCons && itl != itle )
+                if (initializerListType->sp->sb->trivialCons)
                 {
                     auto list = &node;
                     auto ita = (*itl)->nested ? (*itl)->nested->begin() : itl;
@@ -2899,13 +2899,13 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
 
                     SymbolTable<SYMBOL>::iterator it;
                     for (it = initializerListType->syms->begin(); ita != itae && it != initializerListType->syms->end();
-                         ++it, ++ita)
+                        ++it, ++ita)
                     {
                         auto sym = *it;
                         if (ismemberdata(sym))
                         {
                             auto pos = MakeExpression(ExpressionNode::structadd_, dest,
-                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                                MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, (*ita)->exp);
                             if (node)
@@ -2925,7 +2925,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         if (ismemberdata(sym))
                         {
                             auto pos = MakeExpression(ExpressionNode::structadd_, dest,
-                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                                MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, MakeIntExpression(ExpressionNode::c_i_, 0));
                             if (node)
@@ -2940,7 +2940,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         }
                     }
                 }
-                else if (*itl && !(*itl)->initializer_list && (*itl)->nested)
+                else if (!(*itl)->initializer_list && (*itl)->nested)
                 {
                     auto ita = (*itl)->nested->begin();
                     auto itae = (*itl)->nested->end();
@@ -3038,7 +3038,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     node = cdest;
                 }
             }
-            else if (itl != initial->end())
+            else
             {
                 auto ita = (*itl)->nested ? (*itl)->nested->begin() : itl;
                 auto itae = (*itl)->nested ? (*itl)->nested->end() : initial->end();
@@ -3265,7 +3265,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             }
         }
         p = *itl;
-        if (p && p->exp && (p->exp->type == ExpressionNode::pc_ || p->exp->type == ExpressionNode::callsite_))
+        if (p->exp && (p->exp->type == ExpressionNode::pc_ || p->exp->type == ExpressionNode::callsite_))
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
@@ -5516,12 +5516,12 @@ static bool getSuffixedNumber(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
     if (sym)
     {
         // look for parameter of type unsigned long long or long double
-        SYMBOL *sym1 = nullptr, *sym2 = nullptr;
+        SYMBOL *sym1 = nullptr;
         auto found = false;
         for (auto sp : *sym->tp->syms)
         {
             sym1 = sp;
-            sym2 = sym1->tp->syms->front();
+            auto sym2 = sym1->tp->syms->front();
             if (sym1->tp->syms->size() == 1 && sym1->tp->type == tpb)
             {
                 found = true;
@@ -5562,7 +5562,7 @@ static bool getSuffixedNumber(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
             {
                 Type* tpx;
                 sym1 = sp;
-                sym2 = sym1->tp->syms->front();
+                auto sym2 = sym1->tp->syms->front();
                 tpx = sym2->tp;
                 if (sym1->tp->syms->size() == 1 && tpx->IsPtr())
                 {

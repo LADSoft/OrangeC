@@ -61,7 +61,7 @@ void MakeStubs::Run(std::ostream* out)
         auto splitQuotedTargets = Utils::split(quotedTargets);
         for (const auto& t : splitTargets)
             outTargets += t + " ";
-        for (auto t : splitQuotedTargets)
+        for (const auto& t : splitQuotedTargets)
         {
             outTargets += Escape(t) + " ";
         }
@@ -76,9 +76,9 @@ void MakeStubs::Run(std::ostream* out)
     }
     *out << outTargets << ": ";
     if (!userOnly)
-        for (auto t : preProcessor.GetSysIncludes())
+        for (const auto& t : preProcessor.GetSysIncludes())
             *out << Escape(t) << separator;
-    for (auto t : preProcessor.GetUserIncludes())
+    for (const auto& t : preProcessor.GetUserIncludes())
         *out << Escape(t) << separator;
     if (phonyTargets)
     {

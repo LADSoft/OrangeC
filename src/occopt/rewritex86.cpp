@@ -1179,7 +1179,7 @@ int x86_examine_icode(QUAD* head)
             /* must be last because it changes head */
             if (head->ans && head->ans->bits)
             {
-                if (head->dc.opcode != i_assn || (head->dc.left && head->dc.left->mode != i_immed) || !isintconst(head->dc.left->offset))
+                if (head->dc.opcode != i_assn || (head->dc.left && (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset))))
                 {
                     IMODE* temp;
                     QUAD* q;

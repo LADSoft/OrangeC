@@ -81,7 +81,7 @@ int BRCMain::Run(int argc, char** argv)
     bool ok = loader.load();
     if (ok)
     {
-        BRCWriter writer(std::move(outputFile), std::move(loader));
+        BRCWriter writer(std::move(outputFile), loader);
         ok = writer.write();
     }
     return !ok;

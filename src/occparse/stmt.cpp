@@ -1797,6 +1797,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
             }
             else
             {
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
+                {
+                    addedBlock++;
+                    AllocateLocalContext(parent, funcsp, codeLabel++);
+                }
                 if (!MATCHKW(lex, Keyword::closepa_))
                 {
                     Type* tp = nullptr;
@@ -1815,6 +1820,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     error(ERR_FOR_NEEDS_CLOSEPA);
                     errskim(&lex, skim_closepa);
                     skip(&lex, Keyword::closepa_);
+                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
+                    {
+                        addedBlock--;
+                        FreeLocalContext(parent, funcsp, codeLabel++);
+                    }
                 }
                 else
                 {
@@ -1860,6 +1870,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     st->label = parent.front()->continuelabel;
                     st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
                     st->select = incrementer;
+                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
+                    {
+                        addedBlock--;
+                        FreeLocalContext(parent, funcsp, codeLabel++);
+                    }
                     if (forline)
                     {
                         parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());

@@ -34,7 +34,13 @@ H_FILES=$(wildcard *.h)
 
 include ../redirect.mak
 
+ifeq "$(COMPILER)" "gcc-linux"
+DISTRIBUTE: copyexe
+	$(COPY) target.cfg ..$(PATHEXT2)orc.cfg
+	$(COPY) target.cfg $(DISTBIN)$(PATHEXT2)orc.cfg
+else
 DISTRIBUTE: copyexe
 	$(COPY) orc.exe ..$(PATHEXT2)
 	$(COPY) target.cfg ..$(PATHEXT2)orc.cfg
 	$(COPY) target.cfg $(DISTBIN)$(PATHEXT2)orc.cfg
+endif

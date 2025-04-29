@@ -3,7 +3,7 @@ DIRS = alexcs asm asmgas bzip2-1.0.5 cpplinq ellf general lame libogg-1.2.0 libv
 CDIRS = $(addsuffix .dir, $(DIRS))
 CLEANDIRS = $(addsuffix .cleandir, $(DIRS))
 
-CLEAN = -del *.o *.exe *.out *.tst *.res *.l *.dll 2>NUL
+CLEAN = -del *.o *.exe *.out *.tst *.res *.l *.dll 2>$(NULLDEV)
 export CLEAN
 
 all: $(CDIRS)  ctestsuite

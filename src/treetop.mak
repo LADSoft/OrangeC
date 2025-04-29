@@ -34,7 +34,7 @@ endif
 
 ifeq "$(COMPILER)" "gcc-linux"
 MKDIR := mkdir -p
-DEL := rm
+DEL := rm -r
 COPY := cp
 else
 MKDIR := mkdir
@@ -102,7 +102,11 @@ endif
 ifeq "$(MAIN_DEPENDENCIES)" "$(MAIN_FILE)"
 link:
 else
+ifneq "$(COMPILER)" "gcc-linux"
 link: $(NAME).exe
+else
+link: $(NAME)
+endif
 endif
 
 _OUTPUTDIR = $(_TARGETDIR)$(PATHEXT2)obj$(PATHEXT2)$(OBJ_IND_PATH)
@@ -162,18 +166,15 @@ else
 endif
 
 export RELEASEPATH
-
+ifneq "$(COMPILER)" "gcc-linux"
 COPYDIR := $(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)copydir.exe)
+SAFEMKDIR := mkdir
+else
+SAFEMKDIR := mkdir -p
+COPYDIR := cp -r
+endif
 export COPYDIR
-
-PEPATCH:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)pepatch.exe)
-export PEPATCH
-
-RESTUB:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)restub.exe)
-export RESTUB
-
-RENSEG:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)renseg.exe)
-export RENSEG
+export SAFEMKDIR
 
 #STUB:=$(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)clibs$(PATHEXT2)platform$(PATHEXT2)dos32$(PATHEXT2)extender$(PATHEXT2)hx$(PATHEXT2)dpmist32.bin)
 #export STUB
@@ -181,15 +182,15 @@ export RENSEG
 DISTMAKE := $(realpath $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dist.mak)
 export DISTMAKE
 
-cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
+cleanDISTRIBUTE: copydir.exe
 	-$(DEL) $(DISTBIN)$(PATHEXT2)*.pdb 2> $(NULLDEV)
 ifndef NOMAKEDIR
 	-$(MKDIR) $(DISTROOT) 2> $(NULLDEV)
 #	-$(DEL) $(DISTROOT) 2> $(NULLDEV)
 #	-$(MKDIR) $(DISTROOT)$(PATHEXT2)rule 2> $(NULLDEV)
 #	-$(DEL) $(DISTROOT)$(PATHEXT2)rule 2> $(NULLDEV)
-	-$(MKDIR) $(DISTBIN) 2> $(NULLDEV)
 	-$(DEL) $(DISTBIN) 2> $(NULLDEV)
+	-$(MKDIR) $(DISTBIN)
 #	-$(MKDIR) $(DISTBIN_8) 2> $(NULLDEV)
 #	-$(DEL) $(DISTBIN_8) 2> $(NULLDEV)
 #	-$(MKDIR) $(DISTBIN_8)$(PATHEXT2)branding 2> $(NULLDEV)

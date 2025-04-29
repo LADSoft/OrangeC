@@ -1348,7 +1348,7 @@ std::string Eval::realpath(const std::string& arglist)
     {
         std::string thisOne = ExtractFirst(text, " ");
         if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/')  // windows specific
-            thisOne = OS::GetWorkingDir() + '/' + thisOne;
+            thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
         if (!rv.empty())
             rv += " ";
         rv += thisOne;

@@ -103,12 +103,21 @@ usually an executable program image or data for it.
 "Time: " __TIME__ "  Date: " __DATE__;
 
 const char* MakeMain::usageText = "[options] goals\n";
-
+#ifdef _WIN32
+// Default variables for OrangeC on windows
 const char* MakeMain::builtinVars =
     "CC=${ORANGEC}/bin/occ\n"
     "CXX=${ORANGEC}/bin/occ\n"
     "AS=${ORANGEC}/bin/oasm\n";
+#else
+// Default variables on UNIX, these are system wide default symlinks, use em.
+const char* MakeMain::builtinVars =
+    "CC=/bin/cc\n"
+    "CXX=/bin/c++\n"
+    "AS=/bin/as\n"
+    "YACC=/bin/yacc\n";
 
+#endif
 const char* MakeMain::builtinRules =
     "%.o: %.c .__BUILTIN\n"
     "\t${CC} ${CPPFLAGS} ${CFLAGS} -o $@ -c $<\n"
@@ -312,11 +321,18 @@ bool MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef TARGET_OS_WINDOWS
-    char** env = environ;
-#else
-    char** env = 0;
+// https://www.man7.org/linux/man-pages/man7/environ.7.html
+/*
+ *Historically and by standard, environ must be declared in the
+ *user program.  However, as a (nonstandard) programmer
+ *convenience, environ is declared in the header file <unistd.h> if
+ *the _GNU_SOURCE feature test macro is defined (see
+ *feature_test_macros(7)).
+ */
+#ifndef TARGET_OS_WINDOWS
+    extern char** environ;
 #endif
+    char** env = environ;
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;
@@ -544,12 +560,12 @@ int MakeMain::Run(int argc, char** argv)
                 v = VariableContainer::Instance()->Lookup("COMSPEC");
             if (!v)
                 v = VariableContainer::Instance()->Lookup("ComSpec");
-            if (v)
-            {
-                std::string val = v->GetValue();
-                SetVariable("SHELL", val, Variable::o_environ, false);
-                SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
-            }
+
+            SetVariable(".SHELLFLAGS", "/c", Variable::o_environ, false);
+        }
+        else
+        {
+            SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
         }
 
         std::string wd = OS::GetWorkingDir();
@@ -607,7 +623,7 @@ int MakeMain::Run(int argc, char** argv)
             if (treeBuild.GetValue())
                 files = "treetop.mak";
             else
-                files = "makefile";
+                files = "Makefile";
         }
         if (treeBuild.GetValue())
             SetTreePath(files);

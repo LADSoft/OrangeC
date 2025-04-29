@@ -46,9 +46,11 @@ class Semaphore
 #else
         // 0 in this case means this is shared internally, not externally
         int ret = sem_init(&handle, 0, value);
-        if (!ret)
+        // https://www.man7.org/linux/man-pages/man3/sem_init.3.html
+        // IT RETURNS 0 ON SUCCESS
+        if (ret != 0)
         {
-            throw std::runtime_error("Semaphore init failed, errno is: " + std::to_string(errno));
+            throw std::system_error(errno, std::system_category());
         }
 #endif
     }
@@ -65,9 +67,9 @@ class Semaphore
 #else
         // 0 in this case means this is shared internally, not externally
         int ret = sem_init(&handle, 0, value);
-        if (!ret)
+        if (ret != 0)
         {
-            throw std::runtime_error("Semaphore init failed, errno is: " + std::to_string(errno));
+            throw std::system_error(errno, std::system_category());
         }
 #endif
     }
@@ -130,7 +132,7 @@ class Semaphore
             if (!null)
             {
 #ifdef TARGET_OS_WINDOWS
-                CloseHandle(handle);
+                CloseHandle(other.handle);
 #else
                 if (named)
                 {

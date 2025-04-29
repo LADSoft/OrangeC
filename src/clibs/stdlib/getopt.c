@@ -226,3 +226,81 @@ int getopt_long(int argc, char* const argv[], const char* optstring,
   ++optind;
   return retval;
 }
+
+int getopt_long_only(int argc, char* const argv[], const char* optstring,
+  const struct option* longopts, int* longindex) {
+  const struct option* o = longopts;
+  const struct option* match = NULL;
+  int num_matches = 0;
+  size_t argument_name_length = 0;
+  const char* current_argument = NULL;
+  int retval = -1;
+
+  optarg = NULL;
+  optopt = 0;
+
+  if (optind >= argc)
+    return -1;
+
+  if (argv[optind][0] != '-')
+    return -1;
+
+  if (argv[optind][1] == '-')
+     current_argument = argv[optind] + 2;
+  else
+     current_argument = argv[optind] + 1;
+     
+  /* It's an option; starts with -- and is longer than two chars. */
+  argument_name_length = strcspn(current_argument, "=");
+  for (; o->name; ++o) {
+    if (strncmp(o->name, current_argument, argument_name_length) == 0) {
+      match = o;
+      ++num_matches;
+    }
+  }
+
+  if (num_matches == 1) {
+    /* If longindex is not NULL, it points to a variable which is set to the
+       index of the long option relative to longopts. */
+    if (longindex)
+      *longindex = (match - longopts);
+
+    /* If flag is NULL, then getopt_long() shall return val.
+       Otherwise, getopt_long() returns 0, and flag shall point to a variable
+       which shall be set to val if the option is found, but left unchanged if
+       the option is not found. */
+    if (match->flag)
+      *(match->flag) = match->val;
+
+    retval = match->flag ? 0 : match->val;
+
+    if (match->has_arg != no_argument) {
+      optarg = strchr(argv[optind], '=');
+      if (optarg != NULL)
+        ++optarg;
+
+      if (match->has_arg == required_argument) {
+        /* Only scan the next argv for required arguments. Behavior is not
+           specified, but has been observed with Ubuntu and Mac OSX. */
+        if (optarg == NULL && ++optind < argc) {
+          optarg = argv[optind];
+        }
+
+        if (optarg == NULL)
+          retval = ':';
+      }
+    } else if (strchr(argv[optind], '=')) {
+      /* An argument was provided to a non-argument option.
+         I haven't seen this specified explicitly, but both GNU and BSD-based
+         implementations show this behavior.
+      */
+      retval = '?';
+    }
+  } else {
+    /* Unknown option or ambiguous match. */
+    retval = '?';
+  }
+
+  ++optind;
+  return retval;
+}

@@ -159,6 +159,7 @@ CmdSwitchCombineString prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"})
 CmdSwitchBool prmPIC(SwitchParser, 0, 0, {"fPIC"});       // ignored for now
 CmdSwitchBool prmWall(SwitchParser, 0, 0, {"Wall"});      // ignored for now
 CmdSwitchBool prmWextra(SwitchParser, 0, 0, {"Wextra"});  // ignored for now
+CmdSwitchBool prmEnableAutoImport(SwitchParser, 0, 0, {"enable-auto-import"}); // ignored for now
 
 CmdSwitchBool MakeStubsOption(SwitchParser, 0, 0, {"M"});
 CmdSwitchBool MakeStubsUser(SwitchParser, 0, 0, {"MM"});

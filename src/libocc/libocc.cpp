@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <filesystem>
 #include "Utils.h"
 #include "ToolChain.h"
 #include "CmdSwitch.h"
@@ -192,5 +193,11 @@ int libocc::Run(int argc, char** argv)
     fclose(fil);
     auto rv = ToolChain::ToolInvoke(toolName, nullptr, " -! -c \"%s\" @%s", outputFile.c_str(), tempName.c_str());
     unlink(tempName.c_str());
+    if (outputFile.size() > 2)
+    {
+        auto msvcLibFile = outputFile;
+        msvcLibFile = SanitizeExtension(outputFile.substr(0, outputFile.size()-2), ".lib");
+        std::filesystem::copy_file(outputFile, msvcLibFile, std::filesystem::copy_options::overwrite_existing);
+    }
     return rv;
 }

@@ -1241,10 +1241,46 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
             }
         }
         else
+        {
             diag("gen_xset: Unknown bit type");
-        if (apal->length != ISZ_UCHAR && apal->length != -ISZ_UCHAR)
-            gen_codes(op_mov, ISZ_UINT, apal, aimmed(0));
-        gen_codes(op, ISZ_UCHAR, apal, 0);
+        }
+        if (apal->preg > EBX)
+        {
+            int i;
+            for (i = 0; i < 4; i++)
+            {
+                if (!live(apal->liveRegs, i))
+                {
+                    altreg = makedreg(i);
+                    assign = true;
+                    break;
+                }
+            }
+            if (!assign)
+            {
+                altreg = make_stack(0);
+                stacked = true;
+            }
+        }
+        if (assign)
+        {
+            if (apal->length != ISZ_UCHAR && apal->length != -ISZ_UCHAR)
+                gen_codes(op_mov, ISZ_UINT, altreg, aimmed(0));
+            gen_codes(op, ISZ_UCHAR, altreg, 0);
+            gen_codes(op_mov, apal->length, apal, altreg);
+        }
+        else if (stacked)
+        {
+            gen_codes(op_push, ISZ_UINT, aimmed(0), NULL);
+            gen_codes(op, ISZ_UCHAR, altreg, 0);
+            gen_codes(op_pop, ISZ_UINT, apal, NULL);
+        }
+        else
+        {
+            if (apal->length != ISZ_UCHAR && apal->length != -ISZ_UCHAR)
+                gen_codes(op_mov, ISZ_UINT, apal, aimmed(0));
+            gen_codes(op, ISZ_UCHAR, apal, 0);
+        }
         return;
     }
     if (left->size >= ISZ_FLOAT)

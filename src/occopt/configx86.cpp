@@ -125,7 +125,8 @@ Optimization control: OPTIMIZATION_DESCRIPTION Flags: OPTMODULES_DESCRIPTION
     -nostdinc, nostdinc++           disable system include file path
     --output-def filename           output a .def file instead of a .lib file for DLLs
     --out-implib filename           specify the name of the import library for DLLs
-    --export-all-symbols            reserved
+    --export-all-symbols            export all global symbols
+    --enable-auto-import            reserved
     -link                           reserved
     -dll or -shared                 compile as DLL (same as /Wd)
     -static                         build a static library

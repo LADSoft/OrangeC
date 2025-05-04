@@ -755,6 +755,7 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
     if (RuntimeHeapCheck.GetValue())
         Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
+    Optimizer::cparams.prm_exportAll = prm_dllexportall.GetValue();
 #ifndef ORANGE_NO_MSIL
     if (Optimizer::architecture == ARCHITECTURE_MSIL && NetCoreSwitch.GetExists())
     {

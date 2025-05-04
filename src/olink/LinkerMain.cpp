@@ -88,6 +88,7 @@ CmdSwitchCombineString LinkerMain::OutputImportLibrary(SwitchParser, 0, 0, {"out
 CmdSwitchCombineString LinkerMain::PrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString LinkerMain::DelayLoadDll(SwitchParser, 0, ';', {"delayload"});
 CmdSwitchCombineString LinkerMain::DelayLoadFlags(SwitchParser, 0, ';', {"delay"});
+CmdSwitchBool LinkerMain::ExportAllSymbols(SwitchParser, 0, 0, {"export-all-symbols"});
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::helpText =
@@ -112,6 +113,7 @@ the os-specific executable.
  --output-def filename    create a .def file for DLLs
  --out-implib filename    specify name for import library when generating DLLs
  --shared                 create a dll
+ --export-all-symbols     export all global symbols
  -delayload dllname       specify a dll to add to the delay load table
  -delay[nobind|unload]    specify a delay load flag
 
@@ -376,7 +378,7 @@ int LinkerMain::Run(int argc, char** argv)
         LibPath += lpath;
     }
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile,
-                       !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile);
+                       !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile, ExportAllSymbols.GetValue());
     linker.SetLibPath(LibPath.GetValue());
     linker.SetDelayLoad(DelayLoadDll.GetValue());
     ParseSpecifiedLibFiles(files, linker);

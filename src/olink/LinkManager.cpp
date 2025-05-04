@@ -63,7 +63,7 @@ std::set<std::string> ignoreLibs = {"advapi32.l", "avicap32.l", "avifil32.l", "c
 void HookError(int aa) {}
 
 LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, ObjString OutputFile, bool CompleteLink,
-                         bool DebugPassThrough, ObjString DebugFile) :
+                         bool DebugPassThrough, ObjString DebugFile, bool ExportAllSymbols) :
     specification(Specification),
     outputFile(std::move(OutputFile)),
     specName(std::move(Specification)),
@@ -73,7 +73,8 @@ LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, ObjString 
     ioBase(nullptr),
     caseSensitive(CaseSensitive),
     debugPassThrough(DebugPassThrough),
-    debugFile(std::move(DebugFile))
+    debugFile(std::move(DebugFile)),
+    exportAllSymbols(ExportAllSymbols)
 {
 }
 
@@ -202,7 +203,7 @@ void LinkManager::MarkExternals(ObjFile* file)
         }
     }
 }
-void LinkManager::MergePublics(ObjFile* file, bool toerr)
+void LinkManager::MergePublics(ObjFile* file, bool fromLibrary, bool toerr)
 {
     for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
@@ -222,18 +223,31 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
             }
             LinkSymbolData* newSymbol = new LinkSymbolData(file, *it);
             publics.insert(newSymbol);
-            auto it = exports.find(newSymbol);
-            if (it != exports.end())
+            auto it2 = exports.find(newSymbol);
+            if (exportAllSymbols && !fromLibrary && it2 == exports.end())
             {
-                (*it)->SetUsed(true);
+                static std::set<std::string> invalid = { "startupStruct", "___unaligned_stacktop" };
+                if (invalid.find((*it)->GetName()) == invalid.end())
+                {
+                    auto sym = new ObjExportSymbol((*it)->GetName());
+                    sym->SetIndex(file->ExportSize());
+                    file->Add(sym);
+                    LinkSymbolData* newSymbol2 = new LinkSymbolData(file, sym);
+                    exports.insert(newSymbol2);
+                    it2 = exports.find(newSymbol2);
+                }
+            }
+            if (it2 != exports.end())
+            {
+                (*it2)->SetUsed(true);
                 newSymbol->SetUsed(true);
             }
-            it = externals.find(newSymbol);
-            if (it != externals.end())
+            it2 = externals.find(newSymbol);
+            if (it2 != externals.end())
             {
-                (*it)->SetUsed(true);
-                delete (*it);
-                externals.erase(it);
+                (*it2)->SetUsed(true);
+                delete (*it2);
+                externals.erase(it2);
             }
         }
     }
@@ -515,7 +529,7 @@ void LinkManager::LoadFiles()
                 if (internalBase.GetStartAddress())
                     ioBase->SetStartAddress(internalBase.GetStartFile(), internalBase.GetStartAddress());
                 fileData.push_back(file);
-                MergePublics(file, true);
+                MergePublics(file, false, true);
             }
             fclose(infile);
         }
@@ -613,7 +627,7 @@ bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name)
                 else
                 {
                     fileData.push_back(file);
-                    MergePublics(file, false);
+                    MergePublics(file, true, false);
                 }
                 found = true;
             }

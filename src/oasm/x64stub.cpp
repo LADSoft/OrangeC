@@ -1148,7 +1148,7 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
                 {
                     if (line.find_first_of("%") != std::string::npos)
                     {
-                        return "[" + RewriteATTArg(line.substr(npos + 1)) + "]";
+                        return RewriteATTArg(line.substr(npos + 1));
                     }
                     else
                     {

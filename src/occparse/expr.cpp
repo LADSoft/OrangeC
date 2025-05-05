@@ -5219,7 +5219,7 @@ static LexList* expression_string(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         switch (data->strtype)
         {
             case LexType::l_u8str_:
-                if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+                if (Optimizer::cparams.c_dialect >= Dialect::c23)
                     tpb = stdchar8_tptr.btp->type;
                 else
                     tpb = stdcharptr.btp->type;
@@ -5295,7 +5295,7 @@ static LexList* expression_string(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
         switch (data->strtype)
         {
             case LexType::l_u8str_:
-                if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+                if (Optimizer::cparams.c_dialect >= Dialect::c23)
                     (*tp)->btp = stdchar8_tptr.btp;
                 else
                     (*tp)->btp = stdcharptr.btp;

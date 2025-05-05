@@ -33,7 +33,7 @@ enum class Dialect
     c89,
     c99,
     c11,
-    c2x,
+    c23,
     cpp11,
     cpp14,
     cpp17

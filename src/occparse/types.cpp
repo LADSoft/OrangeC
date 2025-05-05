@@ -2710,7 +2710,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                         type = BasicType::unative_;
                         break;
                     case BasicType::bitint_:
-                        RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
+                        RequiresDialect::Keyword(Dialect::c23, "_Bitint");
                         type = BasicType::unsigned_bitint_;
                         lex = getsym();
                         needkw(&lex, Keyword::openpa_);
@@ -2748,7 +2748,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                 }
                 break;
             case Keyword::bitint_:
-                RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
+                RequiresDialect::Keyword(Dialect::c23, "_Bitint");
                 switch (type)
                 {
                     case BasicType::unsigned_:
@@ -4026,7 +4026,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
     }
     else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
     {
-        RequiresDialect::Removed(Dialect::c2x, "K&R prototypes");
+        RequiresDialect::Removed(Dialect::c23, "K&R prototypes");
         SYMBOL* spo = nullptr;
         sp->sb->oldstyle = true;
         if (sp->sb->storage_class != StorageClass::member_ && sp->sb->storage_class != StorageClass::mutable_)
@@ -4197,7 +4197,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
         }
         skip(&lex, Keyword::closepa_);
     }
-    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x ||
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23 ||
              ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
               !MATCHKW(lex, Keyword::closepa_) && *spin))
     {

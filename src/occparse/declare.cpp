@@ -1161,7 +1161,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     {
         if (sp->tp->syms || sp->tp->tags)
         {
-            if (Optimizer::cparams.c_dialect != Dialect::c2x)
+            if (Optimizer::cparams.c_dialect != Dialect::c23)
             {
                 preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
             }
@@ -1193,7 +1193,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
         lex = structbody(lex, funcsp, sp, defaultAccess, anonymousTable);
         *defd = true;
     }
-    if (hasBody && Optimizer::cparams.c_dialect == Dialect::c2x)
+    if (hasBody && Optimizer::cparams.c_dialect == Dialect::c23)
     {
         if (oldsyms)
         {
@@ -1595,7 +1595,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
 {
     long long enumval = 0;
     Type* unfixedType;
-    bool fixed = Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x ? true : false;
+    bool fixed = Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23 ? true : false;
     unfixedType = spi->tp->btp;
     if (!unfixedType)
         unfixedType = &stdint;
@@ -1614,7 +1614,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
             {
                 SYMBOL* sp;
                 Type* tp;
-                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x)
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23)
                 {
                     tp = (fixedType ? fixedType : unfixedType)->CopyType();
                     tp->scoped = scoped;  // scoped the constants type as well for error checking
@@ -1664,7 +1664,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
 
                     if (tp && isintconst(exp))  // type is redefined to nullptr here, is this intentional?
                     {
-                        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x)
+                        if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23)
                         {
                             if (!fixedType)
                             {
@@ -1701,7 +1701,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                     }
                 }
                 sp->sb->value.i = enumval++;
-                if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x) && spi->tp->btp)
+                if ((Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23) && spi->tp->btp)
                 {
                     if (fixedType)
                     {
@@ -1822,7 +1822,7 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
     }
     if (KW(lex) == Keyword::colon_)
     {
-        RequiresDialect::Feature(Dialect::c2x, "Underlying type");
+        RequiresDialect::Feature(Dialect::c23, "Underlying type");
         lex = getsym();
         fixedType = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
         if (!fixedType || !fixedType->IsInt())
@@ -4298,7 +4298,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     {
                         if (ismemberdata(sp))
                             error(ERR_CONSTEXPR_MEMBER_MUST_BE_STATIC);
-                        else if (Optimizer::cparams.c_dialect >= Dialect::c2x && sp->tp->IsFunction())
+                        else if (Optimizer::cparams.c_dialect >= Dialect::c23 && sp->tp->IsFunction())
                             error(ERR_CONSTEXPR_MUST_BE_OBJECT);
                         else
                             CheckIsLiteralClass(sp->tp);

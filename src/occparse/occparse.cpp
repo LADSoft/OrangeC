@@ -600,9 +600,9 @@ MAINTRY
             {
                 Optimizer::cparams.c_dialect = Dialect::c11;
             }
-            else if (prm_std.GetValue() == "c2x" || prm_std.GetValue() == "c23")
+            else if (prm_std.GetValue() == "c23")
             {
-                Optimizer::cparams.c_dialect = Dialect::c2x;
+                Optimizer::cparams.c_dialect = Dialect::c23;
             }
             else if (prm_std.GetValue() == "c++11")
             {
@@ -658,7 +658,7 @@ MAINTRY
             buffer, prm_cinclude.GetValue(),
             Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
             Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-            Optimizer::cparams.prm_cplusplus ? Dialect::c2x : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
+            Optimizer::cparams.prm_cplusplus ? Dialect::c23 : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
             prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 

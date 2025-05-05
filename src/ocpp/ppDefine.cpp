@@ -712,7 +712,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
                 }
                 doit = false;
             }
-            else if (dialect == Dialect::c2x && name == "__VA_OPT__" && macro[p] == '(')
+            else if (dialect == Dialect::c23 && name == "__VA_OPT__" && macro[p] == '(')
             {
                 auto start = p + 1;
                 auto end = start;

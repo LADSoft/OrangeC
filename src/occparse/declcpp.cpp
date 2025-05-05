@@ -2997,7 +2997,7 @@ bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always)
         }
         else if (MATCHKW(*lex, Keyword::alignas_))
         {
-            RequiresDialect::Keyword(Dialect::c2x, "alignas");
+            RequiresDialect::Keyword(Dialect::c23, "alignas");
             rv = true;
             *lex = getsym();
             if (needkw(lex, Keyword::openpa_))
@@ -3095,7 +3095,7 @@ bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always)
             *lex = getsym();
             if (MATCHKW(*lex, Keyword::openbr_))
             {
-                RequiresDialect::Feature(Dialect::c2x, "Attribute specifiers");
+                RequiresDialect::Feature(Dialect::c23, "Attribute specifiers");
                 const std::string occNamespace = "occ";
                 const std::string gccNamespace = "gnu";
                 const std::string clangNamespace = "clang";

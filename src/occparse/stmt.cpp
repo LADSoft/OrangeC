@@ -3964,7 +3964,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         browse_startfunc(funcsp, funcsp->sb->declline);
         for (auto sp2 : *funcsp->tp->BaseType()->syms)
         {
-            if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c2x &&
+            if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.c_dialect < Dialect::c23 &&
                 sp2->tp->type != BasicType::ellipse_ && !sp2->tp->IsVoid() && sp2->sb->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
             sp2->sb->destructed = false;

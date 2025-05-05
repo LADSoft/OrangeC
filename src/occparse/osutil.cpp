@@ -94,7 +94,7 @@ CmdSwitchParser SwitchParser;
 CmdSwitchBool prm_c89(SwitchParser, '8');
 CmdSwitchBool prm_c99(SwitchParser, '9');
 CmdSwitchBool prm_c11(SwitchParser, '1');
-CmdSwitchBool prm_c2x(SwitchParser, '2');
+CmdSwitchBool prm_c23(SwitchParser, '2');
 CmdSwitchBool prm_ansi(SwitchParser, 'A');
 CmdSwitchBool prm_errfile(SwitchParser, 'e');
 CmdSwitchBool prm_cppfile(SwitchParser, 'i');
@@ -468,8 +468,8 @@ static void ParamTransfer(const char* name)
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         ToolChain::Usage(getUsageText());
     // booleans
-    if (prm_c2x.GetValue())
-        Optimizer::cparams.c_dialect = Dialect::c2x;
+    if (prm_c23.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c23;
     else if (prm_c11.GetValue())
         Optimizer::cparams.c_dialect = Dialect::c11;
     else if (prm_c99.GetValue())
@@ -855,9 +855,9 @@ void setglbdefs(void)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
     }
-    if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c2x)
+    if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c23)
     {
-        if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+        if (Optimizer::cparams.c_dialect >= Dialect::c23)
         {
             preProcessor->Define("__STDC_VERSION__", "202311L");
             preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");

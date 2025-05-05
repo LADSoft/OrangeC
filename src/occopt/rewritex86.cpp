@@ -945,19 +945,6 @@ int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int 
             case i_udiv:
             case i_smod:
             case i_umod:
-                /*
-                if (ins->ans->size <= ISZ_ULONG && ins->dc.right->mode == i_immed && isintconst(ins->dc.right->offset))
-                {
-                    t = InitTempOpt(ins->dc.right->size, ins->dc.right->size);
-                    newIns = Allocate<QUAD>();
-                    newIns->ans = t;
-                    newIns->dc.left = ins->dc.right;
-                    newIns->dc.opcode = i_assn;
-                    ins->dc.right = t;
-                    ins->temps |= TEMP_RIGHT;
-                    InsertInstruction(ins->back, newIns);
-                }
-                */
             case i_muluh:
             case i_mulsh:
                 t = InitTempOpt(ins->ans->size, ins->ans->size);
@@ -1007,8 +994,7 @@ int x86_examine_icode(QUAD* head)
     Block* b = nullptr;
     bool changed = false;
     QUAD* hold = head;
-    uses_substack = false;
-    while (head)
+    uses_substack = false;    while (head)
     {
         if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv || head->dc.opcode == i_smod || head->dc.opcode == i_umod)
         {
@@ -2325,6 +2311,10 @@ static void IterateConflict(int ans, int t)
     {
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
+            if (head->dc.opcode == i_assn)
+            {
+                insertConflict(t, head->dc.left->offset->sp->i);
+            }
             if (head->dc.left->offset->sp->pushedtotemp)
                 insertConflict(ans, head->dc.left->offset->sp->i);
             else
@@ -2363,7 +2353,6 @@ void x86InternalConflict(QUAD* head)
                     int t1 = head->ans->offset->sp->i;
                     IterateConflict(t1, head->dc.left->offset->sp->i);
                 }
-
             }
             /* make sure that when regs are allocated, the right- hand argument is in a different
              * reg than the result.  For shifts this is the count value, for divs this is the denominator

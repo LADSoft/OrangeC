@@ -45,7 +45,7 @@
 #endif
 class OSTakeJobIfNotMake
 {
-    static const int MaxOmakeInstances = 2;
+    static const int MaxOmakeInstances = 10;
     bool take_job = false;
     static bool initted;
     static Semaphore sem;

@@ -994,7 +994,8 @@ int x86_examine_icode(QUAD* head)
     Block* b = nullptr;
     bool changed = false;
     QUAD* hold = head;
-    uses_substack = false;    while (head)
+    uses_substack = false;
+    while (head)
     {
         if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv || head->dc.opcode == i_smod || head->dc.opcode == i_umod)
         {
@@ -2311,10 +2312,6 @@ static void IterateConflict(int ans, int t)
     {
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
-            if (head->dc.opcode == i_assn)
-            {
-                insertConflict(t, head->dc.left->offset->sp->i);
-            }
             if (head->dc.left->offset->sp->pushedtotemp)
                 insertConflict(ans, head->dc.left->offset->sp->i);
             else
@@ -2333,27 +2330,35 @@ void x86InternalConflict(QUAD* head)
 {
     switch (head->dc.opcode)
     {
+        case i_muluh:
+        case i_mulsh:
         case i_udiv:
         case i_sdiv:
         case i_umod:
         case i_smod:
-        case i_muluh:
-        case i_mulsh:
+            /* for divs we have to make sure the answer node conflicts with anything
+              * that was used to load the numerator...
+              */
+            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
+                head->dc.left->offset->type == se_tempref)
+            {
+                int t1 = head->ans->offset->sp->i;
+                IterateConflict(t1, head->dc.left->offset->sp->i);
+            }
+            /* make sure that when regs are allocated, the right- hand argument is in a different
+             * reg than the result.  For shifts this is the count value, for divs this is the denominator
+             */
+            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
+                head->dc.right->offset->type == se_tempref)
+            {
+                int t1 = head->ans->offset->sp->i;
+                int t2 = head->dc.right->offset->sp->i;
+                insertConflict(t1, t2);
+            }
+            break;
         case i_lsl:
         case i_lsr:
         case i_asr:
-            if (head->dc.opcode != i_lsl && head->dc.opcode != i_lsr && head->dc.opcode != i_asr)
-            {
-                /* for divs we have to make sure the answer node conflicts with anything
-                  * that was used to load the numerator...
-                  */
-                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
-                    head->dc.left->offset->type == se_tempref)
-                {
-                    int t1 = head->ans->offset->sp->i;
-                    IterateConflict(t1, head->dc.left->offset->sp->i);
-                }
-            }
             /* make sure that when regs are allocated, the right- hand argument is in a different
              * reg than the result.  For shifts this is the count value, for divs this is the denominator
              */

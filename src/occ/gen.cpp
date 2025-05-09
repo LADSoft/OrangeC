@@ -1613,6 +1613,11 @@ static void gen_div(Optimizer::QUAD* q, enum e_opcode op) /* unsigned division *
     }
     else
     {
+        bool push = mod && (live(apal->liveRegs, EAX));
+        if (push)
+        {
+            gen_codes(op_push, ISZ_UINT, makedreg(EAX), NULL);
+        }
         AMODE* divby = aprl;
         if (apal->mode != am_dreg)
             diag("asm_udiv: answer not a dreg");
@@ -1630,6 +1635,10 @@ static void gen_div(Optimizer::QUAD* q, enum e_opcode op) /* unsigned division *
         }
         divby->liveRegs = q->liveRegs;
         gen_codes(op, q->ans->size, divby, 0);
+        if (push)
+        {
+            gen_codes(op_pop, ISZ_UINT, makedreg(EAX), NULL);
+        }
     }
 }
 static void gen_mulxh(Optimizer::QUAD* q, enum e_opcode op) /* unsigned division */

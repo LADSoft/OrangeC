@@ -33,6 +33,7 @@ public:
     bool          before(const type_info  &) const;
 
     const char *  name() const;
+    size_t        hash_code() const;
 
 protected:
                   type_info(tpid *_tpp) { tpp = _tpp; }

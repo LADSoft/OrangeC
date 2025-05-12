@@ -21,12 +21,9 @@
 #          email: TouchStone222@runbox.com <David Lindauer>
 #  
 
-SHELL=cmd.exe
-export SHELL
-
 ifeq "$(COMPILER)" "gcc-linux"
-MKDIR := mdkdir -p
-DEL := rm
+MKDIR := mkdir -p
+DEL := rm -r
 COPY := cp
 else
 MKDIR := mkdir
@@ -40,8 +37,8 @@ export COPY
 
 all: mkapps
 
-BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdbit stdlib STRING strings \
-	threads TIME uio wc uchar
+BASEDIRS= alloc cmath complib io locale math procont stdbit stdlib string strings \
+	threads time uio wc uchar
 CLIBDIRS = $(BASEDIRS) cpp
 DLLDIRS = $(BASEDIRS) cpp
 DIRS= $(CLIBDIRS)
@@ -54,7 +51,7 @@ C_CLIBS:= $(call SUFFIXDIRS,$(DIRS),.clibs)
 C_DLLS:= $(call SUFFIXDIRS,$(DLLDIRS),.dlls)
 C_FORMAT= $(call SUFFIXDIRS,$(DIRS),.formats)
 
-MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
+MAKEFILES := $(MAKEFILES) $(subst /,$(PATHEXT2),$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
@@ -62,57 +59,57 @@ ifneq ($(shell type makefile),)
 B = /b
 endif
 
-THISPATH:=$(subst /,\,$(CURDIR)\)
+THISPATH:=$(subst /,$(PATHEXT2),$(CURDIR)\)
 
 #DOSOBJECT:=$(THISPATH)object\dos
 #export DOSOBJECT
-WINOBJECT:=$(THISPATH)object\windows
+WINOBJECT:=$(THISPATH)object$(PATHEXT2)windows
 export WINOBJECT
 
-SYSOBJECT:=$(THISPATH)object\startup
+SYSOBJECT:=$(THISPATH)object$(PATHEXT2)startup
 export SYSOBJECT
 
-LSCRTLOBJECT:=$(THISPATH)object\startup
+LSCRTLOBJECT:=$(THISPATH)object$(PATHEXT2)startup
 export LSCRTLOBJECT
 
-CLIBOBJECT:=$(THISPATH)object\clib
+CLIBOBJECT:=$(THISPATH)object$(PATHEXT2)clib
 export CLIBOBJECT
 
-CILOBJECT:=$(THISPATH)object\cil
+CILOBJECT:=$(THISPATH)object$(PATHEXT2)cil
 export CILOBJECT
 
-LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
+LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)$(PATHEXT2)*.o))
 #DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
 #DOSOBJS = $(DOSOBJS1:.OBJ=.o)
-WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
-CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
+WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)$(PATHEXT2)*.o))
+CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)$(PATHEXT2)*.ilo))
 
 $(MKDIR):
-	-$(MKDIR) object 2> NUL
-#	-$(MKDIR) object\dos 2> NUL
-	-$(MKDIR) object\windows 2> NUL
-	-$(MKDIR) object\startup 2> NUL
-	-$(MKDIR) object\cil 2> NUL
-	-$(MKDIR) object\clib 2> NUL
+	-$(MKDIR) object 2> $(NULLDEV)
+#	-$(MKDIR) object$(PATHEXT2)dos 2> $(NULLDEV)
+	-$(MKDIR) object$(PATHEXT2)windows 2> $(NULLDEV)
+	-$(MKDIR) object$(PATHEXT2)startup 2> $(NULLDEV)
+	-$(MKDIR) object$(PATHEXT2)cil 2> $(NULLDEV)
+	-$(MKDIR) object$(PATHEXT2)clib 2> $(NULLDEV)
 
 copyfiles: $(MKDIR)
-	-$(MKDIR) ..\..\include 2> NUL
-	-$(MKDIR) ..\..\include\c 2> NUL
-	-$(MKDIR) ..\..\include\c\sys 2> NUL
-	-$(MKDIR) ..\..\include\c\win32 2> NUL
-	-$(MKDIR) ..\..\include\c\win32\gl 2> NUL
-	-$(MKDIR) ..\..\include\support 2> NUL
-	-$(MKDIR) ..\..\include\support\win32 2> NUL
-	-$(MKDIR) ..\..\include\support\orangec 2> NUL
-	-$(COPY)  cpp\libcxx\include ..\..\include 2>NUL
-	-$(COPY)  cpp\libcxx\include\support\win32 ..\..\include\support\win32 2>NUL
-	-$(COPY)  cpp\libcxx\include\support\orangec ..\..\include\support\orangec 2>NUL
-	-$(COPY)  cpp\stdinc_libcxx ..\..\include 2>NUL
-	-$(COPY)  stdinc ..\..\include\c 2>NUL
-	-$(COPY)  stdinc\sys ..\..\include\c\sys 2>NUL
-	-$(COPY)  platform\win32\inc ..\..\include\c\win32 2>NUL
-	-$(COPY)  platform\win32\inc\gdiplus ..\..\include\c\win32 2>NUL
-	-$(COPY)  platform\win32\inc\gl ..\..\include\c\win32\gl 2>NUL
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include 2> $(NULLDEV)
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c 2> $(NULLDEV)
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)sys
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32 2> $(NULLDEV)
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32$(PATHEXT2)gl 2> $(NULLDEV)
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)support 2> $(NULLDEV)
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32 2> $(NULLDEV)
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)orangec 2> $(NULLDEV)
+	-$(COPY)  cpp$(PATHEXT2)libcxx$(PATHEXT2)include ..$(PATHEXT2)..$(PATHEXT2)include 2>$(NULLDEV)
+	-$(COPY)  cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32 ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32 2>$(NULLDEV)
+	-$(COPY)  cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)orangec ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)orangec 2>$(NULLDEV)
+	-$(COPY)  cpp$(PATHEXT2)stdinc_libcxx ..$(PATHEXT2)..$(PATHEXT2)include 2>$(NULLDEV)
+	-$(COPY)  stdinc ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c 2>$(NULLDEV)
+	-$(COPY)  stdinc$(PATHEXT2)sys ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)sys 2>$(NULLDEV)
+	-$(COPY)  platform$(PATHEXT2)win32$(PATHEXT2)inc ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32 2>$(NULLDEV)
+	-$(COPY)  platform$(PATHEXT2)win32$(PATHEXT2)inc$(PATHEXT2)gdiplus ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32 2>$(NULLDEV)
+	-$(COPY)  platform$(PATHEXT2)win32$(PATHEXT2)inc$(PATHEXT2)gl ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32$(PATHEXT2)gl 2>$(NULLDEV)
 
 $(C_CLIBS) : %.clibs :
 	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)" --eval="$(BUILDING_DLL)"
@@ -128,9 +125,9 @@ ifneq "$(ORANGEC_ONLY)" "YES"
 #	-$(DEL) $(SYSOBJECT)\cldos.l
 #	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
 endif
-	-$(DEL) $(SYSOBJECT)\clwin.l
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir))
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
+	-$(DEL) $(SYSOBJECT)$(PATHEXT2)clwin.l
+	$(LIB) $(LIBFLAGS) $(SYSOBJECT)$(PATHEXT2)clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)$(PATHEXT2)$(dir))
+	$(LIB) $(LIBFLAGS) $(SYSOBJECT)$(PATHEXT2)clwin.l $(foreach dir, $(WINOBJS), $(WINOBJECT)$(PATHEXT2)$(dir))
 
 mkapps:
 	$(MAKE) copyfiles
@@ -138,7 +135,7 @@ mkapps:
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" final
 
 test:
-	$(MAKE) -Ccpp\libcxx\test current
+	$(MAKE) -Ccpp$(PATHEXT2)libcxx$(PATHEXT2)test current
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
 FORMAT: $(C_FORMAT)
@@ -149,49 +146,51 @@ ifdef DISTMAKE
 	 	include $(DISTMAKE)
 
 DISTRIBUTE:
-	$(COPYDIR) cpp\libcxx\include\%. $(DISTINC)
-	$(COPYDIR) cpp\libcxx\include\%.h $(DISTINC)
-	$(COPYDIR) cpp\libcxx\include\support\win32\%. $(DISTINC)\support\win32
-	$(COPYDIR) cpp\libcxx\include\support\win32\%.h $(DISTINC)\support\win32
-	$(COPYDIR) cpp\stdinc_libcxx\%. $(DISTINC)
-	$(COPYDIR) cpp\stdinc_libcxx\%.h $(DISTINC)
-	$(COPYDIR) stdinc\%.h $(DISTINC)\c
-	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\c\sys
-	$(COPYDIR) platform\win32\inc\%.h $(DISTINC)\c\win32
+	-$(MKDIR) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys
+	-$(MKDIR) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2) $(DISTINC)
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)*.h $(DISTINC)
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32$(PATHEXT2) $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32
+	$(COPYDIR) cpp$(PATHEXT2)stdinc_libcxx$(PATHEXT2) $(DISTINC)
+	$(COPYDIR) cpp$(PATHEXT2)stdinc_libcxx$(PATHEXT2)*.h $(DISTINC)
+	$(COPYDIR) stdinc$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)c
+	$(COPYDIR) stdinc$(PATHEXT2)sys$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys
+	$(COPYDIR) platform$(PATHEXT2)win32$(PATHEXT2)inc$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
 ifndef BUILDENV
-	$(COPYDIR) object\startup\%.l $(DISTLIB)
-	$(COPYDIR) object\startup\%.o $(DISTLIB)
+	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)*.l $(DISTLIB)
+	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)*.o $(DISTLIB)
 ifneq "$(ORANGEC_ONLY)" "YES"
-#	$(COPYDIR) object\startup\%.exe $(DISTLIB)
+#	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.exe $(DISTLIB)
 endif
-	$(COPYDIR) object\startup\%.dll $(DISTBIN)
+	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)*.dll $(DISTBIN)
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif
 
 clean:
-#	-$(DEL) $(DOSOBJECT) 2> NUL
-	-$(DEL) $(WINOBJECT) 2> NUL
-	-$(DEL) $(SYSOBJECT) 2> NUL
-	-$(DEL) $(CILOBJECT) 2> NUL
-	-$(DEL) $(CLIBOBJECT) 2> NUL
-	-$(DEL) platform\win32\crtdmain\*.o 2>NUL
-	-$(DEL) platform\win32\lscrtl\*.o 2>NUL
-	-$(DEL) platform\win32\lscrtl\*.dll 2>NUL
-	-$(DEL) platform\win32\lsdbghelper\*.o 2>NUL
-	-$(DEL) platform\win32\msvcrdm\*.o 2>NUL
-	-$(DEL) platform\win32\occil\*.o 2>NUL
-	-$(DEL) platform\win32\occil\occmsil.dll 2>NUL
-	-$(DEL) platform\win32\pe\*.o 2>NUL
-	-$(DEL) platform\win32\pels\*.o 2>NUL
-	-$(DEL) platform\win32\rtl\*.o 2>NUL
-#	-$(DEL) platform\dos32\debug\*.o 2>NUL
-#	-$(DEL) platform\dos32\le\*.o 2>NUL
-#	-$(DEL) platform\dos32\pm\*.o 2>NUL
-#	-$(DEL) platform\dos32\rtl\*.o 2>NUL
-#	-rmdir $(DOSOBJECT) 2> NUL
-	-rmdir $(WINOBJECT) 2> NUL
-	-rmdir $(SYSOBJECT) 2> NUL
-	-rmdir $(CILOBJECT) 2> NUL
-	-rmdir $(CLIBOBJECT) 2> NUL
-	-rmdir object 2> NUL
+#	-$(DEL) $(DOSOBJECT) 2> $(NULLDEV)
+	-$(DEL) $(WINOBJECT) 2> $(NULLDEV)
+	-$(DEL) $(SYSOBJECT) 2> $(NULLDEV)
+	-$(DEL) $(CILOBJECT) 2> $(NULLDEV)
+	-$(DEL) $(CLIBOBJECT) 2> $(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)crtdmain$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)lscrtl$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)lscrtl$(PATHEXT2)*.dll 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)lsdbghelper$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)msvcrdm$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)occil$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)occil$(PATHEXT2)occmsil.dll 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pe$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pels$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)rtl$(PATHEXT2)*.o 2>$(NULLDEV)
+#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)debug$(PATHEXT2)*.o 2>$(NULLDEV)
+#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)le$(PATHEXT2)*.o 2>$(NULLDEV)
+#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)pm$(PATHEXT2)*.o 2>$(NULLDEV)
+#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)rtl$(PATHEXT2)*.o 2>$(NULLDEV)
+#	-rmdir $(DOSOBJECT) 2> $(NULLDEV)
+	-rmdir $(WINOBJECT) 2> $(NULLDEV)
+	-rmdir $(SYSOBJECT) 2> $(NULLDEV)
+	-rmdir $(CILOBJECT) 2> $(NULLDEV)
+	-rmdir $(CLIBOBJECT) 2> $(NULLDEV)
+	-rmdir object 2> $(NULLDEV)

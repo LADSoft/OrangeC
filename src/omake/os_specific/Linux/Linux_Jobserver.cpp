@@ -6,10 +6,13 @@
 #include <thread>
 #include <stdexcept>
 #include <sstream>
+#include <sys/stat.h>
+#include "BasicLogging.h"
 namespace OMAKE
 {
 bool POSIXJobServer::TryTakeNewJob()
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TryTakeNewJob function start");
     if (writefd == -1 || readfd == -1)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
@@ -34,17 +37,27 @@ bool POSIXJobServer::TryTakeNewJob()
 #if EAGAIN != EWOULDBLOCK
                 case EWOULDBLOCK:
 #endif
+                    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG,
+                                                     "TryTakeNewJob function returning -1 after a blocking error");
+
                     return false;
                 default:
                     throw std::system_error(err, std::system_category());
             }
         }
+        else
+        {
+            popped_char_stack.push(only_buffer);
+        }
     }
     //    current_jobs++;
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TryTakeNewJob function final end");
+
     return false;
 }
 bool POSIXJobServer::TakeNewJob()
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TakeNewJob start");
     if (writefd == -1 || readfd == -1)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
@@ -75,12 +88,20 @@ bool POSIXJobServer::TakeNewJob()
                     throw std::system_error(err, std::system_category());
             }
         }
+        else
+        {
+            popped_char_stack.push(only_buffer);
+        }
     }
     //    current_jobs++;
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TakeNewJob end");
+
     return false;
 }
 bool POSIXJobServer::ReleaseJob()
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "ReleaseJob start");
+
     if (writefd == -1 || readfd == -1)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
@@ -92,12 +113,13 @@ bool POSIXJobServer::ReleaseJob()
     else  // if (current_jobs != 1)
     {
         int err = 0;
-        char write_buffer = '1';
+        char write_buffer = popped_char_stack.top();
         ssize_t bytes_written = 0;
     try_again:
         if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
         {
-            return true;
+            popped_char_stack.pop();
+            OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "ReleaseJob popping");
         }
         else
         {
@@ -118,19 +140,30 @@ bool POSIXJobServer::ReleaseJob()
         }
     }
     current_jobs--;
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "ReleaseJob end");
+
     return true;
 }
 // Populates the write pipe with the maximum number of jobs available in the pipe, only used on the first construction of the pipe
 static int populate_pipe(int writefd, int max_jobs)
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "populate_pipe start");
+    int total_written = 0;
     for (int i = 0; i < max_jobs; i++)
     {
         int err = 0;
         char write_buffer = '1';
         ssize_t bytes_written = 0;
     try_again:
-        if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
+        bytes_written = write(writefd, &write_buffer, 1);
+
+        if (bytes_written != -1)
         {
+            if (max_jobs != total_written)
+            {
+                continue;
+            }
+            std::cout << "populate_pipe end write early return" << std::endl;
             return true;
         }
         else
@@ -148,10 +181,14 @@ static int populate_pipe(int writefd, int max_jobs)
             }
         }
     }
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "populate_pipe end");
+
     return true;
 }
 POSIXJobServer::POSIXJobServer(int max_jobs)
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "PosixJobServer(max_jobs) start");
+
     int readwrite[2];
     if (max_jobs < 1)
     {
@@ -167,14 +204,41 @@ POSIXJobServer::POSIXJobServer(int max_jobs)
         throw std::system_error(errno, std::generic_category());
     }
     populate_pipe(writefd, max_jobs);
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "PosixJobServer(max_jobs) end");
 }
 POSIXJobServer::POSIXJobServer(int read, int write)
 {
     readfd = read;
     writefd = write;
 }
+POSIXJobServer::POSIXJobServer(std::string auth_name, int max_jobs)
+{
+    std::string fifo_location = "/tmp/" + auth_name;
+    this->fifo_name = fifo_location;
+    mkfifo(fifo_location.c_str(), 0666);
+    fifo_fd = open(fifo_location.c_str(), O_RDWR);
+    populate_pipe(fifo_fd, max_jobs);
+}
+POSIXJobServer::POSIXJobServer(std::string auth_name)
+{
+    this->fifo_name = auth_name;
+    readfd = open(fifo_name.c_str(), O_RDONLY);
+    writefd = open(fifo_name.c_str(), O_WRONLY);
+}
+POSIXJobServer::~POSIXJobServer()
+{
+    if (this->readfd != -1)
+    {
+        close(readfd);
+        close(writefd);
+    }
+}
 std::string POSIXJobServer::PassThroughCommandString()
 {
+    if (fifo_name != "")
+    {
+        return "auth:" + this->fifo_name;
+    }
     std::stringstream stream;
     stream << readfd << ',' << writefd;
     return stream.str();

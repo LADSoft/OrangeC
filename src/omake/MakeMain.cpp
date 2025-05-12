@@ -42,6 +42,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <sstream>
+#include "BasicLogging.h"
 
 CmdSwitchParser MakeMain::SwitchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(SwitchParser, 'f', ' ', {"file"});
@@ -71,9 +72,10 @@ CmdSwitchBool MakeMain::keepResponseFiles(SwitchParser, 'K');
 CmdSwitchInt MakeMain::jobs(SwitchParser, 'j', INT_MAX, 1, INT_MAX);
 CmdSwitchString MakeMain::jobServer(SwitchParser, 0, 0, {"jobserver-auth"});
 CmdSwitchCombineString MakeMain::jobOutputMode(SwitchParser, 'O');
+CmdSwitchString MakeMain::verbose2(SwitchParser, 'y', 'y', {"verbose"});
 
 const char* MakeMain::helpText =
-R"help([options] goals\n"
+    R"help([options] goals\n"
 
 This program is a make utility simiar to gnu make.
 It runs scripts which define how to create some type of output
@@ -94,13 +96,14 @@ usually an executable program image or data for it.
 /t    Touch                   /u    Debug warnings
 /w    Print make status       --eval=STRING evaluate a statement
 /!    No logo                 /? or --help  this help
+/v    Verbose
 --jobserver-auth=xxxx               Name a jobserver to use for getting jobs
 --version                           Show version info
 --no-builtin-rules                  Ignore builtin rules
 --no-builtin-vars                   Ignore builtin variables
-
+--verbose                           Verbose
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 
 const char* MakeMain::usageText = "[options] goals\n";
 #ifdef _WIN32
@@ -134,8 +137,7 @@ const char* MakeMain::builtinRules =
 
 int MakeMain::makeLevel;
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     MakeMain Main;
     return Main.Run(argc, argv);
@@ -258,9 +260,24 @@ void MakeMain::SetMakeFlags()
     {
         vals += "u";
     }
-    // not setting -T so we don't make it recursive
+
+    // if (verbose.GetValue())
+    //{
+    //     vals += "v";
+    // }
+    //  not setting -T so we don't make it recursive
     if (vals == "-")
         vals = "";
+    if (verbose2.GetExists())
+    {
+        vals += std::string(" -y");
+        auto value = verbose2.GetValue();
+        for (int i = 0; i < value.length(); i++)
+        {
+            vals += "y";
+        }
+        std::cout << "Verbosity intended: " << (int)verbose2.GetExists() + verbose2.GetValue().length() << std::endl;
+    }
     if (jobs.GetExists())
     {
         int n = jobs.GetValue();
@@ -512,6 +529,7 @@ int MakeMain::Run(int argc, char** argv)
     }
     auto files =
         ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return !help.GetValue(); });
+    OrangeC::Utils::BasicLogger::SetVerbosity((int)verbose2.GetExists() + verbose2.GetValue().length());
     LoadEquates(files);
     char* cpath = getenv("CPATH");
     if (cpath)
@@ -529,13 +547,11 @@ int MakeMain::Run(int argc, char** argv)
             return 2;
         }
     }
-
     if (cancelKeep.GetValue())
     {
         cancelKeep.SetValue(false);
         keepGoing.SetValue(false);
     }
-
     if (!LoadJobArgs())
         ToolChain::Usage(helpText);
 

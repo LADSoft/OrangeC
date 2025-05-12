@@ -40,11 +40,15 @@ endif
 
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
-CCFLAGS = -c -D__MSVCRT__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -Wno-int-to-pointer-cast
-
+CCFLAGS = -c -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX
+ifneq "$(DEBUG)" ""
+CCFLAGS += -Og -g
+else
+CCFLAGS += -O2
+endif
 CPPFLAGS = -std=gnu++17
 LINK=ld
-LFLAGS=-L$(_LIBDIR)
+LFLAGS=-L$(_LIBDIR) -lm
 
 LIB=ar
 LIBFLAGS= -r -s

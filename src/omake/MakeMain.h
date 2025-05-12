@@ -79,6 +79,7 @@ class MakeMain
     static CmdSwitchInt jobs;
     static CmdSwitchCombineString jobOutputMode;
     static CmdSwitchString jobServer;
+    static CmdSwitchString verbose2;
     static const char* helpText;
     static const char* usageText;
     static const char* builtinVars;

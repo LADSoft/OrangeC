@@ -35,7 +35,6 @@
 #    include <signal.h>
 #    include <unistd.h>
 #    define _SH_DENYNO 0
-#    include <xmmintrin.h>
 #    include <wordexp.h>
 #    include <wait.h>
 #    include <unistd.h>
@@ -81,6 +80,7 @@
 #include <memory>
 #include "JobServer.h"
 #include "CmdFiles.h"
+#include "BasicLogging.h"
 // #define DEBUG
 static std::mutex processIdMutex;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
@@ -185,7 +185,7 @@ void OS::WriteToConsole(std::string string)
 void OS::ToConsole(std::deque<std::string>& strings)
 {
     std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
-    for (const auto & s : strings)
+    for (const auto& s : strings)
     {
         WriteToConsole(std::move(s));
     }
@@ -211,7 +211,6 @@ bool OS::TakeJob()
     localJobServer->TakeNewJob();
     return false;
 }
-bool OS::TryTakeJob() { return localJobServer->TryTakeNewJob() != -1; }
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
@@ -356,6 +355,7 @@ void OS::JobRundown()
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "Entering OS::Spawn(command, env, output)");
 #ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
 
@@ -883,12 +883,12 @@ void OS::SetFileTime(const std::string fileName, Time time)
 #endif
 }
 std::string OS::GetWorkingDir()
-{ 
-    #ifdef _WIN32
-    #ifndef PATH_MAX
-    #define PATH_MAX MAX_PATH
-    #endif
-    #endif
+{
+#ifdef _WIN32
+#    ifndef PATH_MAX
+#        define PATH_MAX MAX_PATH
+#    endif
+#endif
     char buf[PATH_MAX];
     getcwd(buf, PATH_MAX);
     return buf;

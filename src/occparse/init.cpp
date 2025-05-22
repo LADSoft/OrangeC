@@ -4884,7 +4884,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     }
     if (sym->sb->constexpression && !definingTemplate)
     {
-        if (!tp->IsPtr() && !tp->IsArithmetic() && tp->BaseType()->type != BasicType::enum_ &&
+        if (!tp->IsRef() && !tp->IsPtr() && !tp->IsArithmetic() && tp->BaseType()->type != BasicType::enum_ &&
             (!tp->IsStructured() /*|| !tp->BaseType()->sp->sb->trivialCons*/))
         {
             error(ERR_CONSTEXPR_SIMPLE_TYPE);

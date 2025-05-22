@@ -2566,11 +2566,23 @@ int opt0(EXPRESSION** node)
                 {
                     if (ts->tp->type == BasicType::templateparam_)
                     {
-                        if (ts->tp->templateParam->second->type != TplType::template_)
-                            break;
-                        ts = ts->tp->templateParam->second->byTemplate.val;
-                        if (!ts)
-                            break;
+                        if (ts->tp->templateParam->second->type == TplType::template_)
+                        {
+                            ts = ts->tp->templateParam->second->byTemplate.val;
+                            if (!ts)
+                            {
+                                break;
+                            }
+                        }
+                        else if (ts->tp->templateParam->second->type == TplType::typename_)
+                        {
+                            auto tp1 = ts->tp->templateParam->second->byClass.val;
+                            if (!tp1 || !tp1->IsStructured())
+                            {
+                                break;
+                            }
+                            ts = sym = tp1->BaseType()->sp;
+                        }
                     }
                     if ((*tsl)[1].isTemplate && (*tsl)[1].templateParams)
                     {
@@ -2623,7 +2635,10 @@ int opt0(EXPRESSION** node)
                                 if ((*find).arguments)
                                     for (auto i : *(*find).arguments)
                                     {
-                                        i->tp = SynthesizeType(i->tp, nullptr, false);
+                                        if (i->tp->type == BasicType::aggregate_)
+                                            i->tp = LookupTypeFromExpression(i->exp, nullptr, false);
+                                        else
+                                            i->tp = SynthesizeType(i->tp, nullptr, false);
                                     }
                                 Type* ctype = sym->tp;
                                 EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, 0);
@@ -2635,19 +2650,25 @@ int opt0(EXPRESSION** node)
                                 auto sp1 = GetOverloadedFunction(&ctype, &exp, sym, &funcparams, nullptr, false, false, 0);
                                 if (sp1)
                                 {
+                                    CallSite* params = Allocate<CallSite>();
+                                    *params = funcparams;
                                     EXPRESSION exp1 = {}, *exp2 = &exp1;
                                     ;
-                                    funcparams.fcall = exp;
-                                    funcparams.sp = sp1;
-                                    funcparams.functp = sp1->tp;
+                                    params->fcall = exp;
+                                    params->sp = sp1;
+                                    params->functp = sp1->tp;
                                     //                                    funcparams.templateParams = nullptr;
                                     exp1.type = ExpressionNode::callsite_;
-                                    exp1.v.func = &funcparams;
+                                    exp1.v.func = params;
                                     optimize_for_constants(&exp2);
+                                    *node = copy_expression(&exp1);
                                     if (exp1.type != ExpressionNode::thisref_ && exp1.type != ExpressionNode::callsite_)
                                     {
-                                        *node = copy_expression(&exp1);
                                         return true;
+                                    }
+                                    else
+                                    {
+                                        return false;
                                     }
                                 }
                             }
@@ -2659,6 +2680,12 @@ int opt0(EXPRESSION** node)
                             {
                                 optimize_for_constants(&sym->sb->init->front()->exp);
                                 *node = sym->sb->init->front()->exp;
+                                return true;
+                            }
+                            else if (sym->sb->storage_class == StorageClass::overloads_)
+                            {
+                                *node = MakeExpression(ExpressionNode::pc_, sym);
+                                *node = MakeExpression(ExpressionNode::l_p_, *node);
                                 return true;
                             }
                         }

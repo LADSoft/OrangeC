@@ -1355,7 +1355,14 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
                 valtp->esize = MakeIntExpression(ExpressionNode::c_i_, 2);
                 val = makeID(StorageClass::auto_, valtp, nullptr, AnonymousName());
                 val->sb->allocate = true;
-                localNameSpace->front()->syms->Add(val);
+                if (theCurrentFunc)
+                {
+                    localNameSpace->front()->syms->Add(val);
+                }
+                else
+                {
+                    insertInitSym(val);
+                }
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
                 funcparams->arguments = argumentListFactory.CreateList();
                 funcparams->arguments->push_back(arg);

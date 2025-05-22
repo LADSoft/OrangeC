@@ -392,6 +392,8 @@ typedef struct
 #define _F_NOVARIADICFOLD 0x200000
 #define _F_EXPRESSIONINPAREN 0x400000
 #define _F_MEMBERINITIALIZER 0x800000
+#define _F_IMPLICIT 0x1000000
+
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 
@@ -695,6 +697,7 @@ typedef struct sym
         unsigned castoperator : 1;            /* a cast operator */
         unsigned deleted : 1;                 /* function was deleted */
         unsigned defaulted : 1;               /* function was defaulted */
+        unsigned explicitDefault : 1;   /* function was explicitly defaulted by the program */
         unsigned defaultarg : 1;              /* function argument was defaulted */
         unsigned isfinal : 1;                 /* class or virtual function is final */
         unsigned isoverride : 1;              /* virtual function marked override */

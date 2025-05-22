@@ -1014,16 +1014,21 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
                             if (!rv)
                                 rv = argumentListFactory.CreateList();
                             rv->push_back(arg1);
-                            if (arg1->exp->type == ExpressionNode::callsite_)
+                            auto exp2 = arg1->exp;
+                            while (exp2->type == ExpressionNode::funcret_)
+                                exp2 = exp2->left;
+                            if (exp2->type == ExpressionNode::callsite_)
                             {
-                                if (arg1->exp->v.func->templateParams)
+                                if (exp2->v.func->templateParams)
                                 {
-                                    for (auto&& tpx : *arg1->exp->v.func->templateParams)
+                                    for (auto&& tpx : *exp2->v.func->templateParams)
                                     {
-                                        if (tpx.second->type != TplType::new_ && !tpx.second->resolved)
+                                        if (tpx.second->type != TplType::new_)
                                         {
                                             defaults.push_back(tpx.second);
-                                            if (tpx.second->packed && tpx.second->byPack.pack)
+
+                                            if (!tpx.second->resolved &&
+                                                tpx.second->packed && tpx.second->byPack.pack)
                                             {
                                                 auto tpl = LookupPackedInstance(tpx);
                                                 if (tpl)
@@ -1034,9 +1039,9 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
                                         }
                                     }
                                 }
-                                if (arg1->exp->v.func->arguments)
+                                if (exp2->v.func->arguments)
                                 {
-                                    for (auto il : *arg1->exp->v.func->arguments)
+                                    for (auto il : *exp2->v.func->arguments)
                                     {
                                         Type** tp = &il->tp;
                                         while ((*tp)->btp)
@@ -1351,5 +1356,30 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start,
     inStaticAssert = oldStaticAssert;
     expandingParams--;
     PopPackIndex();
+}
+int GetPackCount()
+{
+    for (auto p : contexts.back().back())
+    {
+        if (p.second)
+        {
+            return p.second->byPack.pack ? p.second->byPack.pack->size() : 0;
+        }
+        else
+        {
+            if (p.first->sb && p.first->packed && p.first->sb->parent)
+            {
+                auto it = p.first->sb->parent->tp->BaseType()->syms->begin();
+                auto itend = p.first->sb->parent->tp->BaseType()->syms->end();
+                for (; it != itend && (*it) != p.first; ++it)
+                    ;
+                int n = 0;
+                for (; it != itend; ++it, ++n)
+                    ;
+                return n;
+            }
+        }
+    }
+    return 0;
 }
 }  // namespace Parser

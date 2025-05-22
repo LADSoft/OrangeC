@@ -1081,7 +1081,7 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     char* p;
                     ++s;
                     if (s->isTemplate)
-                        p = mangleTemplate(nm, nm, s->sp, s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
+                        p = mangleTemplate(nm, nm, s->sp, s->sp->sb && s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
                     else
                         p = getName(nm, nm, s->sp);
                     PUTZERO(p);

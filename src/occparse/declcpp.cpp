@@ -1129,6 +1129,8 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         }
         else if (MATCHKW(lex, Keyword::classsel_) || ISID(lex))
         {
+            if (!strcmp(declsym->name, "Layout"))
+                printf("hi");
             char name[512];
             name[0] = 0;
             if (ISID(lex))
@@ -1311,12 +1313,12 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                                 break;
                                             }
                                             *second = *(itp->second);
-                                            second->byClass.dflt = itp->second->byClass.val;
+//                                            second->byClass.dflt = itp->second->byClass.val;
                                         }
                                         else
                                         {
                                             *second = *(itsrc->second);
-                                            second->byClass.dflt = itsrc->second->byClass.val;
+ //                                           second->byClass.dflt = itsrc->second->byClass.val;
                                         }
                                     }
                                     if (done)
@@ -2093,19 +2095,14 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 SYMBOL* sp;
                 lex = getsym();
                 std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                bool pulledtypename = false;
-                if (MATCHKW(lex, Keyword::typename_))
-                {
-                    pulledtypename = true;
-                    lex = getsym();
-                }
                 if (inTemplate && (ISID(lex) || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::typename_)))
                 {
                     SYMBOL *sym = nullptr, *strsym = nullptr;
                     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
                     bool throughClass = false;
                     parsingTrailingReturnOrUsing++;
-                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr, 0, 0);
+                    bool isTemplate = false;
+                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, &isTemplate, false, false, nullptr, 0, 0);
                     if (sym)
                     {
                         tp = sym->tp;
@@ -2124,21 +2121,59 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                             lex = GetTemplateArguments(lex, (*strsym->tp->sp->sb->templateSelector)[1].sp, sym, &lst);
                         }
                     }
+                    else if (definingTemplate && !instantiatingTemplate && isTemplate && strsym)
+                    {
+                        while (!MATCHKW(lex, Keyword::classsel_) && !MATCHKW(lex, Keyword::semicolon_))
+                        {
+                            lex = getsym();
+                        }
+                        if (MATCHKW(lex, Keyword::classsel_))
+                        {
+                            lex = getsym();
+                            if (MATCHKW(lex, Keyword::template_))
+                            {
+                                lex = getsym();
+                            }
+                        }
+                        const char* name = ISID(lex) ? lex->data->value.s.a : "????";
+                        lex = getsym();
+                        bool hasParams = false;
+                        if (MATCHKW(lex, Keyword::lt_))
+                        {
+                            hasParams = true;
+                            lex = GetTemplateArguments(lex, nullptr, sym, &lst);
+                        }
+                        auto* templateSelector = templateSelectorListFactory.CreateVector();
+                        templateSelector->push_back(TEMPLATESELECTOR{});
+                        templateSelector->push_back(TEMPLATESELECTOR{});
+                        templateSelector->back().sp = strsym;
+                        templateSelector->push_back(TEMPLATESELECTOR{});
+                        templateSelector->back().name = litlate(name);
+                        if (hasParams)
+                        {
+                            templateSelector->back().isTemplate = true;
+                            templateSelector->back().templateParams = lst;
+                        }
+                        tp = Type::MakeType(BasicType::templateselector_);
+                        sp = makeID(StorageClass::global_, tp, nullptr, AnonymousName());
+                        sp->sb->templateSelector = templateSelector;
+                        tp->sp = sp;
+                    }
                     parsingTrailingReturnOrUsing--;
-                    Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
-                    bool defd = false;
-                    SYMBOL* sp = nullptr;
-                    bool notype = false;
-                    bool oldTemplateType = inTemplateType;
+                    if (!isTemplate)
+                    {
+                        Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
+                        bool defd = false;
+                        SYMBOL* sp = nullptr;
+                        bool notype = false;
 
-                    tp = TypeGenerator::BeforeName(lex, nullptr, tp, &sp, nullptr, nullptr, false, storage_class, &linkage,
-                                                   &linkage2, &linkage3, nullptr, false, false, true,
-                                                   false); /* fixme at file scope init */
+                        tp = TypeGenerator::BeforeName(lex, nullptr, tp, &sp, nullptr, nullptr, false, storage_class, &linkage,
+                            &linkage2, &linkage3, nullptr, false, false, true,
+                            false); /* fixme at file scope init */
+                    }
                 }
                 else
                 {
-                    if (pulledtypename)
-                        lex = backupsym();
                     parsingUsing++;
                     tp = TypeGenerator::TypeId(lex, nullptr, StorageClass::cast_, false, true, true);
                     parsingUsing--;

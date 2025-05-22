@@ -26,6 +26,8 @@
 namespace Parser
 {
 extern int templateDeclarationLevel;
+extern SYMBOL* defaultParsingContext;
+
 Type* SolidifyType(Type* tp);
 std::list<TEMPLATEPARAMPAIR>* SolidifyTemplateParams(std::list<TEMPLATEPARAMPAIR>* in);
 std::list<TEMPLATEPARAMPAIR>* copyParams(std::list<TEMPLATEPARAMPAIR>* t, bool alsoSpecializations, bool unique = false);

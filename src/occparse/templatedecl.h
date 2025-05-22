@@ -40,7 +40,6 @@ extern int inTemplateHeader;
 extern SYMBOL* instantiatingMemberFuncClass;
 extern int instantiatingFunction;
 extern int instantiatingClass;
-extern int parsingDefaultTemplateArgs;
 extern int count1;
 extern int inTemplateArgs;
 extern bool fullySpecialized;

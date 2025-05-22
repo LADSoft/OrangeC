@@ -522,7 +522,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         DumpInstantiations();
     }
     return true;
-}
+    }
 int printerr(int err, const char* file, int line, ...)
 {
     bool canprint = false;
@@ -2154,14 +2154,22 @@ void CheckThroughConstObject(Type* tp, EXPRESSION* exp)
         (tp && tp->IsRef() && !tp->BaseType()->btp->IsConst() && !IsLValue(exp) && tp->type != BasicType::derivedfromtemplate_))
     {
         auto offset = 0;
+        bool lastLval = false, structLval = false;
         // takes advantage of the fact that the this ptr will always be the last leftmost node if it is there at all...
         while (exp && exp->type != ExpressionNode::auto_)
         {
+            if (IsLValue(exp))
+                lastLval = true;
             if (exp->type == ExpressionNode::structadd_)
+            {
                 offset = exp->right->v.i;
+                // structlval tells whether the access is a direct member or through a pointer....
+                structLval = lastLval;
+                lastLval = false;
+            }
             exp = exp->left;
         }
-        if (exp && exp->v.sp->sb->thisPtr && exp->v.sp->tp->BaseType()->btp->IsConst())
+        if (!structLval && exp && exp->v.sp->sb->thisPtr && exp->v.sp->tp->BaseType()->btp->IsConst())
         {
             // this next is necessary to catch alterations to mutable objects
             // normally it will only be a bother if we do try to modify a mutable object

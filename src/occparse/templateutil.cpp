@@ -454,8 +454,12 @@ bool templateCompareTypes(Type* tp1, Type* tp2, bool exact, bool sameType)
         auto tss1 = (*left).begin();
         auto tss2 = (*right).begin();
         ++tss1;
-        ++tss1;
         ++tss2;
+        if (!!tss1->templateParams != !!tss2->templateParams)
+            return false;
+        if (tss1->templateParams && !exactMatchOnTemplateArgs(tss1->templateParams, tss2->templateParams))
+            return false;
+        ++tss1;
         ++tss2;
         for (; tss1 != (*left).end() && tss2 != (*right).end(); ++tss1, ++tss2)
         {
@@ -729,7 +733,7 @@ bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, st
         }
         if (itp != itpe)
         {
-            if (!itp->second->packed)
+            if (!itp->second->packed && !itp->second->byClass.txtdflt)
             {
                 errorsym(ERR_TOO_FEW_ARGS_PASSED_TO_TEMPLATE, sp);
             }
@@ -1439,8 +1443,8 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
             return &std__object;
         case ExpressionNode::l_p_: {
             Type* tp = LookupTypeFromExpression(exp->left, enclosing, alt);
-            if (tp && tp->IsPtr())
-                tp = tp->BaseType()->btp;
+            if (tp && !tp->IsPtr())
+                tp = Type::MakeType(BasicType::pointer_, tp);
             return tp;
         }
 

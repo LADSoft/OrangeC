@@ -311,6 +311,7 @@ static void DumpEnclosedStructs(Type* tp, bool genXT)
 {
     SYMBOL* sym = tp->BaseType()->sp;
     tp->InstantiateDeferred();
+    tp->InitializeDeferred();
     if (sym->sb->vbaseEntries)
     {
         for (auto vbase : *sym->sb->vbaseEntries)
@@ -379,6 +380,7 @@ static void DumpEnclosedStructs(Type* tp, bool genXT)
                     flags |= XD_CL_CONST;
                 tp = tp->BaseType();
                 tp->InstantiateDeferred();
+                tp->InitializeDeferred();
                 if (tp->IsStructured())
                 {
                     if (genXT)
@@ -429,6 +431,7 @@ SYMBOL* RTTIDumpType(Type* tp, bool symOnly)
         {
             char name[4096];
             tp->InstantiateDeferred();
+            tp->InitializeDeferred();
             RTTIGetName(name + sizeof(name), name, tp);
             xtSym = search(rttiSyms, name);
             if (!xtSym || !Optimizer::SymbolManager::Get(xtSym)->generated)

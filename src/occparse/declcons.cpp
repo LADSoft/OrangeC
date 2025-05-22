@@ -1172,7 +1172,7 @@ static void conditionallyDeleteDefaultConstructor(SYMBOL* func)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && matchesDefaultConstructor(sp))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesDefaultConstructor(sp))
         {
             if (isDefaultDeleted(sp->sb->parentClass))
             {
@@ -1185,7 +1185,7 @@ static bool conditionallyDeleteCopyConstructor(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && matchesCopy(sp, move))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesCopy(sp, move))
         {
             if (move && isMoveConstructorDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
@@ -1199,7 +1199,7 @@ static bool conditionallyDeleteCopyAssignment(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && matchesCopy(sp, move))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesCopy(sp, move))
         {
             if (move && isMoveAssignmentDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
@@ -1500,7 +1500,7 @@ void ConditionallyDeleteClassMethods(SYMBOL* sp)
         conditionallyDeleteCopyConstructor(cons, true);
         conditionallyDeleteCopyAssignment(asgn, true);
     }
-    if (sp->sb->defaulted)
+    if (sp->sb->defaulted && !sp->sb->explicitDefault)
     {
         auto dest = search(sp->tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
         conditionallyDeleteDestructor(dest->tp->syms->front());
@@ -3139,9 +3139,10 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
     params->thisptr = *exp;
     params->thistp = Type::MakeType(BasicType::pointer_, sp->tp);
     params->ascall = true;
-
+    
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion,
-                                  (usesInitList ? _F_INITLIST : 0) | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
+                                  (usesInitList ? _F_INITLIST : 0) | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0) |
+                                  (implicit ? _F_IMPLICIT : 0));
 
     if (cons1 && cons1->tp->IsFunction())
     {

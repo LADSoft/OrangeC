@@ -1358,6 +1358,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
     if (ISKW(lex))
         tokenName = lex->data->kw->name;
     (void)funcsp;
+    (*tp)->InstantiateDeferred();
     // find structured version of arithmetic types for msil member matching
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
         ((*tp)->IsArithmetic() || (*tp)->type == BasicType::string_ || ((*tp)->IsArray() && (*tp)->BaseType()->msil)))
@@ -1919,7 +1920,7 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             LookupSingleAggregate(tp2, &expr2);
             if (((*tp)->IsStructuredMath(tp2) || Optimizer::architecture == ARCHITECTURE_MSIL) &&
                 (FindOperatorFunction(ovcl_openbr, Keyword::openbr_, funcsp, tp, exp, tp2, expr2, nullptr, flags) ||
-                 (Optimizer::architecture != ARCHITECTURE_MSIL &&
+                 (Optimizer::architecture != ARCHITECTURE_MSIL && tp2->IsStructured() &&
                   castToArithmeticInternal(false, &tp2, &expr2, (Keyword)-1, &stdint, false))))
             {
             }
@@ -2115,7 +2116,15 @@ static LexList* expression_bracket(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
             }
             else if (!definingTemplate || (*tp)->BaseType()->type != BasicType::templateselector_)
             {
-                error(ERR_DEREF);
+                if (IsPacking())
+                {
+                    // this is invalid code gen, we need reference to both expressions for packing error handling later
+                    *exp = MakeExpression(ExpressionNode::comma_, *exp, expr2);
+                }
+                else
+                {
+                    error(ERR_DEREF);
+                }
             }
         }
         else
@@ -2202,6 +2211,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                         tooshort = true;
                     else if (itp != itpe)
                     {
+                        decl->tp->InstantiateDeferred();
                         if (decl->sb->attribs.inheritable.zstring)
                         {
                             EXPRESSION* exp = (*itp)->exp;
@@ -2515,7 +2525,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                     }
                     else if (p->exp && p->exp->type != ExpressionNode::packedempty_)  // && p->tp->type != BasicType::any_)
                     {
-                        if (!p->tp->IsStructured() && !p->tp->templateParam && p->tp->type != BasicType::any_)
+                        if (!p->tp->IsStructured() && !p->tp->templateParam && p->tp->type != BasicType::any_ && !IsPacking())
                             checkPackedExpression(p->exp);
                         // this is going to presume that the expression involved
                         // is not too long to be cached by the LexList mechanism.
@@ -6410,10 +6420,15 @@ static LexList* expression_primary(LexList* lex, SYMBOL* funcsp, Type* atp, Type
                             *tp = &stdint;
                         }
                     }
-                    else if (enclosingDeclarations.GetFirst() && funcsp && funcsp->sb->parentClass)
+                    else if (enclosingDeclarations.GetFirst() && theCurrentFunc && (theCurrentFunc->sb->parentClass || theCurrentFunc->sb->storage_class == StorageClass::member_))
                     {
-                        getThisType(funcsp, tp);
-                        *exp = MakeExpression(ExpressionNode::auto_, (SYMBOL*)funcsp->tp->BaseType()->syms->front());  // this ptr
+                        // the complexity is a nod to the fact that 'this' can appear in a trailing return statement...
+                        auto old = theCurrentFunc->sb->parentClass;
+                        if (!old)
+                            theCurrentFunc->sb->parentClass = enclosingDeclarations.GetFirst();
+                        getThisType(theCurrentFunc, tp);
+                        theCurrentFunc->sb->parentClass = old;
+                        *exp = MakeExpression(ExpressionNode::auto_, (SYMBOL*)theCurrentFunc->tp->BaseType()->syms->front());  // this ptr
                         Dereference(&stdpointer, exp);
                     }
                     else
@@ -7104,6 +7119,7 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
     {
         Type *btp, *tp1;
         EXPRESSION *exp1 = *exp, *symRef;
+        optimize_for_constants(&exp1);
         while (exp1->type == ExpressionNode::comma_ && exp1->right)
             exp1 = exp1->right;
         if (exp1->type == ExpressionNode::comma_)
@@ -7134,7 +7150,8 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
                 if ((exp1)->type != ExpressionNode::const_ && exp1->type != ExpressionNode::assign_)
                     if (!IsLValue(exp1))
                         if (Optimizer::cparams.prm_ansi || !IsCastValue(exp1))
-                            error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
+                            if (!definingTemplate || instantiatingTemplate || exp1->type != ExpressionNode::templateselector_)
+                                error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
             if (IsLValue(exp1))
             {
                 if (exp1->left->type == ExpressionNode::structadd_ && isconstzero(&stdint, exp1->left->right) &&
@@ -7222,7 +7239,8 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
             {
                 if (!btp->array && !btp->vla && !btp->IsStructured() && btp->BaseType()->type != BasicType::memberptr_ &&
                     btp->BaseType()->type != BasicType::templateparam_)
-                    error(ERR_LVALUE);
+                    if (!definingTemplate || instantiatingTemplate || (*exp)->type != ExpressionNode::templateselector_)
+                        error(ERR_LVALUE);
             }
             if (btp->type != BasicType::memberptr_)
             {
@@ -8525,7 +8543,12 @@ static LexList* expression_hook(LexList* lex, SYMBOL* funcsp, Type* atp, Type** 
                     }
                     else
                     {
-                        *tp = destSize(tpc, tph, &epc, &eph, false, nullptr);
+                        if (!tpc->IsArithmetic() || !tph->IsArithmetic() || tpc->BaseType()->type != tph->BaseType()->type)
+                            *tp = destSize(tpc, tph, &epc, &eph, false, nullptr);
+                        else if (tph->IsConst())
+                            *tp = tph;
+                        else
+                            *tp = tpc;
                     }
                 }
                 else

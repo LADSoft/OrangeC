@@ -2117,6 +2117,10 @@ Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         {
             rv = inttype(t1);
         }
+        if (Optimizer::cparams.prm_cplusplus && tp1->IsInt() && tp2->IsInt() && tp1->btp && tp2->btp && tp1->btp->type == BasicType::enum_ && tp1->btp->CompatibleType(tp2->btp))
+        {
+            return tp1;
+        }
         if (exp1 && (rv->type != tp1->type || rv->bitintbits != tp1->bitintbits) && exp1)
             cast(rv, exp1);
         if (exp2 && (rv->type != tp2->type || rv->bitintbits != tp2->bitintbits) && exp2)

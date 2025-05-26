@@ -304,9 +304,9 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
     {
         std::string bigmatch = "";
         int max = strlen(name);
-        const char* s = strchr(name, ',');
-        if (!s)
-            s = strchr(name, '=');
+        // const char* s = strchr(name, ',');
+        // if (!s)
+        const char* s = strchr(name, '=');
         if (!s)
             s = strchr(name, ':');
         if (s && s - name < max)
@@ -384,9 +384,9 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                 if (longName)
                 {
                     b = Find(data, true);
-                    const char* p = strchr(data, ',');
-                    if (!p)
-                        p = strchr(data, '=');
+                    // const char* p = strchr(data, ',');
+                    // if (!p)
+                    const char* p = strchr(data, '=');
                     if (!p)
                         p = strchr(data, ':');
                     if (p)

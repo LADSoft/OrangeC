@@ -3186,6 +3186,25 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
 
     return data;
 }
+static void InsertStructureData(std::list<Initializer*>** init, Type* tp, EXPRESSION* exp, int baseOffset)
+{
+    for (auto s : *tp->BaseType()->syms)
+    {
+        if (ismemberdata(s))
+        {
+            if (s->tp->IsStructured())
+            {
+                InsertStructureData(init, s->tp, exp, s->sb->offset + baseOffset);
+            }
+            else
+            {
+                auto xx = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, s->sb->offset));
+                Dereference(s->tp, &xx);
+                InsertInitializer(init, s->tp, xx, s->sb->offset + baseOffset, false);
+            }
+        }
+    }
+}
 static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* base, int offset, StorageClass sc, Type* itype,
                                           std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember,
                                           bool deduceTemplate, int flags)
@@ -3585,8 +3604,14 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
             else
             {
                 std::list<Initializer*>* it = nullptr;
-                switch (exp->type)
+                if (tp->IsStructured())
                 {
+                    InsertStructureData(&it, tp, exp, 0);
+                }
+                else
+                {
+                    switch (exp->type)
+                    {
                     case ExpressionNode::global_:
                     case ExpressionNode::auto_:
                     case ExpressionNode::threadlocal_:
@@ -3609,6 +3634,7 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                     default: {
                         InsertInitializer(&it, itype, exp, offset, false);
                         break;
+                    }
                     }
                 }
                 if (it)

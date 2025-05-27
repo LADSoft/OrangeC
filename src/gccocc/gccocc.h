@@ -45,8 +45,8 @@ class gccocc
     static CmdSwitchString prm_march;
     static CmdSwitchString prm_mtune;
     static CmdSwitchBool prm_verbose;
-    static CmdSwitchString prm_libs;
-    static CmdSwitchString prm_output;
+    static CmdSwitchCombineString prm_libs;
+    static CmdSwitchCombineString prm_output;
     static CmdSwitchBool prm_cppmode;
     static CmdSwitchCombineString prm_define;
     static CmdSwitchCombineString prm_libpath;

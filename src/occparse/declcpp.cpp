@@ -1102,6 +1102,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     enclosingDeclarations.Add(declsym);
     do
     {
+        LexList* startLex = lex;
         ParseAttributeSpecifiers(&lex, funcsp, true);
         EnterPackedSequence();
         if (MATCHKW(lex, Keyword::decltype_))
@@ -1129,8 +1130,6 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
         }
         else if (MATCHKW(lex, Keyword::classsel_) || ISID(lex))
         {
-            if (!strcmp(declsym->name, "Layout"))
-                printf("hi");
             char name[512];
             name[0] = 0;
             if (ISID(lex))
@@ -1283,84 +1282,46 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                             }
                             else
                             {
-                                int n = 0;
-                                bool done = false;
-                                bool failed = false;
-                                while (!done)
+                                int n =  GetPackCount();
+                                if (n)
                                 {
-                                    std::list<TEMPLATEPARAMPAIR>* workingList = templateParamPairListFactory.CreateList();
-                                    SYMBOL* temp;
-                                    bool packed = false;
-                                    auto itdest = bcsym->templateParams->begin();
-                                    ++itdest;
-                                    auto itdeste = bcsym->templateParams->end();
-                                    auto itsrc = lst->begin();
-                                    auto itsrce = lst->end();
-                                    for (; itsrc != itsrce && itdest != itdeste; ++itsrc, ++itdest)
+                                    LexList* current = lex;
+                                    PushPackIndex();
+                                    inTemplateArgs++;
+                                    for (int i = 0; i < n; i++)
                                     {
-                                        auto second = Allocate<TEMPLATEPARAM>();
-                                        workingList->push_back(TEMPLATEPARAMPAIR{nullptr, second});
-                                        if (itsrc->second->packed && itsrc->second->byPack.pack)
+                                        SetPackIndex(i);
+                                        lex = SetAlternateLex(startLex);
+                                        SYMBOL* sym = nullptr;
+                                        lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
+                                        lex = getsym();
+                                        if (sym)
                                         {
-                                            auto itp = itsrc->second->byPack.pack->begin();
-                                            auto itpe = itsrc->second->byPack.pack->end();
-                                            packed = true;
-                                            for (i = 0; i < n && itp != itpe; i++, ++itp)
-                                                ;
-                                            if (itp == itpe)
+                                            inTemplateSpecialization++;
+                                            lst = nullptr;
+                                            lex = GetTemplateArguments(lex, funcsp, sym, &lst);
+                                            inTemplateSpecialization--;
+                                            sym = GetClassTemplate(sym, lst, false);
+                                            if (sym)
                                             {
-                                                done = true;
-                                                break;
-                                            }
-                                            *second = *(itp->second);
-//                                            second->byClass.dflt = itp->second->byClass.val;
-                                        }
-                                        else
-                                        {
-                                            *second = *(itsrc->second);
- //                                           second->byClass.dflt = itsrc->second->byClass.val;
-                                        }
-                                    }
-                                    if (done)
-                                        break;
-                                    if (workingList)
-                                    {
-                                        temp = GetClassTemplate(bcsym, workingList, true);
-                                        if (temp && allTemplateArgsSpecified(temp, temp->templateParams))
-                                            temp = TemplateClassInstantiateInternal(temp, temp->templateParams, false);
-                                        if (temp)
-                                        {
-                                            auto bc = innerBaseClass(declsym, temp, isvirtual, currentAccess);
-                                            if (bc)
-                                            {
-                                                baseClasses->push_back(bc);
+                                                if (allTemplateArgsSpecified(sym, sym->templateParams))
+                                                    sym = TemplateClassInstantiateInternal(sym, sym->templateParams, false);
+                                                if (sym)
+                                                {
+                                                    SetLinkerNames(sym, Linkage::cdecl_);
+                                                    auto bc = innerBaseClass(declsym, sym, isvirtual, currentAccess);
+                                                    if (bc)
+                                                    {
+                                                        baseClasses->push_back(bc);
+                                                    }
+                                                }
                                             }
                                         }
-                                        n++;
+                                        SetAlternateLex(nullptr);
                                     }
-                                    if (!packed)
-                                        break;
-                                }
-                                auto itdest = bcsym->templateParams->begin();
-                                ++itdest;
-                                auto itdeste = bcsym->templateParams->end();
-                                auto itsrc = lst->begin();
-                                auto itsrce = lst->end();
-                                for (; itsrc != itsrce && itdest != itdeste; ++itdest)
-                                {
-                                    if (itsrc->second->packed && itsrc->second->byPack.pack)
-                                    {
-                                        auto itp = itsrc->second->byPack.pack->begin();
-                                        auto itpe = itsrc->second->byPack.pack->end();
-                                        for (i = 0; i < n && itp != itpe; i++, ++itp)
-                                            ;
-                                        if (itp != itpe)
-                                            failed = true;
-                                    }
-                                }
-                                if (failed)
-                                {
-                                    error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                                    inTemplateArgs--;
+                                    lex = current;
+                                    PopPackIndex();
                                 }
                             }
                             lex = getsym();

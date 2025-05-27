@@ -34,6 +34,7 @@
 #define __STRING_H
 
 #    include <stddef.h>
+#    include <wchar.h>
 
 #ifdef __cplusplus
 extern "C"

@@ -805,8 +805,8 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                         if (sp && sp->tp->templateParam)
                         {
                             lex = getsym();
-                            if (!MATCHKW(lex, Keyword::rightshift_) && !MATCHKW(lex, Keyword::gt_) &&
-                                !MATCHKW(lex, Keyword::comma_))
+                            if ((!MATCHKW(lex, Keyword::rightshift_) && !MATCHKW(lex, Keyword::gt_) &&
+                                !MATCHKW(lex, Keyword::comma_)) || sp->tp->templateParam->second->packed)
                             {
                                 lex = prevsym(last);
                                 goto join;
@@ -956,8 +956,8 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
                                     a.push_back(*tp->templateParam);
                                     lst = ExpandTemplateArguments(lst, funcsp, &a);
                                 }
-                                if (tp && tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
-                                    AddPackedEntityToSequence((*lst)->back().first, (*lst)->back().second);
+//                                if (tp && tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
+//                                    AddPackedEntityToSequence((*lst)->back().first, (*lst)->back().second);
                                 skip = true;
                                 first = false;
                             }

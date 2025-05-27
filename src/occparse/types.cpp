@@ -2032,7 +2032,6 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
     }
     return tp;
 }
-int count3;
 Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym,
                                 std::list<NAMESPACEVALUEDATA*>** nsv, bool inTemplate, StorageClass storage_class, Linkage* linkage,
                                 Linkage* linkage2, Linkage* linkage3, bool* notype, bool asFriend, int consdest, bool beforeOnly,
@@ -2341,45 +2340,59 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     ptype = TypeGenerator::BeforeName(lex, funcsp, ptype, spi, strSym, nsv, inTemplate, storage_class, linkage,
                                                       linkage2, linkage3, nullptr, asFriend, false, beforeOnly, true);
                     basisAttribs = oldAttribs;
-                    if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
-                                   ptype->BaseType()->type != BasicType::memberptr_))
-                    {
-                        // if here is not a potential pointer to func
-                        if (!ptype)
-                            tp = &stdint;
-                        ptype = nullptr;
-                    }
                     if (!needkw(&lex, Keyword::closepa_))
                     {
                         errskim(&lex, skim_closepa);
                         skip(&lex, Keyword::closepa_);
                     }
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, true);
-                    if (ptype)
+                    if (ptype->IsFunctionPtr() && !MATCHKW(lex, Keyword::openpa_) && !MATCHKW(lex, Keyword::openbr_))
                     {
-                        // pointer to func or pointer to memberfunc
-                        Type* atype = tp;
-                        tp = ptype;
-                        if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
-                            atype->BaseType()->byRefArray = true;
-                        while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
-                                ptype->BaseType()->type == BasicType::memberptr_) &&
-                               ptype->btp)
-                            if (ptype->btp->type == BasicType::any_)
-                            {
-                                break;
-                            }
-                            else
-                            {
-                                ptype = ptype->btp;
-                            }
-                        ptype->btp = atype;
-                        ptype->rootType = atype->rootType;
-                        tp->UpdateRootTypes();
-
-                        atype = tp->BaseType();
+                        auto  atype = tp->BaseType();
                         if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
                             atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                        auto tp1 = ptype;
+                        ptype =ptype->BaseType()->btp->BaseType();
+                        ptype->btp = tp;
+                        tp = tp1;
+                        tp->UpdateRootTypes();
+                    }
+                    else
+                    {
+                        if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
+                            ptype->BaseType()->type != BasicType::memberptr_))
+                        {
+                            // if here is not a potential pointer to func
+                            if (!ptype)
+                                tp = &stdint;
+                            ptype = nullptr;
+                        }
+                        tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, true);
+                        if (ptype)
+                        {
+                            // pointer to func or pointer to memberfunc
+                            Type* atype = tp;
+                            tp = ptype;
+                            if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
+                                atype->BaseType()->byRefArray = true;
+                            while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
+                                ptype->BaseType()->type == BasicType::memberptr_) &&
+                                ptype->btp)
+                                if (ptype->btp->type == BasicType::any_)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    ptype = ptype->btp;
+                                }
+                            ptype->btp = atype;
+                            ptype->rootType = atype->rootType;
+                            tp->UpdateRootTypes();
+
+                            atype = tp->BaseType();
+                            if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
+                                atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                        }
                     }
                     if (*spi)
                         (*spi)->tp = tp;

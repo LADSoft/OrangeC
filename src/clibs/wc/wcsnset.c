@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-wchar_t* wcsnset(wchar_t* p, int n, size_t len)
+wchar_t* wcsnset(wchar_t* p, wchar_t n, size_t len)
 {
     int l = wcslen(p);
     if (l > len)
@@ -33,4 +33,4 @@ wchar_t* wcsnset(wchar_t* p, int n, size_t len)
     wmemset(p, n, l);
     return p;
 }
-wchar_t* _wcsnset(wchar_t* p, int n, size_t len) { return wcsnset(p, n, len); }
+wchar_t* _wcsnset(wchar_t* p, wchar_t n, size_t len) { return wcsnset(p, n, len); }

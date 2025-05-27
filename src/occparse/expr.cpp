@@ -778,6 +778,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                     {
                         sym->packed = true;
                         *exp = MakeExpression(ExpressionNode::auto_, sym);
+                        AddPackedEntityToSequence(sym->tp->BaseType()->templateParam->first, sym->tp->BaseType()->templateParam->second);
                     }
                 }
                 else
@@ -1326,7 +1327,7 @@ static LexList* variableName(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp,
                     (localNameSpace->front()->syms || sym->sb->storage_class != StorageClass::auto_))
                     InsertSymbol(sym, sym->sb->storage_class, Linkage::none_, false);
             }
-            if (nsv)
+            if (nsv && (!IsPacking() || unpackingTemplate))
             {
                 errorNotMember(strSym, nsv->front(), sym->sb->decoratedName);
             }
@@ -5077,6 +5078,12 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
                     sym = nullptr;
                 }
             }
+            if (sym && sym->tp->type == BasicType::templateparam_ && !sym->tp->templateParam->second->packed && sym->tp->templateParam->second->type == TplType::typename_)
+            {
+                auto tp1 = sym->tp->templateParam->second->byClass.val;
+                if (tp1->IsStructured())
+                    sym = tp1->BaseType()->sp;
+            }
             if (sym && sym->tp->IsStructured())
             {
                 if (MATCHKW(lex, Keyword::lt_))
@@ -5112,11 +5119,13 @@ static LexList* expression_offsetof(LexList* lex, SYMBOL* funcsp, Type** tp, EXP
             else
             {
                 error(ERR_CLASS_TYPE_EXPECTED);
+                errskim(&lex, skim_closepa);
             }
         }
         else
         {
             error(ERR_IDENTIFIER_EXPECTED);
+            errskim(&lex, skim_closepa);
         }
         needkw(&lex, Keyword::closepa_);
     }
@@ -7119,11 +7128,18 @@ static LexList* expression_ampersand(LexList* lex, SYMBOL* funcsp, Type* atp, Ty
     {
         Type *btp, *tp1;
         EXPRESSION *exp1 = *exp, *symRef;
-        optimize_for_constants(&exp1);
+        if (exp1->type != ExpressionNode::const_)
+        {
+            optimize_for_constants(&exp1);
+        }
         while (exp1->type == ExpressionNode::comma_ && exp1->right)
+        {
             exp1 = exp1->right;
+        }
         if (exp1->type == ExpressionNode::comma_)
+        {
             exp1 = exp1->left;
+        }
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? GetSymRef(exp1) : nullptr;
         btp = (*tp)->BaseType();
         tp1 = LookupSingleAggregate(btp, &exp1, true);

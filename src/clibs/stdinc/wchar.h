@@ -176,7 +176,7 @@ extern "C"
     wchar_t * _RTL_FUNC _wcsnset(wchar_t *, wchar_t, size_t);
     wchar_t * _RTL_FUNC _wcsrev(wchar_t *);
 
-    wchar_t * _RTL_FUNC _wcserror(int);
+    wchar_t * _RTL_FUNC _wcserror(const wchar_t *);
     wchar_t * _RTL_FUNC _wcsichr(const wchar_t *, wchar_t);
     wchar_t * _RTL_FUNC _wcsistr(const wchar_t *, const wchar_t *);
     wchar_t * _RTL_FUNC _wcsrichr(const wchar_t *, wchar_t);

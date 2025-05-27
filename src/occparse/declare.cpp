@@ -62,6 +62,7 @@
 #include "ListFactory.h"
 #include "class.h"
 #include "overload.h"
+#include "exprpacked.h"
 
 namespace Parser
 {
@@ -968,9 +969,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
 }
 static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
-    if (!definingTemplate || instantiatingTemplate)
-        if (!strcmp(sp->name, "LayoutImpl"))
-            printf("hi");
     (void)funcsp;
     if (Optimizer::cparams.prm_cplusplus)
     {
@@ -1925,7 +1923,10 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
     {
         if (scoped)
             enumSyms = sp;
+        EnterPackedSequence();
         lex = enumbody(lex, funcsp, sp, storage_class, access, fixedType, scoped);
+        ClearPackedSequence();
+        LeavePackedSequence();
         enumSyms = nullptr;
         *defd = true;
     }

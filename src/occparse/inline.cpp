@@ -93,6 +93,7 @@ void inlineinit(void)
     enteredInlines.clear();
     contextMap.clear();
     inlineMemberPtrData.clear();
+    inlineLocalUninitializers.clear();
 }
 
 static void GenInline(SYMBOL* sym);

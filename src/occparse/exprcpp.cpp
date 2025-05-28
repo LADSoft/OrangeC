@@ -702,7 +702,8 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     {
                         bcall = nullptr;
                     }
-                    lex = backupsym();
+                    if (lex)
+                        lex = backupsym();
                     lex = backupsym();
                 }
                 else
@@ -955,8 +956,8 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
     if ((*newType)->IsVoid())
         return true;
     // conversion of one numeric value to another
-    if (((*newType)->IsArithmetic() || ((*newType)->type == BasicType::enum_ && !(*newType)->scoped)) &&
-        (oldType->IsArithmetic() || (oldType->type == BasicType::enum_ && !oldType->scoped)))
+    if (((*newType)->IsArithmetic() || ((*newType)->BaseType()->type == BasicType::enum_ && !(*newType)->BaseType()->scoped)) &&
+        (oldType->IsArithmetic() || (oldType->BaseType()->type == BasicType::enum_ && !oldType->BaseType()->scoped)))
     {
         cast(*newType, exp);
         return true;
@@ -1994,7 +1995,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
                 tp1->array = 1;
                 tp1->esize = arrSize;
             }
-            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, sym, false, false, 0);
+            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, sym, false, false, _F_EXPLICIT);
             if (!(*tp)->IsStructured() && !arrSize)
             {
                 if (init->size() != 1 || (init->front()->basetp && init->front()->basetp->IsStructured()))

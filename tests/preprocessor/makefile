@@ -35,7 +35,7 @@ TEST_FILES = n_1.exe \
     stringize1.exe
 
 
-all: af.o
+all: af.o namedvarargs.exe
 	$(MAKE) tests
 
 tests: $(TEST_FILES)
@@ -45,6 +45,11 @@ clean:
 
 af.o : af.c
 	occ /c /! $^
+
+namedvarargs.exe: namedvarargs.c
+	occ /! /T /9 $^
+	-$* > $*.out
+	fc /b $*.cmpx $*.out
 
 %.exe: %.c af.o
 	occ /! /T /9 $^ af.o

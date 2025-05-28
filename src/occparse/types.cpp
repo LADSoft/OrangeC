@@ -112,6 +112,7 @@ bool Type::IsUnsigned()
         case BasicType::unsigned_long_long_:
         case BasicType::wchar_t_:
         case BasicType::unsigned_bitint_:
+        case BasicType::char32_t_:
             return true;
         default:
             return false;

@@ -61,16 +61,17 @@ class ppDefine
     class Definition : public Symbol
     {
       public:
-        Definition(const std::string& Name, std::string& Value, DefinitionArgList* List, bool Permanent) :
-            Symbol(Name),
-            value(Value),
-            argList(List),
-            permanent(Permanent),
-            varargs(false),
-            caseInsensitive(false),
-            preprocessing(false),
-            undefined(false),
-            elipses(false)
+          Definition(const std::string& Name, std::string& Value, DefinitionArgList* List, std::string VaArgs, bool Permanent) :
+              Symbol(Name),
+              value(Value),
+              argList(List),
+              permanent(Permanent),
+              varargs(false),
+              caseInsensitive(false),
+              preprocessing(false),
+              undefined(false),
+              elipses(false),
+              vaArgs(VaArgs)
         {
         }
         Definition& operator=(const Definition&);
@@ -80,6 +81,7 @@ class ppDefine
         void SetPreprocessing(bool flag) { preprocessing = flag; }
         bool HasVarArgs() const { return varargs; }
         void SetHasVarArgs() { varargs = true; }
+        const std::string& GetVaArgsName() { return vaArgs; }
         int GetArgCount()
         {
             if (!argList)
@@ -107,6 +109,7 @@ class ppDefine
         bool varargs;
         bool preprocessing;
         std::string value;
+        std::string vaArgs;
         std::unique_ptr<DefinitionArgList> argList;
     };
 
@@ -120,7 +123,7 @@ class ppDefine
         macro = Macro;
     }
     bool Check(kw token, std::string& line);
-    Definition* Define(const std::string& name, std::string& value, DefinitionArgList* args, bool permanent, bool varargs,
+    Definition* Define(const std::string& name, std::string& value, DefinitionArgList* args, std::string vaArgsName, bool permanent, bool varargs,
                        bool errors, bool caseInsensitive);
     void Undefine(const std::string& name);
     Definition* Lookup(const std::string& name);
@@ -129,7 +132,7 @@ class ppDefine
     void Assign(const std::string& name, int value, bool caseInsensitive)
     {
         std::string v = Utils::NumberToString(value);
-        Define(name, v, nullptr, false, false, false, caseInsensitive);
+        Define(name, v, nullptr, "__VA_ARGS__", false, false, false, caseInsensitive);
     }
     SymbolTable& GetDefines() { return symtab; }
 
@@ -146,7 +149,7 @@ class ppDefine
     bool NotSlashed(const std::string& macro, int pos);
     bool ppNumber(const std::string& macro, int begin, int pos);
     bool ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newArgs,
-                     const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, const std::string varargs);
+                     const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, Definition* currentDefinition, const std::string varargs);
     void SetupAlreadyReplaced(std::string& macro);
     int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions,
                        std::deque<TokenPos>* positions);

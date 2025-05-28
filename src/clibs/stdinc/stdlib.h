@@ -218,6 +218,7 @@ extern unsigned char _RTL_DATA _osminor;
     long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
     void _RTL_FUNC _IMPORT _NORETURN _exit(int __status);
     char* ZSTR _RTL_FUNC _IMPORT _fullpath(char* ZSTR, const char* ZSTR, size_t);
+    wchar_t* ZSTR _RTL_FUNC _IMPORT _wfullpath(wchar_t* ZSTR, const wchar_t* ZSTR, size_t);
     char* ZSTR _RTL_FUNC _IMPORTMM itoa(int __value, char* ZSTR __stringValue, int __radix);
     char* ZSTR _RTL_FUNC _IMPORTMM _itoa(int __value, char* ZSTR __stringValue, int __radix);
     char* ZSTR _RTL_FUNC _IMPORTMM _i64toa(__int64 __value, char* ZSTR __stringValue, int __radix);
@@ -229,6 +230,8 @@ extern unsigned char _RTL_DATA _osminor;
 #endif
     void _RTL_FUNC _IMPORT _makepath(char* ZSTR __path, const char* ZSTR __drive, const char* ZSTR __dir, const char* ZSTR __name,
                                      const char* ZSTR __ext);
+    void _RTL_FUNC _IMPORT _wmakepath(wchar_t* ZSTR __path, const wchar_t* ZSTR __drive, const wchar_t* ZSTR __dir, const wchar_t* ZSTR __name,
+                                     const wchar_t* ZSTR __ext);
     int _RTL_FUNC _IMPORT putenv(const char* ZSTR __name);
     int _RTL_FUNC _IMPORT _wputenv(const wchar_t* ZSTR __name);
     int _RTL_FUNC _IMPORT _putenv(const char* ZSTR __name);
@@ -242,8 +245,12 @@ extern unsigned char _RTL_DATA _osminor;
     void _RTL_FUNC _IMPORT _searchstr(const char* ZSTR __file, const char* ZSTR __ipath, char* ZSTR __pathname);
     void _RTL_FUNC _IMPORT _splitpath(const char* ZSTR __path, char* ZSTR __drive, char* ZSTR __dir, char* ZSTR __name,
                                       char* ZSTR __ext);
+    void _RTL_FUNC _IMPORT _wsplitpath(const wchar_t* ZSTR __path, wchar_t* ZSTR __drive, wchar_t* ZSTR __dir, wchar_t* ZSTR __name,
+                                      wchar_t* ZSTR __ext);
     void _RTL_FUNC _IMPORT _splitpath2(const char* ZSTR __path, char* ZSTR __outpath, char* ZSTR* __drive, char* ZSTR* __dir,
                                        char* ZSTR* __name, char* ZSTR* __ext);
+    void _RTL_FUNC _IMPORT _wsplitpath2(const wchar_t* ZSTR __path, wchar_t* ZSTR __outpath, wchar_t* ZSTR* __drive, wchar_t* ZSTR* __dir,
+                                       wchar_t* ZSTR* __name, wchar_t* ZSTR* __ext);
     void _RTL_FUNC _IMPORT swab(char* ZSTR __from, char* ZSTR __to, int __nbytes);
     void _RTL_FUNC _IMPORT _swab(char* ZSTR, char* ZSTR, int);
     char* ZSTR _RTL_FUNC _IMPORT ultoa(unsigned long __value, char* ZSTR __stringValue, int __radix);

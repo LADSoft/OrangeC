@@ -54,6 +54,7 @@ ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition
     varargs = old.varargs;
     preprocessing = old.preprocessing;
     value = old.value;
+    vaArgs = old.vaArgs;
     if (old.argList)
     {
         argList.reset(new DefinitionArgList());
@@ -71,6 +72,7 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     varargs = old.varargs;
     preprocessing = old.preprocessing;
     value = old.value;
+    vaArgs = old.vaArgs;
     if (old.argList)
     {
         argList.reset(new DefinitionArgList());
@@ -123,7 +125,7 @@ bool ppDefine::Check(kw token, std::string& line)
     return rv;
 }
 #include <iostream>
-ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& value, DefinitionArgList* args, bool permanent,
+ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& value, DefinitionArgList* args, std::string vaArgsName, bool permanent,
                                        bool varargs, bool errors, bool caseInsensitive)
 {
     if (asmpp)
@@ -188,7 +190,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     std::string name1 = name;
     if (caseInsensitive)
         name1 = UTF8::ToUpper(name1);
-    Definition* d = new Definition(name1, value, args, permanent);
+    Definition* d = new Definition(name1, value, args, vaArgsName, permanent);
     if (value[1] == REPLACED_TOKENIZING)
         d->DefinedError("macro definition begins with tokenizing token");
     d->SetCaseInsensitive(caseInsensitive);
@@ -273,7 +275,7 @@ void ppDefine::DoAssign(std::string& line, bool caseInsensitive)
         if (!failed)
         {
             std::string value = Utils::NumberToString((int)n);
-            Define(name, value, nullptr, false, false, false, caseInsensitive);
+            Define(name, value, nullptr, "__VA_ARGS__", false, false, false, caseInsensitive);
         }
     }
     if (failed)
@@ -305,6 +307,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
     bool hasEllipses = false;
     std::unique_ptr<DefinitionArgList> da;
     std::string name;
+    std::string vaArgsName = "__VA_ARGS__";
     if (!next->IsIdentifier())
     {
         failed = true;
@@ -348,15 +351,17 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
                     }
                     next = tk.Next();
                 }
-                if (hascomma)
+                if (next->GetKeyword() == kw::ellipses)
                 {
-                    if (next->GetKeyword() == kw::ellipses)
+                    if (!hascomma && da->size())
                     {
-                        if (dialect == Dialect::c89)
-                            Errors::Error("Macro variable argument specifier only allowed in C99");
-                        hasEllipses = true;
-                        next = tk.Next();
+                        vaArgsName = da->back();
+                        da->pop_back();
                     }
+                    if (dialect == Dialect::c89)
+                        Errors::Error("Macro variable argument specifier only allowed in C99");
+                    hasEllipses = true;
+                    next = tk.Next();
                 }
                 if (next->GetKeyword() != kw::closepa)
                 {
@@ -368,7 +373,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
     if (!failed)
     {
         std::string ref = tk.GetString();
-        Define(name, ref, da.release(), false, hasEllipses, !asmpp, caseInsensitive);
+        Define(name, ref, da.release(), vaArgsName, false, hasEllipses, !asmpp, caseInsensitive);
     }
     else
         Errors::Error("Macro argument syntax error");
@@ -669,7 +674,7 @@ bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
 }
 /* replace macro args */
 bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newargs,
-                           const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, const std::string varargs)
+                           const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, Definition* currentDefinition, const std::string varargs)
 {
     std::string name;
     int waiting = 0;
@@ -689,7 +694,7 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
             bool doit = true;
             int q = p;
             name = defid(macro, q, p);
-            if (dialect != Dialect::c89 && name == "__VA_ARGS__")
+            if (dialect != Dialect::c89 && name == currentDefinition->GetVaArgsName())
             {
                 if (varargs.empty())
                 {
@@ -977,7 +982,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
 
                     macro = d->GetValue();
                     if (count != 0 || !varargs.empty() || d->HasVarArgs())
-                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, definitions, std::move(varargs)))
+                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, definitions, d, std::move(varargs)))
                             return INT_MIN;
                     tokenized = Tokenize(macro);
                     Stringize(macro);

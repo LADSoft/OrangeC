@@ -54,6 +54,9 @@
 #include "symtab.h"
 #include "types.h"
 
+#define ASM_DEST_REG 0
+#define ASM_SRC_REG_START 1
+
 namespace Parser
 {
 static Optimizer::ASMREG* regimage;
@@ -182,7 +185,24 @@ static void inasm_err(int errnum)
     errorstr(ERR_ASM, assembler_errors[errnum]);
     lex = getsym();
 }
-
+static void setreg(std::vector<int>& srcRegs, Optimizer::ASMREG* regImage)
+{
+    int reg = regImage->regnum;
+    switch (regImage->size)
+    {
+    case ISZ_UCHAR:
+        reg += R_AL;
+        break;
+    case ISZ_USHORT:
+        reg += R_AX;
+        break;
+    default:
+    case ISZ_UINT:
+        reg += R_EAX;
+        break;
+    }
+    srcRegs.push_back(reg);
+}
 static void inasm_txsym(void)
 {
     if (lex && ISID(lex))
@@ -555,7 +575,7 @@ static int inasm_structsize(void)
 
 /*-------------------------------------------------------------------------*/
 
-static AMODE* inasm_mem(void)
+static AMODE* inasm_mem(std::vector<int>& srcRegs)
 {
     int reg1 = -1, reg2 = -1, scale = 0, seg = 0;
     bool subtract = false;
@@ -634,6 +654,7 @@ static AMODE* inasm_mem(void)
                                 reg1 = rg;
                             }
                         }
+                        setreg(srcRegs, regimage);
                     }
                     break;
                 case LexType::l_wchr_:
@@ -741,7 +762,7 @@ static AMODE* inasm_mem(void)
 
 /*-------------------------------------------------------------------------*/
 
-static AMODE* inasm_amode(int nosegreg)
+static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<int>& destRegs)
 {
     AMODE* rv = beLocalAllocate<AMODE>();
     int sz = 0, seg = 0;
@@ -839,6 +860,10 @@ static AMODE* inasm_amode(int nosegreg)
                     }
                     else
                     {
+                        if (destRegs.size() == 0)
+                            setreg(destRegs, regimage);
+                        else
+                            setreg(srcRegs, regimage);
                         rv->preg = regimage->regnum;
                         rv->mode = (e_am)regimage->regtype;
                         sz = rv->length = regimage->size;
@@ -859,7 +884,7 @@ static AMODE* inasm_amode(int nosegreg)
                     switch (KW(lex))
                     {
                         case Keyword::openbr_:
-                            rv = inasm_mem();
+                            rv = inasm_mem(srcRegs);
                             if (rv && rv->seg)
                                 seg = rv->seg;
                             break;
@@ -1130,6 +1155,8 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
     lastsym = 0;
     lex = inlex; /* patch to not have to rewrite entire module for new frontend */
     inasm_txsym();
+    std::vector<int> srcRegs;
+    std::vector<int> destRegs;
     do
     {
         snp = Statement::MakeStatement(lex, parent, StatementNode::passthrough_);
@@ -1145,7 +1172,7 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
                 inasm_getsym();
                 op = op_int;
                 rv = beLocalAllocate<OCODE>();
-                rv->oper1 = inasm_amode(true);
+                rv->oper1 = inasm_amode(true, srcRegs, destRegs);
                 goto join;
             }
             node = inasm_label();
@@ -1176,15 +1203,15 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
             {
                 if (!atend && !MATCHKW(lex, Keyword::semicolon_))
                 {
-                    rv->oper1 = inasm_amode(false);
+                    rv->oper1 = inasm_amode(false, srcRegs, destRegs);
                     if (MATCHKW(lex, Keyword::comma_))
                     {
                         inasm_getsym();
-                        rv->oper2 = inasm_amode(false);
+                        rv->oper2 = inasm_amode(false, srcRegs, destRegs);
                         if (MATCHKW(lex, Keyword::comma_))
                         {
                             inasm_getsym();
-                            rv->oper3 = inasm_amode(false);
+                            rv->oper3 = inasm_amode(false, srcRegs, destRegs);
                         }
                     }
                 }
@@ -1216,7 +1243,29 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
         rv->fwd = rv->back = 0;
         AssembleInstruction(rv);
         snp->select = (EXPRESSION*)rv;
-
+        switch (op)
+        {
+        case op_div:
+        case op_idiv:
+        case op_mul:
+            if (destRegs.size())
+                destRegs[0] = R_EAXEDX;
+            break;
+        case op_imul:
+            if (!rv->oper2 && destRegs.size())
+                destRegs[0] = R_EAXEDX;
+            break;
+        default:
+            break;
+        }
+        unsigned char* regs = Allocate<unsigned char>(srcRegs.size() + 2);
+        if (destRegs.size())
+            regs[ASM_DEST_REG] = destRegs[0] + 1;
+        else
+            regs[ASM_DEST_REG] = 255;
+        for (int i = 0; i < srcRegs.size(); i++)
+            regs[i+ ASM_SRC_REG_START] = srcRegs[i] + 1;
+        snp->assemblyRegs = regs;
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);
     return lex;
 }

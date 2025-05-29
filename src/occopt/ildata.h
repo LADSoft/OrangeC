@@ -110,7 +110,7 @@ struct FunctionData
     int ellipsePos;
     QUAD* instructionList;
     int setjmp_used : 1;
-    int hasAssembly : 1;
+    int dontOptimize : 1;
 };
 struct BaseData
 {
@@ -235,7 +235,7 @@ extern int nextLabel;
 extern bool assembling;
 extern int fastcallAlias;
 extern bool setjmp_used;
-extern bool functionHasAssembly;
+extern bool dontOptimizeFunction;
 extern std::string compilerName;
 extern std::string intermediateName;
 extern std::string backendName;

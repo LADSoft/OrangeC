@@ -420,6 +420,11 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
     if (rv->dc.opcode == i_passthrough)
     {
         rv->dc.left = (Optimizer::IMODE*)UnstreamAssemblyInstruction();
+        int len = UnstreamIndex();
+        rv->assemblyRegs = Allocate<unsigned char>(len);
+        for (int i = 0; i < len; i++)
+            rv->assemblyRegs[i] = UnstreamByte();
+        rv->assemblyRegCount = len;
     }
     else
     {
@@ -763,7 +768,7 @@ static FunctionData* UnstreamFunc()
     fd->name = (Optimizer::SimpleSymbol*)UnstreamIndex();
     int flgs = UnstreamIndex();
     fd->setjmp_used = !!(flgs & FF_USES_SETJMP);
-    fd->hasAssembly = !!(flgs & FF_HAS_ASSEMBLY);
+    fd->dontOptimize = !!(flgs & FF_HAS_ASSEMBLY);
     fd->blockCount = UnstreamIndex();
     fd->tempCount = UnstreamIndex();
     fd->exitBlock = UnstreamIndex();

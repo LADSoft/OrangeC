@@ -806,6 +806,8 @@ void gen_asm(Statement* stmt)
     newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_passthrough;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
+    newQuad->assemblyRegs = stmt->assemblyRegs;
+    newQuad->assemblyRegCount = strlen((char*)stmt->assemblyRegs);
     // if (Optimizer::chosenAssembler->gen->adjustcodelab)
     //    Optimizer::chosenAssembler->gen->adjustcodelab(newQuad->dc.left, codeLabelOffset);
     adjustcodelab(newQuad->dc.left, codeLabelOffset);

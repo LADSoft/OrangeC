@@ -556,6 +556,7 @@ typedef struct quad
     BITINT* isolated;
     BITINT* OCP;
     BITINT* RO;
+    unsigned char *assemblyRegs;
     //	unsigned short *modifiesTnum;
     int index;
     int ansColor;
@@ -567,8 +568,6 @@ typedef struct quad
     int sourceindx;
     int copy;
     int retcount;
-    short OCPTerms;
-    char sehMode;
     union
     {
         struct
@@ -604,6 +603,10 @@ typedef struct quad
         };
         unsigned flags;
     };
+    short OCPTerms;
+    char sehMode;
+    unsigned char assemblyRegCount;
+    unsigned assemblyTempRegStart;
     char fastcall; /* index for fastcall-related arg, positive for call sites and negative as callee */
     char oldmode;
     char novalue;

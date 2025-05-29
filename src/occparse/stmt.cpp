@@ -2173,7 +2173,7 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
         block->table = localNameSpace->front()->syms;
         st->explicitGoto = true;
         st->indirectGoto = true;
-        Optimizer::functionHasAssembly = true;  // don't optimize
+        Optimizer::dontOptimizeFunction = true;  // don't optimize
         // turn off optimizations
         lex = getsym();
         Type* tp = nullptr;
@@ -3416,7 +3416,6 @@ bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     (void)parent;  //
-    Optimizer::functionHasAssembly = true;
 #ifndef ORANGE_NO_INASM
     if (StatementGenerator::HasInlineAsm())
     {
@@ -4486,7 +4485,7 @@ void StatementGenerator::FunctionBody()
     int oldNestingCount = definingTemplate;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
-    bool oldfunctionHasAssembly = Optimizer::functionHasAssembly;
+    bool olddontOptimizeFunction = Optimizer::dontOptimizeFunction;
     bool oldDeclareAndInitialize = declareAndInitialize;
     bool oldHasXCInfo = hasXCInfo;
     bool oldFunctionCanThrow = functionCanThrow;
@@ -4516,7 +4515,7 @@ void StatementGenerator::FunctionBody()
     codeLabel = INT_MIN;
     hasXCInfo = false;
     localNameSpace->front()->syms = nullptr;
-    Optimizer::functionHasAssembly = false;
+    Optimizer::dontOptimizeFunction = false;
     Optimizer::setjmp_used = false;
     functionReturnType = funcsp->tp->BaseType()->btp;
     declareAndInitialize = false;
@@ -4606,7 +4605,7 @@ void StatementGenerator::FunctionBody()
             funcsp->sb->inlineFunc.stmt->front()->blockTail = block->blockTail;
             funcsp->sb->declaring = false;
             if (funcsp->sb->attribs.inheritable.isInline &&
-                (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_))
+                (Optimizer::dontOptimizeFunction || funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_))
                 funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
             if (!Optimizer::cparams.prm_allowinline)
                 funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
@@ -4647,7 +4646,7 @@ void StatementGenerator::FunctionBody()
     theCurrentFunc = oldtheCurrentFunc;
     hasXCInfo = oldHasXCInfo;
     Optimizer::setjmp_used = oldsetjmp_used;
-    Optimizer::functionHasAssembly = oldfunctionHasAssembly;
+    Optimizer::dontOptimizeFunction = olddontOptimizeFunction;
     localNameSpace->front()->syms = oldSyms;
     labelSyms = oldLabelSyms;
     codeLabel = oldCodeLabel;

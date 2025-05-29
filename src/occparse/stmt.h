@@ -53,6 +53,8 @@ struct Statement
     int altlabel;
     int tryStart;
     int tryEnd;
+    // inline assembly used regs
+    unsigned char* assemblyRegs;
     int hasvla : 1;
     int hasdeclare : 1;
     int purelabel : 1;

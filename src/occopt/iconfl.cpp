@@ -169,6 +169,26 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         }
                     }
                 }
+                else if (tail->dc.opcode == i_passthrough)
+                {
+                    if (optimize)
+                    {
+                        // dest reg
+                        if (tail->assemblyRegs[0] != 255)
+                        {
+                            briggsReset(live, tail->assemblyTempRegStart);
+                            for (j = 0; j < live->top; j++)
+                            {
+                                if (live->data[j] != tail->assemblyTempRegStart)
+                                    insertConflict(live->data[j], tail->assemblyTempRegStart);
+                            }
+                        }
+                        // src regs
+                        for (int i = 1; i < tail->assemblyRegCount; i++)
+                            if (tail->assemblyRegs[i] != 255)
+                                briggsSet(live, tail->assemblyTempRegStart + i);
+                    }
+                }
                 else if (tail->temps & TEMP_ANS)
                 {
                     if (tail->ans->mode == i_direct)

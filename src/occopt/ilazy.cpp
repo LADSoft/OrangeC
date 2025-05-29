@@ -187,6 +187,12 @@ static void GatherGlobals(void)
                     {
                         EnterGlobal(head);
                     }
+                    else if (head->dc.opcode == i_passthrough)
+                    {
+                        EnterGlobal(head);
+                        while (head->dc.opcode == i_passthrough) head = head->fwd;
+                        head = head->back;
+                    }
                 }
                 head = head->fwd;
             }
@@ -368,22 +374,25 @@ static void CalculateTransparent(void)
                     andmap(tail->transparent, tempInfo[n]->terms);
             }
         }
-        else if (tail->dc.opcode == i_gosub)
+        else if (tail->dc.opcode == i_gosub || tail->dc.opcode == i_passthrough)
         {
             QUAD* next = tail->fwd;
             setmap(tempBytes3, false);
             AliasGosub(tail, tempBytes3, tail->transparent, n /** sizeof(BITINT)*/);
-            while (next && !next->transparent)
+            if (tail->dc.opcode == i_gosub)
             {
-                if (next->dc.left && next->dc.left->retval && (next->temps & TEMP_ANS) && next->ans->mode == i_direct)
+                while (next && !next->transparent)
                 {
-                    int n = next->ans->offset->sp->i;
-                    clearbit(head->transparent, termMap[n]);
-                    if (tempInfo[n]->terms)
-                        andmap(tail->transparent, tempInfo[n]->terms);
-                    break;
+                    if (next->dc.left && next->dc.left->retval && (next->temps & TEMP_ANS) && next->ans->mode == i_direct)
+                    {
+                        int n = next->ans->offset->sp->i;
+                        clearbit(head->transparent, termMap[n]);
+                        if (tempInfo[n]->terms)
+                            andmap(tail->transparent, tempInfo[n]->terms);
+                        break;
+                    }
+                    next = next->fwd;
                 }
-                next = next->fwd;
             }
             complementmap(tempBytes3);
             for (j = 0; j < n; j++)

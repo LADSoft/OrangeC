@@ -1266,6 +1266,8 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
         for (int i = 0; i < srcRegs.size(); i++)
             regs[i+ ASM_SRC_REG_START] = srcRegs[i] + 1;
         snp->assemblyRegs = regs;
+        if (theCurrentFunc)
+            theCurrentFunc->sb->noinline = true;
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);
     return lex;
 }

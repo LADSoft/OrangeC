@@ -901,7 +901,6 @@ void putconst(Optimizer::SimpleExpression* offset, int color)
             if (offset->sp)
             {
                 Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)offset->sp;
-                printf("%d %s\n", sym->i, sym->name);
                 if (offset->right)
                     oprintf(icdFile, "T%d[%s]", (int)(sym->i), ((Optimizer::SimpleSymbol*)offset->right)->name);
                 else

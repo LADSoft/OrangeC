@@ -7,6 +7,8 @@
 #include "Token.h"
 #include <limits.h>
 #include <variant>
+#include <cstdint>
+
 using embed_token_type = std::shared_ptr<Token>;
 using embed_value_type = uintmax_t;
 using embeder_type = std::variant<embed_token_type, embed_value_type>;

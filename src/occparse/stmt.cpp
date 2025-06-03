@@ -883,6 +883,10 @@ void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
         addedBlock++;
         AllocateLocalContext(parent, funcsp, codeLabel++);
     }
+    // this next needed for strength reduction; we need to know definitively where the expression starts....
+    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+    st->label = codeLabel++;
+    st->blockInit = true;
     do
     {
         lastLabelStmt = dostmt->statements->back();
@@ -1503,6 +1507,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
 
                         st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                         st->label = loopLabel;
+                        st->blockInit = true;
 
                         std::list<FunctionBlock*> dummy(beforeit, parent.end());
                         AllocateLocalContext(dummy, funcsp, codeLabel++);
@@ -1829,6 +1834,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 else
                 {
                     lex = getsym();
+                    // this next needed for strength reduction; we need to know definitively where the expression starts....
+                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st->label = codeLabel++;
+                    st->blockInit = true;
+
                     if (init)
                     {
                         st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
@@ -3103,6 +3113,10 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
             }
             else
             {
+                // this next needed for strength reduction; we need to know definitively where the expression starts....
+                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st->label = codeLabel++;
+                st->blockInit = true;
                 st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
                 st->label = whilestmt->breaklabel;
                 st->altlabel = whilestmt->continuelabel;

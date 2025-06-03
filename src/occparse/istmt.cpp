@@ -861,6 +861,8 @@ Optimizer::IMODE* genstmt(std::list<Statement*>* stmts, SYMBOL* funcsp, int flag
                     Optimizer::gen_label((int)stmt->label + codeLabelOffset);
                     if (stmt->purelabel)
                         Optimizer::intermed_tail->alwayslive = true;
+                    if (stmt->blockInit)
+                        Optimizer::intermed_tail->blockInit = true;
                     break;
                 case StatementNode::goto_:
                     if (stmt->destexp)

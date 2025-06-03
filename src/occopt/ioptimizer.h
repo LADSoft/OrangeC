@@ -600,6 +600,7 @@ typedef struct quad
             int ptrbox : 1;          // msil - box this pointer
             int runtimeIsStore : 1;
             int moveBarrier : 1; /* can't move instructions past this point, e.g. for computed goto/label */
+            int blockInit : 1;
         };
         unsigned flags;
     };

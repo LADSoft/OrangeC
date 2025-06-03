@@ -315,7 +315,7 @@ void Optimize(SimpleSymbol* funcsp)
     gatherLocalInfo(functionVariables);
 
     RunOptimizerModules();
-    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
+    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !dontOptimizeFunction)
     {
         if (cparams.icd_flags & ICD_QUITEARLY)
             return;
@@ -405,7 +405,7 @@ void ProcessFunctions()
             exitBlock = v->funcData->exitBlock;
             fastcallAlias = v->funcData->fastcallAlias;
             tempCount = v->funcData->tempCount;
-            functionHasAssembly = v->funcData->hasAssembly;
+            dontOptimizeFunction = v->funcData->dontOptimize;
             intermed_head = v->funcData->instructionList;
             intermed_tail = intermed_head;
             while (intermed_tail && intermed_tail->fwd)

@@ -176,7 +176,16 @@ void x86FastcallColor(QUAD* head)
 }
 void x86PreColor(QUAD* head) /* precolor an instruction */
 {
-    if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
+    if (head->dc.opcode == i_passthrough)
+    {
+        for (int i = 0; i < head->assemblyRegCount; i++)
+        {
+            int n = head->assemblyTempRegStart + i;
+            tempInfo[n]->precolored = true;
+            tempInfo[n]->color = head->assemblyRegs[i] == 255 ? head->assemblyRegs[i] : head->assemblyRegs[i] - 1;
+        }
+    }
+    else if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
     {
         if (head->temps & TEMP_ANS)
         {

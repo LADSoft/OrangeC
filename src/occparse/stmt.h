@@ -53,11 +53,14 @@ struct Statement
     int altlabel;
     int tryStart;
     int tryEnd;
+    // inline assembly used regs
+    unsigned char* assemblyRegs;
     int hasvla : 1;
     int hasdeclare : 1;
     int purelabel : 1;
     int explicitGoto : 1;
     int indirectGoto : 1;
+    int blockInit : 1;
     static Statement* MakeStatement(LexList* lex, std::list<FunctionBlock*>& parent, StatementNode stype);
 };
 struct FunctionBlock

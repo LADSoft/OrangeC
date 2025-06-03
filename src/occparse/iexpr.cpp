@@ -2474,7 +2474,7 @@ static int MarkFastcall(SYMBOL* sym, Type* functp, bool thisptr)
         return 0;
 #endif
 
-    if (!Optimizer::functionHasAssembly)
+    if (!Optimizer::dontOptimizeFunction)
     {
         /* if there is a setjmp in the function, no variable gets moved into a reg */
         if (!(Optimizer::setjmp_used))

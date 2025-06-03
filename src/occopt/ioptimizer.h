@@ -556,6 +556,7 @@ typedef struct quad
     BITINT* isolated;
     BITINT* OCP;
     BITINT* RO;
+    unsigned char *assemblyRegs;
     //	unsigned short *modifiesTnum;
     int index;
     int ansColor;
@@ -567,8 +568,6 @@ typedef struct quad
     int sourceindx;
     int copy;
     int retcount;
-    short OCPTerms;
-    char sehMode;
     union
     {
         struct
@@ -601,9 +600,14 @@ typedef struct quad
             int ptrbox : 1;          // msil - box this pointer
             int runtimeIsStore : 1;
             int moveBarrier : 1; /* can't move instructions past this point, e.g. for computed goto/label */
+            int blockInit : 1;
         };
         unsigned flags;
     };
+    short OCPTerms;
+    char sehMode;
+    unsigned char assemblyRegCount;
+    unsigned assemblyTempRegStart;
     char fastcall; /* index for fastcall-related arg, positive for call sites and negative as callee */
     char oldmode;
     char novalue;

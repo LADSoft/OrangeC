@@ -435,6 +435,9 @@ static void StreamInstruction(QUAD* q)
     if (q->dc.opcode == i_passthrough)
     {
         StreamAssemblyInstruction((OCODE*)q->dc.left);
+        StreamIndex(q->assemblyRegCount);
+        for (int i = 0; i < q->assemblyRegCount; i++)
+            StreamByte(q->assemblyRegs[i]);
     }
     else
     {
@@ -839,7 +842,7 @@ static void StreamFunc(FunctionData* fd)
             s->fileIndex = 2 * i++ + 1;
     }
     StreamIndex(fd->name->fileIndex);
-    StreamIndex((fd->setjmp_used ? FF_USES_SETJMP : 0) + (fd->hasAssembly ? FF_HAS_ASSEMBLY : 0));
+    StreamIndex((fd->setjmp_used ? FF_USES_SETJMP : 0) + (fd->dontOptimize ? FF_HAS_ASSEMBLY : 0));
     StreamIndex(fd->blockCount);
     StreamIndex(fd->tempCount);
     StreamIndex(fd->exitBlock);

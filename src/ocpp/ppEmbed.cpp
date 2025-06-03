@@ -11,6 +11,7 @@
 #include <array>
 #include <functional>
 #include <strstream>
+#include <algorithm>
 #include <cstdio>
 #include "ppExpr.h"
 std::function<embeder::embeder_func> embeder::embed_elements;

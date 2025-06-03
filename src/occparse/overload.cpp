@@ -2702,6 +2702,11 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         Type* tppp = tpp->BaseType()->btp;
         while (tppp->IsRef())
             tppp = tppp->BaseType()->btp;
+        if (tppp->BaseType()->type == BasicType::templateselector_)
+        {
+            seq[(*n)++] = CV_NONE;
+            return;
+        }
         if (!rref && expa && tppp->IsStructured() && expa->type != ExpressionNode::not__lvalue_)
         {
             EXPRESSION* expx = expa;
@@ -2849,6 +2854,11 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
     {
         if ((tpax->IsConst() != tppx->IsConst()) || (tpax->IsVolatile() != tppx->IsVolatile()))
             seq[(*n)++] = CV_QUALS;
+        if (tpp->BaseType()->type == BasicType::templateselector_)
+        {
+            seq[(*n)++] = CV_NONE;
+            return;
+        }
         if (tpp->BaseType()->type == BasicType::string_)
         {
             if (tpa->BaseType()->type == BasicType::string_ || (expa && expa->type == ExpressionNode::labcon_ && expa->string))

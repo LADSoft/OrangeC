@@ -883,6 +883,10 @@ void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
         addedBlock++;
         AllocateLocalContext(parent, funcsp, codeLabel++);
     }
+    // this next needed for strength reduction; we need to know definitively where the expression starts....
+    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+    st->label = codeLabel++;
+    st->blockInit = true;
     do
     {
         lastLabelStmt = dostmt->statements->back();
@@ -1503,6 +1507,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
 
                         st = Statement::MakeStatement(lex, parent, StatementNode::label_);
                         st->label = loopLabel;
+                        st->blockInit = true;
 
                         std::list<FunctionBlock*> dummy(beforeit, parent.end());
                         AllocateLocalContext(dummy, funcsp, codeLabel++);
@@ -1829,6 +1834,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 else
                 {
                     lex = getsym();
+                    // this next needed for strength reduction; we need to know definitively where the expression starts....
+                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st->label = codeLabel++;
+                    st->blockInit = true;
+
                     if (init)
                     {
                         st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
@@ -2173,7 +2183,7 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
         block->table = localNameSpace->front()->syms;
         st->explicitGoto = true;
         st->indirectGoto = true;
-        Optimizer::functionHasAssembly = true;  // don't optimize
+        Optimizer::dontOptimizeFunction = true;  // don't optimize
         // turn off optimizations
         lex = getsym();
         Type* tp = nullptr;
@@ -3103,6 +3113,10 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
             }
             else
             {
+                // this next needed for strength reduction; we need to know definitively where the expression starts....
+                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st->label = codeLabel++;
+                st->blockInit = true;
                 st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
                 st->label = whilestmt->breaklabel;
                 st->altlabel = whilestmt->continuelabel;
@@ -3416,7 +3430,6 @@ bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     (void)parent;  //
-    Optimizer::functionHasAssembly = true;
 #ifndef ORANGE_NO_INASM
     if (StatementGenerator::HasInlineAsm())
     {
@@ -4486,7 +4499,7 @@ void StatementGenerator::FunctionBody()
     int oldNestingCount = definingTemplate;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
-    bool oldfunctionHasAssembly = Optimizer::functionHasAssembly;
+    bool olddontOptimizeFunction = Optimizer::dontOptimizeFunction;
     bool oldDeclareAndInitialize = declareAndInitialize;
     bool oldHasXCInfo = hasXCInfo;
     bool oldFunctionCanThrow = functionCanThrow;
@@ -4516,7 +4529,7 @@ void StatementGenerator::FunctionBody()
     codeLabel = INT_MIN;
     hasXCInfo = false;
     localNameSpace->front()->syms = nullptr;
-    Optimizer::functionHasAssembly = false;
+    Optimizer::dontOptimizeFunction = false;
     Optimizer::setjmp_used = false;
     functionReturnType = funcsp->tp->BaseType()->btp;
     declareAndInitialize = false;
@@ -4606,7 +4619,7 @@ void StatementGenerator::FunctionBody()
             funcsp->sb->inlineFunc.stmt->front()->blockTail = block->blockTail;
             funcsp->sb->declaring = false;
             if (funcsp->sb->attribs.inheritable.isInline &&
-                (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_))
+                (Optimizer::dontOptimizeFunction || funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_))
                 funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
             if (!Optimizer::cparams.prm_allowinline)
                 funcsp->sb->attribs.inheritable.isInline = funcsp->sb->promotedToInline = false;
@@ -4647,7 +4660,7 @@ void StatementGenerator::FunctionBody()
     theCurrentFunc = oldtheCurrentFunc;
     hasXCInfo = oldHasXCInfo;
     Optimizer::setjmp_used = oldsetjmp_used;
-    Optimizer::functionHasAssembly = oldfunctionHasAssembly;
+    Optimizer::dontOptimizeFunction = olddontOptimizeFunction;
     localNameSpace->front()->syms = oldSyms;
     labelSyms = oldLabelSyms;
     codeLabel = oldCodeLabel;

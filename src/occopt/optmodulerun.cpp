@@ -172,7 +172,7 @@ void RunOptimizerModules()
 {
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size))
     {
-        if (!functionHasAssembly)
+        if (!dontOptimizeFunction)
         {
             if (Optimizer::cparams.verbosity >= 5)
                 printf("Optimizing: %s\n", currentFunction->name);

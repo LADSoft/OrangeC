@@ -37,6 +37,8 @@
 #include "ireshape.h"
 #include "Utils.h"
 #include "ioptutil.h"
+#include "issa.h"
+
 #include <unordered_map>
 #include <deque>
 #include "FNV_hash.h"
@@ -56,7 +58,7 @@ namespace Optimizer
 {
 static std::unordered_map<int, IMODE*> loadTemps;
 static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> hash;
-static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
+static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int match, ILIST* vars, int first, int last)
 {
     if (!l)
         return;
@@ -80,14 +82,14 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
                                 multiplier = head->dc.left;
                                 tr = head->ans->offset->sp->i;
                                 ans = head->ans;
-                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                             }
                             else if (multiplier->mode == i_immed)
                             {
                                 multiplier = make_immed(multiplier->size, head->dc.left->offset->i * multiplier->offset->i);
                                 tr = head->ans->offset->sp->i;
                                 ans = head->ans;
-                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                             }
                         }
                     }
@@ -104,14 +106,14 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
                                 multiplier = head->dc.right;
                                 tr = head->ans->offset->sp->i;
                                 ans = head->ans;
-                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                             }
                             else if (multiplier->mode == i_immed)
                             {
                                 multiplier = make_immed(multiplier->size, head->dc.right->offset->i * multiplier->offset->i);
                                 tr = head->ans->offset->sp->i;
                                 ans = head->ans;
-                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                                ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                             }
                         }
                     }
@@ -134,7 +136,7 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
                                     multiplier = make_immed(head->dc.right->size, 1 << head->dc.right->offset->i);
                                     tr = head->ans->offset->sp->i;
                                     ans = head->ans;
-                                    ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                                    ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                                     break;
                                 }
                                 else if (multiplier->mode == i_immed)
@@ -143,7 +145,7 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
                                         make_immed(multiplier->size, (1 << head->dc.right->offset->i) * multiplier->offset->i);
                                     tr = head->ans->offset->sp->i;
                                     ans = head->ans;
-                                    ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                                    ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                                     break;
                                 }
                             }
@@ -155,7 +157,7 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
                 if (head->dc.left->mode == i_direct && head->ans->mode == i_direct)
                 {
                     int tr = head->ans->offset->sp->i;
-                    ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
+                    ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars, first, last);
                 }
             default:
                 break;
@@ -193,7 +195,19 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
                 }
                 s = tempInfo[tnum]->sl;
             }
-            tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
+            if (tempInfo[ans->offset->sp->i]->strengthRename != s->strengthName)
+            {
+                tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
+            
+                auto key = tempInfo[ans->offset->sp->i]->preSSATemp;
+                for (int i=0; i < tempCount; i++)
+                    if (tempInfo[i] && tempInfo[i]->inUse && key == tempInfo[i]->preSSATemp)
+                    {
+                        int b = tempInfo[i]->blockDefines->blocknum;
+                        if (b >= first && b < last)
+                            tempInfo[i]->strengthRename = s->strengthName;
+                    }
+            }
         }
         multiplier = oldMult;
     }
@@ -206,17 +220,25 @@ static void ScanStrength(void)
         Loop* lt = loopArray[i];
         if (lt->type != LT_BLOCK)
         {
+            // find the first block associated with setup for this loop
+            int last = lt->entry->blocknum;
+            int first = lt->entry->blocknum;
+            QUAD* head = lt->entry->head->back;
+            if (head->block)
+            {
+                auto loop = head->block->loopParent;
+                while (head && head->block && head->block->loopParent == loop && !head->blockInit) head = head->back;
+                if (head && head->block && head->block->loopParent == loop && head->blockInit)
+                    first = head->block->blocknum;
+            }
             INDUCTION_LIST* sets = lt->inductionSets;
             while (sets)
             {
                 ILIST* vars = sets->vars;
-                int n;
-                for (n = 0; vars; vars = vars->next, n++)
-                    ;
                 vars = sets->vars;
                 while (vars)
                 {
-                    ScanVarStrength(tempInfo[vars->data]->instructionUses, nullptr, vars->data, vars->data, sets->vars);
+                    ScanVarStrength(tempInfo[vars->data]->instructionUses, nullptr, vars->data, vars->data, sets->vars, first, last);
                     vars = vars->next;
                 }
                 sets = sets->next;
@@ -372,14 +394,14 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     if (q1.dc.left->offset->type == se_tempref && q1.dc.left->mode == i_direct)
     {
         int n = q1.dc.left->offset->sp->i;
-        if (tempInfo[n]->preSSATemp >= 0)
-            q1.dc.left = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
+//        if (tempInfo[n]->preSSATemp >= 0)
+//            q1.dc.left = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
     }
     if (q1.dc.right && q1.dc.right->offset->type == se_tempref && q1.dc.right->mode == i_direct)
     {
         int n = q1.dc.right->offset->sp->i;
-        if (tempInfo[n]->preSSATemp >= 0)
-            q1.dc.right = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
+ //       if (tempInfo[n]->preSSATemp >= 0)
+  //          q1.dc.right = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
     }
     if (ins->dc.opcode != i_assn)
     {
@@ -400,7 +422,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
             tempInfo[ins->ans->offset->sp->i]->preSSATemp = ins->ans->offset->sp->i;
         }
     }
-    if (size != ins->dc.left->size)
+    if (0 && size != ins->dc.left->size)
     {
         QUAD* ins1 = Allocate<QUAD>();
         ins1->dc.left = ins->dc.left;
@@ -721,8 +743,8 @@ static void ReduceStrength(Block* b)
 }
 void ReduceLoopStrength(void)
 {
-    loadTemps.clear();
     int i;
+
     hash.clear();
     CalculateInduction();
     ScanStrength();

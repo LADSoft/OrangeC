@@ -8,6 +8,7 @@
 #include <utility>
 #include <memory>
 #include "semaphores.h"
+#include <stack>
 // The main issue with using semaphores alone for Linux is that named semaphores
 // on linux can't be used without knowing the state of every application taking
 // the named semaphores, a solution to this is to use a jobserver, in order for
@@ -58,8 +59,11 @@ class POSIXJobServer : public JobServer
 {
     friend class JobServer;
     int readfd = -1, writefd = -1;
+    std::string fifo_name;
+    int fifo_fd = -1;
     int get_read_fd() { return readfd; }
     int get_write_fd() { return writefd; }
+    std::stack<char> popped_char_stack;
 
   public:
     std::string PassThroughCommandString();
@@ -69,6 +73,9 @@ class POSIXJobServer : public JobServer
     // Need these to be public in order to do std::make_shared on em'
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
+    POSIXJobServer(std::string);
+    POSIXJobServer(std::string, int max_jobs);
+    ~POSIXJobServer();
 };
 class WINDOWSJobServer : public JobServer
 {

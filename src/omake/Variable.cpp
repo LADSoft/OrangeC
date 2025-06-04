@@ -85,6 +85,8 @@ Variable* VariableContainer::Lookup(const std::string& name)
 }
 void VariableContainer::operator+(Variable* variable)
 {
+    if (!variable)
+        return;
     std::unique_ptr<Variable> temp(variable);
     if (variable->GetName().find_first_of('%') != std::string::npos)
     {

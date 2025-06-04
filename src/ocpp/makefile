@@ -35,6 +35,14 @@ H_FILES=$(wildcard *.h)
 
 include ../redirect.mak
 
+ifeq "$(COMPILER)" "gcc-linux"
+DISTRIBUTE:
+	$(COPY) ocpplib $(DISTBIN)$(PATHEXT2)ocpp
+	$(COPY) target.cfg $(DISTBIN)$(PATHEXT2)ocpp.cfg
+
+else
 DISTRIBUTE:
 	$(COPY) ocpplib.exe $(DISTBIN)$(PATHEXT2)ocpp.exe
 	$(COPY) target.cfg $(DISTBIN)$(PATHEXT2)ocpp.cfg
+
+endif

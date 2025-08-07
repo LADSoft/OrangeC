@@ -215,15 +215,36 @@ POSIXJobServer::POSIXJobServer(std::string auth_name, int max_jobs)
 {
     std::string fifo_location = "/tmp/" + auth_name;
     this->fifo_name = fifo_location;
-    mkfifo(fifo_location.c_str(), 0666);
-    fifo_fd = open(fifo_location.c_str(), O_RDWR);
-    populate_pipe(fifo_fd, max_jobs);
+    int ret = mkfifo(fifo_location.c_str(), 0666);
+    if (ret == -1)
+    {
+        throw std::system_error(errno, std::system_category(), "mkfifo failed");
+    }
+    readfd = open(fifo_location.c_str(), O_RDONLY | O_NONBLOCK);
+    int errno1 = errno;
+    writefd = open(fifo_location.c_str(), O_WRONLY | O_NONBLOCK);
+    int errno2 = errno;
+
+    if (readfd == -1 || writefd == -1)
+    {
+        throw std::runtime_error(std::string("Writefd or readfd were created as -1! errnos: ") + "1: " + std::to_string(errno1) +
+                                 " 2: " + std::to_string(errno2));
+    }
+    this->fifo_name = auth_name;
+    populate_pipe(writefd, max_jobs);
 }
 POSIXJobServer::POSIXJobServer(std::string auth_name)
 {
     this->fifo_name = auth_name;
-    readfd = open(fifo_name.c_str(), O_RDONLY);
-    writefd = open(fifo_name.c_str(), O_WRONLY);
+    readfd = open(fifo_name.c_str(), O_RDONLY | O_NONBLOCK);
+    int errno1 = errno;
+    writefd = open(fifo_name.c_str(), O_WRONLY | O_NONBLOCK);
+    int errno2 = errno;
+    if (readfd == -1 || writefd == -1)
+    {
+        throw std::runtime_error(std::string("Writefd or readfd were created as -1! errnos: ") + "1: " + std::to_string(errno1) +
+                                 " 2: " + std::to_string(errno2));
+    }
 }
 POSIXJobServer::~POSIXJobServer()
 {
@@ -237,7 +258,7 @@ std::string POSIXJobServer::PassThroughCommandString()
 {
     if (fifo_name != "")
     {
-        return "auth:" + this->fifo_name;
+        return "auth:" + std::string("/tmp/") + this->fifo_name;
     }
     std::stringstream stream;
     stream << readfd << ',' << writefd;

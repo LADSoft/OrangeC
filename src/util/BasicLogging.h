@@ -1,4 +1,6 @@
 #include <iostream>
+#include <utility>
+
 namespace OrangeC
 {
 namespace Utils
@@ -38,6 +40,28 @@ class BasicLogger
     {
         log((int)verbositylevel, args...);
     }
+    template <typename... Args>
+    static void extremedebug(Args... args)
+    {
+        log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, args...);
+    }
+    template <typename... Args>
+    static void debug(Args... args)
+    {
+        log(OrangeC::Utils::VerbosityLevels::DEBUG, args...);
+    }
+};
+class LoggerEnterExit
+{
+    std::string message;
+
+  public:
+    LoggerEnterExit(std::string generic_message)
+    {
+        message = generic_message;
+        BasicLogger::extremedebug("Entering: " + message);
+    }
+    ~LoggerEnterExit() { BasicLogger::extremedebug("Exiting: " + message); }
 };
 };  // namespace Utils
 };  // namespace OrangeC

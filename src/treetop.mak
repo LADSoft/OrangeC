@@ -34,7 +34,7 @@ endif
 
 ifeq "$(COMPILER)" "gcc-linux"
 MKDIR := mkdir -p
-DEL := rm -r
+DEL := rm -rf
 COPY := cp
 else
 MKDIR := mkdir

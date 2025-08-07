@@ -113,6 +113,7 @@ void OS::TerminateAll()
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Entering QuoteCommand");
     std::string rv;
     bool sh = exe.find("sh") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
@@ -153,6 +154,7 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
         }
         rv.push_back('"');
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Exiting QuoteCommand");
     return rv;
 }
 bool Time::operator>(const Time& last)
@@ -214,6 +216,7 @@ bool OS::TakeJob()
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Enter OS::GetFullPath");
     std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
 #ifdef TARGET_OS_WINDOWS
@@ -237,11 +240,14 @@ std::string OS::GetFullPath(const std::string& fullname)
         return recievingbuffer;
     }
 #endif
+    OrangeC::Utils::BasicLogger::extremedebug("Exit OS::GetFullPath");
+
     return recievingbuffer;
 }
 std::string OS::JobName() { return jobName; }
 void OS::InitJobServer()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Enter InitJobServer");
     bool first = false;
     std::string name;
     if (!localJobServer)
@@ -249,10 +255,13 @@ void OS::InitJobServer()
         if (MakeMain::jobServer.GetExists())
         {
             name = MakeMain::jobServer.GetValue();
+            OrangeC::Utils::BasicLogger::extremedebug("Getting from a current job server in InitJobServer");
             localJobServer = OMAKE::JobServer::GetJobServer(name);
+            OrangeC::Utils::BasicLogger::extremedebug("Made a new job server in InitJobServer");
         }
         else
         {
+            OrangeC::Utils::BasicLogger::extremedebug("Making a new jobserver in InitJobServer");
             localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
             name = localJobServer->PassThroughCommandString();
             MakeMain::jobServer.SetValue(std::move(name));
@@ -265,10 +274,12 @@ void OS::InitJobServer()
                      "if this message appears"
                   << std::endl;
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Exit InitJobServer");
 }
 bool OS::first = false;
 void OS::JobInit()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Enter JobInit");
     std::string name = MakeMain::jobServer.GetValue();
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
@@ -347,6 +358,7 @@ void OS::JobInit()
         }
         free(temp);
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Exit JobInit");
 }
 void OS::JobRundown()
 {
@@ -589,8 +601,8 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         return -1;
     }
     const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
-    char cwd[1024];
-    getcwd(cwd, 1024);
+    char cwd[PATH_MAX];
+    getcwd(cwd, PATH_MAX);
     ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, strs.data());
     std::string output_str;
     posix_spawn_file_actions_destroy(&spawn_file_actions);
@@ -614,11 +626,16 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         int poll_ret = poll(&polls, 1, 100);
         if (poll_ret > 0 && polls.revents & POLLIN)
         {
-            char bytes_to_read[120];
+            char bytes_to_read[1000];
             int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
-                output_str += std::string(bytes_to_read, bytes_read);
+                std::cout << std::string(bytes_to_read, bytes_read) << std::endl;
+            }
+            bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
             }
         }
         if ((poll_ret && !(polls.revents & POLLIN)) || poll_ret == 0)
@@ -631,7 +648,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
             status = WEXITSTATUS(status);
         }
-
     } while (!exit_condition);
     close(pipe_cout[0]);
     close(pipe_cout[1]);
@@ -768,7 +784,6 @@ std::string OS::SpawnWithRedirect(const std::string command)
             }
         }
         if ((poll_ret && !(polls.revents & POLLIN)) || poll_ret == 0)
-
         {
             ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
             if (ret == -1)
@@ -890,8 +905,13 @@ std::string OS::GetWorkingDir()
 #    endif
 #endif
     char buf[PATH_MAX];
-    getcwd(buf, PATH_MAX);
-    return buf;
+    char* ret = getcwd(buf, PATH_MAX);
+    if (ret == NULL)
+    {
+        fprintf(stderr, "GetWorkingDir failed!\n");
+        fflush(stderr);
+    }
+    return ret;
 }
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
 void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }

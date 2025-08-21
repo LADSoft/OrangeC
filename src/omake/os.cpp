@@ -619,12 +619,16 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     bool exit_condition = false;
     do
     {
-        struct pollfd polls;
-        polls.events = POLLIN;
-        polls.fd = pipe_cout[0];
-        polls.revents = 0;
-        int poll_ret = poll(&polls, 1, 100);
-        if (poll_ret > 0 && polls.revents & POLLIN)
+        struct pollfd polls[2] = {};
+        polls[0].events = POLLIN;
+        polls[0].fd = pipe_cout[0];
+        polls[0].revents = 0;
+        polls[1].events = POLLIN;
+        polls[1].fd = pipe_cout[1];
+        polls[1].revents = 0;
+
+        int poll_ret = poll(polls, 2, 100);
+        if (poll_ret > 0 && polls[0].revents & POLLIN)
         {
             char bytes_to_read[1000];
             int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
@@ -632,13 +636,17 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             {
                 std::cout << std::string(bytes_to_read, bytes_read) << std::endl;
             }
-            bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
+        }
+        if (poll_ret > 0 && polls[1].revents & POLLIN)
+        {
+            char bytes_to_read[1000];
+            int bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
                 std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
             }
-        }
-        if ((poll_ret && !(polls.revents & POLLIN)) || poll_ret == 0)
+        } 
+        if ((poll_ret && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
         {
             ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
             if (ret == -1)
@@ -646,6 +654,10 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 OS::WriteToConsole("An error has occured!");
             }
             exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            if (WIFSTOPPED(status))
+            {
+                printf("Process stopped! Exiting\n");
+            }
             status = WEXITSTATUS(status);
         }
     } while (!exit_condition);
@@ -760,6 +772,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     posix_spawnattr_destroy(&spawn_attr);
     if (ret != 0)
     {
+        std::cerr << "Posix spawn failed" << std::endl;
         close(pipe_cout[0]);
         close(pipe_cout[1]);
         return "";
@@ -769,28 +782,46 @@ std::string OS::SpawnWithRedirect(const std::string command)
     bool exit_condition = false;
     do
     {
-        struct pollfd polls;
-        polls.events = POLLIN;
-        polls.fd = pipe_cout[0];
-        polls.revents = 0;
-        int poll_ret = poll(&polls, 1, 100);
-        if (poll_ret > 0 && (polls.revents & POLLIN))
+        struct pollfd polls[2] = {};
+        polls[0].events = POLLIN;
+        polls[0].fd = pipe_cout[0];
+        polls[0].revents = 0;
+        polls[1].events = POLLIN;
+        polls[1].fd = pipe_cout[1];
+        polls[1].revents = 0;
+
+        int poll_ret = poll(polls, 2, 100);
+        if (poll_ret > 0 && polls[0].revents & POLLIN)
         {
-            char bytes_to_read[120];
+            char bytes_to_read[1000];
             int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
-                output_str += std::string(bytes_to_read, bytes_read);
+                std::cout << std::string(bytes_to_read, bytes_read) << std::endl;
             }
         }
-        if ((poll_ret && !(polls.revents & POLLIN)) || poll_ret == 0)
+        if (poll_ret > 0 && polls[1].revents & POLLIN)
         {
-            ret_wait = waitpid(default_pid, &status, WUNTRACED | WCONTINUED);
+            char bytes_to_read[1000];
+            int bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
+            }
+        } 
+        if ((poll_ret > 0 && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
+        {
+            ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
             if (ret == -1)
             {
                 OS::WriteToConsole("An error has occured!");
             }
             exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            if (WIFSTOPPED(status))
+            {
+                printf("Process stopped! Exiting\n");
+            }
+            status = WEXITSTATUS(status);
         }
 
     } while (!exit_condition);

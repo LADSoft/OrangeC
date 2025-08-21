@@ -529,7 +529,18 @@ int MakeMain::Run(int argc, char** argv)
     }
     auto files =
         ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return !help.GetValue(); });
+    LoadEnvironment();
     OrangeC::Utils::BasicLogger::SetVerbosity((int)verbose2.GetExists() + verbose2.GetValue().length());
+    auto* var = VariableContainer::Instance()->Lookup("MAKE_LEVEL");
+    if (!var)
+    {
+        OrangeC::Utils::BasicLogger::SetPrologue(std::string("[OMAKE(") + std::to_string(OS::GetProcessId()) + ",0)]");
+    }
+    else
+    {
+        OrangeC::Utils::BasicLogger::SetPrologue(std::string("[OMAKE(") + std::to_string(OS::GetProcessId()) + "," +
+                                                 var->GetValue() + ")]");
+    }
     LoadEquates(files);
     char* cpath = getenv("CPATH");
     if (cpath)

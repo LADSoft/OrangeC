@@ -12,7 +12,7 @@ b/testb:
 	$(MAKE) -C b
 a/testa:
 	$(MAKE) -C a
-.PHONY: clean
+.PHONY: clean test testa testb
 clean:
 	$(MAKE) -C b clean
 	$(MAKE) -C a clean

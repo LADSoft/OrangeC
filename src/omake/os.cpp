@@ -645,7 +645,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             {
                 std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
             }
-        } 
+        }
         if ((poll_ret && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
         {
             ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
@@ -653,16 +653,27 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             {
                 OS::WriteToConsole("An error has occured!");
             }
+            if (ret_wait == 0)
+            {
+                continue;
+            }
             exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            if (WIFEXITED(status))
+            {
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " exited. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+            }
             if (WIFSTOPPED(status))
             {
-                printf("Process stopped! Exiting\n");
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " stopped. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
             }
             status = WEXITSTATUS(status);
         }
     } while (!exit_condition);
     close(pipe_cout[0]);
     close(pipe_cout[1]);
+    OrangeC::Utils::BasicLogger::debug("OS::Spawn returning from command: " + command + " with status: " + std::to_string(status));
     return status;
 #endif
 }
@@ -808,7 +819,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
             {
                 std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
             }
-        } 
+        }
         if ((poll_ret > 0 && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
         {
             ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
@@ -816,10 +827,20 @@ std::string OS::SpawnWithRedirect(const std::string command)
             {
                 OS::WriteToConsole("An error has occured!");
             }
+            if (ret_wait == 0)
+            {
+                continue;
+            }
             exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            if (WIFEXITED(status))
+            {
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " exited. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+            }
             if (WIFSTOPPED(status))
             {
-                printf("Process stopped! Exiting\n");
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " stopped. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
             }
             status = WEXITSTATUS(status);
         }
@@ -827,6 +848,8 @@ std::string OS::SpawnWithRedirect(const std::string command)
     } while (!exit_condition);
     close(pipe_cout[0]);
     close(pipe_cout[1]);
+    OrangeC::Utils::BasicLogger::debug("OS::SpawnWithRedirect returning from command: " + command +
+                                       " with status: " + std::to_string(status));
     return output_str;
 #endif
 }

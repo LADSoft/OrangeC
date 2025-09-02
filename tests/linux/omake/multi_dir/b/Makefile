@@ -3,6 +3,6 @@ testb:
 test: testb
 	./testb
 
-.PHONY: clean
+.PHONY: clean test
 clean:
 	rm -f testb testb.o

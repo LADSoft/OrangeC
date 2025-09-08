@@ -338,15 +338,18 @@ static std::list<TEMPLATEPARAMPAIR>** addStructParam(std::list<TEMPLATEPARAMPAIR
                 *pt = templateParamPairListFactory.CreateList();
             (*pt)->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
             *(*pt)->back().second = *search.second;
-            if (search.second->packed && search.second->byPack.pack && search.second->byPack.pack->size())
+            if (search.second->packed)
             {
                 auto tpl = (*pt)->back().second->byPack.pack = templateParamPairListFactory.CreateList();
-                for (auto& tpx : *search.second->byPack.pack)
+                if (search.second->byPack.pack && search.second->byPack.pack->size())
                 {
-                    tpl->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
-                    *tpl->back().second = *tpx.second;
-                    if ((!definingTemplate || instantiatingTemplate) && tpl->back().second->byClass.dflt)
-                        tpl->back().second->byClass.dflt = SynthesizeType(tpl->back().second->byClass.dflt, enclosing, false);
+                    for (auto& tpx : *search.second->byPack.pack)
+                    {
+                        tpl->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
+                        *tpl->back().second = *tpx.second;
+                        if ((!definingTemplate || instantiatingTemplate) && tpl->back().second->byClass.dflt)
+                            tpl->back().second->byClass.dflt = SynthesizeType(tpl->back().second->byClass.dflt, enclosing, false);
+                    }
                 }
             }
             else
@@ -1388,7 +1391,7 @@ SYMBOL* SynthesizeResult(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
                                                 }
                                                 else
                                                 {
-                                                    auto sym = CopySymbol(a, true);
+                                                    auto sym = CopySymbol(a);
                                                     sym->name = AnonymousName();
                                                     sym->packed = false;
                                                     sym->tp = tpl.second->byClass.val;
@@ -1472,6 +1475,7 @@ static bool ValidArg(Type* tp)
                 {
                     while (tp->IsPtr())
                         tp = tp->btp;
+                    tp = tp->BaseType();
                     if (tp->type == BasicType::templateparam_)
                     {
                         if (tp->templateParam->second->type != TplType::typename_)
@@ -2709,7 +2713,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
         {
             Type* tp2 = nullptr;
 
-            if (sp1->sb->instantiated && matchOverload(sym->tp, sp1->tp))
+            if (matchOverload(sym->tp, sp1->tp))
             {
                 ok = false;
                 break;
@@ -3552,6 +3556,15 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* u
                         {
                             if (itParams->second->type == TplType::typename_)
                             {
+                                if (itParams->second->byClass.dflt && itParams->second->byClass.dflt->IsDeferred())
+                                {
+                                    Type** tp1 = &itParams->second->byClass.dflt;
+                                    while ((*tp1)->type != BasicType::templatedeferredtype_)
+                                        tp1 = &(*tp1)->btp;
+                                    auto tp = Type::MakeType(BasicType::struct_);
+                                    tp->sp = (*tp1)->sp;
+                                    itParams->second->byClass.dflt = tp;
+                                }
                                 if (itParams->second->byClass.dflt &&
                                     !Deduce(itParams->second->byClass.dflt, itParams->second->byClass.val, nullptr, true, true,
                                             false, false))
@@ -4362,8 +4375,8 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     }
     if (sp->sb->specializations)
         n += sp->sb->specializations->size();
-    spList = Allocate<SYMBOL*>(n);
-    origList = Allocate<SYMBOL*>(n);
+    spList = (SYMBOL**)alloca(n* sizeof(SYMBOL*));
+    origList = (SYMBOL**)alloca(n * sizeof(SYMBOL*));
     origList[i++] = sp;
     if (sp->sb->specializations)
         for (auto s : *sp->sb->specializations)
@@ -4532,7 +4545,6 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, Linkage::cdecl_);
-
             auto found2 = classTemplateMap2[found1->sb->decoratedName];
             if (found2 && (found2->sb->specialized || !found1->sb->specialized) &&
                 allTemplateArgsSpecified(found2, found2->templateParams))
@@ -4605,8 +4617,8 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
     Type** tpi;
     if (sp->sb->specializations)
         n += sp->sb->specializations->size();
-    spList = Allocate<SYMBOL*>(n);
-    origList = Allocate<SYMBOL*>(n);
+    spList = (SYMBOL**)alloca(n * sizeof(SYMBOL*));
+    origList = (SYMBOL**)alloca(n * sizeof(SYMBOL*));
     origList[0] = sp;
     spList[0] = ValidateClassTemplate(sp, unspecialized, args);
     if (!spList[0])
@@ -6139,8 +6151,11 @@ static std::list<TEMPLATEPARAMPAIR>* TypeAliasAdjustArgs(std::list<TEMPLATEPARAM
     }
     for (; itt != tpx->end() && n; ++itt, ++ita, n--)
     {
-        newNames.push_back(std::pair<SYMBOL*, SYMBOL*>(itt->first, ita->first));
-        ita->first = itt->first;
+        if (itt->first != ita->first)
+        {
+            newNames.push_back(std::pair<SYMBOL*, SYMBOL*>(itt->first, ita->first));
+            ita->first = itt->first;
+        }
     }
     for (; itt != tpx->end(); ++itt)
     {

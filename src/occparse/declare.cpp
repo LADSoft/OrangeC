@@ -1442,7 +1442,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
             browse_variable(sp);
-            (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
+            (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass && !funcsp ? globalNameSpace->front()->tags : table)->Add(sp);
         }
     }
     else
@@ -3234,8 +3234,6 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         if (nsv->size() > 1)
                             nsv->front()->name->sb->value.i++;
 
-                        auto list = Allocate<Optimizer::LIST>();
-                        list->next = nullptr;
                         nameSpaceList.clear();
                         nameSpaceList.push_back(nsv->front()->name);
                         globalNameSpace = nsv;
@@ -3654,7 +3652,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                 for (auto sp : *spi->tp->syms)
                                 {
-                                    if (!sp->sb->instantiated)
+                                    if (!sp->sb->instantiated && sp->sb->templateLevel)
                                         ScrubTemplateValues(sp);
                                 }
                                 if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
@@ -3664,7 +3662,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         instantiatingTemplate++;
                                     InitializeFunctionArguments(sp);
                                     sym = searchOverloads(sp, spi->tp->syms);
-                                    if (fullySpecialized && sym && (!sym->sb->templateLevel || sym->templateParams->size() > 1))
+                                    if (fullySpecialized && sym && ((!sym->sb->templateLevel && !sym->sb->parentClass) || (sym->templateParams  && sym->templateParams->size() > 1)))
                                         sym = nullptr;
                                     if (definingTemplate == 1 && sp->templateParams && sp->templateParams->size() == 1 &&
                                         !sp->templateParams->front().second->bySpecialization.types)

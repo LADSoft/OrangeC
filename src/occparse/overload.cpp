@@ -85,6 +85,7 @@ static int GetHashValue(const char* string)
 
 bool matchOverload(Type* tnew, Type* told)
 {
+    auto funcold = told->BaseType();
     auto hnew = tnew->BaseType()->syms->begin();
     auto hnewe = tnew->BaseType()->syms->end();
     auto hold = told->BaseType()->syms->begin();
@@ -121,7 +122,9 @@ bool matchOverload(Type* tnew, Type* told)
         }
         tnew = snew->tp->BaseType();
         told = sold->tp->BaseType();
-        told->InstantiateDeferred();
+        told = sold->tp->BaseType();
+        if (funcold->sp && !funcold->sp->sb->templateLevel)
+            told->InstantiateDeferred();
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
             if ((told->type != tnew->type || (!told->CompatibleType(tnew) && !SameTemplatePointedTo(tnew, told, true))) &&
@@ -329,6 +332,11 @@ bool matchOverload(Type* tnew, Type* told)
                     if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
                         if (tpn->BaseType()->type != BasicType::templateselector_)
                             return false;
+                    SYMBOL* typedefSym = nullptr;
+                    if (tps->type == BasicType::typedef_)
+                    {
+                        typedefSym = tps->sp;
+                    }
                     tpn = tpn->BaseType();
                     tps = tps->BaseType();
                     if (tpn->CompatibleType(tps) ||
@@ -377,13 +385,28 @@ bool matchOverload(Type* tnew, Type* told)
                                     if ((*tpn->sp->sb->templateSelector)[2].name[0])
                                         return false;
                                 }
-                                else if (told->BaseType()->btp->type == BasicType::typedef_ &&
-                                         strcmp(told->BaseType()->btp->sp->name, (*tpn->sp->sb->templateSelector)[2].name) == 0)
+                                if (typedefSym)
                                 {
+                                    if (strcmp((*tpn->sp->sb->templateSelector)[2].name,
+                                        typedefSym->name) == 0)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        return false;
+                                    }
+
                                 }
                                 else
                                 {
-                                    return false;
+                                    if (strcmp((*tpn->sp->sb->templateSelector)[2].name,
+                                        (*tps->sp->sb->templateSelector)[2].name) == 0)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        return false;
+                                    }
                                 }
                             }
                         }
@@ -4202,6 +4225,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                         {
                             InitializeFunctionArguments(sym);
                         }
+
                         spList[n] = sym;
                     }
                 }
@@ -4782,6 +4806,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     enclosingDeclarations.Release();
                     return nullptr;
                 }
+
                 spList.resize(n);
                 icsList.resize(n);
                 lenList.resize(n);

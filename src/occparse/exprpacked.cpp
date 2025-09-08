@@ -995,7 +995,7 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
                     SYMBOL* syms[200];
                     int count = 0, n = 0;
                     GatherPackedVars(&count, syms, arg->exp);
-                    if (count)
+                    if (count && arg->exp->packedfunc)
                     {
                         for (int i = 0; i < count; i++)
                         {

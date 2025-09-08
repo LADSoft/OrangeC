@@ -2033,7 +2033,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             init->init = nullptr;
                             argumentNesting++;
                             lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, _F_MEMBERINITIALIZER);
+                                           false, _F_MEMBERINITIALIZER | _F_PACKABLE);
                             argumentNesting--;
                             done = true;
                             needkw(&lex, bypa ? Keyword::closepa_ : Keyword::end_);

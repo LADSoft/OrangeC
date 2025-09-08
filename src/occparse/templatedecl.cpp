@@ -777,11 +777,23 @@ LexList* GetTemplateArguments(LexList* lex, SYMBOL* funcsp, SYMBOL* templ, std::
 
                     if (itorig != iteorig)
                         (*lst)->back().first = itorig->first;
-                    if (itorig != iteorig && itorig->second->type == TplType::template_ && tp->IsStructured() &&
-                        tp->BaseType()->sp->sb->templateLevel)
+                    if (itorig != iteorig && itorig->second->type == TplType::template_)
                     {
-                        (*lst)->back().second->type = TplType::template_;
-                        (*lst)->back().second->byTemplate.dflt = tp->BaseType()->sp;
+                        if (tp->IsStructured() && tp->BaseType()->sp->sb->templateLevel)
+                        {
+                            (*lst)->back().second->type = TplType::template_;
+                            (*lst)->back().second->byTemplate.dflt = tp->BaseType()->sp;
+                        }
+                        else if (tp->type == BasicType::typedef_ && tp->sp->sb->templateLevel)
+                        {
+                            (*lst)->back().second->type = TplType::template_;
+                            (*lst)->back().second->byTemplate.dflt = tp->sp;
+                        }
+                        else
+                        {
+                            (*lst)->back().second->type = TplType::typename_;
+                            (*lst)->back().second->byClass.dflt = tp;
+                        }
                     }
                     else
                     {

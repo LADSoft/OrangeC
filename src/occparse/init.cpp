@@ -2182,7 +2182,7 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
         itype->UpdateRootTypes();
         sym->tp->UpdateRootTypes();
         CheckThroughConstObject(itype, exp);
-        if (!tp->IsRef() &&
+        if (!itype->IsRef() &&
             ((tp->IsConst() && !itype->BaseType()->btp->IsConst()) || (tp->IsVolatile() && !itype->BaseType()->btp->IsVolatile())))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
         else if (itype->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
@@ -3765,10 +3765,50 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
             }
             else
             {
-                lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, 0);
+                if (flags & _F_PACKABLE)
+                {
+                    EnterPackedSequence();
+                }
+                LexList* start = lex;
+                lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
                 tp1->InstantiateDeferred();
                 if (!tp1)
                     error(ERR_EXPRESSION_SYNTAX);
+                else if (itype->IsArray() && (flags & _F_PACKABLE) && IsPacking() && MATCHKW(lex, Keyword::ellipse_))
+                {
+                    Type* baseType = itype->BaseType()->btp;
+                    PushPackIndex();
+                    int n = GetPackCount();
+                    bool first = true;
+                    std::list<Initializer*>* it = nullptr;
+                    for (int i = 0; i < n; i++)
+                    {
+                        SetPackIndex(i);
+                        lex = SetAlternateLex(start);
+                        lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
+                        if (!baseType->CompatibleType(tp1) && !SameTemplate(baseType, tp1))
+                            errorConversionOrCast(true, tp1, baseType);
+                        if (exp1)
+                        {
+                            InsertInitializer(&it, itype, exp1, offset, false);
+                            offset += baseType->size;
+                        }
+                    }
+                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                        !base->sb->attribs.inheritable.isInline)
+                    {
+                        insertDynamicInitializer(base, it);
+                    }
+                    else
+                    {
+                        *init = it;
+                    }
+                    // should be a ... here...
+                    lex = getsym();
+                    PopPackIndex();
+                    ClearPackedSequence();
+                }
                 else if (!itype->CompatibleType(tp1) && !SameTemplate(itype, tp1))
                 {
                     bool toErr = true;
@@ -3818,6 +3858,10 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                     {
                         errorConversionOrCast(true, tp1, itype);
                     }
+                }
+                if (flags & _F_PACKABLE)
+                {
+                    LeavePackedSequence();
                 }
                 if (exp1)
                 {

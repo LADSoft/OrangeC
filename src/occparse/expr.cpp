@@ -1597,6 +1597,7 @@ static LexList* expression_member(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRE
                 lex = getsym();
                 sp2->sb->attribs.inheritable.used = true;
                 *tp = sp2->tp;
+                *tp = ResolveTemplateSelectors(sp2, *tp);
                 while ((*tp)->type == BasicType::typedef_)
                     (*tp) = (*tp)->btp;
                 tpb = (*tp)->BaseType();
@@ -2523,6 +2524,7 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                     if (definingTemplate)
                     {
                         (*lptr)->push_back(p);
+                        p->exp->packedfunc = true;
                     }
                     else if (p->exp && p->exp->type != ExpressionNode::packedempty_)  // && p->tp->type != BasicType::any_)
                     {

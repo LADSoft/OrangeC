@@ -1417,7 +1417,7 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
             lex = getsym();
         }
         lex = getIdName(lex, funcsp, buf, sizeof(buf), &ov, &castType);
-        if (buf[0])
+        if (buf[0] &&(!definingTemplate || instantiatingTemplate || !encloser || encloser->tp->BaseType()->type != BasicType::templateselector_))
         {
             if (encloser)
                 encloser->tp->InstantiateDeferred();

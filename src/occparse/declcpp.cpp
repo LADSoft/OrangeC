@@ -1102,7 +1102,9 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
     enclosingDeclarations.Add(declsym);
     do
     {
-        LexList* startLex = lex;
+        // this next needs work, OCC throws errors because of the gotos later in this function...
+        LexList* startLex;
+        startLex = lex;
         ParseAttributeSpecifiers(&lex, funcsp, true);
         EnterPackedSequence();
         if (MATCHKW(lex, Keyword::decltype_))
@@ -1120,7 +1122,7 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
             }
             else
             {
-                auto bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
+                auto bc = innerBaseClass(declsym, tp->BaseType()->sp, isvirtual, currentAccess);
                 if (bc)
                     baseClasses->push_back(bc);
             }

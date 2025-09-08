@@ -2715,6 +2715,17 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 lex = getsym();
             }
             returnexp = exp1;
+            if (tp1->BaseType()->type == BasicType::templateparam_)
+            {
+                auto tp2 = &tp1;
+                while ((*tp2)->type != BasicType::templateparam_)
+                    tp2 = &(*tp2)->btp;
+                auto tpn = (*tp2)->templateParam->second->byClass.val;
+                if (!tpn)
+                    tpn = (*tp2)->templateParam->second->byClass.dflt;
+                if (tpn)
+                    *tp2 = tpn;
+            }
             if (functionReturnType->BaseType()->type == BasicType::string_)
             {
                 if (returnexp->type == ExpressionNode::labcon_)
@@ -2732,7 +2743,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     {
                         auto tpx = functionReturnType;
                         if (tpx->IsRef())
-                            tpx = tpx->BaseType()->btp;
+                            tpx = tpx->BaseType()->btp->BaseType();
                         if (tpx->IsStructured())
                         {
                             if (!doStaticCast(&functionReturnType, tp1, &returnexp, funcsp, true))

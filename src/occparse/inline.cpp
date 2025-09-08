@@ -114,7 +114,7 @@ void dumpInlines(void)
                 done = true;
                 for (auto sym : inlines)
                 {
-                    if (!sym->sb->dontinstantiate &&
+                    if (!sym->sb->dontinstantiate  &&
                         (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
                     {
                         if (!sym->sb->didinline && !sym->sb->dontinstantiate)

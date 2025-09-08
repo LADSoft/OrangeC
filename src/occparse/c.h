@@ -489,6 +489,7 @@ typedef struct expr
     int structByAddress : 1;
     int isStructAddress : 1;
     int packedArray : 1;
+    int packedfunc : 1;
 } EXPRESSION;
 
 typedef struct _msilarray

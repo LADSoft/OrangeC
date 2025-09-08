@@ -448,29 +448,32 @@ static bool isStandardLayout(Type* tp, SYMBOL** result)
             return false;
         if (n)
         {
-            SYMBOL* first = nullptr;
-            for (auto sym : *found->tp->BaseType()->syms)
+            if (!found->tp->IsArithmetic())
             {
-                if (!first)
-                    first = sym;
-                if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
+                SYMBOL* first = nullptr;
+                for (auto sym : *found->tp->BaseType()->syms)
                 {
-                    if (sym->tp->IsStructured() && !isStandardLayout(sym->tp, nullptr))
-                        return false;
-                    if (access != AccessLevel::none_)
+                    if (!first)
+                        first = sym;
+                    if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
                     {
-                        if (access != sym->sb->access)
+                        if (sym->tp->IsStructured() && !isStandardLayout(sym->tp, nullptr))
                             return false;
+                        if (access != AccessLevel::none_)
+                        {
+                            if (access != sym->sb->access)
+                                return false;
+                        }
+                        access = sym->sb->access;
                     }
-                    access = sym->sb->access;
                 }
-            }
-            if (first && first->tp->IsStructured())
-            {
-                if (found->sb->baseClasses)
-                    for (auto bc : *found->sb->baseClasses)
-                        if (bc->cls->tp->CompatibleType(first->tp))
-                            return false;
+                if (first && first->tp->IsStructured())
+                {
+                    if (found->sb->baseClasses)
+                        for (auto bc : *found->sb->baseClasses)
+                            if (bc->cls->tp->CompatibleType(first->tp))
+                                return false;
+                }
             }
         }
         if (result)

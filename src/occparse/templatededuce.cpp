@@ -1248,7 +1248,9 @@ void ScrubTemplateValues(SYMBOL* func)
     }
     Type* retval = func->tp->BaseType()->btp->BaseType();
     if (retval->IsStructured() && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
+    {
         ClearArgValues(retval->sp->templateParams, retval->sp->sb->specialized);
+    }
 }
 void PushPopTemplateArgs(SYMBOL* func, bool push)
 {

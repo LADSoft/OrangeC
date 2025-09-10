@@ -12,7 +12,7 @@ namespace OMAKE
 {
 bool POSIXJobServer::TryTakeNewJob()
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TryTakeNewJob function start");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "TryTakeNewJob function start");
     if (writefd == -1 || readfd == -1)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
@@ -37,7 +37,7 @@ bool POSIXJobServer::TryTakeNewJob()
 #if EAGAIN != EWOULDBLOCK
                 case EWOULDBLOCK:
 #endif
-                    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG,
+                    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
                                                      "TryTakeNewJob function returning -1 after a blocking error");
 
                     return false;
@@ -51,13 +51,13 @@ bool POSIXJobServer::TryTakeNewJob()
         }
     }
     //    current_jobs++;
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TryTakeNewJob function final end");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "TryTakeNewJob function final end");
 
     return false;
 }
 bool POSIXJobServer::TakeNewJob()
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TakeNewJob start");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "TakeNewJob start");
     if (writefd == -1 || readfd == -1)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
@@ -94,13 +94,13 @@ bool POSIXJobServer::TakeNewJob()
         }
     }
     //    current_jobs++;
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "TakeNewJob end");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "TakeNewJob end");
 
     return false;
 }
 bool POSIXJobServer::ReleaseJob()
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "ReleaseJob start");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "ReleaseJob start");
 
     if (writefd == -1 || readfd == -1)
     {
@@ -119,7 +119,7 @@ bool POSIXJobServer::ReleaseJob()
         if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
         {
             popped_char_stack.pop();
-            OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "ReleaseJob popping");
+            OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "ReleaseJob popping");
         }
         else
         {
@@ -140,14 +140,14 @@ bool POSIXJobServer::ReleaseJob()
         }
     }
     current_jobs--;
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "ReleaseJob end");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "ReleaseJob end");
 
     return true;
 }
 // Populates the write pipe with the maximum number of jobs available in the pipe, only used on the first construction of the pipe
 static int populate_pipe(int writefd, int max_jobs)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "populate_pipe start");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "populate_pipe start");
     int total_written = 0;
     for (int i = 0; i < max_jobs; i++)
     {
@@ -181,13 +181,13 @@ static int populate_pipe(int writefd, int max_jobs)
             }
         }
     }
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "populate_pipe end");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "populate_pipe end");
 
     return true;
 }
 POSIXJobServer::POSIXJobServer(int max_jobs)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "PosixJobServer(max_jobs) start");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "PosixJobServer(max_jobs) start");
 
     int readwrite[2];
     if (max_jobs < 1)
@@ -204,7 +204,7 @@ POSIXJobServer::POSIXJobServer(int max_jobs)
         throw std::system_error(errno, std::generic_category());
     }
     populate_pipe(writefd, max_jobs);
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "PosixJobServer(max_jobs) end");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "PosixJobServer(max_jobs) end");
 }
 POSIXJobServer::POSIXJobServer(int read, int write)
 {

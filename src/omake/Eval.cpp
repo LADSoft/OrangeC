@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <sstream>
 #include "Utils.h"
+#include "BasicLogging.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -112,9 +113,11 @@ void Eval::Clear()
 
 std::string Eval::Evaluate()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Eval::Evaluate called with str: " + str);
     std::string rv = ParseMacroLine(str);
     if (expandWildcards)
         rv = wildcardinternal(rv);
+    OrangeC::Utils::BasicLogger::extremedebug("Eval::Evaluate returns: " + rv);
     return rv;
 }
 
@@ -1169,6 +1172,7 @@ std::string Eval::notdir(const std::string& names)
     std::string working = names;
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
+    std::string temp = working;
     std::string rv;
     while (!working.empty())
     {
@@ -1183,6 +1187,7 @@ std::string Eval::notdir(const std::string& names)
             rv += " ";
         rv += intermed;
     }
+    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: " + names + " evaluated names " + working + " returns: " + rv);
     return rv;
 }
 
@@ -1282,6 +1287,8 @@ std::string Eval::addprefix(const std::string& arglist)
 
 std::string Eval::wildcard(const std::string& arglist)
 {
+    OrangeC::Utils::BasicLogger::debug("Called Eval::wildcard with argslist: " + arglist);
+
     std::string names = strip(arglist);
     std::string rv;
     names = wildcardinternal(names);
@@ -1300,6 +1307,7 @@ std::string Eval::wildcard(const std::string& arglist)
 }
 std::string Eval::wildcardinternal(std::string& names)
 {
+    OrangeC::Utils::BasicLogger::debug("Called Eval::wildcardinternal with argslist: " + names);
     CmdFiles files;
     while (!names.empty())
     {
@@ -1313,6 +1321,7 @@ std::string Eval::wildcardinternal(std::string& names)
             rv += " ";
         rv += name;
     }
+    OrangeC::Utils::BasicLogger::debug("Returning from Eval::wildcardinternal: " + rv);
     return rv;
 }
 
@@ -1479,6 +1488,7 @@ std::string Eval::foreach (const std::string& arglist)
 
 std::string Eval::call(const std::string& arglist)
 {
+    OrangeC::Utils::BasicLogger::debug("Called Eval::call with argslist: " + arglist);
     std::string sub = arglist;
     std::string args;
     std::string rv;

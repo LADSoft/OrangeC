@@ -115,10 +115,11 @@ const char* MakeMain::builtinVars =
 #else
 // Default variables on UNIX, these are system wide default symlinks, use em.
 const char* MakeMain::builtinVars =
-    "CC=/bin/cc\n"
-    "CXX=/bin/c++\n"
-    "AS=/bin/as\n"
-    "YACC=/bin/yacc\n";
+    "CC=cc\n"
+    "CXX=c++\n"
+    "AS=as\n"
+    "YACC=yacc\n"
+    "LEX=lex\n";
 
 #endif
 const char* MakeMain::builtinRules =

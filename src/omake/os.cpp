@@ -367,7 +367,7 @@ void OS::JobRundown()
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "Entering OS::Spawn(command, env, output)");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "Entering OS::Spawn(command, env, output)");
 #ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
 
@@ -976,6 +976,9 @@ std::string OS::NormalizeFileName(const std::string file)
     // with '\\' when not in a string
     int stringchar = 0;
     bool escape = false;
+    auto shell_var = VariableContainer::Instance()->Lookup("SHELL");
+    bool counts_as_sh_exe = shell_var ? true : false;
+    OrangeC::Utils::BasicLogger::extremedebug("Counts as sh_exe in NormalizeFileName: " + std::to_string(counts_as_sh_exe));
     for (size_t i = 0; i < name.size(); i++)
     {
         if (stringchar)
@@ -991,7 +994,7 @@ std::string OS::NormalizeFileName(const std::string file)
         {
             stringchar = name[i];
         }
-        else if (isSHEXE)
+        else if (counts_as_sh_exe)
         {
             if (name[i] == '\\' && (!i || name[i - 1] != '='))
                 name[i] = '/';

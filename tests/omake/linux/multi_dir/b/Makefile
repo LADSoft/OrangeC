@@ -1,5 +1,5 @@
 testb:
-
+	$(CC) ./testb.c -o testb
 test: testb
 	./testb
 

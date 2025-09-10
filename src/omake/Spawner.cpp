@@ -300,7 +300,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
                         std::string str;
                         rv1 = OS::Spawn(cmd, environment,
                                         outputType != o_none && (outputType != o_recurse || !make1) ? &str : nullptr);
-                        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::INFO,
+                        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_INFO,
                                                          "Ran " + OS::JobName() + cmd + " returned " + std::to_string(rv1) + "\n");
                         if (outputType != o_none && !str.empty())
                             output.push_back(std::move(str));
@@ -367,7 +367,7 @@ bool Spawner::split(const std::string& cmd)
 }
 std::string Spawner::shell(const std::string& cmd)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::WARNING, OS::JobName() + " is running $(shell " + cmd + " )");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_WARNING, OS::JobName() + " is running $(shell " + cmd + " )");
     std::string rv = OS::SpawnWithRedirect(cmd);
     int n = rv.size();
     while (n && (rv[n - 1] == '\r' || rv[n - 1] == '\n'))

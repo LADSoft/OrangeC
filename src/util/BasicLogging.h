@@ -8,23 +8,20 @@ namespace Utils
 {
 enum class VerbosityLevels
 {
-    ERROR,
-    WARNING,
-    DEBUG,
-    INFO,
-    EXTREMEDEBUG,
+    VERB_ERROR,
+    VERB_WARNING,
+    VERB_DEBUG,
+    VERB_INFO,
+    VERB_EXTREMEDEBUG,
 };
 class BasicLogger
 {
     static int verbosity;
     static std::string prologue;
+
   public:
-    
     static void SetVerbosity(int iverbosity) { verbosity = iverbosity; }
-    static void SetPrologue(std::string str)
-    {
-        prologue = str;
-    }
+    static void SetPrologue(std::string str) { prologue = str; }
     static std::string stringify(std::string str) { return str; }
     static std::string stringify(const char* str) { return str; }
     template <typename T>
@@ -49,12 +46,12 @@ class BasicLogger
     template <typename... Args>
     static void extremedebug(Args... args)
     {
-        log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, args...);
+        log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, args...);
     }
     template <typename... Args>
     static void debug(Args... args)
     {
-        log(OrangeC::Utils::VerbosityLevels::DEBUG, args...);
+        log(OrangeC::Utils::VerbosityLevels::VERB_DEBUG, args...);
     }
 };
 class LoggerEnterExit

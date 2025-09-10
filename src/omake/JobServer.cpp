@@ -34,7 +34,7 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
 }
 std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_string)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "Entering GetJobServer(std::string)");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "Entering GetJobServer(std::string)");
 #ifdef TARGET_OS_WINDOWS
     return std::make_shared<WINDOWSJobServer>(auth_string);
 #else
@@ -42,14 +42,14 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_strin
     if (found != std::string::npos)
     {
         std::string new_string = std::string(auth_string.begin() + found + strlen("auth:"), auth_string.end());
-        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG,
+        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
                                          "GetJobServer(std::string) auth based, string: " + auth_string +
                                              " new string: " + new_string);
         return std::make_shared<POSIXJobServer>(new_string);
     }
     else
     {
-        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::EXTREMEDEBUG, "GetJobServer(std::string) fd based");
+        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "GetJobServer(std::string) fd based");
 
         int readfd, writefd;
         std::string read = auth_string.substr(0, auth_string.find(','));

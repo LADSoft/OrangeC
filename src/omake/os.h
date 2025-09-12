@@ -74,7 +74,8 @@ class OS
     static void JobRundown();
     static bool TakeJob();
     static void GiveJob();
-    static void WriteToConsole(std::string string);
+    static void WriteToConsole(const std::string& string);
+    static void WriteErrorToConsole(const std::string& string);
     static void ToConsole(std::deque<std::string>& strings);
     static void AddConsole(std::deque<std::string>& strings, std::string string);
     static int Spawn(const std::string command, EnvironmentStrings& environment, std::string* output);

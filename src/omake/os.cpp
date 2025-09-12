@@ -173,7 +173,7 @@ bool Time::operator>=(const Time& last)
 
 void OS::Init() {}
 
-void OS::WriteToConsole(std::string string)
+void OS::WriteToConsole(const std::string& string)
 {
     std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
 #ifdef TARGET_OS_WINDOWS
@@ -182,6 +182,17 @@ void OS::WriteToConsole(std::string string)
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
 #else
     printf("%s\n", string.c_str());
+#endif
+}
+void OS::WriteErrorToConsole(const std::string& string)
+{
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
+#ifdef TARGET_OS_WINDOWS
+
+    DWORD written;
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), string.c_str(), string.size(), &written, nullptr);
+#else
+    fprintf(stderr, "%s\n", string.c_str());
 #endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
@@ -628,22 +639,21 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         polls[1].revents = 0;
 
         int poll_ret = poll(polls, 2, 100);
+        char bytes_to_read[1000];
         if (poll_ret > 0 && polls[0].revents & POLLIN)
         {
-            char bytes_to_read[1000];
             int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
-                std::cout << std::string(bytes_to_read, bytes_read) << std::endl;
+                OS::WriteToConsole(std::string(bytes_to_read, bytes_read));
             }
         }
         if (poll_ret > 0 && polls[1].revents & POLLIN)
         {
-            char bytes_to_read[1000];
             int bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
-                std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
+                OS::WriteErrorToConsole(std::string(bytes_to_read, bytes_read));
             }
         }
         if ((poll_ret && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
@@ -802,13 +812,14 @@ std::string OS::SpawnWithRedirect(const std::string command)
         polls[1].revents = 0;
 
         int poll_ret = poll(polls, 2, 100);
+        char bytes_to_read[1000];
         if (poll_ret > 0 && polls[0].revents & POLLIN)
         {
             char bytes_to_read[1000];
             int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
-                std::cout << std::string(bytes_to_read, bytes_read) << std::endl;
+                output_str += std::string(bytes_to_read, bytes_read);
             }
         }
         if (poll_ret > 0 && polls[1].revents & POLLIN)
@@ -817,7 +828,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
             int bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
             if (bytes_read > 0)
             {
-                std::cerr << std::string(bytes_to_read, bytes_read) << std::endl;
+                OS::WriteErrorToConsole(std::string(bytes_to_read, bytes_read));
             }
         }
         if ((poll_ret > 0 && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)

@@ -163,6 +163,7 @@ void Eval::RemoveVPath(const std::string& path)
 }
 std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Calling Eval::ExtractFirst with value: " + value + " and seps: " + seps);
     StripLeadingSpaces(value);
     int n = value.size();
     if (seps == " " && (value[0] == '"' || value[0] == '\''))
@@ -218,6 +219,7 @@ std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
         value.replace(0, n, "");
     else
         value.replace(0, n + 1, "");
+    OrangeC::Utils::BasicLogger::extremedebug("Returning from Eval::ExtractFirst with value: " + value + " and rv: " + rv);
 
     return rv;
 }
@@ -1287,7 +1289,7 @@ std::string Eval::addprefix(const std::string& arglist)
 
 std::string Eval::wildcard(const std::string& arglist)
 {
-    OrangeC::Utils::BasicLogger::debug("Called Eval::wildcard with argslist: " + arglist);
+    OrangeC::Utils::BasicLogger::extremedebug("Called Eval::wildcard with argslist: " + arglist);
 
     std::string names = strip(arglist);
     std::string rv;
@@ -1302,12 +1304,13 @@ std::string Eval::wildcard(const std::string& arglist)
             rv += current;
         }
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Returning from Eval::wildcard: " + rv);
 
     return rv;
 }
 std::string Eval::wildcardinternal(std::string& names)
 {
-    OrangeC::Utils::BasicLogger::debug("Called Eval::wildcardinternal with argslist: " + names);
+    OrangeC::Utils::BasicLogger::extremedebug("Called Eval::wildcardinternal with argslist: " + names);
     CmdFiles files;
     while (!names.empty())
     {
@@ -1321,7 +1324,7 @@ std::string Eval::wildcardinternal(std::string& names)
             rv += " ";
         rv += name;
     }
-    OrangeC::Utils::BasicLogger::debug("Returning from Eval::wildcardinternal: " + rv);
+    OrangeC::Utils::BasicLogger::extremedebug("Returning from Eval::wildcardinternal: " + rv);
     return rv;
 }
 

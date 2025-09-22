@@ -23,7 +23,7 @@
 
 ifeq "$(COMPILER)" "gcc-linux"
 MKDIR := mkdir -p
-DEL := rm -r
+DEL := rm
 COPY := cp
 else
 MKDIR := mkdir
@@ -95,7 +95,7 @@ $(MKDIR):
 copyfiles: $(MKDIR)
 	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include 2> $(NULLDEV)
 	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c 2> $(NULLDEV)
-	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)sys
+	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)sys 2> $(NULLDEV)
 	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32 2> $(NULLDEV)
 	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)c$(PATHEXT2)win32$(PATHEXT2)gl 2> $(NULLDEV)
 	-$(MKDIR) ..$(PATHEXT2)..$(PATHEXT2)include$(PATHEXT2)support 2> $(NULLDEV)
@@ -146,24 +146,22 @@ ifdef DISTMAKE
 	 	include $(DISTMAKE)
 
 DISTRIBUTE:
-	-$(MKDIR) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys
-	-$(MKDIR) $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
-	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2) $(DISTINC)
-	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)*.h $(DISTINC)
-	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32$(PATHEXT2) $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32
-	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32
-	$(COPYDIR) cpp$(PATHEXT2)stdinc_libcxx$(PATHEXT2) $(DISTINC)
-	$(COPYDIR) cpp$(PATHEXT2)stdinc_libcxx$(PATHEXT2)*.h $(DISTINC)
-	$(COPYDIR) stdinc$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)c
-	$(COPYDIR) stdinc$(PATHEXT2)sys$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys
-	$(COPYDIR) platform$(PATHEXT2)win32$(PATHEXT2)inc$(PATHEXT2)*.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)%. $(DISTINC)
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)%.h $(DISTINC)
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32$(PATHEXT2)%. $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32
+	$(COPYDIR) cpp$(PATHEXT2)libcxx$(PATHEXT2)include$(PATHEXT2)support$(PATHEXT2)win32$(PATHEXT2)%.h $(DISTINC)$(PATHEXT2)support$(PATHEXT2)win32
+	$(COPYDIR) cpp$(PATHEXT2)stdinc_libcxx$(PATHEXT2)%. $(DISTINC)
+	$(COPYDIR) cpp$(PATHEXT2)stdinc_libcxx$(PATHEXT2)%.h $(DISTINC)
+	$(COPYDIR) stdinc$(PATHEXT2)%.h $(DISTINC)$(PATHEXT2)c
+	$(COPYDIR) stdinc$(PATHEXT2)sys$(PATHEXT2)%.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)sys
+	$(COPYDIR) platform$(PATHEXT2)win32$(PATHEXT2)inc$(PATHEXT2)%.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
 ifndef BUILDENV
-	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)*.l $(DISTLIB)
-	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)*.o $(DISTLIB)
+	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.l $(DISTLIB)
+	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.o $(DISTLIB)
 ifneq "$(ORANGEC_ONLY)" "YES"
 #	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.exe $(DISTLIB)
 endif
-	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)*.dll $(DISTBIN)
+	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.dll $(DISTBIN)
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif

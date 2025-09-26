@@ -86,7 +86,7 @@ int main(int argc, char** argv)
     char filename[PATH_MAX], *f;
     if (argc != 3)
     {
-        printf("wrong number of args");
+        fprintf(stderr, "wrong number of args\n");
         return 1;
     }
     strcpy(filename, argv[1]);
@@ -101,8 +101,10 @@ int main(int argc, char** argv)
         {
             char* filname = glob_fils.gl_pathv[fil];
             size_t len = strlen(filname);
+            struct stat my_stat;
+            stat(filename, &my_stat);
             // if there's a trailing slash the file is a directory and can be ignored per the WINDOWs behavior
-            if (len < PATH_MAX || filename[len - 1] == '/')
+            if (len < PATH_MAX && S_ISDIR(my_stat.st_mode))
             {
                 char newFile[PATH_MAX];
                 char filname_COPY[PATH_MAX];
@@ -114,6 +116,7 @@ int main(int argc, char** argv)
                     strcat(newFile, "/");
                 }
                 strcat(newFile, basename(filname_COPY));
+                printf("copying %s to %s\n", newFile, filname_COPY);
                 struct stat filstat = {0};
                 stat(filname, &filstat);
 

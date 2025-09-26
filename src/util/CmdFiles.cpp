@@ -136,7 +136,6 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
                 if (strcmp(find.name, ".") != 0 && strcmp(find.name, "..") != 0)
                 {
                     std::string file(path + std::string(find.name));
-                    OrangeC::Utils::BasicLogger::extremedebug("CmdFiles::Add pushing back the name: " + file);
                     names.push_back(std::move(file));
                     rv = true;
                 }

@@ -136,6 +136,7 @@ void DumpIncDec(SYMBOL* funcsp)
 }
 Optimizer::IMODE* LookupExpression(Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right)
 {
+    static Optimizer::QUAD name_value_dag;
     if (right && right->mode == Optimizer::i_immed && right->size != left->size)
     {
         // if it is an address mode with a right constant we do this so that we can
@@ -159,10 +160,12 @@ Optimizer::IMODE* LookupExpression(Optimizer::i_ops op, int size, Optimizer::IMO
         }
     }
     Optimizer::IMODE* ap = nullptr;
-    Optimizer::QUAD head = {op, left, right};
+    name_value_dag.dc.opcode = op;
+    name_value_dag.dc.left = left;
+    name_value_dag.dc.right = right;
     if (!left->bits && (!right || !right->bits))
     {
-        auto it = name_value_hash.find(&head);
+        auto it = name_value_hash.find(&name_value_dag);
         if (it != name_value_hash.end())
             ap = it->second;
     }

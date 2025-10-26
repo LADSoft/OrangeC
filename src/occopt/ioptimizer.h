@@ -509,6 +509,7 @@ typedef struct _phidata
  * icode node
  * this is also used for dag nodes
  */
+// we are doing comparisons on this...   the packing on MSVC caused problems...
 struct _basic_dag
 {
     enum i_ops opcode; /* opcode */

@@ -379,7 +379,7 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                         *tp = itTA->second->byClass.val;
                     }
                     to->second->deduced = true;
-                    if (to->second->byClass.dflt && to->second->byClass.val &&
+                    if (to->second->byClass.dflt && to->second->byClass.val && to->second->byClass.dflt->type != BasicType::templateselector_ &&
                         !Deduce(to->second->byClass.dflt, to->second->byClass.val, nullptr, change, byClass, false, false))
                         return false;
                     break;
@@ -918,23 +918,46 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
                 if (Pb->btp->type != BasicType::auto_ &&
                     !Deduce(Pb->btp, Ab->btp, nullptr, change, byClass, allowSelectors, baseClasses))
                     return false;
-                while (ita != itaend && itp != itpend)
+                if (ita == itaend && itp != itpend)
+                {
+                    SYMBOL* sp = *itp;
+                    if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed)
+                    {
+                        if (!sp->tp->templateParam->second->byPack.pack || !sp->tp->templateParam->second->byPack.pack->size())
+                        {
+                            sp->tp->templateParam->second->byPack.pack = nullptr;
+                            ++itp;
+                        }
+                    }
+                }
+                else while (ita != itaend && itp != itpend)
                 {
                     SYMBOL* sp = *itp;
                     if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed)
                     {
                         sp->tp->templateParam->second->packed = false;
                         std::list<Type*> types;
-                        for (; ita != itaend; ++ita)
+                        if ((*ita)->tp->type != BasicType::void_)
                         {
-                            if (!Deduce(sp->tp, (*ita)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
+                            for (; ita != itaend; ++ita)
                             {
-                                sp->tp->templateParam->second->packed = true;
-                                sp->tp->templateParam->second->byClass.val = nullptr;
-                                return false;
+                                if ((*ita)->tp->type == BasicType::templateparam_ && (*ita)->tp->templateParam->second->packed)
+                                {
+                                    if ((*ita)->tp->templateParam->second->byPack.pack)
+                                        for (auto&& tpl : *(*ita)->tp->templateParam->second->byPack.pack)
+                                        {
+                                            types.push_back(tpl.second->byClass.val);
+                                        }
+                                }
+                                else
+                                {
+                                    types.push_back((*ita)->tp);
+                                }
                             }
-                            types.push_back(sp->tp->templateParam->second->byClass.val);
-                            sp->tp->templateParam->second->byClass.val = nullptr;
+                        }
+                        else
+                        {
+                            ita = itaend;
                         }
                         if (types.size())
                         {
@@ -951,6 +974,7 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
                         }
                         else
                         {
+                            sp->tp->templateParam->second->packed = true;
                             sp->tp->templateParam->second->byPack.pack = nullptr;
                         }
                         ++itp;

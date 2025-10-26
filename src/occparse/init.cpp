@@ -379,6 +379,7 @@ void insertDynamicInitializer(SYMBOL* sym, std::list<Initializer*>* init, bool f
             else
                 dynamicInitializers.push_back(DynamicInitializer{sym, init});
         }
+
     }
 }
 static void insertTLSInitializer(SYMBOL* sym, std::list<Initializer*>* init)
@@ -3458,6 +3459,12 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                         for (auto a : *funcparams->arguments)
                             a->initializer_list = true;
                 }
+                else
+                {
+                    for (auto a : *funcparams->arguments)
+                        if (a->nested)
+                            a->initializer_list = true;
+                }
                 if (deduceTemplate)
                 {
                     CTADLookup(funcsp, &exp, &itype, funcparams, 0);
@@ -4170,6 +4177,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
 {
     Type* tp;
     tp = itype->BaseType();
+    tp = tp->InitializeDeferred();
     if (tp->type == BasicType::templateselector_)
     {
         SYMBOL* ts = (*tp->sp->sb->templateSelector)[1].sp;

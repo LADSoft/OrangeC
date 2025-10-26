@@ -2052,12 +2052,18 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, Type* argtp, 
         EXPRESSION* ep1 = exp;
         if (exp->type == ExpressionNode::callsite_)
         {
-
-            exp = ep1->v.func->returnEXP;
-            if (!exp)
-                exp = ep1->v.func->thisptr;
-            if (exp)
-                exp = getAddress(exp);
+            if (ep->right && ep->right->type == ExpressionNode::auto_)
+            {
+                exp = ep->right;
+            }
+            else
+            {
+                exp = ep1->v.func->returnEXP;
+                if (!exp)
+                    exp = ep1->v.func->thisptr;
+                if (exp)
+                    exp = getAddress(exp);
+            }
         }
         else if (ep->type == ExpressionNode::auto_)
         {

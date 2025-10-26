@@ -263,7 +263,7 @@ typedef struct
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
         construct_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
-        type_, pointsto_, dot_, select_, constexprconstructor_, cppintrinsic_,
+        type_, pointsto_, dot_,pointstar_,dotstar_, select_, constexprconstructor_, cppintrinsic_,
         // stuff that can only appear temporarily in constexpr expressions
         cvarpointer_, paramsubstitute_
     };

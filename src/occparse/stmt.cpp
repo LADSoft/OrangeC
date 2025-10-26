@@ -1620,8 +1620,8 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 }
                                 DeduceAuto(&declSP->tp, starType, declExp, false);
                                 declSP->tp->UpdateRootTypes();
-                                if (!declSP->tp->CompatibleType(starType) &&
-                                    (!declSP->tp->IsArithmetic() || !starType->IsArithmetic()))
+                                if ((!declSP->tp->IsArithmetic() || !starType->IsArithmetic()) && 
+                                    !declSP->tp->CompatibleType(starType) && !SameTemplate(declSP->tp, starType))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
@@ -2757,6 +2757,11 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         }
                     }
                     else if (tp1->IsPtr() && functionReturnType->IsPtr())
+                    {
+                        if (!doStaticCast(&functionReturnType, tp1, &returnexp, funcsp, true))
+                            err = true;
+                    }
+                    else if (tp1->BaseType()->type == BasicType::memberptr_)
                     {
                         if (!doStaticCast(&functionReturnType, tp1, &returnexp, funcsp, true))
                             err = true;

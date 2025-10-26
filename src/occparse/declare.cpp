@@ -216,7 +216,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
     SymbolTable<SYMBOL>* table;
     SYMBOL* ssp = enclosingDeclarations.GetFirst();
 
-    if (ssp && sp->sb->parentClass == ssp)
+    if (storage_class != StorageClass::auto_ && ssp && sp->sb->parentClass == ssp)
     {
         table = sp->sb->parentClass->tp->syms;
     }
@@ -1141,14 +1141,14 @@ static bool compareStructSyms(SymbolTable<SYMBOL>* left, SymbolTable<SYMBOL>* ri
     return itl == left->end() && itr == right->end();
 }
 LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
-                         bool* defd, SymbolTable<SYMBOL>* anonymousTable)
+                         bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable)
 {
     auto oldParsingContext = defaultParsingContext;
     int oldExpressionParsing;
     oldExpressionParsing = inFunctionExpressionParsing;
     defaultParsingContext = nullptr;
     inFunctionExpressionParsing = false;
-    bool hasBody = (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_) || KW(lex) == Keyword::begin_;
+    bool hasBody = !nobody && (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_) || KW(lex) == Keyword::begin_;
     SYMBOL* injected = nullptr;
 
     if (nameSpaceList.size())
@@ -1187,7 +1187,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
             if (!MATCHKW(lex, Keyword::begin_))
                 errorint(ERR_NEEDY, '{');
         }
-    if (KW(lex) == Keyword::begin_)
+    if (hasBody && KW(lex) == Keyword::begin_)
     {
         sp->sb->isfinal = isfinal;
         lex = structbody(lex, funcsp, sp, defaultAccess, anonymousTable);
@@ -1271,6 +1271,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     unsigned char* uuid;
     Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
     bool searched = false;
+    bool nobody = false;
     *defd = false;
     newName[0] = '\0';
     switch (KW(lex))
@@ -1355,25 +1356,33 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     if (ISID(lex))
     {
         lex = getsym();
-        if (MATCHKW(lex, Keyword::lt_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_))
+        if (MATCHKW(lex, Keyword::begin_))
         {
+            nobody = true;
             lex = backupsym();
-            // multiple identifiers, wade through them for error handling
-            error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
-            while (ISID(lex))
-            {
-                charindex = lex->data->charindex;
-                tagname = litlate(lex->data->value.s.a);
-                Utils::StrCpy(newName, tagname);
-                lex = tagsearch(lex, newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
-            }
         }
         else
         {
-            lex = backupsym();
+            if (MATCHKW(lex, Keyword::lt_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_))
+            {
+                lex = backupsym();
+                // multiple identifiers, wade through them for error handling
+                error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
+                while (ISID(lex))
+                {
+                    charindex = lex->data->charindex;
+                    tagname = litlate(lex->data->value.s.a);
+                    Utils::StrCpy(newName, tagname);
+                    lex = tagsearch(lex, newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
+                }
+            }
+            else
+            {
+                lex = backupsym();
+            }
         }
     }
-    if (funcsp && !searched && !inFunctionExpressionParsing && (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_)))
+    if (funcsp && !searched && !inFunctionExpressionParsing && (MATCHKW(lex, Keyword::colon_) || (!nobody && MATCHKW(lex, Keyword::begin_))))
     {
         sp = nullptr;
         nsv = nullptr;
@@ -1601,7 +1610,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             {
                 errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
             }
-            lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, anonymous ? table : nullptr);
+            lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, nobody, anonymous ? table : nullptr);
             if (constexpression)
             {
                 error(ERR_CONSTEXPR_NO_STRUCT);
@@ -3598,7 +3607,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         if (nsv && !strSym)
                         {
                             unvisitUsingDirectives(nsv->front());
-                            auto rvl = tablesearchinline(sp->name, nsv->front(), false);
+                            std::list<SYMBOL*> rvl;
+                            tablesearchinline(rvl, sp->name, nsv->front(), false);
                             if (rvl.size() != 0)
                                 if (rvl.size() > 1)
                                 {

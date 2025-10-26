@@ -52,6 +52,8 @@ typedef unsigned short wchar_t;
 #    define S_IFCHR 0x2000 /* character special */
 #    define S_IFBLK 0x3000 /* block special */
 #    define S_IFREG 0x8000 /* or just 0x0000, regular */
+#    define S_IFSOCK 0x5000
+
 /*#define S_IREAD  0x0100  owner may read */
 /*#define S_IWRITE 0x0080  owner may write */
 /*#define S_IEXEC  0x0040  owner may execute <directory search> */
@@ -63,6 +65,7 @@ typedef unsigned short wchar_t;
 #    define S_ISBLK(m) (!!((m)&S_IFBLK))
 #    define S_ISREG(m) (!!((m)&S_IFREG))
 #    define S_ISFIFO(m) (!!((m)&S_IFIFO))
+#    define S_ISSOCK(m) (!!((m)&S_IFSOCK))
 
 /* owner permission */
 #    define S_IRWXU 0000700

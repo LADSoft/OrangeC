@@ -115,12 +115,9 @@ SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly)
     }
     return nullptr;
 }
-static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::list<SYMBOL*>& gather, bool tagsOnly,
-                               bool allowUsing);
-std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing)
+void tablesearchinline(std::list<SYMBOL*> & rv, const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing)
 {
     // main namespace
-    std::list<SYMBOL*> rv;
     SYMBOL* find = tablesearchone(name, ns, tagsOnly);
     if (find)
         rv.insert(rv.begin(), find);
@@ -132,11 +129,7 @@ std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, b
             if (!x->sb->visited)
             {
                 x->sb->visited = true;
-                auto rv1 = tablesearchinline(name, x->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
-                if (rv1.size())
-                {
-                    rv.insert(rv.begin(), rv1.begin(), rv1.end());
-                }
+                tablesearchinline(rv, name, x->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
             }
         }
     }
@@ -148,7 +141,16 @@ std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, b
             if (!x->sb->visited)
             {
                 x->sb->visited = true;
-                namespacesearchone(name, x->sb->nameSpaceValues->front(), rv, tagsOnly, allowUsing);
+                SYMBOL* find = tablesearchone(name, x->sb->nameSpaceValues->front(), tagsOnly);
+                if (find)
+                {
+                    rv.insert(rv.begin(), find);
+                    break;
+                }
+                else
+                {
+                    tablesearchinline(rv, name, x->sb->nameSpaceValues->front(), tagsOnly, true);
+                }
             }
         }
     }
@@ -156,55 +158,24 @@ std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, b
     if (ns->name && !ns->name->sb->visited && ns->name->sb->attribs.inheritable.linkage == Linkage::inline_)
     {
         ns->name->sb->visited = true;
-        auto rv1 = tablesearchinline(name, ns->name->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
-        if (rv1.size())
-        {
-            rv.insert(rv.begin(), rv1.begin(), rv1.end());
-        }
+        tablesearchinline(rv, name, ns->name->sb->nameSpaceValues->front(), tagsOnly, allowUsing);
     }
-    return rv;
 }
-static void namespacesearchone(const char* name, NAMESPACEVALUEDATA* ns, std::list<SYMBOL*>& gather, bool tagsOnly, bool allowUsing)
-{
-    auto rv = tablesearchinline(name, ns, tagsOnly, allowUsing);
-    if (rv.size())
-    {
-        rv.insert(rv.end(), gather.begin(), gather.end());
-    }
-    else
-    {
-        rv = gather;
-    }
-    if (allowUsing && ns->usingDirectives)
-    {
-        for (auto x : *ns->usingDirectives)
-        {
-            if (!x->sb->visited)
-            {
-                x->sb->visited = true;
-                namespacesearchone(name, x->sb->nameSpaceValues->front(), rv, tagsOnly, allowUsing);
-            }
-        }
-    }
-    gather = std::move(rv);
-}
-static std::list<SYMBOL*> namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified,
+void namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, std::list<SYMBOL*>& gather, bool qualified,
                                                   bool tagsOnly, bool allowUsing)
 {
-    std::list<SYMBOL*> lst;
-
     for (auto ns1 : *ns)
     {
         unvisitUsingDirectives(ns1);
-        namespacesearchone(name, ns1, lst, tagsOnly, allowUsing);
-        if (qualified || lst.size())
+        tablesearchinline(gather, name, ns1, tagsOnly, allowUsing);
+        if (qualified || gather.size())
             break;
     }
-    return lst;
 }
 SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly)
 {
-    auto lst = namespacesearchInternal(name, ns, qualified, tagsOnly, true);
+    std::list<SYMBOL*> lst;
+    namespacesearchInternal(name, ns, lst, qualified, tagsOnly, true);
 
     if (lst.size())
     {
@@ -256,11 +227,7 @@ void searchNS(SYMBOL* sym, SYMBOL* nssp, std::list<SYMBOL*>& gather)
 {
     if (nssp)
     {
-        auto x = namespacesearchInternal(sym->name, nssp->sb->nameSpaceValues, true, false, false);
-        if (x.size())
-        {
-            gather.insert(gather.end(), x.begin(), x.end());
-        }
+        namespacesearchInternal(sym->name, nssp->sb->nameSpaceValues, gather, true, false, false);
     }
 }
 SYMBOL* gsearch(const char* name)

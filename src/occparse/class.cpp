@@ -340,6 +340,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             }
             else
             {
+                strSym->tp = strSym->tp->InitializeDeferred();
                 if (!typeName)
                     GetUsingName(buf);
 
@@ -918,9 +919,8 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, b
     SYMBOL* rv = nullptr;
     SYMBOL* symrv = nullptr;
     SYMBOL* cls = enclosingDeclarations.GetFirst();
-
-    EnclosingDeclarations::iterator its;
-    for (its = enclosingDeclarations.begin(); its != enclosingDeclarations.end(); ++its)
+    EnclosingDeclarations::iterator its = enclosingDeclarations.begin();
+    for (; its != enclosingDeclarations.end(); ++its)
     {
         if (!(*its).tmpl || rv)
             break;
@@ -1037,6 +1037,14 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
                 if (lambdas.front()->lthis)
                 {
                     rv = search(lambdas.front()->lthis->tp->syms, name);
+                    if (!rv && lambdas.front()->lthis->sb->baseClasses)
+                    {
+                        rv = classdata(name, lambdas.front()->lthis, nullptr, false, tagsOnly);
+                        if (rv == (SYMBOL*)-1)
+                        {
+                            rv = nullptr;
+                        }
+                    }
                     if (rv)
                         rv->sb->throughClass = true;
                 }

@@ -174,7 +174,6 @@ inline void SymbolTable<SYMBOL>::Add(SYMBOL* in)
 template <class T>
 inline void SymbolTable<T>::insertOverload(T* in)
 {
-
     if (Optimizer::cparams.prm_extwarning)
         if (in->sb->storage_class == StorageClass::parameter_ || in->sb->storage_class == StorageClass::auto_ ||
             in->sb->storage_class == StorageClass::register_)

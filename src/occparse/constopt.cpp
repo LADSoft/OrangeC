@@ -2568,7 +2568,7 @@ int opt0(EXPRESSION** node)
                     {
                         if (ts->tp->templateParam->second->type == TplType::template_)
                         {
-                            ts = ts->tp->templateParam->second->byTemplate.val;
+                            ts = sym = ts->tp->templateParam->second->byTemplate.val;
                             if (!ts)
                             {
                                 break;

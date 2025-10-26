@@ -948,7 +948,7 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
     if ((*newType)->IsPtr() && oldType->IsInt() && isconstzero(oldType, *exp))
         return true;
     // conversion to or from void pointer
-    if ((((*newType)->IsVoidPtr() && (oldType->IsPtr() || oldType->IsFunction())) ||
+    if ((((*newType)->IsVoidPtr() && (oldType->IsPtr() || oldType->IsFunction() || oldType->BaseType()->type == BasicType::memberptr_)) ||
          (((oldType->IsVoidPtr() || (*exp)->type == ExpressionNode::nullptr_) && (*newType)->IsPtr()) &&
           (!checkconst || (*newType)->BaseType()->btp->IsConst() || !oldType->BaseType()->btp->IsConst()))))
         return true;
@@ -983,7 +983,8 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
         return true;
     }
     // pointer to bool
-    if ((*newType)->BaseType()->type == BasicType::bool_ && oldType->BaseType()->type == BasicType::pointer_)
+    if ((*newType)->BaseType()->type == BasicType::bool_ && 
+        (oldType->BaseType()->type == BasicType::pointer_ || oldType->BaseType()->type == BasicType::memberptr_))
     {
         cast((*newType)->BaseType(), exp);
         return true;
@@ -1410,7 +1411,6 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
 bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite* funcparams, int flags)
 {
     SYMBOL *s2 = nullptr, *s3;
-    SYMLIST **hrd, *hrs;
     const char* name = overloadNameTab[(int)Keyword::openpa_ - (int)Keyword::new_ + CI_NEW];
     Type* tpx;
     if (!(*tp)->IsStructured())
@@ -1472,7 +1472,6 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
     if ((int)kw >= (int)Keyword::new_ && (int)kw <= (int)Keyword::unary_and_)
     {
         SYMBOL* s1 = nullptr, * s2 = nullptr, * s3, * s4 = nullptr, * s5 = nullptr;
-        SYMLIST** hrd, * hrs;
         CallSite* funcparams;
         const char* name = overloadNameTab[(int)kw - (int)Keyword::new_ + CI_NEW];
         Type* tpin = *tp;

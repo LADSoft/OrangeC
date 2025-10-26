@@ -1240,6 +1240,51 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
     }
     switch (exp->type)
     {
+        case ExpressionNode::dotstar_:
+        case ExpressionNode::pointstar_:
+            if (exp->right->type == ExpressionNode::callsite_)
+            {
+                Type* tp = LookupTypeFromExpression(exp->left, nullptr, false);
+                if (!tp)
+                    return tp;
+                auto thisptr = exp->left;
+                if (exp->type == ExpressionNode::pointstar_)
+                {
+                    Dereference(tp, &thisptr);
+                }
+                auto tpx = tp;
+                while (tpx->btp) tpx = tpx->btp;
+                if (!tpx->IsStructured())
+                    return nullptr;
+                auto oldsp = exp->right->v.func->sp;
+                if (exp->right->v.func->sp->tp->type == BasicType::templateparam_)
+                {
+                    EnclosingDeclarations::iterator its = enclosingDeclarations.begin();
+                    for (; its != enclosingDeclarations.end(); ++its)
+                    {
+                        auto rv = templatesearch(exp->right->v.func->sp->name, (*its).tmpl);
+                        if (rv)
+                        {
+                            auto tp1 = rv->tp->templateParam->second->byClass.val;
+                            if (tp1->IsRef())
+                                tp1 = tp1->BaseType()->btp;
+                            if (tp1 && tp1->BaseType()->type == BasicType::memberptr_)
+                            {
+                                exp->right->v.func->sp = tp1->BaseType()->btp->BaseType()->sp;
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (exp->right->v.func->sp == oldsp)
+                    return nullptr;
+                exp->right->v.func->thisptr = thisptr;
+                exp->right->v.func->thistp = tp;
+                auto rv = LookupTypeFromExpression(exp->right, nullptr, false);
+                exp->right->v.func->sp = oldsp;
+                return rv;
+            }
+            return LookupTypeFromExpression(exp->right, nullptr, false);
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_: {
             Type* tp = LookupTypeFromExpression(exp->left, nullptr, false);
@@ -1508,7 +1553,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::callsite_: {
             Type* rv;
             EXPRESSION* exp1 = nullptr;
-            if (exp->v.func->functp->BaseType()->type != BasicType::aggregate_ && !exp->v.func->functp->IsStructured() &&
+            if (exp->v.func->functp->BaseType()->type != BasicType::templateparam_ && exp->v.func->functp->BaseType()->type != BasicType::aggregate_ && !exp->v.func->functp->IsStructured() &&
                 !exp->v.func->functp->BaseType()->sp->sb->externShim)
             {
                 if (exp->v.func->asaddress)
@@ -2665,7 +2710,12 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx
         *rv->back().second = *tpx->second;
         rv->back().second->byClass.dflt = TemplateLookupTypeFromDeclType(rv->back().second->byClass.dflt);
         if (!rv->back().second->byClass.dflt)
-            rv->back().second->byClass.dflt = &stdany;
+        {
+            if (!definingTemplate || instantiatingTemplate)
+                rv->back().second->byClass.dflt = &stdany;
+            else
+                rv->back().second->byClass.dflt = tpx->second->byClass.dflt;
+        }
         return rv;
     }
     else

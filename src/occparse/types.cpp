@@ -972,6 +972,10 @@ bool Type::CompareTypes(Type* typ1, Type* typ2, int exact)
     if (typ1->IsFunction() && typ2->IsFunction() &&
         typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
         return true;
+    else if (typ1->type == BasicType::memberptr_ && typ2->IsFunction())
+    {
+        return typ2->sp->sb->parentClass && CompareTypes(typ1->sp->tp, typ2->sp->sb->parentClass->tp, exact);
+    }
     else if (!exact && ((typ1->IsPtr() && (typ2->IsFunctionPtr() || typ2->IsFunction() || typ2->IsInt())) ||
                         (typ2->IsPtr() && (typ1->IsFunctionPtr() || typ1->IsFunction() || typ1->IsInt()))))
         return (true);
@@ -1382,6 +1386,7 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
                 Utils::StrCat(buf, top-buf, " (");
                 buf += strlen(buf);
                 char temp[4000];
+                temp[0] = 0;
                 getcls(temp, tp->sp);
                 Utils::StrCpy(buf, top-buf, temp);
                 buf += strlen(buf);
@@ -3722,6 +3727,7 @@ Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic
     }
     return tp;
 }
+int count4;
 Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate,
                                     StorageClass storage_class, bool funcptr)
 {

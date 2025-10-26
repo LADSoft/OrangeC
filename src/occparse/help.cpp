@@ -784,7 +784,8 @@ bool TakeAddress(EXPRESSION** exp, Type* extended)
         if ((*last)->type == ExpressionNode::callsite_ && !(*last)->v.func->ascall)
         {
             *last = (*last)->v.func->fcall;
-            rv = true;
+            if (*last)
+                rv = true;
         }
     }
     if (rv)

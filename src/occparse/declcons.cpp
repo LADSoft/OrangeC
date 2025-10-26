@@ -395,6 +395,7 @@ static bool hasConstFunc(SYMBOL* sp, int type, bool move)
     }
     return false;
 }
+/*
 static bool constCopyConstructor(SYMBOL* sp)
 {
     if (sp->sb->baseClasses)
@@ -411,6 +412,7 @@ static bool constCopyConstructor(SYMBOL* sp)
                 return false;
     return true;
 }
+*/
 static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
 {
     SYMBOL *func, *sp1;
@@ -428,7 +430,7 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     else
     {
         sp1->tp = Type::MakeType(move ? BasicType::rref_ : BasicType::lref_, sp->tp->BaseType());
-        if (!move && constCopyConstructor(sp))
+        if (!move /* && constCopyConstructor(sp)*/)
         {
             sp1->tp->btp = Type::MakeType(BasicType::const_, sp1->tp->btp);
         }
@@ -503,8 +505,7 @@ bool matchesCopy(SYMBOL* sp, bool move)
                     Type* tp = arg1->tp->BaseType()->btp;
                     tp->InstantiateDeferred();
                     if (tp->IsStructured())
-                        if (tp->BaseType()->sp == sp->sb->parentClass || tp->BaseType()->sp == sp->sb->parentClass->sb->mainsym ||
-                            tp->BaseType()->sp->sb->mainsym == sp->sb->parentClass || SameTemplate(tp, sp->sb->parentClass->tp))
+                        if (tp->CompatibleType(sp->sb->parentClass->tp) || SameTemplate(tp, sp->sb->parentClass->tp))
                             return true;
                 }
             }
@@ -3254,12 +3255,16 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             else
             {
                 std::list<Argument*> temp;
-                std::list<Argument*>* temp2 = &temp;
                 if (params->arguments && params->arguments->size() && params->arguments->front()->nested &&
                     !params->arguments->front()->initializer_list)
                 {
-                    temp = *params->arguments->front()->nested;
-                    *params->arguments = std::move(temp);
+                    auto it2 = cons1->tp->BaseType()->syms->begin();
+                    ++it2;
+                    if (!(*it2)->tp->IsStructured())
+                    {
+                        temp = *params->arguments->front()->nested;
+                        *params->arguments = std::move(temp);
+                    }
                 }
                 AdjustParams(cons1, cons1->tp->BaseType()->syms->begin(), cons1->tp->BaseType()->syms->end(), &params->arguments,
                              false, implicit && !cons1->sb->isExplicit);

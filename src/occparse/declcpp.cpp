@@ -568,6 +568,8 @@ void CheckCalledException(SYMBOL* cst, EXPRESSION* exp)
 }
 void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset)
 {
+    if (definingTemplate && !instantiatingTemplate)
+        return;
     auto lst = base->sb->baseClasses;
     *pos = vtabEntryListFactory.CreateList();
     if (sym->sb->hasvtab && (!lst || !lst->size() || lst->front()->isvirtual || !lst->front()->cls->sb->vtabEntries))
@@ -869,6 +871,14 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
     {
         if (arg->sb->deferredCompile && !arg->sb->init)
         {
+            // we are evauating a function argument
+            // have to disable searching in any function blocks
+            static SymbolTable<struct sym> syms;
+            static NAMESPACEVALUEDATA ns{ &syms };
+            static std::list<NAMESPACEVALUEDATA*> nswrapper = { &ns };
+
+            auto oldNS = localNameSpace;
+            localNameSpace = &nswrapper;
             bool initted = false;
             int oldInstantiatingTemplate;
             auto str = func->sb->parentClass;
@@ -930,6 +940,7 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                 definingTemplate--;
                 instantiatingTemplate = oldInstantiatingTemplate;
             }
+            localNameSpace = oldNS;
         }
     }
 }
@@ -1343,7 +1354,8 @@ LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel 
                                 allTemplateArgsSpecified(bcsym, bcsym->templateParams))
                             {
                                 bcsym->tp = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams, false)->tp;
-                                bcsym->tp->sp = bcsym;
+                                bcsym = bcsym->tp->BaseType()->sp;
+//                                bcsym->tp->sp = bcsym;
                             }
                         }
                     }
@@ -2202,6 +2214,7 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                 }
                 else
                 {
+                    sp->sb->parentClass = enclosingDeclarations.GetFirst();
                     InsertSymbol(sp, storage_class, Linkage::cdecl_, false);
                 }
                 if (sp_out)
@@ -2271,16 +2284,21 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
         bool done = false;
         bool absorbedPack = false;
         std::stack<std::tuple<decltype(path)::iterator, int, int, const char*, SYMBOL*, Mode>> stk;
-        const char* lastName = nullptr;
+        const char* lastName = nullptr, *lastRealName = nullptr;
         auto it = path.begin();
         while (!done)
         {
+            static int count;
             done = true;
             bool skipProcess = false;
             for (; it != path.end();)
             {
                 const char* buf = it->first.c_str();
                 if (lastName && !strcmp(lastName, buf))
+                {
+                    buf = overloadNameTab[CI_CONSTRUCTOR];
+                }
+                else if (lastRealName && !strcmp(lastRealName, buf))
                 {
                     buf = overloadNameTab[CI_CONSTRUCTOR];
                 }
@@ -2423,6 +2441,15 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                         break;
                     }
                 }
+                if (it == path.begin() && sp && sp->tp->type == BasicType::typedef_ && sp->tp->IsStructured())
+                {
+                    sp = sp->tp->BaseType()->sp;
+                    lastRealName = sp->name;
+                }
+                else
+                {
+                    lastRealName = nullptr;
+                }
                 lastName = buf;
                 ++it;
             }
@@ -2446,18 +2473,22 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                         {
                             if (sp->sb->storage_class == StorageClass::overloads_)
                             {
+                                SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
                                 for (auto sp2 : *sp->tp->syms)
                                 {
-                                    SYMBOL *ssp = enclosingDeclarations.GetFirst(), *ssp1;
-                                    SYMBOL* sp1 = CopySymbol(sp2);
-                                    sp1->sb->wasUsing = true;
-                                    ssp1 = sp1->sb->parentClass;
-                                    if (ssp && ismember(sp1))
-                                        sp1->sb->parentClass = ssp;
-                                    sp1->sb->mainsym = sp2;
-                                    sp1->sb->access = access;
-                                    InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
-                                    sp1->sb->parentClass = ssp1;
+// covscript
+//                                    if (!sp2->sb->isConstructor || (!matchesCopy(sp2, false) && !matchesCopy(sp2, true)))
+                                    {
+                                        SYMBOL* sp1 = CopySymbol(sp2);
+                                        sp1->sb->wasUsing = true;
+                                        ssp1 = sp1->sb->parentClass;
+                                        if (ssp && ismember(sp1))
+                                            sp1->sb->parentClass = ssp;
+                                        sp1->sb->mainsym = sp2;
+                                        sp1->sb->access = access;
+                                        InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
+                                        sp1->sb->parentClass = ssp1;
+                                    }
                                 }
                             }
                             else
@@ -3492,7 +3523,7 @@ LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn)
         if ((*tn))
         {
             optimize_for_constants(&exp);
-            if (definingTemplate && !instantiatingTemplate || (*tn)->type == BasicType::any_)
+            if ((definingTemplate && !instantiatingTemplate) || ((*tn)->type == BasicType::any_ && !inDeduceArgs))
             {
                 (*tn) = Type::MakeType(BasicType::templatedecltype_);
                 (*tn)->templateDeclType = exp;

@@ -448,7 +448,7 @@ static bool isStandardLayout(Type* tp, SYMBOL** result)
             return false;
         if (n)
         {
-            if (!found->tp->IsArithmetic())
+            if (!found->tp->IsArithmetic() && !found->tp->IsPtr())
             {
                 SYMBOL* first = nullptr;
                 for (auto sym : *found->tp->BaseType()->syms)
@@ -1122,11 +1122,18 @@ static bool is_convertible_to(EXPRESSION* exp)
                 if (!rv && from->IsStructured() && to->IsStructured())
                 {
                     if (classRefCount(to->BaseType()->sp, from->BaseType()->sp) == 1)
+                    {
                         rv = true;
-                    else if (lookupGenericConversion(from->BaseType()->sp, to->BaseType()))
-                        rv = true;
+                    }
+                    else
+                    {
+// covscript
+                        auto sp1 = lookupGenericConversion(from->BaseType()->sp, to->BaseType());
+//                        auto sp1 = lookupNonspecificCast(from->BaseType()->sp, to->BaseType());
+                        rv = sp1 && !sp1->sb->isExplicit;
+                    }
                 }
-                if (!rv && from->IsStructured())
+                else if (!rv && from->IsStructured())
                 {
                     CI_CONSTRUCTOR;
                     SYMBOL* sym = search(from->BaseType()->syms, overloadNameTab[CI_CAST]);
@@ -1134,7 +1141,7 @@ static bool is_convertible_to(EXPRESSION* exp)
                     {
                         for (auto sp1 : *sym->tp->syms)
                         {
-                            if (sp1->tp->BaseType()->btp->SameType(to))
+                            if (sp1->tp->BaseType()->btp->SameType(to) && !sp1->sb->isExplicit)
                             {
                                 rv = true;
                                 break;

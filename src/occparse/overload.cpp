@@ -83,6 +83,26 @@ static int GetHashValue(const char* string)
     return i;
 }
 
+static bool EmptyPackedTemplateParam(Type* tnew, Type* told)
+{
+    while (tnew->IsRef()) tnew = tnew->BaseType()->btp;
+    while (told->IsRef()) told = told->BaseType()->btp;
+    tnew = tnew->BaseType();
+    told = told->BaseType();
+    if (tnew->type == BasicType::templateparam_ && told->type == BasicType::templateparam_)
+    {
+        if (tnew->templateParam->second->packed && told->templateParam->second->packed)
+        {
+            if ((!tnew->templateParam->second->byPack.pack || !tnew->templateParam->second->byPack.pack->size()) &&
+                (!told->templateParam->second->byPack.pack || !told->templateParam->second->byPack.pack->size()))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+
+}
 bool matchOverload(Type* tnew, Type* told)
 {
     auto funcold = told->BaseType();
@@ -128,7 +148,7 @@ bool matchOverload(Type* tnew, Type* told)
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
             if ((told->type != tnew->type || (!told->CompatibleType(tnew) && !SameTemplatePointedTo(tnew, told, true))) &&
-                !SameTemplateSelector(tnew, told))
+                !SameTemplateSelector(tnew, told) && !EmptyPackedTemplateParam(tnew, told))
                 break;
             else
             {
@@ -211,6 +231,56 @@ bool matchOverload(Type* tnew, Type* told)
         ++hnew;
     }
     matchOverloadLevel--;
+    if (!definingTemplate || instantiatingTemplate)
+    {
+        if (hold != holde)
+        {
+            // if  the old one has a packed template parame with no elements we are safe...
+            auto tpx = (*hold)->tp;
+            while (tpx->IsRef())
+                tpx = tpx->BaseType()->btp;
+            tpx = tpx->BaseType();
+            if (tpx->type == BasicType::void_ || (tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed))
+            {
+                if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                {
+                    if (hnew != hnewe)
+                    {
+                        tpx = (*hnew)->tp;
+                        while (tpx->IsRef())
+                            tpx = tpx->BaseType()->btp;
+                        tpx = tpx->BaseType();
+                        if (tpx->type == BasicType::void_ || tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed)
+                        {
+                            if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                            {
+                                hold = holde;
+                                hnew = hnewe;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        hold = holde;
+                    }
+                }
+            }
+        }
+        else if (hnew != hnewe)
+        {
+            auto tpx = (*hnew)->tp;
+            while (tpx->IsPtr() || tpx->IsRef())
+                tpx = tpx->BaseType()->btp;
+            tpx = tpx->BaseType();
+            if (tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed)
+            {
+                if (!tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                {
+                    hnew = hnewe;
+                }
+            }
+        }
+    }
     if (hold == holde && hnew == hnewe)
     {
         if (tCount)
@@ -2649,7 +2719,7 @@ void arg_compare_bitint(Type* tpp, Type* tpa, int* n, e_cvsrn* seq)
     }
 }
 void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
-                         bool allowUser, bool ref)
+    bool allowUser, bool ref)
 {
     bool lref = false;
     bool rref = false;
@@ -2660,6 +2730,11 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         tpax = tpax->BaseType();
     tpa = tpa->BaseType();
     tpp = tpp->BaseType();
+    if (tpp->type == BasicType::any_)
+    {
+        seq[(*n)++] = CV_NONE;
+        return;
+    }
     // when evaluating decltype we sometimes come up with these
     if (tpa->type == BasicType::templateparam_)
         tpa = tpa->templateParam->second->byClass.val;
@@ -2725,11 +2800,18 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         Type* tppp = tpp->BaseType()->btp;
         while (tppp->IsRef())
             tppp = tppp->BaseType()->btp;
+        if (tpp->type == BasicType::any_)
+        {
+            seq[(*n)++] = CV_NONE;
+            return;
+        }
         if (tppp->BaseType()->type == BasicType::templateselector_)
         {
             seq[(*n)++] = CV_NONE;
             return;
         }
+        if (tpp->IsInt() && tppp->BaseType()->btp && tppp->BaseType()->btp->type == BasicType::enum_)
+            tppp = tppp->BaseType()->btp;
         if (!rref && expa && tppp->IsStructured() && expa->type != ExpressionNode::not__lvalue_)
         {
             EXPRESSION* expx = expa;
@@ -3012,6 +3094,15 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         }
         else if (tpp->IsPtr())
         {
+            auto tpx = tpp;
+            while (tpx->IsPtr())
+                tpx = tpx->BaseType()->btp;
+            tpx = tpx->BaseType();
+            if (tpx->type == BasicType::any_)
+            {
+                seq[(*n)++] = CV_NONE;
+                return;
+            }
             if (tpa->IsPtr())
             {
                 if (tpp->IsVoidPtr())
@@ -3767,7 +3858,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                             }
                         }
                     }
-                    else if ((*ita)->tp && (*ita)->exp)  // might be an empty initializer list...
+                    else if (tp1->IsStructured() && (*ita)->tp && (*ita)->exp)  // might be an empty initializer list...
                     {
                         int n1 = m;
                         getSingleConversion((tp1->BaseType()->sp)->tp, ita != itae ? (*ita)->tp : (*itt)->tp,
@@ -4657,7 +4748,9 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         }
         if (args->thisptr)
         {
-            SYMBOL* spt = args->thistp->BaseType()->btp->BaseType()->sp;
+            auto tp2 = args->thistp;
+            while (tp2->IsPtr() || tp2->IsRef()) tp2 = tp2->BaseType()->btp;
+            SYMBOL* spt = tp2->BaseType()->sp;
             if (spt->templateParams)
             {
                 enclosingDeclarations.Add(spt->templateParams);
@@ -4688,7 +4781,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         {
             if (args || atp)
             {
-                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass)) && !args->nameSpace)
+                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass && !args->nameSpace)))
                 {
                     // ok the sp is a valid candidate for argument search
                     if (args)
@@ -4718,24 +4811,22 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             }
             if (sp->tp)
             {
+                bool found = false;
                 if (args->nameSpace)
                 {
                     unvisitUsingDirectives(args->nameSpace);
-                    gather = tablesearchinline(sp->name, args->nameSpace, false, true);
+                    tablesearchinline(gather, sp->name, args->nameSpace, false, true);
                 }
-                else
-                {
-                    bool found = false;
-                    for (auto sym : gather)
-                        if (sym == sp)
-                        {
-                            found = true;
-                            break;
-                        }
-                    if (!found)
+                found = false;
+                for (auto sym : gather)
+                    if (sym == sp)
                     {
-                        gather.push_front(sp);
+                        found = true;
+                        break;
                     }
+                if (!found)
+                {
+                    gather.push_front(sp);
                 }
             }
             weedgathering(gather);
@@ -4998,7 +5089,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
                         }
                     }
-                    else
+                    else if ((!definingTemplate || instantiatingTemplate) && !inDeduceArgs)
                     {
                         SYMBOL* sym = SymAlloc();
                         sym->sb->parentClass = sp->sb->parentClass;
@@ -5058,6 +5149,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     inNothrowHandler++;
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
+                auto found10 = found1;
                 if (!(flags & _F_SIZEOF) || found1->tp->BaseType()->btp->IsAutoType() ||
                     ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LexList*)-1))
                 {
@@ -5087,6 +5179,12 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         if (found1->sb->mainsym)
                             found1 = found1->sb->mainsym;
                         found1 = CopySymbol(found1);
+                        if (found1->sb->memberInitializers)
+                        {
+                            auto mi = found1->sb->memberInitializers;
+                            found1->sb->memberInitializers = memberInitializersListFactory.CreateList();
+                            found1->sb->memberInitializers->insert(found1->sb->memberInitializers->end(), mi->begin(), mi->end());
+                        }
                         found1->sb->mainsym = old;
                         found1->sb->parentClass = CopySymbol(found1->sb->parentClass);
                         found1->sb->parentClass->sb->mainsym = old->sb->parentClass;

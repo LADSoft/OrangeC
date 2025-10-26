@@ -33,6 +33,8 @@
 #include <atomic>
 #include "Rule.h"
 #include <memory>
+#include "BasicLogging.h"
+
 class Depends
 {
   public:
@@ -48,6 +50,7 @@ class Depends
         displayOnly(false),
         ignoreResults(false)
     {
+        OrangeC::Utils::BasicLogger::debug("Depends with goal: " + Goal + " is being constructed");
     }
     ~Depends();
 

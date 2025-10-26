@@ -39,6 +39,7 @@
 #include <memory>
 #include <mutex>
 #include "semaphores.h"
+#include "BasicLogging.h"
 #ifdef TARGET_OS_WINDOWS
 #    include <windows.h>
 #    undef Yield
@@ -49,6 +50,7 @@ class OSTakeJobIfNotMake
     bool take_job = false;
     static bool initted;
     static Semaphore sem;
+
   public:
     OSTakeJobIfNotMake(bool take_job = false) : take_job(take_job)
     {
@@ -57,7 +59,7 @@ class OSTakeJobIfNotMake
             initted = true;
             if (OS::JobCount() == 1)
             {
-                for (int i=0; i < MaxOmakeInstances - 1; i++)
+                for (int i = 0; i < MaxOmakeInstances - 1; i++)
                     sem.Wait();
             }
         }
@@ -82,7 +84,9 @@ class OSTakeJobIfNotMake
             {
                 sem.Post();
             }
-            catch (std::runtime_error) { /* don't care */ }
+            catch (std::runtime_error)
+            { /* don't care */
+            }
         }
     }
 };
@@ -254,13 +258,9 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     int rv = 0;
     std::string cmd = cmdin;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (v)
+    if (!v)
     {
-        std::string shell = v->GetValue();
-        if (shell != "/bin/sh")
-        {
-            cmd = OS::NormalizeFileName(cmdin);
-        }
+        cmd = OS::NormalizeFileName(cmdin);
     }
     std::string make;
     Variable* v1 = VariableContainer::Instance()->Lookup("MAKE");
@@ -269,9 +269,9 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         make = v1->GetValue();
         size_t i = make.find_last_of('/');
         if (i == std::string::npos)
-            i = make.find_last_of	('\\');
+            i = make.find_last_of('\\');
         if (i != std::string::npos)
-            make = make.substr(i+1);
+            make = make.substr(i + 1);
     }
     if (oneShell)
     {
@@ -305,8 +305,10 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
                     if (!dontrun)
                     {
                         std::string str;
-                        rv1 = OS::Spawn(std::move(cmd), environment,
+                        rv1 = OS::Spawn(cmd, environment,
                                         outputType != o_none && (outputType != o_recurse || !make1) ? &str : nullptr);
+                        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_INFO,
+                                                         "Ran " + OS::JobName() + cmd + " returned " + std::to_string(rv1) + "\n");
                         if (outputType != o_none && !str.empty())
                             output.push_back(std::move(str));
                         if (!rv)
@@ -372,6 +374,7 @@ bool Spawner::split(const std::string& cmd)
 }
 std::string Spawner::shell(const std::string& cmd)
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_WARNING, OS::JobName() + " is running $(shell " + cmd + " )");
     std::string rv = OS::SpawnWithRedirect(cmd);
     int n = rv.size();
     while (n && (rv[n - 1] == '\r' || rv[n - 1] == '\n'))

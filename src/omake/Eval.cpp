@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <sstream>
 #include "Utils.h"
+#include "BasicLogging.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -112,9 +113,11 @@ void Eval::Clear()
 
 std::string Eval::Evaluate()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Eval::Evaluate called with str: " + str);
     std::string rv = ParseMacroLine(str);
     if (expandWildcards)
         rv = wildcardinternal(rv);
+    OrangeC::Utils::BasicLogger::extremedebug("Eval::Evaluate returns: " + rv);
     return rv;
 }
 
@@ -160,6 +163,7 @@ void Eval::RemoveVPath(const std::string& path)
 }
 std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Calling Eval::ExtractFirst with value: " + value + " and seps: " + seps);
     StripLeadingSpaces(value);
     int n = value.size();
     if (seps == " " && (value[0] == '"' || value[0] == '\''))
@@ -215,6 +219,7 @@ std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
         value.replace(0, n, "");
     else
         value.replace(0, n + 1, "");
+    OrangeC::Utils::BasicLogger::extremedebug("Returning from Eval::ExtractFirst with value: " + value + " and rv: " + rv);
 
     return rv;
 }
@@ -1169,6 +1174,7 @@ std::string Eval::notdir(const std::string& names)
     std::string working = names;
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
+    std::string temp = working;
     std::string rv;
     while (!working.empty())
     {
@@ -1183,6 +1189,7 @@ std::string Eval::notdir(const std::string& names)
             rv += " ";
         rv += intermed;
     }
+    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: " + names + " evaluated names " + working + " returns: " + rv);
     return rv;
 }
 
@@ -1282,6 +1289,8 @@ std::string Eval::addprefix(const std::string& arglist)
 
 std::string Eval::wildcard(const std::string& arglist)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Called Eval::wildcard with argslist: " + arglist);
+
     std::string names = strip(arglist);
     std::string rv;
     names = wildcardinternal(names);
@@ -1295,11 +1304,13 @@ std::string Eval::wildcard(const std::string& arglist)
             rv += current;
         }
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Returning from Eval::wildcard: " + rv);
 
     return rv;
 }
 std::string Eval::wildcardinternal(std::string& names)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Called Eval::wildcardinternal with argslist: " + names);
     CmdFiles files;
     while (!names.empty())
     {
@@ -1313,6 +1324,7 @@ std::string Eval::wildcardinternal(std::string& names)
             rv += " ";
         rv += name;
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Returning from Eval::wildcardinternal: " + rv);
     return rv;
 }
 
@@ -1348,7 +1360,7 @@ std::string Eval::realpath(const std::string& arglist)
     {
         std::string thisOne = ExtractFirst(text, " ");
         if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/')  // windows specific
-            thisOne = OS::GetWorkingDir() + '/' + thisOne;
+            thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
         if (!rv.empty())
             rv += " ";
         rv += thisOne;
@@ -1479,6 +1491,7 @@ std::string Eval::foreach (const std::string& arglist)
 
 std::string Eval::call(const std::string& arglist)
 {
+    OrangeC::Utils::BasicLogger::debug("Called Eval::call with argslist: " + arglist);
     std::string sub = arglist;
     std::string args;
     std::string rv;

@@ -33,7 +33,7 @@
 #include <list>
 #include <cstdlib>
 #include <iostream>
-
+#include "BasicLogging.h"
 void Runner::DeleteOne(Depends* depend)
 {
     for (auto& d : *depend)
@@ -48,6 +48,7 @@ void Runner::CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* li
 {
     auto retval = runner->RunOne(list, depend, env, keepGoing);
     promise.set_value(retval);
+    OrangeC::Utils::BasicLogger::debug("CallRunner returning from a runner: " + depend->GetGoal());
 }
 int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
 {
@@ -68,6 +69,8 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
     {
         std::promise<int> promise;
         workingList.push_back(promise.get_future());
+        OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: " + i->GetGoal());
+
         auto thrd = std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise));
         workingThreads.push_back(std::move(thrd));
         if (MakeMain::jobs.GetValue() == 1)

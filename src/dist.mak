@@ -26,16 +26,18 @@ ifndef DISTNAME
 DISTNAME = $(NAME)
 endif
 
-stubexe:
-#	$(RESTUB) $(DISTBIN)\$(DISTNAME).exe $(STUB)
-#	upx $(DISTBIN)\$(DISTNAME).exe
-#	$(RENSEG) $(DISTBIN)\$(DISTNAME).exe
+ifeq "$(COMPILER)" "gcc-linux"
+distcopy:
+	$(COPY) $(RELEASEPATH)$(PATHEXT2)$(NAME) $(DISTBIN)$(PATHEXT2)$(DISTNAME)
+else
 distcopy:
 	$(COPY) $(RELEASEPATH)$(PATHEXT2)$(NAME).exe $(DISTBIN)$(PATHEXT2)$(DISTNAME).exe
+endif
+
 ifeq "$(COMPILER)" "MS"
 ifneq "$(MSPDB)" ""
 	-$(COPY) $(RELEASEPATH)$(PATHEXT2)$(NAME).pdb $(DISTBIN)$(PATHEXT2)$(DISTNAME).pdb
 endif
 endif
-copyexe: distcopy stubexe
+copyexe: distcopy
 

@@ -517,8 +517,27 @@ static bool hasCopy(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (!sp->sb->internallyGenned && matchesCopy(sp, move))
-            return true;
+        if (!sp->sb->internallyGenned)
+        {
+            auto it = sp->tp->BaseType()->syms->begin();
+            ++it;
+            if (it != sp->tp->BaseType()->syms->end())
+            {
+                SYMBOL* arg1 = *it;
+                ++it;
+                if (it == sp->tp->BaseType()->syms->end() || (*it)->sb->init || (*it)->sb->deferredCompile || (*it)->sb->constop)
+                {
+                    if (arg1->tp->BaseType()->type == (move ? BasicType::rref_ : BasicType::lref_))
+                    {
+                        Type* tp = arg1->tp->BaseType()->btp;
+                        tp->InstantiateDeferred();
+                        if (tp->IsStructured())
+                            if (tp->CompatibleType(func->sb->parentClass->tp) || SameTemplate(tp, func->sb->parentClass->tp))
+                                return true;
+                    }
+                }
+            }
+        }
     }
     return false;
 }

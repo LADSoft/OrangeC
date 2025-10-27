@@ -1127,9 +1127,9 @@ static bool is_convertible_to(EXPRESSION* exp)
                     }
                     else
                     {
-// covscript
                         auto sp1 = lookupGenericConversion(from->BaseType()->sp, to->BaseType());
-//                        auto sp1 = lookupNonspecificCast(from->BaseType()->sp, to->BaseType());
+// covscript
+//                         auto sp1 = lookupNonspecificCast(from->BaseType()->sp, to->BaseType());
                         rv = sp1 && !sp1->sb->isExplicit;
                     }
                 }

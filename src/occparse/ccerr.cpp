@@ -474,7 +474,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         total_errors++;
         currentErrorFile = preProcessor->GetRealFile().c_str();
         currentErrorLine = preProcessor->GetRealLineNo();
-            disabledNote = false;
+        disabledNote = false;
     }
     else
     {

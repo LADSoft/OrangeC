@@ -184,13 +184,13 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
             bool found = false;
             for (auto a : lst)
             {
-                if (a->sb->storage_class != StorageClass::overloads_)
+                if (a->sb->storage_class == StorageClass::overloads_)
                 {
                     found = true;
                     break;
                 }
             }
-            if (!found)
+            if (found)
             {
                 Type* tp = Type::MakeType(BasicType::aggregate_);
                 SYMBOL* sym = makeID(StorageClass::overloads_, tp, nullptr, lst.front()->name);
@@ -198,14 +198,22 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
                 tp->syms = symbols->CreateSymbolTable();
                 for (auto a : lst)
                 {
-                    for (auto b : *a->tp->syms)
+                    if (a->sb->storage_class == StorageClass::overloads_)
                     {
-                        tp->syms->AddName(b);
+                        for (auto b : *a->tp->syms)
+                        {
+                            tp->syms->AddName(b);
+                        }
+                    }
+                    else if (a->sb->storage_class != StorageClass::type_)
+                    {
+                        goto collission;
                     }
                 }
                 return sym;
             }
         }
+collission:
         for (auto it = lst.begin(); it != lst.end(); ++it)
         {
             // collision

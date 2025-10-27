@@ -2288,7 +2288,6 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
         auto it = path.begin();
         while (!done)
         {
-            static int count;
             done = true;
             bool skipProcess = false;
             for (; it != path.end();)
@@ -2476,19 +2475,15 @@ LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageC
                                 SYMBOL* ssp = enclosingDeclarations.GetFirst(), * ssp1;
                                 for (auto sp2 : *sp->tp->syms)
                                 {
-// covscript
-//                                    if (!sp2->sb->isConstructor || (!matchesCopy(sp2, false) && !matchesCopy(sp2, true)))
-                                    {
-                                        SYMBOL* sp1 = CopySymbol(sp2);
-                                        sp1->sb->wasUsing = true;
-                                        ssp1 = sp1->sb->parentClass;
-                                        if (ssp && ismember(sp1))
-                                            sp1->sb->parentClass = ssp;
-                                        sp1->sb->mainsym = sp2;
-                                        sp1->sb->access = access;
-                                        InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
-                                        sp1->sb->parentClass = ssp1;
-                                    }
+                                    SYMBOL* sp1 = CopySymbol(sp2);
+                                    sp1->sb->wasUsing = true;
+                                    ssp1 = sp1->sb->parentClass;
+                                    if (ssp && ismember(sp1))
+                                        sp1->sb->parentClass = ssp;
+                                    sp1->sb->mainsym = sp2;
+                                    sp1->sb->access = access;
+                                    InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
+                                    sp1->sb->parentClass = ssp1;
                                 }
                             }
                             else

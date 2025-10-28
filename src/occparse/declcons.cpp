@@ -1565,6 +1565,31 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
         optimize_for_constants(&exp);
         st->select = exp;
     }
+    else if (parentCons->sb->explicitDefault)
+    {
+        if (member->tp->IsArithmetic() || member->tp->IsPtr() || member->tp->BaseType()->type == BasicType::enum_)
+        {
+            Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
+            EXPRESSION* exp;
+            thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
+            thisptr->right->keepZero = true;
+            Dereference(member->tp, &thisptr);
+            exp = MakeExpression(ExpressionNode::assign_, thisptr, MakeIntExpression(ExpressionNode::c_i_, 0));
+            optimize_for_constants(&exp);
+            st->select = exp;
+        }
+        else if (member->tp->IsStructured() && member->tp->BaseType()->sp->sb->trivialCons)
+        {
+            Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
+            EXPRESSION* exp;
+            thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
+            thisptr->right->keepZero = true;
+            auto clr = MakeExpression(ExpressionNode::blockclear_, thisptr);
+            clr->size = member->tp;
+            optimize_for_constants(&exp);
+            st->select = exp;
+        }
+    }
 }
 static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEMBERINITIALIZERS*>* mi, SYMBOL* member,
                                int memberOffs, bool top, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons,

@@ -87,12 +87,6 @@ class OS
     static void RemoveFile(const std::string name);
     static std::string NormalizeFileName(const std::string name);
     static void CreateThread(void* func, void* data);
-    template <class Function, class... Args>
-    static OMAKE::JobServerAwareThread CreateThread(Function&& f, Args&&... args)
-    {
-        // Always use the JobServer as the *SOURCE OF TRUTH* for everything, we have one instance, we can use it well
-        return OMAKE::JobServerAwareThread(localJobServer, std::forward<Function>(f), std::forward<Args>(args)...);
-    }
     static void InitJobServer();
     static std::string GetFullPath(const std::string& filename);
     static int GetProcessId();

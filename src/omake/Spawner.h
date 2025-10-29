@@ -30,7 +30,6 @@
 #include <list>
 #include <atomic>
 #include <future>
-#include "JobServerAwareThread.h"
 #include <vector>
 #include "os.h"
 #ifdef TARGET_OS_WINDOWS

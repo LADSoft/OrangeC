@@ -127,7 +127,7 @@ const char* unmang_intrins(char* buf, const char* name, const char* last)
             {
                 case 2:  // cast op
                     strcpy(buf, "operator ");
-                    if (*name == '.')
+                    if (*name == '.' && *(name + 1) == 'o')
                     {
                         buf += strlen(buf);
                         name = unmang1(buf, name + 2, last, false);
@@ -625,6 +625,11 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
         }
         buf[-2] = '>';
         buf[-1] = 0;
+    }
+    if (*name == '.' && name[1] == 'o')
+    {
+        name = unmang1(buf - 1, name + 2, last, false);
+        buf += strlen(buf);
     }
     return name;
 }

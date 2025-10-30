@@ -153,7 +153,7 @@ static const char* unmang_intrins(char (&orig)[n], char *buf, const char* name, 
             {
                 case 2:  // cast op
                     Utils::StrCpy(buf, UNMANGLE_SIZE(buf), "operator ");
-                    if (*name == '.')
+                    if (*name == '.' && *(name + 1) == 'o')
                     {
                         buf += strlen(buf);
                         name = unmang1(orig, buf, name + 2, last, false);
@@ -740,6 +740,11 @@ static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, 
         }
         buf[-2] = '>';
         buf[-1] = 0;
+    }
+    if (*name == '.' && name[1] == 'o')
+    {
+        name = unmang1(orig, buf-1,name + 2, last, false);
+        buf += strlen(buf);
     }
     return name;
 }

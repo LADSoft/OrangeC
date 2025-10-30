@@ -808,7 +808,15 @@ static bool is_base_of(EXPRESSION* exp)
     if (arguments->size() == 2)
     {
         if (first(arguments)->tp->IsStructured() && second(arguments)->tp->IsStructured())
-            rv = classRefCount(first(arguments)->tp->BaseType()->sp, second(arguments)->tp->BaseType()->sp) != 0;
+        {;
+            auto spl = first(arguments)->tp->BaseType()->sp;
+            auto spr = second(arguments)->tp->BaseType()->sp;
+            if (spl->tp->BaseType()->type != BasicType::union_)
+            {
+                rv = spl->tp->CompatibleType(spr->tp) || SameTemplate(spl->tp, spr->tp);
+            }
+            rv = rv || classRefCount(spl, spr) != 0;
+        }
     }
     return rv;
 }

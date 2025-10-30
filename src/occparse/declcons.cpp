@@ -1565,7 +1565,7 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
         optimize_for_constants(&exp);
         st->select = exp;
     }
-    else if (parentCons->sb->explicitDefault)
+    else if (parentCons->sb->explicitDefault && matchesDefaultConstructor(parentCons))
     {
         if (member->tp->IsArithmetic() || member->tp->IsPtr() || member->tp->BaseType()->type == BasicType::enum_)
         {
@@ -3269,7 +3269,10 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 }
                 if (!params->arguments->front()->initializer_list)
                 {
-                    temp = *params->arguments->front()->nested;
+                    if (params->arguments->front()->nested)
+                        temp = *params->arguments->front()->nested;
+                    else
+                        temp = *params->arguments;
                 }
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &temp2, false, initializerRef);
                 params->arguments = temp2;

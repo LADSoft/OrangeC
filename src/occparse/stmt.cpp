@@ -73,6 +73,7 @@
 #include "overload.h"
 #include "exprpacked.h"
 #include "lambda.h"
+#include "unmangle.h"
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
@@ -2552,28 +2553,60 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         else
                         {
                             bool nonconst = funcsp->sb->nonConstVariableUsed;
-                            funcparams->arguments = argumentListFactory.CreateList();
-                            funcparams->arguments->push_back(Allocate<Argument>());
-                            funcparams->arguments->front()->tp = tp1;
-                            funcparams->arguments->front()->exp = exp1;
-                            oldrref = tp1->BaseType()->rref;
-                            oldlref = tp1->BaseType()->lref;
-                            tp1->BaseType()->rref =
-                                exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
-                            if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
-                                exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
-                                tp1->BaseType()->rref = true;
-                            tp1->BaseType()->lref = !tp1->BaseType()->rref;
-                            maybeConversion = false;
-                            returntype = functionReturnType;
-                            // try the rref constructor first
-                            if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
-                                                false, false, false))
+                            bool toConstruct = true;
+                            SYMBOL* sym;
+                            if (tp1->IsStructured() && (sym = lookupSpecificCast(tp1->BaseType()->sp,  ctype)))
                             {
-                                if (funcparams->sp && matchesCopy(funcparams->sp, true))
+                                 auto tp2 = sym->tp->BaseType()->btp;
+                                 CallSite* castBody = Allocate<CallSite>();
+                                 castBody->sp = sym;
+                                 castBody->thisptr = exp1;
+                                 castBody->thistp = Type::MakeType(BasicType::pointer_, tp1);
+                                 if (sym->tp->BaseType()->btp->IsStructured())
+                                 {
+                                     castBody->returnEXP = en;
+                                     castBody->returnSP = ctype->BaseType()->sp;
+                                 }
+                                 castBody->ascall = true;
+                                 castBody->functp = sym->tp;
+                                 castBody->fcall = MakeExpression(ExpressionNode::pc_, sym);
+                                 exp1 = MakeExpression(castBody);
+                                 if (sym->tp->BaseType()->btp->IsStructured())
+                                 {
+                                     toConstruct = false;
+                                     funcsp->sb->nonConstVariableUsed = nonconst;
+                                     returntype = sym->tp->BaseType()->btp;
+                                     returnexp = exp1;
+                                 }
+                                 else
+                                 {
+                                     tp1 = sym->tp->BaseType()->btp;
+                                 }
+                            }
+                            if (toConstruct)
+                            {
+                                funcparams->arguments = argumentListFactory.CreateList();
+                                funcparams->arguments->push_back(Allocate<Argument>());
+                                funcparams->arguments->front()->tp = tp1;
+                                funcparams->arguments->front()->exp = exp1;
+                                oldrref = tp1->BaseType()->rref;
+                                oldlref = tp1->BaseType()->lref;
+                                tp1->BaseType()->rref =
+                                    exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
+                                if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
+                                    exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
+                                    tp1->BaseType()->rref = true;
+                                tp1->BaseType()->lref = !tp1->BaseType()->rref;
+                                maybeConversion = false;
+                                returntype = functionReturnType;
+                                // try the rref constructor first
+                                if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
+                                    false, false, false))
                                 {
-                                    switch (exp1->type)
+                                    if (funcparams->sp && matchesCopy(funcparams->sp, true))
                                     {
+                                        switch (exp1->type)
+                                        {
                                         case ExpressionNode::global_:
                                         case ExpressionNode::auto_:
                                         case ExpressionNode::threadlocal_:
@@ -2581,29 +2614,29 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                             break;
                                         default:
                                             break;
+                                        }
                                     }
                                 }
+                                else
+                                {
+                                    // not there try an lref version of the constructor
+                                    ctype = functionReturnType;
+                                    tp1->BaseType()->rref = false;
+                                    tp1->BaseType()->lref = true;
+                                    CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
+                                        false, false, true);
+                                }
+                                tp1->BaseType()->rref = oldrref;
+                                tp1->BaseType()->lref = oldlref;
+                                funcsp->sb->nonConstVariableUsed = nonconst;
+                                returnexp = en;
                             }
-                            else
-                            {
-                                // not there try an lref version of the constructor
-                                ctype = functionReturnType;
-                                tp1->BaseType()->rref = false;
-                                tp1->BaseType()->lref = true;
-                                CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
-                                                false, false, true);
-                            }
-                            tp1->BaseType()->rref = oldrref;
-                            tp1->BaseType()->lref = oldlref;
-                            funcsp->sb->nonConstVariableUsed = nonconst;
-                            returnexp = en;
                         }
                     }
                 }
             }
             else
             {
-
                 returnexp = exp1;
                 if (!returnexp)
                     returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);

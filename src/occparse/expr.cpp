@@ -2210,7 +2210,14 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                     if (!decl)
                         toolong = true;
                     else if (itp == itpe && !(*it)->sb->init && !(*it)->sb->deferredCompile)
-                        tooshort = true;
+                    {
+                        auto tp2 = (*it)->tp;
+                        while (tp2->IsRef() || tp2->IsPtr())
+                            tp2 = tp2->BaseType()->btp;
+                        tp2 = tp2->BaseType();
+
+                        tooshort = tp2->type != BasicType::templateparam_ || !tp2->templateParam->second->packed;
+                    }
                     else if (itp != itpe)
                     {
                         decl->tp->InstantiateDeferred();
@@ -4711,21 +4718,24 @@ LexList* expression_arguments(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSIO
                     {
                         if ((*itq)->sb->thisPtr)
                             ++itq;
-                        Type* tp = (*itq)->tp;
-                        if (tp->IsRef())
+                        if (itq != tp1->BaseType()->syms->end())
                         {
-                            initializerRef = true;
-                            tp = tp->BaseType()->btp;
-                        }
-                        if (tp->IsStructured())
-                        {
-                            SYMBOL* sym = (tp->BaseType()->sp);
-                            if (sym->sb->initializer_list && sym->sb->templateLevel)
+                            Type* tp = (*itq)->tp;
+                            if (tp->IsRef())
                             {
-                                auto itr = sym->templateParams->begin();
-                                ++itr;
-                                initializerListTemplate = sym->tp;
-                                initializerListType = itr->second->byClass.val;
+                                initializerRef = true;
+                                tp = tp->BaseType()->btp;
+                            }
+                            if (tp->IsStructured())
+                            {
+                                SYMBOL* sym = (tp->BaseType()->sp);
+                                if (sym->sb->initializer_list && sym->sb->templateLevel)
+                                {
+                                    auto itr = sym->templateParams->begin();
+                                    ++itr;
+                                    initializerListTemplate = sym->tp;
+                                    initializerListType = itr->second->byClass.val;
+                                }
                             }
                         }
                     }

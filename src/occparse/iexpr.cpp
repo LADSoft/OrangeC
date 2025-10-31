@@ -895,7 +895,10 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         {
                             return gen_expr(funcsp, exp->left->left, 0, ISZ_ADDR);
                         }
-                        return gen_expr(funcsp, inlineSymStructPtr.back(), 0, ISZ_ADDR);
+                        if (exp->type != ExpressionNode::l_p_ || exp->left->type != ExpressionNode::auto_ || exp->left->v.sp != node->left->v.sp)
+                        {
+                            return gen_expr(funcsp, inlineSymStructPtr.back(), 0, ISZ_ADDR);
+                        }
                     }
                 }
                 sym = Optimizer::SymbolManager::Get(node->left->v.sp);

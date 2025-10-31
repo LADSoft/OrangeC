@@ -49,8 +49,11 @@ bool WINDOWSJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
+    if (current_jobs >= 1)
+    {
+        semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+    }
     current_jobs++;
-    semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
     return true;
 }
 bool WINDOWSJobServer::ReleaseJob()
@@ -63,7 +66,7 @@ bool WINDOWSJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    else
+    else if (current_jobs > 1)
     {
         semaphore.Post();
     }

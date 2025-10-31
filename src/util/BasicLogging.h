@@ -1,7 +1,10 @@
 #pragma once
+#include <string>
 #include <iostream>
 #include <utility>
 #include <functional>
+#include <type_traits>
+
 namespace OrangeC
 {
 namespace Utils
@@ -22,7 +25,8 @@ class BasicLogger
   public:
     static void SetVerbosity(int iverbosity) { verbosity = iverbosity; }
     static void SetPrologue(std::string str) { prologue = str; }
-    static std::string stringify(std::string str) { return str; }
+    static std::string stringify(const std::string&& str) { return str; }
+    static std::string stringify(const std::string& str) { return str; }
     static std::string stringify(const char* str) { return str; }
     template <typename T>
     static std::string stringify(T item)
@@ -35,7 +39,13 @@ class BasicLogger
         if (verbosity >= (int)verbositylevel)
         {
             // I'd really love something like fmt::format here, or std::format, but alas, c++14 vs c++20
-            std::cout << prologue << stringify(args...) << std::endl;
+            std::cout << prologue;
+            auto arr = {stringify(args)...};
+            for (auto&& val : arr)
+            {
+                std::cout << val;
+            }
+            std::cout << std::endl;
         }
     }
     template <typename... Args>

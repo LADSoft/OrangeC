@@ -46,52 +46,20 @@
 #endif
 class OSTakeJobIfNotMake
 {
-    static const int MaxOmakeInstances = 2;
     bool take_job = false;
-    static bool initted;
-    static Semaphore sem;
 
   public:
     OSTakeJobIfNotMake(bool take_job = false) : take_job(take_job)
     {
-        if (!initted)
-        {
-            initted = true;
-            if (OS::JobCount() == 1)
-            {
-                for (int i = 0; i < MaxOmakeInstances - 1; i++)
-                    sem.Wait();
-            }
-        }
-        if (take_job)
-        {
-            OS::TakeJob();
-        }
-        else
-        {
-            sem.Wait();
-        }
+        OrangeC::Utils::BasicLogger::extremedebug("Constructing OSTakeJobIfNotMake");
+        OS::TakeJob();
     }
     ~OSTakeJobIfNotMake()
     {
-        if (take_job)
-        {
-            OS::GiveJob();
-        }
-        else
-        {
-            try
-            {
-                sem.Post();
-            }
-            catch (std::runtime_error)
-            { /* don't care */
-            }
-        }
+        OrangeC::Utils::BasicLogger::extremedebug("Destructing OSTakeJobIfNotMake");
+        OS::GiveJob();
     }
 };
-bool OSTakeJobIfNotMake::initted;
-Semaphore OSTakeJobIfNotMake::sem(MaxOmakeInstances, MaxOmakeInstances);
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 bool Spawner::stopAll;
@@ -367,7 +335,8 @@ bool Spawner::split(const std::string& cmd)
 }
 std::string Spawner::shell(const std::string& cmd)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_WARNING, OS::JobName() + " is running $(shell " + cmd + " )");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_WARNING,
+                                     OS::JobName() + " is running $(shell " + cmd + " )");
     std::string rv = OS::SpawnWithRedirect(cmd);
     int n = rv.size();
     while (n && (rv[n - 1] == '\r' || rv[n - 1] == '\n'))

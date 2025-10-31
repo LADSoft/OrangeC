@@ -50,7 +50,8 @@ class Depends
         displayOnly(false),
         ignoreResults(false)
     {
-        OrangeC::Utils::BasicLogger::debug("Depends with goal: " + Goal + " is being constructed");
+        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,
+                                         "Depends with goal: " + this->GetGoal() + " is being destructed");
     }
     ~Depends();
 

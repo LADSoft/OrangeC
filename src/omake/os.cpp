@@ -268,7 +268,7 @@ void OS::InitJobServer()
             name = MakeMain::jobServer.GetValue();
             OrangeC::Utils::BasicLogger::extremedebug("Getting from a current job server in InitJobServer");
             localJobServer = OMAKE::JobServer::GetJobServer(name);
-            OrangeC::Utils::BasicLogger::extremedebug("Made a new job server in InitJobServer");
+            OrangeC::Utils::BasicLogger::extremedebug("Made a new job server from existing in InitJobServer");
         }
         else
         {
@@ -614,6 +614,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
     char cwd[PATH_MAX];
     getcwd(cwd, PATH_MAX);
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", command);
     ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, strs.data());
     std::string output_str;
     posix_spawn_file_actions_destroy(&spawn_file_actions);
@@ -786,6 +787,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
     posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);
     posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[0]);
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command", command);
     const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
     int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, environ);
     std::string output_str;

@@ -14,13 +14,14 @@ namespace OMAKE
 {
 std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
 {
-    OrangeC::Utils::BasicLogger::log(5, "GetJobServer making new job server");
 #ifdef TARGET_OS_WINDOWS
     // let's use a number that is gauranteed to be unique per-process so that no other process can *ACCIDENTALLY* generate this
     // value unless they're trying to be sneaky
     int pid = getpid();
     std::string omake_string = "OMAKE";
     std::string combined = omake_string + std::to_string(pid);
+    OrangeC::Utils::BasicLogger::log(5,
+                                     "GetJobServer making new job server: " + combined + " job count: " + std::to_string(max_jobs));
     return std::make_shared<WINDOWSJobServer>(combined, max_jobs);
 #else
     int pid = getpid();

@@ -2,7 +2,7 @@
 #include <random>
 #include <array>
 #include <algorithm>
-#include <Functional>
+#include <functional>
 #ifdef TARGET_OS_WINDOWS
 #    include <process.h>
 #endif

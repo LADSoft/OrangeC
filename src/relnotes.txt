@@ -1,6 +1,7 @@
 Release notes:
 
 version 6.0.74
+    project: make updates so that it would compile with g++15
     project: full support for C++17
     project: update libcxx to libcxx 17
     project: finish supporting C23 (adds #embed to previous functionality)
@@ -10,6 +11,9 @@ version 6.0.74
     project: enable building with the C++17 version of the compiler
     project: add git actions to build checkins with MSVC and GCC
     project: occil supports .NET core
+    project: make adjustments so that compiling OCC with the 64-bit MSVC results in a working compiler
+    project: many source code improvements
+    occ: find bugs by compiling 3rd-party programs
     occ: fix templated lambdas to not strip qualifiers and references when making the template variables
     occ: fix problems with code generation for dfault copy constructors for unions
     occ: fix problems where a default constructor dragged in via USING statement could generate infinite recursion
@@ -61,10 +65,19 @@ version 6.0.74
     occ: bug fixes to integer template arguments
     occ: optimize the lazy optimizer a bit 
     occ: fix range-based for when the range is a bracketed list of initializers
-
+    occ  fix optimizers problems with strength reduction optimization
     occ: fix various programs that crashed
     occ: fix various programs that didn't compile
-
+    occ: code generation for bit test operations could wipe unrelated registers
+    occ: support export_all_symbols fully
+    occ: code generation for a div could assume EAX was preserved (it isn't)
+    occ: fix optimization of bit fields to work better
+    occ: fix compiler bug to value initialize when a constructor was specifically declared as default
+    occ: logical and math operations where the arguments are identical enums, resulted in a conversion to int.
+    occ: fix compiler bugs so that the c++17 filesystem library works
+    occ: can now partially optimize functions that have inline assembly (but they can't be inlined)
+    occ: fix name unmangling for templated cast operators to work better
+    occ: fix other bugs with name unmangling
     occil: could generate virtual BSS data in MSIL code
     occil: optimize locals better
     occil: default code generation is CONSOLE apps
@@ -73,18 +86,22 @@ version 6.0.74
     ocpp: source code cleanup, change some #defines to typedefs
     occ, ocpp:  make stub generation should go to stdout unless something else is specified
     occ, ocpp:  add __FUNCTION__ to preprocessor
+    occ, ocpp:  add named varargs macro extension
     olib: fix case sensitivy handling for symbols
     olib: fix bugs with extract command
     olib: support unitialized BSS virtual sections
     olib: detect libraries that are not formatted correctly
     olink: support uninitialized BSS virtual sections
-    olink: ignore common MSVC import libraries if specified on the command line
+    olink: ignore common MSVC import libraries if specified on the command linefix 
     onm: don't consider onm itself as an input file
     omake: improve builds by not having potentially hundreds of omake instances waiting for something to do
+    omake: fix compiler bug that caused omake to crash randomly when compiled with occ
     orc: was unable to specify an output file
     dlpe: add symbols for missing publics (for virtual bss code generation)
-
-
+    gccocc: allow space between -o and the parameter
+    libocc: copy output file with an extension of .lib
+    oasm: .text and .data sections could switch to 16 bits when using section directives
+    oasm: fix gas 'jmp *%reg' instruction to work properly
     rtl: add _TRUNCATE
     rtl: add a few const qualifiers to wide string functions they were missing in
     rtl: fix some problems with WIN32 headers not appearing in ZIP files...
@@ -95,14 +112,14 @@ version 6.0.74
     rtl: fix import library support for winsock
     rtl: add ws2_32.dll to the import library support
     rtl: use bottom-up allocation with the lea allocator and use MEM_RESERVE
-
+    rtl: typeino header needed a hash_code function
+    rtl: updates to winbase.h
+    rtl: add wide character functions for directory name parsing
+    rtl: fix compiler bugs to allow multimap.insert to compile
     build: sqlite3.l would sometimes be confused for a lexer input file
     build: don't put multiple msvc project files in same directory
     build: fix make the docs configuration file
     build: fix bugs that made appveyor build fail randomly
-
-
-
 
 version 6.0.73 (sep 23, 2023)
     project: update sqlite3 to latest version

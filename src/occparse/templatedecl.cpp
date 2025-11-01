@@ -83,7 +83,6 @@ int inTemplateArgs;
 bool fullySpecialized;
 
 int templateNameTag;
-std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*, StringHash>> classTemplateMap;
 std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
 std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 
@@ -107,7 +106,6 @@ void templateInit(void)
     instantiatingFunction = 0;
     defaultParsingContext = nullptr;
     inDeduceArgs = 0;
-    classTemplateMap.clear();
     classTemplateMap2.clear();
     classInstantiationMap.clear();
     templateNameTag = 1;

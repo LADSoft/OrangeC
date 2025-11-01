@@ -84,7 +84,8 @@
 #include "exprpacked.h"
 #include <cstdlib>
 #include <cstdio>
-
+#include "sha1.h"
+#include "templateHash.h"
 //#define x64_compiler
 #ifndef __SANITIZE_ADDRESS__
 #ifndef x64_compiler
@@ -383,6 +384,7 @@ void compile(bool global)
     lexini();
     setglbdefs();
     templateInit();
+    templateHashInit();
 
     if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {

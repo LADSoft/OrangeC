@@ -45,7 +45,6 @@ extern int inTemplateArgs;
 extern bool fullySpecialized;
 
 extern int templateNameTag;
-extern std::unordered_map<SYMBOL*, std::unordered_map<std::string, SYMBOL*, StringHash>> classTemplateMap;
 extern std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
 extern std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 

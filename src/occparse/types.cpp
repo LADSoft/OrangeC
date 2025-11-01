@@ -3672,7 +3672,6 @@ Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic
     while (KWTYPE(lex, TT_TYPEQUAL) || (allowstatic && MATCHKW(lex, Keyword::static_)))
     {
         Type* tpn;
-        Type* tpl;
         if (MATCHKW(lex, Keyword::intrinsic_))
         {
             lex = getsym();

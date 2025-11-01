@@ -177,6 +177,12 @@
     <ClInclude Include="exprpacked.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="templatehash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netlib\sha1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="beinterf.cpp">
@@ -453,6 +459,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ocpp\ppEmbed.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="templatehash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netlib\sha1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

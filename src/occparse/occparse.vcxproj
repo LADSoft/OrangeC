@@ -27,6 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\netlib\sha1.h" />
     <ClInclude Include="beinterf.h" />
     <ClInclude Include="browse.h" />
     <ClInclude Include="c.h" />
@@ -48,6 +49,7 @@
     <ClInclude Include="expreval.h" />
     <ClInclude Include="exprpacked.h" />
     <ClInclude Include="floatconv.h" />
+    <ClInclude Include="templatehash.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="iexpr.h" />
     <ClInclude Include="iinline.h" />
@@ -83,6 +85,7 @@
     <ClInclude Include="wseh.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\netlib\sha1.cpp" />
     <ClCompile Include="..\oasm\AdlFunctions.cpp" />
     <ClCompile Include="..\oasm\AsmExpr.cpp" />
     <ClCompile Include="..\oasm\AsmFile.cpp" />
@@ -144,6 +147,7 @@
     <ClCompile Include="expreval.cpp" />
     <ClCompile Include="exprpacked.cpp" />
     <ClCompile Include="floatconv.cpp" />
+    <ClCompile Include="templatehash.cpp" />
     <ClCompile Include="help.cpp" />
     <ClCompile Include="iexpr.cpp" />
     <ClCompile Include="iinline.cpp" />

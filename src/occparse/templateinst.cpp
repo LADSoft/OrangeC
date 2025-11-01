@@ -61,6 +61,8 @@
 #include "class.h"
 #include "expr.h"
 #include "exprpacked.h"
+#include "sha1.h"
+#include "templatehash.h"
 namespace Parser
 {
 int templateDeclarationLevel;
@@ -4419,15 +4421,19 @@ static void ChooseMoreSpecialized(SYMBOL** list, int n)
         }
     }
 }
+int count3;
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
+    if (!strcmp(sp->name, "is_convertible"))
+        if (++count3 == 0x3)
+            printf("hi");
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;
     int n = 1, i = 0;
     std::list<TEMPLATEPARAMPAIR>* unspecialized = sp->templateParams;
-    SYMBOL *found1 = nullptr, *found2 = nullptr;
-    SYMBOL **spList, **origList;
+    SYMBOL* found1 = nullptr, * found2 = nullptr;
+    SYMBOL** spList, ** origList;
     std::list<TEMPLATEPARAMPAIR>* search = args;
     int count = 0;
     noErr |= matchOverloadLevel;
@@ -4445,23 +4451,18 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     if (sp->sb->parentTemplate)
         sp = sp->sb->parentTemplate;
 
-    std::string argumentName;
-    if (GetTemplateArgumentName(args, argumentName, false))
+    DotNetPELib::SHA1Context context;
+    found1 = LookupTemplateClass(context, sp, args);
+    if (found1)
     {
-        SYMBOL* found1 = classTemplateMap[sp][argumentName];
-        if (found1)
+        if (allTemplateArgsSpecified(found1, found1->templateParams))
         {
-            if (allTemplateArgsSpecified(found1, found1->templateParams))
-                return found1;
+            return found1;
         }
-    }
-    else
-    {
-        argumentName.clear();
     }
     if (sp->sb->specializations)
         n += sp->sb->specializations->size();
-    spList = (SYMBOL**)alloca(n* sizeof(SYMBOL*));
+    spList = (SYMBOL**)alloca(n * sizeof(SYMBOL*));
     origList = (SYMBOL**)alloca(n * sizeof(SYMBOL*));
     origList[i++] = sp;
     if (sp->sb->specializations)
@@ -4644,15 +4645,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             parent->sb->instantiations->push_back(found1);
             if (!strchr(found1->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
             {
-                if (!argumentName.empty() && found1->templateParams->size() - 1 == (args ? args->size() : 0))
-                {
-                    if (found1->sb->deferredCompile ||
-                        (found1->sb->maintemplate && found1->sb->maintemplate->sb->deferredCompile) ||
-                        (found1->sb->parentTemplate && found1->sb->parentTemplate->sb->deferredCompile))
-                    {
-                        classTemplateMap[sp][argumentName] = found1;
-                    }
-                }
+                RegisterTemplateClass(context, found1);
                 classTemplateMap2[found1->sb->decoratedName] = found1;
             }
         }
@@ -4665,7 +4658,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             found1->tp->sp = found1;
 
             found1->templateParams = templateParamPairListFactory.CreateList();
-            found1->templateParams->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
+            found1->templateParams->push_back(TEMPLATEPARAMPAIR{ nullptr, Allocate<TEMPLATEPARAM>() });
             *found1->templateParams->back().second = *sym->templateParams->front().second;  // the TplType::new_ entry
             auto it = sym->templateParams->begin();
             ++it;

@@ -111,7 +111,7 @@ const char* overloadXlateTab[] = {
 
 #define MAX_MANGLE_NAME_COUNT 36
 
-static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
+char mangledNames[MAX_MANGLE_NAME_COUNT][256];
 int mangledNamesCount;
 
 template <int n>
@@ -1222,131 +1222,6 @@ static bool validType(Type* tp, bool byVal)
             break;
         default: {
             break;
-        }
-    }
-    return true;
-}
-bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& result, bool byVal)
-{
-
-    mangledNamesCount = 0;
-    if (!params || !params->size() || (params->size() == 1 && params->front().second->type == TplType::new_))
-        result = "v";
-    else
-        result = "";
-    if (params)
-    {
-        for (auto&& param : *params)
-        {
-            if (param.second->type != TplType::new_)
-            {
-                char buf[8000];
-                void* dflt;
-                if (param.second->packed)
-                {
-                    if (!param.second->byPack.pack || !param.second->byPack.pack->size())
-                    {
-                        return false;
-                    }
-                    for (auto tpl : *param.second->byPack.pack)
-                    {
-                        buf[0] = 0;
-                        if (byVal)
-                        {
-                            dflt = tpl.second->byClass.val;
-                            if (!dflt)
-                                dflt = tpl.second->byClass.dflt;
-                        }
-                        else
-                        {
-                            dflt = tpl.second->byClass.dflt;
-                            if (!dflt)
-                                dflt = tpl.second->byClass.val;
-                        }
-                        if (!dflt)
-                            return false;
-                        switch (param.second->type)
-                        {
-                            case TplType::typename_:
-                            {
-                                if (!validType((Type*)dflt, byVal))
-                                    return false;
-                                result += 'c';
-                                Type* tp1 = (Type*)dflt;
-                                while (tp1->IsPtr() || tp1->IsRef())
-                                    tp1 = tp1->BaseType()->btp;
-                                char* p = buf;
-                                if (tp1->IsStructured() && tp1->BaseType()->sp->sb->parentClass)
-                                {
-                                    p = mangleType(buf, buf, tp1->BaseType()->sp->sb->parentClass->tp, true);
-                                    *p = 0;
-                                }
-                                *(mangleType(buf, p, (Type*)dflt, true)) = 0;
-                                break;
-                            }
-                            case TplType::int_:
-                                result += 'i';
-                                *mangleExpression(buf, buf, (EXPRESSION*)dflt) = 0;
-                                break;
-                            case TplType::template_:
-                                result += 't';
-                                *mangleTemplate(buf, buf, (SYMBOL*)dflt, tpl.second->byTemplate.args) = 0;
-                                break;
-                        }
-
-                        result += buf;
-                    }
-                }
-                else
-                {
-                    if (byVal)
-                    {
-                        dflt = param.second->byClass.val;
-                        if (!dflt)
-                            dflt = param.second->byClass.dflt;
-                    }
-                    else
-                    {
-                        dflt = param.second->byClass.dflt;
-                        if (!dflt)
-                            dflt = param.second->byClass.val;
-                    }
-                    if (!dflt)
-                        return false;
-                    buf[0] = 0;
-                    switch (param.second->type)
-                    {
-                        case TplType::typename_:
-                        {
-                            if (!validType((Type*)dflt, byVal))
-                                return false;
-                            result += 'c';
-                            Type* tp1 = (Type*)dflt;
-                            while (tp1->IsPtr() || tp1->IsRef())
-                                tp1 = tp1->BaseType()->btp;
-                            char* p = buf;
-                            if (tp1->IsStructured() && tp1->BaseType()->sp->sb->parentClass)
-                            {
-                                p = mangleType(buf, buf, tp1->BaseType()->sp->sb->parentClass->tp, true);
-                                *p = 0;
-                            }
-                            *(mangleType(buf, p, (Type*)dflt, true)) = 0;
-                            break;
-                        }
-                        case TplType::int_:
-                            if (((EXPRESSION*)dflt)->type == ExpressionNode::templateparam_)
-                                return false;
-                            result += 'i';
-                            *mangleExpression(buf, buf, (EXPRESSION*)dflt) = 0;
-                            break;
-                        case TplType::template_:
-                            result += 't';
-                            *mangleTemplate(buf, buf, (SYMBOL*)dflt, param.second->byTemplate.args) = 0;
-                            break;
-                    }
-                    result += buf;
-                }
-            }
         }
     }
     return true;

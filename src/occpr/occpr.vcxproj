@@ -91,6 +91,7 @@
     <ClCompile Include="..\occparse\symtab.cpp" />
     <ClCompile Include="..\occparse\templatedecl.cpp" />
     <ClCompile Include="..\occparse\templatededuce.cpp" />
+    <ClCompile Include="..\occparse\templatehash.cpp" />
     <ClCompile Include="..\occparse\templateinst.cpp" />
     <ClCompile Include="..\occparse\templateutil.cpp" />
     <ClCompile Include="..\occparse\types.cpp" />
@@ -126,6 +127,7 @@
     <ClInclude Include="..\occparse\exprpacked.h" />
     <ClInclude Include="..\occparse\namespace.h" />
     <ClInclude Include="..\occparse\overload.h" />
+    <ClInclude Include="..\occparse\templatehash.h" />
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="symtypes.h" />

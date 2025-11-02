@@ -105,11 +105,24 @@ void OS::TerminateAll()
     for (auto a : processIds)
     {
 #ifdef TARGET_OS_WINDOWS
-        TerminateProcess(a, 0);
+        TerminateProcess(a, 0); 
 #else
         kill(a, 0);
 #endif
     }
+}
+static bool is_unixlike_shell(const std::string& str)
+{
+    using namespace std::string_literals;
+    std::array arr = {"cmd"s, "cmd.exe"s, "command"s, "command.com"s};
+    for (auto&& val : arr)
+    {
+        if (str.find(val) != std::string::npos)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
@@ -378,20 +391,34 @@ void OS::JobRundown()
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "Entering OS::Spawn(command, env, output)");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
+                                     "Entering OS::Spawn(command, env, output)");
 #ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
 
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    bool shell_type = (bool)v;
-    std::string cmd = v->GetValue();
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("COMSPEC");
+        if (!v)
+        {
+            v = VariableContainer::Instance()->Lookup("ComSpec");
+        }
+        if (!v)
+        {
+            OS::WriteErrorToConsole("Somehow both SHELL and COMSPEC are undefined!");
+            throw std::runtime_error("No valid shells found");
+        }
+    }
+    std::string shell = v->GetValue();
+    std::string cmd = shell;
     if (v->GetFlavor() == Variable::f_recursive)
     {
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
     bool asapp = true;
-    if (shell_type)
+    if (is_unixlike_shell(shell))
     {
         cmd = v->GetValue() + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
@@ -476,6 +503,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
+        OrangeC::Utils::BasicLogger::extremedebug("Opened command: ", command1);
         {
             std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.insert(pi.hProcess);
@@ -509,6 +537,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     }
     else
     {
+        OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", cmd);
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
@@ -691,17 +720,29 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 std::string OS::SpawnWithRedirect(const std::string command)
 {
 #ifdef TARGET_OS_WINDOWS
-    std::string command1 = std::move(command);
+    std::string command1 = command;
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    bool shell_like = (bool)v;
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("COMSPEC");
+        if (!v)
+        {
+            v = VariableContainer::Instance()->Lookup("ComSpec");
+        }
+        if (!v)
+        {
+            OS::WriteErrorToConsole("Somehow both SHELL and COMSPEC are undefined!");
+            throw std::runtime_error("No valid shells found");
+        }
+    }
     std::string cmd = v->GetValue();
     if (v->GetFlavor() == Variable::f_recursive)
     {
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    if (shell_like)
+    if (is_unixlike_shell(v->GetValue()))
     {
         cmd = v->GetValue() + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
@@ -733,6 +774,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     startup.hStdOutput = pipeWriteDuplicate;
     startup.hStdError = pipeWriteDuplicate;
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", cmd);
     if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, nullptr, nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -787,7 +829,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
     posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);
     posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[0]);
-    OrangeC::Utils::BasicLogger::extremedebug("Spawning command", command);
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", command);
     const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
     int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, environ);
     std::string output_str;

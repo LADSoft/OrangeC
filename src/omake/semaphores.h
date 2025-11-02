@@ -80,13 +80,14 @@ class Semaphore
         handle = OpenSemaphore(EVENT_ALL_ACCESS, FALSE, name.c_str());
         if (!handle)
         {
-            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()));
+            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(GetLastError()) +
+                                        " name: " + name);
         }
 #else
         auto ret = sem_open(name.c_str(), O_RDWR);
         if (ret == SEM_FAILED)
         {
-            throw std::invalid_argument("OpenSemaphore failed, presumably bad name, Error code: " + std::to_string(errno));
+            throw std::invalid_argument("sem_open failed, presumably bad name, Error code: " + std::to_string(errno));
         }
         handle = *ret;
 #endif

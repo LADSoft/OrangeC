@@ -42,6 +42,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <sstream>
+#include <filesystem>
 #include "BasicLogging.h"
 
 CmdSwitchParser MakeMain::SwitchParser;
@@ -569,6 +570,8 @@ int MakeMain::Run(int argc, char** argv)
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());
+    std::string make_command_path = files[0];
+    std::string proper_make = std::filesystem::absolute(make_command_path).string();
     while (!done && !Eval::GetErrCount())
     {
         VariableContainer::Instance()->Clear();
@@ -579,7 +582,7 @@ int MakeMain::Run(int argc, char** argv)
         LoadCmdDefines();
         RunEquates();
         OS::InitJobServer();
-        SetVariable("MAKE", files[0].c_str(), Variable::o_environ, false);
+        SetVariable("MAKE", proper_make.c_str(), Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)
         {

@@ -61,6 +61,9 @@
 #include "overload.h"
 #include "exprpacked.h"
 #include "exprpacked.h"
+#include "sha1.h"
+#include "templatehash.h"
+
 namespace Parser
 {
 static std::unordered_set<SYMBOL*> enteredInlines;
@@ -218,7 +221,9 @@ void dumpInlines(void)
                         SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         SYMBOL* origsym;
                         std::string argumentName;
-                        auto found2 = classTemplateMap2[sym->sb->parentClass->sb->decoratedName];
+                        DotNetPELib::SHA1Context generatedContext;
+
+                        auto found2 = LookupGeneratedTemplateClass(generatedContext, sym->sb->parentClass);
                         if (found2)
                         {
                             parentTemplate = found2;

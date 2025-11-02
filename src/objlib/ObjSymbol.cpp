@@ -1393,7 +1393,7 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                     {
                         name++;
                         PUTCH(buf,  '<');
-                        while (*name && *name != '.')
+                        while (*name && *name != '~')
                         {
                             PUTZERO(buf);
                             name = unmang1(orig, buf, name, last, false);
@@ -1409,12 +1409,12 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                                 unmang2(orig, buf, temp);
                                 buf += strlen(buf);
                             }
-                            if (*name && *name != '.')
+                            if (*name && *name != '~')
                             {
                                 PUTCH(buf,  ',');
                                 PUTCH(buf,  ' ');
-                                PUTZERO(buf);
                             }
+                            PUTZERO(buf);
                         }
                         buf[-2] = '>';
                         buf--;

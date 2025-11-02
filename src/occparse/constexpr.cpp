@@ -1582,16 +1582,19 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                 {
                     if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
-                        found1 = found1->sb->mainsym;
-                        if (found1)
+                        if (!allTemplateArgsSpecified(found1, found1->templateParams))
                         {
-                            if (found1->sb->castoperator)
+                            found1 = found1->sb->mainsym;
+                            if (found1)
                             {
-                                found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
-                            }
-                            else
-                            {
-                                found1 = detemplate(found1, node->v.func, nullptr);
+                                if (found1->sb->castoperator)
+                                {
+                                    found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
+                                }
+                                else
+                                {
+                                    found1 = detemplate(found1, node->v.func, nullptr);
+                                }
                             }
                         }
                     }

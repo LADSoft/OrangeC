@@ -348,7 +348,8 @@ namespace
             case ExpressionNode::constexprconstructor_:
                 hashExpressionInternal(context, exp->left);
                 break;
-            case ExpressionNode::callsite_: {
+            case ExpressionNode::callsite_: 
+            {
                 if (exp->v.func->ascall)
                 {
                     PUTCH('f');
@@ -535,7 +536,18 @@ namespace
                     }
                     else
                     {
-                        PUTCH('i');
+                        if (it->second->byNonType.tp->IsInt())
+                        {
+                            PUTCH('i');
+                        }
+                        else if (it->second->byNonType.tp->IsFloat())
+                        {
+                            PUTCH('f');
+                        }
+                        else
+                        {
+                            hashType(context, it->second->byNonType.tp, true);
+                        }
                         if ((bySpecial || sym->sb && sym->sb->instantiated) && it->second->byNonType.val)
                         {
                             EXPRESSION* exp =
@@ -734,11 +746,48 @@ namespace
                     }
                     break;
                 case BasicType::templateparam_:
-                    if (tp->templateParam->second->type == TplType::typename_ && tp->templateParam->second->byClass.val &&
-                        tp->templateParam->second->byClass.val->BaseType()->type != BasicType::templateparam_)
-                        hashType(context, tp->templateParam->second->byClass.val, false);
+                    if (tp->templateParam->second->type == TplType::typename_)
+                    {
+                        if (tp->templateParam->second->packed)
+                        {
+                            if (tp->templateParam->second->byPack.pack)
+                            {
+                                for (auto&& tpl : *tp->templateParam->second->byPack.pack)
+                                {
+                                    auto dflt = tpl.second->byClass.dflt;
+                                    if (!dflt)
+                                        dflt = tpl.second->byClass.val;
+                                    if (dflt && dflt->BaseType()->type != BasicType::templateparam_)
+                                    {
+                                        hashType(context, dflt, false);
+                                    }
+                                    else
+                                    {
+                                        getName(context, tpl.first);
+                                    }
+
+                                }
+                            }
+                        }
+                        else
+                        {
+                            auto dflt = tp->templateParam->second->byClass.dflt;
+                            if (!dflt)
+                                dflt = tp->templateParam->second->byClass.val;
+                            if (dflt && dflt->BaseType()->type != BasicType::templateparam_)
+                            {
+                                hashType(context, dflt, false);
+                            }
+                            else
+                            {
+                                getName(context, tp->templateParam->first);
+                            }
+                        }
+                    }
                     else
+                    {
                         getName(context, tp->templateParam->first);
+                    }
                     break;
                 case BasicType::templateselector_: {
                     auto s = (*tp->sp->sb->templateSelector).begin();
@@ -837,18 +886,18 @@ namespace
         {
             for (auto elem : *sym->sb->specializations)
             {
-                syms.Add(elem);
+                syms.AddName(elem);
             }
         }
         hashCandidates(context, &syms);
     }
      void hashTemplateParents(DotNetPELib::SHA1Context& context, SYMBOL* sym)
     {
-        SYMBOL* lastParent = sym;
+        SYMBOL* lastParent = sym->sb->parent ? sym->sb->parent : sym;
         while (lastParent->sb->parentClass)
             lastParent = lastParent->sb->parentClass;
         hashNameSpaces(context, lastParent->sb->parentNameSpace);
-        hashClasses(context, sym->sb->parentClass);
+        hashClasses(context, (sym->sb->parent ? sym->sb->parent : sym)->sb->parentClass);
         if (sym->sb->parent)
         {
             hashParent(context, sym);
@@ -972,8 +1021,6 @@ namespace
                         {
                         case ExpressionNode::pc_:
                         case ExpressionNode::global_:
-                        case ExpressionNode::callsite_:
-                        case ExpressionNode::comma_:
                             break;
                         default:
                             return false;
@@ -1058,7 +1105,7 @@ namespace Parser
 SYMBOL* LookupTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     context.Computed = false;
-    if (!inTemplateArgs && !inTemplateHeader && (!definingTemplate || instantiatingTemplate || hasAllArgs(sym, params)))
+    if (hasAllArgs(sym, params))
     {
         DotNetPELib::SHA1Reset(&context);
         PUTCH('@');
@@ -1074,6 +1121,20 @@ SYMBOL* LookupTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym, std:
         {
             return it->second;
         }
+    }
+    return nullptr;
+}
+SYMBOL* LookupGeneratedTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+{
+    DotNetPELib::SHA1Reset(&context);
+    PUTSTRING(sym->sb->decoratedName);
+    DotNetPELib::SHA1Result(&context);
+    std::array<unsigned char, SHA1_DIGEST_SIZE> array;
+    std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
+    auto it = classHash.find(array);
+    if (it != classHash.end())
+    {
+        return it->second;
     }
     return nullptr;
 }

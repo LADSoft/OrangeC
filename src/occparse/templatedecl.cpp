@@ -83,7 +83,6 @@ int inTemplateArgs;
 bool fullySpecialized;
 
 int templateNameTag;
-std::unordered_map<std::string, SYMBOL*, StringHash> classTemplateMap2;
 std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 
 struct templateListData* currents;
@@ -106,7 +105,6 @@ void templateInit(void)
     instantiatingFunction = 0;
     defaultParsingContext = nullptr;
     inDeduceArgs = 0;
-    classTemplateMap2.clear();
     classInstantiationMap.clear();
     templateNameTag = 1;
     fullySpecialized = false;
@@ -2014,7 +2012,7 @@ bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATE
                     return false;
                 if (its->second->packed)
                 {
-                    if (firstVariadic)
+                    if (firstVariadic) 
                     {
                         its->second->byPack.pack = templateParamPairListFactory.CreateList();
                     }

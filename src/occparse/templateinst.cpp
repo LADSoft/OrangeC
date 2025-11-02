@@ -4421,12 +4421,8 @@ static void ChooseMoreSpecialized(SYMBOL** list, int n)
         }
     }
 }
-int count3;
 SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool noErr)
 {
-    if (!strcmp(sp->name, "is_convertible"))
-        if (++count3 == 0x3)
-            printf("hi");
     // quick check for non-template
     if (!sp->sb->templateLevel)
         return sp;
@@ -4457,8 +4453,9 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     {
         if (allTemplateArgsSpecified(found1, found1->templateParams))
         {
-            return found1;
+             return found1;
         }
+        found1 = nullptr;
     }
     if (sp->sb->specializations)
         n += sp->sb->specializations->size();
@@ -4632,10 +4629,12 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, Linkage::cdecl_);
-            auto found2 = classTemplateMap2[found1->sb->decoratedName];
+            DotNetPELib::SHA1Context generatedContext;
+            auto found2 = LookupGeneratedTemplateClass(generatedContext, found1);
             if (found2 && (found2->sb->specialized || !found1->sb->specialized) &&
                 allTemplateArgsSpecified(found2, found2->templateParams))
             {
+                // may get here if a specialization list is often being added to....
                 restoreParams(origList, n);
                 return found2;
             }
@@ -4646,7 +4645,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             if (!strchr(found1->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
             {
                 RegisterTemplateClass(context, found1);
-                classTemplateMap2[found1->sb->decoratedName] = found1;
+                RegisterTemplateClass(generatedContext, found1);
             }
         }
         else
@@ -4832,7 +4831,8 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, Linkage::cdecl_);
-            auto found2 = classTemplateMap2[found1->sb->decoratedName];
+            DotNetPELib::SHA1Context generatedContext;
+            auto found2 = LookupGeneratedTemplateClass(generatedContext, found1);
             if (found2)
             {
                 return found2;
@@ -4855,7 +4855,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
                 }
             }
             found1->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-            classTemplateMap2[found1->sb->decoratedName] = found1;
+            RegisterTemplateClass(generatedContext, found1);
             if (found1->sb->storage_class != StorageClass::constant_)
                 if (!definingTemplate || instantiatingTemplate)
                     InsertInlineData(found1);
@@ -6299,6 +6299,15 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     sp->tp->InstantiateDeferred();
     TemplateArgInstantiateDeferred(args);
     SYMBOL* rv;
+    DotNetPELib::SHA1Context context;
+    rv = LookupTemplateClass(context, sp, args);
+    if (rv)
+    {
+        if (!rv->templateParams || allTemplateArgsSpecified(rv, rv->templateParams))
+        {
+            return rv;
+        }
+    }
     // if we get here we have a templated typedef
     if (args->size())
     {
@@ -6340,6 +6349,8 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             rv->tp = TemplateLookupTypeFromDeclType(basetp);
             if (!rv->tp)
                 rv->tp = &stdany;
+            else
+                RegisterTemplateClass(context, rv);
         }
     }
     else if (basetp->type == BasicType::templateselector_)
@@ -6386,6 +6397,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
                 *last = rv->tp;
                 rv->tp = tpr;
             }
+            RegisterTemplateClass(context, rv);
         }
         else
         {
@@ -6408,6 +6420,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             {
                 rv = GetClassTemplate(basetp->BaseType()->sp, newParams, false);
             }
+            RegisterTemplateClass(context, rv);
             if (rv && newNames.size())
             {
                 for (auto&& t : *rv->templateParams)

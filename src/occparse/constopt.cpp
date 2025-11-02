@@ -3319,7 +3319,6 @@ int fold_const(EXPRESSION* node)
 }
 
 /*
-
  * remove type casts from constant nodes and change their size
  */
 int typedconsts(EXPRESSION* node1)

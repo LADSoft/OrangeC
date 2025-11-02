@@ -611,6 +611,8 @@ void errorcurrent(int err) { printerr(err, nullptr, 0); }
 void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
     char buf[4096];
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char unopped[UNMANGLE_BUFFER_SIZE];
     const char* last = "typename";
     char lastb[UNMANGLE_BUFFER_SIZE];
@@ -678,6 +680,8 @@ void errorstr(int err, const char* val)
 void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
 void errorsym(int err, SYMBOL* sym)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char buf[UNMANGLE_BUFFER_SIZE];
     if (sym->sb)
     {
@@ -695,6 +699,8 @@ void errorsym(int err, SYMBOL* sym)
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char buf[UNMANGLE_BUFFER_SIZE];
     if (!sym->sb->decoratedName)
     {
@@ -705,6 +711,8 @@ void errorsym(int err, SYMBOL* sym, int line, const char* file)
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char one[UNMANGLE_BUFFER_SIZE], two[UNMANGLE_BUFFER_SIZE];
     unmangle(one, sym1->sb->decoratedName);
     unmangle(two, sym2->sb->decoratedName);
@@ -712,6 +720,8 @@ void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char two[UNMANGLE_BUFFER_SIZE];
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
@@ -761,6 +771,8 @@ void errorabstract(int error, SYMBOL* sp)
 }
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char argbuf[UNMANGLE_BUFFER_SIZE];
     char buf[UNMANGLE_BUFFER_SIZE];
     if (declsp->sb->anonymous)

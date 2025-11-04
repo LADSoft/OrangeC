@@ -154,14 +154,17 @@ template <int n>
 static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
 {
     in += strlen(in);
-    Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
-    in += strlen(in);
     if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
     {
+        PUTCH(in, '@');
         in = mangleTemplate(orig, in, sym->sb->parent, sym->sb->parent->templateParams);
-        in += strlen(in);
    }
-   return in;
+    else
+    {
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
+    }
+    in += strlen(in);
+    return in;
 }
 template <int n>
 static char* mangleClasses(char (&orig)[n], char* in, SYMBOL* sym)
@@ -1357,15 +1360,25 @@ void GetClassKey(char* buf, int len, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* 
     const int n = 8000;
     char orig[n];
     mangledNamesCount = 0;
-    SYMBOL* lastParent = sym;
-    while (lastParent->sb->parentClass)
-        lastParent = lastParent->sb->parentClass;
+    SYMBOL* lastParent;
     char* p = orig;
-    p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
-    p = mangleClasses(orig, p, sym->sb->parentClass);
     if (sym->sb->parent)
     {
+        lastParent = sym->sb->parent;
+        while (lastParent->sb->parentClass)
+            lastParent = lastParent->sb->parentClass;
+        p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+        p = mangleClasses(orig, p, sym->sb->parent->sb->parentClass);
         p = mangleParent(orig, p, sym);
+    }
+    else
+    {
+        lastParent = sym;
+        while (lastParent->sb->parentClass)
+            lastParent = lastParent->sb->parentClass;
+        p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+        p = mangleClasses(orig, p, sym->sb->parentClass);
+
     }
     PUTCH(p, '@');
     PUTZERO(p);
@@ -1472,14 +1485,23 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             if (isTemplateDefinition)
                 PUTCH(p, '@');
             PUTZERO(p);
-            lastParent = sym;
-            while (lastParent->sb->parentClass)
-                lastParent = lastParent->sb->parentClass;
-            p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
-            p = mangleClasses(orig, p, sym->sb->parentClass);
             if (sym->sb->parent)
             {
+                lastParent = sym->sb->parent;
+                while (lastParent->sb->parentClass)
+                    lastParent = lastParent->sb->parentClass;
+                p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+                p = mangleClasses(orig, p, sym->sb->parent->sb->parentClass);
                 p = mangleParent(orig, p, sym);
+            }
+            else
+            {
+                lastParent = sym;
+                while (lastParent->sb->parentClass)
+                    lastParent = lastParent->sb->parentClass;
+                p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+                p = mangleClasses(orig, p, sym->sb->parentClass);
+
             }
             PUTCH(p, '@');
             PUTZERO(p);

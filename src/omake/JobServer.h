@@ -28,7 +28,7 @@ class JobServer : public IJobServer
     int max_jobs;
     // The current job count, starts at zero and we can *ALWAYS* assume that there is at least one job available, because of this,
     // the expected jobs is always at least 1 as the max of the current jobs
-    std::atomic<int> current_jobs;
+    std::atomic<int> current_jobs = 0;
 
   public:
     // This is *REALLY* ineffecient, but is the only *easy* way to do this on POSIX without taking an unfathomably long amount of

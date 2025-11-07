@@ -1,5 +1,6 @@
 #include "../../JobServer.h"
 #include "../../semaphores.h"
+#include "BasicLogging.h"
 #include <stdexcept>
 
 namespace OMAKE
@@ -36,15 +37,20 @@ bool WINDOWSJobServer::TryTakeNewJob()
     }
     // Increment beforehand so that we don't accidentally wait too much with this...
     current_jobs++;
-    bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
-    if (ret == false)
+    if (current_jobs != 1)
     {
-        current_jobs--;
+        bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+        if (ret == false)
+        {
+            current_jobs--;
+        }
+        return ret;
     }
-    return ret;
+    return true;
 }
 bool WINDOWSJobServer::TakeNewJob()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Taking new job, current number of jobs: ", current_jobs.load());
     if (server_name.length() == 0)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
@@ -71,6 +77,8 @@ bool WINDOWSJobServer::ReleaseJob()
         semaphore.Post();
     }
     current_jobs--;  // Wait until after the job is done to release it
+    OrangeC::Utils::BasicLogger::extremedebug("Released job, current number of jobs: ", current_jobs.load());
+
     return true;
 }
 std::string WINDOWSJobServer::PassThroughCommandString() { return server_name; }

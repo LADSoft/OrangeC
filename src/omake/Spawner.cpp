@@ -102,6 +102,14 @@ int Spawner::InternalRun()
     {
         shell = v->GetValue();
     }
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("ComSpec");
+        if (!v)
+        {
+            v = VariableContainer::Instance()->Lookup("COMSPEC");
+        }
+    }
     int rv = 0;
     std::string longstr;
     std::deque<std::string> tempFiles;

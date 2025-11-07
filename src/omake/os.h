@@ -74,6 +74,7 @@ class OS
     static void JobRundown();
     static bool TakeJob();
     static void GiveJob();
+    static int GetCurrentJobs();
     static void WriteToConsole(const std::string& string);
     static void WriteErrorToConsole(const std::string& string);
     static void ToConsole(std::deque<std::string>& strings);
@@ -84,8 +85,8 @@ class OS
     static Time GetFileTime(const std::string fileName);
     static void SetFileTime(const std::string fileName, Time time);
     static std::string GetWorkingDir();
-    static bool SetWorkingDir(const std::string name);
-    static void RemoveFile(const std::string name);
+    static bool SetWorkingDir(const std::string& name);
+    static void RemoveFile(const std::string& name);
     static std::string NormalizeFileName(const std::string name);
     static void CreateThread(void* func, void* data);
     template <class Function, class... Args>

@@ -105,7 +105,7 @@ void OS::TerminateAll()
     for (auto a : processIds)
     {
 #ifdef TARGET_OS_WINDOWS
-        TerminateProcess(a, 0); 
+        TerminateProcess(a, 0);
 #else
         kill(a, 0);
 #endif
@@ -389,6 +389,28 @@ void OS::JobRundown()
     if (jobFile.size())
         RemoveFile(jobFile);
 }
+int OS::GetCurrentJobs() { return localJobServer->GetCurrentJobs(); }
+#ifdef TARGET_OS_WINDOWS
+void spin_and_report_single_process(HANDLE handle, DWORD ms_wait, const std::string& command_to_print, DWORD procid)
+{
+    DWORD wait_response;
+    while ((wait_response = WaitForSingleObject(handle, ms_wait)) == WAIT_TIMEOUT)
+    {
+        OrangeC::Utils::BasicLogger::extremedebug("Waiting for command ", command_to_print, " (procid: ", std::to_string(procid),
+                                                  ") to return, number of jobs: ", OS::GetCurrentJobs());
+    }
+    if (wait_response == WAIT_FAILED)
+    {
+        DWORD last_error = GetLastError();
+        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_INFO, "WaitForSingleObject for ", command_to_print,
+                                         " failed with GetLastError of: ", std::to_string(last_error));
+    }
+    if (wait_response == WAIT_ABANDONED)
+    {
+        OrangeC::Utils::BasicLogger::extremedebug("WaitForSingleObject somehow returned WAIT_ABANDONED");
+    }
+}
+#endif
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
     OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
@@ -508,7 +530,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.insert(pi.hProcess);
         }
-        WaitForSingleObject(pi.hProcess, INFINITE);
+        spin_and_report_single_process(pi.hProcess, 1000, command1, pi.dwProcessId);
         {
             std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.erase(pi.hProcess);
@@ -534,6 +556,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         rv = x;
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        OrangeC::Utils::BasicLogger::extremedebug("Closing command: ", command1);
     }
     else
     {
@@ -546,7 +569,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 
                 processIds.insert(pi.hProcess);
             }
-            WaitForSingleObject(pi.hProcess, INFINITE);
+            spin_and_report_single_process(pi.hProcess, 1000, cmd, pi.dwProcessId);
             {
                 std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
 
@@ -571,6 +594,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             rv = x;
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
+            OrangeC::Utils::BasicLogger::extremedebug("Closing spawned command: ", cmd);
         }
         else
         {
@@ -1022,8 +1046,8 @@ std::string OS::GetWorkingDir()
     }
     return ret;
 }
-bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
-void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
+bool OS::SetWorkingDir(const std::string& name) { return !chdir(name.c_str()); }
+void OS::RemoveFile(const std::string& name) { unlink(name.c_str()); }
 std::string OS::NormalizeFileName(const std::string file)
 {
     std::string name = std::move(file);

@@ -27,7 +27,7 @@ class JobServer : public IJobServer
 {
   protected:
     // The maximum number of jobs, can be any value we like so long as it's above or equal to one
-    int max_jobs;
+    int max_jobs = 0;
     // The current job count, starts at zero and we can *ALWAYS* assume that there is at least one job available, because of this,
     // the expected jobs is always at least 1 as the max of the current jobs
     std::atomic<int> current_jobs = 0;
@@ -52,6 +52,8 @@ class JobServer : public IJobServer
     static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string, int max_jobs);
     // Creates an OMAKE compatible job server, allowing for the main class to move out when needed
     static std::shared_ptr<JobServer> GetJobServer(int max_jobs, bool ignored);
+    /// Get the current number of taken jobs, as reported via seq_cst atomic current_jobs
+    int GetCurrentJobs() { return current_jobs.load(); }
 };
 // Use composition to our advantage: if we have a JobServer and we know it's either one of these, we can use the same code
 // without having to worry if it's POSIX or Windows except at the calling barrier

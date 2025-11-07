@@ -931,10 +931,24 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
             r++;
         if (l == lenl && r != lenr)
         {
+            if (rtype->IsRef())
+            {
+                // prefere areference type to a class type
+                if (ltype->IsStructured())
+                    if (rtype->CompatibleType(ltype) || SameTemplate(rtype, ltype))
+                        return 1;
+            }
             return -1;
         }
         else if (l != lenl && r == lenr)
         {
+            if (ltype->IsRef())
+            {
+                // prefere areference type to a class type
+                if (rtype->IsStructured())
+                    if (ltype->CompatibleType(rtype) || SameTemplate(ltype, rtype))
+                        return -1;
+            }
             return 1;
         }
         // compare ranks

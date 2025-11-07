@@ -1054,8 +1054,13 @@ static Type* rewriteNonRef(Type* A)
 {
     if (A->IsArray())
     {
+        bool constant = A->stringconst;
         while (A->IsArray())
             A = A->BaseType()->btp;
+        if (constant)
+        {
+            A = Type::MakeType(BasicType::const_, A);
+        }
         A = Type::MakeType(BasicType::pointer_, A);
     }
     else if (A->IsFunction())
@@ -1507,9 +1512,26 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
 
                         last->back().second->type = TplType::typename_;
                         if ((*symArgs)->tp->IsArray())
-                            last->back().second->byClass.val = (*symArgs)->tp;
+                        {
+                            if (!(*symArgs)->tp->stringconst)
+                            {
+                                last->back().second->byClass.val = (*symArgs)->tp;
+                            }
+                            else
+                            {
+                                auto tp1 = Type::MakeType(BasicType::const_,(*symArgs)->tp->BaseType()->btp);
+                                auto tp2 = Allocate<Type>();
+                                *tp2 = *(*symArgs)->tp;
+                                tp2->stringconst = false;
+                                tp2->btp = tp1;
+                                tp2->UpdateRootTypes();
+                                last->back().second->byClass.val = tp2;
+                            }
+                        }
                         else
+                        {
                             last->back().second->byClass.val = rewriteNonRef((*symArgs)->tp);
+                        }
                         if (TemplateConstExpr(last->back().second->byClass.val, (*symArgs)->exp))
                             last->back().second->byClass.val = Type::MakeType(BasicType::const_, last->back().second->byClass.val);
                         if (forward && !definingTemplate)

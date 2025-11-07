@@ -1559,9 +1559,9 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
                     exp3 = exp3->right;
                 if (exp3->type == ExpressionNode::thisref_)
                 {
-                    tp1 = tp1->CopyType();
-                    tp1->lref = false;
-                    tp1->rref = true;
+                    tp1 = tp1->CopyType(true);
+                    tp1->BaseType()->lref = false;
+                    tp1->BaseType()->rref = true;
                 }
             }
             else if (tp1->BaseType()->type == BasicType::enum_)  // enum

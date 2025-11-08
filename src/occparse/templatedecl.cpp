@@ -2536,7 +2536,7 @@ LexList* GetDeductionGuide(LexList* lex, SYMBOL* funcsp, StorageClass storage_cl
             auto enclosing = search(sp1->tp->syms, DG_NAME);
             SYMBOL* deductionSym = nullptr;
             if (enclosing)
-                deductionSym = searchOverloads(sp, sp1->tp->syms);
+                deductionSym = searchOverloads(sp, enclosing->tp->syms);
             if (!deductionSym)
                 deductionSym = insertFunc(sp1, sp);
             deductionSym->sb->deductionGuide = deductionGuide;

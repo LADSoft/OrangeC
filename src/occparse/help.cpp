@@ -1379,14 +1379,14 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                         if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
                         {
                             exp2->v.func->returnSP->sb->allocate = false;
-                            exp2->v.func->returnEXP = copy_expression(expsym);
+                            exp2->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = exp2;
                             noClear = true;
                         }
                         else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
                         {
                             exp2->left->v.func->returnSP->sb->allocate = false;
-                            exp2->left->v.func->returnEXP = copy_expression(expsym);
+                            exp2->left->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = exp2;
                             noClear = true;
                         }

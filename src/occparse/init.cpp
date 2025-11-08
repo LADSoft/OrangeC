@@ -3185,6 +3185,41 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
     set_array_sizes(cache);
     sort_aggregate_initializers(data);
 
+    if (deduceTemplate)
+    {
+        EXPRESSION* throwaway = nullptr;
+        CallSite funcparams = { 0 };
+        funcparams.arguments = argumentListFactory.CreateList();
+        for (auto d : *data)
+        {
+            auto arg = Allocate<Argument>();
+            arg->exp = d->exp;
+            arg->tp = d->realtp;
+            funcparams.arguments->push_back(arg);
+        }
+        CTADLookup(funcsp, &throwaway, &itype, &funcparams, 0);
+        base->tp = itype;
+        int offset = 0;
+        for (auto d : *data)
+        {
+            d->offset = offset;
+            if (d->basetp->type == BasicType::templateparam_)
+            {
+                if (d->realtp->IsArray())
+                {
+                    auto tp1 = d->realtp->CopyType();
+                    tp1->size = getSize(BasicType::pointer_);
+                    tp1->array = false;
+                    d->basetp = tp1;
+                }
+                else
+                {
+                    d->basetp = d->realtp;
+                }
+            }
+            offset += d->basetp->size;
+        }
+    }
     return data;
 }
 static void InsertStructureData(std::list<Initializer*>** init, Type* tp, EXPRESSION* exp, int baseOffset)
@@ -4752,7 +4787,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                         }
                     }
                     if (!found)
-                        InsertInitializer(&sym->sb->init, nullptr, nullptr, t->IsAutoType() ? sym->tp->size : t->size, false);
+                        InsertInitializer(&sym->sb->init, nullptr, nullptr, t->IsAutoType() || deduceTemplate ? sym->tp->size : t->size, false);
                 }
             }
         }
@@ -4768,6 +4803,10 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             t = sym->tp;
         if (t->IsStructured())
         {
+            if (deduceTemplate)
+            {
+                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
+            }
             if (!tp->BaseType()->sp->sb->trivialCons)
             {
                 // default constructor without (), or array of structures without an initialization list
@@ -4813,6 +4852,13 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     if (!found)
                         InsertInitializer(&sym->sb->init, nullptr, nullptr, t->size, false);
                 }
+            }
+        }
+        else if (sym->tp->BaseType()->type == BasicType::templatedeferredtype_)
+        {
+            if (deduceTemplate)
+            {
+                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
             }
         }
         else if (sym->tp->IsArray())

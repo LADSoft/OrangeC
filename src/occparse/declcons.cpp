@@ -265,6 +265,8 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         funcs->sb->parentClass = sp;
         tp->sp = funcs;
         SetLinkerNames(funcs, Linkage::cdecl_);
+        if (!sp->tp->BaseType()->syms)
+            sp->tp->BaseType()->syms = symbols->CreateSymbolTable();
         sp->tp->BaseType()->syms->Add(funcs);
         funcs->sb->parent = sp;
         funcs->tp->syms = symbols->CreateSymbolTable();

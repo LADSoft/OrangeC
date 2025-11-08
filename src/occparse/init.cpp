@@ -3219,6 +3219,22 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
             }
             offset += d->basetp->size;
         }
+        auto sc = base->sb->storage_class;
+        if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+            sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline)
+        {
+            EXPRESSION* exp = MakeExpression(ExpressionNode::global_, base);
+            std::list<Initializer*>* first = nullptr;
+            CallDestructor(itype->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
+            InsertInitializer(&first, itype, exp, 0, true);
+            insertDynamicDestructor(base, first);
+        }
+        else if (dest)
+        {
+            EXPRESSION* exp = MakeExpression(ExpressionNode::auto_, base);
+            CallDestructor(itype->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
+            InsertInitializer(dest, itype, exp, 0, true);
+        }
     }
     return data;
 }

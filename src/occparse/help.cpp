@@ -1206,6 +1206,8 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
 EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* expsym, SYMBOL* funcsp, std::list<Initializer*>* init,
                                            EXPRESSION* thisptr, bool isdest)
 {
+    if (isdest)
+        printf("hi");
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
     EXPRESSION *exp = nullptr;

@@ -55,9 +55,13 @@ bool WINDOWSJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    if (current_jobs >= 1)
+    // Logic behind this choice, TryWait attempts to wait for a period once, if unobtained then check if current_jobs >= 1, if
+    // current_jobs == 0 we have a free slot again, thus, use it.
+    bool taken = false;
+    while (!taken && current_jobs >= 1)
     {
-        semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+        using namespace std::chrono_literals;
+        taken = semaphore.WaitFor(1s);
     }
     current_jobs++;
     return true;

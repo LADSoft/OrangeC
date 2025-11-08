@@ -197,14 +197,14 @@ class Semaphore
     {
         return WaitFor(time - std::chrono::steady_clock::now());
     }
-    // return 0: success
-    // return -1: failure
+    // true SUCCESS
+    // false FAILURE
     template <typename Rep, typename Period>
-    bool WaitFor(std::chrono::duration<Rep, Period> time)
+    bool WaitFor(const std::chrono::duration<Rep, Period>& time)
     {
-        std::chrono::milliseconds milli = std::chrono::duration_cast(time);
-        int waitTime = milli.count();
+        std::chrono::milliseconds milli = std::chrono::duration_cast<std::chrono::milliseconds>(time);
 #ifdef WIN32
+        DWORD waitTime = milli.count();
         if (waitTime >= INFINITE)
         {
             throw std::invalid_argument("The time spent for waiting is too long to handle normally");
@@ -222,6 +222,7 @@ class Semaphore
                 return false;
         }
 #else
+        int waitTime = milli.count();
         timespec ts = {waitTime / 1000, (waitTime % 1000) * 1000000};
         return !sem_timedwait(&handle, &ts);
 #endif

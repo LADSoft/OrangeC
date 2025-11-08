@@ -802,6 +802,7 @@ void setglbdefs(void)
                 break;
             case Dialect::cpp17:
                 preProcessor->Define("__cplusplus", "201703");
+                preProcessor->Define("__cpp_deduction_guides","201611");
                 break;
         }
         if (Optimizer::cparams.prm_xcept)

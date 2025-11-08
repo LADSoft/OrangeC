@@ -2505,9 +2505,9 @@ static LexList* getInitInternal(LexList* lex, SYMBOL* funcsp, std::list<Argument
                 }
                 if (exp3->type == ExpressionNode::thisref_)
                 {
-                    p->tp = p->tp->CopyType();
-                    p->tp->lref = false;
-                    p->tp->rref = true;
+                    p->tp = p->tp->CopyType(true);
+                    p->tp->BaseType()->lref = false;
+                    p->tp->BaseType()->rref = true;
                 }
             }
             if (p->tp)

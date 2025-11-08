@@ -265,6 +265,8 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         funcs->sb->parentClass = sp;
         tp->sp = funcs;
         SetLinkerNames(funcs, Linkage::cdecl_);
+        if (!sp->tp->BaseType()->syms)
+            sp->tp->BaseType()->syms = symbols->CreateSymbolTable();
         sp->tp->BaseType()->syms->Add(funcs);
         funcs->sb->parent = sp;
         funcs->tp->syms = symbols->CreateSymbolTable();
@@ -1564,31 +1566,6 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEM
         exp = ConverInitializersToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
         optimize_for_constants(&exp);
         st->select = exp;
-    }
-    else if (parentCons->sb->explicitDefault && matchesDefaultConstructor(parentCons))
-    {
-        if (member->tp->IsArithmetic() || member->tp->IsPtr() || member->tp->BaseType()->type == BasicType::enum_)
-        {
-            Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
-            EXPRESSION* exp;
-            thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
-            thisptr->right->keepZero = true;
-            Dereference(member->tp, &thisptr);
-            exp = MakeExpression(ExpressionNode::assign_, thisptr, MakeIntExpression(ExpressionNode::c_i_, 0));
-            optimize_for_constants(&exp);
-            st->select = exp;
-        }
-        else if (member->tp->IsStructured() && member->tp->BaseType()->sp->sb->trivialCons)
-        {
-            Statement* st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
-            EXPRESSION* exp;
-            thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
-            thisptr->right->keepZero = true;
-            auto clr = MakeExpression(ExpressionNode::blockclear_, thisptr);
-            clr->size = member->tp;
-            optimize_for_constants(&exp);
-            st->select = exp;
-        }
     }
 }
 static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<MEMBERINITIALIZERS*>* mi, SYMBOL* member,

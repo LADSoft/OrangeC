@@ -2046,17 +2046,10 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
                 lex = getsym();
                 break;
             case Keyword::explicit_:
-                if (*storage_class != StorageClass::member_)
-                {
-                    error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
-                }
+                if (isExplicit)
+                    *isExplicit = true;
                 else
-                {
-                    if (isExplicit)
-                        *isExplicit = true;
-                    else
-                        error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
-                }
+                    error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
                 lex = getsym();
                 break;
             case Keyword::mutable_:

@@ -1054,8 +1054,13 @@ static Type* rewriteNonRef(Type* A)
 {
     if (A->IsArray())
     {
+        bool constant = A->stringconst;
         while (A->IsArray())
             A = A->BaseType()->btp;
+        if (constant)
+        {
+            A = Type::MakeType(BasicType::const_, A);
+        }
         A = Type::MakeType(BasicType::pointer_, A);
     }
     else if (A->IsFunction())
@@ -1507,9 +1512,26 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
 
                         last->back().second->type = TplType::typename_;
                         if ((*symArgs)->tp->IsArray())
-                            last->back().second->byClass.val = (*symArgs)->tp;
+                        {
+                            if (!(*symArgs)->tp->stringconst)
+                            {
+                                last->back().second->byClass.val = (*symArgs)->tp;
+                            }
+                            else
+                            {
+                                auto tp1 = Type::MakeType(BasicType::const_,(*symArgs)->tp->BaseType()->btp);
+                                auto tp2 = Allocate<Type>();
+                                *tp2 = *(*symArgs)->tp;
+                                tp2->stringconst = false;
+                                tp2->btp = tp1;
+                                tp2->UpdateRootTypes();
+                                last->back().second->byClass.val = tp2;
+                            }
+                        }
                         else
+                        {
                             last->back().second->byClass.val = rewriteNonRef((*symArgs)->tp);
+                        }
                         if (TemplateConstExpr(last->back().second->byClass.val, (*symArgs)->exp))
                             last->back().second->byClass.val = Type::MakeType(BasicType::const_, last->back().second->byClass.val);
                         if (forward && !definingTemplate)
@@ -2056,25 +2078,28 @@ void CTADLookup(SYMBOL* funcsp, EXPRESSION** exp, Type** templateType, CallSite*
         {
             sym->tp->InitializeDeferred();
             *templateType = sym->tp;
-            funcparams->thisptr = exp_in ? exp_in : exp_in = AnonymousVar(StorageClass::auto_, sym->tp);
-            funcparams->sp = (*exp)->v.sp;
-            funcparams->functp = (*exp)->v.sp->tp;
-            funcparams->fcall = (*exp);
-            int offset = 0;
-            auto exp2 = relptr(exp_in, offset);
-            if (exp2)
-                sym = exp2->v.sp;
-            (*exp) = MakeExpression(funcparams);
-            (*exp) = MakeExpression(ExpressionNode::thisref_, (*exp));
-            (*exp)->v.t.thisptr = funcparams->thisptr;
-            (*exp)->v.t.tp = *templateType;
-            if (sym)
-                sym->sb->constexpression = true;
-            optimize_for_constants(&(*exp));
-            if (sym && (*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
-                sym->sb->constexpression = false;
-            PromoteConstructorArgs(funcparams->sp, funcparams);
-            // can't default destruct while deducing a template
+            if (!sym->sb->parentTemplate->sb->trivialCons)
+            {
+                funcparams->thisptr = exp_in ? exp_in : exp_in = AnonymousVar(StorageClass::auto_, sym->tp);
+                funcparams->sp = (*exp)->v.sp;
+                funcparams->functp = (*exp)->v.sp->tp;
+                funcparams->fcall = (*exp);
+                int offset = 0;
+                auto exp2 = relptr(exp_in, offset);
+                if (exp2)
+                    sym = exp2->v.sp;
+                (*exp) = MakeExpression(funcparams);
+                (*exp) = MakeExpression(ExpressionNode::thisref_, (*exp));
+                (*exp)->v.t.thisptr = funcparams->thisptr;
+                (*exp)->v.t.tp = *templateType;
+                if (sym)
+                    sym->sb->constexpression = true;
+                optimize_for_constants(&(*exp));
+                if (sym && (*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
+                    sym->sb->constexpression = false;
+                PromoteConstructorArgs(funcparams->sp, funcparams);
+                // can't default destruct while deducing a template
+            }
         }
         else
         {

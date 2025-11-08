@@ -931,10 +931,24 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
             r++;
         if (l == lenl && r != lenr)
         {
+            if (rtype->IsRef())
+            {
+                // prefere areference type to a class type
+                if (ltype->IsStructured())
+                    if (rtype->CompatibleType(ltype) || SameTemplate(rtype, ltype))
+                        return 1;
+            }
             return -1;
         }
         else if (l != lenl && r == lenr)
         {
+            if (ltype->IsRef())
+            {
+                // prefere areference type to a class type
+                if (rtype->IsStructured())
+                    if (ltype->CompatibleType(rtype) || SameTemplate(ltype, rtype))
+                        return -1;
+            }
             return 1;
         }
         // compare ranks
@@ -4431,10 +4445,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
         for (auto c : *deduce->tp->syms)
         {
             c->utilityIndex = i++;
-            if (c->tp->syms->size() == args->arguments->size() + 1)
-            {
-                spList.push_back(c);
-            }
+            spList.push_back(c);
         }
     }
     if (spList.size())
@@ -4517,6 +4528,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
         funcList.resize(n);
 
         std::list<std::list<TEMPLATEPARAMPAIR>*> stk2;
+        int nscount = PushTemplateNamespace(sp);
         for (auto&& s : spList)
         {
             auto sp1 = s->sb->parentClass;
@@ -4536,6 +4548,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
             stk2.clear();
             s = s1;
         }
+        PopTemplateNamespace(nscount);
         SYMBOL *found1 = nullptr, *found2 = nullptr;
         if (n != 1)
         {
@@ -4662,23 +4675,26 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                 {
                     deduced->tp->InitializeDeferred();
                     auto ctype = deduced->tp;
-                    auto overloads = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     auto thstp = Type::MakeType(BasicType::pointer_, deduced->tp);
                     if (args->thistp->IsConst())
                         thstp = Type::MakeType(BasicType::const_, thstp);
                     if (args->thistp->IsVolatile())
                         thstp = Type::MakeType(BasicType::volatile_, thstp);
                     args->thistp = thstp;
-                    if (overloads)
+                    if (!sp->sb->trivialCons)
                     {
-                        *exp = nullptr;
-                        SYMBOL* s = GetOverloadedFunction(&ctype, exp, overloads, args, nullptr, false, false, 0);
-                        if (!*exp)
+                        auto overloads = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
+                        if (overloads)
+                        {
+                            *exp = nullptr;
+                            SYMBOL* s = GetOverloadedFunction(&ctype, exp, overloads, args, nullptr, false, false, 0);
+                            if (!*exp)
+                                deduced = nullptr;
+                        }
+                        else
+                        {
                             deduced = nullptr;
-                    }
-                    else
-                    {
-                        deduced = nullptr;
+                        }
                     }
                 }
             }

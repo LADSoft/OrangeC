@@ -59,8 +59,8 @@
     <ClCompile Include="invoke.cpp" />
     <ClCompile Include="msilInit.cpp" />
     <ClCompile Include="MsilProcess.cpp" />
+    <ClCompile Include="msilusing.cpp" />
     <ClCompile Include="occil.cpp" />
-    <ClCompile Include="using.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">

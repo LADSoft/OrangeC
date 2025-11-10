@@ -43,7 +43,7 @@
 #include "iblock.h"
 #include "output.h"
 #include "msilInit.h"
-#include "using.h"
+#include "msilusing.h"
 #include "igen.h"
 #include "invoke.h"
 #include "MsilProcess.h"

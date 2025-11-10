@@ -71,9 +71,6 @@
     <ClCompile Include="occil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="using.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\occopt\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -111,6 +108,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\occopt\OptUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="msilusing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,6 +1,6 @@
 Release notes:
 
-version 6.0.74
+version 7.0.0
     project: make updates so that it would compile with g++15
     project: full support for C++17
     project: update libcxx to libcxx 17

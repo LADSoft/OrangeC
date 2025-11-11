@@ -111,7 +111,6 @@ void ParseBuiltins(void)
         "bool __stdcall __rtllinkage ___ckdadd(void*, int, void*, int, void*, int);"
         "bool __stdcall __rtllinkage ___ckdmul(void*, int, void*, int, void*, int);"
         "bool __stdcall __rtllinkage ___ckdsub(void*, int, void*, int, void*, int);";
-    LexList* lex;
 
     packed_init();
     EnterPackedContext();
@@ -119,38 +118,29 @@ void ParseBuiltins(void)
     {
         libcxx_builtins();
         SetAlternateParse(true, cppbuiltin);
-        lex = getsym();
-        if (lex)
-        {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                  AccessLevel::public_)) != nullptr)
-                ;
-        }
+        getsym();
+        while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
+                                AccessLevel::public_))
+            ;
         SetAlternateParse(false, "");
     }
     else if (Optimizer::cparams.c_dialect >= Dialect::c23)
     {
         SetAlternateParse(true, cbuiltin);
-        lex = getsym();
-        if (lex)
-        {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                  AccessLevel::public_)) != nullptr)
-                ;
-        }
+        getsym();
+        while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
+                                AccessLevel::public_))
+            ;
         SetAlternateParse(false, "");
     }
     if (Optimizer::chosenAssembler->bltins)
     {
         std::string temp = Optimizer::chosenAssembler->bltins;
         SetAlternateParse(true, temp);
-        lex = getsym();
-        if (lex)
-        {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                  AccessLevel::public_)) != nullptr)
-                ;
-        }
+        getsym();
+        while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
+                                AccessLevel::public_)) 
+            ;
         SetAlternateParse(false, "");
     }
     LeavePackedContext();

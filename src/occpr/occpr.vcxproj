@@ -35,7 +35,7 @@
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
     <ClCompile Include="..\occil\msilInit.cpp" />
-    <ClCompile Include="..\occil\using.cpp" />
+    <ClCompile Include="..\occil\msilusing.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />
     <ClCompile Include="..\occopt\configx86.cpp" />
@@ -49,8 +49,10 @@
     <ClCompile Include="..\occopt\OptUtils.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
+    <ClCompile Include="..\occparse\attribs.cpp" />
     <ClCompile Include="..\occparse\beinterf.cpp" />
     <ClCompile Include="..\occparse\browse.cpp" />
+    <ClCompile Include="..\occparse\casts.cpp" />
     <ClCompile Include="..\occparse\ccerr.cpp" />
     <ClCompile Include="..\occparse\class.cpp" />
     <ClCompile Include="..\occparse\constexpr.cpp" />
@@ -86,6 +88,7 @@
     <ClCompile Include="..\occparse\overload.cpp" />
     <ClCompile Include="..\occparse\property.cpp" />
     <ClCompile Include="..\occparse\rtti.cpp" />
+    <ClCompile Include="..\occparse\staticassert.cpp" />
     <ClCompile Include="..\occparse\stmt.cpp" />
     <ClCompile Include="..\occparse\SymbolManager.cpp" />
     <ClCompile Include="..\occparse\symtab.cpp" />
@@ -96,6 +99,8 @@
     <ClCompile Include="..\occparse\templateutil.cpp" />
     <ClCompile Include="..\occparse\types.cpp" />
     <ClCompile Include="..\occparse\unmangle.cpp" />
+    <ClCompile Include="..\occparse\using.cpp" />
+    <ClCompile Include="..\occparse\vtab.cpp" />
     <ClCompile Include="..\occparse\wseh.cpp" />
     <ClCompile Include="..\occ\InstructionParser.cpp" />
     <ClCompile Include="..\occ\x64Parser.cpp" />
@@ -127,6 +132,7 @@
     <ClInclude Include="..\occparse\exprpacked.h" />
     <ClInclude Include="..\occparse\namespace.h" />
     <ClInclude Include="..\occparse\overload.h" />
+    <ClInclude Include="..\occparse\SymbolProperties.h" />
     <ClInclude Include="..\occparse\templatehash.h" />
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />

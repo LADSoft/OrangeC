@@ -64,6 +64,7 @@
 #include "overload.h"
 #include "class.h"
 #include "exprpacked.h"
+#include "staticassert.h"
 namespace Parser
 {
 int unpackingTemplate;
@@ -465,7 +466,7 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
     }
     return rv;
 }
-void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* start, EXPRESSION* packedExp)
+void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexToken::iterator& start, EXPRESSION* packedExp)
 {
     if (packedExp->type == ExpressionNode::templateparam_)
     {
@@ -540,11 +541,11 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* 
                 for (i = 0; i < n; i++)
                 {
                     Argument* p = Allocate<Argument>();
-                    LexList* lex = SetAlternateLex(start);
+                    currentContext->PlayAgain(&start);
                     SetPackIndex(i);
-                    expression_assign(lex, funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                    expression_assign(funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
                     optimize_for_constants(&p->exp);
-                    SetAlternateLex(nullptr);
+                    currentContext->PlayAgain(nullptr);
                     if (p->tp && p->tp->type != BasicType::void_)
                         (*lptr)->push_back(p);
                 }
@@ -631,11 +632,11 @@ static int GetVBaseClassList(const char* name, SYMBOL* cls, std::list<VBASEENTRY
     }
     return vcount;
 }
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
-                             std::list<MEMBERINITIALIZERS*>::iterator& initend, std::list<MEMBERINITIALIZERS*>* mi,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORINITIALIZER*>::iterator& init,
+                             std::list<CONSTRUCTORINITIALIZER*>::iterator& initend, std::list<CONSTRUCTORINITIALIZER*>* mi,
                              std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase)
 {
-    MEMBERINITIALIZERS* linit = *init;
+    CONSTRUCTORINITIALIZER* linit = *init;
     int basecount = 0, vbasecount = 0;
     std::list<BASECLASS*> baseEntries;
     std::list<VBASEENTRY*> vbaseEntries;
@@ -655,16 +656,17 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
     }
     else
     {
-        LexList* lex = SetAlternateLex(linit->initData);
+        SwitchTokenStream(linit->initData);
         init = mi->erase(init);
-        if (MATCHKW(lex, Keyword::lt_))
+        if (MATCHKW(Keyword::lt_))
         {
             // at this point we've already created the independent base classes
             // but the initdata has the argument list, so get it out of the way
             // and also count the number of packs to see if it matches the number of templates..
             int n = -1;
             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-            LexList* arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
+            GetTemplateArguments(funcsp, linit->sp, &lst);
+            auto arglex = currentContext->Index();
             std::deque<Type*> defaults;
             PushPopDefaults(defaults, funcsp->templateParams, true, true);
             std::stack<TEMPLATEPARAM*> stk;
@@ -688,7 +690,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                     t->byClass.dflt = t->byClass.val;
                 }
             }
-            SetAlternateLex(nullptr);
+            SwitchTokenStream(nullptr);
             if (lst)
             {
                 for (auto&& pack : *lst)
@@ -730,27 +732,27 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                         ++itb;
                     else
                         ++itv;
-                    MEMBERINITIALIZERS* added = Allocate<MEMBERINITIALIZERS>();
+                    CONSTRUCTORINITIALIZER* added = Allocate<CONSTRUCTORINITIALIZER>();
                     bool done = false;
-                    lex = SetAlternateLex(arglex);
+                    currentContext->PlayAgain(&arglex);
                     SetPackIndex(i);
                     added->name = linit->name;
                     init = mi->insert(init, added);
                     ++init;
                     added->sp = baseSP;
-                    if (MATCHKW(lex, Keyword::openpa_) && added->sp->tp->sp->sb->trivialCons)
+                    if (MATCHKW(Keyword::openpa_) && added->sp->tp->sp->sb->trivialCons)
                     {
-                        lex = getsym();
-                        if (MATCHKW(lex, Keyword::closepa_))
+                        getsym();
+                        if (MATCHKW(Keyword::closepa_))
                         {
-                            lex = getsym();
+                            getsym();
                             added->init = nullptr;
                             InsertInitializer(&added->init, nullptr, nullptr, added->sp->sb->offset, false);
                             done = true;
                         }
                         else
                         {
-                            lex = backupsym();
+                            BackupTokenStream();
                         }
                     }
                     if (!done)
@@ -759,8 +761,8 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                         CallSite shim;
                         added->sp = sym;
                         shim.arguments = nullptr;
-                        getMemberInitializers(lex, funcsp, &shim,
-                                              MATCHKW(lex, Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
+                        GetConstructorInitializers(funcsp, &shim,
+                                              MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
                         if (shim.arguments)
                         {
                             added->init = initListFactory.CreateList();
@@ -773,7 +775,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
                             }
                         }
                     }
-                    SetAlternateLex(nullptr);
+                    currentContext->PlayAgain(nullptr);
                 }
                 PopPackIndex();
                 argumentNesting = oldArgumentNesting;
@@ -782,16 +784,16 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIA
         }
         else
         {
-            lex = SetAlternateLex(nullptr);
+            SwitchTokenStream(nullptr);
             SpecializationError((char*)nullptr);
         }
     }
 }
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack,
-                                    std::list<MEMBERINITIALIZERS*>** p, LexList* start, std::list<Argument*>* list)
+void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack,
+                                    std::list<CONSTRUCTORINITIALIZER*>** p, LexToken* start, std::list<Argument*>* list)
 {
     int n = CountPacks(templatePack);
-    MEMBERINITIALIZERS* orig = (*p)->front();
+    CONSTRUCTORINITIALIZER* orig = (*p)->front();
     (*p)->pop_front();
     auto itp = (*p)->begin();
     if (n)
@@ -826,8 +828,8 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
         auto ittppe = templatePack->end();
         for (i = 0; i < n; i++)
         {
-            LexList* lex = SetAlternateLex(start);
-            MEMBERINITIALIZERS* mi = Allocate<MEMBERINITIALIZERS>();
+            SwitchTokenStream(start);
+            CONSTRUCTORINITIALIZER* mi = Allocate<CONSTRUCTORINITIALIZER>();
             Type* tp = ittpp->second->byClass.val;
             int offset = 0;
             int vcount = 0, ccount = 0;
@@ -854,10 +856,10 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
             {
                 bool done = false;
                 mi->sp->sb->offset = offset;
-                if (MATCHKW(lex, Keyword::openpa_) && mi->sp->tp->sp->sb->trivialCons)
+                if (MATCHKW(Keyword::openpa_) && mi->sp->tp->sp->sb->trivialCons)
                 {
-                    lex = getsym();
-                    if (MATCHKW(lex, Keyword::closepa_))
+                    getsym();
+                    if (MATCHKW(Keyword::closepa_))
                     {
                         mi->init = nullptr;
                         InsertInitializer(&mi->init, nullptr, nullptr, mi->sp->sb->offset, false);
@@ -869,11 +871,11 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
                     SYMBOL* sym = makeID(StorageClass::member_, mi->sp->tp, nullptr, mi->sp->name);
                     CallSite shim;
                     mi->sp = sym;
-                    lex = SetAlternateLex(mi->initData);
+                    SwitchTokenStream(mi->initData);
                     shim.arguments = nullptr;
-                    getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
+                    GetConstructorInitializers(funcsp, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
                                           false);
-                    SetAlternateLex(nullptr);
+                    SwitchTokenStream(nullptr);
                     if (shim.arguments)
                     {
                         mi->init = initListFactory.CreateList();
@@ -900,7 +902,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPL
             {
                 errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, mi->name, cls);
             }
-            SetAlternateLex(nullptr);
+            SwitchTokenStream(nullptr);
         }
         PopPackIndex();
     }
@@ -1158,7 +1160,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     (*lst)->back().first = select->front().first;
     return lst;
 }
-std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start, SYMBOL* funcsp,
+std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexToken::iterator& start, SYMBOL* funcsp,
                                                        std::list<TEMPLATEPARAMPAIR>* select)
 {
     int beginning = 0;
@@ -1204,11 +1206,11 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
         }
         for (i = 0; i < n; i++)
         {
-            LexList* lex = SetAlternateLex(start);
+            currentContext->PlayAgain(&start);
             Type* tp;
             SetPackIndex(i);
-            tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::parameter_, false, true, false);
-            SetAlternateLex(nullptr);
+            tp = TypeGenerator::TypeId(funcsp, StorageClass::parameter_, false, true, false);
+            currentContext->PlayAgain(nullptr);
             if (!definingTemplate && (!tp || tp->type == BasicType::any_))
             {
                 error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
@@ -1284,7 +1286,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     return lst;
 }
 
-void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
+void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexToken::iterator& start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
                              Type** tp, EXPRESSION** exp)
 {
     // this is going to presume that the expression involved
@@ -1324,16 +1326,16 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start,
         ;
         for (i = 0; i < n; i++)
         {
-            LexList* lex = SetAlternateLex(start);
+            currentContext->PlayAgain(&start);
             SetPackIndex(i);
-            expression_assign(lex, funcsp, nullptr, tp, exp, nullptr, _F_PACKABLE);
+            expression_assign(funcsp, nullptr, tp, exp, nullptr, _F_PACKABLE);
             if (exp)
             {
                 optimize_for_constants(exp);
                 while ((*exp)->type == ExpressionNode::comma_ && (*exp)->right)
                     (*exp) = (*exp)->right;
             }
-            SetAlternateLex(nullptr);
+            currentContext->PlayAgain(nullptr);
             if (tp)
             {
                 list->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});

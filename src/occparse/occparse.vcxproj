@@ -28,9 +28,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\netlib\sha1.h" />
+    <ClInclude Include="..\occil\msilusing.h" />
+    <ClInclude Include="attribs.h" />
     <ClInclude Include="beinterf.h" />
     <ClInclude Include="browse.h" />
     <ClInclude Include="c.h" />
+    <ClInclude Include="casts.h" />
     <ClInclude Include="ccerr.h" />
     <ClInclude Include="class.h" />
     <ClInclude Include="compiler.h" />
@@ -49,6 +52,8 @@
     <ClInclude Include="expreval.h" />
     <ClInclude Include="exprpacked.h" />
     <ClInclude Include="floatconv.h" />
+    <ClInclude Include="staticassert.h" />
+    <ClInclude Include="SymbolProperties.h" />
     <ClInclude Include="templatehash.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="iexpr.h" />
@@ -81,6 +86,8 @@
     <ClInclude Include="tsort.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="unmangle.h" />
+    <ClInclude Include="using.h" />
+    <ClInclude Include="vtab.h" />
     <ClInclude Include="winmode.h" />
     <ClInclude Include="wseh.h" />
   </ItemGroup>
@@ -94,7 +101,7 @@
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
     <ClCompile Include="..\occil\msilInit.cpp" />
-    <ClCompile Include="..\occil\using.cpp" />
+    <ClCompile Include="..\occil\msilusing.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />
     <ClCompile Include="..\occopt\configx86.cpp" />
@@ -130,8 +137,10 @@
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
     <ClCompile Include="..\ocpp\TokenSettings.cpp" />
+    <ClCompile Include="attribs.cpp" />
     <ClCompile Include="beinterf.cpp" />
     <ClCompile Include="browse.cpp" />
+    <ClCompile Include="casts.cpp" />
     <ClCompile Include="ccerr.cpp" />
     <ClCompile Include="class.cpp" />
     <ClCompile Include="constexpr.cpp" />
@@ -147,6 +156,7 @@
     <ClCompile Include="expreval.cpp" />
     <ClCompile Include="exprpacked.cpp" />
     <ClCompile Include="floatconv.cpp" />
+    <ClCompile Include="staticassert.cpp" />
     <ClCompile Include="templatehash.cpp" />
     <ClCompile Include="help.cpp" />
     <ClCompile Include="iexpr.cpp" />
@@ -178,6 +188,8 @@
     <ClCompile Include="templateutil.cpp" />
     <ClCompile Include="types.cpp" />
     <ClCompile Include="unmangle.cpp" />
+    <ClCompile Include="using.cpp" />
+    <ClCompile Include="vtab.cpp" />
     <ClCompile Include="wseh.cpp" />
   </ItemGroup>
   <ItemGroup>

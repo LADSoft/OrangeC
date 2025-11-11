@@ -36,23 +36,14 @@ EXPRESSION* getMemberPtr(SYMBOL* memberSym, SYMBOL* strSym, Type** tp, SYMBOL* f
 EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, CallSite* funcparams, SymbolTable<SYMBOL>* syms);
 Statement* do_substitute_for_function(Statement* block, CallSite* funcparams, SymbolTable<SYMBOL>* syms);
 EXPRESSION* substitute_params_for_function(CallSite* funcparams, SymbolTable<SYMBOL>* syms);
-bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
-bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
-bool doConstCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
-bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
-LexList* GetCastInfo(LexList* lex, SYMBOL* funcsp, Type** newType, Type** oldType, EXPRESSION** oldExp, bool packed);
-LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
-LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
-LexList* expression_delete(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
-LexList* expression_noexcept(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp);
+void expression_typeid( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
+void expression_new( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
+void expression_delete( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags);
+void expression_noexcept( SYMBOL* funcsp, Type** tp, EXPRESSION** exp);
 
 //
 EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en);
-bool castToArithmeticInternal(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
-void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
-bool castToPointer(Type** tp, EXPRESSION** exp, Keyword kw, Type* other);
-bool cppCast(Type* src, Type** tp, EXPRESSION** exp);
-LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
+void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
 bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite* funcparams, int flags);
 bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, Type* tp1, EXPRESSION* exp1,
                           std::list<Argument*>* args, int flags);

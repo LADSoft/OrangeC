@@ -64,6 +64,7 @@
 #include "libcxx.h"
 #include "overload.h"
 #include "class.h"
+#include "staticassert.h"
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -3213,22 +3214,22 @@ int fold_const(EXPRESSION* node)
             break;
         case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
-            LexList* lex = SetAlternateLex(node->v.construct.deferred);
+            SwitchTokenStream(node->v.construct.tokenStream);
             if (node->v.construct.tp->IsArithmetic())
             {
 
                 std::list<Initializer*>*init = nullptr, *dest = nullptr;
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
+                initType(nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
                 if (init)
                     *node = *init->front()->exp;
             }
             else
             {
                 EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
+                initType(nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
                                node->v.construct.tp, exp->v.sp, false, false, 0);
             }
-            SetAlternateLex(nullptr);
+            SwitchTokenStream(nullptr);
         }
         break;
         case ExpressionNode::callsite_: {
@@ -3962,16 +3963,16 @@ void optimize_for_constants(EXPRESSION** expr)
         rebalance(expr);
     }
 }
-LexList* optimized_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
+void optimized_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
 {
     if (commaallowed)
-        lex = expression(lex, funcsp, atp, tp, expr, 0);
+        expression(funcsp, atp, tp, expr, 0);
     else
-        lex = expression_no_comma(lex, funcsp, atp, tp, expr, nullptr, 0);
+        expression_no_comma(funcsp, atp, tp, expr, nullptr, 0);
     if (*tp)
     {
         optimize_for_constants(expr);
     }
-    return lex;
+    return;
 }
 }  // namespace Parser

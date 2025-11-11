@@ -48,6 +48,8 @@
 #include "symtab.h"
 #include "ListFactory.h"
 #include "types.h"
+#include "SymbolProperties.h"
+#include "attribs.h"
 
 namespace Parser
 {
@@ -412,7 +414,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     insertFunc(lambdas.front()->cls, func);
     func->tp->syms->remove(func->tp->syms->begin());  // elide this pointer
     st = Statement::MakeStatement(
-        NULL, block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
+        block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
     st->select = MakeExpression(params);
     st->select = MakeExpression(ExpressionNode::thisref_, st->select);
 
@@ -445,17 +447,16 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     params->thisptr = MakeExpression(ExpressionNode::global_, self);
     Dereference(&stdpointer, &params->thisptr);
     params->thistp = self->tp;
-    st = Statement::MakeStatement(NULL, block1, StatementNode::block_);
+    st = Statement::MakeStatement(block1, StatementNode::block_);
     st->lower = block2.front()->statements;
     st->blockTail = block2.front()->blockTail;
     func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(NULL, emptyBlockdata, StatementNode::block_));
+    func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = args->BaseType()->syms;
     if (lambdas.front()->templateFunctions)
     {
-        LexList* lex1;
         int l = 0;
         if (lambdas.front()->functp->IsAutoType())
             func->tp->BaseType()->btp = &stdauto;  // convert return type back to auto
@@ -472,13 +473,10 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         }
         val += ");} ;";
         SetAlternateParse(true, val);
-        lex1 = getsym();
-        getDeferredData(lex1, &func->sb->deferredCompile, true);
+        getsym();
+        auto stream = GetTokenStream(  true);
+        bodyTokenStreams.set(func, stream);
         SetAlternateParse(false, "");
-    }
-    else
-    {
-        InsertInline(func);
     }
     func->tp->UpdateRootTypes();
     return func;
@@ -507,25 +505,24 @@ static void createConverter(SYMBOL* self)
     func->sb->parentClass = lambdas.front()->cls;
     insertFunc(lambdas.front()->cls, func);
     // Keyword::assign_ ___self = this
-    st = Statement::MakeStatement(NULL, block2, StatementNode::expr_);
+    st = Statement::MakeStatement(block2, StatementNode::expr_);
     st->select = MakeExpression(ExpressionNode::auto_, (SYMBOL*)func->tp->BaseType()->syms->front());
     Dereference(&stdpointer, &st->select);
     st->select = MakeExpression(ExpressionNode::assign_, MakeExpression(ExpressionNode::global_, self), st->select);
     Dereference(&stdpointer, &st->select->left);
     // return pointer to ptrtocaller
-    st = Statement::MakeStatement(NULL, block2, StatementNode::return_);
+    st = Statement::MakeStatement(block2, StatementNode::return_);
     st->select = MakeExpression(ExpressionNode::pc_, caller);
-    st = Statement::MakeStatement(NULL, block1, StatementNode::block_);
+    st = Statement::MakeStatement(block1, StatementNode::block_);
     st->lower = block2.front()->statements;
     st->blockTail = block2.front()->blockTail;
     func->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(NULL, emptyBlockdata, StatementNode::block_));
+    func->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(emptyBlockdata, StatementNode::block_));
     func->sb->inlineFunc.stmt->front()->lower = block1.front()->statements;
     func->sb->inlineFunc.stmt->front()->blockTail = block1.front()->blockTail;
     func->sb->inlineFunc.syms = symbols->CreateSymbolTable();
     if (lambdas.front()->templateFunctions)
     {
-        LexList* lex1;
         CallSite* f = Allocate<CallSite>();
         if (!f->arguments)
             f->arguments = argumentListFactory.CreateList();
@@ -563,15 +560,12 @@ static void createConverter(SYMBOL* self)
         std::string val = "{ ___self=this;return &___ptrcall;} ;";
 
         SetAlternateParse(true, val);
-        lex1 = getsym();
-        getDeferredData(lex1, &func->sb->deferredCompile, true);
+        getsym();
+        auto stream = GetTokenStream( true);
+        bodyTokenStreams.set(func, stream);
         SetAlternateParse(false, "");
         func->sb->templateLevel = definingTemplate;
         func->sb->parentTemplate = func;
-    }
-    else
-    {
-        InsertInline(func);
     }
     func->tp->UpdateRootTypes();
 }
@@ -809,7 +803,7 @@ static EXPRESSION* createLambda(bool noinline)
     *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
+void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
 {
     auto declline = lines;
     LAMBDA* self;
@@ -858,45 +852,45 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     {
         self->lthis = enclosingDeclarations.GetFirst();
     }
-    lex = getsym();  // past [
+    getsym();  // past [
     if (funcsp)
     {
         // can have a capture list;
-        if (MATCHKW(lex, Keyword::assign_))
+        if (MATCHKW(Keyword::assign_))
         {
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::comma_) || MATCHKW(lex, Keyword::closebr_))
+            getsym();
+            if (MATCHKW(Keyword::comma_) || MATCHKW(Keyword::closebr_))
             {
                 self->captureMode = cmValue;
             }
         }
-        else if (MATCHKW(lex, Keyword::and_))
+        else if (MATCHKW(Keyword::and_))
         {
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::comma_) || MATCHKW(lex, Keyword::closebr_))
+            getsym();
+            if (MATCHKW(Keyword::comma_) || MATCHKW(Keyword::closebr_))
             {
                 self->captureMode = cmRef;
             }
             else
             {
-                lex = backupsym();
+                BackupTokenStream();
             }
         }
-        if (MATCHKW(lex, Keyword::comma_) || (self->captureMode == cmNone && !MATCHKW(lex, Keyword::closebr_)))
+        if (MATCHKW(Keyword::comma_) || (self->captureMode == cmNone && !MATCHKW(Keyword::closebr_)))
         {
             do
             {
-                if (MATCHKW(lex, Keyword::comma_))
-                    skip(&lex, Keyword::comma_);
-                bool hasStar = MATCHKW(lex, Keyword::star_);
+                if (MATCHKW(Keyword::comma_))
+                    skip(Keyword::comma_);
+                bool hasStar = MATCHKW(Keyword::star_);
                 if (hasStar)
-                    skip(&lex, Keyword::star_);
-                if (MATCHKW(lex, Keyword::this_))
+                    skip(Keyword::star_);
+                if (MATCHKW(Keyword::this_))
                 {
                     if (hasStar)
                         RequiresDialect::Feature(Dialect::cpp17, "capture of *this");
                     e_cm localMode = self->captureMode;
-                    lex = getsym();
+                    getsym();
                     if (!hasStar && (localMode == cmValue || !self->lthis))
                     {
                         error(ERR_CANNOT_CAPTURE_THIS_BY_VALUE);
@@ -922,46 +916,46 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
                 e_cm localMode;
-                if (MATCHKW(lex, Keyword::and_))
+                if (MATCHKW(Keyword::and_))
                 {
                     localMode = cmRef;
-                    lex = getsym();
+                    getsym();
                 }
                 else
                 {
                     localMode = cmValue;
                 }
-                if (ISID(lex))
+                if (ISID())
                 {
                     if (self->captureMode == localMode)
                     {
                         if (localMode != cmRef)
                         {
-                            errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, lex->data->value.s.a);
+                            errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, currentLex->value.s.a);
                         }
                         else
                         {
-                            errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, lex->data->value.s.a);
+                            errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, currentLex->value.s.a);
                         }
                     }
-                    LexList* idlex = lex;
+                    auto idlex = currentContext->Index();
                     SYMBOL* sp;
                     LAMBDA* current;
-                    lex = getsym();
-                    if (MATCHKW(lex, Keyword::assign_))
+                    getsym();
+                    if (MATCHKW(Keyword::assign_))
                     {
                         RequiresDialect::Feature(Dialect::cpp14, "Lambda Capture Expressions");
                         Type* tp = NULL;
                         EXPRESSION* exp;
-                        lex = getsym();
-                        lex = expression_no_comma(lex, funcsp, NULL, &tp, &exp, NULL, 0);
+                        getsym();
+                        expression_no_comma(funcsp, NULL, &tp, &exp, NULL, 0);
                         if (!tp)
                         {
                             error(ERR_EXPRESSION_SYNTAX);
                         }
                         else
                         {
-                            SYMBOL* sp = makeID(StorageClass::auto_, tp, NULL, idlex->data->value.s.a);
+                            SYMBOL* sp = makeID(StorageClass::auto_, tp, NULL, (*idlex)->value.s.a);
                             InsertInitializer(&sp->sb->init, tp, exp, 0, true);
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
@@ -972,10 +966,10 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                     }
                     else
                     {
-                        sp = search(localNameSpace->front()->syms, idlex->data->value.s.a);
+                        sp = search(localNameSpace->front()->syms, (*idlex)->value.s.a);
                         for (auto current : lambdas)
                         {
-                            sp = search(current->oldSyms, idlex->data->value.s.a);
+                            sp = search(current->oldSyms, (*idlex)->value.s.a);
                             if (sp)
                                 break;
                         }
@@ -983,10 +977,13 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                         {
                             if (sp->packed)
                             {
-                                if (!MATCHKW(idlex, Keyword::ellipse_))
+                                if ((*idlex)->type != LexType::l_kw_ ||  (*idlex)->kw->key != Keyword::ellipse_)
                                     error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                 else
-                                    idlex = getsym();
+                                {
+                                    idlex = currentContext->Index();
+                                    getsym();
+                                }
                             }
                             if (sp->packed)
                             {
@@ -1006,42 +1003,42 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                             }
                         }
                         else
-                            errorstr(ERR_UNDEFINED_IDENTIFIER, idlex->data->value.s.a);
+                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*idlex)->value.s.a);
                     }
                 }
                 else
                 {
                     error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
                 }
-            } while (MATCHKW(lex, Keyword::comma_));
+            } while (MATCHKW(Keyword::comma_));
         }
         else
         {
-            self->captureThis = MATCHKW(lex, Keyword::closebr_);
+            self->captureThis = MATCHKW(Keyword::closebr_);
         }
-        needkw(&lex, Keyword::closebr_);
+        needkw(Keyword::closebr_);
     }
     else
     {
-        if (!MATCHKW(lex, Keyword::closebr_))
+        if (!MATCHKW(Keyword::closebr_))
         {
             error(ERR_LAMBDA_CANNOT_CAPTURE);
         }
         else
         {
-            lex = getsym();
+            getsym();
         }
     }
-    if (MATCHKW(lex, Keyword::openpa_))
+    if (MATCHKW(Keyword::openpa_))
     {
         Type* tpx = &stdvoid;
-        tpx = TypeGenerator::FunctionParams(lex, NULL, &self->func, tpx, false, StorageClass::auto_, false);
+        tpx = TypeGenerator::FunctionParams(NULL, &self->func, tpx, false, StorageClass::auto_, false);
         if (!self->func->tp->syms)
         {
             errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
             *tp = &stdint;
             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-            return lex;
+            return;
         }
         for (auto sym : *self->func->tp->syms)
         {
@@ -1050,7 +1047,7 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
                 error(ERR_CANNOT_DEFAULT_PARAMETERS_WITH_LAMBDA);
             }
         }
-        if (MATCHKW(lex, Keyword::mutable_))
+        if (MATCHKW(Keyword::mutable_))
         {
             for (auto lsp : *self->captured)
             {
@@ -1061,19 +1058,19 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
             }
             self->isMutable = true;
 
-            lex = getsym();
+            getsym();
         }
-        ParseAttributeSpecifiers(&lex, funcsp, true);
-        if (MATCHKW(lex, Keyword::noexcept_))
+        ParseAttributeSpecifiers(funcsp, true);
+        if (MATCHKW(Keyword::noexcept_))
         {
             funcLevel++;
-            TypeGenerator::ExceptionSpecifiers(lex, funcsp, self->func, self->func->sb->storage_class);
+            TypeGenerator::ExceptionSpecifiers(funcsp, self->func, self->func->sb->storage_class);
             funcLevel--;
         }
-        if (MATCHKW(lex, Keyword::pointsto_))
+        if (MATCHKW(Keyword::pointsto_))
         {
-            lex = getsym();
-            self->functp = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
+            getsym();
+            self->functp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, false, true, false);
             if (!self->functp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1134,23 +1131,18 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
         SetLinkerNames(ths, Linkage::cdecl_);
         lambda_insert(ths, lambdas.front());
     }
-    if (MATCHKW(lex, Keyword::begin_))
+    if (MATCHKW(Keyword::begin_))
     {
-        lex = getDeferredData(lex, &self->func->sb->deferredCompile, true);
+        auto stream = GetTokenStream(true);
+        bodyTokenStreams.set(self->func, stream);
         if (!lambdas.front()->templateFunctions)
         {
-            LexList* lex1 = SetAlternateLex(self->func->sb->deferredCompile);
+            SwitchTokenStream(stream);
             SetLinkerNames(self->func, Linkage::cdecl_);
-            StatementGenerator sg(lex1, self->func);
+            StatementGenerator sg(self->func);
             sg.FunctionBody();
             sg.BodyGen();
-            lex1 = self->func->sb->deferredCompile;
-            while (lex1)
-            {
-                lex1->data->registered = false;
-                lex1 = lex1->next;
-            }
-            SetAlternateLex(NULL);
+            SwitchTokenStream(NULL);
         }
     }
     else
@@ -1170,6 +1162,6 @@ LexList* expression_lambda(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, E
     }
     lambdas.pop_front();
     lines = declline;
-    return lex;
+    return;
 }
 }  // namespace Parser

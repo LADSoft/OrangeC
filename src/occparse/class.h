@@ -28,20 +28,20 @@
 namespace Parser
 {
 
-LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly,
+void  nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly,
                     StorageClass storage_class, bool isType, int flags);
 SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, bool tagsOnly);
 SYMBOL* templatesearch(const char* name, std::list<TEMPLATEPARAMPAIR>* arg);
 TEMPLATEPARAMPAIR* getTemplateStruct(char* name);
-LexList* tagsearch(LexList* lex, char* name, int len, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
+void  tagsearch( char* name, int len, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
                    std::list<NAMESPACEVALUEDATA*>** nsv_out, StorageClass storage_class);
 SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, bool toErr);
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALUEDATA*>* ns, bool tagsOnly, bool throughClass,
                      bool namespaceOnly);
-LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor,
+void  nestedSearch( SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor,
                       bool* isTemplate, bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType);
-LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType);
-LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+void  getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType);
+void  id_expression( SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
                        bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int len, int flags);
 SYMBOL* LookupSym(char* name);
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress);

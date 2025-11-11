@@ -90,8 +90,8 @@ EXPRESSION* createTemporary(Type* tp, EXPRESSION* val);
 EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val);
 void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref);
 SYMBOL* getFunctionSP(Type** tp);
-LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems);
-LexList* concatStrings(LexList* lex, EXPRESSION** expr, LexType* tp, int* elems);
+void concatStringsInternal( StringData** str, int* elems);
+void concatStrings( EXPRESSION** expr, LexType* tp, int* elems);
 bool isintconst(EXPRESSION* exp);
 bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);
@@ -118,6 +118,6 @@ BasicType btmax(BasicType left, BasicType right);
 Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, Type* atp);
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp);
 EXPRESSION* EvaluateDest(EXPRESSION* exp, Type* tp);
-void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym);
+void SetRuntimeData( EXPRESSION* exp, SYMBOL* sym);
 EXPRESSION* getFunc(EXPRESSION* exp);
 }  // namespace Parser

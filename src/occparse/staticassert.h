@@ -24,42 +24,12 @@
  */
 #pragma once
 
-/* the long long type is 8 bytes...  if neither long long nor the long type is 8 byte in the compiler
- * this is compiled with, things will still work, however long long constants will be limited in size
- * and then automatically sign-extended out to long-long at runtime if necessary when used.  Also
- * some floating point conversions will have a more limited integer portion.
- */
-
-#include "ctypes.h"
-
-#include <cstdio>
-#include <cctype>
-#include <cstdlib>
-#include <climits>
-#include <ctime>
-#include <cstring>
-#include <cfloat>
-
-#if _MSC_VER == 1900 /* MSVC 2015 */
-#    define CONSTEXPR
-#else
-#    define CONSTEXPR constexpr
-#endif
-
-#include "Floating.h"
-#include "osutil.h"
-#include "ioptimizer.h"
-#include "c.h"
-#include "beinterfdefs.h"
-
-struct EnumClassHash
+namespace Parser
 {
-    template <typename T>
-    std::size_t operator()(T t) const
-    {
-        return static_cast<std::size_t>(t);
-    }
-};
+    extern int inStaticAssert;
+    extern std::map<SYMBOL*, std::list<LexToken*>> structureStaticAsserts;
 
-#define M_LN2 0.693147180559945309417
-#define M_LN10 2.30258509299404568402
+    void EnterStructureStaticAssert(SYMBOL* sym, LexToken* tokenStream);
+    void ParseStructureStaticAssert(SYMBOL* sym);
+    void handleStaticAssert();
+}  // namespace Parser

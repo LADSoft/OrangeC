@@ -59,6 +59,7 @@
 #include "ListFactory.h"
 #include "constopt.h"
 #include "Utils.h"
+#include "SymbolProperties.h"
 
 namespace Parser
 {
@@ -1744,7 +1745,8 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                     auto itr = spList[j]->tp->BaseType()->syms->begin();
                     auto itrend = spList[j]->tp->BaseType()->syms->end();
                     memset(arr, 0, sizeof(arr));
-                    for (k = 0; k < argCount; k++)
+                    int xindex = 0;
+                    for (k = 0; k < argCount + xindex; k++)
                     {
                         e_cvsrn* seql = &icsList[i][l];
                         e_cvsrn* seqr = &icsList[j][r];
@@ -1786,6 +1788,7 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                             arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, funcparams->thistp,
                                                         funcparams->thisptr, funcList ? funcList[i][k] : nullptr,
                                                         funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
+                            xindex++;
                         }
                         else
                         {
@@ -1843,7 +1846,7 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                         l += lenList[i][k + lk];
                         r += lenList[j][k + rk];
                     }
-                    for (k = 0; k < argCount + bothCast; k++)
+                    for (k = 0; k < argCount + bothCast + xindex; k++)
                     {
                         if (arr[k] > 0)
                             right++;
@@ -2358,7 +2361,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                                     SYMBOL* first = *sparg;
                                     ++sparg;
                                     SYMBOL* next = sparg == spend ? nullptr : *sparg;
-                                    if (!next || next->sb->init || next->sb->deferredCompile)
+                                    if (!next || next->sb->init || initTokenStreams.get(next))
                                     {
                                         if (first->tp->type != BasicType::ellipse_)
                                         {
@@ -3992,7 +3995,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
         if (it != ite)
         {
             SYMBOL* sym = *it;
-            if (sym->sb->init || sym->sb->deferredCompile || sym->packed)
+            if (sym->sb->init  || sym->packed || initTokenStreams.get(sym))
             {
                 return true;
             }
@@ -5166,8 +5169,9 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
                 auto found10 = found1;
+                auto stream = noExceptTokenStreams.get(found1);
                 if (!(flags & _F_SIZEOF) || found1->tp->BaseType()->btp->IsAutoType() ||
-                    ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LexList*)-1))
+                    ((flags & _F_IS_NOTHROW) && stream != 0 && stream != (LexToken*)-1))
                 {
                     if (theCurrentFunc && !(flags & _F_NOEVAL) && !found1->sb->constexpression)
                     {
@@ -5195,11 +5199,12 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         if (found1->sb->mainsym)
                             found1 = found1->sb->mainsym;
                         found1 = CopySymbol(found1);
-                        if (found1->sb->memberInitializers)
+                        if (found1->sb->constructorInitializers && *found1->sb->constructorInitializers)
                         {
-                            auto mi = found1->sb->memberInitializers;
-                            found1->sb->memberInitializers = memberInitializersListFactory.CreateList();
-                            found1->sb->memberInitializers->insert(found1->sb->memberInitializers->end(), mi->begin(), mi->end());
+                            auto mi = *found1->sb->constructorInitializers;
+                            found1->sb->constructorInitializers = Allocate<std::list<CONSTRUCTORINITIALIZER*>*>();
+                            *found1->sb->constructorInitializers = constructorInitializerListFactory.CreateList();
+                            (*found1->sb->constructorInitializers)->insert((*found1->sb->constructorInitializers)->end(), mi->begin(), mi->end());
                         }
                         found1->sb->mainsym = old;
                         found1->sb->parentClass = CopySymbol(found1->sb->parentClass);
@@ -5228,19 +5233,16 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             }
                         }
 
-                        if (found1->tp->BaseType()->btp->IsAutoType() && found1->sb->deferredCompile &&
-                            !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs || (flags & _F_INDECLTYPE)))
+                        if (found1->tp->BaseType()->btp->IsAutoType() &&
+                            !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs || (flags & _F_INDECLTYPE)) && bodyTokenStreams.get(found1))
                         {
-                            CompileInline(found1, false);
+                            CompileInlineFunction(found1);
                         }
                         else if ((flags & _F_IS_NOTHROW) ||
                                  (found1->sb->constexpression && (!definingTemplate || instantiatingTemplate)))
                         {
-                            if (found1->sb->deferredNoexcept &&
-                                (!found1->sb->constexpression || (definingTemplate && !instantiatingTemplate)))
+                            if ((!found1->sb->constexpression || (definingTemplate && !instantiatingTemplate)) && noExceptTokenStreams.get(found1))
                             {
-                                if (!found1->sb->deferredCompile && !found1->sb->deferredNoexcept)
-                                    propagateTemplateDefinition(found1);
                                 if (found1->templateParams)
                                 {
                                     enclosingDeclarations.Add(found1->templateParams);
@@ -5251,11 +5253,11 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                     enclosingDeclarations.Drop();
                                 }
                             }
-                            else if (found1->sb->deferredCompile && !found1->sb->inlineFunc.stmt)
+                            else if (!!found1->sb->inlineFunc.stmt && bodyTokenStreams.get(found1))
                             {
                                 if (!inSearchingFunctions || inTemplateArgs)
                                 {
-                                    CompileInline(found1, false);
+                                    CompileInlineFunction(found1);
                                 }
                             }
                         }

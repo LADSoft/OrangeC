@@ -65,7 +65,7 @@ extern ListFactory<FunctionBlock*> blockDataListFactory;
 extern ListFactory<Initializer*> initListFactory;
 extern ListFactory<struct _ccNamespaceData*> ccNameSpaceDataListFactory;
 extern ListFactory<struct __lambda*> lambdaListFactory;
-extern ListFactory<struct _memberInitializers*> memberInitializersListFactory;
+extern ListFactory<struct _constructorInitializers*> constructorInitializerListFactory;
 extern ListFactory<struct _baseClass*> baseClassListFactory;
 extern ListFactory<struct _vtabEntry*> vtabEntryListFactory;
 extern ListFactory<struct _vbaseEntry*> vbaseEntryListFactory;

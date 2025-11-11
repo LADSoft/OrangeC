@@ -40,6 +40,7 @@
 #include "stmt.h"
 #include "namespace.h"
 #include "symtab.h"
+#include "attribs.h"
 
 namespace Parser
 {
@@ -63,7 +64,7 @@ static void ReorderSEHRecords(std::list<Statement*>* xtry, std::list<FunctionBlo
     {
         if (xtry->front() != xtry->back())
         {
-            Statement* st = Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::seh_try_);
+            Statement* st = Statement::MakeStatement(emptyBlockdata, StatementNode::seh_try_);
             st->lower = xtry;
             xtry->clear();
             xtry->push_back(st);
@@ -74,7 +75,7 @@ static void ReorderSEHRecords(std::list<Statement*>* xtry, std::list<FunctionBlo
     {
         if (xtry->front() != xtry->back())
         {
-            Statement* st = Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::seh_try_);
+            Statement* st = Statement::MakeStatement(emptyBlockdata, StatementNode::seh_try_);
             st->lower = xtry;
             xtry->clear();
             xtry->push_back(st);
@@ -83,7 +84,7 @@ static void ReorderSEHRecords(std::list<Statement*>* xtry, std::list<FunctionBlo
     }
     parent.front()->statements->insert(parent.front()->statements->end(), xtry->begin(), xtry->end());
 }
-static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_catch( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
@@ -92,8 +93,8 @@ static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     Type* tp = nullptr;
     FunctionBlock* catchstmt = Allocate<FunctionBlock>();
     SYMBOL* sym = nullptr;
-    lex = getsym();
-    ParseAttributeSpecifiers(&lex, funcsp, true);
+    getsym();
+    ParseAttributeSpecifiers(funcsp, true);
     catchstmt->breaklabel = -1;
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = Keyword::catch_;
@@ -101,20 +102,20 @@ static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     parent.push_front(catchstmt);
     inLoopOrConditional++;
     StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
-    if (MATCHKW(lex, Keyword::openpa_))
+    if (MATCHKW(Keyword::openpa_))
     {
-        needkw(&lex, Keyword::openpa_);
-        lex = declare(lex, funcsp, &tp, StorageClass::auto_, Linkage::none_, parent, false, true, false, AccessLevel::public_);
-        needkw(&lex, Keyword::closepa_);
+        needkw(Keyword::openpa_);
+        declare(funcsp, &tp, StorageClass::auto_, Linkage::none_, parent, false, true, false, AccessLevel::public_);
+        needkw(Keyword::closepa_);
         sym = localNameSpace->front()->syms->front();
     }
     else
     {
         tp = nullptr;
     }
-    if (MATCHKW(lex, Keyword::begin_))
+    if (MATCHKW(Keyword::begin_))
     {
-        StatementGenerator sg(lex, funcsp);
+        StatementGenerator sg(funcsp);
         sg.Compound(parent, false);
         before->nosemi = true;
         before->needlabel &= catchstmt->needlabel;
@@ -127,23 +128,23 @@ static LexList* SEH_catch(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     }
     inLoopOrConditional--;
     StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
-    st = Statement::MakeStatement(lex, parent, StatementNode::seh_catch_);
+    st = Statement::MakeStatement(parent, StatementNode::seh_catch_);
     st->blockTail = catchstmt->blockTail;
     st->lower = catchstmt->statements;
     st->tp = tp;
     st->sp = sym;
     parent.pop_front();
-    return lex;
+    return;
 }
-static LexList* SEH_finally(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_finally( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
     ++next;
     Statement* st;
     FunctionBlock* finallystmt = Allocate<FunctionBlock>();
-    lex = getsym();
-    ParseAttributeSpecifiers(&lex, funcsp, true);
+    getsym();
+    ParseAttributeSpecifiers(funcsp, true);
     finallystmt->breaklabel = -1;
     finallystmt->defaultlabel = -1; /* no default */
     finallystmt->type = Keyword::catch_;
@@ -151,9 +152,9 @@ static LexList* SEH_finally(LexList* lex, SYMBOL* funcsp, std::list<FunctionBloc
     parent.push_front(finallystmt);
     StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::begin_))
+    if (MATCHKW(Keyword::begin_))
     {
-        StatementGenerator sg(lex, funcsp);
+        StatementGenerator sg(funcsp);
         sg.Compound(parent, false);
         before->nosemi = true;
         before->needlabel &= finallystmt->needlabel;
@@ -166,21 +167,21 @@ static LexList* SEH_finally(LexList* lex, SYMBOL* funcsp, std::list<FunctionBloc
     }
     StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional--;
-    st = Statement::MakeStatement(lex, parent, StatementNode::seh_finally_);
+    st = Statement::MakeStatement(parent, StatementNode::seh_finally_);
     st->blockTail = finallystmt->blockTail;
     st->lower = finallystmt->statements;
     parent.pop_front();
-    return lex;
+    return;
 }
-static LexList* SEH_fault(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_fault( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
     ++next;
     Statement* st;
     FunctionBlock* faultstmt = Allocate<FunctionBlock>();
-    lex = getsym();
-    ParseAttributeSpecifiers(&lex, funcsp, true);
+    getsym();
+    ParseAttributeSpecifiers(funcsp, true);
     faultstmt->breaklabel = -1;
     faultstmt->defaultlabel = -1; /* no default */
     faultstmt->type = Keyword::catch_;
@@ -188,9 +189,9 @@ static LexList* SEH_fault(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
     parent.push_front(faultstmt);
     StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
     inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::begin_))
+    if (MATCHKW(Keyword::begin_))
     {
-        StatementGenerator sg(lex, funcsp);
+        StatementGenerator sg(funcsp);
         sg.Compound(parent, false);
         before->nosemi = true;
         before->needlabel &= faultstmt->needlabel;
@@ -202,14 +203,14 @@ static LexList* SEH_fault(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
     StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
-    st = Statement::MakeStatement(lex, parent, StatementNode::seh_fault_);
+    st = Statement::MakeStatement(parent, StatementNode::seh_fault_);
     st->blockTail = faultstmt->blockTail;
     st->lower = faultstmt->statements;
     inLoopOrConditional--;
     parent.pop_front();
-    return lex;
+    return;
 }
-static LexList* SEH_try(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_try( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
@@ -221,9 +222,9 @@ static LexList* SEH_try(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>&
     trystmt->type = Keyword::seh_try_;
     trystmt->table = localNameSpace->front()->syms;
     parent.push_front(trystmt);
-    lex = getsym();
+    getsym();
     inLoopOrConditional++;
-    if (!MATCHKW(lex, Keyword::begin_))
+    if (!MATCHKW(Keyword::begin_))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
     }
@@ -233,61 +234,61 @@ static LexList* SEH_try(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>&
         parent.front()->statements = nullptr;
         bool foundFinally = false, foundFault = false;
         StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
-        StatementGenerator sg(lex, funcsp);
+        StatementGenerator sg(funcsp);
         sg.Compound(parent, false);
         StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
         before->needlabel = trystmt->needlabel;
-        st = Statement::MakeStatement(lex, parent, StatementNode::seh_try_);
+        st = Statement::MakeStatement(parent, StatementNode::seh_try_);
         st->blockTail = trystmt->blockTail;
         st->lower = trystmt->statements;
         before->nosemi = true;
         if (next != parent.end())
             (*next)->nosemi = true;
-        if (!MATCHKW(lex, Keyword::seh_catch_) && !MATCHKW(lex, Keyword::seh_finally_) && !MATCHKW(lex, Keyword::seh_fault_))
+        if (!MATCHKW(Keyword::seh_catch_) && !MATCHKW(Keyword::seh_finally_) && !MATCHKW(Keyword::seh_fault_))
         {
             error(ERR_EXPECTED_SEH_HANDLER);
         }
-        while (MATCHKW(lex, Keyword::seh_catch_) || MATCHKW(lex, Keyword::seh_finally_) || MATCHKW(lex, Keyword::seh_fault_))
+        while (MATCHKW(Keyword::seh_catch_) || MATCHKW(Keyword::seh_finally_) || MATCHKW(Keyword::seh_fault_))
         {
-            if (MATCHKW(lex, Keyword::seh_finally_))
+            if (MATCHKW(Keyword::seh_finally_))
             {
                 if (foundFinally)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
                     foundFinally = true;
             }
-            else if (MATCHKW(lex, Keyword::seh_fault_))
+            else if (MATCHKW(Keyword::seh_fault_))
             {
                 if (foundFault)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
                     foundFault = true;
             }
-            lex = ParseSEH(lex, funcsp, parent);
+            ParseSEH(funcsp, parent);
         }
         ReorderSEHRecords(parent.front()->statements, parent);
         parent.front()->statements->insert(parent.front()->statements->begin(), prev->begin(), prev->end());
     }
     inLoopOrConditional--;
     parent.pop_front();
-    return lex;
+    return;
 }
 
-LexList* ParseSEH(LexList* lex, SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+void ParseSEH( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
-    switch (KW(lex))
+    switch (KW())
     {
         case Keyword::seh_try_:
-            return SEH_try(lex, funcsp, parent);
+            return SEH_try(funcsp, parent);
         case Keyword::seh_catch_:
-            return SEH_catch(lex, funcsp, parent);
+            return SEH_catch(funcsp, parent);
         case Keyword::seh_finally_:
-            return SEH_finally(lex, funcsp, parent);
+            return SEH_finally(funcsp, parent);
         case Keyword::seh_fault_:
-            return SEH_fault(lex, funcsp, parent);
+            return SEH_fault(funcsp, parent);
         default:
             break;
     }
-    return lex;
+    return;
 }
 }  // namespace Parser

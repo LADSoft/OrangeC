@@ -57,7 +57,7 @@
 #include "mangle.h"
 #include "types.h"
 #include "overload.h"
-
+#include "SymbolProperties.h"
 namespace Parser
 {
 static int functionNestingCount;
@@ -84,7 +84,7 @@ bool checkconstexprfunc(EXPRESSION* node)
     if (node->type == ExpressionNode::callsite_ && node->v.func->sp)
     {
         if (node->v.func->sp->sb->constexpression &&
-            (node->v.func->sp->sb->inlineFunc.stmt || node->v.func->sp->sb->deferredCompile))
+            (node->v.func->sp->sb->inlineFunc.stmt || bodyTokenStreams.get(node->v.func->sp)))
         {
             if (node->v.func->arguments)
                 for (auto t : *node->v.func->arguments)
@@ -248,8 +248,8 @@ bool isConstexprConstructor(SYMBOL* sym)
         if (ismemberdata(sp) && !sp->sb->init)
         {
             bool found = false;
-            if (sym->sb->memberInitializers)
-                for (auto memberInit : *sym->sb->memberInitializers)
+            if (sym->sb->constructorInitializers && *sym->sb->constructorInitializers)
+                for (auto memberInit : **sym->sb->constructorInitializers)
                     if (!strcmp(memberInit->name, sp->name))
                     {
                         found = true;
@@ -392,9 +392,9 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
             exp->v.constexprData.data[sp->sb->offset] = expx;
         }
     }
-    if (sym->sb->memberInitializers)
+    if (sym->sb->constructorInitializers && *sym->sb->constructorInitializers)
     {
-        for (auto m : *sym->sb->memberInitializers)
+        for (auto m : **sym->sb->constructorInitializers)
 
             if (m->init)
             {
@@ -1578,7 +1578,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
             SYMBOL* found1 = node->v.func->sp;
             if (found1->tp->IsFunction())
             {
-                if (!found1->sb->inlineFunc.stmt && found1->sb->deferredCompile)
+                if (!found1->sb->inlineFunc.stmt && bodyTokenStreams.get(found1))
                 {
                     if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
@@ -1606,7 +1606,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false);
                         }
-                        CompileInline(found1, false);
+                        CompileInlineFunction(found1);
                         enclosingDeclarations.Release();
                     }
                 }

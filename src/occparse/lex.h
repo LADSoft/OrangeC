@@ -22,8 +22,10 @@
  *
  *
  */
-
 #pragma once
+
+#include <cassert>
+#include <algorithm>
 
 #define MAX_LOOKBACK 1024
 namespace Parser
@@ -134,64 +136,226 @@ struct StringData
 
 struct Lexeme
 {
+    Lexeme() = default;
     LexType type;
-    struct u_val value;
-    char* litaslit;
-    char* suffix;
-    Optimizer::LINEDATA* linedata;
-    int errline;
-    const char* errfile;
-    int charindex;
-    int charindexend;
-    int filenum;
-    KeywordData* kw;
-    SYMBOL* typequal;
-    int registered : 1;
+    union
+    {
+        struct u_val value;
+        KeywordData* kw;
+    };
+    struct
+    {
+        int errline;
+        const char* errfile;
+        int charindex;
+        int charindexend;
+        int filenum;
+    };
+    struct
+    {
+        unsigned refcount;
+        char* litaslit;
+        char* suffix;
+        Optimizer::LINEDATA* linedata;
+        SYMBOL* typequal;
+    };
 };
 
-struct LexList
+struct LexToken
 {
-    LexList *next, *prev;
-    Lexeme* data;
+    typedef std::vector<Lexeme*>::iterator iterator;
+
+    Lexeme* Create()
+    {
+        if (cache.size())
+        {
+            auto rv = cache.front();
+            *rv = {};
+            cache.pop_front();
+            return rv;
+        }
+        auto rv = new Lexeme();
+        return rv;
+    }
+    void Add(Lexeme* lex)
+    {
+        data.push_back(lex);
+        ++current;
+        if (current > top) ++top;
+    }
+    void Next()
+    {
+        if (current < data.size())
+        {
+            if (current == top)
+            {
+                ++top;
+            }
+            ++current;
+        }
+    }
+    void Prev()
+    {
+        if (current)
+        {
+            --current;
+        }
+    }
+    Lexeme* operator*()
+    {
+        assert(current != data.size());
+        return data[current];
+    }
+    iterator Index()
+    {
+        auto it = begin();
+        std::advance(it, current);
+        return it;
+    }
+    void Index(iterator it)
+    {
+        current = it - begin();
+    }
+    void reset()
+    {
+        replaying = true;
+        current =top = 0;
+    }
+    bool RePlaying()
+    {
+        return replaying;
+    }
+    bool Reloaded()
+    {
+        return current < top;
+    }
+    void PlayAgain(iterator* index)
+    {
+        if (!index)
+        {
+            current = hold.back();
+            hold.pop_back();
+        }
+        else
+        {
+            hold.push_back(current);
+            current = *index - data.begin();
+        }
+    }
+    void Prune(unsigned maxDepth, unsigned pruneSize)
+    {
+        if (hold.size() > maxDepth && ValidPrune(pruneSize) )
+        {
+            for (int i = 0; i < pruneSize; i++)
+            {
+                if (data[i]->refcount < 2)
+                {
+                    if (cache.size() < pruneSize)
+                    {
+                        cache.push_back(data[i]);
+                    }
+                    else
+                    {
+                        delete data[i];
+                    }
+                }
+            }
+            std::rotate(data.begin() + pruneSize, data.begin(), data.end());
+            data.resize(maxDepth - pruneSize);
+            for (auto&& it : hold)
+            {
+                it -= pruneSize;
+            }
+            current -= pruneSize;
+            top -= pruneSize;
+        }
+    }
+    bool ValidPrune(unsigned pruneSize)
+    {
+        if (current < pruneSize)
+            return false;
+        if (top < pruneSize)
+            return false;
+        for (auto val : hold)
+        {
+            if (val  < pruneSize)
+                return false;
+        }
+        return true;
+    }
+    iterator begin() { return data.begin(); }
+    iterator end() { return data.end(); }
+    size_t size() const { return data.size(); }
+private:
+    bool replaying = false;
+    int current = 0;
+    int top= 0;
+    std::deque<Lexeme*> cache;
+    std::deque<int> hold;
+    std::vector<Lexeme*> data;
 };
-struct LexContext
+struct LexTokenFactory
 {
-    LexContext* next;
-    LexList* cur;
-    LexList* last;
+    LexToken* Create()
+    {
+        auto tokens = new LexToken();
+        lists.insert(tokens);
+        return tokens;
+    }
+    void Destroy(LexToken* tokens)
+    {
+        delete tokens;
+        lists.erase(tokens);
+    }
+    void clear()
+    {
+        for (auto s : lists)
+        {
+            delete s;
+        }
+        lists.clear();
+    }
+    ~LexTokenFactory()
+    {
+        clear();
+    }
+private:
+    std::set<LexToken*> lists;
 };
 
-#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
-#define ISID(lex) (lex && (lex)->data->type == LexType::l_id_)
-#define ISKW(lex) (lex && (lex)->data->type == LexType::l_kw_)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-bool KWTYPE(LexList* lex, unsigned types);
-#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
+#define MATCHTYPE(tp) (currentLex->type == (tp))
+#define ISID() (currentLex->type == LexType::l_id_)
+#define ISKW() (currentLex->type == LexType::l_kw_)
+#define MATCHKW(keyWord) (ISKW() && (currentLex->kw->key == keyWord))
+bool KWTYPE(unsigned types);
+#define KW() (ISKW() ? currentLex->kw->key : Keyword::none_)
 
 extern Optimizer::LINEDATA nullLineData;
 extern int eofLine;
 extern const char* eofFile;
 extern bool parsingPreprocessorConstant;
-extern LexContext* context;
+extern LexTokenFactory tokenFactory;
+extern std::stack<LexToken*> context;
 extern int charIndex;
 extern SymbolTable<KeywordData>* kwSymbols;
-extern LexList* currentLex;
+extern Lexeme* currentLex;
+extern LexToken* currentContext;
 
 void lexini(void);
 KeywordData* searchkw(const unsigned char** p);
-LexList* SkipToNextLine(void);
-LexList* getGTSym(LexList* in);
+void SkipToNextLine(void);
+Lexeme* getGTSym();
 void SkipToEol();
 bool AtEol();
 void CompilePragma(const unsigned char** linePointer);
 void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
 void FlushLineData(const char* file, int lineno);
-std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, LexList* lex, int offset);
-LexList* getsym(void);
-LexList* prevsym(LexList* lex);
-LexList* backupsym(void);
-LexList* SetAlternateLex(LexList* lexList);
-bool CompareLex(LexList* left, LexList* right);
+std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme* lex, int offset);
+void getsym(void);
+void BackupTokenStream(LexToken::iterator to);
+void BackupTokenStream(void);
+void SwitchTokenStream(LexToken* lexList);
+bool CompareLex(LexToken* left, LexToken* right);
 void SetAlternateParse(bool set, const std::string& val);
 long long ParseExpression(std::string& line);
 }  // namespace Parser

@@ -63,6 +63,9 @@
 #include "exprpacked.h"
 #include "sha1.h"
 #include "templatehash.h"
+#include "SymbolProperties.h"
+#include "using.h"
+
 namespace Parser
 {
 int templateDeclarationLevel;
@@ -1984,14 +1987,13 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
         while (it != ite)
         {
             SYMBOL* sp = *it;
-            if (sp->sb->deferredCompile)
+            if (initTokenStreams.get(sp))
             {
-                LexList* lex;
                 dontRegisterTemplate += templateDeclarationLevel != 0;
-                lex = SetAlternateLex(sp->sb->deferredCompile);
+                SwitchTokenStream(initTokenStreams.get(sp));
                 sp->sb->init = nullptr;
-                lex = initialize(lex, func, sp, StorageClass::parameter_, true, false, false, _F_TEMPLATEARGEXPANSION);
-                SetAlternateLex(nullptr);
+                initialize(func, sp, StorageClass::parameter_, true, false, false, _F_TEMPLATEARGEXPANSION);
+                SwitchTokenStream(nullptr);
                 dontRegisterTemplate -= templateDeclarationLevel != 0;
                 if (sp->sb->init && sp->sb->init->front()->exp && !ValidExp(&sp->sb->init->front()->exp))
                 {
@@ -2216,8 +2218,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     std::list<TEMPLATEPARAMPAIR>* defaults = nullptr;
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
-    LexList* head = nullptr;
-    LexList* tail = nullptr;
+    LexToken* head = nullptr;
     SYMBOL* oldMemberClass = instantiatingMemberFuncClass;
     std::list<TEMPLATEPARAMPAIR>::iterator itPrimary, itePrimary = itPrimary;
     if (declareSym->sb->specialized && declareSym->sb->parentTemplate &&
@@ -2231,8 +2232,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     instantiatingMemberFuncClass = declareSym->sb->parentClass;
     if (currents)
     {
-        head = currents->bodyHead;
-        tail = currents->bodyTail;
+        head = currents->bodyTokenStream;
     }
     enclosingDeclarations.Add(enclosing);
     auto oldContext = defaultParsingContext;
@@ -2268,7 +2268,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
         if ((!args || itArgs == iteArgs || (!itArgs->second->byClass.val && itArgs->second->byClass.txtdflt)) && !itDest->second->byClass.val && !itDest->second->packed &&
             (itPrimary == itePrimary || !itPrimary->second->packed))
         {
-            LexList* lex;
             int n;
             if (!itSrc->second->byClass.txtdflt)
             {
@@ -2304,12 +2303,12 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
             itDest->second->byClass.txtdflt = itSrc->second->byClass.txtdflt;
             itDest->second->byClass.txtargs = itSrc->second->byClass.txtargs;
             itDest->second->byNonType.txttype = itSrc->second->byNonType.txttype;
-            lex = SetAlternateLex(itSrc->second->byClass.txtdflt);
+            SwitchTokenStream(itSrc->second->byClass.txtdflt);
             switch (itDest->second->type)
             {
                 case TplType::typename_: {
                     noTypeNameError++;
-                    itDest->second->byClass.val = TypeGenerator::TypeId(lex, nullptr, StorageClass::cast_, false, true, false);
+                    itDest->second->byClass.val = TypeGenerator::TypeId(nullptr, StorageClass::cast_, false, true, false);
                     noTypeNameError--;
                     itDest->second->byClass.val->InstantiateDeferred();
                     if (!itDest->second->byClass.val || itDest->second->byClass.val->type == BasicType::any_ ||
@@ -2318,7 +2317,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         defaultParsingContext = oldContext;
                         enclosingDeclarations.Release();
                         PopTemplateNamespace(n);
-                        SetAlternateLex(nullptr);
+                        SwitchTokenStream(nullptr);
                         enclosingDeclarations.Drop();
                         instantiatingMemberFuncClass = oldMemberClass;
                         return false;
@@ -2327,8 +2326,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                 }
                 case TplType::template_: {
                     char buf[256];
-                    Utils::StrCpy(buf, lex->data->value.s.a);
-                    lex = id_expression(lex, nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf, sizeof(buf),
+                    Utils::StrCpy(buf, currentLex->value.s.a);
+                    id_expression(nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf, sizeof(buf),
                                         0);
 
                     if (!itDest->second->byTemplate.val)
@@ -2336,7 +2335,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         defaultParsingContext = oldContext;
                         enclosingDeclarations.Release();
                         PopTemplateNamespace(n);
-                        SetAlternateLex(nullptr);
+                        SwitchTokenStream(nullptr);
                         enclosingDeclarations.Drop();
                         instantiatingMemberFuncClass = oldMemberClass;
                         return false;
@@ -2349,20 +2348,20 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     if (itDest->second->byNonType.txttype)
                     {
                         int oldNesting = argumentNesting;
-                        LexList* start = lex;
-                        lex = SetAlternateLex(itSrc->second->byNonType.txttype);
+                        auto start = currentContext->Index();
+                        SwitchTokenStream(itSrc->second->byNonType.txttype);
                         openStructs = nullptr;
                         structLevel = 0;
                         argumentNesting = 0;
                         noTypeNameError++;
-                        tp1 = TypeGenerator::TypeId(lex, nullptr, StorageClass::parameter_, true, false, false);
+                        tp1 = TypeGenerator::TypeId(nullptr, StorageClass::parameter_, true, false, false);
                         tp1->InstantiateDeferred();
                         noTypeNameError--;
                         argumentNesting = oldNesting;
                         openStructs = oldOpenStructs;
                         structLevel = oldStructLevel;
-                        SetAlternateLex(nullptr);
-                        lex = start;
+                        SwitchTokenStream(nullptr);
+                        start;
                         Type* tp2 = tp1;
                         while (tp2->IsPtr())
                             tp2 = tp2->BaseType()->btp;
@@ -2371,7 +2370,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                             defaultParsingContext = oldContext;
                             enclosingDeclarations.Release();
                             PopTemplateNamespace(n);
-                            SetAlternateLex(nullptr);
+                            SwitchTokenStream(nullptr);
                             enclosingDeclarations.Drop();
                             instantiatingMemberFuncClass = oldMemberClass;
                             return false;
@@ -2380,7 +2379,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     }
                     openStructs = nullptr;
                     structLevel = 0;
-                    lex = expression_no_comma(lex, nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
+                    expression_no_comma(nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
                     optimize_for_constants(&exp1);
                     openStructs = oldOpenStructs;
                     structLevel = oldStructLevel;
@@ -2394,7 +2393,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                             defaultParsingContext = oldContext;
                             enclosingDeclarations.Release();
                             PopTemplateNamespace(n);
-                            SetAlternateLex(nullptr);
+                            SwitchTokenStream(nullptr);
                             enclosingDeclarations.Drop();
                             instantiatingMemberFuncClass = oldMemberClass;
                             return false;
@@ -2406,7 +2405,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                         defaultParsingContext = oldContext;
                         enclosingDeclarations.Release();
                         PopTemplateNamespace(n);
-                        SetAlternateLex(nullptr);
+                        SwitchTokenStream(nullptr);
                         enclosingDeclarations.Drop();
                         instantiatingMemberFuncClass = oldMemberClass;
                         return false;
@@ -2417,7 +2416,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     break;
             }
             PopTemplateNamespace(n);
-            SetAlternateLex(nullptr);
+            SwitchTokenStream(nullptr);
         }
         enclosingDeclarations.Release();
         if (itArgs != iteArgs)
@@ -2427,8 +2426,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     }
     if (currents)
     {
-        currents->bodyHead = head;
-        currents->bodyTail = tail;
+        currents->bodyTokenStream = head;
     }
     defaultParsingContext = oldContext;
     enclosingDeclarations.Drop();
@@ -2524,7 +2522,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
     if (ita != itae && ita->second->type == TplType::new_)
         ++ita;
     (void)args;
-    LexList* lex = nullptr;
     SYMBOL* cls = sym;
     if (cls->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
         return cls;
@@ -2537,16 +2534,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             if (itx != classInstantiationMap.end())
                 return itx->second;
         }
-        if (sym->sb->maintemplate && (!sym->sb->specialized || sym->sb->maintemplate->sb->specialized))
-        {
-            lex = sym->sb->maintemplate->sb->deferredCompile;
-            if (lex)
-                sym->tp = sym->sb->maintemplate->tp;
-        }
-        if (!lex)
-            lex = sym->sb->deferredCompile;
-        if (!lex && sym->sb->parentTemplate && (!sym->sb->specialized || sym->sb->parentTemplate->sb->specialized))
-            lex = sym->sb->parentTemplate->sb->deferredCompile;
+        auto lex = bodyTokenStreams.get(sym);
         if (lex)
         {
             if (sym->sb->decoratedName)
@@ -2554,14 +2542,13 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
                 if (!strchr(sym->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
                     classInstantiationMap[sym->sb->decoratedName] = cls;
             }
-            EnterInstantiation(lex, sym);
+            EnterInstantiation(sym, true);
             EnterPackedContext();
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;
             bool defd = false;
             SYMBOL old;
             int nsl = PushTemplateNamespace(sym);
-            LexList* reinstateLex = lex;
             bool oldTemplateType = inTemplateType;
             auto oldLambdas = lambdas;
             int oldExpandingParams = expandingParams;
@@ -2623,23 +2610,15 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             cls->sb->vbaseEntries = nullptr;
             instantiatingTemplate++;
             SwapMainTemplateArgs(cls);
-            lex = SetAlternateLex(lex);
+            SwitchTokenStream(lex);
             cls->sb->instantiating = true;
-            lex = innerDeclStruct(lex, nullptr, cls, false,
+            innerDeclStruct(nullptr, cls, false,
                                   cls->tp->type == BasicType::class_ ? AccessLevel::private_ : AccessLevel::public_,
                                   cls->sb->isfinal, &defd, false, nullptr);
             cls->sb->instantiating = false;
-            SetAlternateLex(nullptr);
+            SwitchTokenStream(nullptr);
             SwapMainTemplateArgs(cls);
-            lex = reinstateLex;
-            while (lex)
-            {
-                lex->data->registered = false;
-                lex = lex->next;
-            }
             SetAccessibleTemplateArgs(cls->templateParams, false);
-            if (old.tp->syms)
-                TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
             instantiatingClass--;
             inLoopOrConditional = oldInLoop;
@@ -2736,9 +2715,9 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
             {
                 return data;
             }
-            if (!data->sb->deferredCompile && sym->sb->deferredCompile)
+//            if (!data->sb->deferredCompile && sym->sb->deferredCompile)
             {
-                data->sb->deferredCompile = sym->sb->deferredCompile;
+ //               data->sb->deferredCompile = sym->sb->deferredCompile;
                 auto hrs = sym->tp->BaseType()->syms->begin();
                 for (auto sym : *data->tp->BaseType()->syms)
                 {

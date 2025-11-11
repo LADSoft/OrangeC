@@ -30,7 +30,7 @@ namespace Parser
 extern bool noExcept;
 
 // decl group
-std::list<MEMBERINITIALIZERS*>* GetMemberInitializers(LexList** lex2, SYMBOL* funcsp, SYMBOL* sym);
+std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym);
 void SetParams(SYMBOL* cons);
 void ConditionallyDeleteClassMethods(SYMBOL* sp);
 void createConstructorsForLambda(SYMBOL* sp);
@@ -42,7 +42,7 @@ bool matchesCopy(SYMBOL* sp, bool move);
 SYMBOL* getCopyCons(SYMBOL* base, bool move);
 bool hasVTab(SYMBOL* sp);
 SYMBOL* findClassName(const char* name, SYMBOL* cls, std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase, int* offset);
-void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);
+void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons);
 EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMBOL* cons, SymbolTable<SYMBOL>* syms,
                                  bool parseInitializers, bool doCopy, bool defaulted);
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc);

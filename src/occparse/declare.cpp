@@ -63,6 +63,11 @@
 #include "class.h"
 #include "overload.h"
 #include "exprpacked.h"
+#include "SymbolProperties.h"
+#include "using.h"
+#include "staticassert.h"
+#include "vtab.h"
+#include "attribs.h"
 
 namespace Parser
 {
@@ -85,7 +90,6 @@ static int unnamed_tag_id, unnamed_id;
 static char* importFile;
 static unsigned symbolKey;
 static int nameshim;
-static std::map<SYMBOL*, std::list<LexList*>> structureStaticAsserts;
 
 void declare_init(void)
 {
@@ -185,18 +189,17 @@ SYMBOL* SymAlloc()
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name)
 {
     SYMBOL* sp = SymAlloc();
-    LexList* lex = context->cur ? context->cur->prev : context->last;
     if (name && strstr(name, "++"))
         sp->sb->compilerDeclared = true;
     sp->name = name;
     sp->sb->storage_class = storage_class;
     sp->tp = tp;
-    if (lex)
+    if (currentLex)
     {
-        sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-        sp->sb->declline = sp->sb->origdeclline = lex->data->errline;
-        sp->sb->realdeclline = lex->data->linedata->lineno;
-        sp->sb->declfilenum = lex->data->linedata->fileindex;
+        sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+        sp->sb->declline = sp->sb->origdeclline = currentLex->errline;
+        sp->sb->realdeclline = currentLex->linedata->lineno;
+        sp->sb->declfilenum = currentLex->linedata->fileindex;
     }
     if (spi)
     {
@@ -583,25 +586,6 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
         }
     }
 }
-void EnterStructureStaticAssert(SYMBOL* sym, LexList* deferredCompile) { structureStaticAsserts[sym].push_back(deferredCompile); }
-void ParseStructureStaticAssert(SYMBOL* sym)
-{
-    auto it = structureStaticAsserts.find(sym);
-    if (it != structureStaticAsserts.end())
-    {
-        int n = PushTemplateNamespace(sym);
-        enclosingDeclarations.Add(sym);
-        auto hold = it->second;
-        for (auto deferred : hold)
-        {
-            auto temp = SetAlternateLex(deferred);
-            temp = handleStaticAssert(temp);
-            SetAlternateLex(nullptr);
-        }
-        enclosingDeclarations.Drop();
-        PopTemplateNamespace(n);
-    }
-}
 static bool validateAnonymousUnion(SYMBOL* parent, Type* unionType)
 {
     bool rv = true;
@@ -967,7 +951,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     }
     structureStaticAsserts.clear();
 }
-static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
+static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
     (void)funcsp;
     if (Optimizer::cparams.prm_cplusplus)
@@ -977,34 +961,34 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
         openStructs = lst;
         lst->data = sp;
     }
-    lex = getsym();
+    getsym();
     enclosingDeclarations.Add(sp);
     sp->sb->declaring = true;
-    while (lex && KW(lex) != Keyword::end_)
+    while (currentLex && KW() != Keyword::end_)
     {
-        FlushLineData(lex->data->errfile, lex->data->linedata->lineno);
-        switch (KW(lex))
+        FlushLineData(currentLex->errfile, currentLex->linedata->lineno);
+        switch (KW())
         {
             case Keyword::private_:
                 sp->sb->accessspecified = true;
                 currentAccess = AccessLevel::private_;
-                lex = getsym();
-                needkw(&lex, Keyword::colon_);
+                getsym();
+                needkw(Keyword::colon_);
                 break;
             case Keyword::public_:
                 sp->sb->accessspecified = true;
                 currentAccess = AccessLevel::public_;
-                lex = getsym();
-                needkw(&lex, Keyword::colon_);
+                getsym();
+                needkw(Keyword::colon_);
                 break;
             case Keyword::protected_:
                 sp->sb->accessspecified = true;
                 currentAccess = AccessLevel::protected_;
-                lex = getsym();
-                needkw(&lex, Keyword::colon_);
+                getsym();
+                needkw(Keyword::colon_);
                 break;
             default:
-                lex = declare(lex, nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
+                declare(nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
                               currentAccess);
                 break;
         }
@@ -1079,16 +1063,16 @@ static LexList* structbody(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, AccessLevel
             }
         }
     }
-    if (!lex)
+    if (!currentLex)
     {
         error(ERR_UNEXPECTED_EOF);
     }
     else
     {
-        lex = getsym();
+        getsym();
         FlushLineData("", 0);
     }
-    return lex;
+    return;
 }
 // this ignores typedef declarations and goes for the 'bare' version of the types...
 static void TypeCRC(Type* tp, unsigned& crc)
@@ -1140,7 +1124,7 @@ static bool compareStructSyms(SymbolTable<SYMBOL>* left, SymbolTable<SYMBOL>* ri
     }
     return itl == left->end() && itr == right->end();
 }
-LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
+void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable)
 {
     auto oldParsingContext = defaultParsingContext;
@@ -1148,7 +1132,7 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     oldExpressionParsing = inFunctionExpressionParsing;
     defaultParsingContext = nullptr;
     inFunctionExpressionParsing = false;
-    bool hasBody = !nobody && (Optimizer::cparams.prm_cplusplus && KW(lex) == Keyword::colon_) || KW(lex) == Keyword::begin_;
+    bool hasBody = !nobody && (Optimizer::cparams.prm_cplusplus && KW() == Keyword::colon_) || KW() == Keyword::begin_;
     SYMBOL* injected = nullptr;
 
     if (nameSpaceList.size())
@@ -1179,18 +1163,18 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     if (inTemplate && templateDeclarationLevel == 1)
         inTemplateBody++;
     if (Optimizer::cparams.prm_cplusplus)
-        if (KW(lex) == Keyword::colon_)
+        if (KW() == Keyword::colon_)
         {
-            lex = baseClasses(lex, funcsp, sp, defaultAccess);
+            baseClasses(funcsp, sp, defaultAccess);
             if (injected)
                 injected->sb->baseClasses = sp->sb->baseClasses;
-            if (!MATCHKW(lex, Keyword::begin_))
+            if (!MATCHKW(Keyword::begin_))
                 errorint(ERR_NEEDY, '{');
         }
-    if (hasBody && KW(lex) == Keyword::begin_)
+    if (hasBody && KW() == Keyword::begin_)
     {
         sp->sb->isfinal = isfinal;
-        lex = structbody(lex, funcsp, sp, defaultAccess, anonymousTable);
+        structbody(funcsp, sp, defaultAccess, anonymousTable);
         *defd = true;
     }
     if (hasBody && Optimizer::cparams.c_dialect == Dialect::c23)
@@ -1206,26 +1190,26 @@ LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTempla
     if (inTemplate && templateDeclarationLevel == 1)
     {
         inTemplateBody--;
-        TemplateGetDeferred(sp);
+        TemplateGetDeferredTokenStream(sp);
     }
     --structLevel;
     inFunctionExpressionParsing = oldExpressionParsing;
     defaultParsingContext = oldParsingContext;
-    return lex;
+    return;
 }
-static unsigned char* ParseUUID(LexList** lex)
+static unsigned char* ParseUUID()
 {
-    if (MATCHKW(*lex, Keyword::uuid_))
+    if (MATCHKW(Keyword::uuid_))
     {
         unsigned vals[16];
         unsigned char* rv = Allocate<unsigned char>(16);
-        *lex = getsym();
-        needkw(lex, Keyword::openpa_);
-        if ((*lex)->data->type == LexType::l_astr_)
+        getsym();
+        needkw(Keyword::openpa_);
+        if (currentLex->type == LexType::l_astr_)
         {
             int i;
-            int count = ((Optimizer::SLCHAR*)(*lex)->data->value.s.w)->count;
-            LCHAR* str = ((Optimizer::SLCHAR*)(*lex)->data->value.s.w)->str;
+            int count = ((Optimizer::SLCHAR*)currentLex->value.s.w)->count;
+            LCHAR* str = ((Optimizer::SLCHAR*)currentLex->value.s.w)->str;
             wchar_t buf[200];
             for (i = 0; i < count; i++)
                 buf[i] = *str++;
@@ -1244,14 +1228,14 @@ static unsigned char* ParseUUID(LexList** lex)
                 for (int j = 8; j < 16; j++)
                     rv[j] = vals[j];
             }
-            *lex = getsym();
+            getsym();
         }
-        needkw(lex, Keyword::closepa_);
+        needkw(Keyword::closepa_);
         return rv;
     }
     return nullptr;
 }
-LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
+void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
                     Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
@@ -1265,8 +1249,8 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     SYMBOL* strSym;
     AccessLevel defaultAccess;
     bool addedNew = false;
-    int declline = lex->data->errline;
-    int realdeclline = lex->data->linedata->lineno;
+    int declline = currentLex->errline;
+    int realdeclline = currentLex->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
     Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
@@ -1274,7 +1258,7 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
     bool nobody = false;
     *defd = false;
     newName[0] = '\0';
-    switch (KW(lex))
+    switch (KW())
     {
         case Keyword::class_:
             defaultAccess = AccessLevel::private_;
@@ -1290,37 +1274,37 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             type = BasicType::union_;
             break;
     }
-    lex = getsym();
-    uuid = ParseUUID(&lex);
+    getsym();
+    uuid = ParseUUID();
     auto oldAttribs = basisAttribs;
     basisAttribs = {0};
-    ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (MATCHKW(lex, Keyword::declspec_))
+    ParseAttributeSpecifiers(funcsp, true);
+    if (MATCHKW(Keyword::declspec_))
     {
-        lex = getsym();
-        lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
+        getsym();
+        parse_declspec(&linkage1, &linkage2, &linkage3);
     }
-    if (MATCHKW(lex, Keyword::rtllinkage_))
+    if (MATCHKW(Keyword::rtllinkage_))
     {
-        lex = getsym();
+        getsym();
         linkage2 = getDefaultLinkage();
     }
-    if (MATCHKW(lex, Keyword::classsel_))
+    if (MATCHKW(Keyword::classsel_))
     {
         charindex = -1;
         tagname = "";
-        lex = nestedSearch(lex, &sp, &strSym, &nsv, nullptr, nullptr, true, storage_class, true, true);
-        lex = getsym();
+        nestedSearch(&sp, &strSym, &nsv, nullptr, nullptr, true, storage_class, true, true);
+        getsym();
         searched = true;
     }
-    else if (ISID(lex))
+    else if (ISID())
     {
-        charindex = lex->data->charindex;
-        tagname = litlate(lex->data->value.s.a);
+        charindex = currentLex->charindex;
+        tagname = litlate(currentLex->value.s.a);
     }
     else
     {
-        if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
+        if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
             errorint(ERR_NEEDY, '{');
         tagname = "";
         charindex = -1;
@@ -1333,11 +1317,11 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         if (inTemplate)
             inTemplateSpecialization++;
 
-        lex = tagsearch(lex, newName, sizeof(newName), & sp, &table, &strSym, &nsv, storage_class);
+        tagsearch(newName, sizeof(newName), & sp, &table, &strSym, &nsv, storage_class);
 
         if (inTemplate)
             inTemplateSpecialization--;
-        if (!asfriend && charindex != -1 && Optimizer::cparams.prm_cplusplus && openStructs && MATCHKW(lex, Keyword::semicolon_))
+        if (!asfriend && charindex != -1 && Optimizer::cparams.prm_cplusplus && openStructs && MATCHKW(Keyword::semicolon_))
         {
             // forward declaration within class...   erase anything found outside the class
             if (!sp || sp->sb->parentClass != (SYMBOL*)openStructs->data)
@@ -1345,44 +1329,44 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
                 sp = nullptr;
             }
         }
-        if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
+        if (charindex != -1 && Optimizer::cparams.prm_cplusplus && ISID() && !strcmp(currentLex->value.s.a, "final"))
         {
             isfinal = true;
-            lex = getsym();
-            if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
+            getsym();
+            if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
                 errorint(ERR_NEEDY, '{');
         }
     }
-    if (ISID(lex))
+    if (ISID())
     {
-        lex = getsym();
-        if (MATCHKW(lex, Keyword::begin_))
+        getsym();
+        if (MATCHKW(Keyword::begin_))
         {
             nobody = true;
-            lex = backupsym();
+            BackupTokenStream();
         }
         else
         {
-            if (MATCHKW(lex, Keyword::lt_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_))
+            if (MATCHKW(Keyword::lt_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_))
             {
-                lex = backupsym();
+                BackupTokenStream();
                 // multiple identifiers, wade through them for error handling
                 error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
-                while (ISID(lex))
+                while (ISID())
                 {
-                    charindex = lex->data->charindex;
-                    tagname = litlate(lex->data->value.s.a);
+                    charindex = currentLex->charindex;
+                    tagname = litlate(currentLex->value.s.a);
                     Utils::StrCpy(newName, tagname);
-                    lex = tagsearch(lex, newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
+                    tagsearch(newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
                 }
             }
             else
             {
-                lex = backupsym();
+                BackupTokenStream();
             }
         }
     }
-    if (funcsp && !searched && !inFunctionExpressionParsing && (MATCHKW(lex, Keyword::colon_) || (!nobody && MATCHKW(lex, Keyword::begin_))))
+    if (funcsp && !searched && !inFunctionExpressionParsing && (MATCHKW(Keyword::colon_) || (!nobody && MATCHKW(Keyword::begin_))))
     {
         sp = nullptr;
         nsv = nullptr;
@@ -1408,13 +1392,13 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-        sp->sb->declfilenum = lex->data->linedata->fileindex;
+        sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+        sp->sb->declfilenum = currentLex->linedata->fileindex;
         sp->sb->attribs = basisAttribs;
         if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ ||
              storage_class == StorageClass::auto_) &&
-            (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) ||
-             MATCHKW(lex, Keyword::semicolon_)))
+            (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_) || MATCHKW(Keyword::try_) ||
+             MATCHKW(Keyword::semicolon_)))
         {
             if (storage_class == StorageClass::auto_)
                 sp->sb->parentClass = theCurrentFunc->sb->parentClass;
@@ -1442,12 +1426,12 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             SetLinkerNames(sp, Linkage::cdecl_);
             if (inTemplate && definingTemplate)
             {
-                if (MATCHKW(lex, Keyword::lt_))
+                if (MATCHKW(Keyword::lt_))
                     errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                 sp->templateParams = TemplateGetParams(sp);
                 sp->sb->templateLevel = definingTemplate;
-                TemplateMatching(lex, nullptr, sp->templateParams, sp,
-                                 MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
+                TemplateMatching(nullptr, sp->templateParams, sp,
+                                 MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
             browse_variable(sp);
@@ -1504,31 +1488,31 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
             }
             else
             {
-                if (inTemplate && KW(lex) == Keyword::lt_)
+                if (inTemplate && KW() == Keyword::lt_)
                 {
                     auto sp1 = sp;
                     std::list<TEMPLATEPARAMPAIR>* origParams = sp->templateParams;
                     std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
                     inTemplateSpecialization++;
                     parsingSpecializationDeclaration = true;
-                    lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->front().second->bySpecialization.types);
+                    GetTemplateArguments(funcsp, nullptr, &templateParams->front().second->bySpecialization.types);
                     parsingSpecializationDeclaration = false;
-                    inTemplateSpecialization--; 
+                    inTemplateSpecialization--;
                     sp = LookupSpecialization(sp, templateParams);
                     if (linkage2 != Linkage::none_)
                         sp->sb->attribs.inheritable.linkage2 = linkage2;
-                    sp->templateParams = TemplateMatching(lex, origParams, templateParams, sp,
-                                                          MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
+                    sp->templateParams = TemplateMatching(origParams, templateParams, sp,
+                                                          MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
                     if (sp->templateParams->front().second->bySpecialization.types)
                         for (auto&& t : *templateParams->front().second->bySpecialization.types)
                         {
                             t.second->specializationParam = true;
                         }
-                    if (ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
+                    if (ISID() && !strcmp(currentLex->value.s.a, "final"))
                     {
                         isfinal = true;
-                        lex = getsym();
-                        if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
+                        getsym();
+                        if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
                             errorint(ERR_NEEDY, '{');
                     }
                 }
@@ -1536,8 +1520,8 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
                 {
                     SYMLIST* instants;
                     std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
-                    sp->templateParams = TemplateMatching(lex, sp->templateParams, templateParams, sp,
-                                                          MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_));
+                    sp->templateParams = TemplateMatching(sp->templateParams, templateParams, sp,
+                                                          MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
                     if (sp->sb->parentTemplate->sb->instantiations)
                     {
                         for (auto instant : *sp->sb->parentTemplate->sb->instantiations)
@@ -1558,44 +1542,44 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
         }
-        else if (sp->sb && MATCHKW(lex, Keyword::lt_))
+        else if (sp->sb && MATCHKW(Keyword::lt_))
         {
             if (inTemplate)
             {
                 // instantiation
                 std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
-                lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->front().second->bySpecialization.types);
-                if (ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
+                GetTemplateArguments(funcsp, nullptr, &templateParams->front().second->bySpecialization.types);
+                if (ISID() && !strcmp(currentLex->value.s.a, "final"))
                 {
                     isfinal = true;
-                    lex = getsym();
-                    if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
+                    getsym();
+                    if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
                         errorint(ERR_NEEDY, '{');
                 }
             }
             else if (!sp->sb || sp->sb->templateLevel)
             {
-                if ((MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+                if ((MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_)))
                 {
                     errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
                 }
                 else
                 {
                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                    lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
+                    GetTemplateArguments(funcsp, nullptr, &lst);
                     if (sp->sb)
                         sp = GetClassTemplate(sp, lst, false);
-                    if (ISID(lex) && !strcmp(lex->data->value.s.a, "final"))
+                    if (ISID() && !strcmp(currentLex->value.s.a, "final"))
                     {
                         isfinal = true;
-                        lex = getsym();
-                        if (!MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::colon_))
+                        getsym();
+                        if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
                             errorint(ERR_NEEDY, '{');
                     }
                 }
             }
         }
-        else if (sp->sb && sp->sb->templateLevel && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+        else if (sp->sb && sp->sb->templateLevel && (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_)))
         {
             errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
         }
@@ -1606,11 +1590,11 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         {
             if (uuid)
                 sp->sb->uuid = uuid;
-            if (access != sp->sb->access && sp->tp->syms && (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::colon_)))
+            if (access != sp->sb->access && sp->tp->syms && (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_)))
             {
                 errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
             }
-            lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd, nobody, anonymous ? table : nullptr);
+            innerDeclStruct(funcsp, sp, inTemplate, defaultAccess, isfinal, defd, nobody, anonymous ? table : nullptr);
             if (constexpression)
             {
                 error(ERR_CONSTEXPR_NO_STRUCT);
@@ -1619,9 +1603,9 @@ LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bo
         *tp = sp->tp;
     }
     basisAttribs = oldAttribs;
-    return lex;
+    return;
 }
-static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, AccessLevel access, Type* fixedType,
+static void enumbody( SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, AccessLevel access, Type* fixedType,
                          bool scoped)
 {
     long long enumval = 0;
@@ -1630,18 +1614,18 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
     unfixedType = spi->tp->btp;
     if (!unfixedType)
         unfixedType = &stdint;
-    lex = getsym();
+    getsym();
     spi->sb->declaring = true;
     if (spi->tp->syms)
     {
         preverrorsym(ERR_ENUM_CONSTANTS_DEFINED, spi, spi->sb->declfile, spi->sb->declline);
     }
     spi->tp->syms = symbols->CreateSymbolTable(); /* holds a list of all the values, e.g. for debug info */
-    if (!MATCHKW(lex, Keyword::end_))
+    if (!MATCHKW(Keyword::end_))
     {
-        while (lex)
+        while (currentLex)
         {
-            if (ISID(lex))
+            if (ISID())
             {
                 SYMBOL* sp;
                 Type* tp;
@@ -1658,13 +1642,13 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                 {
                     tp = Type::MakeType(BasicType::int_);
                 }
-                sp = makeID(StorageClass::enumconstant_, tp, 0, litlate(lex->data->value.s.a));
-                sp->name = sp->sb->decoratedName = litlate(lex->data->value.s.a);
-                sp->sb->declcharpos = lex->data->charindex;
-                sp->sb->declline = sp->sb->origdeclline = lex->data->errline;
-                sp->sb->realdeclline = lex->data->linedata->lineno;
-                sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-                sp->sb->declfilenum = lex->data->linedata->fileindex;
+                sp = makeID(StorageClass::enumconstant_, tp, 0, litlate(currentLex->value.s.a));
+                sp->name = sp->sb->decoratedName = litlate(currentLex->value.s.a);
+                sp->sb->declcharpos = currentLex->charindex;
+                sp->sb->declline = sp->sb->origdeclline = currentLex->errline;
+                sp->sb->realdeclline = currentLex->linedata->lineno;
+                sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+                sp->sb->declfilenum = currentLex->linedata->fileindex;
                 sp->sb->parentClass = spi->sb->parentClass;
                 sp->sb->access = access;
                 browse_variable(sp);
@@ -1681,13 +1665,13 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                         globalNameSpace->front()->syms->Add(sp);
                 }
                 spi->tp->syms->Add(sp);
-                lex = getsym();
-                if (MATCHKW(lex, Keyword::assign_))
+                getsym();
+                if (MATCHKW(Keyword::assign_))
                 {
                     Type* tp = nullptr;
                     EXPRESSION* exp = nullptr;
-                    lex = getsym();
-                    lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_SCOPEDENUM);
+                    getsym();
+                    expression_no_comma(funcsp, nullptr, &tp, &exp, nullptr, _F_SCOPEDENUM);
                     if (tp)
                     {
                         optimize_for_constants(&exp);
@@ -1729,7 +1713,7 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                         if (!definingTemplate)
                         {
                             error(ERR_CONSTANT_VALUE_EXPECTED);
-                            errskim(&lex, skim_end);
+                            errskim(skim_end);
                         }
                     }
                 }
@@ -1755,12 +1739,12 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
                         }
                     }
                 }
-                if (!MATCHKW(lex, Keyword::comma_))
+                if (!MATCHKW(Keyword::comma_))
                     break;
                 else
                 {
-                    lex = getsym();
-                    if (KW(lex) == Keyword::end_)
+                    getsym();
+                    if (KW() == Keyword::end_)
                     {
                         if (Optimizer::cparams.prm_ansi && Optimizer::cparams.c_dialect < Dialect::c99 &&
                             !Optimizer::cparams.prm_cplusplus)
@@ -1774,27 +1758,27 @@ static LexList* enumbody(LexList* lex, SYMBOL* funcsp, SYMBOL* spi, StorageClass
             else
             {
                 error(ERR_IDENTIFIER_EXPECTED);
-                errskim(&lex, skim_end);
+                errskim(skim_end);
                 break;
             }
         }
     }
-    if (!lex)
+    if (!currentLex)
         error(ERR_UNEXPECTED_EOF);
-    else if (!MATCHKW(lex, Keyword::end_))
+    else if (!MATCHKW(Keyword::end_))
     {
         errorint(ERR_NEEDY, '}');
-        errskim(&lex, skim_end);
-        skip(&lex, Keyword::end_);
+        errskim(skim_end);
+        skip(Keyword::end_);
     }
     else
-        lex = getsym();
+        getsym();
     if (fixed)
         spi->tp->fixed = true;
     spi->sb->declaring = false;
-    return lex;
+    return;
 }
-LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd)
+void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd)
 {
     SymbolTable<SYMBOL>* table;
     const char* tagname;
@@ -1806,29 +1790,29 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
     SYMBOL* sp;
     std::list<NAMESPACEVALUEDATA*>* nsv;
     SYMBOL* strSym;
-    int declline = lex->data->errline;
-    int realdeclline = lex->data->linedata->lineno;
+    int declline = currentLex->errline;
+    int realdeclline = currentLex->linedata->lineno;
     bool anonymous = false;
     Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     *defd = false;
-    lex = getsym();
+    getsym();
     auto oldAttribs = basisAttribs;
     basisAttribs = {0};
-    ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (Optimizer::cparams.prm_cplusplus && (MATCHKW(lex, Keyword::class_) || MATCHKW(lex, Keyword::struct_)))
+    ParseAttributeSpecifiers(funcsp, true);
+    if (Optimizer::cparams.prm_cplusplus && (MATCHKW(Keyword::class_) || MATCHKW(Keyword::struct_)))
     {
         scoped = true;
-        lex = getsym();
+        getsym();
     }
-    if (MATCHKW(lex, Keyword::declspec_))
+    if (MATCHKW(Keyword::declspec_))
     {
-        lex = getsym();
-        lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
+        getsym();
+        parse_declspec(&linkage1, &linkage2, &linkage3);
     }
-    if (ISID(lex))
+    if (ISID())
     {
-        charindex = lex->data->charindex;
-        tagname = litlate(lex->data->value.s.a);
+        charindex = currentLex->charindex;
+        tagname = litlate(currentLex->value.s.a);
     }
     else
     {
@@ -1840,10 +1824,10 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
 
     Utils::StrCpy(newName, tagname);
 
-    lex = tagsearch(lex, newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
+    tagsearch(newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
 
-    ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (funcsp && (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_)))
+    ParseAttributeSpecifiers(funcsp, true);
+    if (funcsp && (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_)))
     {
         sp = nullptr;
         nsv = nullptr;
@@ -1853,11 +1837,11 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
         }
         table = localNameSpace->front()->tags;
     }
-    if (KW(lex) == Keyword::colon_)
+    if (KW() == Keyword::colon_)
     {
         RequiresDialect::Feature(Dialect::c23, "Underlying type");
-        lex = getsym();
-        fixedType = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
+        getsym();
+        fixedType = TypeGenerator::TypeId(funcsp, StorageClass::cast_, false, true, false);
         if (!fixedType || !fixedType->IsInt())
         {
             error(ERR_NEED_INTEGER_TYPE);
@@ -1902,8 +1886,8 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = lex->data->errfile;
-        sp->sb->declfilenum = lex->data->linedata->fileindex;
+        sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+        sp->sb->declfilenum = currentLex->linedata->fileindex;
         if (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_)
             sp->sb->parentClass = enclosingDeclarations.GetFirst();
         if (nsv)
@@ -1924,16 +1908,16 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
     {
         error(ERR_REDEFINITION_OF_ENUMERATION_SCOPE_OR_BASE_TYPE);
     }
-    if (noname && (scoped || opaque || KW(lex) != Keyword::begin_))
+    if (noname && (scoped || opaque || KW() != Keyword::begin_))
     {
         error(ERR_ENUMERATED_TYPE_NEEDS_NAME);
     }
-    if (KW(lex) == Keyword::begin_)
+    if (KW() == Keyword::begin_)
     {
         if (scoped)
             enumSyms = sp;
         EnterPackedSequence();
-        lex = enumbody(lex, funcsp, sp, storage_class, access, fixedType, scoped);
+        enumbody(funcsp, sp, storage_class, access, fixedType, scoped);
         ClearPackedSequence();
         LeavePackedSequence();
         enumSyms = nullptr;
@@ -1958,31 +1942,31 @@ LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_
         (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
     }
     basisAttribs = oldAttribs;
-    return lex;
+    return;
 }
-static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage,
+static void getStorageClass( SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage,
                                 Optimizer::ADDRESS* address, bool* blocked, bool* isExplicit, AccessLevel access)
 {
     (void)access;
     bool found = false;
     StorageClass oldsc;
-    while (KWTYPE(lex, TT_STORAGE_CLASS))
+    while (KWTYPE(TT_STORAGE_CLASS))
     {
-        switch (KW(lex))
+        switch (KW())
         {
             case Keyword::extern_:
                 oldsc = *storage_class;
                 if (*storage_class == StorageClass::parameter_ || *storage_class == StorageClass::member_ ||
                     *storage_class == StorageClass::mutable_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 else
                     *storage_class = StorageClass::external_;
-                lex = getsym();
+                getsym();
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    if (lex->data->type == LexType::l_astr_)
+                    if (currentLex->type == LexType::l_astr_)
                     {
-                        Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)lex->data->value.s.w;
+                        Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)currentLex->value.s.w;
                         char buf[256];
                         int i;
                         Linkage next = Linkage::none_;
@@ -2006,18 +1990,18 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
                         if (next != Linkage::none_)
                         {
                             *linkage = next;
-                            lex = getsym();
-                            if (MATCHKW(lex, Keyword::begin_))
+                            getsym();
+                            if (MATCHKW(Keyword::begin_))
                             {
                                 *blocked = true;
-                                lex = getsym();
-                                while (lex && !MATCHKW(lex, Keyword::end_))
+                                getsym();
+                                while (currentLex && !MATCHKW(Keyword::end_))
                                 {
-                                    lex = declare(lex, nullptr, nullptr, StorageClass::global_, *linkage, emptyBlockdata, true,
+                                    declare(nullptr, nullptr, StorageClass::global_, *linkage, emptyBlockdata, true,
                                                   false, false, AccessLevel::public_);
                                 }
-                                needkw(&lex, Keyword::end_);
-                                return lex;
+                                needkw(Keyword::end_);
+                                return;
                             }
                         }
                         else
@@ -2029,7 +2013,7 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
                                 *q++ = *p++;
                             *q = 0;
                             errorstr(ERR_UNKNOWN_LINKAGE, buf);
-                            lex = getsym();
+                            getsym();
                         }
                     }
                 }
@@ -2037,20 +2021,20 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
             case Keyword::virtual_:
                 if (*storage_class != StorageClass::member_)
                 {
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 }
                 else
                 {
                     *storage_class = StorageClass::virtual_;
                 }
-                lex = getsym();
+                getsym();
                 break;
             case Keyword::explicit_:
                 if (isExplicit)
                     *isExplicit = true;
                 else
                     error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
-                lex = getsym();
+                getsym();
                 break;
             case Keyword::mutable_:
                 if (*storage_class != StorageClass::member_)
@@ -2061,39 +2045,39 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
                 {
                     *storage_class = StorageClass::mutable_;
                 }
-                lex = getsym();
+                getsym();
                 break;
             case Keyword::static_:
                 if (*storage_class == StorageClass::parameter_ ||
                     (!Optimizer::cparams.prm_cplusplus &&
                      (*storage_class == StorageClass::member_ || *storage_class == StorageClass::mutable_)))
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 else if (*storage_class == StorageClass::auto_)
                     *storage_class = StorageClass::localstatic_;
                 else
                     *storage_class = StorageClass::static_;
-                lex = getsym();
+                getsym();
                 break;
             case Keyword::absolute_:
                 if (*storage_class == StorageClass::parameter_ || *storage_class == StorageClass::member_ ||
                     *storage_class == StorageClass::mutable_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, lex->data->kw->name);
+                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 else
                     *storage_class = StorageClass::absolute_;
-                lex = getsym();
-                if (MATCHKW(lex, Keyword::openpa_))
+                getsym();
+                if (MATCHKW(Keyword::openpa_))
                 {
                     Type* tp = nullptr;
                     EXPRESSION* exp = nullptr;
-                    lex = getsym();
-                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                    getsym();
+                    optimized_expression(funcsp, nullptr, &tp, &exp, false);
                     if (tp && isintconst(exp))
                         *address = exp->v.i;
                     else
                         error(ERR_CONSTANT_VALUE_EXPECTED);
-                    if (!MATCHKW(lex, Keyword::closepa_))
-                        needkw(&lex, Keyword::closepa_);
-                    lex = getsym();
+                    if (!MATCHKW(Keyword::closepa_))
+                        needkw(Keyword::closepa_);
+                    getsym();
                 }
                 else
                     error(ERR_ABSOLUTE_NEEDS_ADDRESS);
@@ -2103,21 +2087,21 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
                     errorstr(ERR_INVALID_STORAGE_CLASS, "auto");
                 else
                     *storage_class = StorageClass::auto_;
-                lex = getsym();
+                getsym();
                 break;
             case Keyword::register_:
                 if (*storage_class != StorageClass::auto_ && *storage_class != StorageClass::parameter_)
                     errorstr(ERR_INVALID_STORAGE_CLASS, "register");
                 else if (*storage_class != StorageClass::parameter_)
                     *storage_class = StorageClass::register_;
-                lex = getsym();
+                getsym();
                 break;
             case Keyword::typedef_:
                 if (*storage_class == StorageClass::parameter_)
                     errorstr(ERR_INVALID_STORAGE_CLASS, "typedef");
                 else
                     *storage_class = StorageClass::typedef_;
-                lex = getsym();
+                getsym();
                 break;
             default:
                 break;
@@ -2126,65 +2110,65 @@ static LexList* getStorageClass(LexList* lex, SYMBOL* funcsp, StorageClass* stor
             error(ERR_TOO_MANY_STORAGE_CLASS_SPECIFIERS);
         found = true;
     }
-    return lex;
+    return;
 }
-LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
+void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
 {
     (void)linkage;
-    if (needkw(&lex, Keyword::openpa_))
+    if (needkw(Keyword::openpa_))
     {
         while (1)
         {
-            if (ISID(lex))
+            if (ISID())
             {
-                if (!strcmp(lex->data->value.s.a, "noreturn"))
+                if (!strcmp(currentLex->value.s.a, "noreturn"))
                 {
                     if (*linkage3 != Linkage::none_)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage3 = Linkage::noreturn_;
                 }
-                else if (!strcmp(lex->data->value.s.a, "align"))
+                else if (!strcmp(currentLex->value.s.a, "align"))
                 {
-                    lex = getsym();
-                    if (needkw(&lex, Keyword::openpa_))
+                    getsym();
+                    if (needkw(Keyword::openpa_))
                     {
                         Type* tp = nullptr;
                         EXPRESSION* exp = nullptr;
 
-                        lex = optimized_expression(lex, nullptr, nullptr, &tp, &exp, false);
+                        optimized_expression(nullptr, nullptr, &tp, &exp, false);
                         if (!tp || !tp->IsInt())
                             error(ERR_NEED_INTEGER_TYPE);
                         else if (!isintconst(exp))
                             error(ERR_CONSTANT_VALUE_EXPECTED);
                         int align = exp->v.i;
-                        LexList* pos = lex;
-                        if (needkw(&lex, Keyword::closepa_))
-                            lex = prevsym(pos);
+                        auto placeHolder = currentContext->Index();
+                        if (needkw(Keyword::closepa_))
+                            BackupTokenStream(placeHolder);
                         basisAttribs.inheritable.structAlign = align;
                         if (basisAttribs.inheritable.structAlign > 0x10000 ||
                             (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
                             error(ERR_INVALID_ALIGNMENT);
                     }
                 }
-                else if (!strcmp(lex->data->value.s.a, "dllimport") || !strcmp(lex->data->value.s.a, "__dllimport__"))
+                else if (!strcmp(currentLex->value.s.a, "dllimport") || !strcmp(currentLex->value.s.a, "__dllimport__"))
                 {
                     if (*linkage2 != Linkage::none_)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = Linkage::import_;
                 }
-                else if (!strcmp(lex->data->value.s.a, "dllexport") || !strcmp(lex->data->value.s.a, "__dllexport__"))
+                else if (!strcmp(currentLex->value.s.a, "dllexport") || !strcmp(currentLex->value.s.a, "__dllexport__"))
                 {
                     if (*linkage2 != Linkage::none_)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage2 = Linkage::export_;
                 }
-                else if (!strcmp(lex->data->value.s.a, "thread") || !strcmp(lex->data->value.s.a, "__thread__"))
+                else if (!strcmp(currentLex->value.s.a, "thread") || !strcmp(currentLex->value.s.a, "__thread__"))
                 {
                     if (*linkage3 != Linkage::none_)
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage3 = Linkage::threadlocal_;
                 }
-                else if (!strcmp(lex->data->value.s.a, "deprecated") || !strcmp(lex->data->value.s.a, "__deprecated__"))
+                else if (!strcmp(currentLex->value.s.a, "deprecated") || !strcmp(currentLex->value.s.a, "__deprecated__"))
                 {
                     basisAttribs.uninheritable.deprecationText = (char*)-1;
                 }
@@ -2193,7 +2177,7 @@ LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linka
                     error(ERR_IGNORING__DECLSPEC);
                 }
             }
-            else if (MATCHKW(lex, Keyword::noreturn_))
+            else if (MATCHKW(Keyword::noreturn_))
             {
                 if (*linkage3 != Linkage::none_)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
@@ -2204,25 +2188,25 @@ LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linka
                 error(ERR_IGNORING__DECLSPEC);
                 break;
             }
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::openpa_))
+            getsym();
+            if (MATCHKW(Keyword::openpa_))
             {
-                errskim(&lex, skim_closepa);
+                errskim(skim_closepa);
             }
-            if (!MATCHKW(lex, Keyword::comma_))
+            if (!MATCHKW(Keyword::comma_))
                 break;
-            lex = getsym();
+            getsym();
         }
-        needkw(&lex, Keyword::closepa_);
+        needkw(Keyword::closepa_);
     }
-    return lex;
+    return;
 }
-static LexList* getLinkageQualifiers(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
+static void getLinkageQualifiers( Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
 {
-    while (KWTYPE(lex, TT_LINKAGE))
+    while (KWTYPE(TT_LINKAGE))
     {
-        Keyword kw = KW(lex);
-        lex = getsym();
+        Keyword kw = KW();
+        getsym();
         switch (kw)
         {
             case Keyword::cdecl_:
@@ -2272,7 +2256,7 @@ static LexList* getLinkageQualifiers(LexList* lex, Linkage* linkage, Linkage* li
                 *linkage2 = Linkage::export_;
                 break;
             case Keyword::declspec_:
-                lex = parse_declspec(lex, linkage, linkage2, linkage3);
+                parse_declspec(linkage, linkage2, linkage3);
                 break;
             case Keyword::rtllinkage_:
                 *linkage2 = getDefaultLinkage();
@@ -2303,62 +2287,62 @@ static LexList* getLinkageQualifiers(LexList* lex, Linkage* linkage, Linkage* li
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = Linkage::import_;
                 importFile = nullptr;
-                if (MATCHKW(lex, Keyword::openpa_))
+                if (MATCHKW(Keyword::openpa_))
                 {
-                    lex = getsym();
-                    if (lex->data->type == LexType::l_astr_)
+                    getsym();
+                    if (currentLex->type == LexType::l_astr_)
                     {
-                        int i, len = ((Optimizer::SLCHAR*)lex->data->value.s.w)->count;
+                        int i, len = ((Optimizer::SLCHAR*)currentLex->value.s.w)->count;
                         importFile = Allocate<char>(len + 1);
                         for (i = 0; i < len; i++)
-                            importFile[i] = (char)((Optimizer::SLCHAR*)lex->data->value.s.w)->str[i];
-                        lex = getsym();
+                            importFile[i] = (char)((Optimizer::SLCHAR*)currentLex->value.s.w)->str[i];
+                        getsym();
                     }
-                    needkw(&lex, Keyword::closepa_);
+                    needkw(Keyword::closepa_);
                 }
                 break;
             default:
                 break;
         }
     }
-    return lex;
+    return;
 }
-LexList* getQualifiers(LexList* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend)
+void getQualifiers( Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend)
 {
-    while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
+    while (KWTYPE((TT_TYPEQUAL | TT_LINKAGE)))
     {
-        if (asFriend && MATCHKW(lex, Keyword::friend_))
+        if (asFriend && MATCHKW(Keyword::friend_))
         {
             *asFriend = true;
-            lex = getsym();
+            getsym();
         }
         else
         {
-            *tp = TypeGenerator::PointerQualifiers(lex, *tp, false);
-            if (MATCHKW(lex, Keyword::atomic_))
+            *tp = TypeGenerator::PointerQualifiers(*tp, false);
+            if (MATCHKW(Keyword::atomic_))
                 break;
-            lex = getLinkageQualifiers(lex, linkage, linkage2, linkage3);
+            getLinkageQualifiers(linkage, linkage2, linkage3);
         }
     }
-    ParseAttributeSpecifiers(&lex, theCurrentFunc, true);
-    return lex;
+    ParseAttributeSpecifiers(theCurrentFunc, true);
+    return;
 }
-static LexList* nestedTypeSearch(LexList* lex, SYMBOL** sym)
+static void nestedTypeSearch( SYMBOL** sym)
 {
     *sym = nullptr;
-    lex = nestedSearch(lex, sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, true);
+    nestedSearch(sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, true);
     if (!*sym || !istype((*sym)))
     {
         error(ERR_TYPE_NAME_EXPECTED);
     }
-    return lex;
+    return;
 }
-static bool isPointer(LexList* lex)
+static bool isPointer(LexToken& lex)
 {
-    while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
-        lex = getsym();
-    if (ISKW(lex))
-        switch (KW(lex))
+    while (KWTYPE((TT_TYPEQUAL | TT_LINKAGE)))
+        getsym();
+    if (ISKW())
+        switch (KW())
         {
             case Keyword::and_:
             case Keyword::land_:
@@ -2369,7 +2353,7 @@ static bool isPointer(LexList* lex)
         }
     return false;
 }
-static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
+static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
 {
     /* two oldstyle declarations aren't compared */
     if ((spo && !spo->sb->oldstyle && spo->sb->hasproto) || !sp->sb->oldstyle)
@@ -2427,25 +2411,24 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
                         {
                             SYMBOL* so = *ito1;
                             SYMBOL* s = *it1;
-                            if (so != s && (so->sb->init || so->sb->deferredCompile) && (s->sb->init || s->sb->deferredCompile))
+                            if (so != s && ((so->sb->init && s->sb->init) ||  initTokenStreams.get(s)))
                                 errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
                             if (!err && last && last->sb->init &&
-                                !(so->sb->init || s->sb->init || so->sb->deferredCompile || s->sb->deferredCompile))
+                                !(so->sb->init || s->sb->init || initTokenStreams.get(s)))
                             {
                                 err = true;
                                 errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
                             }
                             last = so;
-                            if (so->sb->init || so->sb->deferredCompile)
+                            if (so->sb->init || initTokenStreams.get(s))
                             {
                                 s->sb->init = so->sb->init;
-                                s->sb->deferredCompile = so->sb->deferredCompile;
                             }
                             ++ito1;
                             ++it1;
                         }
                         // this is kind of iffy the hr->p values were copied one by one
-                        if (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
+                        if (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::try_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
                             spo->tp->BaseType()->syms = sp->tp->BaseType()->syms;
                         else
                             sp->tp->BaseType()->syms = spo->tp->BaseType()->syms;
@@ -2460,7 +2443,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
         {
             if (!sp->sb->xc || !sp->sb->xc->xcDynamic)
             {
-                if (!MATCHKW(lex, Keyword::begin_))
+                if (!MATCHKW(Keyword::begin_))
                     errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
 
@@ -2505,7 +2488,7 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
             }
             else if (sp->sb->xcMode == xc_unspecified)
             {
-                if (!MATCHKW(lex, Keyword::begin_))
+                if (!MATCHKW(Keyword::begin_))
                     errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
             else
@@ -2515,19 +2498,19 @@ static void matchFunctionDeclaration(LexList* lex, SYMBOL* sp, SYMBOL* spo, bool
         }
     }
 }
-LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
+LexToken* GetTokenStream(bool braces)
 {
-    LexList **cur = savePos, *last = nullptr;
+    LexToken* savePos = tokenFactory.Create();
     int paren = 0;
     int begin = 0;
     int brack = 0;
     int ltgt = 0;
     bool viaTry = false;
     if (braces) // theoretically we can only have a try at this point for function bodies...
-        viaTry = MATCHKW(lex, Keyword::try_);
-    while (lex != nullptr)
+        viaTry = MATCHKW(Keyword::try_);
+    while (!currentLex)
     {
-        Keyword kw = KW(lex);
+        Keyword kw = KW();
         if (braces)
         {
             if (kw == Keyword::begin_)
@@ -2536,12 +2519,9 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
             }
             else if (kw == Keyword::end_ && !--paren)
             {
-                *cur = Allocate<LexList>();
-                **cur = *lex;
-                (*cur)->prev = last;
-                last = *cur;
-                lex = getsym();
-                if (!viaTry || !MATCHKW(lex, Keyword::catch_))
+                savePos->Add(currentLex);
+                getsym();
+                if (!viaTry || !MATCHKW(Keyword::catch_))
                 {
                     break;
                 }
@@ -2597,18 +2577,14 @@ LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces)
                 ltgt--;
             }
         }
-        *cur = Allocate<LexList>();
-        if (lex->data->type == LexType::l_id_)
-            lex->data->value.s.a = litlate(lex->data->value.s.a);
-        **cur = *lex;
-        (*cur)->prev = last;
-        (*cur)->data->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+        if (currentLex->type == LexType::l_id_)
+            currentLex->value.s.a = litlate(currentLex->value.s.a);
+        savePos->Add(currentLex);
+        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
         lines = nullptr;
-        last = *cur;
-        cur = &(*cur)->next;
-        lex = getsym();
+        getsym();
     }
-    return lex;
+    return savePos;
 }
 static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
 {
@@ -2703,7 +2679,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* bt
     *index += sou;
     return mul;
 }
-static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<FunctionBlock*>& block, Type* btp, bool bypointer)
+static void allocateVLA( SYMBOL* sp, SYMBOL* funcsp, std::list<FunctionBlock*>& block, Type* btp, bool bypointer)
 {
     EXPRESSION *result = nullptr, **rptr = &result;
     Type* tp1 = btp;
@@ -2729,7 +2705,7 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
             sp->sb->storage_class != StorageClass::localstatic_)
             error(ERR_VLA_BLOCK_SCOPE);
     }
-    currentLineData(block, lex, 0);
+    currentLineData(block, currentLex, 0);
     if (sp->tp->sp)
     {
         SYMBOL* dest = sp;
@@ -2765,7 +2741,7 @@ static void allocateVLA(LexList* lex, SYMBOL* sp, SYMBOL* funcsp, std::list<Func
     }
     if (result != nullptr)
     {
-        Statement* st = Statement::MakeStatement(nullptr, block, StatementNode::declare_);
+        Statement* st = Statement::MakeStatement(block, StatementNode::declare_);
         st->hasvla = true;
         if (sp->sb->storage_class != StorageClass::typedef_ && !bypointer)
         {
@@ -2825,7 +2801,48 @@ static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
     }
     return true;
 }
-LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
+static bool CopyFunctionArguments(SYMBOL* spi, SYMBOL* sp)
+{
+    bool changed = false;
+    if (sp == nullptr)
+    {
+        sp = functionDefinitions.get(spi);
+        if (!sp)
+            return false;
+    }
+    if (spi->tp->BaseType()->syms && sp->tp->BaseType()->syms)
+    {
+        auto src = sp->tp->BaseType()->syms->begin();
+        auto srce = sp->tp->BaseType()->syms->end();
+        auto dest = spi->tp->BaseType()->syms->begin();
+        auto deste = spi->tp->BaseType()->syms->end();
+        if (src != srce && (*src)->sb->thisPtr)
+            ++src;
+        if (dest != deste && (*dest)->sb->thisPtr)
+            ++dest;
+        while (src != srce && dest != deste)
+        {
+            changed = changed || !strcmp((*dest)->name, (*src)->name);
+            (*dest)->name = (*src)->name;
+            ++src;
+            ++dest;
+        }
+    }
+    if (spi->templateParams && sp->templateParams)
+    {
+        auto itsrc = sp->templateParams->begin();
+        auto itdest = spi->templateParams->begin();
+        for (; itsrc != sp->templateParams->end() && itdest != spi->templateParams->end();
+            ++itsrc, ++itdest)
+            if (itsrc->first && itdest->first)
+            {
+                changed = changed || !strcmp(itdest->first->name, itsrc->first->name);
+                itdest->first->name = itsrc->first->name;
+            }
+    }
+    return changed;
+}
+void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
                            StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                            bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,
                            Linkage* linkage2, Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest,
@@ -2837,30 +2854,30 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
     *blocked = false;
     *constexpression = *builtin_constexpr = false;
 
-    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
-           (!foundType && TypeGenerator::StartOfType(lex, nullptr, assumeType)) || MATCHKW(lex, Keyword::complx_) ||
+    while (KWTYPE(TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
+           (!foundType && TypeGenerator::StartOfType(nullptr, assumeType)) || MATCHKW(Keyword::complx_) ||
            (*storage_class == StorageClass::typedef_ && !foundType))
     {
-        if (KWTYPE(lex, TT_DECLARE))
+        if (KWTYPE(TT_DECLARE))
         {
             // The next line has a recurring check. The 'lex' condition was already verified above
             // the problem is I'm using macros that I want to be independent from each other
             // and I don't want to introduce another macro without the check for readability
             // reasons.  So I'm going to leave the recurring check.
-            if (MATCHKW(lex, Keyword::constexpr_))
+            if (MATCHKW(Keyword::constexpr_))
             {
                 *constexpression = true;
             }
-            if (MATCHKW(lex, Keyword::builtin_constexpr_))
+            if (MATCHKW(Keyword::builtin_constexpr_))
             {
                 *constexpression = true;
                 *builtin_constexpr = true;
             }
-            lex = getsym();
+            getsym();
         }
-        else if (KWTYPE(lex, TT_STORAGE_CLASS))
+        else if (KWTYPE(TT_STORAGE_CLASS))
         {
-            lex = getStorageClass(lex, funcsp, storage_class, linkage, address, blocked, isExplicit, access);
+            getStorageClass(funcsp, storage_class, linkage, address, blocked, isExplicit, access);
             if (*blocked)
                 break;
             if (*storage_class == StorageClass::typedef_)
@@ -2869,14 +2886,14 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
                 inTypedef++;
             }
         }
-        else if (KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE))
+        else if (KWTYPE(TT_POINTERQUAL | TT_LINKAGE))
         {
-            lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, asFriend);
-            if (MATCHKW(lex, Keyword::atomic_))
+            getQualifiers(tp, linkage, linkage2, linkage3, asFriend);
+            if (MATCHKW(Keyword::atomic_))
             {
                 foundType = true;
                 *tp = TypeGenerator::UnadornedType(
-                    lex, funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd,
+                    funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd,
                     consdest, templateArg, Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? deduceTemplate : nullptr,
                     *storage_class == StorageClass::typedef_, true, false, asFriend, *constexpression);
             }
@@ -2890,20 +2907,20 @@ LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool i
         else
         {
             foundType = true;
-            *tp = TypeGenerator::UnadornedType(lex, funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3,
+            *tp = TypeGenerator::UnadornedType(funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3,
                                                access, notype, defd, consdest, templateArg,
                                                Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? deduceTemplate : nullptr,
                                                *storage_class == StorageClass::typedef_, true, false, asFriend, *constexpression);
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
                 *storage_class = StorageClass::static_;
         }
-        if (ParseAttributeSpecifiers(&lex, funcsp, true))
+        if (ParseAttributeSpecifiers(funcsp, true))
             break;
         first = false;
     }
     if (flaggedTypedef)
         inTypedef--;
-    return lex;
+    return;
 }
 static bool mismatchedOverloadLinkage(SYMBOL* sp, SymbolTable<SYMBOL>* table)
 {
@@ -2976,7 +2993,7 @@ static bool sameNameSpace(SYMBOL* left, SYMBOL* right)
     }
     return false;
 }
-LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage,
+bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage,
                  std::list<FunctionBlock*>& block, bool needsemi, int asExpression, bool inTemplate, AccessLevel access)
 {
     bool isExtern = false;
@@ -2996,28 +3013,28 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
     attributes oldAttribs = basisAttribs;
 
     basisAttribs = {0};
-    hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
+    hasAttributes = ParseAttributeSpecifiers(funcsp, true);
 
-    if (!MATCHKW(lex, Keyword::semicolon_))
+    if (!MATCHKW(Keyword::semicolon_))
     {
-        if (MATCHKW(lex, Keyword::inline_))
+        if (MATCHKW(Keyword::inline_))
         {
             isInline = true;
             linkage = Linkage::inline_;
-            lex = getsym();
-            ParseAttributeSpecifiers(&lex, funcsp, true);
+            getsym();
+            ParseAttributeSpecifiers(funcsp, true);
         }
-        else if (!asExpression && MATCHKW(lex, Keyword::extern_))
+        else if (!asExpression && MATCHKW(Keyword::extern_))
         {
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::template_))
+            getsym();
+            if (MATCHKW(Keyword::template_))
             {
                 isExtern = true;
                 goto jointemplate;
             }
-            lex = backupsym();
+            BackupTokenStream();
         }
-        if (!asExpression && MATCHKW(lex, Keyword::template_))
+        if (!asExpression && MATCHKW(Keyword::template_))
         {
         jointemplate:
             if (funcsp)
@@ -3030,10 +3047,10 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
 
-            lex = TemplateDeclaration(lex, funcsp, access, storage_class, isExtern);
+            TemplateDeclaration(funcsp, access, storage_class, isExtern);
             needsemi = false;
         }
-        else if (!asExpression && MATCHKW(lex, Keyword::namespace_))
+        else if (!asExpression && MATCHKW(Keyword::namespace_))
         {
 
             int count = 0;
@@ -3041,28 +3058,28 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             struct _ccNamespaceData nsData;
             if (!IsCompiler())
             {
-                nsData.declfile = lex->data->errfile;
-                nsData.startline = lex->data->errline;
+                nsData.declfile = currentLex->errfile;
+                nsData.startline = currentLex->errline;
             }
             if (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_)
                 error(ERR_NAMESPACE_NO_STRUCT);
 
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-            lex = getsym();
-            hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
-            lex = insertNamespace(lex, linkage, storage_class_in, &linked);
+            getsym();
+            hasAttributes = ParseAttributeSpecifiers(funcsp, true);
+            insertNamespace(linkage, storage_class_in, &linked);
             if (linked)
             {
-                if (MATCHKW(lex, Keyword::classsel_))
+                if (MATCHKW(Keyword::classsel_))
                 {
                     RequiresDialect::Feature(Dialect::cpp17, "Nested Namespace Definitions");
                 }
                 ++count;
-                while (linked && MATCHKW(lex, Keyword::classsel_))
+                while (linked && MATCHKW(Keyword::classsel_))
                 {
-                    lex = getsym();
-                    lex = insertNamespace(lex, linkage, storage_class_in, &linked);
+                    getsym();
+                    insertNamespace(linkage, storage_class_in, &linked);
                     if (linked)
                         ++count;
                 }
@@ -3070,16 +3087,16 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                 {
                     errorsym(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, nameSpaceList.front());
                 }
-                if (linked && needkw(&lex, Keyword::begin_))
+                if (linked && needkw(Keyword::begin_))
                 {
-                    while (lex && !MATCHKW(lex, Keyword::end_))
+                    while (currentLex && !MATCHKW(Keyword::end_))
                     {
-                        lex = declare(lex, nullptr, nullptr, storage_class, defaultLinkage, emptyBlockdata, true, false, false,
+                        declare(nullptr, nullptr, storage_class, defaultLinkage, emptyBlockdata, true, false, false,
                                       access);
                     }
-                    if (!IsCompiler() && lex)
-                        nsData.endline = lex->data->errline;
-                    needkw(&lex, Keyword::end_);
+                    if (!IsCompiler() && currentLex)
+                        nsData.endline = currentLex->errline;
+                    needkw(Keyword::end_);
                 }
                 for (; count; count--)
                 {
@@ -3100,20 +3117,20 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                 needsemi = false;
             }
         }
-        else if (!asExpression && MATCHKW(lex, Keyword::using_))
+        else if (!asExpression && MATCHKW(Keyword::using_))
         {
-            lex = getsym();
+            getsym();
             sp = nullptr;
-            lex = insertUsing(lex, &sp, access, storage_class_in, inTemplate, hasAttributes);
+            insertUsing(&sp, access, storage_class_in, inTemplate, hasAttributes);
             if (sp && tprv)
                 *tprv = (Type*)-1;
         }
-        else if (!asExpression && MATCHKW(lex, Keyword::static_assert_))
+        else if (!asExpression && MATCHKW(Keyword::static_assert_))
         {
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-            lex = getsym();
-            lex = handleStaticAssert(lex);
+            getsym();
+            handleStaticAssert();
         }
         else
         {
@@ -3127,16 +3144,16 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
             bool deduceTemplate = false;
             int consdest = CT_NONE;
             declaringInitialType++;
-            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &deduceTemplate, &storage_class, &storage_class_in,
+            getStorageAndType(funcsp, &strSym, inTemplate, false, &deduceTemplate, &storage_class, &storage_class_in,
                                     &address, &blocked, &isExplicit, &constexpression, &builtin_constexpression, &tp, &linkage,
                                     &linkage2, &linkage3, access, &notype, &defd, &consdest, &templateArg, &asFriend);
             declaringInitialType--;
-            bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::openbr_);
+            bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::openbr_);
             if (bindingcandidate)
             {
-                lex = getsym();
-                bindingcandidate = ISID(lex);
-                lex = backupsym();
+                getsym();
+                bindingcandidate = ISID();
+                BackupTokenStream();
             }
             auto ssp = enclosingDeclarations.GetFirst();
             if (blocked)
@@ -3151,14 +3168,14 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                       storage_class_in == StorageClass::static_ || storage_class_in == StorageClass::global_))
             {
                 RequiresDialect::Feature(Dialect::cpp17, "Structured binding declarations");
-                lex = GetStructuredBinding(lex, funcsp, storage_class, linkage, block);
+                GetStructuredBinding(funcsp, storage_class, linkage, block);
             }
             else if (Optimizer::cparams.cpp_dialect >= Dialect::cpp17 && !strSym && inTemplate && tp &&
                      (!ssp || (ssp->tp != tp && !SameTemplate(ssp->tp, tp))) && tp->IsStructured() && tp == tp->BaseType() &&
-                     tp->sp->sb->templateLevel && MATCHKW(lex, Keyword::openpa_))
+                     tp->sp->sb->templateLevel && MATCHKW(Keyword::openpa_))
             {
                 *tprv = tp;
-                lex = GetDeductionGuide(lex, funcsp, storage_class, linkage, tprv);
+                GetDeductionGuide(funcsp, storage_class, linkage, tprv);
             }
             else
             {
@@ -3178,6 +3195,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     Type* tp1 = tp;
                     std::list<NAMESPACEVALUEDATA*>* oldGlobals = nullptr;
                     std::list<SYMBOL*> oldNameSpaceList;
+                    std::list<CONSTRUCTORINITIALIZER*>* constructorInitializers = nullptr;
                     bool promotedToTemplate = false;
                     if (!tp1)
                     {
@@ -3193,15 +3211,15 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         if (!strcmp(l->name, overloadNameTab[CI_CAST]))
                         {
                             strSym = (*tp->sp->sb->templateSelector)[1].sp;
-                            while (!MATCHKW(lex, Keyword::operator_))
-                                lex = lex->prev;
+                            while (!MATCHKW(Keyword::operator_))
+                                BackupTokenStream();
                             notype = true;
                             tp = tp1 = Type::MakeType(BasicType::int_);
                             isTemplatedCast = true;
                         }
                     }
-                    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, &asFriend);
-                    tp1 = TypeGenerator::BeforeName(lex, funcsp, tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage,
+                    getQualifiers(&tp, &linkage, &linkage2, &linkage3, &asFriend);
+                    tp1 = TypeGenerator::BeforeName(funcsp, tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage,
                                                     &linkage2, &linkage3, &notype, asFriend, consdest, false, false);
                     if (linkage2 == Linkage::import_)
                         if (storage_class == StorageClass::global_)
@@ -3255,7 +3273,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     if (Optimizer::cparams.prm_cplusplus && tp1->IsFunction() &&
                         (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_) && !asFriend)
                     {
-                        if (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
+                        if (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
                         {
                             sp->sb->attribs.inheritable.isInline = true;
                         }
@@ -3277,7 +3295,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     {
                         if (!strSym)
                         {
-                            if (MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
+                            if (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
                             {
                                 if (strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                 {
@@ -3497,10 +3515,10 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         sp->sb->access = access;
                         sp->sb->isExplicit = isExplicit;
                         sp->sb->storage_class = storage_class;
-                        if (inTemplate && (!sp->templateParams || MATCHKW(lex, Keyword::colon_) || MATCHKW(lex, Keyword::begin_) ||
-                                           MATCHKW(lex, Keyword::try_)))
+                        if (inTemplate && (!sp->templateParams || MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_) ||
+                                           MATCHKW(Keyword::try_)))
                             sp->templateParams = TemplateGetParams(sp);
-                        if (sp->sb->isDestructor && sp->sb->xcMode == xc_unspecified && !sp->sb->deferredNoexcept)
+                        if (sp->sb->isDestructor && sp->sb->xcMode == xc_unspecified && !noExceptTokenStreams.get(sp))
                         {
                             sp->sb->noExcept = true;
                             sp->sb->xcMode = xc_none;
@@ -3542,16 +3560,19 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         {
                             inTemplateBody++;
                         }
-                        if (Optimizer::cparams.prm_cplusplus && sp->tp->IsFunction() && MATCHKW(lex, Keyword::colon_))
+                        if (Optimizer::cparams.prm_cplusplus && sp->sb->isConstructor)
                         {
-                            lex = getsym();
-                            sp->sb->memberInitializers = GetMemberInitializers(&lex, funcsp, sp);
+                            if (MATCHKW(Keyword::colon_))
+                            {
+                                getsym();
+                                constructorInitializers = GetConstructorInitializers(funcsp, sp);
+                            }
                         }
                         if (storage_class == StorageClass::absolute_)
                             sp->sb->value.i = address;
                         if ((!Optimizer::cparams.prm_cplusplus || !enclosingDeclarations.GetFirst()) && !istype(sp) &&
                             sp->sb->storage_class != StorageClass::static_ && tp1->BaseType()->IsFunction() &&
-                            !MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::try_))
+                            !MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::try_))
                             sp->sb->storage_class = StorageClass::external_;
                         if (tp1->IsVoid())
                             if (sp->sb->storage_class != StorageClass::parameter_ &&
@@ -3650,6 +3671,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         if (spi && spi->sb->storage_class == StorageClass::overloads_)
                         {
+                            sp->sb->parentTemplate = spi->tp->syms->front()->sb->parentTemplate;
                             SYMBOL* sym = nullptr;
                             if (sp->tp->IsFunction())
                             {
@@ -3874,21 +3896,21 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     if (templateParams->front().second->bySpecialization.types && spi->sb->parentTemplate)
                                     {
                                         spi->templateParams =
-                                            TemplateMatching(lex, spi->sb->parentTemplate->templateParams, templateParams, spi,
-                                                             MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_));
+                                            TemplateMatching(spi->sb->parentTemplate->templateParams, templateParams, spi,
+                                                             MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_));
                                     }
                                     else
                                     {
-                                        if (!asFriend || MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
+                                        if (!asFriend || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
                                         {
                                             auto temp =
-                                                TemplateMatching(lex, spi->templateParams, templateParams, spi,
-                                                                 MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_));
+                                                TemplateMatching(spi->templateParams, templateParams, spi,
+                                                                 MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_));
                                             spi->templateParams = temp;
                                         }
                                         else
                                         {
-                                            auto temp = TemplateMatching(lex, spi->templateParams, templateParams, spi, true);
+                                            auto temp = TemplateMatching(spi->templateParams, templateParams, spi, true);
                                         }
                                     }
                                 }
@@ -3905,7 +3927,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             }
                             if (spi->tp->IsFunction())
                             {
-                                matchFunctionDeclaration(lex, sp, spi, checkReturn, asFriend);
+                                matchFunctionDeclaration(sp, spi, checkReturn, asFriend);
                             }
                             if (sp->sb->parentClass)
                             {
@@ -3942,15 +3964,17 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     sp->tp->InstantiateDeferred();
                                     spi->tp->InstantiateDeferred();
                                 }
-                                if (spi->sb->pushedTemplateSpecializationDefinition &&
-                                    (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)))
+                                /*
+                                if (spi->tp->IsFunction() && (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
                                 {
-                                    spi->sb->pushedTemplateSpecializationDefinition = false;
-                                    spi->sb->inlineFunc.stmt = nullptr;
-                                    spi->sb->deferredCompile = nullptr;
+                                    if (spi->sb->specialized)
+                                    {
+                                        sp->sb->inlineFunc.stmt = nullptr;
+                                    }
                                 }
-                                if ((spi->tp->IsFunction() && (spi->sb->inlineFunc.stmt || spi->sb->deferredCompile) &&
-                                     (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)) &&
+                                */
+                                if ((spi->tp->IsFunction() && (spi->sb->inlineFunc.stmt || bodyTokenStreams.get(spi)) &&
+                                     (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)) &&
                                      (!spi->sb->parentClass || !spi->sb->parentClass->sb->instantiated ||
                                       !spi->sb->copiedTemplateFunction)) &&
                                     spi->sb->parentClass &&
@@ -4110,11 +4134,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     }
                                 }
                                 if (Optimizer::cparams.prm_cplusplus &&
-                                    (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)))
+                                    (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
                                 {
                                     spi->templateParams = sp->templateParams;
                                 }
-                                if (!asFriend || MATCHKW(lex, Keyword::try_) || MATCHKW(lex, Keyword::begin_))
+                                if (!asFriend || MATCHKW(Keyword::try_) || MATCHKW(Keyword::begin_))
                                 {
                                     spi->tp = sp->tp;
                                     spi->tp->sp = spi;
@@ -4132,14 +4156,25 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 spi->sb->realdeclline = sp->sb->realdeclline;
                                 spi->sb->declfilenum = sp->sb->declfilenum;
                             }
-                            spi->sb->memberInitializers = sp->sb->memberInitializers;
-
+                            sp->sb->constructorInitializers = spi->sb->constructorInitializers;
+                            if (constructorInitializers)
+                            {
+                                *sp->sb->constructorInitializers = constructorInitializers;
+                            }
                             spi->sb->attribs.inheritable.isInline |= sp->sb->attribs.inheritable.isInline;
                             spi->sb->promotedToInline |= sp->sb->promotedToInline;
                             spi->sb->declaredAsInline |= sp->sb->declaredAsInline;
 
                             spi->sb->parentClass = sp->sb->parentClass;
                             spi->sb->externShim = false;
+
+                            if (spi->tp->IsFunction() && MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
+                            {
+                                if (Optimizer::cparams.prm_cplusplus && CopyFunctionArguments(spi, sp))
+                                {
+                                    functionDefinitions.set(spi, sp);
+                                }
+                            }
                             sp->sb->mainsym = spi;
 
                             sp = spi;
@@ -4147,6 +4182,15 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         }
                         else
                         {
+                            if (Optimizer::cparams.prm_cplusplus)
+                            {
+                                CopyFunctionArguments(sp, nullptr);
+                            }
+                            if (sp->sb->isConstructor)
+                            {
+                                sp->sb->constructorInitializers = Allocate<std::list<CONSTRUCTORINITIALIZER*>*>();
+                                *sp->sb->constructorInitializers = constructorInitializers;
+                            }
                             if (inTemplate)
                             {
                                 std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
@@ -4162,13 +4206,13 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 }
                                 else if (definingTemplate == 1)
                                 {
-                                    TemplateMatching(lex, nullptr, templateParams, sp,
-                                                     MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_));
+                                    TemplateMatching(nullptr, templateParams, sp,
+                                                     MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_));
                                 }
                             }
                             if (sp->tp->IsFunction())
                             {
-                                matchFunctionDeclaration(lex, sp, sp, false, asFriend);
+                                matchFunctionDeclaration(sp, sp, false, asFriend);
                                 if (inTemplate)
                                     sp->sb->parentTemplate = sp;
                             }
@@ -4184,7 +4228,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 if (!asFriend || !definingTemplate || instantiatingTemplate || inTemplate)
                                 {
                                     if (sp->sb->storage_class == StorageClass::external_ ||
-                                        (asFriend && !MATCHKW(lex, Keyword::begin_) && !MATCHKW(lex, Keyword::try_)))
+                                        (asFriend && !MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::try_)))
                                     {
                                         InsertSymbol(sp, StorageClass::external_, linkage, false);
                                     }
@@ -4296,14 +4340,14 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         btp = sp->tp->BaseType();
                         if (btp->vla)
                         {
-                            allocateVLA(lex, sp, funcsp, block, btp, false);
+                            allocateVLA(sp, funcsp, block, btp, false);
                         }
                         else
                         {
                             btp = btp->btp->BaseType();
                             if (btp->vla)
                             {
-                                allocateVLA(lex, sp, funcsp, block, btp, true);
+                                allocateVLA(sp, funcsp, block, btp, true);
                                 btp->size = sp->tp->BaseType()->size;
                             }
                         }
@@ -4331,7 +4375,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                         else
                             CheckIsLiteralClass(sp->tp);
                     }
-                    if (lex)
+                    if (currentLex)
                     {
                         if (linkage != Linkage::cdecl_)
                             sp->sb->attribs.inheritable.linkage = linkage;
@@ -4348,7 +4392,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             if (sp->tp->BaseType()->btp->IsAutoType())
                                 RequiresDialect::Feature(Dialect::cpp14, "Return value deduction");
                             if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate &&
-                                (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_)))
+                                (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
                                 errorsym(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == StorageClass::localstatic_)
                                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
@@ -4387,7 +4431,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 SetTemplateNamespace(sp);
                             if (storage_class == StorageClass::external_)
                                 sp->sb->declaredAsExtern = true;
-                            if (MATCHKW(lex, Keyword::begin_) || MATCHKW(lex, Keyword::try_))
+                            if (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
                             {
                                 if (asFriend)
                                     sp->sb->friendContext = enclosingDeclarations.GetFirst();
@@ -4426,10 +4470,11 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                     sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                     if (sp->sb->constexpression && sp->sb->isConstructor)
                                         ConstexprMembersNotInitializedErrors(sp);
-                                    auto startStmt = currentLineData(emptyBlockdata, lex, 0);
+                                    auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                     if (startStmt)
                                         sp->sb->linedata = startStmt->front()->lineData;
-                                    lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
+                                    auto stream = GetTokenStream( true);
+                                    bodyTokenStreams.set(sp, stream);
                                     Optimizer::SymbolManager::Get(sp);
                                     sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                     if (!sp->sb->attribs.inheritable.isInline)
@@ -4447,19 +4492,23 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         {
                                             if (!sp->sb->parentNameSpace ||
                                                 (sp->sb->specialized && sp->templateParams->size() == 1) || sp->sb->isDestructor)
+                                            {
                                                 sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                            if ((!sp->sb->parentNameSpace && (!definingTemplate || instantiatingTemplate)) ||
-                                                (sp->sb->specialized && sp->templateParams->size() == 1) || sp->sb->isDestructor)
-                                                InsertInline(sp);
+                                                if (!sp->sb->parentNameSpace && (!definingTemplate || instantiatingTemplate))
+                                                {
+                                                    InsertInline(sp);
+                                                }
+                                            }
                                         }
                                     }
                                     if (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
                                         definingTemplate == 1 || (asFriend && definingTemplate == 2))
                                     {
-                                        auto startStmt = currentLineData(emptyBlockdata, lex, 0);
+                                        auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                         if (startStmt)
                                             sp->sb->linedata = startStmt->front()->lineData;
-                                        lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
+                                        auto stream = GetTokenStream( true);
+                                        bodyTokenStreams.set(sp, stream);
                                         Optimizer::SymbolManager::Get(sp);
                                         if (asFriend)
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
@@ -4472,12 +4521,12 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             sp->sb->specialized2 = true;
                                         }
                                         if (sp->templateParams && sp->templateParams->size() == 1 &&
-                                            (!definingTemplate || instantiatingTemplate))
+                                            (!definingTemplate || instantiatingTemplate) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
                                             InsertInline(sp);
                                     }
                                     else
                                     {
-                                        StatementGenerator sg(lex, sp);
+                                        StatementGenerator sg(sp);
                                         sg.FunctionBody();
                                         sg.BodyGen();
                                     }
@@ -4493,12 +4542,12 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             else
                             {
                                 browse_variable(sp);
-                                if (sp->sb->memberInitializers)
+                                if (sp->sb->constructorInitializers && *sp->sb->constructorInitializers)
                                     errorsym(ERR_CONSTRUCTOR_MUST_HAVE_BODY, sp);
-                                if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::assign_))
+                                if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::assign_))
                                 {
-                                    lex = getsym();
-                                    if (MATCHKW(lex, Keyword::delete_))
+                                    getsym();
+                                    if (MATCHKW(Keyword::delete_))
                                     {
                                         sp->sb->deleted = true;
                                         sp->sb->constexpression = true;
@@ -4506,9 +4555,9 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         {
                                             errorsym(ERR_DELETE_ON_REDECLARATION, sp);
                                         }
-                                        lex = getsym();
+                                        getsym();
                                     }
-                                    else if (MATCHKW(lex, Keyword::default_))
+                                    else if (MATCHKW(Keyword::default_))
                                     {
                                         sp->sb->defaulted = true;
                                         sp->sb->explicitDefault = true;
@@ -4532,17 +4581,18 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             else
                                                 createAssignment(sp->sb->parentClass, sp);
                                             sp->sb->forcedefault = true;
+                                            sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                             InsertInline(sp);
                                         }
-                                        lex = getsym();
+                                        getsym();
                                     }
-                                    else if (lex->data->type != LexType::i_ || lex->data->value.i != 0)
+                                    else if (currentLex->type != LexType::i_ || currentLex->value.i != 0)
                                     {
                                         error(ERR_PURE_SPECIFIER_CONST_ZERO);
                                     }
                                     else
                                     {
-                                        lex = getsym();
+                                        getsym();
                                         sp->sb->ispure = true;
                                     }
                                 }
@@ -4567,20 +4617,18 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                             {
                                 sp->sb->runtimeSym = AnonymousVar(StorageClass::auto_, &stdpointer)->v.sp;
                             }
-                            LexList* hold = lex;
+                            auto placeHolder = currentContext->Index();
                             bool structuredArray = false;
                             if (notype)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);
-                                errskim(&lex, skim_semi);
-                                return lex;
+                                errskim(skim_semi);
+                                return currentLex;
                             }
                             if (linkage3 == Linkage::entrypoint_)
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);
                             }
-//                            if (inTemplate)
-//                                RequiresDialect::Feature(Dialect::cpp14, "Variable Templates");
                             if (sp->sb->storage_class == StorageClass::virtual_)
                             {
                                 errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);
@@ -4593,7 +4641,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                  * will cause errors later*/
                                 if (!sp->tp->IsInt() || !sp->tp->IsConst())
                                 {
-                                    Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
+                                    Statement* s = Statement::MakeStatement(block, StatementNode::varstart_);
                                     s->select = MakeExpression(ExpressionNode::auto_, sp);
                                 }
                             }
@@ -4604,9 +4652,9 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                 sp->sb->label = Optimizer::nextLabel++;
                             if (Optimizer::cparams.prm_cplusplus && sp->sb->storage_class != StorageClass::type_ &&
                                 sp->sb->storage_class != StorageClass::typedef_ && structLevel && (!instantiatingTemplate) &&
-                                !funcsp && (MATCHKW(lex, Keyword::assign_) || MATCHKW(lex, Keyword::begin_)))
+                                !funcsp && (MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)))
                             {
-                                if ((MATCHKW(lex, Keyword::assign_) || MATCHKW(lex, Keyword::begin_)) &&
+                                if ((MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)) &&
                                     storage_class_in == StorageClass::member_ &&
                                     (sp->sb->storage_class == StorageClass::static_ ||
                                      sp->sb->storage_class == StorageClass::external_))
@@ -4621,7 +4669,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }
                                 }
-                                lex = getDeferredData(lex, &sp->sb->deferredCompile, false);
+                                auto stream = GetTokenStream( false);
+                                initTokenStreams.set(sp, stream);
                             }
                             else
                             {
@@ -4637,7 +4686,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         sp->tp = tn;
                                     }
                                 }
-                                lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, inTemplate, deduceTemplate,
+                                initialize(funcsp, sp, storage_class_in, asExpression, inTemplate, deduceTemplate,
                                                  0); /* also reserves space */
                                 if (sp->sb->parentClass && sp->sb->storage_class == StorageClass::global_)
                                 {
@@ -4674,7 +4723,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                                 {
                                                     found = true;
                                                     break;
-                                                }
+                                                } 
                                             }
                                             doit = found;
                                         }
@@ -4688,8 +4737,8 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                         if (!sp->sb->constexpression)
                                         {
                                             Statement* st;
-                                            currentLineData(block, hold, 0);
-                                            st = Statement::MakeStatement(hold, block, StatementNode::expr_);
+                                            currentLineData(block, *placeHolder, 0);
+                                            st = Statement::MakeStatement(block, StatementNode::expr_, *placeHolder);
                                             if (!sp->tp->IsStructured() || !sp->tp->BaseType()->sp->sb->islambda)
                                             {
                                                 st->select = ConverInitializersToExpression(sp->tp, sp, nullptr, funcsp,
@@ -4705,14 +4754,14 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                             {
                                                 auto exp = relptr(st->select->left->left, offset, true);
                                                 if (exp)
-                                                    SetRuntimeData(lex, exp, sp);
+                                                    SetRuntimeData(exp, sp);
                                             }
                                         }
                                         else if (sp->tp->IsStructured())
                                         {
                                             Statement* st;
-                                            currentLineData(block, hold, 0);
-                                            st = Statement::MakeStatement(hold, block, StatementNode::expr_);
+                                            currentLineData(block, *placeHolder, 0);
+                                            st = Statement::MakeStatement(block, StatementNode::expr_, *placeHolder);
                                             st->select = MakeExpression(ExpressionNode::constexprconstructor_, sp);
                                             st->select->left = ConverInitializersToExpression(sp->tp, sp, nullptr, funcsp,
                                                                                               sp->sb->init, nullptr, false);
@@ -4735,7 +4784,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                                     // be accesed in the switch body
                                                     ++it;
                                                     int n = (*it)->statements->size();
-                                                    st = Statement::MakeStatement(hold, emptyBlockdata, StatementNode::expr_);
+                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, *placeHolder);
                                                     auto itb = (*it)->statements->begin();
                                                     for (int i = 0; i < n; i++, ++itb)
                                                         ;
@@ -4743,7 +4792,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                                                 }
                                                 else
                                                 {
-                                                    st = Statement::MakeStatement(hold, emptyBlockdata, StatementNode::expr_);
+                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, *placeHolder);
                                                     block.front()->statements->push_front(st);
                                                 }
                                                 st->select = MakeExpression(ExpressionNode::initobj_,
@@ -4776,7 +4825,7 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     if (inTemplate && templateDeclarationLevel == 1)
                     {
                         inTemplateBody--;
-                        TemplateGetDeferred(sp);
+                        TemplateGetDeferredTokenStream(sp);
                     }
                     if (!strcmp(sp->name, "main") && !sp->sb->parentClass)
                     {
@@ -4815,17 +4864,17 @@ LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage
                     {
                         enclosingDeclarations.Drop();
                     }
-                } while (!asExpression && !inTemplate && MATCHKW(lex, Keyword::comma_) && (lex = getsym()) != nullptr);
+                } while (!asExpression && !inTemplate && MATCHKW(Keyword::comma_) && (getsym(), currentLex != nullptr));
             }
         }
     }
     FlushLineData(preProcessor->GetRealFile().c_str(), preProcessor->GetRealLineNo());
     if (needsemi && !asExpression)
-        if (definingTemplate || !needkw(&lex, Keyword::semicolon_))
+        if (definingTemplate || !needkw(Keyword::semicolon_))
         {
-            errskim(&lex, skim_semi_declare);
-            skip(&lex, Keyword::semicolon_);
+            errskim(skim_semi_declare);
+            skip(Keyword::semicolon_);
         }
-    return lex;
-}
+        return currentLex;
+    }
 }  // namespace Parser

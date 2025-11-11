@@ -48,6 +48,8 @@
 #include "beinterf.h"
 #include "initbackend.h"
 #include "types.h"
+#include "SymbolProperties.h"
+
 namespace Parser
 {
 const char* beDecorateSymName(SYMBOL* sym)
@@ -81,6 +83,9 @@ void Optimizer::SymbolManager::clear()
     if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
         symbols.clear();
     globalSymbols.clear();
+    initTokenStreams.clear();
+    bodyTokenStreams.clear();
+    noExceptTokenStreams.clear();
 }
 
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym, bool definingFunction)

@@ -66,7 +66,8 @@
 #include "iexpr.h"
 #include "ioptimizer.h"
 #ifndef ORANGE_NO_MSIL
-#    include "using.h"
+#include "msilusing.h"
+#include "msilusing.h"
 #endif
 #include "templatedecl.h"
 #include "templateutil.h"
@@ -2651,6 +2652,10 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return Optimizer::make_immed(ISZ_UINT, 0);
     if (!f->ascall)
     {
+        if (Optimizer::cparams.prm_cplusplus)
+        {
+            f->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+        }
         InsertInline(f->sp);
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
@@ -2660,7 +2665,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         InsertRttiType(f->rttiType2);
     if (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
     {
-        if (CompileInline(f->sp, false) && !f->sp->sb->noinline)
+        if (CompileInlineFunction(f->sp) && !f->sp->sb->noinline)
         {
             ap = gen_inline(funcsp, node, flags);
             if (ap)
@@ -2676,6 +2681,10 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 return ap;
             }
         }
+    }
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        f->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     }
     InsertInline(f->sp);
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
@@ -3800,9 +3809,21 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             {
                 Optimizer::EnterExternal(sym);
                 if (sym->inlineSym)
+                {
+                    if (Optimizer::cparams.prm_cplusplus)
+                    {
+                        sym->inlineSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                    }
                     InsertInline(sym->inlineSym);
+                }
                 else if (node->v.sp->tp->IsFunction())
+                {
+                    if (Optimizer::cparams.prm_cplusplus)
+                    {
+                        node->v.sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                    }
                     InsertInline(node->v.sp);
+                }
             }
             if (sym->imaddress && (Optimizer::architecture != ARCHITECTURE_MSIL))
             {

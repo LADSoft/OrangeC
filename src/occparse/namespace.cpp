@@ -65,6 +65,8 @@ namespace Parser
 {
 SymbolTable<SYMBOL>* labelSyms;
 std::list<NAMESPACEVALUEDATA*>*globalNameSpace, *localNameSpace, *rootNameSpace;
+std::list<SYMBOL*> nameSpaceList;
+char anonymousNameSpaceName[512];
 
 void namespaceinit()
 {
@@ -252,25 +254,25 @@ SYMBOL* tsearch(const char* name)
         return sym;
     return search(globalNameSpace->front()->tags, name);
 }
-LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked)
+void insertNamespace( Linkage linkage, StorageClass storage_class, bool* linked)
 {
     bool anon = false;
     char buf[256], *p;
     SYMBOL* sym;
     Optimizer::LIST* list;
     *linked = false;
-    if (ISID(lex))
+    if (ISID())
     {
-        Utils::StrCpy (buf, lex->data->value.s.a);
-        lex = getsym();
-        if (MATCHKW(lex, Keyword::assign_))
+        Utils::StrCpy (buf, currentLex->value.s.a);
+        getsym();
+        if (MATCHKW(Keyword::assign_))
         {
-            lex = getsym();
-            if (ISID(lex))
+            getsym();
+            if (ISID())
             {
                 char buf1[512];
-                Utils::StrCpy(buf1, lex->data->value.s.a);
-                lex = nestedSearch(lex, &sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
+                Utils::StrCpy(buf1, currentLex->value.s.a);
+                nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, true, false);
                 if (sym)
                 {
                     if (sym->sb->storage_class != StorageClass::namespace_)
@@ -297,8 +299,8 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
                                 {
                                     error(ERR_INLINE_NOT_ALLOWED);
                                 }
-                                lex = getsym();
-                                return lex;
+                                getsym();
+                                return;
                             }
                         }
                         tp = Type::MakeType(BasicType::void_);
@@ -329,13 +331,13 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
                 {
                     error(ERR_INLINE_NOT_ALLOWED);
                 }
-                lex = getsym();
+                getsym();
             }
             else
             {
                 error(ERR_EXPECTED_NAMESPACE_NAME);
             }
-            return lex;
+            return;
         }
     }
     else
@@ -408,7 +410,7 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
         if (sym->sb->storage_class != StorageClass::namespace_)
         {
             errorsym(ERR_NOT_A_NAMESPACE, sym);
-            return lex;
+            return;
         }
         if (linkage == Linkage::inline_)
             if (sym->sb->attribs.inheritable.linkage != Linkage::inline_)
@@ -421,6 +423,6 @@ LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_cla
     globalNameSpace->push_front(sym->sb->nameSpaceValues->front());
 
     *linked = true;
-    return lex;
+    return;
 }
 }  // namespace Parser

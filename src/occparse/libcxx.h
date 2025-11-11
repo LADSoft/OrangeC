@@ -30,9 +30,9 @@ namespace Parser
 extern int inNoExceptHandler;
 void libcxx_init(void);
 void libcxx_builtins(void);
-bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
+bool parseBuiltInTypelistFunc( SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp);
 void EvaluateLibcxxConstant(EXPRESSION** exp);
-bool underlying_type(LexList** lex, SYMBOL* funcsp, Type** tp);
+bool underlying_type( SYMBOL* funcsp, Type** tp);
 bool is_literal_type(Type* tp);
 SYMBOL* Decay(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);
 SYMBOL* RemoveReference(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);

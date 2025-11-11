@@ -60,6 +60,8 @@
 #include "class.h"
 #include "overload.h"
 #include "exprpacked.h"
+#include "casts.h"
+
 namespace Parser
 {
 bool SameTemplateSelector(Type* tnew, Type* told)
@@ -784,10 +786,9 @@ static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym)
         }
     }
 }
-std::list<TEMPLATEPARAMPAIR>* TemplateMatching(LexList* lex, std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
+std::list<TEMPLATEPARAMPAIR>* TemplateMatching( std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
                                                SYMBOL* sp, bool definition)
 {
-    (void)lex;
     std::list<TEMPLATEPARAMPAIR>* rv = nullptr;
     currents->sp = sp;
     if (old)

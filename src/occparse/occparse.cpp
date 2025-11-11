@@ -362,7 +362,6 @@ void compile(bool global)
 {
     fileIndex++;
     SET_GLOBAL(true, 1);
-    LexList* lex = nullptr;
     Optimizer::SymbolManager::clear();
     ListFactoryInit();
     helpinit();
@@ -418,14 +417,14 @@ void compile(bool global)
     EnterPackedContext();
     if (Optimizer::cparams.prm_assemble)
     {
-        lex = getsym();
-        if (lex)
+        getsym();
+        if (currentLex)
         {
             FunctionBlock bd;
             memset(&bd, 0, sizeof(bd));
             bd.type = Keyword::begin_;
             std::list<FunctionBlock*> block{&bd};
-            StatementGenerator sg(lex, nullptr);
+            StatementGenerator sg(nullptr);
             while (sg.ParseAsm(block))
                 ;
             if (IsCompiler())
@@ -436,16 +435,16 @@ void compile(bool global)
     }
     else
     {
-        lex = getsym();
-        if (lex)
+        getsym();
+        if (currentLex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                  AccessLevel::public_)) != nullptr)
+            while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
+                                  AccessLevel::public_))
             {
-                if (MATCHKW(lex, Keyword::end_))
+                if (MATCHKW(Keyword::end_))
                 {
-                    lex = getsym();
-                    if (!lex)
+                    getsym();
+                    if (!currentLex)
                         break;
                 }
             }
@@ -762,7 +761,7 @@ MAINTRY
             statement_ini(true);
             packed_init();
             EnterPackedContext();
-            while (getsym() != nullptr)
+            while (getsym(), currentLex)
                 ;
         }
         if (Optimizer::cparams.prm_makestubs)

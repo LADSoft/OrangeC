@@ -61,7 +61,7 @@ struct Statement
     int explicitGoto : 1;
     int indirectGoto : 1;
     int blockInit : 1;
-    static Statement* MakeStatement(LexList* lex, std::list<FunctionBlock*>& parent, StatementNode stype);
+    static Statement* MakeStatement(std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme *lex = nullptr);
 };
 struct FunctionBlock
 {
@@ -79,11 +79,11 @@ struct FunctionBlock
     int hasbreak : 1;
     int hassemi : 1;
     int nosemi : 1; /* ok to skip semi */
-    void AddThis(LexList* lex, std::list<FunctionBlock*>& parent);
+    void AddThis( std::list<FunctionBlock*>& parent);
 };
 struct StatementGenerator
 {
-    StatementGenerator(LexList*& lex_in, SYMBOL* funcsp_in) : lex(lex_in), funcsp(funcsp_in), functionReturnType(nullptr) {}
+    StatementGenerator(SYMBOL* funcsp_in) : funcsp(funcsp_in), functionReturnType(nullptr) {}
 
     bool ParseAsm(std::list<FunctionBlock*>& parent);
     void Compound(std::list<FunctionBlock*>& parent, bool first);
@@ -91,10 +91,10 @@ struct StatementGenerator
     void BodyGen();
 
     static void SetFunctionDefine(std::string name, bool set);
-    static int GetLabelValue(LexList* lex, std::list<FunctionBlock*>* parent, Statement* st);
+    static int GetLabelValue( std::list<FunctionBlock*>* parent, Statement* st);
     static void AssignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
     static void ParseNoExceptClause(SYMBOL* sp);
-    static bool ResolvesToDeclaration(LexList* lex, bool structured);
+    static bool ResolvesToDeclaration( bool structured);
     static bool HasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }
     static EXPRESSION* DestructorsForExpression(EXPRESSION* exp);
     static void DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct);
@@ -152,7 +152,6 @@ struct StatementGenerator
     static void TagSyms(SymbolTable<SYMBOL>* syms);
 
   private:
-    LexList*& lex;
     SYMBOL* funcsp;
     Type* functionReturnType;
 };

@@ -25,10 +25,9 @@
 
 #include "compiler.h"
 #include "Utils.h"
-#include "declcpp.h"
 #include "OptUtils.h"
 #include "unmangle.h"
-
+#include "namespace.h"
 #define UNMANGLE_SIZE(buf) (n - (buf - orig))
 #define PUTCH(buf, ch) { if (n - (buf - orig) > 0) *buf++ = ch; }
 #define PUTZERO(buf) { if (n - (buf - orig) > 0) *buf = '\0'; }

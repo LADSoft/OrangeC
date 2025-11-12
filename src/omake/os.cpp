@@ -734,6 +734,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             }
             status = WEXITSTATUS(status);
         }
+        OrangeC::Utils::BasicLogger::extremedebug("Waiting on command: ", command, " with PID: ", default_pid);
     } while (!exit_condition);
     close(pipe_cout[0]);
     close(pipe_cout[1]);

@@ -37,7 +37,7 @@ class JobServer : public IJobServer
     // extra time AFAICT
     virtual void ReleaseAllJobs()
     {
-        while (current_jobs > 1)
+        while (current_jobs >= 1)
         {
             ReleaseJob();
         }

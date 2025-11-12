@@ -22,13 +22,19 @@ bool POSIXJobServer::TryTakeNewJob()
         int err = 0;
         char only_buffer;
         ssize_t bytes_read;
+        int zero_jobs = 0;
+        bool success = false;
         // Wait while we can't get our own
-        if ((bytes_read = read(readfd, &only_buffer, 1)) <= 0)
+        if (!(success = current_jobs.compare_exchange_strong(zero_jobs, 1)) && (bytes_read = read(readfd, &only_buffer, 1)) <= 0)
         {
             OrangeC::Utils::BasicLogger::extremedebug("Tried to take one new job");
             return false;
         }
-        OrangeC::Utils::BasicLogger::extremedebug("Took one new job");
+        if (success)
+        {
+            OrangeC::Utils::BasicLogger::extremedebug("Took one new job");
+            return true;
+        }
 
         if (bytes_read == -1)
         {
@@ -52,7 +58,10 @@ bool POSIXJobServer::TryTakeNewJob()
         }
         else
         {
+            OrangeC::Utils::BasicLogger::extremedebug("Took one new job");
+
             popped_char_stack.push(only_buffer);
+            current_jobs++;
             OrangeC::Utils::BasicLogger::extremedebug("TryTakeNewJob function return true end");
 
             return true;
@@ -70,20 +79,30 @@ bool POSIXJobServer::TakeNewJob()
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
-    if (current_jobs != 0)
+    int err = 0;
+    char only_buffer;
+    ssize_t bytes_read;
+    int exchange_value = 0;
+    // Wait while we can't get our own
+    bool end_while = false;
+    int start_jobs = current_jobs.load();
+    do
     {
-        int err = 0;
-        char only_buffer;
-        ssize_t bytes_read;
-    try_again:
-        // Wait while we can't get our own
-        while ((bytes_read = read(readfd, &only_buffer, 1)) != 1)
+        exchange_value = 0;
+        if (exchange_value != 0)
         {
-            // Yield our thread to other executions while we're waiting for a thread to actually execute and take up time
-            std::this_thread::yield();
+            throw std::runtime_error("Exchange value was not reset to 0, actual value: " + std::to_string(exchange_value));
         }
-        OrangeC::Utils::BasicLogger::extremedebug("Took one new job via TakeNewJob.");
+        bool exchanged = current_jobs.compare_exchange_strong(exchange_value, 1);
+        if (exchanged)
+        {
+            OrangeC::Utils::BasicLogger::extremedebug("Setting current_jobs to one via compare_exchange_strong, exchange_value: ",
+                                                      exchange_value);
 
+            end_while = true;
+            continue;
+        }
+        bytes_read = read(readfd, &only_buffer, 1);
         if (bytes_read == -1)
         {
             switch (err = errno)
@@ -92,21 +111,31 @@ bool POSIXJobServer::TakeNewJob()
 #if EAGAIN != EWOULDBLOCK
                 case EWOULDBLOCK:
 #endif
-                    goto try_again;
+                    continue;
                     break;
                 default:
                     throw std::system_error(err, std::system_category());
             }
         }
-        else
+        if (bytes_read >= 1)
         {
+            end_while = true;
             popped_char_stack.push(only_buffer);
+            OrangeC::Utils::BasicLogger::extremedebug("Adding one to current_jobs via read()");
+            current_jobs++;
+            continue;
         }
-    }
-    current_jobs++;
+        if (!end_while)
+        {
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(1s);
+        }
+    } while (!end_while);
+    OrangeC::Utils::BasicLogger::extremedebug("Took one new job via TakeNewJob. original_jobs: ", start_jobs,
+                                              " current_jobs: ", current_jobs.load());
     OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "TakeNewJob end");
 
-    return false;
+    return true;
 }
 bool POSIXJobServer::ReleaseJob()
 {
@@ -114,7 +143,8 @@ bool POSIXJobServer::ReleaseJob()
 
     if (writefd == -1 || readfd == -1)
     {
-        throw std::runtime_error("Job server used without initializing the underlying parameters");
+        throw std::runtime_error("Job server used without initializing the underlying parameters, popped_char_stack count: " +
+                                 std::to_string(popped_char_stack.size()));
     }
     if (current_jobs == 0)
     {
@@ -122,6 +152,11 @@ bool POSIXJobServer::ReleaseJob()
     }
     else if (current_jobs > 1)
     {
+        if (popped_char_stack.size() == 0)
+        {
+            throw std::runtime_error("Somehow current_jobs is: " + std::to_string(current_jobs.load()) +
+                                     " but popped_char_stack is: " + std::to_string(popped_char_stack.size()));
+        }
         int err = 0;
         char write_buffer = popped_char_stack.top();
         ssize_t bytes_written = 0;
@@ -150,7 +185,8 @@ bool POSIXJobServer::ReleaseJob()
         }
     }
     current_jobs--;
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "ReleaseJob end");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
+                                     "ReleaseJob end, current_jobs: ", current_jobs.load());
 
     return true;
 }
@@ -192,7 +228,6 @@ static int populate_pipe(int writefd, int max_jobs)
         }
     }
     OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "populate_pipe end");
-
     return true;
 }
 POSIXJobServer::POSIXJobServer(int max_jobs)

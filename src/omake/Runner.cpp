@@ -159,7 +159,8 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
             using namespace std::chrono_literals;
             while (w.wait_for(1s) != std::future_status::ready)
             {
-                OrangeC::Utils::BasicLogger::extremedebug("Waiting on the future for depends: ", w.command);
+                OrangeC::Utils::BasicLogger::extremedebug("Waiting on the future for depends: ", w.command,
+                                                          " current jobs: ", OS::GetCurrentJobs());
             }
             int rv1 = w.get();
             OrangeC::Utils::BasicLogger::extremedebug("Finished the future get on iterator: ", std::to_string(distance));

@@ -9,6 +9,7 @@
 #include <memory>
 #include "semaphores.h"
 #include <stack>
+#include <mutex>
 // The main issue with using semaphores alone for Linux is that named semaphores
 // on linux can't be used without knowing the state of every application taking
 // the named semaphores, a solution to this is to use a jobserver, in order for
@@ -66,7 +67,7 @@ class POSIXJobServer : public JobServer
     int get_read_fd() { return readfd; }
     int get_write_fd() { return writefd; }
     std::stack<char> popped_char_stack;
-
+    std::mutex char_stack_mutex;
   public:
     std::string PassThroughCommandString();
     bool TakeNewJob();

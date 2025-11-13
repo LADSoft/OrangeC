@@ -59,8 +59,9 @@ bool POSIXJobServer::TryTakeNewJob()
         else
         {
             OrangeC::Utils::BasicLogger::extremedebug("Took one new job");
-
+            char_stack_mutex.lock();
             popped_char_stack.push(only_buffer);
+            char_stack_mutex.unlock();
             current_jobs++;
             OrangeC::Utils::BasicLogger::extremedebug("TryTakeNewJob function return true end");
 
@@ -84,23 +85,17 @@ bool POSIXJobServer::TakeNewJob()
     ssize_t bytes_read;
     int exchange_value = 0;
     // Wait while we can't get our own
-    bool end_while = false;
     int start_jobs = current_jobs.load();
     do
     {
         exchange_value = 0;
-        if (exchange_value != 0)
-        {
-            throw std::runtime_error("Exchange value was not reset to 0, actual value: " + std::to_string(exchange_value));
-        }
         bool exchanged = current_jobs.compare_exchange_strong(exchange_value, 1);
         if (exchanged)
         {
             OrangeC::Utils::BasicLogger::extremedebug("Setting current_jobs to one via compare_exchange_strong, exchange_value: ",
                                                       exchange_value);
-
-            end_while = true;
-            continue;
+            OrangeC::Utils::BasicLogger::extremedebug("TakeNewJob end");
+            return true;
         }
         bytes_read = read(readfd, &only_buffer, 1);
         if (bytes_read == -1)
@@ -119,21 +114,20 @@ bool POSIXJobServer::TakeNewJob()
         }
         if (bytes_read >= 1)
         {
-            end_while = true;
+            char_stack_mutex.lock();
+
             popped_char_stack.push(only_buffer);
+            char_stack_mutex.unlock();
             OrangeC::Utils::BasicLogger::extremedebug("Adding one to current_jobs via read()");
             current_jobs++;
-            continue;
+            OrangeC::Utils::BasicLogger::extremedebug("Took one new job via TakeNewJob. original_jobs: ", start_jobs,
+                                                      " current_jobs: ", current_jobs.load());
+            OrangeC::Utils::BasicLogger::extremedebug("TakeNewJob end");
+            return true;
         }
-        if (!end_while)
-        {
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(1s);
-        }
-    } while (!end_while);
-    OrangeC::Utils::BasicLogger::extremedebug("Took one new job via TakeNewJob. original_jobs: ", start_jobs,
-                                              " current_jobs: ", current_jobs.load());
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, "TakeNewJob end");
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1s);
+    } while (true);
 
     return true;
 }
@@ -155,16 +149,20 @@ bool POSIXJobServer::ReleaseJob()
         if (popped_char_stack.size() == 0)
         {
             throw std::runtime_error("Somehow current_jobs is: " + std::to_string(current_jobs.load()) +
-                                     " but popped_char_stack is: " + std::to_string(popped_char_stack.size()));
+                                     " but popped_char_stack is: 0");
         }
         int err = 0;
+        char_stack_mutex.lock();
         char write_buffer = popped_char_stack.top();
+        char_stack_mutex.unlock();
         ssize_t bytes_written = 0;
     try_again:
         if ((bytes_written = write(writefd, &write_buffer, 1)) != -1)
         {
+            char_stack_mutex.lock();
             popped_char_stack.pop();
-            OrangeC::Utils::BasicLogger::extremedebug("ReleaseJob job popping");
+            char_stack_mutex.unlock();
+            OrangeC::Utils::BasicLogger::extremedebug("ReleaseJob job popping write()");
         }
         else
         {

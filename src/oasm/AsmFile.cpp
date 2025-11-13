@@ -1369,6 +1369,7 @@ void AsmFile::TextDirective()
     {
         currentSection = Section::sections[name];
     }
+    parser->Setup(currentSection.get());
     AsmExpr::SetSection(currentSection);
     SetSubsection(currentSection, subsection);
 }
@@ -1392,6 +1393,7 @@ void AsmFile::DataDirective()
     {
         currentSection = Section::sections[name];
     }
+    parser->Setup(currentSection.get());
     AsmExpr::SetSection(currentSection);
     SetSubsection(currentSection, subsection);
 }

@@ -69,7 +69,7 @@ static bool HasMake(const std::string& cmd, const std::string& make)
     size_t n = cmd.find(make);
     if (n != std::string::npos)
     {
-        size_t m = cmd.find_first_not_of(" \n\t\v\r");
+        int m = cmd.find_first_not_of(" \n\t\v\r");
         if (m >= 0)
         {
             if (cmd[m] == '"')
@@ -80,7 +80,14 @@ static bool HasMake(const std::string& cmd, const std::string& make)
             {
                 m = cmd.find_first_of(" \n\t\r\v", m + 1);
             }
-            return m != std::string::npos && m > n;
+            if ( m != std::string::npos && m > n)
+                return true;
+            // hack for autoconfig texts which use '&& $(MAKE) ...'
+            // a more complete solution would look for any bash operator I guess...
+            while (n > 0 && !isspace(cmd[n]) && cmd[n] != '&') n--;
+            while (n > 0 && isspace(cmd[n])) n--;
+            if (n > 1 && cmd[n] == '&' && cmd[n-1] == '&')
+                return true;
         }
     }
     return false;

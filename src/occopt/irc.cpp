@@ -538,7 +538,13 @@ static void CopyLocalColors(void)
     regmask = 0;
     while (head)
     {
-        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        if (head->dc.opcode == i_passthrough)
+        {
+            for (int i = 0; i < head->assemblyRegCount; i++)
+                if (head->assemblyRegs[i] != 255)
+                    regmask |= chosenAssembler->arch->regNames[head->assemblyRegs[i]-1].pushMask;
+        }
+        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
         {
             if ((head->temps & TEMP_ANS) || (head->ans && head->ans->retval))
             {
@@ -773,6 +779,10 @@ static void CountInstructions(bool first)
             case i_dbgblock:
             case i_dbgblockend:
             case i_varstart:
+                break;
+            case i_passthrough:
+                for (int i = 0; i < head->assemblyRegCount; i++)
+                    tempInfo[head->assemblyTempRegStart + i]->doGlobal = true;
                 break;
             default:
                 head->index = instructionCount++;
@@ -2272,7 +2282,12 @@ void retemp(void)
     head = intermed_head;
     while (head)
     {
-        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        if (head->dc.opcode == i_passthrough)
+        {
+            for (int i=0; i < head->assemblyRegCount; i++)
+                tempInfo[head->assemblyTempRegStart + i]->inUse = true;
+        }
+        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
         {
             if (head->ans)
             {
@@ -2313,7 +2328,17 @@ void retemp(void)
     head = intermed_head;
     while (head)
     {
-        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        if (head->dc.opcode == i_passthrough)
+        {
+            head->assemblyTempRegStart = map[head->assemblyTempRegStart];
+            for (int i = 0; i < head->assemblyRegCount; i++)
+            {
+                int n = head->assemblyTempRegStart + i;
+                tempInfo[n]->enode->sp->retemp = true;
+                tempInfo[n]->enode->sp->i = map[n];
+            }
+        }
+        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
         {
             if (head->ans)
             {

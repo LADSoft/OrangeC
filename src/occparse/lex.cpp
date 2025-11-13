@@ -471,7 +471,7 @@ bool KWTYPE(LexList* lex, unsigned types)
                 rv = TypeGenerator::StartOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
                 lex = backupsym();
                 if (rv == TT_BASETYPE)
-                    RequiresDialect::Feature(Dialect::c2x, "auto as a type");
+                    RequiresDialect::Feature(Dialect::c23, "auto as a type");
             }
         }
         else
@@ -539,7 +539,7 @@ KeywordData* searchkw(const unsigned char** p)
                     }
                     else if (kw->matchFlags & KW_C2X)
                     {
-                        if (RequiresDialect::Keyword(Dialect::c2x, kw->name))
+                        if (RequiresDialect::Keyword(Dialect::c23, kw->name))
                             return nullptr;
                     }
                     if (kw->matchFlags & KW_CPLUSPLUS)
@@ -862,6 +862,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
         {
             // fixme utf8 raw strings...
             char preamble[256];
+            preamble[0] = '{';
             int pcount = 0, qcount = 0;
             LCHAR* qpos = 0;
             int lineno = preProcessor->GetErrLineNo();
@@ -1121,7 +1122,7 @@ static long long getbase(int b, const unsigned char** ptr)
     if (hasSep)
     {
         RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
-        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c23, "Digit Separators");
     }
     return i;
 }
@@ -1151,7 +1152,7 @@ static void getfloatingbase(int b, FPF* rval, const unsigned char** ptr)
     if (hasSep)
     {
         RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
-        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c23, "Digit Separators");
     }
 }
 /*
@@ -1190,7 +1191,7 @@ static int getfrac(int radix, const unsigned char** ptr, FPF* rval)
     if (hasSep)
     {
         RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
-        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c23, "Digit Separators");
     }
     temp = (unsigned long long)i;
     if (radix == 10)
@@ -1229,7 +1230,7 @@ static int getexp(const unsigned char** ptr)
     if (hasSep)
     {
         RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
-        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c23, "Digit Separators");
     }
     return ival;
 }
@@ -1326,7 +1327,7 @@ LexType getBitInt(const unsigned char* base, const unsigned char** ptr, int radi
     if (hasSep)
     {
         RequiresDialect::Feature(Dialect::cpp14, "Digit Separators");
-        RequiresDialect::Feature(Dialect::c2x, "Digit Separators");
+        RequiresDialect::Feature(Dialect::c23, "Digit Separators");
     }
     return isunsigned ? LexType::ubitint_ : LexType::bitint_;
 }
@@ -1359,7 +1360,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
         }
         else if ((Optimizer::cparams.prm_cplusplus || !Optimizer::cparams.prm_ansi) && (**ptr == 'b' || **ptr == 'B'))
         {
-            RequiresDialect::Feature(Dialect::c2x, "Binary Literals");
+            RequiresDialect::Feature(Dialect::c23, "Binary Literals");
             RequiresDialect::Feature(Dialect::cpp14, "Binary Literals");
             (*ptr)++;
             radix = 2;
@@ -1385,7 +1386,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
     }
     if ((lastst = getBitInt(base, ptr, radix, ival, bitintvalue)) != LexType::none_)
     {
-        RequiresDialect::Feature(Dialect::c2x, "_Bitint Literals");
+        RequiresDialect::Feature(Dialect::c23, "_Bitint Literals");
         return lastst;
     }
     if (**ptr == '.')

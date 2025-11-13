@@ -72,35 +72,46 @@ void ClearArgValues(std::list<TEMPLATEPARAMPAIR>* params, bool specialized)
             if (param.second->type != TplType::new_)
             {
                 if (param.second->packed)
-                    param.second->byPack.pack = nullptr;
-                else
-                    param.second->byClass.val = param.second->byClass.temp = nullptr;
-                if (param.second->byClass.txtdflt && !specialized && !param.second->specializationParam)
-                    param.second->byClass.dflt = nullptr;
-                if (param.second->byClass.dflt)
                 {
-                    if (param.second->type == TplType::typename_)
+                    if (param.second->derivedFromUnpacked && param.second->byPack.pack)
                     {
-                        Type* tp = param.second->byClass.dflt;
-                        while (tp->IsPtr())
-                            tp = tp->BaseType()->btp;
-                        tp = tp->BaseType();
-                        if (tp->type == BasicType::templateparam_)
-                        {
-                            tp->templateParam->second->byClass.val = nullptr;
-                        }
-                        else if (tp->IsStructured() && (tp->sp)->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
-                        {
-                            ClearArgValues(tp->sp->templateParams, specialized);
-                        }
-                        else if (tp->type == BasicType::templateselector_)
-                        {
-                            ClearArgValues((*tp->sp->sb->templateSelector)[1].templateParams, specialized);
-                        }
+                        ClearArgValues(param.second->byPack.pack, specialized);
                     }
                     else
                     {
-                        param.second->byClass.val = nullptr;
+                        param.second->byPack.pack = nullptr;
+                    }
+                }
+                else
+                {
+                    param.second->byClass.val = param.second->byClass.temp = nullptr;
+                    if (param.second->byClass.txtdflt && !specialized && !param.second->specializationParam)
+                        param.second->byClass.dflt = nullptr;
+                    if (param.second->byClass.dflt)
+                    {
+                        if (param.second->type == TplType::typename_)
+                        {
+                            Type* tp = param.second->byClass.dflt;
+                            while (tp->IsPtr())
+                                tp = tp->BaseType()->btp;
+                            tp = tp->BaseType();
+                            if (tp->type == BasicType::templateparam_)
+                            {
+                                tp->templateParam->second->byClass.val = nullptr;
+                            }
+                            else if (tp->IsStructured() && (tp->sp)->sb->attribs.inheritable.linkage4 != Linkage::virtual_)
+                            {
+                                ClearArgValues(tp->sp->templateParams, specialized);
+                            }
+                            else if (tp->type == BasicType::templateselector_)
+                            {
+                                ClearArgValues((*tp->sp->sb->templateSelector)[1].templateParams, specialized);
+                            }
+                        }
+                        else
+                        {
+                            param.second->byClass.val = nullptr;
+                        }
                     }
                 }
             }
@@ -368,7 +379,7 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                         *tp = itTA->second->byClass.val;
                     }
                     to->second->deduced = true;
-                    if (to->second->byClass.dflt && to->second->byClass.val &&
+                    if (to->second->byClass.dflt && to->second->byClass.val && to->second->byClass.dflt->type != BasicType::templateselector_ &&
                         !Deduce(to->second->byClass.dflt, to->second->byClass.val, nullptr, change, byClass, false, false))
                         return false;
                     break;
@@ -795,6 +806,7 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
     Type *Pin = P, *Ain = A;
     if (!P || !A)
         return false;
+
     while (1)
     {
         Type* Ab = A->BaseType();
@@ -906,32 +918,75 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
                 if (Pb->btp->type != BasicType::auto_ &&
                     !Deduce(Pb->btp, Ab->btp, nullptr, change, byClass, allowSelectors, baseClasses))
                     return false;
-                while (ita != itaend && itp != itpend)
+                if (ita == itaend && itp != itpend)
                 {
                     SYMBOL* sp = *itp;
-                    if (!Deduce(sp->tp, (*ita)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
-                        return false;
-                    if (sp->tp->type == BasicType::templateparam_)
+                    if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed)
                     {
-                        if (sp->tp->templateParam->second->packed)
+                        if (!sp->tp->templateParam->second->byPack.pack || !sp->tp->templateParam->second->byPack.pack->size())
                         {
-                            auto sra = Ab->syms->back();
-                            auto srp = Pb->syms->back();
-                            while ((*ita) != sra)
-                                ++ita;
-                            while ((*itp) != srp)
-                                ++itp;
-                            if ((sra->tp->type != BasicType::ellipse_ && srp->tp->type != BasicType::ellipse_) ||
-                                sra->tp->type == srp->tp->type)
-                            {
-                                itp = itpend;
-                                ita = itaend;
-                            }
-                            break;
+                            sp->tp->templateParam->second->byPack.pack = nullptr;
+                            ++itp;
                         }
                     }
-                    ++itp;
-                    ++ita;
+                }
+                else while (ita != itaend && itp != itpend)
+                {
+                    SYMBOL* sp = *itp;
+                    if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed)
+                    {
+                        sp->tp->templateParam->second->packed = false;
+                        std::list<Type*> types;
+                        if ((*ita)->tp->type != BasicType::void_)
+                        {
+                            for (; ita != itaend; ++ita)
+                            {
+                                if ((*ita)->tp->type == BasicType::templateparam_ && (*ita)->tp->templateParam->second->packed)
+                                {
+                                    if ((*ita)->tp->templateParam->second->byPack.pack)
+                                        for (auto&& tpl : *(*ita)->tp->templateParam->second->byPack.pack)
+                                        {
+                                            types.push_back(tpl.second->byClass.val);
+                                        }
+                                }
+                                else
+                                {
+                                    types.push_back((*ita)->tp);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ita = itaend;
+                        }
+                        if (types.size())
+                        {
+                            sp->tp->templateParam->second->byPack.pack = templateParamPairListFactory.CreateList();
+                            for (auto tp : types)
+                            {
+                                TEMPLATEPARAM* tpl = Allocate<TEMPLATEPARAM>();
+                                *tpl = *sp->tp->templateParam->second;
+                                tpl->byPack.pack = nullptr;
+                                tpl->byClass.val = tp;
+                                sp->tp->templateParam->second->byPack.pack->push_back({ nullptr, tpl });
+                            }
+                            sp->tp->templateParam->second->packed = true;
+                        }
+                        else
+                        {
+                            sp->tp->templateParam->second->packed = true;
+                            sp->tp->templateParam->second->byPack.pack = nullptr;
+                        }
+                        ++itp;
+                        break;
+                    }
+                    else
+                    {
+                        if (!Deduce(sp->tp, (*ita)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
+                            return false;
+                        ++itp;
+                        ++ita;
+                    }
                 }
                 if (ita != itaend)
                     return false;
@@ -973,7 +1028,7 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
         }
     }
 }
-static Type* GetForwardType(Type* P, Type* A, EXPRESSION* exp)
+Type* GetForwardType(Type* P, Type* A, EXPRESSION* exp)
 {
     bool lref = false;
     bool rref = false;
@@ -999,8 +1054,13 @@ static Type* rewriteNonRef(Type* A)
 {
     if (A->IsArray())
     {
+        bool constant = A->stringconst;
         while (A->IsArray())
             A = A->BaseType()->btp;
+        if (constant)
+        {
+            A = Type::MakeType(BasicType::const_, A);
+        }
         A = Type::MakeType(BasicType::pointer_, A);
     }
     else if (A->IsFunction())
@@ -1210,10 +1270,16 @@ void ScrubTemplateValues(SYMBOL* func)
                                tp->BaseType()->sp->sb->specialized);
             }
         }
+        else if (tp->IsDeferred())
+        {
+            ClearArgValues(tp->BaseType()->templateArgs, false);
+        }
     }
     Type* retval = func->tp->BaseType()->btp->BaseType();
     if (retval->IsStructured() && retval->sp->templateParams && !retval->sp->sb->instantiated && !retval->sp->sb->declaring)
+    {
         ClearArgValues(retval->sp->templateParams, retval->sp->sb->specialized);
+    }
 }
 void PushPopTemplateArgs(SYMBOL* func, bool push)
 {
@@ -1417,7 +1483,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                 if (itParams != iteParams)
                     ++itParams;
             }
-            if (templateArgs != templateArgsEnd)
+            if (templateArgs != templateArgsEnd && symArgs != itae)
             {
                 SYMBOL* sp = *templateArgs;
                 Type* tp = sp->tp;
@@ -1446,9 +1512,26 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
 
                         last->back().second->type = TplType::typename_;
                         if ((*symArgs)->tp->IsArray())
-                            last->back().second->byClass.val = (*symArgs)->tp;
+                        {
+                            if (!(*symArgs)->tp->stringconst)
+                            {
+                                last->back().second->byClass.val = (*symArgs)->tp;
+                            }
+                            else
+                            {
+                                auto tp1 = Type::MakeType(BasicType::const_,(*symArgs)->tp->BaseType()->btp);
+                                auto tp2 = Allocate<Type>();
+                                *tp2 = *(*symArgs)->tp;
+                                tp2->stringconst = false;
+                                tp2->btp = tp1;
+                                tp2->UpdateRootTypes();
+                                last->back().second->byClass.val = tp2;
+                            }
+                        }
                         else
+                        {
                             last->back().second->byClass.val = rewriteNonRef((*symArgs)->tp);
+                        }
                         if (TemplateConstExpr(last->back().second->byClass.val, (*symArgs)->exp))
                             last->back().second->byClass.val = Type::MakeType(BasicType::const_, last->back().second->byClass.val);
                         if (forward && !definingTemplate)
@@ -1505,6 +1588,11 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                             }
                         }
                     }
+                }
+                else if (tp->IsDeferred())
+                {
+                    if (!TemplateParseDefaultArgs(tp->BaseType()->sp, nullptr, tp->BaseType()->templateArgs, tp->BaseType()->templateArgs, tp->BaseType()->templateArgs))
+                        return nullptr;
                 }
             }
             if (!rv)
@@ -1990,25 +2078,28 @@ void CTADLookup(SYMBOL* funcsp, EXPRESSION** exp, Type** templateType, CallSite*
         {
             sym->tp->InitializeDeferred();
             *templateType = sym->tp;
-            funcparams->thisptr = exp_in ? exp_in : exp_in = AnonymousVar(StorageClass::auto_, sym->tp);
-            funcparams->sp = (*exp)->v.sp;
-            funcparams->functp = (*exp)->v.sp->tp;
-            funcparams->fcall = (*exp);
-            int offset = 0;
-            auto exp2 = relptr(exp_in, offset);
-            if (exp2)
-                sym = exp2->v.sp;
-            (*exp) = MakeExpression(funcparams);
-            (*exp) = MakeExpression(ExpressionNode::thisref_, (*exp));
-            (*exp)->v.t.thisptr = funcparams->thisptr;
-            (*exp)->v.t.tp = *templateType;
-            if (sym)
-                sym->sb->constexpression = true;
-            optimize_for_constants(&(*exp));
-            if (sym && (*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
-                sym->sb->constexpression = false;
-            PromoteConstructorArgs(funcparams->sp, funcparams);
-            // can't default destruct while deducing a template
+            if (!sym->sb->parentTemplate->sb->trivialCons)
+            {
+                funcparams->thisptr = exp_in ? exp_in : exp_in = AnonymousVar(StorageClass::auto_, sym->tp);
+                funcparams->sp = (*exp)->v.sp;
+                funcparams->functp = (*exp)->v.sp->tp;
+                funcparams->fcall = (*exp);
+                int offset = 0;
+                auto exp2 = relptr(exp_in, offset);
+                if (exp2)
+                    sym = exp2->v.sp;
+                (*exp) = MakeExpression(funcparams);
+                (*exp) = MakeExpression(ExpressionNode::thisref_, (*exp));
+                (*exp)->v.t.thisptr = funcparams->thisptr;
+                (*exp)->v.t.tp = *templateType;
+                if (sym)
+                    sym->sb->constexpression = true;
+                optimize_for_constants(&(*exp));
+                if (sym && (*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
+                    sym->sb->constexpression = false;
+                PromoteConstructorArgs(funcparams->sp, funcparams);
+                // can't default destruct while deducing a template
+            }
         }
         else
         {

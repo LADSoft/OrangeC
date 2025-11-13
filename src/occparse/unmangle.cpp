@@ -153,7 +153,7 @@ static const char* unmang_intrins(char (&orig)[n], char *buf, const char* name, 
             {
                 case 2:  // cast op
                     Utils::StrCpy(buf, UNMANGLE_SIZE(buf), "operator ");
-                    if (*name == '.')
+                    if (*name == '.' && *(name + 1) == 'o')
                     {
                         buf += strlen(buf);
                         name = unmang1(orig, buf, name + 2, last, false);
@@ -741,6 +741,11 @@ static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, 
         buf[-2] = '>';
         buf[-1] = 0;
     }
+    if (*name == '.' && name[1] == 'o')
+    {
+        name = unmang1(orig, buf-1,name + 2, last, false);
+        buf += strlen(buf);
+    }
     return name;
 }
 const char* unmang1(char* val, const char* name, const char* last, bool tof)
@@ -753,6 +758,14 @@ template <int n>
 static const char* unmang1(char (&orig)[n], char* buf, const char* name, const char* last, bool tof)
 {
     buf[0] = 0;
+    if (*name == '@')
+    {
+       name++;
+       while (*name && *name != '#' && orig + n > buf-1) PUTCH(buf, *name++);
+       if (*name)
+           name = unmangTemplate(orig, buf, name, last);
+       return name;
+    }
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
     char buf1[10000], *p, buf2[10000], buf3[1000];
@@ -883,15 +896,14 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     PUTCH(p, ')');
                 }
                 PUTCH(p, '(');
-                *p = 0;
+                PUTZERO(p);
                 if (*name == 'v')
                 {
                     // special case for func with void argument
                     PUTCH(p, ',');
                     PUTCH(p, ' ');
-                    *p = 0;
+                    PUTZERO(p);
                     name++;
-                    PUTZERO(buf);
                 }
                 else
                 {
@@ -899,29 +911,28 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     {
                         if (*name == '#')
                         {
-                            name = unmangTemplate(orig, p, name, last);
+                            name = unmangTemplate(buf1, p, name, last);
                         }
                         else
                         {
-                            name = unmang1(orig, p, name, last, false);
+                            name = unmang1(buf1, p, name, last, false);
                         }
                         p += strlen(p);
                         PUTCH(p, ',');
                         PUTCH(p, ' ');
-                        PUTZERO(buf);
-                        *p = 0;
+                        PUTZERO(p);
                     }
                 }
                 if (*name == '.')
                     name++;
                 if (p >= buf1 + 2)
                     p -= 2;
-                *p = 0;
+                PUTZERO(p);
                 if (*name)
                 {
                     // discard return value
                     buf2[0] = 0;
-                    name = unmang1(orig, buf2, name, last, false);
+                    name = unmang1(buf2, buf2, name, last, false);
                 }
                 Utils::StrCpy(buf, UNMANGLE_SIZE(buf), buf1);
                 Utils::StrCat(buf, UNMANGLE_SIZE(buf), ")");
@@ -1001,9 +1012,10 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
             }
             case 'M':
                 buf2[0] = 0;
+                buf3[0] = 0;
                 if (*name == '#')
                 {
-                    name = unmangTemplate(orig, buf2, name, last);
+                    name = unmangTemplate(buf2, buf2, name, last);
                     p = buf2;
                 }
                 else if (*name == 'n')
@@ -1029,7 +1041,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                             name++;
                             PUTCH(p, ':');
                             PUTCH(p, ':');
-                            PUTZERO(buf);
+                            PUTZERO(p);
                         }
                         else if (*name == '#')
                         {
@@ -1047,7 +1059,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                         Utils::StrCpy(manglenames[manglenamecount++], buf2);
                     if (buf3[0] == '#')
                     {
-                        unmangTemplate(orig, buf2, buf3, last);
+                        unmangTemplate(buf2, buf2, buf3, last);
                     }
                     else
                     {
@@ -1060,12 +1072,12 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                 buf3[0] = 0;
                 if (name[0] == 'q')
                 {
-                    name = unmang1(orig, buf3, name, last, true);
+                    name = unmang1(buf3, buf3, name, last, true);
                 }
                 buf1[0] = 0;
                 if (name[0] == '.')
                 {
-                    name = unmang1(orig, buf1, ++name, last, false);
+                    name = unmang1(buf1, buf1, ++name, last, false);
                 }
                 if (buf3[0])
                 {
@@ -1356,7 +1368,7 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                     {
                         name++;
                         PUTCH(buf,  '<');
-                        while (*name && *name != '.')
+                        while (*name && *name != '~')
                         {
                             PUTZERO(buf);
                             name = unmang1(orig, buf, name, last, false);
@@ -1372,12 +1384,12 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                                 unmang2(orig, buf, temp);
                                 buf += strlen(buf);
                             }
-                            if (*name && *name != '.')
+                            if (*name && *name != '~')
                             {
                                 PUTCH(buf,  ',');
                                 PUTCH(buf,  ' ');
-                                PUTZERO(buf);
                             }
+                            PUTZERO(buf);
                         }
                         buf[-2] = '>';
                         buf--;

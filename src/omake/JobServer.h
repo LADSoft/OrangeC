@@ -1,5 +1,4 @@
 #pragma once
-#include "JobServerAwareThread.h"
 #include "IJobServer.h"
 #include <atomic>
 #include <stdexcept>

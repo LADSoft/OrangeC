@@ -432,6 +432,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SymbolTable<SYMBOL>* table, std::list
         }
     }
 }
+extern bool vv(SYMBOL* sym);
 static void inlineUnbindArgs(SymbolTable<SYMBOL>* table)
 {
     for (auto sym : *table)

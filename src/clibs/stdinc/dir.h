@@ -77,7 +77,9 @@ extern "C"
     int _RTL_FUNC _IMPORT findfirst(const char* __path, struct ffblk* __ffblk, int __attrib);
     int _RTL_FUNC _IMPORT findnext(struct ffblk* __ffblk);
     void _RTL_FUNC _IMPORT fnmerge(char* __path, const char* __drive, const char* __dir, const char* __name, const char* __ext);
+    void _RTL_FUNC _IMPORT wfnmerge(wchar_t* __path, const wchar_t* __drive, const wchar_t* __dir, const wchar_t* __name, const wchar_t* __ext);
     int _RTL_FUNC _IMPORT fnsplit(const char* __path, char* __drive, char* __dir, char* __name, char* __ext);
+    int _RTL_FUNC _IMPORT wfnsplit(const wchar_t* __path, wchar_t* __drive, wchar_t* __dir, wchar_t* __name, wchar_t* __ext);
     int _RTL_FUNC _IMPORT getcurdir(int __drive, char* __directory);
     char* _RTL_FUNC _IMPORT getcwd(char* __buf, int __buflen);
     int _RTL_FUNC _IMPORT getdisk(void);

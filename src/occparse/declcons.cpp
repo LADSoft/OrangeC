@@ -265,6 +265,8 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         funcs->sb->parentClass = sp;
         tp->sp = funcs;
         SetLinkerNames(funcs, Linkage::cdecl_);
+        if (!sp->tp->BaseType()->syms)
+            sp->tp->BaseType()->syms = symbols->CreateSymbolTable();
         sp->tp->BaseType()->syms->Add(funcs);
         funcs->sb->parent = sp;
         funcs->tp->syms = symbols->CreateSymbolTable();
@@ -395,6 +397,7 @@ static bool hasConstFunc(SYMBOL* sp, int type, bool move)
     }
     return false;
 }
+/*
 static bool constCopyConstructor(SYMBOL* sp)
 {
     if (sp->sb->baseClasses)
@@ -411,6 +414,7 @@ static bool constCopyConstructor(SYMBOL* sp)
                 return false;
     return true;
 }
+*/
 static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
 {
     SYMBOL *func, *sp1;
@@ -428,7 +432,7 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     else
     {
         sp1->tp = Type::MakeType(move ? BasicType::rref_ : BasicType::lref_, sp->tp->BaseType());
-        if (!move && constCopyConstructor(sp))
+        if (!move /* && constCopyConstructor(sp)*/)
         {
             sp1->tp->btp = Type::MakeType(BasicType::const_, sp1->tp->btp);
         }
@@ -503,8 +507,7 @@ bool matchesCopy(SYMBOL* sp, bool move)
                     Type* tp = arg1->tp->BaseType()->btp;
                     tp->InstantiateDeferred();
                     if (tp->IsStructured())
-                        if (tp->BaseType()->sp == sp->sb->parentClass || tp->BaseType()->sp == sp->sb->parentClass->sb->mainsym ||
-                            tp->BaseType()->sp->sb->mainsym == sp->sb->parentClass || SameTemplate(tp, sp->sb->parentClass->tp))
+                        if (tp->CompatibleType(sp->sb->parentClass->tp) || SameTemplate(tp, sp->sb->parentClass->tp))
                             return true;
                 }
             }
@@ -516,8 +519,27 @@ static bool hasCopy(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (!sp->sb->internallyGenned && matchesCopy(sp, move))
-            return true;
+        if (!sp->sb->internallyGenned)
+        {
+            auto it = sp->tp->BaseType()->syms->begin();
+            ++it;
+            if (it != sp->tp->BaseType()->syms->end())
+            {
+                SYMBOL* arg1 = *it;
+                ++it;
+                if (it == sp->tp->BaseType()->syms->end() || (*it)->sb->init || (*it)->sb->deferredCompile || (*it)->sb->constop)
+                {
+                    if (arg1->tp->BaseType()->type == (move ? BasicType::rref_ : BasicType::lref_))
+                    {
+                        Type* tp = arg1->tp->BaseType()->btp;
+                        tp->InstantiateDeferred();
+                        if (tp->IsStructured())
+                            if (tp->CompatibleType(func->sb->parentClass->tp) || SameTemplate(tp, func->sb->parentClass->tp))
+                                return true;
+                    }
+                }
+            }
+        }
     }
     return false;
 }
@@ -1172,7 +1194,7 @@ static void conditionallyDeleteDefaultConstructor(SYMBOL* func)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && matchesDefaultConstructor(sp))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesDefaultConstructor(sp))
         {
             if (isDefaultDeleted(sp->sb->parentClass))
             {
@@ -1185,7 +1207,7 @@ static bool conditionallyDeleteCopyConstructor(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && matchesCopy(sp, move))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesCopy(sp, move))
         {
             if (move && isMoveConstructorDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
@@ -1199,7 +1221,7 @@ static bool conditionallyDeleteCopyAssignment(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && matchesCopy(sp, move))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesCopy(sp, move))
         {
             if (move && isMoveAssignmentDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
@@ -1500,7 +1522,7 @@ void ConditionallyDeleteClassMethods(SYMBOL* sp)
         conditionallyDeleteCopyConstructor(cons, true);
         conditionallyDeleteCopyAssignment(asgn, true);
     }
-    if (sp->sb->defaulted)
+    if (sp->sb->defaulted && !sp->sb->explicitDefault)
     {
         auto dest = search(sp->tp->BaseType()->syms, overloadNameTab[CI_DESTRUCTOR]);
         conditionallyDeleteDestructor(dest->tp->syms->front());
@@ -2033,7 +2055,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             init->init = nullptr;
                             argumentNesting++;
                             lex = initType(lex, cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, _F_MEMBERINITIALIZER);
+                                           false, _F_MEMBERINITIALIZER | _F_PACKABLE);
                             argumentNesting--;
                             done = true;
                             needkw(&lex, bypa ? Keyword::closepa_ : Keyword::end_);
@@ -3139,9 +3161,10 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
     params->thisptr = *exp;
     params->thistp = Type::MakeType(BasicType::pointer_, sp->tp);
     params->ascall = true;
-
+    
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion,
-                                  (usesInitList ? _F_INITLIST : 0) | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0));
+                                  (usesInitList ? _F_INITLIST : 0) | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0) |
+                                  (implicit ? _F_IMPLICIT : 0));
 
     if (cons1 && cons1->tp->IsFunction())
     {
@@ -3223,7 +3246,10 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 }
                 if (!params->arguments->front()->initializer_list)
                 {
-                    temp = *params->arguments->front()->nested;
+                    if (params->arguments->front()->nested)
+                        temp = *params->arguments->front()->nested;
+                    else
+                        temp = *params->arguments;
                 }
                 CreateInitializerList(cons1, initializerListTemplate, initializerListType, &temp2, false, initializerRef);
                 params->arguments = temp2;
@@ -3253,12 +3279,16 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             else
             {
                 std::list<Argument*> temp;
-                std::list<Argument*>* temp2 = &temp;
                 if (params->arguments && params->arguments->size() && params->arguments->front()->nested &&
                     !params->arguments->front()->initializer_list)
                 {
-                    temp = *params->arguments->front()->nested;
-                    *params->arguments = std::move(temp);
+                    auto it2 = cons1->tp->BaseType()->syms->begin();
+                    ++it2;
+                    if (!(*it2)->tp->IsStructured())
+                    {
+                        temp = *params->arguments->front()->nested;
+                        *params->arguments = std::move(temp);
+                    }
                 }
                 AdjustParams(cons1, cons1->tp->BaseType()->syms->begin(), cons1->tp->BaseType()->syms->end(), &params->arguments,
                              false, implicit && !cons1->sb->isExplicit);

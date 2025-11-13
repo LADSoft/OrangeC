@@ -149,6 +149,23 @@ template <int n>
 static char* mangleTemplate(char (&orig)[n], char *buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 template <int n>
 static char* getName(char (&orig)[n], char *in, SYMBOL* sym);
+
+template <int n>
+static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
+{
+    in += strlen(in);
+    if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
+    {
+        PUTCH(in, '@');
+        in = mangleTemplate(orig, in, sym->sb->parent, sym->sb->parent->templateParams);
+   }
+    else
+    {
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
+    }
+    in += strlen(in);
+    return in;
+}
 template <int n>
 static char* mangleClasses(char (&orig)[n], char* in, SYMBOL* sym)
 {
@@ -158,14 +175,7 @@ static char* mangleClasses(char (&orig)[n], char* in, SYMBOL* sym)
         in = mangleClasses(orig, in, sym->sb->parentClass);
     if (sym->sb->parent)
     {
-        in += strlen(in);
-        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
-        in += strlen(in);
-        if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
-        {
-            in = mangleTemplate(orig, in, sym->sb->parent, sym->sb->parent->templateParams);
-            in += strlen(in);
-        }
+        in = mangleParent(orig, in, sym);
     }
     if (sym->sb->castoperator)
     {
@@ -764,6 +774,10 @@ static char* getName(char (&orig)[n], char* in, SYMBOL* sym)
         char buf[4096], *p;
         p = mangleNameSpaces(buf, buf, sym->sb->parentNameSpace);
         p = mangleClasses(buf, p, sym->sb->parentClass);
+        if (sym->sb->parent)
+        {
+            p = mangleParent(orig, p, sym);
+        }
         if (p != buf)
             PUTCH(p, '@');
         PUTZERO(p);
@@ -831,6 +845,11 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                 if (tp->IsRRefQual())
                     PUTCH(in,  'R');
                 PUTZERO(in);
+            }
+            in = mangleClasses(orig, in, tp->BaseType()->sp->sb->parentClass);
+            if (tp->BaseType()->sp->sb->parent)
+            {
+                in = mangleParent(orig, in, tp->BaseType()->sp);
             }
             in = mangleTemplate(orig, in, tp->BaseType()->sp, tp->BaseType()->sp->templateParams);
             return in;
@@ -1081,7 +1100,7 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     char* p;
                     ++s;
                     if (s->isTemplate)
-                        p = mangleTemplate(nm, nm, s->sp, s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
+                        p = mangleTemplate(nm, nm, s->sp, s->sp->sb && s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
                     else
                         p = getName(nm, nm, s->sp);
                     PUTZERO(p);
@@ -1252,11 +1271,22 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                         switch (param.second->type)
                         {
                             case TplType::typename_:
+                            {
                                 if (!validType((Type*)dflt, byVal))
                                     return false;
                                 result += 'c';
-                                *(mangleType(buf, buf, (Type*)dflt, true)) = 0;
+                                Type* tp1 = (Type*)dflt;
+                                while (tp1->IsPtr() || tp1->IsRef())
+                                    tp1 = tp1->BaseType()->btp;
+                                char* p = buf;
+                                if (tp1->IsStructured() && tp1->BaseType()->sp->sb->parentClass)
+                                {
+                                    p = mangleType(buf, buf, tp1->BaseType()->sp->sb->parentClass->tp, true);
+                                    *p = 0;
+                                }
+                                *(mangleType(buf, p, (Type*)dflt, true)) = 0;
                                 break;
+                            }
                             case TplType::int_:
                                 result += 'i';
                                 *mangleExpression(buf, buf, (EXPRESSION*)dflt) = 0;
@@ -1290,11 +1320,22 @@ bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& 
                     switch (param.second->type)
                     {
                         case TplType::typename_:
+                        {
                             if (!validType((Type*)dflt, byVal))
                                 return false;
                             result += 'c';
-                            *(mangleType(buf, buf, (Type*)dflt, true)) = 0;
+                            Type* tp1 = (Type*)dflt;
+                            while (tp1->IsPtr() || tp1->IsRef())
+                                tp1 = tp1->BaseType()->btp;
+                            char* p = buf;
+                            if (tp1->IsStructured() && tp1->BaseType()->sp->sb->parentClass)
+                            {
+                                p = mangleType(buf, buf, tp1->BaseType()->sp->sb->parentClass->tp, true);
+                                *p = 0;
+                            }
+                            *(mangleType(buf, p, (Type*)dflt, true)) = 0;
                             break;
+                        }
                         case TplType::int_:
                             if (((EXPRESSION*)dflt)->type == ExpressionNode::templateparam_)
                                 return false;
@@ -1319,12 +1360,26 @@ void GetClassKey(char* buf, int len, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* 
     const int n = 8000;
     char orig[n];
     mangledNamesCount = 0;
-    SYMBOL* lastParent = sym;
-    while (lastParent->sb->parentClass)
-        lastParent = lastParent->sb->parentClass;
+    SYMBOL* lastParent;
     char* p = orig;
-    p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
-    p = mangleClasses(orig, p, sym->sb->parentClass);
+    if (sym->sb->parent)
+    {
+        lastParent = sym->sb->parent;
+        while (lastParent->sb->parentClass)
+            lastParent = lastParent->sb->parentClass;
+        p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+        p = mangleClasses(orig, p, sym->sb->parent->sb->parentClass);
+        p = mangleParent(orig, p, sym);
+    }
+    else
+    {
+        lastParent = sym;
+        while (lastParent->sb->parentClass)
+            lastParent = lastParent->sb->parentClass;
+        p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+        p = mangleClasses(orig, p, sym->sb->parentClass);
+
+    }
     PUTCH(p, '@');
     PUTZERO(p);
     p = mangleTemplate(orig, p, sym, params);
@@ -1430,15 +1485,23 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             if (isTemplateDefinition)
                 PUTCH(p, '@');
             PUTZERO(p);
-            lastParent = sym;
-            while (lastParent->sb->parentClass)
-                lastParent = lastParent->sb->parentClass;
-            p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
-            p = mangleClasses(orig, p, sym->sb->parentClass);
             if (sym->sb->parent)
             {
-                Optimizer::my_sprintf(p, MANGLE_SIZE(p), "@%s", sym->sb->parent->name);
-                p += strlen(p);
+                lastParent = sym->sb->parent;
+                while (lastParent->sb->parentClass)
+                    lastParent = lastParent->sb->parentClass;
+                p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+                p = mangleClasses(orig, p, sym->sb->parent->sb->parentClass);
+                p = mangleParent(orig, p, sym);
+            }
+            else
+            {
+                lastParent = sym;
+                while (lastParent->sb->parentClass)
+                    lastParent = lastParent->sb->parentClass;
+                p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
+                p = mangleClasses(orig, p, sym->sb->parentClass);
+
             }
             PUTCH(p, '@');
             PUTZERO(p);

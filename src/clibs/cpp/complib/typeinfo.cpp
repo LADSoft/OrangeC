@@ -23,6 +23,7 @@
  */
 
 #include <typeinfo>
+#include <string>
 #include <string.h>
 #include <stdio.h>
 #include "_rtti.h"
@@ -56,6 +57,12 @@ bool type_info::before(const type_info& in) const
     return (strcmp(left->name, right->name) > 0);
 }
 
+size_t type_info::hash_code() const
+{
+    RTTI* left = (RTTI*)this->tpp;
+    std::hash<std::string> h;
+    return h(left->name);
+}
 const char* type_info::name() const
 {
     RTTI* ths = (RTTI*)this->tpp;

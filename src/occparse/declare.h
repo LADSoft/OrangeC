@@ -113,7 +113,7 @@ SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* na
 SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
 LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
-                         bool* defd, SymbolTable<SYMBOL>* anonymousTable);
+                         bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable);
 LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
                     Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression);
 LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);

@@ -93,6 +93,7 @@ void inlineinit(void)
     enteredInlines.clear();
     contextMap.clear();
     inlineMemberPtrData.clear();
+    inlineLocalUninitializers.clear();
 }
 
 static void GenInline(SYMBOL* sym);
@@ -113,7 +114,7 @@ void dumpInlines(void)
                 done = true;
                 for (auto sym : inlines)
                 {
-                    if (!sym->sb->dontinstantiate &&
+                    if (!sym->sb->dontinstantiate  &&
                         (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
                     {
                         if (!sym->sb->didinline && !sym->sb->dontinstantiate)
@@ -281,7 +282,7 @@ void dumpInlines(void)
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                             if (sym->sb->dest)
                                 destructors.push(sym);
-                            if (sym->sb->init && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                            if (sym->sb->init && sym->sb->init->front()->exp && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                 CreateInlineConstructor(sym);
                         }
                     }

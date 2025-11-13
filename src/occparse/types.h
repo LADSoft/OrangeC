@@ -119,7 +119,7 @@ struct Type
     bool IsConstWithArr();
     bool SameIntegerType(Type* t2);
     Type* InitializerListType();
-    bool InstantiateDeferred(bool noErr = false);
+    bool InstantiateDeferred(bool noErr = false, bool override = false);
     Type* InitializeDeferred();
     static Type* MakeType(Type& tp, BasicType type, Type* base = nullptr);
     static Type* MakeType(BasicType type, Type* base = nullptr);

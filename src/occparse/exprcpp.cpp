@@ -702,7 +702,8 @@ LexList* expression_func_type_cast(LexList* lex, SYMBOL* funcsp, Type** tp, EXPR
                     {
                         bcall = nullptr;
                     }
-                    lex = backupsym();
+                    if (lex)
+                        lex = backupsym();
                     lex = backupsym();
                 }
                 else
@@ -947,7 +948,7 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
     if ((*newType)->IsPtr() && oldType->IsInt() && isconstzero(oldType, *exp))
         return true;
     // conversion to or from void pointer
-    if ((((*newType)->IsVoidPtr() && (oldType->IsPtr() || oldType->IsFunction())) ||
+    if ((((*newType)->IsVoidPtr() && (oldType->IsPtr() || oldType->IsFunction() || oldType->BaseType()->type == BasicType::memberptr_)) ||
          (((oldType->IsVoidPtr() || (*exp)->type == ExpressionNode::nullptr_) && (*newType)->IsPtr()) &&
           (!checkconst || (*newType)->BaseType()->btp->IsConst() || !oldType->BaseType()->btp->IsConst()))))
         return true;
@@ -955,8 +956,8 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
     if ((*newType)->IsVoid())
         return true;
     // conversion of one numeric value to another
-    if (((*newType)->IsArithmetic() || ((*newType)->type == BasicType::enum_ && !(*newType)->scoped)) &&
-        (oldType->IsArithmetic() || (oldType->type == BasicType::enum_ && !oldType->scoped)))
+    if (((*newType)->IsArithmetic() || ((*newType)->BaseType()->type == BasicType::enum_ && !(*newType)->BaseType()->scoped)) &&
+        (oldType->IsArithmetic() || (oldType->BaseType()->type == BasicType::enum_ && !oldType->BaseType()->scoped)))
     {
         cast(*newType, exp);
         return true;
@@ -982,7 +983,8 @@ bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcs
         return true;
     }
     // pointer to bool
-    if ((*newType)->BaseType()->type == BasicType::bool_ && oldType->BaseType()->type == BasicType::pointer_)
+    if ((*newType)->BaseType()->type == BasicType::bool_ && 
+        (oldType->BaseType()->type == BasicType::pointer_ || oldType->BaseType()->type == BasicType::memberptr_))
     {
         cast((*newType)->BaseType(), exp);
         return true;
@@ -1355,7 +1357,14 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
                 valtp->esize = MakeIntExpression(ExpressionNode::c_i_, 2);
                 val = makeID(StorageClass::auto_, valtp, nullptr, AnonymousName());
                 val->sb->allocate = true;
-                localNameSpace->front()->syms->Add(val);
+                if (theCurrentFunc)
+                {
+                    localNameSpace->front()->syms->Add(val);
+                }
+                else
+                {
+                    insertInitSym(val);
+                }
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
                 funcparams->arguments = argumentListFactory.CreateList();
                 funcparams->arguments->push_back(arg);
@@ -1402,7 +1411,6 @@ LexList* expression_typeid(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION**
 bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite* funcparams, int flags)
 {
     SYMBOL *s2 = nullptr, *s3;
-    SYMLIST **hrd, *hrs;
     const char* name = overloadNameTab[(int)Keyword::openpa_ - (int)Keyword::new_ + CI_NEW];
     Type* tpx;
     if (!(*tp)->IsStructured())
@@ -1464,7 +1472,6 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
     if ((int)kw >= (int)Keyword::new_ && (int)kw <= (int)Keyword::unary_and_)
     {
         SYMBOL* s1 = nullptr, * s2 = nullptr, * s3, * s4 = nullptr, * s5 = nullptr;
-        SYMLIST** hrd, * hrs;
         CallSite* funcparams;
         const char* name = overloadNameTab[(int)kw - (int)Keyword::new_ + CI_NEW];
         Type* tpin = *tp;
@@ -1552,9 +1559,9 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
                     exp3 = exp3->right;
                 if (exp3->type == ExpressionNode::thisref_)
                 {
-                    tp1 = tp1->CopyType();
-                    tp1->lref = false;
-                    tp1->rref = true;
+                    tp1 = tp1->CopyType(true);
+                    tp1->BaseType()->lref = false;
+                    tp1->BaseType()->rref = true;
                 }
             }
             else if (tp1->BaseType()->type == BasicType::enum_)  // enum
@@ -1994,7 +2001,7 @@ LexList* expression_new(LexList* lex, SYMBOL* funcsp, Type** tp, EXPRESSION** ex
                 tp1->array = 1;
                 tp1->esize = arrSize;
             }
-            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, sym, false, false, 0);
+            lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, sym, false, false, _F_EXPLICIT);
             if (!(*tp)->IsStructured() && !arrSize)
             {
                 if (init->size() != 1 || (init->front()->basetp && init->front()->basetp->IsStructured()))

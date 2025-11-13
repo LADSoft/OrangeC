@@ -119,6 +119,18 @@ static void liveSetup(void)
                         pb = pb->next;
                     }
                 }
+                else if (tail->dc.opcode == i_passthrough)
+                {
+                    int tnum = tail->assemblyTempRegStart;
+                    briggsReset(exposed, tnum);
+                    clearbit(blk->liveGen, tnum);
+                    setbit(blk->liveKills, tnum);
+                    for (int i=1; i < tail->assemblyRegCount; i++)
+                    {
+                        briggsSet(exposed, tnum+i);
+                        setbit(blk->liveGen, tnum+i);
+                    }
+                }
                 else
                 {
                     if (tail->temps & TEMP_ANS)

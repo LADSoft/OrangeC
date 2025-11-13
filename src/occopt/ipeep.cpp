@@ -574,7 +574,7 @@ static bool peep(Block* b, bool branches)
         switch (head->dc.opcode)
         {
             case i_goto:
-                if (branches && !functionHasAssembly)
+                if (branches && !dontOptimizeFunction)
                 {
                     kill_dupgoto(b, head);
                     kill_brtonext(b, head);
@@ -592,7 +592,7 @@ static bool peep(Block* b, bool branches)
             case i_jl:
                 if (architecture != ARCHITECTURE_MSIL)
                     merge_setxx(b, head);
-                if (branches && !functionHasAssembly)
+                if (branches && !dontOptimizeFunction)
                 {
                     kill_jumpover(b, head);
                     kill_brtonext(b, head);

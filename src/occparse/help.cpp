@@ -784,7 +784,8 @@ bool TakeAddress(EXPRESSION** exp, Type* extended)
         if ((*last)->type == ExpressionNode::callsite_ && !(*last)->v.func->ascall)
         {
             *last = (*last)->v.func->fcall;
-            rv = true;
+            if (*last)
+                rv = true;
         }
     }
     if (rv)
@@ -1378,14 +1379,14 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                         if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
                         {
                             exp2->v.func->returnSP->sb->allocate = false;
-                            exp2->v.func->returnEXP = copy_expression(expsym);
+                            exp2->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = exp2;
                             noClear = true;
                         }
                         else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
                         {
                             exp2->left->v.func->returnSP->sb->allocate = false;
-                            exp2->left->v.func->returnEXP = copy_expression(expsym);
+                            exp2->left->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = exp2;
                             noClear = true;
                         }
@@ -2116,6 +2117,10 @@ Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         else
         {
             rv = inttype(t1);
+        }
+        if (Optimizer::cparams.prm_cplusplus && tp1->IsInt() && tp2->IsInt() && tp1->btp && tp2->btp && tp1->btp->type == BasicType::enum_ && tp1->btp->CompatibleType(tp2->btp))
+        {
+            return tp1;
         }
         if (exp1 && (rv->type != tp1->type || rv->bitintbits != tp1->bitintbits) && exp1)
             cast(rv, exp1);

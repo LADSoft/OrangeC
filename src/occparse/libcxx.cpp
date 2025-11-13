@@ -448,29 +448,32 @@ static bool isStandardLayout(Type* tp, SYMBOL** result)
             return false;
         if (n)
         {
-            SYMBOL* first = nullptr;
-            for (auto sym : *found->tp->BaseType()->syms)
+            if (!found->tp->IsArithmetic() && !found->tp->IsPtr())
             {
-                if (!first)
-                    first = sym;
-                if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
+                SYMBOL* first = nullptr;
+                for (auto sym : *found->tp->BaseType()->syms)
                 {
-                    if (sym->tp->IsStructured() && !isStandardLayout(sym->tp, nullptr))
-                        return false;
-                    if (access != AccessLevel::none_)
+                    if (!first)
+                        first = sym;
+                    if (sym->sb->storage_class == StorageClass::member_ || sym->sb->storage_class == StorageClass::mutable_)
                     {
-                        if (access != sym->sb->access)
+                        if (sym->tp->IsStructured() && !isStandardLayout(sym->tp, nullptr))
                             return false;
+                        if (access != AccessLevel::none_)
+                        {
+                            if (access != sym->sb->access)
+                                return false;
+                        }
+                        access = sym->sb->access;
                     }
-                    access = sym->sb->access;
                 }
-            }
-            if (first && first->tp->IsStructured())
-            {
-                if (found->sb->baseClasses)
-                    for (auto bc : *found->sb->baseClasses)
-                        if (bc->cls->tp->CompatibleType(first->tp))
-                            return false;
+                if (first && first->tp->IsStructured())
+                {
+                    if (found->sb->baseClasses)
+                        for (auto bc : *found->sb->baseClasses)
+                            if (bc->cls->tp->CompatibleType(first->tp))
+                                return false;
+                }
             }
         }
         if (result)
@@ -805,7 +808,15 @@ static bool is_base_of(EXPRESSION* exp)
     if (arguments->size() == 2)
     {
         if (first(arguments)->tp->IsStructured() && second(arguments)->tp->IsStructured())
-            rv = classRefCount(first(arguments)->tp->BaseType()->sp, second(arguments)->tp->BaseType()->sp) != 0;
+        {;
+            auto spl = first(arguments)->tp->BaseType()->sp;
+            auto spr = second(arguments)->tp->BaseType()->sp;
+            if (spl->tp->BaseType()->type != BasicType::union_)
+            {
+                rv = spl->tp->CompatibleType(spr->tp) || SameTemplate(spl->tp, spr->tp);
+            }
+            rv = rv || classRefCount(spl, spr) != 0;
+        }
     }
     return rv;
 }
@@ -1119,11 +1130,18 @@ static bool is_convertible_to(EXPRESSION* exp)
                 if (!rv && from->IsStructured() && to->IsStructured())
                 {
                     if (classRefCount(to->BaseType()->sp, from->BaseType()->sp) == 1)
+                    {
                         rv = true;
-                    else if (lookupGenericConversion(from->BaseType()->sp, to->BaseType()))
-                        rv = true;
+                    }
+                    else
+                    {
+                        auto sp1 = lookupGenericConversion(from->BaseType()->sp, to->BaseType());
+// covscript
+//                         auto sp1 = lookupNonspecificCast(from->BaseType()->sp, to->BaseType());
+                        rv = sp1 && !sp1->sb->isExplicit;
+                    }
                 }
-                if (!rv && from->IsStructured())
+                else if (!rv && from->IsStructured())
                 {
                     CI_CONSTRUCTOR;
                     SYMBOL* sym = search(from->BaseType()->syms, overloadNameTab[CI_CAST]);
@@ -1131,7 +1149,7 @@ static bool is_convertible_to(EXPRESSION* exp)
                     {
                         for (auto sp1 : *sym->tp->syms)
                         {
-                            if (sp1->tp->BaseType()->btp->SameType(to))
+                            if (sp1->tp->BaseType()->btp->SameType(to) && !sp1->sb->isExplicit)
                             {
                                 rv = true;
                                 break;

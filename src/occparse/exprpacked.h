@@ -63,4 +63,5 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
                                                        std::list<TEMPLATEPARAMPAIR>* select);
 void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
                              Type** tp, EXPRESSION** exp);
+int GetPackCount();
 }  // namespace Parser

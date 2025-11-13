@@ -83,8 +83,29 @@ static int GetHashValue(const char* string)
     return i;
 }
 
+static bool EmptyPackedTemplateParam(Type* tnew, Type* told)
+{
+    while (tnew->IsRef()) tnew = tnew->BaseType()->btp;
+    while (told->IsRef()) told = told->BaseType()->btp;
+    tnew = tnew->BaseType();
+    told = told->BaseType();
+    if (tnew->type == BasicType::templateparam_ && told->type == BasicType::templateparam_)
+    {
+        if (tnew->templateParam->second->packed && told->templateParam->second->packed)
+        {
+            if ((!tnew->templateParam->second->byPack.pack || !tnew->templateParam->second->byPack.pack->size()) &&
+                (!told->templateParam->second->byPack.pack || !told->templateParam->second->byPack.pack->size()))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+
+}
 bool matchOverload(Type* tnew, Type* told)
 {
+    auto funcold = told->BaseType();
     auto hnew = tnew->BaseType()->syms->begin();
     auto hnewe = tnew->BaseType()->syms->end();
     auto hold = told->BaseType()->syms->begin();
@@ -121,11 +142,13 @@ bool matchOverload(Type* tnew, Type* told)
         }
         tnew = snew->tp->BaseType();
         told = sold->tp->BaseType();
-        told->InstantiateDeferred();
+        told = sold->tp->BaseType();
+        if (funcold->sp && !funcold->sp->sb->templateLevel)
+            told->InstantiateDeferred();
         if (told->type != BasicType::any_ || tnew->type != BasicType::any_)  // packed template param
         {
             if ((told->type != tnew->type || (!told->CompatibleType(tnew) && !SameTemplatePointedTo(tnew, told, true))) &&
-                !SameTemplateSelector(tnew, told))
+                !SameTemplateSelector(tnew, told) && !EmptyPackedTemplateParam(tnew, told))
                 break;
             else
             {
@@ -208,6 +231,56 @@ bool matchOverload(Type* tnew, Type* told)
         ++hnew;
     }
     matchOverloadLevel--;
+    if (!definingTemplate || instantiatingTemplate)
+    {
+        if (hold != holde)
+        {
+            // if  the old one has a packed template parame with no elements we are safe...
+            auto tpx = (*hold)->tp;
+            while (tpx->IsRef())
+                tpx = tpx->BaseType()->btp;
+            tpx = tpx->BaseType();
+            if (tpx->type == BasicType::void_ || (tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed))
+            {
+                if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                {
+                    if (hnew != hnewe)
+                    {
+                        tpx = (*hnew)->tp;
+                        while (tpx->IsRef())
+                            tpx = tpx->BaseType()->btp;
+                        tpx = tpx->BaseType();
+                        if (tpx->type == BasicType::void_ || tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed)
+                        {
+                            if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                            {
+                                hold = holde;
+                                hnew = hnewe;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        hold = holde;
+                    }
+                }
+            }
+        }
+        else if (hnew != hnewe)
+        {
+            auto tpx = (*hnew)->tp;
+            while (tpx->IsPtr() || tpx->IsRef())
+                tpx = tpx->BaseType()->btp;
+            tpx = tpx->BaseType();
+            if (tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed)
+            {
+                if (!tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                {
+                    hnew = hnewe;
+                }
+            }
+        }
+    }
     if (hold == holde && hnew == hnewe)
     {
         if (tCount)
@@ -329,6 +402,11 @@ bool matchOverload(Type* tnew, Type* told)
                     if (tpn->IsConst() != tps->IsConst() || tpn->IsVolatile() != tps->IsVolatile())
                         if (tpn->BaseType()->type != BasicType::templateselector_)
                             return false;
+                    SYMBOL* typedefSym = nullptr;
+                    if (tps->type == BasicType::typedef_)
+                    {
+                        typedefSym = tps->sp;
+                    }
                     tpn = tpn->BaseType();
                     tps = tps->BaseType();
                     if (tpn->CompatibleType(tps) ||
@@ -377,13 +455,28 @@ bool matchOverload(Type* tnew, Type* told)
                                     if ((*tpn->sp->sb->templateSelector)[2].name[0])
                                         return false;
                                 }
-                                else if (told->BaseType()->btp->type == BasicType::typedef_ &&
-                                         strcmp(told->BaseType()->btp->sp->name, (*tpn->sp->sb->templateSelector)[2].name) == 0)
+                                if (typedefSym)
                                 {
+                                    if (strcmp((*tpn->sp->sb->templateSelector)[2].name,
+                                        typedefSym->name) == 0)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        return false;
+                                    }
+
                                 }
                                 else
                                 {
-                                    return false;
+                                    if (strcmp((*tpn->sp->sb->templateSelector)[2].name,
+                                        (*tps->sp->sb->templateSelector)[2].name) == 0)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        return false;
+                                    }
                                 }
                             }
                         }
@@ -838,10 +931,24 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
             r++;
         if (l == lenl && r != lenr)
         {
+            if (rtype->IsRef())
+            {
+                // prefere areference type to a class type
+                if (ltype->IsStructured())
+                    if (rtype->CompatibleType(ltype) || SameTemplate(rtype, ltype))
+                        return 1;
+            }
             return -1;
         }
         else if (l != lenl && r == lenr)
         {
+            if (ltype->IsRef())
+            {
+                // prefere areference type to a class type
+                if (rtype->IsStructured())
+                    if (ltype->CompatibleType(rtype) || SameTemplate(ltype, rtype))
+                        return -1;
+            }
             return 1;
         }
         // compare ranks
@@ -1816,16 +1923,20 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
             if (funcparams->arguments)
             {
                 int* match = (int*)alloca(sizeof(int) * 500);
-                bool found = false;
+                bool foundArithmetic = false, foundNested = false;
                 for (auto arg : *funcparams->arguments)
                 {
-                    if (arg->tp->IsArithmetic())
+                    if (!arg->tp)
                     {
-                        found = true;
+                        foundNested = true;
+                    }
+                    else if (arg->tp->IsArithmetic())
+                    {
+                        foundArithmetic = true;
                         break;
                     }
                 }
-                if (found)
+                if (foundArithmetic)
                 {
                     for (int i = 0; i < funcCount; i++)
                     {
@@ -1837,12 +1948,12 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                             if ((*it)->sb->thisPtr)
                                 ++it;
                             int n = 0;
-                            found = false;
+                            foundArithmetic = false;
                             for (auto arg : *funcparams->arguments)
                             {
                                 if (it == ite)
                                 {
-                                    found = true;
+                                    foundArithmetic = true;
                                     break;
                                 }
                                 Type* target = (*it)->tp;
@@ -1881,7 +1992,7 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                                 }
                                 ++it;
                             }
-                            if (!found && (it == ite || (*it)->sb->defaultarg))
+                            if (!foundArithmetic && (it == ite || (*it)->sb->defaultarg))
                             {
                                 match[i] = n;
                             }
@@ -1898,6 +2009,51 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                     for (int i = 0; i < funcCount; i++)
                         if (match[i] != sum && match[i] >= 0)
                             spList[i] = nullptr;
+                }
+                if (foundNested)
+                {
+                    for (int i = 0; i < funcCount; i++)
+                    {
+                        if (spList[i] && !spList[i]->sb->templateLevel)
+                        {
+                            auto it = spList[i]->tp->BaseType()->syms->begin();
+                            auto ite = spList[i]->tp->BaseType()->syms->end();
+                            if ((*it)->sb->thisPtr)
+                                ++it;
+                            if ((*it)->tp->IsVoid())
+                                ++it;
+                            auto ita = funcparams->arguments->begin();
+                            auto itae = funcparams->arguments->end();
+                            for (; ita != itae; ++ita)
+                            {
+                                if ((*ita)->nested)
+                                {
+                                    int n = (*ita)->nested->size();
+                                    if (it == ite)
+                                    {
+                                        if (n != 0)
+                                        {
+                                            spList[i] = nullptr;
+                                        }
+                                        break;
+                                    }
+                                    else if (!(*it)->sb->initializer_list)
+                                    {
+                                        int m = 0;
+                                        while (it != ite) ++it, ++m;
+                                        if (m != n)
+                                        {
+                                            spList[i] = nullptr;
+                                        }
+                                    }
+                                    break;
+                                }
+                                if (it == ite)
+                                    break;
+                                ++it;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2247,17 +2403,37 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
             SelectBestFunc(spList, icsList, lenList, &funcparams, 2, funcs, nullptr);
             WeedTemplates(spList, funcs, &funcparams, nullptr);
             found1 = found2 = nullptr;
-
-            for (i = 0; i < funcs && !found1; i++)
+            for (int i = 0; i < funcs && !found1; i++)
             {
-                int j;
-                found1 = spList[i];
-                m = i;
-                for (j = i + 1; j < funcs && found1 && !found2; j++)
+                if (spList[i] && spList[i]->sb->isConstructor)
                 {
-                    if (spList[j])
+                    auto itParams = spList[i]->tp->syms->begin();
+                    auto itParamsEnd = spList[i]->tp->syms->end();
+                    ++itParams;
+                    if (itParams != itParamsEnd && ((*itParams)->tp->CompatibleType(tpa) && (!tpa->IsArithmetic() || tpa->BaseType()->type == (*itParams)->tp->BaseType()->type) || SameTemplate((*itParams)->tp, tpa)))
                     {
-                        found2 = spList[j];
+                        ++itParams;
+                        if (itParams == itParamsEnd || (*itParams)->sb->defaultarg)
+                        {
+                            m = i;
+                            found1 = spList[i];
+                        }
+                    }
+                }
+            }
+            if (!found1)
+            {
+                for (i = 0; i < funcs && !found1; i++)
+                {
+                    int j;
+                    found1 = spList[i];
+                    m = i;
+                    for (j = i + 1; j < funcs && found1 && !found2; j++)
+                    {
+                        if (spList[j])
+                        {
+                            found2 = spList[j];
+                        }
                     }
                 }
             }
@@ -2332,15 +2508,15 @@ void getQualConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, e_cvsrn* s
                 hasvol = false;
         }
         first = false;
-        if (tpa->type == BasicType::enum_)
-            tpa = tpa->btp;
+        if (tpa->BaseType()->type == BasicType::enum_)
+            tpa = tpa->BaseType()->btp;
         if (tpa->IsArray())
             while (tpa->IsArray())
                 tpa = tpa->BaseType()->btp;
         else
             tpa = tpa->BaseType()->btp;
-        if (tpp->type == BasicType::enum_)
-            tpp = tpp->btp;
+        if (tpp->BaseType()->type == BasicType::enum_)
+            tpp = tpp->BaseType()->btp;
         if (tpp->IsArray())
             while (tpp->IsArray())
                 tpp = tpp->BaseType()->btp;
@@ -2557,7 +2733,7 @@ void arg_compare_bitint(Type* tpp, Type* tpa, int* n, e_cvsrn* seq)
     }
 }
 void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
-                         bool allowUser, bool ref)
+    bool allowUser, bool ref)
 {
     bool lref = false;
     bool rref = false;
@@ -2568,6 +2744,11 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         tpax = tpax->BaseType();
     tpa = tpa->BaseType();
     tpp = tpp->BaseType();
+    if (tpp->type == BasicType::any_)
+    {
+        seq[(*n)++] = CV_NONE;
+        return;
+    }
     // when evaluating decltype we sometimes come up with these
     if (tpa->type == BasicType::templateparam_)
         tpa = tpa->templateParam->second->byClass.val;
@@ -2632,6 +2813,18 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
     {
         Type* tppp = tpp->BaseType()->btp;
         while (tppp->IsRef())
+            tppp = tppp->BaseType()->btp;
+        if (tpp->type == BasicType::any_)
+        {
+            seq[(*n)++] = CV_NONE;
+            return;
+        }
+        if (tppp->BaseType()->type == BasicType::templateselector_)
+        {
+            seq[(*n)++] = CV_NONE;
+            return;
+        }
+        if (tpp->IsInt() && tppp->BaseType()->btp && tppp->BaseType()->btp->type == BasicType::enum_)
             tppp = tppp->BaseType()->btp;
         if (!rref && expa && tppp->IsStructured() && expa->type != ExpressionNode::not__lvalue_)
         {
@@ -2745,9 +2938,10 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
             else
                 seq[(*n)++] = CV_NONE;
         }
-        else if (tppp->IsFunctionPtr())
+        else if (tppp->IsFunctionPtr() || tppp->IsFunction())
         {
-            tpp = tppp->BaseType()->btp;
+            if (tppp->IsFunctionPtr())
+                tpp = tppp->BaseType()->btp;
             if (tpa->IsFunctionPtr())
                 tpa = tpa->BaseType()->btp;
             if (tpp->CompatibleType(tpa))
@@ -2779,6 +2973,11 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
     {
         if ((tpax->IsConst() != tppx->IsConst()) || (tpax->IsVolatile() != tppx->IsVolatile()))
             seq[(*n)++] = CV_QUALS;
+        if (tpp->BaseType()->type == BasicType::templateselector_)
+        {
+            seq[(*n)++] = CV_NONE;
+            return;
+        }
         if (tpp->BaseType()->type == BasicType::string_)
         {
             if (tpa->BaseType()->type == BasicType::string_ || (expa && expa->type == ExpressionNode::labcon_ && expa->string))
@@ -2909,6 +3108,15 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
         }
         else if (tpp->IsPtr())
         {
+            auto tpx = tpp;
+            while (tpx->IsPtr())
+                tpx = tpx->BaseType()->btp;
+            tpx = tpx->BaseType();
+            if (tpx->type == BasicType::any_)
+            {
+                seq[(*n)++] = CV_NONE;
+                return;
+            }
             if (tpa->IsPtr())
             {
                 if (tpp->IsVoidPtr())
@@ -3125,6 +3333,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     seq[(*n)++] = CV_NONE;
                 }
                 else if (tpa->IsInt())
+                {
                     if (tpp->BaseType()->type == BasicType::bitint_ || tpp->BaseType()->type == BasicType::unsigned_bitint_ ||
                         tpa->BaseType()->type == BasicType::bitint_ || tpa->BaseType()->type == BasicType::unsigned_bitint_)
                     {
@@ -3142,10 +3351,14 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     else if ((tpp->BaseType()->type == BasicType::int_ || tpp->BaseType()->type == BasicType::unsigned_) &&
                              tpa->BaseType()->type < tpp->BaseType()->type)
                     {
+                        if (tpa->IsUnsigned() != tpp->IsUnsigned())
+                            seq[(*n)++] = CV_INTEGRALCONVERSION;
                         seq[(*n)++] = CV_INTEGRALPROMOTION;
                     }
                     else if (tpp->IsBitInt() || tpa->IsBitInt())
                     {
+                        if (tpa->IsUnsigned() != tpp->IsUnsigned())
+                            seq[(*n)++] = CV_INTEGRALCONVERSION;
                         seq[(*n)++] = CV_INTEGRALPROMOTION;
                     }
                     else if (tpp->IsInt())
@@ -3168,8 +3381,9 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                         else if (tpp->BaseType()->type == BasicType::long_double_)
                             seq[(*n)++] = CV_FLOATINGPROMOTION;
                     }
-
+                }
                 else /* floating */
+                {
                     if (tpp->BaseType()->type == BasicType::bool_)
                         seq[(*n)++] = CV_BOOLCONVERSION;
                     else if (tpp->IsInt())
@@ -3193,6 +3407,7 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                     }
                     else
                         seq[(*n)++] = CV_NONE;
+                }
             }
             else if (!isenumconst)
             {
@@ -3567,6 +3782,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                 Type* tp1 = tp;
                 if (tp1->IsRef())
                     tp1 = tp1->BaseType()->btp;
+                tp1->InstantiateDeferred();
                 initializerListType = nullptr;
                 if (tp1->IsStructured())
                 {
@@ -3656,7 +3872,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                             }
                         }
                     }
-                    else if ((*ita)->tp && (*ita)->exp)  // might be an empty initializer list...
+                    else if (tp1->IsStructured() && (*ita)->tp && (*ita)->exp)  // might be an empty initializer list...
                     {
                         int n1 = m;
                         getSingleConversion((tp1->BaseType()->sp)->tp, ita != itae ? (*ita)->tp : (*itt)->tp,
@@ -4068,14 +4284,15 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                 bool found = false;
                 if (sym->name[0] == '.' || sym->sb->templateLevel)
                 {
-                    it1 = it1end;                }
+                    it1 = it1end;
+                }
                 else
                 {
                     if ((*it1)->sb->thisPtr)
                         ++it1;
                     if ((*it1)->tp->type == BasicType::void_)
                         ++it1;
-                    if (args->arguments && args->arguments->size())
+                    if (args && args->arguments && args->arguments->size())
                     {
                         auto ita = args->arguments->begin();
                         auto itae = args->arguments->end();
@@ -4113,6 +4330,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                         {
                             InitializeFunctionArguments(sym);
                         }
+
                         spList[n] = sym;
                     }
                 }
@@ -4227,10 +4445,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
         for (auto c : *deduce->tp->syms)
         {
             c->utilityIndex = i++;
-            if (c->tp->syms->size() == args->arguments->size() + 1)
-            {
-                spList.push_back(c);
-            }
+            spList.push_back(c);
         }
     }
     if (spList.size())
@@ -4313,6 +4528,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
         funcList.resize(n);
 
         std::list<std::list<TEMPLATEPARAMPAIR>*> stk2;
+        int nscount = PushTemplateNamespace(sp);
         for (auto&& s : spList)
         {
             auto sp1 = s->sb->parentClass;
@@ -4332,6 +4548,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
             stk2.clear();
             s = s1;
         }
+        PopTemplateNamespace(nscount);
         SYMBOL *found1 = nullptr, *found2 = nullptr;
         if (n != 1)
         {
@@ -4458,23 +4675,26 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                 {
                     deduced->tp->InitializeDeferred();
                     auto ctype = deduced->tp;
-                    auto overloads = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
                     auto thstp = Type::MakeType(BasicType::pointer_, deduced->tp);
                     if (args->thistp->IsConst())
                         thstp = Type::MakeType(BasicType::const_, thstp);
                     if (args->thistp->IsVolatile())
                         thstp = Type::MakeType(BasicType::volatile_, thstp);
                     args->thistp = thstp;
-                    if (overloads)
+                    if (!sp->sb->trivialCons)
                     {
-                        *exp = nullptr;
-                        SYMBOL* s = GetOverloadedFunction(&ctype, exp, overloads, args, nullptr, false, false, 0);
-                        if (!*exp)
+                        auto overloads = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
+                        if (overloads)
+                        {
+                            *exp = nullptr;
+                            SYMBOL* s = GetOverloadedFunction(&ctype, exp, overloads, args, nullptr, false, false, 0);
+                            if (!*exp)
+                                deduced = nullptr;
+                        }
+                        else
+                        {
                             deduced = nullptr;
-                    }
-                    else
-                    {
-                        deduced = nullptr;
+                        }
                     }
                 }
             }
@@ -4544,7 +4764,9 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         }
         if (args->thisptr)
         {
-            SYMBOL* spt = args->thistp->BaseType()->btp->BaseType()->sp;
+            auto tp2 = args->thistp;
+            while (tp2->IsPtr() || tp2->IsRef()) tp2 = tp2->BaseType()->btp;
+            SYMBOL* spt = tp2->BaseType()->sp;
             if (spt->templateParams)
             {
                 enclosingDeclarations.Add(spt->templateParams);
@@ -4575,7 +4797,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         {
             if (args || atp)
             {
-                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass)) && !args->nameSpace)
+                if ((!sp->tp || (!sp->sb->wasUsing && !sp->sb->parentClass && !args->nameSpace)))
                 {
                     // ok the sp is a valid candidate for argument search
                     if (args)
@@ -4605,24 +4827,22 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             }
             if (sp->tp)
             {
+                bool found = false;
                 if (args->nameSpace)
                 {
                     unvisitUsingDirectives(args->nameSpace);
-                    gather = tablesearchinline(sp->name, args->nameSpace, false, true);
+                    tablesearchinline(gather, sp->name, args->nameSpace, false, true);
                 }
-                else
-                {
-                    bool found = false;
-                    for (auto sym : gather)
-                        if (sym == sp)
-                        {
-                            found = true;
-                            break;
-                        }
-                    if (!found)
+                found = false;
+                for (auto sym : gather)
+                    if (sym == sp)
                     {
-                        gather.push_front(sp);
+                        found = true;
+                        break;
                     }
+                if (!found)
+                {
+                    gather.push_front(sp);
                 }
             }
             weedgathering(gather);
@@ -4693,6 +4913,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     enclosingDeclarations.Release();
                     return nullptr;
                 }
+
                 spList.resize(n);
                 icsList.resize(n);
                 lenList.resize(n);
@@ -4701,7 +4922,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
                     bool hasDest = false;
-
+                    bool hasImplicit = false;
                     std::unordered_map<int, SYMBOL*> storage;
                     if (atp || args->ascall)
                         GatherConversions(sp, &spList[0], n, args, atp, &icsList[0], &lenList[0], argCount, &funcList[0],
@@ -4710,6 +4931,15 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     {
                         storage[i] = spList[i];
                         hasDest |= spList[i] && spList[i]->sb->deleted;
+                        hasImplicit |= spList[i] && !spList[i]->sb->isExplicit;
+                    }
+                    if ((flags & _F_IMPLICIT) && hasImplicit)
+                    {
+                        for (int i = 0; i < n; i++)
+                        {
+                            if (spList[i] && spList[i]->sb->isExplicit)
+                                spList[i] = nullptr;
+                        }
                     }
                     if (atp || args->ascall)
                         SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, argCount, n, &funcList[0]);
@@ -4793,7 +5023,6 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     // this block to aid in debugging unfound functions...
                     if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !definingTemplate)
                     {
-
                         n = insertFuncs(&spList[0], gather, args, atp, flags);
                         if (atp || args->ascall)
                         {
@@ -4857,19 +5086,18 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 p++;
                             else
                                 p = buf;
-                            Utils::StrCpy(buf + (p - buf), sizeof(buf) - (p - buf), p);
+                            Utils::StrCpy(buf + n + 2, sizeof(buf) - n - 2,  p);
                             buf[n] = buf[n + 1] = ':';
-                            Utils::StrCat(buf, sizeof(buf), "(");
+                            Utils::StrCat(buf, "(");
                             if (args->arguments && args->arguments->size())
                             {
                                 for (auto a : *args->arguments)
                                 {
                                     a->tp->ToString(buf + sizeof(buf), buf + strlen(buf));
-                                    Utils::StrCat(buf, sizeof(buf), ",");
+                                    Utils::StrCat(buf, ",");
                                 }
-                                buf[strlen(buf) - 1] = 0;
                             }
-                            Utils::StrCat(buf, sizeof(buf), ")");
+                            Utils::StrCat(buf, ")");
                             errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
                         }
                         else
@@ -4877,7 +5105,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
                         }
                     }
-                    else
+                    else if ((!definingTemplate || instantiatingTemplate) && !inDeduceArgs)
                     {
                         SYMBOL* sym = SymAlloc();
                         sym->sb->parentClass = sp->sb->parentClass;
@@ -4937,6 +5165,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     inNothrowHandler++;
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
+                auto found10 = found1;
                 if (!(flags & _F_SIZEOF) || found1->tp->BaseType()->btp->IsAutoType() ||
                     ((flags & _F_IS_NOTHROW) && found1->sb->deferredNoexcept != 0 && found1->sb->deferredNoexcept != (LexList*)-1))
                 {
@@ -4966,6 +5195,12 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         if (found1->sb->mainsym)
                             found1 = found1->sb->mainsym;
                         found1 = CopySymbol(found1);
+                        if (found1->sb->memberInitializers)
+                        {
+                            auto mi = found1->sb->memberInitializers;
+                            found1->sb->memberInitializers = memberInitializersListFactory.CreateList();
+                            found1->sb->memberInitializers->insert(found1->sb->memberInitializers->end(), mi->begin(), mi->end());
+                        }
                         found1->sb->mainsym = old;
                         found1->sb->parentClass = CopySymbol(found1->sb->parentClass);
                         found1->sb->parentClass->sb->mainsym = old->sb->parentClass;

@@ -106,6 +106,7 @@ bool Field::ILSrcDump(PELib& peLib, std::ostream& out) const
         case Bytes:
             if (byteValue_ && byteLength_)
             {
+                auto flags = out.flags();
                 out << " at $" << name_ << std::endl;
                 out << ".data cil $" << name_ << " = bytearray (" << std::endl << std::hex;
                 int i;
@@ -115,7 +116,8 @@ bool Field::ILSrcDump(PELib& peLib, std::ostream& out) const
                     if (i % 8 == 7 && i != byteLength_ - 1)
                         out << std::endl << "\t";
                 }
-                out << ")" << std::dec;
+                out << ")";
+                out.flags(flags);
             }
             break;
     }

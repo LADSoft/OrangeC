@@ -112,6 +112,7 @@ bool Type::IsUnsigned()
         case BasicType::unsigned_long_long_:
         case BasicType::wchar_t_:
         case BasicType::unsigned_bitint_:
+        case BasicType::char32_t_:
             return true;
         default:
             return false;
@@ -642,9 +643,9 @@ Type* Type::InitializerListType()
     }
     return rtp;
 }
-bool Type::InstantiateDeferred(bool noErr)
+bool Type::InstantiateDeferred(bool noErr, bool override)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!definingTemplate || instantiatingTemplate || override)
     {
         auto tp = this;
         assert(tp);
@@ -971,6 +972,10 @@ bool Type::CompareTypes(Type* typ1, Type* typ2, int exact)
     if (typ1->IsFunction() && typ2->IsFunction() &&
         typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
         return true;
+    else if (typ1->type == BasicType::memberptr_ && typ2->IsFunction())
+    {
+        return typ2->sp->sb->parentClass && CompareTypes(typ1->sp->tp, typ2->sp->sb->parentClass->tp, exact);
+    }
     else if (!exact && ((typ1->IsPtr() && (typ2->IsFunctionPtr() || typ2->IsFunction() || typ2->IsInt())) ||
                         (typ2->IsPtr() && (typ1->IsFunctionPtr() || typ1->IsFunction() || typ1->IsInt()))))
         return (true);
@@ -1381,6 +1386,7 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
                 Utils::StrCat(buf, top-buf, " (");
                 buf += strlen(buf);
                 char temp[4000];
+                temp[0] = 0;
                 getcls(temp, tp->sp);
                 Utils::StrCpy(buf, top-buf, temp);
                 buf += strlen(buf);
@@ -1707,7 +1713,10 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* 
         lex = getsym();
         ParseAttributeSpecifiers(&lex, funcsp, true);
         parsingTrailingReturnOrUsing++;
-        tpx = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
+        auto old = theCurrentFunc;
+        theCurrentFunc = *sp;
+        tpx = TypeGenerator::TypeId(lex, *sp, StorageClass::cast_, false, true, false);
+        theCurrentFunc = old;
         parsingTrailingReturnOrUsing--;
         // weed out temporary syms that were added as part of a decltype; they will be
         // reinstated as stackblock syms later
@@ -2337,45 +2346,59 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     ptype = TypeGenerator::BeforeName(lex, funcsp, ptype, spi, strSym, nsv, inTemplate, storage_class, linkage,
                                                       linkage2, linkage3, nullptr, asFriend, false, beforeOnly, true);
                     basisAttribs = oldAttribs;
-                    if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
-                                   ptype->BaseType()->type != BasicType::memberptr_))
-                    {
-                        // if here is not a potential pointer to func
-                        if (!ptype)
-                            tp = &stdint;
-                        ptype = nullptr;
-                    }
                     if (!needkw(&lex, Keyword::closepa_))
                     {
                         errskim(&lex, skim_closepa);
                         skip(&lex, Keyword::closepa_);
                     }
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, true);
-                    if (ptype)
+                    if (ptype->IsFunctionPtr() && !MATCHKW(lex, Keyword::openpa_) && !MATCHKW(lex, Keyword::openbr_))
                     {
-                        // pointer to func or pointer to memberfunc
-                        Type* atype = tp;
-                        tp = ptype;
-                        if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
-                            atype->BaseType()->byRefArray = true;
-                        while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
-                                ptype->BaseType()->type == BasicType::memberptr_) &&
-                               ptype->btp)
-                            if (ptype->btp->type == BasicType::any_)
-                            {
-                                break;
-                            }
-                            else
-                            {
-                                ptype = ptype->btp;
-                            }
-                        ptype->btp = atype;
-                        ptype->rootType = atype->rootType;
-                        tp->UpdateRootTypes();
-
-                        atype = tp->BaseType();
+                        auto  atype = tp->BaseType();
                         if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
                             atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                        auto tp1 = ptype;
+                        ptype =ptype->BaseType()->btp->BaseType();
+                        ptype->btp = tp;
+                        tp = tp1;
+                        tp->UpdateRootTypes();
+                    }
+                    else
+                    {
+                        if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
+                            ptype->BaseType()->type != BasicType::memberptr_))
+                        {
+                            // if here is not a potential pointer to func
+                            if (!ptype)
+                                tp = &stdint;
+                            ptype = nullptr;
+                        }
+                        tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, true);
+                        if (ptype)
+                        {
+                            // pointer to func or pointer to memberfunc
+                            Type* atype = tp;
+                            tp = ptype;
+                            if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
+                                atype->BaseType()->byRefArray = true;
+                            while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
+                                ptype->BaseType()->type == BasicType::memberptr_) &&
+                                ptype->btp)
+                                if (ptype->btp->type == BasicType::any_)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    ptype = ptype->btp;
+                                }
+                            ptype->btp = atype;
+                            ptype->rootType = atype->rootType;
+                            tp->UpdateRootTypes();
+
+                            atype = tp->BaseType();
+                            if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
+                                atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                        }
                     }
                     if (*spi)
                         (*spi)->tp = tp;
@@ -2710,7 +2733,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                         type = BasicType::unative_;
                         break;
                     case BasicType::bitint_:
-                        RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
+                        RequiresDialect::Keyword(Dialect::c23, "_Bitint");
                         type = BasicType::unsigned_bitint_;
                         lex = getsym();
                         needkw(&lex, Keyword::openpa_);
@@ -2748,7 +2771,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                 }
                 break;
             case Keyword::bitint_:
-                RequiresDialect::Keyword(Dialect::c2x, "_Bitint");
+                RequiresDialect::Keyword(Dialect::c23, "_Bitint");
                 switch (type)
                 {
                     case BasicType::unsigned_:
@@ -3073,7 +3096,7 @@ founddecltype:
                         if (!parsingTrailingReturnOrUsing)
                         {
                             if (definingTemplate && !instantiatingTemplate && !inTemplateHeader && !declaringInitialType &&
-                                !inTemplateArgs)
+                                (!inTemplateArgs || parsingSpecializationDeclaration))
                             {
                                 sp1 = GetTypeAliasSpecialization(sp, lst);
                                 if (sp1)
@@ -3118,6 +3141,7 @@ founddecltype:
                     else
                     {
                         SpecializationError(sp);
+                        foundsomething = noNeedToSpecialize;
                         tn = sp->tp;
                     }
                 }
@@ -3366,7 +3390,7 @@ founddecltype:
                                         sp = instantiatingMemberFuncClass;
                                     else if (deduceTemplate)
                                         *deduceTemplate = MustSpecialize(sp->name);
-                                    else
+                                    else if (!allTemplateArgsSpecified(sp, sp->templateParams))
                                         SpecializationError(sp);
                                 }
                             }
@@ -3703,6 +3727,7 @@ Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic
     }
     return tp;
 }
+int count4;
 Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate,
                                     StorageClass storage_class, bool funcptr)
 {
@@ -3783,7 +3808,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 Type* tp2;
                 spi = nullptr;
                 tp1 = nullptr;
-
+                LexList* start = lex;
                 noTypeNameError++;
                 lex = getStorageAndType(lex, funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
                                         &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
@@ -3827,13 +3852,13 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 while (tp2->IsPtr() || tp2->IsRef())
                     tp2 = tp2->BaseType()->btp;
                 tp2 = tp2->BaseType();
-                if (tp2->type == BasicType::templateparam_ && tp2->templateParam->second->packed)
+                if (spi->sb->anonymous && MATCHKW(lex, Keyword::ellipse_))
                 {
-                    spi->packed = true;
-                    if (spi->sb->anonymous && MATCHKW(lex, Keyword::ellipse_))
+                    if (IsPacking() || (tp2->templateParam && tp2->templateParam->second->packed))
                     {
-                        lex = getsym();
+                        spi->packed = true;
                     }
+                    lex = getsym();
                 }
                 spi->tp = tp1;
                 spi->sb->attribs.inheritable.linkage = linkage;
@@ -3841,74 +3866,139 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 if (spi->packed)
                 {
                     checkPackedType(spi);
-                    if (!definingTemplate ||
-                        (!funcptr && tp2->type == BasicType::templateparam_ && tp2->templateParam->first &&
-                         !inCurrentTemplate(tp2->templateParam->first->name) && definedInTemplate(tp2->templateParam->first->name)))
+                    if (tp2->type == BasicType::templateparam_ && tp2->templateParam->second->packed)
                     {
-                        if (tp2->templateParam && tp2->templateParam->second->packed)
+                        if (!definingTemplate ||
+                            (!funcptr && tp2->type == BasicType::templateparam_ && tp2->templateParam->first &&
+                                !inCurrentTemplate(tp2->templateParam->first->name) && definedInTemplate(tp2->templateParam->first->name)))
                         {
-                            Type* newtp1 = Allocate<Type>();
-                            std::list<TEMPLATEPARAMPAIR>* templateParams = tp2->templateParam->second->byPack.pack;
-                            auto tpp = Allocate<TEMPLATEPARAMPAIR>();
-                            TEMPLATEPARAM* tpnew = Allocate<TEMPLATEPARAM>();
-                            std::list<TEMPLATEPARAMPAIR>* newPack = templateParamPairListFactory.CreateList();
-                            bool first = true;
-                            *tpnew = *tp2->templateParam->second;
-                            *tpp = TEMPLATEPARAMPAIR{tp2->templateParam->first, tpnew};
-                            *newtp1 = *tp2;
-                            newtp1->templateParam = tpp;
-                            tp1 = newtp1;
-                            tp1->templateParam->second->byPack.pack = newPack;
-                            tp1->templateParam->second->index = 0;
-                            if (templateParams)
+                            if (tp2->templateParam && tp2->templateParam->second->packed)
                             {
-                                for (auto&& tpp : *templateParams)
+                                bool forwarding = false;
+                                if (tp1->BaseType()->type == BasicType::rref_)
+                                {
+                                    auto tp3 = tp1;
+                                    tp3 = tp3->BaseType()->btp;
+                                    // unadorned rref means we are forwading
+                                    forwarding = !tp3->IsConst() && !tp3->IsVolatile() && tp3->BaseType()->type == BasicType::templateparam_;
+                                }
+                                Type* newtp1 = Allocate<Type>();
+                                std::list<TEMPLATEPARAMPAIR>* templateParams = tp2->templateParam->second->byPack.pack;
+                                auto tpp = Allocate<TEMPLATEPARAMPAIR>();
+                                TEMPLATEPARAM* tpnew = Allocate<TEMPLATEPARAM>();
+                                std::list<TEMPLATEPARAMPAIR>* newPack = templateParamPairListFactory.CreateList();
+                                bool first = true;
+                                *tpnew = *tp2->templateParam->second;
+                                *tpp = TEMPLATEPARAMPAIR{ tp2->templateParam->first, tpnew };
+                                *newtp1 = *tp2;
+                                newtp1->templateParam = tpp;
+                                tp1 = newtp1;
+                                tp1->templateParam->second->byPack.pack = newPack;
+                                tp1->templateParam->second->index = 0;
+                                if (templateParams)
+                                {
+                                    for (auto&& tpp : *templateParams)
+                                    {
+                                        SYMBOL* clone = CopySymbol(spi);
+
+                                        if (forwarding)
+                                        {
+                                            clone->tp = GetForwardType(nullptr, tpp.second->byClass.val, nullptr)->CopyType(true);
+                                        }
+                                        else
+                                        {
+                                            clone->tp = clone->tp->CopyType(true, [&tpp](Type*& old, Type*& newx) {
+                                                if (old->type == BasicType::templateparam_)
+                                                {
+                                                    old = tpp.second->byClass.val;
+                                                    *newx = *old;
+                                                }
+                                                });
+                                        }
+                                        CollapseReferences(clone->tp);
+                                        SetLinkerNames(clone, Linkage::none_);
+                                        sizeQualifiers(clone->tp);
+                                        if (!first)
+                                        {
+                                            clone->name = clone->sb->decoratedName = AnonymousName();
+                                            clone->packed = false;
+                                        }
+                                        else
+                                        {
+                                            clone->synthesized = true;
+                                            clone->tp->templateParam = tp1->templateParam;
+                                        }
+                                        auto second = Allocate<TEMPLATEPARAM>();
+                                        *second = *tpp.second;
+                                        second->packsym = clone;
+                                        newPack->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+                                        tp->syms->Add(clone);
+                                        first = false;
+                                        tp1->templateParam->second->index++;
+                                        clone->tp->UpdateRootTypes();
+                                    }
+                                }
+                                else
                                 {
                                     SYMBOL* clone = CopySymbol(spi);
-
-                                    clone->tp = clone->tp->CopyType(true, [&tpp](Type*& old, Type*& newx) {
-                                        if (old->type == BasicType::templateparam_)
-                                        {
-                                            old = tpp.second->byClass.val;
-                                            *newx = *old;
-                                        }
-                                    });
-                                    CollapseReferences(clone->tp);
+                                    clone->tp = clone->tp->CopyType();
+                                    clone->tp->templateParam = tp1->templateParam;
                                     SetLinkerNames(clone, Linkage::none_);
+                                    clone->tp->UpdateRootTypes();
                                     sizeQualifiers(clone->tp);
-                                    if (!first)
-                                    {
-                                        clone->name = clone->sb->decoratedName = AnonymousName();
-                                        clone->packed = false;
-                                    }
-                                    else
-                                    {
-                                        clone->synthesized = true;
-                                        clone->tp->templateParam = tp1->templateParam;
-                                    }
-                                    auto second = Allocate<TEMPLATEPARAM>();
-                                    *second = *tpp.second;
-                                    second->packsym = clone;
-                                    newPack->push_back(TEMPLATEPARAMPAIR{nullptr, second});
                                     tp->syms->Add(clone);
-                                    first = false;
-                                    tp1->templateParam->second->index++;
                                     clone->tp->UpdateRootTypes();
                                 }
+                                clonedParams = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        LexList* current = lex;
+                        PushPackIndex();
+                        int n = GetPackCount();
+                        bool first = true;
+                        inTemplateArgs++;
+                        for (int i = 0; i < n; i++)
+                        {
+                            SetPackIndex(i);
+                            lex = SetAlternateLex(start);
+                            noTypeNameError++;
+                            tp1 = nullptr;
+                            lex = getStorageAndType(lex, funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
+                                &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
+                                AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
+                            noTypeNameError--;
+                            
+                            SYMBOL* spi1 = nullptr;;
+                            tp1 = TypeGenerator::BeforeName(lex, funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
+                                &linkage3, nullptr, false, false, false, false);
+                            SetAlternateLex(nullptr);
+
+                            SYMBOL* clone = CopySymbol(spi);
+                            clone->tp = tp1; 
+                            CollapseReferences(clone->tp);
+                            SetLinkerNames(clone, Linkage::none_);
+                            sizeQualifiers(clone->tp);
+                            if (!first)
+                            {
+                                clone->name = clone->sb->decoratedName = AnonymousName();
+                                clone->packed = false;
                             }
                             else
                             {
-                                SYMBOL* clone = CopySymbol(spi);
-                                clone->tp = clone->tp->CopyType();
-                                clone->tp->templateParam = tp1->templateParam;
-                                SetLinkerNames(clone, Linkage::none_);
-                                clone->tp->UpdateRootTypes();
-                                sizeQualifiers(clone->tp);
-                                tp->syms->Add(clone);
-                                clone->tp->UpdateRootTypes();
+                                clone->synthesized = true;
+//                                clone->tp->templateParam = tp1->templateParam;
                             }
-                            clonedParams = true;
+                            tp->syms->Add(clone);
+                            first = false;
+                            clone->tp->UpdateRootTypes();
                         }
+                        lex = current;
+                        inTemplateArgs--;
+                        PopPackIndex();
+                        clonedParams = true;
                     }
                     ClearPackedSequence();
                 }
@@ -4026,7 +4116,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
     }
     else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
     {
-        RequiresDialect::Removed(Dialect::c2x, "K&R prototypes");
+        RequiresDialect::Removed(Dialect::c23, "K&R prototypes");
         SYMBOL* spo = nullptr;
         sp->sb->oldstyle = true;
         if (sp->sb->storage_class != StorageClass::member_ && sp->sb->storage_class != StorageClass::mutable_)
@@ -4197,7 +4287,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
         }
         skip(&lex, Keyword::closepa_);
     }
-    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c2x ||
+    else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23 ||
              ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
               !MATCHKW(lex, Keyword::closepa_) && *spin))
     {

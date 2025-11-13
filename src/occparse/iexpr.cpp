@@ -136,6 +136,7 @@ void DumpIncDec(SYMBOL* funcsp)
 }
 Optimizer::IMODE* LookupExpression(Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right)
 {
+    static Optimizer::QUAD name_value_dag;
     if (right && right->mode == Optimizer::i_immed && right->size != left->size)
     {
         // if it is an address mode with a right constant we do this so that we can
@@ -159,10 +160,12 @@ Optimizer::IMODE* LookupExpression(Optimizer::i_ops op, int size, Optimizer::IMO
         }
     }
     Optimizer::IMODE* ap = nullptr;
-    Optimizer::QUAD head = {op, left, right};
+    name_value_dag.dc.opcode = op;
+    name_value_dag.dc.left = left;
+    name_value_dag.dc.right = right;
     if (!left->bits && (!right || !right->bits))
     {
-        auto it = name_value_hash.find(&head);
+        auto it = name_value_hash.find(&name_value_dag);
         if (it != name_value_hash.end())
             ap = it->second;
     }
@@ -892,7 +895,10 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         {
                             return gen_expr(funcsp, exp->left->left, 0, ISZ_ADDR);
                         }
-                        return gen_expr(funcsp, inlineSymStructPtr.back(), 0, ISZ_ADDR);
+                        if (exp->type != ExpressionNode::l_p_ || exp->left->type != ExpressionNode::auto_ || exp->left->v.sp != node->left->v.sp)
+                        {
+                            return gen_expr(funcsp, inlineSymStructPtr.back(), 0, ISZ_ADDR);
+                        }
                     }
                 }
                 sym = Optimizer::SymbolManager::Get(node->left->v.sp);
@@ -2052,12 +2058,18 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, Type* argtp, 
         EXPRESSION* ep1 = exp;
         if (exp->type == ExpressionNode::callsite_)
         {
-
-            exp = ep1->v.func->returnEXP;
-            if (!exp)
-                exp = ep1->v.func->thisptr;
-            if (exp)
-                exp = getAddress(exp);
+            if (ep->right && ep->right->type == ExpressionNode::auto_)
+            {
+                exp = ep->right;
+            }
+            else
+            {
+                exp = ep1->v.func->returnEXP;
+                if (!exp)
+                    exp = ep1->v.func->thisptr;
+                if (exp)
+                    exp = getAddress(exp);
+            }
         }
         else if (ep->type == ExpressionNode::auto_)
         {
@@ -2474,7 +2486,7 @@ static int MarkFastcall(SYMBOL* sym, Type* functp, bool thisptr)
         return 0;
 #endif
 
-    if (!Optimizer::functionHasAssembly)
+    if (!Optimizer::dontOptimizeFunction)
     {
         /* if there is a setjmp in the function, no variable gets moved into a reg */
         if (!(Optimizer::setjmp_used))

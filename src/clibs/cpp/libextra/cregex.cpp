@@ -134,7 +134,6 @@ extern "C" int _RTL_FUNC regexec(regex_t* re, const char* str, size_t nmatch, re
         {
             std::cmatch cm;
             bool matched = std::regex_match(str, cm, *static_cast<std::regex*>(inner), rflags);
-            printf("hi");
             if (matched)
             {
                 re->re_nsub = cm.size() - 1;
@@ -148,7 +147,6 @@ extern "C" int _RTL_FUNC regexec(regex_t* re, const char* str, size_t nmatch, re
         }
         catch (std::regex_error& e)
         {
-            printf("bye");
             return errmap(e);
         }
     }

@@ -117,6 +117,7 @@ typedef struct
     bool prm_makelib;            /* make library */
     int prm_stackprotect;        /* stack protection mode */
     int prm_netcore_version;     /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
+    bool prm_exportAll;              /* export all symbols */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */

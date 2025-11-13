@@ -68,6 +68,7 @@ class LinkerMain
     static CmdSwitchCombineString PrintFileName;
     static CmdSwitchCombineString DelayLoadDll;
     static CmdSwitchCombineString DelayLoadFlags;
+    static CmdSwitchBool ExportAllSymbols;
     static SwitchConfig TargetConfig;
     static const char* usageText;
     static const char* helpText;

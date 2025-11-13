@@ -11,6 +11,7 @@
 #include <array>
 #include <functional>
 #include <strstream>
+#include <algorithm>
 #include <cstdio>
 #include <algorithm>
 #include "ppExpr.h"
@@ -85,7 +86,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         return {builder, EmbedReturnValue::EMBED_NOT_FOUND};
     }
     size_t size = Utils::file_size(fil);
-    ppExpr evaluator(false, Dialect::c2x);
+    ppExpr evaluator(false, Dialect::c23);
     // I would love if the above evaluator could run on tokens
     if (info.mapped_values.find("limit") != info.mapped_values.end())
     {

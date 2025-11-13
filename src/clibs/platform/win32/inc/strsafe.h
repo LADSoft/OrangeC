@@ -49,8 +49,8 @@ typedef unsigned long DWORD;
 #endif /* STRSAFE_MAX_CCH */
 
 #if __STDC_VERSION__ >= 201101L
-_Static_assert(STRSAFE_MAX_CCH <= 2147483647, L"STRSAFE_MAX_CCH is too big !!");
-_Static_assert(STRSAFE_MAX_CCH > 1, L"STRSAFE_MAX_CCH is too small !!");
+_Static_assert(STRSAFE_MAX_CCH <= 2147483647, "STRSAFE_MAX_CCH is too big !!");
+_Static_assert(STRSAFE_MAX_CCH > 1, "STRSAFE_MAX_CCH is too small !!");
 #endif
 
 #define STRSAFE_MAX_LENGTH  (STRSAFE_MAX_CCH - 1)

@@ -32,10 +32,10 @@ extern SymbolTable<SYMBOL>* labelSyms;
 
 void namespaceinit();
 void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
-SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
-std::list<SYMBOL*> tablesearchinline(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing = false);
+void  tablesearchinline(std::list<SYMBOL*>&gather, const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing = false);
 SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bool qualified, bool tagsOnly);
 void searchNS(SYMBOL* sym, SYMBOL* nssp, std::list<SYMBOL*>& gather);
+SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
 SYMBOL* gsearch(const char* name);
 SYMBOL* tsearch(const char* name);
 LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked);

@@ -166,7 +166,7 @@ int init_backend()
         stdchar8_tptr.rootType = &stdchar8_tptr;
         stdchar16tptr.rootType = &stdchar16tptr;
         stdchar32tptr.rootType = &stdchar32tptr;
-        if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+        if (Optimizer::cparams.c_dialect >= Dialect::c23)
             stdchar8_t.type = BasicType::char8_t_;
     }
     return rv;

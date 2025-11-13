@@ -8,7 +8,7 @@
 class TokenizerSettings
 {
   public:
-    TokenizerSettings() : dialect(Dialect::c2x), disableExtensions(false) {}
+    TokenizerSettings() : dialect(Dialect::c23), disableExtensions(false) {}
     using symbol_check_function = bool(const char*, bool);
 
   private:

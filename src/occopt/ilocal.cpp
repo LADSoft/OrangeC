@@ -1,4 +1,5 @@
 /* Software License Agreement
+/* Software License Agreement
  *
  *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
  *
@@ -46,6 +47,8 @@ namespace Optimizer
 {
 BriggsSet* killed;
 int tempBottom, nextTemp;
+
+IMODE* InitTempOpt(int size1, int size2);
 
 static void CalculateFastcall(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& functionVariables)
 {
@@ -135,7 +138,7 @@ static IMODE* localVar(SimpleType* tp)
     ap->size = exp->sizeFromType;
     return ap;
 }
-static void renameOneSym(SimpleSymbol* sym, int structret)
+static void RenameOneSym(SimpleSymbol* sym, int structret)
 {
     SimpleType* tp;
     /* needed for pointer aliasing */
@@ -268,12 +271,12 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         }
     }
 }
-static void renameToTemps(std::vector<SimpleSymbol*>& functionVariables)
+static void RenameToTemps(std::vector<SimpleSymbol*>& functionVariables)
 {
     LIST* lst;
     bool doRename = true;
     CalculateFastcall(currentFunction, functionVariables);
-    doRename &= !functionHasAssembly;
+    doRename &= !dontOptimizeFunction;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);
     doRename &= !(currentFunction->anyTry);
@@ -281,15 +284,42 @@ static void renameToTemps(std::vector<SimpleSymbol*>& functionVariables)
     for (auto sym : functionVariables)
     {
         if (doRename)
-            renameOneSym(sym, structret);
+            RenameOneSym(sym, structret);
     }
 
     for (auto sym : temporarySymbols)
     {
         if (!sym->anonymous && doRename)
         {
-            renameOneSym(sym, structret);
+            RenameOneSym(sym, structret);
         }
+    }
+}
+
+static void CreateAssemblyTemps()
+{
+    bool changed = false;
+    nextTemp = tempCount;
+    QUAD* head = intermed_head;
+    while (head)
+    {
+        if (head->dc.opcode == i_passthrough)
+        {
+            head->assemblyTempRegStart = tempCount;
+            for (int i = 0; i < head->assemblyRegCount; i++)
+            {
+                changed = true;
+                auto temp = InitTempOpt(ISZ_UINT, 0);
+                int n = temp->offset->sp->i;
+                tempInfo[n]->inUse = true;
+                tempInfo[n]->size = ISZ_UINT;
+            }
+        }
+        head = head->fwd;
+    }
+    if (changed)
+    {
+        nextTemp = tempBottom = tempCount;
     }
 }
 
@@ -527,8 +557,9 @@ void usesInfo(void)
 }
 void gatherLocalInfo(std::vector<SimpleSymbol*>& functionVariables)
 {
-    renameToTemps(functionVariables);
+    RenameToTemps(functionVariables);
     InitTempInfo();
+    CreateAssemblyTemps();
     definesInfo();
 }
 }  // namespace Optimizer

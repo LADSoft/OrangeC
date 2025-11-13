@@ -379,6 +379,7 @@ void insertDynamicInitializer(SYMBOL* sym, std::list<Initializer*>* init, bool f
             else
                 dynamicInitializers.push_back(DynamicInitializer{sym, init});
         }
+
     }
 }
 static void insertTLSInitializer(SYMBOL* sym, std::list<Initializer*>* init)
@@ -2182,7 +2183,7 @@ static LexList* initialize_reference_type(LexList* lex, SYMBOL* funcsp, int offs
         itype->UpdateRootTypes();
         sym->tp->UpdateRootTypes();
         CheckThroughConstObject(itype, exp);
-        if (!tp->IsRef() &&
+        if (!itype->IsRef() &&
             ((tp->IsConst() && !itype->BaseType()->btp->IsConst()) || (tp->IsVolatile() && !itype->BaseType()->btp->IsVolatile())))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
         else if (itype->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
@@ -3184,7 +3185,77 @@ auto InitializeSimpleAggregate(LexList*& lex, Type* itype, bool needend, int off
     set_array_sizes(cache);
     sort_aggregate_initializers(data);
 
+    if (deduceTemplate)
+    {
+        EXPRESSION* throwaway = nullptr;
+        CallSite funcparams = { 0 };
+        funcparams.arguments = argumentListFactory.CreateList();
+        for (auto d : *data)
+        {
+            auto arg = Allocate<Argument>();
+            arg->exp = d->exp;
+            arg->tp = d->realtp;
+            funcparams.arguments->push_back(arg);
+        }
+        CTADLookup(funcsp, &throwaway, &itype, &funcparams, 0);
+        base->tp = itype;
+        int offset = 0;
+        for (auto d : *data)
+        {
+            d->offset = offset;
+            if (d->basetp->type == BasicType::templateparam_)
+            {
+                if (d->realtp->IsArray())
+                {
+                    auto tp1 = d->realtp->CopyType();
+                    tp1->size = getSize(BasicType::pointer_);
+                    tp1->array = false;
+                    d->basetp = tp1;
+                }
+                else
+                {
+                    d->basetp = d->realtp;
+                }
+            }
+            offset += d->basetp->size;
+        }
+        auto sc = base->sb->storage_class;
+        if (sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+            sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline)
+        {
+            EXPRESSION* exp = MakeExpression(ExpressionNode::global_, base);
+            std::list<Initializer*>* first = nullptr;
+            CallDestructor(itype->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
+            InsertInitializer(&first, itype, exp, 0, true);
+            insertDynamicDestructor(base, first);
+        }
+        else if (dest)
+        {
+            EXPRESSION* exp = MakeExpression(ExpressionNode::auto_, base);
+            CallDestructor(itype->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
+            InsertInitializer(dest, itype, exp, 0, true);
+        }
+    }
     return data;
+}
+static void InsertStructureData(std::list<Initializer*>** init, Type* tp, EXPRESSION* exp, int baseOffset)
+{
+    for (auto s : *tp->BaseType()->syms)
+    {
+        if (ismemberdata(s))
+        {
+            if (s->tp->IsStructured())
+            {
+                InsertStructureData(init, s->tp, exp, s->sb->offset + baseOffset);
+            }
+            else
+            {
+                auto xx = MakeExpression(ExpressionNode::add_, exp, MakeIntExpression(ExpressionNode::c_i_, s->sb->offset));
+                Dereference(s->tp, &xx);
+                InsertInitializer(init, s->tp, xx, s->sb->offset + baseOffset, false);
+            }
+        }
+    }
 }
 static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* base, int offset, StorageClass sc, Type* itype,
                                           std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember,
@@ -3439,6 +3510,12 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                         for (auto a : *funcparams->arguments)
                             a->initializer_list = true;
                 }
+                else
+                {
+                    for (auto a : *funcparams->arguments)
+                        if (a->nested)
+                            a->initializer_list = true;
+                }
                 if (deduceTemplate)
                 {
                     CTADLookup(funcsp, &exp, &itype, funcparams, 0);
@@ -3585,8 +3662,14 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
             else
             {
                 std::list<Initializer*>* it = nullptr;
-                switch (exp->type)
+                if (tp->IsStructured())
                 {
+                    InsertStructureData(&it, tp, exp, 0);
+                }
+                else
+                {
+                    switch (exp->type)
+                    {
                     case ExpressionNode::global_:
                     case ExpressionNode::auto_:
                     case ExpressionNode::threadlocal_:
@@ -3609,6 +3692,7 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                     default: {
                         InsertInitializer(&it, itype, exp, offset, false);
                         break;
+                    }
                     }
                 }
                 if (it)
@@ -3739,10 +3823,50 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
             }
             else
             {
-                lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, 0);
+                if (flags & _F_PACKABLE)
+                {
+                    EnterPackedSequence();
+                }
+                LexList* start = lex;
+                lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
                 tp1->InstantiateDeferred();
                 if (!tp1)
                     error(ERR_EXPRESSION_SYNTAX);
+                else if (itype->IsArray() && (flags & _F_PACKABLE) && IsPacking() && MATCHKW(lex, Keyword::ellipse_))
+                {
+                    Type* baseType = itype->BaseType()->btp;
+                    PushPackIndex();
+                    int n = GetPackCount();
+                    bool first = true;
+                    std::list<Initializer*>* it = nullptr;
+                    for (int i = 0; i < n; i++)
+                    {
+                        SetPackIndex(i);
+                        lex = SetAlternateLex(start);
+                        lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
+                        if (!baseType->CompatibleType(tp1) && !SameTemplate(baseType, tp1))
+                            errorConversionOrCast(true, tp1, baseType);
+                        if (exp1)
+                        {
+                            InsertInitializer(&it, itype, exp1, offset, false);
+                            offset += baseType->size;
+                        }
+                    }
+                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                        !base->sb->attribs.inheritable.isInline)
+                    {
+                        insertDynamicInitializer(base, it);
+                    }
+                    else
+                    {
+                        *init = it;
+                    }
+                    // should be a ... here...
+                    lex = getsym();
+                    PopPackIndex();
+                    ClearPackedSequence();
+                }
                 else if (!itype->CompatibleType(tp1) && !SameTemplate(itype, tp1))
                 {
                     bool toErr = true;
@@ -3792,6 +3916,10 @@ static LexList* initialize_aggregate_type(LexList* lex, SYMBOL* funcsp, SYMBOL* 
                     {
                         errorConversionOrCast(true, tp1, itype);
                     }
+                }
+                if (flags & _F_PACKABLE)
+                {
+                    LeavePackedSequence();
                 }
                 if (exp1)
                 {
@@ -4100,6 +4228,7 @@ LexList* initType(LexList* lex, SYMBOL* funcsp, int offset, StorageClass sc, std
 {
     Type* tp;
     tp = itype->BaseType();
+    tp = tp->InitializeDeferred();
     if (tp->type == BasicType::templateselector_)
     {
         SYMBOL* ts = (*tp->sp->sb->templateSelector)[1].sp;
@@ -4674,7 +4803,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                         }
                     }
                     if (!found)
-                        InsertInitializer(&sym->sb->init, nullptr, nullptr, t->IsAutoType() ? sym->tp->size : t->size, false);
+                        InsertInitializer(&sym->sb->init, nullptr, nullptr, t->IsAutoType() || deduceTemplate ? sym->tp->size : t->size, false);
                 }
             }
         }
@@ -4690,6 +4819,10 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
             t = sym->tp;
         if (t->IsStructured())
         {
+            if (deduceTemplate)
+            {
+                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
+            }
             if (!tp->BaseType()->sp->sb->trivialCons)
             {
                 // default constructor without (), or array of structures without an initialization list
@@ -4735,6 +4868,13 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
                     if (!found)
                         InsertInitializer(&sym->sb->init, nullptr, nullptr, t->size, false);
                 }
+            }
+        }
+        else if (sym->tp->BaseType()->type == BasicType::templatedeferredtype_)
+        {
+            if (deduceTemplate)
+            {
+                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
             }
         }
         else if (sym->tp->IsArray())
@@ -4884,7 +5024,7 @@ LexList* initialize(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass stor
     }
     if (sym->sb->constexpression && !definingTemplate)
     {
-        if (!tp->IsPtr() && !tp->IsArithmetic() && tp->BaseType()->type != BasicType::enum_ &&
+        if (!tp->IsRef() && !tp->IsPtr() && !tp->IsArithmetic() && tp->BaseType()->type != BasicType::enum_ &&
             (!tp->IsStructured() /*|| !tp->BaseType()->sp->sb->trivialCons*/))
         {
             error(ERR_CONSTEXPR_SIMPLE_TYPE);

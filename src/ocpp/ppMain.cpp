@@ -51,7 +51,7 @@ CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
 CmdSwitchBool ppMain::c11Mode(SwitchParser, '1', false);
-CmdSwitchBool ppMain::c2xMode(SwitchParser, '2', false);
+CmdSwitchBool ppMain::c23Mode(SwitchParser, '2', false);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
@@ -167,7 +167,7 @@ int ppMain::Run(int argc, char* argv[])
         ToolChain::Usage(usageText);
 
     Tokenizer::SetAnsi(disableExtensions.GetValue());
-    Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue() || c2xMode.GetValue());
+    Tokenizer::SetC99(c99Mode.GetValue() || c11Mode.GetValue() || c23Mode.GetValue());
     for (int i = 1; i < files.size(); i++)
     {
         bool cplusplus = false;
@@ -181,8 +181,8 @@ int ppMain::Run(int argc, char* argv[])
             }
         }
         Dialect dialect;
-        if (c2xMode.GetValue())
-            dialect = Dialect::c2x;
+        if (c23Mode.GetValue())
+            dialect = Dialect::c23;
         else if (c11Mode.GetValue())
             dialect = Dialect::c11;
         else if (c99Mode.GetValue())
@@ -192,7 +192,7 @@ int ppMain::Run(int argc, char* argv[])
         PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(),
                         false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect, !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
-        if (c2xMode.GetValue())
+        if (c23Mode.GetValue())
         {
             std::string ver = "202311L";
             pp.Define("__STDC_VERSION__", std::move(ver), true);

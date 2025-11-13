@@ -94,7 +94,7 @@ int nextLabel;
 bool assembling;
 int fastcallAlias;
 bool setjmp_used;
-bool functionHasAssembly;
+bool dontOptimizeFunction;
 std::string compilerName;
 std::string intermediateName;
 std::string backendName;
@@ -164,7 +164,7 @@ void AddFunction()
         data->loadHash = loadHash;
         data->instructionList = intermed_head;
         data->setjmp_used = setjmp_used;
-        data->hasAssembly = functionHasAssembly;
+        data->dontOptimize = dontOptimizeFunction;
         data->exitBlock = exitBlock;
         data->tempCount = tempCount;
         data->blockCount = blockCount;

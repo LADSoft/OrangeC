@@ -22,15 +22,11 @@
  *  
  */
 
-#include <stdlib.h>
-#include <string.h>
+#pragma GCC system_header
 
-wchar_t* wcsnset(wchar_t* p, wchar_t n, size_t len)
-{
-    int l = wcslen(p);
-    if (l > len)
-        l = len;
-    wmemset(p, n, l);
-    return p;
-}
-wchar_t* _wcsnset(wchar_t* p, wchar_t n, size_t len) { return wcsnset(p, n, len); }
+#ifndef __DIRENT_H
+#define __DIRENT_H
+
+#define PATH_MAX 260
+
+#endif

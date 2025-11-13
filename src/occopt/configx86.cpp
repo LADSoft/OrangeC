@@ -52,7 +52,7 @@ R"help([options] [@response file] files
  
 This program is the Orange C compiler for x86   
 
-/1        - C1x mode                  /2        - c2x mode
+/1        - C11 mode                  /2        - c23 mode
 /8        - c89 mode                  /9        - C99 mode
 /#        - compile then assemble then link
 /axxx     - set assembler extension   /c        - compile only
@@ -125,7 +125,8 @@ Optimization control: OPTIMIZATION_DESCRIPTION Flags: OPTMODULES_DESCRIPTION
     -nostdinc, nostdinc++           disable system include file path
     --output-def filename           output a .def file instead of a .lib file for DLLs
     --out-implib filename           specify the name of the import library for DLLs
-    --export-all-symbols            reserved
+    --export-all-symbols            export all global symbols
+    --enable-auto-import            reserved
     -link                           reserved
     -dll or -shared                 compile as DLL (same as /Wd)
     -static                         build a static library

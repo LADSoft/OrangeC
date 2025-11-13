@@ -395,7 +395,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                         set.insert(temp);
                         if (!rv.empty())
                             rv += " ";
-                        rv += Maker::GetFullName(temp);
+                        rv += Maker::GetFullName(std::move(temp));
                     }
                 }
             }

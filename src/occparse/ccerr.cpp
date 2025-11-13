@@ -9,7 +9,7 @@
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
- *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     The Orange C Compiler package is distributed in the hope that it will be "useful",
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
@@ -537,7 +537,7 @@ int printerr(int err, const char* file, int line, ...)
 bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
 {
     static std::unordered_map<Dialect, const char*, EnumClassHash> lookup = {
-        {Dialect::c89, "C89"},     {Dialect::c99, "C99"},     {Dialect::c11, "C11"},    {Dialect::c2x, "C23"},
+        {Dialect::c89, "C89"},     {Dialect::c99, "C99"},     {Dialect::c11, "C11"},    {Dialect::c23, "C23"},
         {Dialect::cpp11, "C++11"}, {Dialect::cpp14, "C++14"}, {Dialect::cpp17, "C++17"}};
     if (cpp >= Dialect::c89 && cpp < Dialect::cpp11)
     {
@@ -2154,14 +2154,22 @@ void CheckThroughConstObject(Type* tp, EXPRESSION* exp)
         (tp && tp->IsRef() && !tp->BaseType()->btp->IsConst() && !IsLValue(exp) && tp->type != BasicType::derivedfromtemplate_))
     {
         auto offset = 0;
+        bool lastLval = false, structLval = false;
         // takes advantage of the fact that the this ptr will always be the last leftmost node if it is there at all...
         while (exp && exp->type != ExpressionNode::auto_)
         {
+            if (IsLValue(exp))
+                lastLval = true;
             if (exp->type == ExpressionNode::structadd_)
+            {
                 offset = exp->right->v.i;
+                // structlval tells whether the access is a direct member or through a pointer....
+                structLval = lastLval;
+                lastLval = false;
+            }
             exp = exp->left;
         }
-        if (exp && exp->v.sp->sb->thisPtr && exp->v.sp->tp->BaseType()->btp->IsConst())
+        if (!structLval && exp && exp->v.sp->sb->thisPtr && exp->v.sp->tp->BaseType()->btp->IsConst())
         {
             // this next is necessary to catch alterations to mutable objects
             // normally it will only be a bother if we do try to modify a mutable object

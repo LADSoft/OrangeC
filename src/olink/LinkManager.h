@@ -110,7 +110,7 @@ class LinkManager
 
   public:
     LinkManager(ObjString Specification, bool CaseSensitive, ObjString OutputFile = "", bool CompleteLink = false,
-                bool DebugPassThrough = false, ObjString DebugFile = "");
+                bool DebugPassThrough = false, ObjString DebugFile = "", bool ExportAllSymbols = false);
 
     ~LinkManager();
 
@@ -182,7 +182,7 @@ class LinkManager
     void LoadExterns(ObjFile* file, ObjExpression* exp);
     void LoadSectionExternals(ObjFile* file, ObjSection* section);
     void MarkExternals(ObjFile* file);
-    void MergePublics(ObjFile* file, bool toerr);
+    void MergePublics(ObjFile* file, bool fromLibrary, bool toerr);
     bool ScanVirtuals();
     void LoadFiles();
     std::unique_ptr<LinkLibrary> OpenLibrary(const ObjString& name);
@@ -227,6 +227,7 @@ class LinkManager
     bool caseSensitive;
     bool debugPassThrough;
     bool delayLoadLoaded = false;
+    bool exportAllSymbols;
     static int errors;
     static int warnings;
 };

@@ -176,7 +176,16 @@ void x86FastcallColor(QUAD* head)
 }
 void x86PreColor(QUAD* head) /* precolor an instruction */
 {
-    if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
+    if (head->dc.opcode == i_passthrough)
+    {
+        for (int i = 0; i < head->assemblyRegCount; i++)
+        {
+            int n = head->assemblyTempRegStart + i;
+            tempInfo[n]->precolored = true;
+            tempInfo[n]->color = head->assemblyRegs[i] == 255 ? head->assemblyRegs[i] : head->assemblyRegs[i] - 1;
+        }
+    }
+    else if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
     {
         if (head->temps & TEMP_ANS)
         {
@@ -945,19 +954,6 @@ int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int 
             case i_udiv:
             case i_smod:
             case i_umod:
-                /*
-                if (ins->ans->size <= ISZ_ULONG && ins->dc.right->mode == i_immed && isintconst(ins->dc.right->offset))
-                {
-                    t = InitTempOpt(ins->dc.right->size, ins->dc.right->size);
-                    newIns = Allocate<QUAD>();
-                    newIns->ans = t;
-                    newIns->dc.left = ins->dc.right;
-                    newIns->dc.opcode = i_assn;
-                    ins->dc.right = t;
-                    ins->temps |= TEMP_RIGHT;
-                    InsertInstruction(ins->back, newIns);
-                }
-                */
             case i_muluh:
             case i_mulsh:
                 t = InitTempOpt(ins->ans->size, ins->ans->size);
@@ -1179,7 +1175,7 @@ int x86_examine_icode(QUAD* head)
             /* must be last because it changes head */
             if (head->ans && head->ans->bits)
             {
-                if (head->dc.opcode != i_assn || (head->dc.left && head->dc.left->mode != i_immed) || !isintconst(head->dc.left->offset))
+                if (head->dc.opcode != i_assn || (head->dc.left && (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset))))
                 {
                     IMODE* temp;
                     QUAD* q;
@@ -2343,28 +2339,35 @@ void x86InternalConflict(QUAD* head)
 {
     switch (head->dc.opcode)
     {
+        case i_muluh:
+        case i_mulsh:
         case i_udiv:
         case i_sdiv:
         case i_umod:
         case i_smod:
-        case i_muluh:
-        case i_mulsh:
+            /* for divs we have to make sure the answer node conflicts with anything
+              * that was used to load the numerator...
+              */
+            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
+                head->dc.left->offset->type == se_tempref)
+            {
+                int t1 = head->ans->offset->sp->i;
+                IterateConflict(t1, head->dc.left->offset->sp->i);
+            }
+            /* make sure that when regs are allocated, the right- hand argument is in a different
+             * reg than the result.  For shifts this is the count value, for divs this is the denominator
+             */
+            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
+                head->dc.right->offset->type == se_tempref)
+            {
+                int t1 = head->ans->offset->sp->i;
+                int t2 = head->dc.right->offset->sp->i;
+                insertConflict(t1, t2);
+            }
+            break;
         case i_lsl:
         case i_lsr:
         case i_asr:
-            if (head->dc.opcode != i_lsl && head->dc.opcode != i_lsr && head->dc.opcode != i_asr)
-            {
-                /* for divs we have to make sure the answer node conflicts with anything
-                  * that was used to load the numerator...
-                  */
-                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
-                    head->dc.left->offset->type == se_tempref)
-                {
-                    int t1 = head->ans->offset->sp->i;
-                    IterateConflict(t1, head->dc.left->offset->sp->i);
-                }
-
-            }
             /* make sure that when regs are allocated, the right- hand argument is in a different
              * reg than the result.  For shifts this is the count value, for divs this is the denominator
              */

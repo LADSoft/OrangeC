@@ -1,5 +1,126 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
+## Version 7.0.0
+* project: make updates so that it would compile with g++15
+* project: full support for C++17
+* project: update libcxx to libcxx 17
+* project: finish supporting C23 (adds #embed to previous functionality)
+* project: remove DOS32 support
+* project: remove COFF2IEEE
+* project: fix the VS project to work more reliably
+* project: enable building with the C++17 version of the compiler
+* project: add git actions to build checkins with MSVC and GCC
+* project: occil supports .NET core
+* project: make adjustments so that compiling OCC with the 64-bit MSVC results in a working compiler
+* project: many source code improvements
+* occ: find bugs by compiling 3rd-party programs
+* occ: fix templated lambdas to not strip qualifiers and references when making the template variables
+* occ: fix problems with code generation for dfault copy constructors for unions
+* occ: fix problems where a default constructor dragged in via USING statement could generate infinite recursion
+* occ: fix minor problems with template argument deduction
+* occ: improve support for constexpr functions
+* occ: improve how template unpacking is done and the error generation for it
+* occ: improve command line documentation
+* occ: check the C++ standards conformance now
+* occ: fix problems where 'extern inline' did not result in a function body in C++ mode
+* occ: fix problems with auto-sizing of enumerations (0x80000000 did not fit in an unsigned long)
+* occ: fix bug in raw string processing: empty lines where handled correctly
+* occ: assignment of a pair to a tuple didn't work
+* occ: fix bug in the numeric constant evaluator, an expression that was order-dependent was free to be reordered
+* occ: have the lexer treat the token '0' as a signed integer
+* occ: sometimes the lexer would return the wrong integer type
+* occ: add '#pragma GCC system_header' functionality
+* occ: add new intrinsics to support libcxx 17
+* occ: fix bug when calculating the size for structures being returned from a function
+* occ: fix various crashes when compiling with other compilers and put asserts in so they can be detected when debugging
+* occ: give some variables better names, start refactoring things to be more C++ friendly
+* occ: fix some bugs with the debug info
+* occ: add alternate methods for declaring thread local storage
+* occ: when instantiating an array in an expression, return its address not its first element
+* occ: when instantiating a structure in an expression, handle bit fields appropriately
+* occ: an undefined union type was not expanded to its actual type
+* occ: forward reference of structures referenced indirectly through templates in typedefs did not always work
+* occ: names with dots could not have an extension added to them when automatically generating output file names
+* occ: defer template instantiation in some instances
+* occ: fix some visibility problems with protected and private
+* occ: move a bunch of functions into more sensible modules
+* occ: minor work to not crash on Linux
+* occ: *(0, (struct nn*)b) was not treated as an lvalue for assignment purposes
+* occ: fix some problems with transferring the intermediate code to the file, optimize the transfer
+* occ: fix global unions and also allow them at function scope
+* occ: fix some bugs with not calling CAST operators from classes often enough
+* occ: when a function argument is a function pointer, resolve it to the correct overload before doing type checking
+* occ: fix some problems with the discovery of what type 'auto' should resolve to
+* occ: ("asdf") is a valid string initializer
+* occ: raw string parsing was broken in various ways
+* occ: when evaluating a hook, resolve the C++ function pointers to the correct overloads
+* occ: improve diagnostics when an assembly language instruction cannot be assembled
+* occ: fix floating point truncate, it lost a bit
+* occ: fix various vagaries when using decltype
+* occ: fix some problems with overload resolution
+* occ: fix bug where lambda structures could have zero length
+* occ: fix captured 'this' in lambda expressions to work properly
+* occ: add type checking for exception specifier part of function types
+* occ: fix bug where duplicate structure member was not flagged
+* occ: bug fixes to integer template arguments
+* occ: optimize the lazy optimizer a bit 
+* occ: fix range-based for when the range is a bracketed list of initializers
+* occ  fix optimizers problems with strength reduction optimization
+* occ: fix various programs that crashed
+* occ: fix various programs that didn't compile
+* occ: code generation for bit test operations could wipe unrelated registers
+* occ: support export_all_symbols fully
+* occ: code generation for a div could assume EAX was preserved (it isn't)
+* occ: fix optimization of bit fields to work better
+* occ: fix compiler bug to value initialize when a constructor was specifically declared as default
+* occ: logical and math operations where the arguments are identical enums, resulted in a conversion to int.
+* occ: fix compiler bugs so that the c++17 filesystem library works
+* occ: can now partially optimize functions that have inline assembly (but they can't be inlined)
+* occ: fix name unmangling for templated cast operators to work better
+* occ: fix other bugs with name unmangling
+* occil: could generate virtual BSS data in MSIL code
+* occil: optimize locals better
+* occil: default code generation is CONSOLE apps
+* occil: compile latest SQLite with occil (as of September 2023)
+* ocpp: fix has_include and has_include_next to work reliably
+* ocpp: source code cleanup, change some #defines to typedefs
+* occ, ocpp:  make stub generation should go to stdout unless something else is specified
+* occ, ocpp:  add __FUNCTION__ to preprocessor
+* occ, ocpp:  add named varargs macro extension
+* olib: fix case sensitivy handling for symbols
+* olib: fix bugs with extract command
+* olib: support unitialized BSS virtual sections
+* olib: detect libraries that are not formatted correctly
+* olink: support uninitialized BSS virtual sections
+* olink: ignore common MSVC import libraries if specified on the command linefix 
+* onm: don't consider onm itself as an input file
+* omake: improve builds by not having potentially hundreds of omake instances waiting for something to do
+* omake: fix compiler bug that caused omake to crash randomly when compiled with occ
+* orc: was unable to specify an output file
+* dlpe: add symbols for missing publics (for virtual bss code generation)
+* gccocc: allow space between -o and the parameter
+* libocc: copy output file with an extension of .lib
+* oasm: .text and .data sections could switch to 16 bits when using section directives
+* oasm: fix gas 'jmp *%reg' instruction to work properly
+* rtl: add _TRUNCATE
+* rtl: add a few const qualifiers to wide string functions they were missing in
+* rtl: fix some problems with WIN32 headers not appearing in ZIP files...
+* rtl: add basic math functions to the C RTL, lgamma related
+* rtl: support 'filesystem' and 'variant' headers
+* rtl: fix name unmangling in lscrtl
+* rtl: a couple of math functions weren't available in lscrtl.dll
+* rtl: fix import library support for winsock
+* rtl: add ws2_32.dll to the import library support
+* rtl: use bottom-up allocation with the lea allocator and use MEM_RESERVE
+* rtl: typeino header needed a hash_code function
+* rtl: updates to winbase.h
+* rtl: add wide character functions for directory name parsing
+* rtl: fix compiler bugs to allow multimap.insert to compile
+* build: sqlite3.l would sometimes be confused for a lexer input file
+* build: don't put multiple msvc project files in same directory
+* build: fix make the docs configuration file
+* build: fix bugs that made appveyor build fail randomly
+
 ## Version 6.0.73
 * project: update sqlite3 to latest version
 * olink: fix bug with debug info for type information

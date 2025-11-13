@@ -188,7 +188,7 @@ static IMODE* renameTemp(Block* b, QUAD* head, IMODE* adr)
         }
         else if (adr->mode == i_ind)
         {
-            if (adr->bits)
+            if (0 && adr->bits)
             {
                 im = Allocate<IMODE>();
                 *im = *adr;
@@ -199,7 +199,7 @@ static IMODE* renameTemp(Block* b, QUAD* head, IMODE* adr)
                 IMODELIST* iml = t->enode->sp->imind;
                 while (iml)
                 {
-                    if (iml->im->size == adr->size)
+                    if (iml->im->size == adr->size && iml->im->bits == adr->bits && iml->im->startbit == adr->startbit)
                     {
                         im = iml->im;
                         break;
@@ -749,7 +749,7 @@ static void returnToNormal(IMODE** adr, bool all)
         {
             if ((*adr)->mode == i_ind)
             {
-                if ((*adr)->bits)
+                if (0 && (*adr)->bits)
                 {
                     im = Allocate<IMODE>();
                     *im = **adr;
@@ -760,7 +760,7 @@ static void returnToNormal(IMODE** adr, bool all)
                     IMODELIST* iml = t->enode->sp->imind;
                     while (iml)
                     {
-                        if (iml->im->size == (*adr)->size)
+                        if (iml->im->size == (*adr)->size && iml->im->bits == (*adr)->bits && iml->im->startbit == (*adr)->startbit)
                         {
                             im = iml->im;
                             break;

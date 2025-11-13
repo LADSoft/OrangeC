@@ -94,7 +94,7 @@ CmdSwitchParser SwitchParser;
 CmdSwitchBool prm_c89(SwitchParser, '8');
 CmdSwitchBool prm_c99(SwitchParser, '9');
 CmdSwitchBool prm_c11(SwitchParser, '1');
-CmdSwitchBool prm_c2x(SwitchParser, '2');
+CmdSwitchBool prm_c23(SwitchParser, '2');
 CmdSwitchBool prm_ansi(SwitchParser, 'A');
 CmdSwitchBool prm_errfile(SwitchParser, 'e');
 CmdSwitchBool prm_cppfile(SwitchParser, 'i');
@@ -159,6 +159,7 @@ CmdSwitchCombineString prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"})
 CmdSwitchBool prmPIC(SwitchParser, 0, 0, {"fPIC"});       // ignored for now
 CmdSwitchBool prmWall(SwitchParser, 0, 0, {"Wall"});      // ignored for now
 CmdSwitchBool prmWextra(SwitchParser, 0, 0, {"Wextra"});  // ignored for now
+CmdSwitchBool prmEnableAutoImport(SwitchParser, 0, 0, {"enable-auto-import"}); // ignored for now
 
 CmdSwitchBool MakeStubsOption(SwitchParser, 0, 0, {"M"});
 CmdSwitchBool MakeStubsUser(SwitchParser, 0, 0, {"MM"});
@@ -467,8 +468,8 @@ static void ParamTransfer(const char* name)
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
         ToolChain::Usage(getUsageText());
     // booleans
-    if (prm_c2x.GetValue())
-        Optimizer::cparams.c_dialect = Dialect::c2x;
+    if (prm_c23.GetValue())
+        Optimizer::cparams.c_dialect = Dialect::c23;
     else if (prm_c11.GetValue())
         Optimizer::cparams.c_dialect = Dialect::c11;
     else if (prm_c99.GetValue())
@@ -754,6 +755,7 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_stackprotect |= STACK_UNINIT_VARIABLE;
     if (RuntimeHeapCheck.GetValue())
         Optimizer::cparams.prm_stackprotect |= HEAP_CHECK;
+    Optimizer::cparams.prm_exportAll = prm_dllexportall.GetValue();
 #ifndef ORANGE_NO_MSIL
     if (Optimizer::architecture == ARCHITECTURE_MSIL && NetCoreSwitch.GetExists())
     {
@@ -800,6 +802,7 @@ void setglbdefs(void)
                 break;
             case Dialect::cpp17:
                 preProcessor->Define("__cplusplus", "201703");
+                preProcessor->Define("__cpp_deduction_guides","201611");
                 break;
         }
         if (Optimizer::cparams.prm_xcept)
@@ -853,9 +856,9 @@ void setglbdefs(void)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
     }
-    if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c2x)
+    if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c23)
     {
-        if (Optimizer::cparams.c_dialect >= Dialect::c2x)
+        if (Optimizer::cparams.c_dialect >= Dialect::c23)
         {
             preProcessor->Define("__STDC_VERSION__", "202311L");
             preProcessor->Define("__STDC_VERSION_STDBIT_H__", "202311");

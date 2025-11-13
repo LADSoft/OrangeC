@@ -48,8 +48,8 @@ CmdSwitchBool gccocc::prm_compileonly(SwitchParser, 'c');
 CmdSwitchString gccocc::prm_directory_options(SwitchParser, 'i');  // ignored
 CmdSwitchBool gccocc::prm_debug(SwitchParser, 'g');
 CmdSwitchBool gccocc::prm_verbose(SwitchParser, 'v');
-CmdSwitchString gccocc::prm_libs(SwitchParser, 'l', ';');
-CmdSwitchString gccocc::prm_output(SwitchParser, 'o');
+CmdSwitchCombineString gccocc::prm_libs(SwitchParser, 'l', ';');
+CmdSwitchCombineString gccocc::prm_output(SwitchParser, 'o');
 CmdSwitchBool gccocc::prm_cppmode(SwitchParser, 'E');
 CmdSwitchCombineString gccocc::prm_define(SwitchParser, 'D', DEFINE_SPLIT_CHAR);
 CmdSwitchCombineString gccocc::prm_libpath(SwitchParser, 'L', ';');

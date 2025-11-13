@@ -263,7 +263,7 @@ typedef struct
         imode_, x_p_, substack_, alloca_, cpblk_, initblk_, initobj_, sizeof_,
         loadstack_, savestack_, stmt_, atomic_, placeholder_, thisshim_, thisref_,
         construct_, templateparam_, templateselector_, packedempty_, sizeofellipse_,
-        type_, pointsto_, dot_, select_, constexprconstructor_, cppintrinsic_,
+        type_, pointsto_, dot_,pointstar_,dotstar_, select_, constexprconstructor_, cppintrinsic_,
         // stuff that can only appear temporarily in constexpr expressions
         cvarpointer_, paramsubstitute_
     };
@@ -392,6 +392,8 @@ typedef struct
 #define _F_NOVARIADICFOLD 0x200000
 #define _F_EXPRESSIONINPAREN 0x400000
 #define _F_MEMBERINITIALIZER 0x800000
+#define _F_IMPLICIT 0x1000000
+
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 
@@ -487,6 +489,7 @@ typedef struct expr
     int structByAddress : 1;
     int isStructAddress : 1;
     int packedArray : 1;
+    int packedfunc : 1;
 } EXPRESSION;
 
 typedef struct _msilarray
@@ -695,6 +698,7 @@ typedef struct sym
         unsigned castoperator : 1;            /* a cast operator */
         unsigned deleted : 1;                 /* function was deleted */
         unsigned defaulted : 1;               /* function was defaulted */
+        unsigned explicitDefault : 1;   /* function was explicitly defaulted by the program */
         unsigned defaultarg : 1;              /* function argument was defaulted */
         unsigned isfinal : 1;                 /* class or virtual function is final */
         unsigned isoverride : 1;              /* virtual function marked override */

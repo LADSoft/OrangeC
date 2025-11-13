@@ -689,6 +689,13 @@ bool eval_binary_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
     if (righttp->BaseType()->type != BasicType::memberptr_)
     {
         error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+        if (definingTemplate && !instantiatingTemplate && righttp->BaseType()->type == BasicType::templateparam_)
+        {
+            *resultexp = MakeExpression(kw == Keyword::pointstar_ ? ExpressionNode::pointstar_ : ExpressionNode::dotstar_,
+                *resultexp, rightexp);
+            *resulttp = Type::MakeType(BasicType::templatedecltype_);
+            (*resulttp)->templateDeclType = *resultexp;
+        }
     }
     else
     {
@@ -745,7 +752,7 @@ bool eval_binary_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
             }
             else
             {
-                if ((*resulttp)->sp->sb->vbaseEntries)
+                if ((*resulttp)->BaseType()->sp->sb->vbaseEntries)
                 {
                     EXPRESSION* ec = MakeExpression(ExpressionNode::add_, rightexp,
                                                     MakeIntExpression(ExpressionNode::c_i_, getSize(BasicType::int_)));

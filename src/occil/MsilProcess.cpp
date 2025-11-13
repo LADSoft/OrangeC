@@ -408,6 +408,8 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp)
     {
         CacheExtern(sp);
         it = externalMethods.find(sp);
+        if (it == externalMethods.end())
+            return nullptr;
         return static_cast<MethodName*>(it->second)->Signature();
     }
     else if (sp->storage_class == Optimizer::scc_static)
@@ -1909,7 +1911,7 @@ static void LoadDynamics()
                 static Optimizer::SimpleSymbol sp1;
                 sp1.name = (char*)sym->name;
                 std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
-                if (it != globalMethods.end())
+                if (it == globalMethods.end())
                     return;
                 MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
                 lst->data = (void*)peLib->AllocateMethodName(signature);

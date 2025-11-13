@@ -35,7 +35,9 @@ bool LibManager::LoadLibrary()
 {
     if (fseek(stream, 0, SEEK_END))
         return false;
-    size_t len = ftell(stream);
+    int len = ftell(stream);
+    if (len < 0)
+        return false;
     memset(&header, 0, sizeof(header));
     if (fseek(stream, 0, SEEK_SET))
         return false;
@@ -48,12 +50,12 @@ bool LibManager::LoadLibrary()
         return false;
     if (header.sig != LibHeader::LIB_SIG)
         return false;
-    if (header.namesOffset >= len || (header.namesOffset < 0) || fseek(stream, header.namesOffset, SEEK_SET))
+    if ((int)header.namesOffset >= len || (int)header.namesOffset < 0 || fseek(stream, header.namesOffset, SEEK_SET))
         return false;
     // this next is a random value to keep coverity happy...
-    if (header.filesInModule > 100000 || !files.ReadNames(stream, header.filesInModule))
+    if ((int)header.filesInModule > 100000 || (int)header.filesInModule < 0 || !files.ReadNames(stream, header.filesInModule))
         return false;
-    if (header.offsetsOffset >= len || fseek(stream, header.offsetsOffset, SEEK_SET))
+    if ((int)header.offsetsOffset >= len || (int)header.offsetsOffset < 0 || fseek(stream, header.offsetsOffset, SEEK_SET))
         return false;
     if (!files.ReadOffsets(stream, header.filesInModule))
         return false;

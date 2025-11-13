@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string.h>
 #include "BasicLogging.h"
+#include <functional>
 #ifdef TARGET_OS_WINDOWS
 #    include <process.h>
 #endif

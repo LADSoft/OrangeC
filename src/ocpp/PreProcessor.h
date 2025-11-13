@@ -73,7 +73,7 @@ class PreProcessor
     int GetMainLineNo() { return lineno; }
     void Define(const std::string name, std::string value, bool caseInsensitive = false)
     {
-        define.Define(name, value, nullptr, false, false, false, caseInsensitive);
+        define.Define(name, value, nullptr, "__VA_ARGS__" , false, false, false, caseInsensitive);
     }
     void Undefine(std::string name) { define.Undefine(name); }
     SymbolTable& GetDefines() { return define.GetDefines(); }

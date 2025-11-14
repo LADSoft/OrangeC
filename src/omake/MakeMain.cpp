@@ -278,7 +278,8 @@ void MakeMain::SetMakeFlags()
         {
             vals += "y";
         }
-        std::cout << "Verbosity intended: " << (int)verbose2.GetExists() + verbose2.GetValue().length() << std::endl;
+        OrangeC::Utils::BasicLogger::extremedebug("Verbosity intended: ",
+                                                  std::to_string(verbose2.GetExists() + verbose2.GetValue().length()));
     }
     if (jobs.GetExists())
     {

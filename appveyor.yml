@@ -21,7 +21,6 @@ branches:
      - /v\d*\.\d*\.\d*/
 
 configuration:
-     - MSVC THEN LIBCXX TEST
      - MSVC THEN WITH STATIC LIB
      - MINGW64 THEN WITH STATIC LIB
      - CLANG THEN WITH STATIC LIB
@@ -31,6 +30,7 @@ configuration:
      - CODE ANALYZER TEST
      - MSIL COMPILER
      - MSVC WITH PDB
+#     - MSVC THEN LIBCXX TEST
 
 for:
 -

@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include "BasicLogging.h"
 
 Parser::Parser(const std::string& string, const std::string& File, int Lineno, bool IncrementLineno, Variable::Origin oOrigin) :
     file(File),
@@ -99,9 +100,22 @@ std::string Parser::GetLine(bool inCommand)
     // concatenate lines
     if (!rv.empty())
     {
-        while (rv[rv.size() - 1] == '\\')
+        // We need to know if this is a file that is generally "\r\n", "\r", or "\n", TTY-type is windows, "\r" is mac, and "\n" is
+        // linux
+        size_t location = rv.rfind('\\');
+        if (location != rv.npos && (rv.size() - 3) < location)
         {
-            if (rv.size() > 1 && rv[rv.size() - 2] == '\\')
+            std::string val_plus_rv = "Value of rv that includes a backslash in the last 3 lines, starting next line:\n";
+            val_plus_rv += rv;
+            OrangeC::Utils::BasicLogger::log(((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG), val_plus_rv);
+        }
+        while ((rv[rv.size() - 1] == '\\' || (rv[rv.size() - 1] == '\r' && rv[rv.size() - 2] == '\\')))
+        // while (rv[rv.size() - 1] == '\\')
+        {
+
+            if (rv.size() > 1 && ((rv[rv.size() - 2] == '\\' && rv[rv.size() - 1] != '\r') ||
+                                  (rv.size() > 2 && rv[rv.size() - 1] == '\r' && rv[rv.size() - 3] == '\\')))
+            // if (rv.size() > 1 && rv[rv.size() - 2] == '\\')
             {
                 break;
             }
@@ -113,6 +127,9 @@ std::string Parser::GetLine(bool inCommand)
             rv.replace(rv.size() - 1, 1, " ");
             lineno++;
             std::string next = Eval::ExtractFirst(remaining, "\n");
+            OrangeC::Utils::BasicLogger::log(((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG) + 3,
+                                             "The value of next is: ", next);
+
             rv += next;
             if (next.empty())
                 break;

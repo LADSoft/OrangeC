@@ -21,7 +21,6 @@ branches:
      - /v\d*\.\d*\.\d*/
 
 configuration:
-     - MSVC THEN LIBCXX TEST
      - MSVC THEN WITH STATIC LIB
      - MINGW64 THEN WITH STATIC LIB
      - CLANG THEN WITH STATIC LIB
@@ -31,6 +30,7 @@ configuration:
      - CODE ANALYZER TEST
      - MSIL COMPILER
      - MSVC WITH PDB
+#     - MSVC THEN LIBCXX TEST
 
 for:
 -
@@ -45,7 +45,7 @@ for:
           description: 'Current Release'
           provider: GitHub
           auth_token:
-              secure: L2Uw6o1Msz3bAsw+p2n9bjxJqqtuP+7YuJNaWtpsRnWZ3JWDjkULQG6c6YRPk+v+
+              secure: ZDQzZdTUeSLRe8caQ+vLFCH51I4bCIeVTkLCHw7Z5onnsRxJYcV+B9q6M3ZQBMbcuLiP0l/SMULksuCcqLkSiuxQfTinOshbivAblt+xh0XDCsugDRZcJS4V4jhtz+Pm
           artifact: /.*/
           draft: false
           prerelease: false

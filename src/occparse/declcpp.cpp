@@ -185,21 +185,21 @@ void DeferredCompileFunction(SYMBOL* cur)
             }
         }
         dontRegisterTemplate++;
-        SwitchTokenStream(bodyTokenStreams.get(cur));
-        if (cur->sb->isConstructor && MATCHKW(Keyword::colon_))
-        {
-            getsym();
-            *cur->sb->constructorInitializers = GetConstructorInitializers(nullptr, cur);
-        }
         oldLambdas = lambdas;
         lambdas.clear();
         int oldStructLevel = structLevel;
         structLevel = 0;
         auto oldOpen = openStructs;
         openStructs = nullptr;
-        StatementGenerator sg(cur);
-        sg.FunctionBody();
-        SwitchTokenStream(nullptr);
+        ParseOnStream(bodyTokenStreams.get(cur), [=]() {
+            if (cur->sb->isConstructor && MATCHKW(Keyword::colon_))
+            {
+                getsym();
+                *cur->sb->constructorInitializers = GetConstructorInitializers(nullptr, cur);
+            }
+            StatementGenerator sg(cur);
+            sg.FunctionBody();
+         });
         dontRegisterTemplate--;
         lambdas = std::move(oldLambdas);
         openStructs = oldOpen;
@@ -254,33 +254,32 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             {
                 enclosingDeclarations.Add(func->templateParams);
             }
-            SwitchTokenStream(initTokenStreams.get(arg));
-
-            arg->tp->InstantiateDeferred();
-            tp2 = arg->tp;
-            if (tp2->IsRef())
-                tp2 = tp2->BaseType()->btp;
-            if (tp2->IsStructured())
-            {
-                SYMBOL* sym2;
-                anonymousNotAlloc++;
-                sym2 = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
-                anonymousNotAlloc--;
-                sym2->sb->stackblock = !arg->tp->IsRef();
-                initialize(theCurrentFunc, sym2, StorageClass::auto_, false, false, false, 0); /* also reserves space */
-                arg->sb->init = sym2->sb->init;
-                if (arg->sb->init->front()->exp && arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
+            ParseOnStream(initTokenStreams.get(arg), [&]() {
+                arg->tp->InstantiateDeferred();
+                tp2 = arg->tp;
+                if (tp2->IsRef())
+                    tp2 = tp2->BaseType()->btp;
+                if (tp2->IsStructured())
                 {
-                    EXPRESSION** expr = &arg->sb->init->front()->exp->left->v.func->thisptr;
-                    if ((*expr)->type == ExpressionNode::add_ && isconstzero(&stdint, (*expr)->right))
-                        arg->sb->init->front()->exp->v.t.thisptr = (*expr) = (*expr)->left;
+                    SYMBOL* sym2;
+                    anonymousNotAlloc++;
+                    sym2 = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
+                    anonymousNotAlloc--;
+                    sym2->sb->stackblock = !arg->tp->IsRef();
+                    initialize(theCurrentFunc, sym2, StorageClass::auto_, false, false, false, 0); /* also reserves space */
+                    arg->sb->init = sym2->sb->init;
+                    if (arg->sb->init->front()->exp && arg->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                    {
+                        EXPRESSION** expr = &arg->sb->init->front()->exp->left->v.func->thisptr;
+                        if ((*expr)->type == ExpressionNode::add_ && isconstzero(&stdint, (*expr)->right))
+                            arg->sb->init->front()->exp->v.t.thisptr = (*expr) = (*expr)->left;
+                    }
                 }
-            }
-            else
-            {
-                initialize(theCurrentFunc, arg, StorageClass::member_, false, false, false, 0);
-            }
-            SwitchTokenStream(nullptr);
+                else
+                {
+                    initialize(theCurrentFunc, arg, StorageClass::member_, false, false, false, 0);
+                }
+            });
             initTokenStreams.set(arg, nullptr);
             enclosingDeclarations.Release();
             PopTemplateNamespace(tns);
@@ -322,16 +321,16 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                 {
                                     sp2->tp->InstantiateDeferred();
                                     Type* tp2;
-                                    SwitchTokenStream(initTokenStreams.get(sp2));
-                                    tp2 = sp2->tp;
-                                    if (tp2->IsRef())
-                                        tp2 = tp2->BaseType()->btp;
-                                    if (!tp2->IsStructured())
-                                    {
-                                        initialize(theCurrentFunc, sp2, StorageClass::member_, false, false, false, 0);
-                                        initTokenStreams.set(sp2, nullptr);
-                                    }
-                                    SwitchTokenStream(nullptr);
+                                    ParseOnStream(initTokenStreams.get(sp2), [&]() {
+                                        tp2 = sp2->tp;
+                                        if (tp2->IsRef())
+                                            tp2 = tp2->BaseType()->btp;
+                                        if (!tp2->IsStructured())
+                                        {
+                                            initialize(theCurrentFunc, sp2, StorageClass::member_, false, false, false, 0);
+                                            initTokenStreams.set(sp2, nullptr);
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -367,10 +366,10 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         }
         else if (!sp->sb->init && initTokenStreams.get(sp))
         {
-            SwitchTokenStream(initTokenStreams.get(sp));
-            initTokenStreams.set(sp, nullptr);
-            initialize(theCurrentFunc, sp, StorageClass::member_, false, false, false, 0);
-            SwitchTokenStream(nullptr);
+            ParseOnStream(initTokenStreams.get(sp), [=]() {
+                initTokenStreams.set(sp, nullptr);
+                initialize(theCurrentFunc, sp, StorageClass::member_, false, false, false, 0);
+            });
             if (sp->sb->constexpression)
             {
                 optimize_for_constants(&sp->sb->init->front()->exp);
@@ -461,7 +460,7 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
     do
     {
         // this next needs work, OCC throws errors because of the gotos later in this function...
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         ParseAttributeSpecifiers(funcsp, true);
         EnterPackedSequence();
         if (MATCHKW(Keyword::decltype_))
@@ -649,33 +648,33 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                                     for (int i = 0; i < n; i++)
                                     {
                                         SetPackIndex(i);
-                                        currentContext->PlayAgain(&placeHolder);
-                                        SYMBOL* sym = nullptr;
-                                        nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
-                                        getsym();
-                                        if (sym)
-                                        {
-                                            inTemplateSpecialization++;
-                                            lst = nullptr;
-                                            GetTemplateArguments(funcsp, sym, &lst);
-                                            inTemplateSpecialization--;
-                                            sym = GetClassTemplate(sym, lst, false);
+                                        placeHolder.Replay([&]() {
+                                            SYMBOL* sym = nullptr;
+                                            nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
+                                            getsym();
                                             if (sym)
                                             {
-                                                if (allTemplateArgsSpecified(sym, sym->templateParams))
-                                                    sym = TemplateClassInstantiateInternal(sym, sym->templateParams, false);
+                                                inTemplateSpecialization++;
+                                                lst = nullptr;
+                                                GetTemplateArguments(funcsp, sym, &lst);
+                                                inTemplateSpecialization--;
+                                                sym = GetClassTemplate(sym, lst, false);
                                                 if (sym)
                                                 {
-                                                    SetLinkerNames(sym, Linkage::cdecl_);
-                                                    auto bc = innerBaseClass(declsym, sym, isvirtual, currentAccess);
-                                                    if (bc)
+                                                    if (allTemplateArgsSpecified(sym, sym->templateParams))
+                                                        sym = TemplateClassInstantiateInternal(sym, sym->templateParams, false);
+                                                    if (sym)
                                                     {
-                                                        baseClasses->push_back(bc);
+                                                        SetLinkerNames(sym, Linkage::cdecl_);
+                                                        auto bc = innerBaseClass(declsym, sym, isvirtual, currentAccess);
+                                                        if (bc)
+                                                        {
+                                                            baseClasses->push_back(bc);
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                        currentContext->PlayAgain(nullptr);
+                                        });
                                     }
                                     inTemplateArgs--;
                                     PopPackIndex();
@@ -1328,7 +1327,7 @@ void getDeclType( SYMBOL* funcsp, Type** tn)
     {
         getsym();
         hasAuto = MATCHKW(Keyword::auto_);
-        BackupTokenStream();
+        --*currentStream;
     }
     else
     {

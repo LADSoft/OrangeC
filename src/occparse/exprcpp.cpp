@@ -513,12 +513,12 @@ void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                         bcall = nullptr;
                     }
                     if (currentLex)
-                        BackupTokenStream();
-                    BackupTokenStream();
+                        --*currentStream;
+                    --*currentStream;
                 }
                 else
                 {
-                    BackupTokenStream();
+                    --*currentStream;
                     bcall = nullptr;
                 }
             }
@@ -614,7 +614,7 @@ void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
             {
                 CallSite funcParams;
                 funcParams.arguments = nullptr;
-                BackupTokenStream();
+                --*currentStream;
                 getArgs(funcsp, &funcParams, Keyword::closepa_, true, flags);
                 throwaway = nullptr;
                 if (funcParams.arguments && funcParams.arguments->size())
@@ -1081,7 +1081,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             funcparams->functp = s3->tp;
             *exp = MakeExpression(funcparams);
             *tp = s3->tp;
-            expression_arguments(funcsp, tp, exp, 0);
+            expression_arguments(funcsp, tp, exp, 0, true);
             if (s3->sb->defaulted && kw == Keyword::assign_)
                 createAssignment(s3->sb->parentClass, s3);
             enclosingDeclarations.Release();
@@ -1117,7 +1117,7 @@ void expression_new( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, i
         else
         {
             // placement new
-            BackupTokenStream();
+            --*currentStream;
             getArgs(funcsp, placement, Keyword::closepa_, true, 0);
         }
     }

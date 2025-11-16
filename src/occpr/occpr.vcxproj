@@ -79,6 +79,7 @@
     <ClCompile Include="..\occparse\istmt.cpp" />
     <ClCompile Include="..\occparse\lambda.cpp" />
     <ClCompile Include="..\occparse\lex.cpp" />
+    <ClCompile Include="..\occparse\LexToken.cpp" />
     <ClCompile Include="..\occparse\libcxx.cpp" />
     <ClCompile Include="..\occparse\ListFactory.cpp" />
     <ClCompile Include="..\occparse\mangle.cpp" />

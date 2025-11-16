@@ -863,7 +863,7 @@ namespace Parser
                 }
                 else
                 {
-                    BackupTokenStream();
+                    --*currentStream;
                     break;
                 }
             }

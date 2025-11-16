@@ -466,7 +466,7 @@ int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs)
     }
     return rv;
 }
-void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexToken::iterator& start, EXPRESSION* packedExp)
+void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexemeStreamPosition& start, EXPRESSION* packedExp)
 {
     if (packedExp->type == ExpressionNode::templateparam_)
     {
@@ -541,11 +541,11 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexToken:
                 for (i = 0; i < n; i++)
                 {
                     Argument* p = Allocate<Argument>();
-                    currentContext->PlayAgain(&start);
-                    SetPackIndex(i);
-                    expression_assign(funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
-                    optimize_for_constants(&p->exp);
-                    currentContext->PlayAgain(nullptr);
+                    start.Replay([=]() {
+                        SetPackIndex(i);
+                        expression_assign(funcsp, nullptr, &p->tp, &p->exp, nullptr, _F_PACKABLE);
+                        optimize_for_constants(&p->exp);
+                    });
                     if (p->tp && p->tp->type != BasicType::void_)
                         (*lptr)->push_back(p);
                 }
@@ -656,141 +656,140 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORI
     }
     else
     {
-        SwitchTokenStream(linit->initData);
-        init = mi->erase(init);
-        if (MATCHKW(Keyword::lt_))
-        {
-            // at this point we've already created the independent base classes
-            // but the initdata has the argument list, so get it out of the way
-            // and also count the number of packs to see if it matches the number of templates..
-            int n = -1;
-            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-            GetTemplateArguments(funcsp, linit->sp, &lst);
-            auto arglex = currentContext->Index();
-            std::deque<Type*> defaults;
-            PushPopDefaults(defaults, funcsp->templateParams, true, true);
-            std::stack<TEMPLATEPARAM*> stk;
-            if (funcsp->templateParams)
+        ParseOnStream(linit->initData, [&]() {
+            init = mi->erase(init);
+            if (MATCHKW(Keyword::lt_))
             {
-                for (auto l : *funcsp->templateParams)
+                // at this point we've already created the independent base classes
+                // but the initdata has the argument list, so get it out of the way
+                // and also count the number of packs to see if it matches the number of templates..
+                int n = -1;
+                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                GetTemplateArguments(funcsp, linit->sp, &lst);
+                LexemeStreamPosition arglex(currentStream);
+                std::deque<Type*> defaults;
+                PushPopDefaults(defaults, funcsp->templateParams, true, true);
+                std::stack<TEMPLATEPARAM*> stk;
+                if (funcsp->templateParams)
                 {
-                    if (l.second->packed)
+                    for (auto l : *funcsp->templateParams)
                     {
-                        if (l.second->byPack.pack)
-                            for (auto i : *l.second->byPack.pack)
-                                stk.push(i.second);
+                        if (l.second->packed)
+                        {
+                            if (l.second->byPack.pack)
+                                for (auto i : *l.second->byPack.pack)
+                                    stk.push(i.second);
+                        }
+                        else if (l.second->type != TplType::new_)
+                            stk.push(l.second);
                     }
-                    else if (l.second->type != TplType::new_)
-                        stk.push(l.second);
-                }
-                while (!stk.empty())
-                {
-                    auto t = stk.top();
-                    stk.pop();
-                    t->byClass.dflt = t->byClass.val;
-                }
-            }
-            SwitchTokenStream(nullptr);
-            if (lst)
-            {
-                for (auto&& pack : *lst)
-                {
-                    if (pack.second->packed)
+                    while (!stk.empty())
                     {
-                        int n1 = CountPacks(pack.second->byPack.pack);
-                        if (n == -1)
-                        {
-                            n = n1;
-                        }
-                        /*
-
-                        else if (n != n1)
-                        {
-                            error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                            break;
-                        }
-                        */
+                        auto t = stk.top();
+                        stk.pop();
+                        t->byClass.dflt = t->byClass.val;
                     }
                 }
-            }
-            if (n > 0)
-            {
-                int i;
-                // the presumption is that the number of packed vars will be the same as the number
-                // of instantiated templates...
-                //
-                // I have also seen n be 0 during parsing...
-                auto itb = baseEntries.begin();
-                auto itv = vbaseEntries.begin();
-                int oldArgumentNesting = argumentNesting;
-                argumentNesting = -1;
-                PushPackIndex();
-                for (i = 0; i < n; i++)
+                if (lst)
                 {
-                    SYMBOL* baseSP = basecount ? (*itb)->cls : (*itv)->cls;
-                    if (basecount)
-                        ++itb;
-                    else
-                        ++itv;
-                    CONSTRUCTORINITIALIZER* added = Allocate<CONSTRUCTORINITIALIZER>();
-                    bool done = false;
-                    currentContext->PlayAgain(&arglex);
-                    SetPackIndex(i);
-                    added->name = linit->name;
-                    init = mi->insert(init, added);
-                    ++init;
-                    added->sp = baseSP;
-                    if (MATCHKW(Keyword::openpa_) && added->sp->tp->sp->sb->trivialCons)
+                    for (auto&& pack : *lst)
                     {
-                        getsym();
-                        if (MATCHKW(Keyword::closepa_))
+                        if (pack.second->packed)
                         {
-                            getsym();
-                            added->init = nullptr;
-                            InsertInitializer(&added->init, nullptr, nullptr, added->sp->sb->offset, false);
-                            done = true;
-                        }
-                        else
-                        {
-                            BackupTokenStream();
-                        }
-                    }
-                    if (!done)
-                    {
-                        SYMBOL* sym = makeID(StorageClass::member_, added->sp->tp, nullptr, added->sp->name);
-                        CallSite shim;
-                        added->sp = sym;
-                        shim.arguments = nullptr;
-                        GetConstructorInitializers(funcsp, &shim,
-                                              MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
-                        if (shim.arguments)
-                        {
-                            added->init = initListFactory.CreateList();
-                            for (auto a : *shim.arguments)
+                            int n1 = CountPacks(pack.second->byPack.pack);
+                            if (n == -1)
                             {
-                                auto xinit = Allocate<Initializer>();
-                                xinit->basetp = a->tp;
-                                xinit->exp = a->exp;
-                                added->init->push_back(xinit);
+                                n = n1;
                             }
+                            /*
+
+                            else if (n != n1)
+                            {
+                                error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                                break;
+                            }
+                            */
                         }
                     }
-                    currentContext->PlayAgain(nullptr);
                 }
-                PopPackIndex();
-                argumentNesting = oldArgumentNesting;
+                if (n > 0)
+                {
+                    int i;
+                    // the presumption is that the number of packed vars will be the same as the number
+                    // of instantiated templates...
+                    //
+                    // I have also seen n be 0 during parsing...
+                    auto itb = baseEntries.begin();
+                    auto itv = vbaseEntries.begin();
+                    int oldArgumentNesting = argumentNesting;
+                    argumentNesting = -1;
+                    PushPackIndex();
+                    for (i = 0; i < n; i++)
+                    {
+                        SYMBOL* baseSP = basecount ? (*itb)->cls : (*itv)->cls;
+                        if (basecount)
+                            ++itb;
+                        else
+                            ++itv;
+                        CONSTRUCTORINITIALIZER* added = Allocate<CONSTRUCTORINITIALIZER>();
+                        bool done = false;
+                        arglex.Replay([&]() {
+                            SetPackIndex(i);
+                            added->name = linit->name;
+                            init = mi->insert(init, added);
+                            ++init;
+                            added->sp = baseSP;
+                            if (MATCHKW(Keyword::openpa_) && added->sp->tp->sp->sb->trivialCons)
+                            {
+                                getsym();
+                                if (MATCHKW(Keyword::closepa_))
+                                {
+                                    getsym();
+                                    added->init = nullptr;
+                                    InsertInitializer(&added->init, nullptr, nullptr, added->sp->sb->offset, false);
+                                    done = true;
+                                }
+                                else
+                                {
+                                    --*currentStream;
+                                }
+                            }
+                            if (!done)
+                            {
+                                SYMBOL* sym = makeID(StorageClass::member_, added->sp->tp, nullptr, added->sp->name);
+                                CallSite shim;
+                                added->sp = sym;
+                                shim.arguments = nullptr;
+                                GetConstructorInitializers(funcsp, &shim,
+                                    MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
+                                if (shim.arguments)
+                                {
+                                    added->init = initListFactory.CreateList();
+                                    for (auto a : *shim.arguments)
+                                    {
+                                        auto xinit = Allocate<Initializer>();
+                                        xinit->basetp = a->tp;
+                                        xinit->exp = a->exp;
+                                        added->init->push_back(xinit);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    PopPackIndex();
+                    argumentNesting = oldArgumentNesting;
+                }
+                PushPopDefaults(defaults, funcsp->templateParams, true, false);
             }
-            PushPopDefaults(defaults, funcsp->templateParams, true, false);
-        }
-        else
-        {
-            SwitchTokenStream(nullptr);
-            SpecializationError((char*)nullptr);
-        }
+            else
+            {
+                SpecializationError((char*)nullptr);
+            }
+        });
     }
 }
 void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack,
-                                    std::list<CONSTRUCTORINITIALIZER*>** p, LexToken* start, std::list<Argument*>* list)
+                                    std::list<CONSTRUCTORINITIALIZER*>** p, LexemeStream* start, std::list<Argument*>* list)
 {
     int n = CountPacks(templatePack);
     CONSTRUCTORINITIALIZER* orig = (*p)->front();
@@ -828,81 +827,81 @@ void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<
         auto ittppe = templatePack->end();
         for (i = 0; i < n; i++)
         {
-            SwitchTokenStream(start);
-            CONSTRUCTORINITIALIZER* mi = Allocate<CONSTRUCTORINITIALIZER>();
-            Type* tp = ittpp->second->byClass.val;
-            int offset = 0;
-            int vcount = 0, ccount = 0;
-            *mi = *orig;
-            mi->sp = nullptr;
-            SetPackIndex(i);
-            mi->name = ittpp->second->byClass.val->sp->name;
-            if (cls->sb->baseClasses)
-                for (auto bc : *cls->sb->baseClasses)
-                    if (!strcmp(bc->cls->name, mi->name))
-                    {
-                        if (bc->isvirtual)
-                            vcount++;
-                        else
-                            ccount++;
-                        mi->sp = bc->cls;
-                        offset = bc->offset;
-                    }
-            if ((ccount && vcount) || ccount > 1)
-            {
-                errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, mi->sp, cls);
-            }
-            if (mi->sp && mi->sp == tp->sp)
-            {
-                bool done = false;
-                mi->sp->sb->offset = offset;
-                if (MATCHKW(Keyword::openpa_) && mi->sp->tp->sp->sb->trivialCons)
-                {
-                    getsym();
-                    if (MATCHKW(Keyword::closepa_))
-                    {
-                        mi->init = nullptr;
-                        InsertInitializer(&mi->init, nullptr, nullptr, mi->sp->sb->offset, false);
-                        done = true;
-                    }
-                }
-                if (!done)
-                {
-                    SYMBOL* sym = makeID(StorageClass::member_, mi->sp->tp, nullptr, mi->sp->name);
-                    CallSite shim;
-                    mi->sp = sym;
-                    SwitchTokenStream(mi->initData);
-                    shim.arguments = nullptr;
-                    GetConstructorInitializers(funcsp, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
-                                          false);
-                    SwitchTokenStream(nullptr);
-                    if (shim.arguments)
-                    {
-                        mi->init = initListFactory.CreateList();
-                        for (auto a : *shim.arguments)
+            ParseOnStream(start, [&]() {
+                CONSTRUCTORINITIALIZER* mi = Allocate<CONSTRUCTORINITIALIZER>();
+                Type* tp = ittpp->second->byClass.val;
+                int offset = 0;
+                int vcount = 0, ccount = 0;
+                *mi = *orig;
+                mi->sp = nullptr;
+                SetPackIndex(i);
+                mi->name = ittpp->second->byClass.val->sp->name;
+                if (cls->sb->baseClasses)
+                    for (auto bc : *cls->sb->baseClasses)
+                        if (!strcmp(bc->cls->name, mi->name))
                         {
-                            auto xinit = Allocate<Initializer>();
-                            xinit->basetp = a->tp;
-                            xinit->exp = a->exp;
-                            mi->init->push_back(xinit);
+                            if (bc->isvirtual)
+                                vcount++;
+                            else
+                                ccount++;
+                            mi->sp = bc->cls;
+                            offset = bc->offset;
+                        }
+                if ((ccount && vcount) || ccount > 1)
+                {
+                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, mi->sp, cls);
+                }
+                if (mi->sp && mi->sp == tp->sp)
+                {
+                    bool done = false;
+                    mi->sp->sb->offset = offset;
+                    if (MATCHKW(Keyword::openpa_) && mi->sp->tp->sp->sb->trivialCons)
+                    {
+                        getsym();
+                        if (MATCHKW(Keyword::closepa_))
+                        {
+                            mi->init = nullptr;
+                            InsertInitializer(&mi->init, nullptr, nullptr, mi->sp->sb->offset, false);
+                            done = true;
+                        }
+                    }
+                    if (!done)
+                    {
+                        SYMBOL* sym = makeID(StorageClass::member_, mi->sp->tp, nullptr, mi->sp->name);
+                        CallSite shim;
+                        mi->sp = sym;
+                        ParseOnStream(mi->initData, [&]() {
+                            shim.arguments = nullptr;
+                            GetConstructorInitializers(funcsp, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
+                                false);
+                            });
+                        if (shim.arguments)
+                        {
+                            mi->init = initListFactory.CreateList();
+                            for (auto a : *shim.arguments)
+                            {
+                                auto xinit = Allocate<Initializer>();
+                                xinit->basetp = a->tp;
+                                xinit->exp = a->exp;
+                                mi->init->push_back(xinit);
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                mi->sp = nullptr;
-            }
-            if (mi->sp)
-            {
-                (*p)->insert(itp, mi);
-                ++itp;
-            }
-            else
-            {
-                errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, mi->name, cls);
-            }
-            SwitchTokenStream(nullptr);
+                else
+                {
+                    mi->sp = nullptr;
+                }
+                if (mi->sp)
+                {
+                    (*p)->insert(itp, mi);
+                    ++itp;
+                }
+                else
+                {
+                    errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, mi->name, cls);
+                }
+            });
         }
         PopPackIndex();
     }
@@ -1160,7 +1159,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     (*lst)->back().first = select->front().first;
     return lst;
 }
-std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexToken::iterator& start, SYMBOL* funcsp,
+std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* funcsp,
                                                        std::list<TEMPLATEPARAMPAIR>* select)
 {
     int beginning = 0;
@@ -1206,11 +1205,11 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
         }
         for (i = 0; i < n; i++)
         {
-            currentContext->PlayAgain(&start);
             Type* tp;
-            SetPackIndex(i);
-            tp = TypeGenerator::TypeId(funcsp, StorageClass::parameter_, false, true, false);
-            currentContext->PlayAgain(nullptr);
+            start.Replay([&]() {
+                SetPackIndex(i);
+                tp = TypeGenerator::TypeId(funcsp, StorageClass::parameter_, false, true, false);
+            });
             if (!definingTemplate && (!tp || tp->type == BasicType::any_))
             {
                 error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
@@ -1286,7 +1285,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     return lst;
 }
 
-void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexToken::iterator& start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
+void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
                              Type** tp, EXPRESSION** exp)
 {
     // this is going to presume that the expression involved
@@ -1326,16 +1325,16 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexToken::itera
         ;
         for (i = 0; i < n; i++)
         {
-            currentContext->PlayAgain(&start);
-            SetPackIndex(i);
-            expression_assign(funcsp, nullptr, tp, exp, nullptr, _F_PACKABLE);
-            if (exp)
-            {
-                optimize_for_constants(exp);
-                while ((*exp)->type == ExpressionNode::comma_ && (*exp)->right)
-                    (*exp) = (*exp)->right;
-            }
-            currentContext->PlayAgain(nullptr);
+            start.Replay([=]() {
+                SetPackIndex(i);
+                expression_assign(funcsp, nullptr, tp, exp, nullptr, _F_PACKABLE);
+                if (exp)
+                {
+                    optimize_for_constants(exp);
+                    while ((*exp)->type == ExpressionNode::comma_ && (*exp)->right)
+                        (*exp) = (*exp)->right;
+                }
+            });
             if (tp)
             {
                 list->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});

@@ -33,7 +33,8 @@ class SymbolProperty
 public:
     void set(SYMBOL* symbol, T val)
     {
-        if (symbol->sb)
+        // check for builtins
+        if (symbol->sb && symbol->sb->origdeclfile)
         {
             if (val)
             {
@@ -47,10 +48,13 @@ public:
     }
    T& get(SYMBOL* symbol)
     {
-
-        auto it = properties.find(symbol);
-        if (it != properties.end())
-            return it->second;
+       // check for builtins..
+       if (symbol->sb && symbol->sb->origdeclfile)
+       {
+           auto it = properties.find(symbol);
+           if (it != properties.end())
+               return it->second;
+       }
         return null;
     }
     void clear()
@@ -100,9 +104,9 @@ private:
     std::unordered_map<SYMBOL*, T, hasher, eq> properties;
 };
 
-inline SymbolProperty<LexToken*> bodyTokenStreams;
-inline SymbolProperty<LexToken*> initTokenStreams;
-inline SymbolProperty<LexToken*> noExceptTokenStreams;
+inline SymbolProperty<LexemeStream*> bodyTokenStreams;
+inline SymbolProperty<LexemeStream*> initTokenStreams;
+inline SymbolProperty<LexemeStream*> noExceptTokenStreams;
 inline SymbolProperty<SYMBOL*> functionDefinitions;
 
 }  // namespace Parser

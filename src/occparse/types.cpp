@@ -1556,7 +1556,7 @@ void TypeGenerator::ExceptionSpecifiers(SYMBOL* funcsp, SYMBOL* sp, StorageClass
                     sp->sb->xcMode = xc_dynamic;
                     if (!sp->sb->xc)
                         sp->sb->xc = Allocate<xcept>();
-                    BackupTokenStream();
+                    --*currentStream;
                     do
                     {
                         Type* tp = nullptr;
@@ -1610,7 +1610,7 @@ void TypeGenerator::ExceptionSpecifiers(SYMBOL* funcsp, SYMBOL* sp, StorageClass
             {
                 sp->sb->xcMode = xc_none;
                 sp->sb->noExcept = true;
-                noExceptTokenStreams.set(sp, (LexToken*)-1);
+                noExceptTokenStreams.set(sp, (LexemeStream*)-1);
                 if (!sp->sb->xc)
                     sp->sb->xc = Allocate<xcept>();
             }
@@ -1629,7 +1629,7 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL*
     bool foundVolatile = false;
     bool foundand = false;
     bool foundland = false;
-    while (!currentLex && !done)
+    while (currentLex && !done)
     {
         if (ISID())
         {
@@ -2053,7 +2053,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
     SYMBOL* sp;
     Type* ptype = nullptr;
     BasicType xtype = BasicType::none_;
-    auto pos = currentContext->Index();
+    LexemeStreamPosition pos(currentStream);
     bool doneAfter = false;
 
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && MATCHKW(Keyword::openbr_))
@@ -2188,7 +2188,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                     }
                     else
                     {
-                        BackupTokenStream(pos);
+                        pos.Backup();
                     }
                 }
                 else
@@ -2265,13 +2265,12 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
     }
     else
     {
-        LexToken::iterator start;
+        LexemeStreamPosition start(currentStream);
         switch (KW())
         {
         case Keyword::openpa_:
             if (beforeOnly)
                 break;
-            start = currentContext->Index();
             getsym();
             /* in a parameter, open paren followed by a type is an  unnamed function */
             if ((storage_class == StorageClass::parameter_ || parsingUsing) &&
@@ -2288,7 +2287,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                     *spi = sp;
                 }
                 tp = (*spi)->tp;
-                BackupTokenStream(start);
+                start.Backup();
                 tp1 = tp;
                 if (!parsingUsing)
                 {
@@ -2326,7 +2325,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                 {
                     enclosingDeclarations.Add(*strSym);
                 }
-                BackupTokenStream(start);
+                start.Backup();
                 tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
                 if (*strSym)
                 {
@@ -2429,7 +2428,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                 // this isn't perfect, it doesn't work with nested parens around the identifier
 
                 if (!ISID())
-                    BackupTokenStream();
+                    --*currentStream;
                 else
                     inparen = true;
             }
@@ -3044,7 +3043,7 @@ Type* TypeGenerator::UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out
             case Keyword::underlying_type_: {
                 getsym();
                 underlying_type(funcsp, &tn);
-                BackupTokenStream();
+                --*currentStream;
                 break;
             }
             default:
@@ -3083,7 +3082,7 @@ founddecltype:
             SYMBOL* strSym = nullptr;
             SYMBOL* sp = nullptr;
             bool destructor = false;
-            auto placeHolder = currentContext->Index();
+            LexemeStreamPosition placeHolder(currentStream);
             bool inTemplate = false;  // hides function parameter
             nestedSearch(&sp, &strSym, &nsv, &destructor, &inTemplate, false, storage_class, false, true);
             if (sp && (istype(sp) || (sp->sb && ((sp->sb->storage_class == StorageClass::type_ && inTemplate) ||
@@ -3566,7 +3565,7 @@ founddecltype:
                     {
                         error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
                     }
-                    BackupTokenStream(placeHolder);
+                    placeHolder.Backup();
                 }
             }
         }
@@ -3703,10 +3702,10 @@ Type* TypeGenerator::PointerQualifiers(Type* tp, bool allowstatic)
                 if (MATCHKW(Keyword::openpa_))
                 {
                     // being used as  a type specifier not a qualifier
-                    BackupTokenStream();
+                    --*currentStream;
                     return tp;
                 }
-                BackupTokenStream();
+                --*currentStream;
                 tpn->type = BasicType::atomic_;
                 break;
             case Keyword::volatile_:
@@ -3747,7 +3746,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
     bool pastfirst = false;
     bool voiderror = false;
     bool hasellipse = false;
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     NAMESPACEVALUEDATA internalNS = {};
     SymbolTable<SYMBOL>* symbolTable = symbols->CreateSymbolTable();
     getsym();
@@ -3816,7 +3815,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 Type* tp2;
                 spi = nullptr;
                 tp1 = nullptr;
-                auto start = currentContext->Index();
+                LexemeStreamPosition start(currentStream);
                 noTypeNameError++;
                 getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
                                         &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
@@ -3829,7 +3828,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 else if (Optimizer::cparams.prm_cplusplus && tp->btp->IsStructured() &&
                          (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::begin_)))
                 {
-                    auto cur = currentContext->Index();
+                    LexemeStreamPosition cur(currentStream);
                     getsym();
                     if (!MATCHKW(Keyword::star_) && !MATCHKW(Keyword::and_) &&
                         !TypeGenerator::StartOfType(nullptr, true))
@@ -3841,10 +3840,10 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                             // will do initialization later...
                         }
                         localNameSpace->pop_front();
-                        BackupTokenStream(placeHolder);
+                        placeHolder.Backup();
                         return tp;
                     }
-                    BackupTokenStream(cur);
+                    cur.Backup();
                 }
                 tp1 = TypeGenerator::BeforeName(funcsp, tp1, &spi, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
                                                 &linkage3, nullptr, false, false, false, false);
@@ -3963,7 +3962,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                     }
                     else
                     {
-                        auto current = currentContext->Index();
+                        auto current = currentStream->Index();
                         PushPackIndex();
                         int n = GetPackCount();
                         bool first = true;
@@ -3971,18 +3970,18 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                         for (int i = 0; i < n; i++)
                         {
                             SetPackIndex(i);
-                            currentContext->PlayAgain(&start);
-                            noTypeNameError++;
-                            tp1 = nullptr;
-                            getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
-                                &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
-                                AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
-                            noTypeNameError--;
+                            start.Replay([&]() {
+                                noTypeNameError++;
+                                tp1 = nullptr;
+                                getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
+                                    &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
+                                    AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
+                                noTypeNameError--;
                             
-                            SYMBOL* spi1 = nullptr;;
-                            tp1 = TypeGenerator::BeforeName(funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
-                                &linkage3, nullptr, false, false, false, false);
-                            currentContext->PlayAgain(nullptr);
+                                SYMBOL* spi1 = nullptr;;
+                                tp1 = TypeGenerator::BeforeName(funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
+                                    &linkage3, nullptr, false, false, false, false);
+                            });
 
                             SYMBOL* clone = CopySymbol(spi);
                             clone->tp = tp1; 
@@ -4316,7 +4315,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
         {
             (*spin)->tp = tp = tp->btp;
             // constructor initialization
-            BackupTokenStream();
+            --*currentStream;
             // will do initialization later...
         }
         else
@@ -4421,7 +4420,7 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
         auto tparam = TemplateLookupSpecializationParam(currentLex->value.s.a);
         if (tparam)
         {
-            auto placeHolder = currentContext->Index();
+            LexemeStreamPosition placeHolder(currentStream);
             bool member;
             getsym();
             member = MATCHKW(Keyword::classsel_);
@@ -4430,7 +4429,7 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
                 getsym();
                 member = MATCHKW(Keyword::star_);
             }
-            BackupTokenStream(placeHolder);
+            placeHolder.Backup();
             if (!member)
             {
                 lines = old;
@@ -4442,14 +4441,14 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
     {
         bool isdecltype = MATCHKW(Keyword::decltype_);
         SYMBOL *sym, *strSym = nullptr;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         bool dest = false;
         EnterPackedSequence();
         nestedSearch(&sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
         ClearPackedSequence();
         LeavePackedSequence();
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
-            BackupTokenStream(placeHolder);
+            placeHolder.Backup();
         lines = old;
         if (structured && sym && istype(sym))
         {

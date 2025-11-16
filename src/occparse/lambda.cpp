@@ -873,7 +873,7 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
             }
             else
             {
-                BackupTokenStream();
+                --*currentStream;
             }
         }
         if (MATCHKW(Keyword::comma_) || (self->captureMode == cmNone && !MATCHKW(Keyword::closebr_)))
@@ -938,7 +938,7 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                             errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, currentLex->value.s.a);
                         }
                     }
-                    auto idlex = currentContext->Index();
+                    auto idlex = currentStream->Index();
                     SYMBOL* sp;
                     LAMBDA* current;
                     getsym();
@@ -955,7 +955,7 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         }
                         else
                         {
-                            SYMBOL* sp = makeID(StorageClass::auto_, tp, NULL, (*idlex)->value.s.a);
+                            SYMBOL* sp = makeID(StorageClass::auto_, tp, NULL, currentStream->get(idlex)->value.s.a);
                             InsertInitializer(&sp->sb->init, tp, exp, 0, true);
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
@@ -966,10 +966,10 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                     }
                     else
                     {
-                        sp = search(localNameSpace->front()->syms, (*idlex)->value.s.a);
+                        sp = search(localNameSpace->front()->syms, currentStream->get(idlex)->value.s.a);
                         for (auto current : lambdas)
                         {
-                            sp = search(current->oldSyms, (*idlex)->value.s.a);
+                            sp = search(current->oldSyms, currentStream->get(idlex)->value.s.a);
                             if (sp)
                                 break;
                         }
@@ -977,11 +977,11 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         {
                             if (sp->packed)
                             {
-                                if ((*idlex)->type != LexType::l_kw_ ||  (*idlex)->kw->key != Keyword::ellipse_)
+                                if (currentStream->get(idlex)->type != LexType::l_kw_ ||  currentStream->get(idlex)->kw->key != Keyword::ellipse_)
                                     error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                 else
                                 {
-                                    idlex = currentContext->Index();
+                                    idlex = currentStream->Index();
                                     getsym();
                                 }
                             }
@@ -1003,7 +1003,7 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                             }
                         }
                         else
-                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*idlex)->value.s.a);
+                            errorstr(ERR_UNDEFINED_IDENTIFIER, currentStream->get(idlex)->value.s.a);
                     }
                 }
                 else
@@ -1137,12 +1137,12 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
         bodyTokenStreams.set(self->func, stream);
         if (!lambdas.front()->templateFunctions)
         {
-            SwitchTokenStream(stream);
-            SetLinkerNames(self->func, Linkage::cdecl_);
-            StatementGenerator sg(self->func);
-            sg.FunctionBody();
-            sg.BodyGen();
-            SwitchTokenStream(NULL);
+            ParseOnStream(stream, [=]() {
+                SetLinkerNames(self->func, Linkage::cdecl_);
+                StatementGenerator sg(self->func);
+                sg.FunctionBody();
+                sg.BodyGen();
+            });
         }
     }
     else

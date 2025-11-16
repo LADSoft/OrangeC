@@ -249,10 +249,10 @@ void dumpInlines(void)
                                 enclosingDeclarations.Add(sym->sb->parentClass);
                                 enclosingDeclarations.Add(sym->templateParams);
                                 int n = PushTemplateNamespace(pc);
-                                SwitchTokenStream(initTokenStreams.get(origsym));
-                                sym->sb->init = nullptr;
-                                initialize(nullptr, sym, StorageClass::global_, true, false, false, _F_NOCONSTGEN);
-                                SwitchTokenStream(nullptr);
+                                ParseOnStream(initTokenStreams.get(origsym), [=]() {
+                                    sym->sb->init = nullptr;
+                                    initialize(nullptr, sym, StorageClass::global_, true, false, false, _F_NOCONSTGEN);
+                                });
                                 PopTemplateNamespace(n);
                                 enclosingDeclarations.Drop();
                                 enclosingDeclarations.Drop();
@@ -472,7 +472,7 @@ static void PushInline(SYMBOL* sym, bool traceback)
     {
         sym = reverseOrder.top();
         reverseOrder.pop();
-        EnterInstantiation(nullptr, sym);
+        EnterInstantiation(sym,  true);
         if (sym->templateParams)
         {
             enclosingDeclarations.Add(sym->templateParams);
@@ -509,7 +509,10 @@ bool CompileInlineFunction(SYMBOL* sym)
             int n1 = 0;
             auto hold = std::move(enclosingDeclarations);
             auto hold2 = std::move(instantiationList);
-            PushInline(sym, true);
+            if (Optimizer::cparams.prm_cplusplus)
+            {
+                PushInline(sym, true);
+            }
             ++instantiatingTemplate;
             DeferredCompileFunction(sym);
             --instantiatingTemplate;

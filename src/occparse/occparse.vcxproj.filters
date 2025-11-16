@@ -204,6 +204,9 @@
     <ClInclude Include="..\occil\msilusing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LexToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="beinterf.cpp">
@@ -501,6 +504,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="using.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LexToken.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

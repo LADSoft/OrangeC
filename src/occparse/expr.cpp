@@ -539,7 +539,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
     SYMBOL* sym = nullptr;
     SYMBOL* strSym = nullptr;
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     if (ismutable)
         *ismutable = false;
     if (Optimizer::cparams.prm_cplusplus ||
@@ -588,7 +588,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                 getsym();
                 std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                 SYMBOL* sp1 = sym;
-                BackupTokenStream();
+                --*currentStream;
                 GetTemplateArguments(funcsp, sp1, &lst);
 
                 bool deferred = false;
@@ -636,7 +636,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
             {
                 case TplType::typename_:
                 case TplType::template_:
-                    BackupTokenStream(placeHolder);
+                    placeHolder.Backup();
                     *tp = nullptr;
                     if ((flags & (_F_SIZEOF | _F_PACKABLE)) == (_F_SIZEOF | _F_PACKABLE))
                     {
@@ -822,7 +822,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                         break;
                     case StorageClass::type_:
                     case StorageClass::typedef_:
-                        BackupTokenStream(placeHolder);
+                        placeHolder.Backup();
                         *tp = nullptr;
                         expression_func_type_cast(funcsp, tp, exp, flags);
                         if (!*exp)
@@ -1092,7 +1092,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
         sym->tp->used = true;
         if (sym->sb && sym->sb->templateLevel && istype(sym))
         {
-            BackupTokenStream(placeHolder);
+            placeHolder.Backup();
             *tp = nullptr;
             expression_func_type_cast(funcsp, tp, exp, flags);
         }
@@ -1119,7 +1119,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                     }
                     if (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::begin_))
                     {
-                        BackupTokenStream(placeHolder);
+                        placeHolder.Backup();
                         Type* tp1 = nullptr;
                         EXPRESSION* exp1;
                         expression_func_type_cast(funcsp, &tp1, &exp1, flags);
@@ -1300,9 +1300,9 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
             {
                 char buf[4000];
                 buf[0] = 0;
-                auto currentPos = currentContext->Index();
-                currentContext->Index(placeHolder);
-                while (currentContext->Index() != currentPos)
+                auto currentPos = currentStream->Index();
+                placeHolder.Restore();
+                while (currentStream->Index() != currentPos)
                 {
                     if (ISKW())
                     {
@@ -2489,7 +2489,7 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
         }
         else
         {
-            auto placeHolder = currentContext->Index();
+            LexemeStreamPosition placeHolder(currentStream);
             EnterPackedSequence();
             expression_assign(funcsp, nullptr, &p->tp, &p->exp, nullptr,
                                     _F_PACKABLE | (finish == Keyword::closepa_ ? _F_INARGS : 0) | (flags & _F_SIZEOF));
@@ -2561,7 +2561,7 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
             }
             else
             {
-                BackupTokenStream();
+                --*currentStream;
                 error(ERR_IDENTIFIER_EXPECTED);
                 errskim(finish == Keyword::closepa_ ? skim_closepa : skim_end);
                 return;
@@ -6557,7 +6557,7 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                         getsym();
                         if (Optimizer::cparams.prm_cplusplus && KWTYPE(TT_OPERATOR))
                         {
-                            auto placeHolder = currentContext->Index();
+                            LexemeStreamPosition placeHolder(currentStream);
                             if (!KWTYPE(TT_ASSIGN | TT_BINARY))
                             {
                                 getsym();
@@ -6567,7 +6567,7 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                             else
                             {
                                 getsym();
-                                auto start = currentContext->Index();
+                                LexemeStreamPosition start(currentStream);
                                 expression_cast(funcsp, atp, tp, exp, nullptr, flags);
                                 if (!*tp)
                                 {
@@ -6577,9 +6577,9 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                 }
                                 else
                                 {
-                                    currentContext->PlayAgain(&placeHolder);
-                                    eval_unary_left_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
-                                    currentContext->PlayAgain(nullptr);
+                                    placeHolder.Replay([&]() {
+                                        eval_unary_left_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
+                                    });
                                     needkw(Keyword::closepa_);
                                 }
                             }
@@ -6593,7 +6593,7 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                     }
                     else
                     {
-                        auto start = currentContext->Index();
+                        LexemeStreamPosition start(currentStream);
                         expression_comma(funcsp, nullptr, tp, exp, ismutable,
                                                (flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD)) |
                                                    _F_EXPRESSIONINPAREN);
@@ -6607,7 +6607,7 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                         {
                             // unary right folding, or binary folding
                             RequiresDialect::Feature(Dialect::cpp17, "Fold expressions");
-                            auto placeHolder = currentContext->Index();
+                            LexemeStreamPosition placeHolder(currentStream);
                             if (!KWTYPE(TT_ASSIGN | TT_BINARY))
                             {
                                 getsym();
@@ -6628,14 +6628,14 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                 if (Optimizer::cparams.prm_cplusplus && KWTYPE(TT_OPERATOR))
                                 {
                                     // binary folding
-                                    if (!MATCHKW((*placeHolder)->kw->key))
+                                    if (!MATCHKW((placeHolder.get())->kw->key))
                                     {
                                         error(ERR_BINARY_FOLDING_OPERATOR_MISMATCH);
                                     }
                                     getsym();
                                     Type* tp1 = nullptr;
                                     EXPRESSION* exp1 = nullptr;
-                                    auto start2 = currentContext->Index();
+                                    LexemeStreamPosition start2(currentStream);;
                                     expression_cast(funcsp, atp, &tp1, &exp1, nullptr,
                                                           flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD));
                                     if (!tp1)
@@ -6645,17 +6645,17 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                     }
                                     else
                                     {
-                                        currentContext->PlayAgain(&placeHolder);
-                                        eval_binary_fold(funcsp, atp, tp, exp, start, *tp, *exp, start2, tp1, exp1, false,
+                                        placeHolder.Replay([&]() {
+                                            eval_binary_fold(funcsp, atp, tp, exp, start, *tp, *exp, start2, tp1, exp1, false,
                                                          flags);
-                                        currentContext->PlayAgain(nullptr);
+                                        });
                                     }
                                 }
                                 else
                                 {
-                                    currentContext->PlayAgain(&placeHolder);
-                                    eval_unary_right_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
-                                    currentContext->PlayAgain(nullptr);
+                                    placeHolder.Replay([&]() {
+                                        eval_unary_right_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
+                                    });
                                 }
                             }
                         }
@@ -7079,19 +7079,19 @@ static void expression_sizeof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
         }
         else
         {
-            auto prev = currentContext->Index();
+            LexemeStreamPosition prev(currentStream);
             *tp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, Optimizer::cparams.prm_cplusplus, true, false);
             if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::openpa_))
             {
                 getsym();
                 if (MATCHKW(Keyword::star_) || MATCHKW(Keyword::cdecl_) || MATCHKW(Keyword::stdcall_))
                 {
-                    BackupTokenStream(prev);
+                    prev.Backup();
                     *tp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, false, true, false);
                 }
                 else
                 {
-                    BackupTokenStream(prev);
+                    prev.Backup();
                     expression_func_type_cast(funcsp, tp, exp, 0);
                 }
             }
@@ -7546,7 +7546,7 @@ static void expression_postfix( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
 void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     bool localMutable = false;
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     /* note some of the math ops are speced to do integer promotions
      * if being stored, the proposed place to store them is not known, so e.g.
      * a ~ on a unsigned char would promote to int to be evaluated,
@@ -7560,9 +7560,9 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             expression_cast(funcsp, atp, tp, exp, nullptr, flags);
             if (*tp)
             {
-                currentContext->PlayAgain(&placeHolder);
-                eval_unary_plus(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                currentContext->PlayAgain(nullptr);
+                placeHolder.Replay([=]() {
+                    eval_unary_plus(funcsp, atp, tp, exp, *tp, *exp, false, flags);
+                });
             }
             break;
         case Keyword::minus_:
@@ -7575,9 +7575,9 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             }
             else
             {
-                currentContext->PlayAgain(&placeHolder);
-                eval_unary_minus(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                currentContext->PlayAgain(nullptr);
+                placeHolder.Replay([=]() {
+                    eval_unary_minus(funcsp, atp, tp, exp, *tp, *exp, false, flags);
+                });
             }
             break;
         case Keyword::star_:
@@ -7596,9 +7596,9 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             }
             else
             {
-                currentContext->PlayAgain(&placeHolder);
-                eval_unary_not(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                currentContext->PlayAgain(nullptr);
+                placeHolder.Replay([=]() {
+                    eval_unary_not(funcsp, atp, tp, exp, *tp, *exp, false, flags);
+                });
             }
             break;
         case Keyword::complx_:
@@ -7611,9 +7611,9 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             }
             else
             {
-                currentContext->PlayAgain(&placeHolder);
-                eval_unary_complement(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                currentContext->PlayAgain(nullptr);
+                placeHolder.Replay([=]() {
+                    eval_unary_complement(funcsp, atp, tp, exp, *tp, *exp, false, flags);
+                });
             }
             break;
         case Keyword::autoinc_:
@@ -7623,9 +7623,9 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             if (*tp)
             {
                 CheckThroughConstObject(nullptr, *exp);
-                currentContext->PlayAgain(&placeHolder);
-                eval_unary_autoincdec(funcsp, atp, tp, exp, *tp, *exp, localMutable, flags);
-                currentContext->PlayAgain(nullptr);
+                placeHolder.Replay([=]() {
+                    eval_unary_autoincdec(funcsp, atp, tp, exp, *tp, *exp, localMutable, flags);
+                });
             }
             break;
         case Keyword::sizeof_:
@@ -7644,7 +7644,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             expression_noexcept(funcsp, tp, exp);
             break;
         case Keyword::classsel_: {
-            auto placeHolder = currentContext->Index();
+            LexemeStreamPosition placeHolder(currentStream);
             getsym();
             switch (KW())
             {
@@ -7655,7 +7655,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
                 default:
                     break;
             }
-            BackupTokenStream(placeHolder);
+            placeHolder.Backup();
         }
             // fallthrough
         default:
@@ -7671,7 +7671,7 @@ void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bo
     {
         bool loadedAttribs = false;
         attributes oldAttribs;
-        auto  start = currentContext->Index();;
+        LexemeStreamPosition  start(currentStream);;
         getsym();
         if (MATCHKW(Keyword::attribute_))
         {
@@ -7801,7 +7801,7 @@ void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bo
                     }
                     else
                     {
-                        auto  lastSym = currentContext->Index();
+                        LexemeStreamPosition  lastSym(currentStream);
                         expression_cast(funcsp, nullptr, &throwaway, exp, ismutable, flags);
                         if (throwaway)
                         {
@@ -7858,7 +7858,7 @@ void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bo
                         {
                             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                             *tp = &stdint;
-                            BackupTokenStream(lastSym);
+                            lastSym.Backup();
                             error(ERR_EXPRESSION_SYNTAX);
                         }
                     }
@@ -7866,13 +7866,13 @@ void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bo
             }
             else  // expression in parenthesis
             {
-                BackupTokenStream(start);
+                start.Backup();
                 expression_unary(funcsp, atp, tp, exp, ismutable, flags);
             }
         }
         else
         {
-            BackupTokenStream(start);
+            start.Backup();
             expression_unary(funcsp, atp, tp, exp, ismutable, flags);
         }
         if (loadedAttribs)
@@ -7892,7 +7892,7 @@ static void expression_pm( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** ex
     while (MATCHKW(Keyword::dotstar_) || MATCHKW(Keyword::pointstar_))
     {
         bool points = false;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         Keyword kw = KW();
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
@@ -7910,13 +7910,13 @@ static void expression_pm( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** ex
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         expression_cast(funcsp, nullptr, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_pm(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
-        currentContext->PlayAgain(nullptr);
+        placeHolder.Replay([=]() {
+            eval_binary_pm(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+        });
     }
     return;
 }
@@ -7927,7 +7927,7 @@ static void expression_times( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
         return;
     while (MATCHKW(Keyword::star_) || MATCHKW(Keyword::divide_) || MATCHKW(Keyword::mod_))
     {
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         ExpressionNode type;
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
@@ -7945,7 +7945,7 @@ static void expression_times( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         expression_pm(funcsp, nullptr, &tp1, &exp1, nullptr, flags);
@@ -7954,9 +7954,9 @@ static void expression_times( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
             *tp = nullptr;
             return;
         }
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_times(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        currentContext->PlayAgain(nullptr);
+        placeHolder.Replay([=]() {
+            eval_binary_times(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
+        });
     }
     return;
 }
@@ -7969,7 +7969,7 @@ static void expression_add( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
     while (MATCHKW(Keyword::plus_) || MATCHKW(Keyword::minus_))
     {
         bool msil = false;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
         getsym();
@@ -7986,7 +7986,7 @@ static void expression_add( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         expression_times(funcsp, atp, &tp1, &exp1, nullptr, flags);
@@ -7995,9 +7995,9 @@ static void expression_add( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
             *tp = nullptr;
             return;
         }
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_add(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        currentContext->PlayAgain(&placeHolder);
+        placeHolder.Replay([=]() {
+            eval_binary_add(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
+        });
     }
     return;
 }
@@ -8011,7 +8011,7 @@ static void expression_shift( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
         ExpressionNode type;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         getsym();
         if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::ellipse_))
         {
@@ -8026,7 +8026,7 @@ static void expression_shift( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         expression_add(funcsp, nullptr, &tp1, &exp1, nullptr, flags);
@@ -8035,9 +8035,9 @@ static void expression_shift( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
             *tp = nullptr;
             return;
         }
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_shift(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        currentContext->PlayAgain(&placeHolder);
+        placeHolder.Replay([=]() {
+            eval_binary_shift(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
+        });
     }
     return;
 }
@@ -8067,7 +8067,7 @@ static void expression_inequality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESS
         }
         if (!done)
         {
-            auto placeHolder = currentContext->Index();
+            LexemeStreamPosition placeHolder(currentStream);
             getsym();
             if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::ellipse_))
             {
@@ -8082,7 +8082,7 @@ static void expression_inequality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESS
                     error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
                 }
                 else
-                    BackupTokenStream();
+                    --*currentStream;
                 return;
             }
             expression_shift(funcsp, nullptr, &tp1, &exp1, nullptr, flags);
@@ -8091,9 +8091,9 @@ static void expression_inequality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESS
                 *tp = nullptr;
                 return;
             }
-            currentContext->PlayAgain(&placeHolder);
-            eval_binary_inequality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-            currentContext->PlayAgain(&placeHolder);
+            placeHolder.Replay([=]() {
+                eval_binary_inequality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
+            });
         }
     }
     return;
@@ -8108,7 +8108,7 @@ static void expression_equality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSIO
     {
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         getsym();
         if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::ellipse_))
         {
@@ -8123,7 +8123,7 @@ static void expression_equality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSIO
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         expression_inequality(funcsp, nullptr, &tp1, &exp1, nullptr, flags);
@@ -8132,9 +8132,9 @@ static void expression_equality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSIO
             *tp = nullptr;
             return;
         }
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_equality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        currentContext->PlayAgain(&placeHolder);
+        placeHolder.Replay([=]() {
+            eval_binary_equality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
+        });
     }
     return;
 }
@@ -8253,7 +8253,7 @@ static void  binop( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, Keyw
                             errorConversionOrCast(true, *tp, &stdint);
             }
         }
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         getsym();
         if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::ellipse_))
         {
@@ -8268,7 +8268,7 @@ static void  binop( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, Keyw
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         (*nextFunc)(funcsp, atp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
@@ -8288,13 +8288,13 @@ static void  binop( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, Keyw
                             errorConversionOrCast(true, tp1, &stdint);
             }
         }
-        currentContext->PlayAgain(&placeHolder);
-        if (!eval_binary_logical(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags))
-        {
-            (*exp)->v.logicaldestructors.left = logicaldestructorsleft;
-            (*exp)->v.logicaldestructors.right = logicaldestructorsright;
-        }
-        currentContext->PlayAgain(&placeHolder);
+        placeHolder.Replay([=]() {
+            if (!eval_binary_logical(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags))
+            {
+                (*exp)->v.logicaldestructors.left = logicaldestructorsleft;
+                (*exp)->v.logicaldestructors.right = logicaldestructorsright;
+            }
+        });
     }
     return;
 }
@@ -8357,7 +8357,7 @@ static void expression_hook( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         isCallNoreturnFunction = false;
@@ -8807,7 +8807,7 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
         return;
     while (currentLex)
     {
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         Type* tp1 = nullptr;
         switch (KW())
         {
@@ -8826,14 +8826,14 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
                     }
                     else
-                        BackupTokenStream();
+                        --*currentStream;
                     return;
                 }
                 if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::begin_))
                 {
                     if ((*tp)->IsStructured())
                     {
-                        BackupTokenStream();
+                        --*currentStream;
                         std::list<Initializer*>* init = nullptr;
                         SYMBOL* spinit = nullptr;
                         tp1 = *tp;
@@ -8893,7 +8893,7 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
                     }
                     else
-                        BackupTokenStream();
+                        --*currentStream;
                     return;
                 }
                 ++inAssignRHS;
@@ -8919,7 +8919,7 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
                     }
                     else
-                        BackupTokenStream();
+                        --*currentStream;
                     return;
                 }
                 ++inAssignRHS;
@@ -8936,9 +8936,9 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
         }
         if (!(*tp)->IsStructured())
             CheckThroughConstObject(nullptr, *exp);
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_assign(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, localMutable, flags);
-        currentContext->PlayAgain(&placeHolder);
+        placeHolder.Replay([=]() {
+            eval_binary_assign(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, localMutable, flags);
+        });
     }
     return;
 }
@@ -8951,7 +8951,7 @@ void expression_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
     {
         EXPRESSION* exp1 = nullptr;
         Type* tp1 = nullptr;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         getsym();
         if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::ellipse_))
         {
@@ -8966,7 +8966,7 @@ void expression_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
                 error(ERR_FOLDING_NEEDS_SIMPLE_EXPRESSION);
             }
             else
-                BackupTokenStream();
+                --*currentStream;
             return;
         }
         expression_assign(funcsp, atp, &tp1, &exp1, nullptr, flags);
@@ -8974,9 +8974,9 @@ void expression_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
         {
             break;
         }
-        currentContext->PlayAgain(&placeHolder);
-        eval_binary_comma(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
-        currentContext->PlayAgain(&placeHolder);
+        placeHolder.Replay([=]() {
+            eval_binary_comma(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
+        });
     }
     return;
 }

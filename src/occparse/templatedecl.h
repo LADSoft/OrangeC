@@ -54,7 +54,7 @@ void TemplateGetDeferredTokenStream(SYMBOL* sym);
 TEMPLATEPARAMPAIR* TemplateLookupSpecializationParam(const char* name);
 std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym);
 void TemplateRegisterToken(Lexeme* lex);
-static std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LexToken& start, SYMBOL* funcsp,
+static std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStream& start, SYMBOL* funcsp,
                                                  std::list<TEMPLATEPARAMPAIR>* select, bool packable);
 void UnrollTemplatePacks(std::list<TEMPLATEPARAMPAIR>* tplx);
 static std::list<TEMPLATEPARAMPAIR>* nextExpand(std::list<TEMPLATEPARAMPAIR>* inx, int n);
@@ -69,7 +69,7 @@ SYMBOL* FindSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templatePa
 SYMBOL* LookupSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templateParams);
 static bool matchTemplatedType(Type* old, Type* sym, bool strict);
 SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp);
-LexToken* TemplateArgGetDefault( bool isExpression);
+LexemeStream* TemplateArgGetDefault( bool isExpression);
 static SYMBOL* templateParamId(Type* tp, const char* name, int tag);
 static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args);
 static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst,

@@ -153,16 +153,14 @@ bool msilManaged(SYMBOL* s)
 Statement* Statement::MakeStatement( std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme *lex)
 {
     Statement* st = Allocate<Statement>();
-    if (!currentLex)
+    if (!lex)
     {
-        auto it = currentContext->Index();
-        --it;
-        lex = (*it);
+        lex = currentStream->get(currentStream->Index() ? currentStream->Index()-1 :  0);
     }
     st->type = stype;
     st->charpos = 0;
-    st->line = currentLex->errline;
-    st->file = currentLex->errfile;
+    st->line = lex->errline;
+    st->file = lex->errfile;
 
     st->parent = parent.size() ? parent.front() : nullptr;
     if (&parent != &emptyBlockdata)
@@ -994,11 +992,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
             }
             if (Optimizer::cparams.prm_cplusplus)
             {
-                auto origLex = currentContext->Index();
+                LexemeStreamPosition origLex(currentStream);
                 while (currentLex && !MATCHKW(Keyword::semicolon_) && !MATCHKW(Keyword::colon_))
                     getsym();
                 hasColon = MATCHKW(Keyword::colon_);
-                BackupTokenStream(origLex);
+                origLex.Backup();
             }
 
             SelectionExpression(parent, &init, hasColon ? Keyword::rangefor_ : Keyword::for_, &declaration);
@@ -3270,13 +3268,13 @@ void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
     auto oldLines = lines;
     lines = nullptr;
 
-    auto prevlex = currentContext->Index();
+    auto prevlex = currentStream->Index();
     optimized_expression(funcsp, nullptr, &tp, &select, true);
     if (expressionReturns.size())
         expressionReturns.back() = std::move(std::pair<EXPRESSION*, Type*>(select, tp));
     lines = oldLines;
 
-    currentLineData(parent, (*prevlex), 0);
+    currentLineData(parent, currentStream->get(prevlex), 0);
     st = Statement::MakeStatement(parent, StatementNode::expr_);
     st->select = select;
     if (!tp)
@@ -3619,7 +3617,7 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
 }
 bool StatementGenerator::ResolvesToDeclaration( bool structured)
 {
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     if (ISKW())
         switch (KW())
         {
@@ -3654,7 +3652,7 @@ bool StatementGenerator::ResolvesToDeclaration( bool structured)
             else if (MATCHKW(Keyword::rightshift_))
             {
                 level--;
-                currentLex = getGTSym();
+                getGTSym();
                 continue;
             }
             getsym();
@@ -3662,7 +3660,7 @@ bool StatementGenerator::ResolvesToDeclaration( bool structured)
     }
     if (MATCHKW(Keyword::begin_))
     {
-        BackupTokenStream(placeHolder);
+        placeHolder.Backup();
         return false;
     }
     if (MATCHKW(Keyword::openpa_))
@@ -3694,27 +3692,28 @@ bool StatementGenerator::ResolvesToDeclaration( bool structured)
         if (MATCHKW(Keyword::assign_) || ((hasStar || !structured) && !hasThis && MATCHKW(Keyword::openpa_)) ||
             MATCHKW(Keyword::openbr_))
         {
-            BackupTokenStream(placeHolder);
+            placeHolder.Backup();
             return true;
         }
-        BackupTokenStream(placeHolder);
+        placeHolder.Backup();
         return false;
     }
-    BackupTokenStream(placeHolder);
+    placeHolder.Backup();
     return true;
 }
 
 void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool viacontrol)
 {
     auto before = parent.front();
-    auto start = currentContext->Index();
+    LexemeStreamPosition start(currentStream);
+    bool first = true;
     ParseAttributeSpecifiers(funcsp, true);
     if (ISID())
     {
         getsym();
         if (MATCHKW(Keyword::colon_))
         {
-            BackupTokenStream();
+            --*currentStream;
             ParseLabel(parent);
             before->needlabel = false;
             before->nosemi = true;
@@ -3722,7 +3721,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
         }
         else
         {
-            BackupTokenStream();
+            --*currentStream;
         }
     }
     if (before->needlabel && !MATCHKW(Keyword::case_) && !MATCHKW(Keyword::default_) && !MATCHKW(Keyword::begin_))
@@ -3896,11 +3895,11 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                     std::list<Statement*>* prev = before->statements;
                     before->statements = nullptr;
                     declareAndInitialize = false;
-                    if (start != currentContext->end())
+                    if (first && start.Position() != currentStream->Index())
                     {
-                        BackupTokenStream(start);
-                        start = currentContext->end();
+                        start.Backup();
                     }
+                    first = false;
                     declare(funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
                                   AccessLevel::public_);
                     // this originally did the last existing statement as well
@@ -4494,43 +4493,43 @@ void StatementGenerator::HandleInlines()
 void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
 {
     auto stream = noExceptTokenStreams.get(funcsp);
-    if (stream && stream != (LexToken*)-1)
+    if (stream && stream != (LexemeStream*)-1)
     {
         dontRegisterTemplate++;
-        SwitchTokenStream(stream);
         int n = PushTemplateNamespace(funcsp);
-        enclosingDeclarations.Mark();
-        if (funcsp->sb->parentClass)
-        {
-            enclosingDeclarations.Add(funcsp->sb->parentClass);
-            auto tpl = funcsp->sb->parentClass->templateParams;
-            if (tpl)
-                enclosingDeclarations.Add(tpl);
-        }
-        Type* tp = nullptr;
-        EXPRESSION* exp = nullptr;
-        AllocateLocalContext(emptyBlockdata, nullptr, 0);
-        for (auto sp2 : *funcsp->tp->BaseType()->syms)
-        {
-            localNameSpace->front()->syms->Add(sp2);
-        }
-        optimized_expression(funcsp, nullptr, &tp, &exp, false);
-        FreeLocalContext(emptyBlockdata, nullptr, 0);
-        if (!IsConstantExpression(exp, false, false))
-        {
-            if (!definingTemplate)
-                error(ERR_CONSTANT_VALUE_EXPECTED);
-        }
-        else
-        {
-            funcsp->sb->xcMode = exp->v.i ? xc_none : xc_all;
-            if (exp->v.i)
-                funcsp->sb->noExcept = true;
-        }
-        SwitchTokenStream(nullptr);
+        ParseOnStream(stream, [=]() {
+            enclosingDeclarations.Mark();
+            if (funcsp->sb->parentClass)
+            {
+                enclosingDeclarations.Add(funcsp->sb->parentClass);
+                auto tpl = funcsp->sb->parentClass->templateParams;
+                if (tpl)
+                    enclosingDeclarations.Add(tpl);
+            }
+            Type* tp = nullptr;
+            EXPRESSION* exp = nullptr;
+            AllocateLocalContext(emptyBlockdata, nullptr, 0);
+            for (auto sp2 : *funcsp->tp->BaseType()->syms)
+            {
+                localNameSpace->front()->syms->Add(sp2);
+            }
+            optimized_expression(funcsp, nullptr, &tp, &exp, false);
+            FreeLocalContext(emptyBlockdata, nullptr, 0);
+            if (!IsConstantExpression(exp, false, false))
+            {
+                if (!definingTemplate)
+                    error(ERR_CONSTANT_VALUE_EXPECTED);
+            }
+            else
+            {
+                funcsp->sb->xcMode = exp->v.i ? xc_none : xc_all;
+                if (exp->v.i)
+                    funcsp->sb->noExcept = true;
+            }
+        });
         enclosingDeclarations.Release();
         PopTemplateNamespace(n);
-        noExceptTokenStreams.set(funcsp, (LexToken*)-1);
+        noExceptTokenStreams.set(funcsp, (LexemeStream*)-1);
         dontRegisterTemplate--;
     }
 }

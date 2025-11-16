@@ -25,12 +25,12 @@ namespace Parser
 {
 // localexpr
 EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags = 0);
-void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& start,
+void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                           Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags);
-void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& start,
+void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                            Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags);
-void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& leftstart,
-                      Type* lefttp, EXPRESSION* leftexp, LexToken::iterator& rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
+void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& leftstart,
+                      Type* lefttp, EXPRESSION* leftexp, LexemeStreamPosition& rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
                       int flags);
 void eval_unary_plus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                      EXPRESSION* leftexp, bool ismutable, int flags);

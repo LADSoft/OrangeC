@@ -98,7 +98,7 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
     std::list<CONSTRUCTORINITIALIZER*>* rv = constructorInitializerListFactory.CreateList();
     //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
     //        error(ERR_Initializer_LIST_REQUIRES_CONSTRUCTOR);
-    while (!currentLex)
+    while (currentLex)
     {
         EnterPackedSequence();
         if (ISID() || MATCHKW(Keyword::classsel_))
@@ -109,7 +109,7 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
             auto v = Allocate<CONSTRUCTORINITIALIZER>();
             v->line = currentLex->errline;
             v->file = currentLex->errfile;
-            v->initData = tokenFactory.Create();
+            v->initData = streamFactory.Create();
             name[0] = 0;
             if (ISID())
             {
@@ -138,7 +138,7 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
                         currentLex->value.s.a = litlate(currentLex->value.s.a);
                     if (MATCHKW(Keyword::rightshift_))
                     {
-                        currentLex = getGTSym();
+                        getGTSym();
                         tmpl--;
                         v->initData->Add(currentLex);
                     }
@@ -1218,7 +1218,7 @@ static void SetDestructorNoexcept(SYMBOL* sp)
     if (!definingTemplate || instantiatingTemplate)
     {
         auto stream = noExceptTokenStreams.get(sp);
-        if (stream && stream  != (LexToken*)-1)
+        if (stream && stream  != (LexemeStream*)-1)
         {
             StatementGenerator::ParseNoExceptClause(sp);
         }
@@ -1989,83 +1989,83 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                 else
                 {
                     bool done = false;
-                    SwitchTokenStream(init->initData);
-                    if (MATCHKW(Keyword::lt_))
-                    {
-                        std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                        GetTemplateArguments(cons, init->sp, &lst);
-                        if (init->sp->sb->templateLevel)
+                    ParseOnStream(init->initData, [&]() {
+                        if (MATCHKW(Keyword::lt_))
                         {
-                            init->sp = TemplateClassInstantiate(init->sp, lst, false, StorageClass::global_);
-                        }
-                        else
-                        {
-                            errorsym(ERR_NOT_A_TEMPLATE, init->sp);
-                        }
-                    }
-                    if (!init->sp->tp->IsStructured())
-                    {
-                        bool bypa = true;
-                        if (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::begin_))
-                        {
-                            bypa = MATCHKW(Keyword::openpa_);
-                            getsym();
-                            if ((bypa && MATCHKW(Keyword::closepa_)) || (!bypa && MATCHKW(Keyword::end_)))
+                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                            GetTemplateArguments(cons, init->sp, &lst);
+                            if (init->sp->sb->templateLevel)
                             {
-                                getsym();
-                                init->init = nullptr;
-                                InsertInitializer(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0, false);
-                                done = true;
+                                init->sp = TemplateClassInstantiate(init->sp, lst, false, StorageClass::global_);
                             }
                             else
                             {
-                                BackupTokenStream();
+                                errorsym(ERR_NOT_A_TEMPLATE, init->sp);
                             }
                         }
-                        if (!done)
+                        if (!init->sp->tp->IsStructured())
                         {
-                            needkw(bypa ? Keyword::openpa_ : Keyword::begin_);
-                            init->init = nullptr;
-                            argumentNesting++;
-                            initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, _F_MEMBERINITIALIZER | _F_PACKABLE);
-                            argumentNesting--;
-                            done = true;
-                            needkw(bypa ? Keyword::closepa_ : Keyword::end_);
-                        }
-                    }
-                    else
-                    {
-                        bool empty = false;
-                        if (MATCHKW(Keyword::openpa_))
-                        {
-                            getsym();
-                            if (MATCHKW(Keyword::closepa_))
-                                empty = true;
-                            BackupTokenStream();
-                        }
-                        if (MATCHKW(Keyword::openpa_) && init->sp->tp->BaseType()->sp->sb->trivialCons)
-                        {
-                            init->init = nullptr;
-                            argumentNesting++;
-                            initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, _F_MEMBERINITIALIZER);
-                            argumentNesting--;
-                            done = true;
-                            if (init->packed || MATCHKW(Keyword::ellipse_))
-                                error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                            bool bypa = true;
+                            if (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::begin_))
+                            {
+                                bypa = MATCHKW(Keyword::openpa_);
+                                getsym();
+                                if ((bypa && MATCHKW(Keyword::closepa_)) || (!bypa && MATCHKW(Keyword::end_)))
+                                {
+                                    getsym();
+                                    init->init = nullptr;
+                                    InsertInitializer(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0, false);
+                                    done = true;
+                                }
+                                else
+                                {
+                                    --*currentStream;
+                                }
+                            }
+                            if (!done)
+                            {
+                                needkw(bypa ? Keyword::openpa_ : Keyword::begin_);
+                                init->init = nullptr;
+                                argumentNesting++;
+                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
+                                    false, _F_MEMBERINITIALIZER | _F_PACKABLE);
+                                argumentNesting--;
+                                done = true;
+                                needkw(bypa ? Keyword::closepa_ : Keyword::end_);
+                            }
                         }
                         else
                         {
-                            init->init = nullptr;
-                            initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                           false, _F_MEMBERINITIALIZER);
-                            if (init->packed)
-                                error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                            bool empty = false;
+                            if (MATCHKW(Keyword::openpa_))
+                            {
+                                getsym();
+                                if (MATCHKW(Keyword::closepa_))
+                                    empty = true;
+                                --*currentStream;
+                            }
+                            if (MATCHKW(Keyword::openpa_) && init->sp->tp->BaseType()->sp->sb->trivialCons)
+                            {
+                                init->init = nullptr;
+                                argumentNesting++;
+                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
+                                    false, _F_MEMBERINITIALIZER);
+                                argumentNesting--;
+                                done = true;
+                                if (init->packed || MATCHKW(Keyword::ellipse_))
+                                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                            }
+                            else
+                            {
+                                init->init = nullptr;
+                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
+                                    false, _F_MEMBERINITIALIZER);
+                                if (init->packed)
+                                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                            }
+                            init->valueInit = empty;
                         }
-                        init->valueInit = empty;
-                    }
-                    SwitchTokenStream(nullptr);
+                    });
                 }
             }
             else
@@ -2082,13 +2082,13 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                         if (sp->tp->templateParam->second->packed)
                         {
                             CallSite shim;
-                            SwitchTokenStream(init->initData);
-                            shim.arguments = nullptr;
-                            GetConstructorInitializers(cons, &shim,
-                                                  MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
-                            if (!init->packed)
-                                error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
-                            SwitchTokenStream(nullptr);
+                            ParseOnStream(init->initData, [&]() {
+                                shim.arguments = nullptr;
+                                GetConstructorInitializers(cons, &shim,
+                                    MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
+                                if (!init->packed)
+                                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                            });
                             ExpandPackedConstructorInitializers(cls, cons, sp->tp->templateParam->second->byPack.pack,
                                                            cons->sb->constructorInitializers, init->initData, shim.arguments);
                             init->sp = cls;
@@ -2125,13 +2125,13 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                 CallSite shim;
                                 sp->sb->offset = offset;
                                 init->sp = sp;
-                                SwitchTokenStream(init->initData);
-                                shim.arguments = nullptr;
-                                GetConstructorInitializers(cons, &shim,
-                                                      MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
-                                if (init->packed)
-                                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
-                                SwitchTokenStream(nullptr);
+                                ParseOnStream(init->initData, [&]() {
+                                    shim.arguments = nullptr;
+                                    GetConstructorInitializers(cons, &shim,
+                                        MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
+                                    if (init->packed)
+                                        error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                                });
                                 if (shim.arguments)
                                 {
                                     init->init = initListFactory.CreateList();
@@ -2188,27 +2188,27 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                         // have to make a *real* variable as a fudge...
                         SYMBOL* sp;
                         CallSite shim;
-                        SwitchTokenStream(init->initData);
-                        if (MATCHKW(Keyword::lt_))
-                        {
-                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                            GetTemplateArguments(cons, init->sp, &lst);
-                            if (init->sp->sb->templateLevel)
+                        ParseOnStream(init->initData, [&]() {
+                            if (MATCHKW(Keyword::lt_))
                             {
-                                init->sp = TemplateClassInstantiate(init->sp, lst, false, StorageClass::global_);
+                                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                                GetTemplateArguments(cons, init->sp, &lst);
+                                if (init->sp->sb->templateLevel)
+                                {
+                                    init->sp = TemplateClassInstantiate(init->sp, lst, false, StorageClass::global_);
+                                }
+                                else
+                                {
+                                    errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                                }
                             }
-                            else
-                            {
-                                errorsym(ERR_NOT_A_TEMPLATE, init->sp);
-                            }
-                        }
-                        sp = makeID(StorageClass::member_, init->sp->tp, nullptr, init->sp->name);
-                        sp->sb->offset = offset;
-                        init->sp = sp;
-                        shim.arguments = nullptr;
-                        GetConstructorInitializers(cons, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
-                                              true);
-                        SwitchTokenStream(nullptr);
+                            sp = makeID(StorageClass::member_, init->sp->tp, nullptr, init->sp->name);
+                            sp->sb->offset = offset;
+                            init->sp = sp;
+                            shim.arguments = nullptr;
+                            GetConstructorInitializers(cons, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
+                                true);
+                        });
                         if (init->packed)
                         {
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -2253,29 +2253,29 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             // have to make a *real* variable as a fudge...
                             SYMBOL* sp;
                             CallSite shim;
-                            SwitchTokenStream(init->initData);
-                            if (MATCHKW(Keyword::lt_))
-                            {
-                                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                                GetTemplateArguments(cons, init->sp, &lst);
-                                if (init->sp->sb->templateLevel)
+                            ParseOnStream(init->initData, [&]() {
+                                if (MATCHKW(Keyword::lt_))
                                 {
-                                    init->sp = TemplateClassInstantiate(init->sp, lst, false, StorageClass::global_);
+                                    std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                                    GetTemplateArguments(cons, init->sp, &lst);
+                                    if (init->sp->sb->templateLevel)
+                                    {
+                                        init->sp = TemplateClassInstantiate(init->sp, lst, false, StorageClass::global_);
+                                    }
+                                    else
+                                    {
+                                        errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                                    }
                                 }
-                                else
-                                {
-                                    errorsym(ERR_NOT_A_TEMPLATE, init->sp);
-                                }
-                            }
-                            sp = makeID(StorageClass::member_, init->sp->tp, nullptr, init->sp->name);
-                            sp->sb->offset = offset;
-                            init->sp = sp;
-                            shim.arguments = nullptr;
-                            GetConstructorInitializers(cons, &shim,
-                                                  MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
-                            if (init->packed)
-                                error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
-                            SwitchTokenStream(nullptr);
+                                sp = makeID(StorageClass::member_, init->sp->tp, nullptr, init->sp->name);
+                                sp->sb->offset = offset;
+                                init->sp = sp;
+                                shim.arguments = nullptr;
+                                GetConstructorInitializers(cons, &shim,
+                                    MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
+                                if (init->packed)
+                                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                            });
                             if (shim.arguments)
                             {
                                 init->init = initListFactory.CreateList();

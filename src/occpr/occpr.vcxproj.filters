@@ -100,6 +100,7 @@
     <ClCompile Include="..\occparse\vtab.cpp" />
     <ClCompile Include="..\occil\msilusing.cpp" />
     <ClCompile Include="..\occparse\using.cpp" />
+    <ClCompile Include="..\occparse\LexToken.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="db.h" />

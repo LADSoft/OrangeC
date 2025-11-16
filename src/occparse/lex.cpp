@@ -70,11 +70,6 @@ const char* eofFile;
 bool parsingPreprocessorConstant;
 
 int charIndex;
-LexTokenFactory tokenFactory;
-std::stack<LexToken*> context;
-
-Lexeme* currentLex;
-LexToken* currentContext;
 
 Optimizer::LINEDATA nullLineData = {0, "", "", 0, 0};
 
@@ -86,6 +81,7 @@ static std::string currentLine;
 static int lastBrowseIndex;
 static unsigned char* bitIntBuffer;
 static std::deque<ppDefine::TokenPos>::const_iterator tokenIterator;
+
 struct ParseHold
 {
     std::string currentLine;
@@ -93,7 +89,6 @@ struct ParseHold
 };
 
 static std::stack<ParseHold> parseStack;
-LexContext* contextHold;
 
 KeywordData keywords[] = {
     {"!", 1, Keyword::not_, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
@@ -408,7 +403,6 @@ void lexini(void)
  * create a keyword table
  */
 {
-    contextHold = nullptr;
     bool old = Optimizer::cparams.prm_extwarning;
     Optimizer::cparams.prm_extwarning = false;
     int i;
@@ -426,14 +420,9 @@ void lexini(void)
     linePointer = (const unsigned char*)currentLine.c_str();
     while (parseStack.size())
         parseStack.pop();
-    while (!context.empty())
-        context.pop();
     lastBrowseIndex = 0;
     Optimizer::cparams.prm_extwarning = old;
-    tokenFactory.clear();
-    currentContext = tokenFactory.Create();
-    context.push(currentContext);
-    currentLex = nullptr;
+    lextokeninit();
 }
 
 /*-------------------------------------------------------------------------*/
@@ -457,7 +446,7 @@ bool KWTYPE(unsigned types)
                 getsym();
                 bool s;
                 rv = TypeGenerator::StartOfType(&s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
-                BackupTokenStream();
+                --*currentStream;
                 if (rv == TT_BASETYPE)
                     RequiresDialect::Feature(Dialect::c23, "auto as a type");
             }
@@ -1646,14 +1635,14 @@ int getId(const unsigned char** ptr, unsigned char* dest)
 void SkipToNextLine(void)
 {
 
-    if (context.size() == 1)
+    if (contextStack.size() == 1)
     {
         SkipToEol();
         currentLex = nullptr;
     }
     getsym();
 }
-Lexeme *getGTSym()
+void getGTSym()
 {
     const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     auto kw = searchkw(&ppgreater);
@@ -1661,7 +1650,7 @@ Lexeme *getGTSym()
     *lex = *currentLex;
     lex->type = LexType::l_kw_;
     lex->kw = kw;
-    return lex;
+    currentLex = lex;
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }
 bool AtEol()
@@ -1857,15 +1846,18 @@ void getsym(void)
     static int trailer;
     Optimizer::SLCHAR* strptr;
 
-    if (currentContext->RePlaying())
+    if (currentStream->RePlaying() || currentStream->Reloaded())
     {
-        if (currentContext->Index() != currentContext->end())
+        if (currentStream->Index() < currentStream->Base() +  currentStream->size())
         {
-            auto rv = *currentContext->Index();
-            if (!currentContext->Reloaded())
-                TemplateRegisterToken(rv);
-            currentContext->Next();
-            if (rv->linedata && rv->linedata != &nullLineData)
+            ++*currentStream;
+            if (currentStream->Index() == currentStream->size())
+            {
+                currentLex = nullptr;
+                return;
+            }
+            currentLex = currentStream->get(currentStream->Index());
+            if (currentLex->linedata && currentLex->linedata != &nullLineData)
             {
                 if (!lines)
                     lines = lineDataListFactory.CreateList();
@@ -1873,26 +1865,28 @@ void getsym(void)
                     lines->pop_back();
                 if (lines->size() == 1)
                 {
-                    lines->front() = rv->linedata;
+                    lines->front() = currentLex->linedata;
                 }
                 else
                 {
-                    lines->push_back(rv->linedata);
+                    lines->push_back(currentLex->linedata);
                 }
             }
-            currentLex = rv;
             return;
         }
-        else
+        else if (currentStream->RePlaying())
         {
             currentLex = nullptr;
             return;
         }
     }
-    if (currentContext->size() > LexCacheDepth)
+    if (currentStream->size() > LexCacheDepth)
     {
-        currentContext->Prune(LexCacheDepth, LexCachePrune);
+        currentStream->Prune(LexCacheDepth, LexCachePrune);    
+        currentLex = currentStream->get(currentStream->Index());
     }
+    if (!parsingPreprocessorConstant)
+        TemplateRegisterToken(currentLex);
     bool fetched = false;
     do
     {
@@ -1933,12 +1927,10 @@ void getsym(void)
                 }
             }
         } while (*linePointer == 0);
-        currentLex =  lex =currentContext->Create();
-        currentContext->Add(lex);
+        currentLex =  lex = LexemeTokenFactory::Instantiation().Create();
+        currentStream->Add(lex);
         currentLex->linedata = &nullLineData;
 
-        if (!parsingPreprocessorConstant)
-            TemplateRegisterToken(currentLex);
         charIndex = currentLex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
         eofLine = currentLex->errline = preProcessor->GetErrLineNo();
         eofFile = currentLex->errfile = preProcessor->GetErrFile().c_str();
@@ -2103,34 +2095,7 @@ void getsym(void)
     }
     currentLex = lex;
 }
-void BackupTokenStream(LexToken::iterator it)
-{
-    currentContext->Index(it);
-    currentLex = *it;
-}
-void BackupTokenStream(void)
-{
-    currentContext->Prev();
-    currentLex = *currentContext->Index();
-}
-void SwitchTokenStream(LexToken* tokens)
-{
-    if (tokens)
-    {
-        tokens->reset();
-        context.push(tokens);
-        currentContext = tokens;
-        currentLex = *tokens->Index();
-        TemplateRegisterToken(currentLex);
-    }
-    else
-    {
-        context.pop();
-        currentContext = context.top();
-        currentLex = *context.top()->Index();
-    }
-}
-bool CompareLex(LexToken* ileft, LexToken* iright)
+bool CompareLex(LexemeStream* ileft, LexemeStream* iright)
 {
     auto itl = ileft->begin();
     auto itle = ileft->end();
@@ -2205,18 +2170,18 @@ void SetAlternateParse(bool set, const std::string& val)
         parseStack.push(std::move(ParseHold{std::move(currentLine), n}));
         currentLine = val;
         linePointer = (const unsigned char*)currentLine.c_str();
-        context.push(tokenFactory.Create());
-        currentContext = context.top();
+        contextStack.push(streamFactory.Create());
+        currentStream = contextStack.top();
         currentLex = nullptr;
     }
     else if (parseStack.size())
     {
-        auto tokens = context.top();
-        context.pop();
-        currentContext = context.top();
-        if (currentContext->size())
-            currentLex = *currentContext->Index();
-        tokenFactory.Destroy(tokens);
+        auto tokens = contextStack.top();
+        contextStack.pop();
+        currentStream = contextStack.top();
+        if (currentStream->size())
+            currentLex = currentStream->get(currentStream->Index());
+        streamFactory.Destroy(tokens);
         currentLine = std::move(parseStack.top().currentLine);
         linePointer = (const unsigned char*)currentLine.c_str() + parseStack.top().charIndex;
         parseStack.pop();
@@ -2224,7 +2189,7 @@ void SetAlternateParse(bool set, const std::string& val)
 }
 long long ParseExpression(std::string& line)
 {
-    LexToken tokenList;
+    LexemeStream tokenList;
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
     SetAlternateParse(true, line);

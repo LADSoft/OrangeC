@@ -1344,7 +1344,7 @@ static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
                                 bool commaallowed, std::function<EXPRESSION*(EXPRESSION*, Type*)> modify, bool arrayElem,
                                 SYMBOL* sym)
 {
-    auto start = currentContext->Index();
+    LexemeStreamPosition start(currentStream);
     int noeval = 0;
     if (Optimizer::cparams.prm_cplusplus && definingTemplate && !instantiatingTemplate && sym && sym->sb->templateLevel)
     {
@@ -1352,7 +1352,7 @@ static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
     }
     else if (Optimizer::cparams.prm_cplusplus && arrayElem)
     {
-        auto start = currentContext->Index();
+        LexemeStreamPosition start(currentStream);
         int pa = 0, lt = 0, beg = 0;
         do
         {
@@ -1394,7 +1394,7 @@ static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
         } while (currentLex);
         if (currentLex && MATCHKW(Keyword::ellipse_))
             noeval = _F_NOEVAL | _F_PACKABLE;
-        BackupTokenStream(start);
+        start.Backup();
     }
     EnterPackedSequence();
     if (commaallowed)
@@ -2450,12 +2450,12 @@ static void allocate_desc(Type* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
 }
 static int str_candidate( Type* tp)
 {
-    auto old = currentContext->Index();
+    LexemeStreamPosition old(currentStream);
     if (MATCHKW(Keyword::openpa_))
     {
         while (currentLex && MATCHKW(Keyword::openpa_))
             getsym();
-        BackupTokenStream(old);
+        old.Backup();
     }
     if (!currentLex)
         return false;
@@ -2992,11 +2992,11 @@ auto InitializeSimpleAggregate(Type* itype, bool needend, int offset, SYMBOL* fu
                 {
                     if (tp2->IsStructured())
                     {
-                        auto placeHolder = currentContext->Index();
+                        LexemeStreamPosition placeHolder(currentStream);
                         EXPRESSION* exp = nullptr;
                         Type* tp = nullptr;
                         expression_no_comma(funcsp, nullptr, &tp, &exp, nullptr, 0);
-                        BackupTokenStream(placeHolder);
+                        placeHolder.Backup();
                         if (tp && tp2->CompatibleType(tp))
                         {
                             break;
@@ -3773,7 +3773,7 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                     getsym();
                     doTrivial = MATCHKW(Keyword::begin_);
                     if (!doTrivial)
-                        BackupTokenStream();
+                        --*currentStream;
                     else
                         getsym();
                 }
@@ -3836,7 +3836,7 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                 {
                     EnterPackedSequence();
                 }
-                auto start = currentContext->Index();
+                LexemeStreamPosition start(currentStream);
                 expression_no_comma(funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
                 tp1->InstantiateDeferred();
                 if (!tp1)
@@ -3851,9 +3851,9 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                     for (int i = 0; i < n; i++)
                     {
                         SetPackIndex(i);
-                        currentContext->PlayAgain(&start);
-                        expression_no_comma(funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
-                        currentContext->PlayAgain(nullptr);
+                        start.Replay([&]() {
+                            expression_no_comma(funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
+                        });
                         if (!baseType->CompatibleType(tp1) && !SameTemplate(baseType, tp1))
                             errorConversionOrCast(true, tp1, baseType);
                         if (exp1)
@@ -4412,7 +4412,7 @@ void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializ
                 {
                     getsym();
                     found = currentLex->type == LexType::l_astr_;
-                    BackupTokenStream();
+                    --*currentStream;
                 }
                 else
                 {
@@ -4734,7 +4734,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
         {
             if (sym->tp->IsAutoType() && MATCHKW(Keyword::assign_))
             {
-                auto placeHolder = currentContext->Index();
+                LexemeStreamPosition placeHolder(currentStream);
                 Type* tp1 = nullptr;
                 EXPRESSION* exp1;
                 getsym();
@@ -4774,7 +4774,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
                         }
                     }
                 }
-                BackupTokenStream(placeHolder);
+                placeHolder.Backup();
             }
             if (sym->sb->storage_class == StorageClass::absolute_)
                 error(ERR_ABSOLUTE_NOT_INITIALIZED);

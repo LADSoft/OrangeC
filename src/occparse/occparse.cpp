@@ -86,6 +86,7 @@
 #include <cstdio>
 #include "sha1.h"
 #include "templateHash.h"
+#if 0
 //#define x64_compiler
 #ifndef __SANITIZE_ADDRESS__
 #ifndef x64_compiler
@@ -164,6 +165,7 @@ void operator delete(void* p) noexcept
 }
 
 #    endif
+#endif
 #endif
 #endif
 #ifndef ORANGE_NO_MSIL

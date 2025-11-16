@@ -163,27 +163,34 @@ std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym)
 }
 void TemplateRegisterToken(Lexeme* lex)
 {
-    if (currentLex && templateDeclarationLevel && !dontRegisterTemplate)
+    if (lex && templateDeclarationLevel && !dontRegisterTemplate)
     {
-        if (!currentContext->Reloaded())
+        if (inTemplateBody)
         {
-            if (currentLex->type == LexType::l_id_)
-                currentLex->value.s.a = litlate(currentLex->value.s.a);
-            if (inTemplateBody)
+            if (!currents->bodyTokenStream)
             {
-                if (currents->bodyTokenStream)
-                {
-                    currents->bodyTokenStream = tokenFactory.Create();
-                }
-                currents->bodyTokenStream->Add(currentLex);
+                currents->bodyTokenStream = streamFactory.Create();
             }
-            else
+            if (currents->bodyTokenStream->ReloadIndex() < currentStream->Index())
             {
-                if (!currents->head)
-                {
-                    currents->head = tokenFactory.Create();
-                }
-                currents->head->Add(currentLex);
+                if (lex->type == LexType::l_id_ && lex->refcount < 2)
+                    lex->value.s.a = litlate(lex->value.s.a);
+                currents->bodyTokenStream->Add(lex);
+                currents->bodyTokenStream->ReloadIndex(currentStream->Index());
+            }
+        }
+        else
+        {
+            if (!currents->head)
+            {
+                currents->head = streamFactory.Create();
+            }
+            if (currents->head->ReloadIndex() < currentStream->Index())
+            {
+                if (lex->type == LexType::l_id_ && lex->refcount < 2)
+                    lex->value.s.a = litlate(lex->value.s.a);
+                currents->head->Add(lex);
+                currents->head->ReloadIndex(currentStream->Index());
             }
         }
     }
@@ -385,7 +392,7 @@ bool constructedInt( SYMBOL* funcsp)
     // depends on this starting a type
     bool rv = false;
     Type* tp;
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
     bool notype = false;
@@ -396,11 +403,11 @@ bool constructedInt( SYMBOL* funcsp)
     if (currentLex->type == LexType::l_id_ || MATCHKW(Keyword::classsel_))
     {
         SYMBOL *sp, *strSym = nullptr;
-        auto placeHolder = currentContext->Index();
+        LexemeStreamPosition placeHolder(currentStream);
         bool dest = false;
         nestedSearch(&sp, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
         if (Optimizer::cparams.prm_cplusplus)
-            BackupTokenStream(placeHolder);
+            placeHolder.Backup();
         if (sp && sp->sb && sp->sb->storage_class == StorageClass::typedef_)
             cont = true;
     }
@@ -423,13 +430,13 @@ bool constructedInt( SYMBOL* funcsp)
             }
         }
     }
-    BackupTokenStream(placeHolder);
+    placeHolder.Backup();
     return rv;
 }
 void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst)
 {
     std::list<TEMPLATEPARAMPAIR>** start = lst;
-    LexToken::iterator expstart;
+    LexemeStreamPosition expstart(currentStream);;
     int oldnoTn = noTypeNameError;
     noTypeNameError = 0;
     bool first = true;
@@ -472,7 +479,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                   (itorig == iteorig && TypeGenerator::StartOfType(nullptr, true) && !constructedInt(funcsp))) &&
                  !MATCHKW(Keyword::sizeof_)))
             {
-                auto start = currentContext->Index();
+                LexemeStreamPosition start(currentStream);
                 tp = nullptr;
                 if (ISID())
                 {
@@ -497,7 +504,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                         }
                         if (!tp)
                         {
-                            BackupTokenStream();
+                            --*currentStream;
                         }
                     }
                 }
@@ -797,7 +804,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                     if (currentLex->type == LexType::l_id_)
                     {
                         SYMBOL* sp;
-                        auto last = currentContext->Index();
+                        LexemeStreamPosition  last(currentStream);
                         nestedSearch(&sp, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
                         if (sp && sp->tp->templateParam)
                         {
@@ -805,7 +812,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             if ((!MATCHKW(Keyword::rightshift_) && !MATCHKW(Keyword::gt_) &&
                                 !MATCHKW(Keyword::comma_)) || sp->tp->templateParam->second->packed)
                             {
-                                BackupTokenStream(last);
+                                last.Backup();
                                 goto join;
                             }
                             else
@@ -817,7 +824,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                         }
                         else
                         {
-                            BackupTokenStream(last);
+                            last.Backup();
                             goto join;
                         }
                     }
@@ -833,7 +840,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                 join:
                     skip = false;
                     name = nullptr;
-                    expstart = currentContext->Index();
+                    expstart.Bump();
                     if (ISID())
                     {
                         for (auto&& s : enclosingDeclarations)
@@ -858,7 +865,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             if (MATCHKW(Keyword::classsel_))
                             {
                                 std::list<NAMESPACEVALUEDATA*>* nsv;
-                                BackupTokenStream(expstart);
+                                expstart.Backup();
                                 nestedPath(&name, &nsv, nullptr, false, StorageClass::parameter_, false, 0);
                                 if (name && name->tp->type == BasicType::templateselector_)
                                 {
@@ -880,12 +887,12 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                                     }
                                     else
                                     {
-                                        BackupTokenStream(expstart);
+                                        expstart.Backup();
                                     }
                                 }
                                 else
                                 {
-                                    BackupTokenStream(expstart);
+                                    expstart.Backup();
                                 }
                             }
                             else if (name->tp->templateParam->second->type == TplType::int_)
@@ -927,12 +934,12 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                                 }
                                 else
                                 {
-                                    BackupTokenStream(expstart);
+                                    expstart.Backup();
                                 }
                             }
                             else
                             {
-                                BackupTokenStream(expstart);
+                                expstart.Backup();
                             }
                         }
                         if (!skip)
@@ -980,7 +987,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                         if (0)
                         {
                         initlistjoin:
-                            expstart = currentContext->end();;
+                            expstart.Position(currentStream->Base() + currentStream->size());;
                             name = nullptr;
                         }
                         if (MATCHKW(Keyword::ellipse_))
@@ -1182,7 +1189,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
     }
     if (MATCHKW(Keyword::rightshift_))
     {
-        currentLex = getGTSym();
+        getGTSym();
     }
     else
     {
@@ -1510,13 +1517,13 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
     restoreParams(&sd, 1);
     return found1;
 }
-LexToken*  TemplateArgGetDefault( bool isExpression)
+LexemeStream*  TemplateArgGetDefault( bool isExpression)
 {
-    LexToken* rv = tokenFactory.Create();
-    LexToken::iterator current = currentContext->Index();
-    if (current != currentContext->end())
+    LexemeStream* rv = streamFactory.Create();
+    LexemeStreamPosition current(currentStream);
+    if (!currentStream->Reloaded())
     {
-        LexToken::iterator end = current;
+        LexemeStreamPosition end(currentStream);
         // this presumes that the template or expression is small enough to be cached...
         // may have to adjust it later
         // have to properly parse the default value, because it may have
@@ -1526,19 +1533,22 @@ LexToken*  TemplateArgGetDefault( bool isExpression)
             Type* tp;
             EXPRESSION* exp;
             expression_no_comma(nullptr, nullptr, &tp, &exp, nullptr, _F_INTEMPLATEPARAMS);
-            end = currentContext->Index();
         }
         else
         {
             Type* tp;
             tp = TypeGenerator::TypeId(nullptr, StorageClass::cast_, false, true, false);
-            end = currentContext->Index();
         }
+        end.Position(currentStream->Index());
         while (current != end)
         {
-            if (ISID(current))
-                (*current)->value.s.a = litlate((*current)->value.s.a);
-            rv->Add(*current);
+            auto lex = current.get();;;
+            if (!currentStream->RePlaying())
+            {
+                if (lex->type == LexType::l_id_)
+                    lex->value.s.a = litlate(lex->value.s.a);
+            }
+            rv->Add(lex);
             ++current;
         }
     }
@@ -1590,7 +1600,7 @@ static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
             }
         }
         if (MATCHKW(Keyword::rightshift_))
-            currentLex = getGTSym();
+            getGTSym();
         else
             needkw(Keyword::gt_);
     }
@@ -1600,8 +1610,8 @@ static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
 static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst,
                             bool templateParam)
 {
-    auto current = currentContext->Index();
-    LexToken* txttype = nullptr;
+    auto current = currentStream->Index();
+    LexemeStream* txttype = nullptr;
     switch (KW())
     {
         Type *tp, *tp1;
@@ -1678,17 +1688,17 @@ static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPL
                 }
                 else if (ISID())
                 {
-                    auto hold = currentContext->Index();
+                    auto hold = currentStream->Index();
                     getsym();
                     if (MATCHKW( Keyword::comma_) || MATCHKW(Keyword::assign_) || MATCHKW(Keyword::gt_) || MATCHKW(Keyword::rightshift_) || MATCHKW(Keyword::ellipse_))
                     {
                         Type* tp = Type::MakeType(BasicType::templateparam_);
                         tp->templateParam = &arg;
-                        arg.first = templateParamId(tp, (*hold)->value.s.a, templateNameTag++);
+                        arg.first = templateParamId(tp, currentStream->get(hold)->value.s.a, templateNameTag++);
                     }
                     else
                     {
-                        BackupTokenStream();
+                        --*currentStream;
                         goto nontype_mainjoin;
                     }
                 }
@@ -1871,13 +1881,19 @@ static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPL
                 tp2 = tp2->BaseType();
                 if (!tp->IsInt() && (!tp->IsPtr() || tp2->type == BasicType::templateselector_))
                 {
-                    auto end = currentContext->Index();
+                    auto end = currentStream->Index();
+                    if (current != end)
+                        txttype = LexemeStreamFactory::Instantiation().Create();
                     // if the type didn't resolve, we want to cache it then evaluate it later...
                     while (current != end)
                     {
-                        if (ISID(current))
-                            (*current)->value.s.a = litlate((*current)->value.s.a);
-                        txttype->Add(*current);
+                        auto lex = currentStream->get(current);
+                        if (!currentStream->RePlaying())
+                        {
+                            if (lex->type == LexType::l_id_)
+                                lex->value.s.a = litlate(lex->value.s.a);
+                        }
+                        txttype->Add(lex);
                         ++current;
                     }
                 }
@@ -1906,9 +1922,9 @@ static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPL
                     {
                         Type* tp = nullptr;
                         EXPRESSION* exp = nullptr;
-                        SwitchTokenStream(arg.second->byNonType.txtdflt);
-                        expression_no_comma(nullptr, nullptr, &tp, &exp, nullptr, 0);
-                        SwitchTokenStream(nullptr);
+                        ParseOnStream(arg.second->byNonType.txtdflt, [&]() {
+                            expression_no_comma(nullptr, nullptr, &tp, &exp, nullptr, 0);
+                        });
                         if (tp && isintconst(exp))
                         {
                             arg.second->byNonType.dflt = exp;
@@ -2948,7 +2964,7 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
         struct templateListData l;
         int count = 0;
         int oldInstantiatingTemplate = instantiatingTemplate;
-        BackupTokenStream();
+        --*currentStream;
         if (isExtern)
             error(ERR_DECLARE_SYNTAX);
 

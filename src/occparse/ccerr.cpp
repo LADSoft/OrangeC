@@ -420,12 +420,11 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         }
     if (!file)
     {
-        if (!context.empty() && (**currentContext)->type != LexType::none_)
+        if (!contextStack.empty() && currentStream->get(currentStream->Index())->type != LexType::none_)
         {
-            auto it = currentContext->Index();
-            --it;
-            line = (*it)->errline;
-            file = (*it)->errfile;
+            auto index = currentStream->Index() - 1;
+            line = currentStream->get(index)->errline;
+            file = currentStream->get(index)->errfile;
         }
         else
         {

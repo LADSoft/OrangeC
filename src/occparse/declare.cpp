@@ -1161,7 +1161,9 @@ void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel d
         }
     }
     if (inTemplate && templateDeclarationLevel == 1)
+    {
         inTemplateBody++;
+    }
     if (Optimizer::cparams.prm_cplusplus)
         if (KW() == Keyword::colon_)
         {
@@ -1343,13 +1345,13 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
         if (MATCHKW(Keyword::begin_))
         {
             nobody = true;
-            BackupTokenStream();
+            --*currentStream;
         }
         else
         {
             if (MATCHKW(Keyword::lt_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_))
             {
-                BackupTokenStream();
+                --*currentStream;
                 // multiple identifiers, wade through them for error handling
                 error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
                 while (ISID())
@@ -1362,7 +1364,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
             }
             else
             {
-                BackupTokenStream();
+                --*currentStream;
             }
         }
     }
@@ -2141,9 +2143,9 @@ void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
                         else if (!isintconst(exp))
                             error(ERR_CONSTANT_VALUE_EXPECTED);
                         int align = exp->v.i;
-                        auto placeHolder = currentContext->Index();
+                        LexemeStreamPosition placeHolder(currentStream);
                         if (needkw(Keyword::closepa_))
-                            BackupTokenStream(placeHolder);
+                            placeHolder.Backup();
                         basisAttribs.inheritable.structAlign = align;
                         if (basisAttribs.inheritable.structAlign > 0x10000 ||
                             (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
@@ -2337,7 +2339,7 @@ static void nestedTypeSearch( SYMBOL** sym)
     }
     return;
 }
-static bool isPointer(LexToken& lex)
+static bool isPointer(LexemeStream& lex)
 {
     while (KWTYPE((TT_TYPEQUAL | TT_LINKAGE)))
         getsym();
@@ -2498,9 +2500,9 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
         }
     }
 }
-LexToken* GetTokenStream(bool braces)
+LexemeStream* GetTokenStream(bool braces)
 {
-    LexToken* savePos = tokenFactory.Create();
+    LexemeStream* savePos = streamFactory.Create();
     int paren = 0;
     int begin = 0;
     int brack = 0;
@@ -2508,7 +2510,7 @@ LexToken* GetTokenStream(bool braces)
     bool viaTry = false;
     if (braces) // theoretically we can only have a try at this point for function bodies...
         viaTry = MATCHKW(Keyword::try_);
-    while (!currentLex)
+    while (currentLex)
     {
         Keyword kw = KW();
         if (braces)
@@ -2853,7 +2855,6 @@ void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool a
     bool flaggedTypedef = false;
     *blocked = false;
     *constexpression = *builtin_constexpr = false;
-
     while (KWTYPE(TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
            (!foundType && TypeGenerator::StartOfType(nullptr, assumeType)) || MATCHKW(Keyword::complx_) ||
            (*storage_class == StorageClass::typedef_ && !foundType))
@@ -3032,7 +3033,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                 isExtern = true;
                 goto jointemplate;
             }
-            BackupTokenStream();
+            --*currentStream;
         }
         if (!asExpression && MATCHKW(Keyword::template_))
         {
@@ -3052,7 +3053,6 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
         }
         else if (!asExpression && MATCHKW(Keyword::namespace_))
         {
-
             int count = 0;
             bool linked;
             struct _ccNamespaceData nsData;
@@ -3153,7 +3153,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
             {
                 getsym();
                 bindingcandidate = ISID();
-                BackupTokenStream();
+                --*currentStream;
             }
             auto ssp = enclosingDeclarations.GetFirst();
             if (blocked)
@@ -3212,7 +3212,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         {
                             strSym = (*tp->sp->sb->templateSelector)[1].sp;
                             while (!MATCHKW(Keyword::operator_))
-                                BackupTokenStream();
+                                --*currentStream;
                             notype = true;
                             tp = tp1 = Type::MakeType(BasicType::int_);
                             isTemplatedCast = true;
@@ -4617,7 +4617,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             {
                                 sp->sb->runtimeSym = AnonymousVar(StorageClass::auto_, &stdpointer)->v.sp;
                             }
-                            auto placeHolder = currentContext->Index();
+                            LexemeStreamPosition placeHolder(currentStream);
                             bool structuredArray = false;
                             if (notype)
                             {
@@ -4737,8 +4737,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         if (!sp->sb->constexpression)
                                         {
                                             Statement* st;
-                                            currentLineData(block, *placeHolder, 0);
-                                            st = Statement::MakeStatement(block, StatementNode::expr_, *placeHolder);
+                                            currentLineData(block, placeHolder.get(), 0);
+                                            st = Statement::MakeStatement(block, StatementNode::expr_, placeHolder.get());
                                             if (!sp->tp->IsStructured() || !sp->tp->BaseType()->sp->sb->islambda)
                                             {
                                                 st->select = ConverInitializersToExpression(sp->tp, sp, nullptr, funcsp,
@@ -4760,8 +4760,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         else if (sp->tp->IsStructured())
                                         {
                                             Statement* st;
-                                            currentLineData(block, *placeHolder, 0);
-                                            st = Statement::MakeStatement(block, StatementNode::expr_, *placeHolder);
+                                            currentLineData(block, placeHolder.get(), 0);
+                                            st = Statement::MakeStatement(block, StatementNode::expr_, placeHolder.get());
                                             st->select = MakeExpression(ExpressionNode::constexprconstructor_, sp);
                                             st->select->left = ConverInitializersToExpression(sp->tp, sp, nullptr, funcsp,
                                                                                               sp->sb->init, nullptr, false);
@@ -4784,7 +4784,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                     // be accesed in the switch body
                                                     ++it;
                                                     int n = (*it)->statements->size();
-                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, *placeHolder);
+                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, placeHolder.get());
                                                     auto itb = (*it)->statements->begin();
                                                     for (int i = 0; i < n; i++, ++itb)
                                                         ;
@@ -4792,7 +4792,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                 }
                                                 else
                                                 {
-                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, *placeHolder);
+                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, placeHolder.get());
                                                     block.front()->statements->push_front(st);
                                                 }
                                                 st->select = MakeExpression(ExpressionNode::initobj_,

@@ -27,7 +27,8 @@
 #include <cassert>
 #include <algorithm>
 
-#define MAX_LOOKBACK 1024
+#include "LexToken.h"
+
 namespace Parser
 {
 /* error list */
@@ -161,171 +162,9 @@ struct Lexeme
     };
 };
 
-struct LexToken
-{
-    typedef std::vector<Lexeme*>::iterator iterator;
-
-    Lexeme* Create()
-    {
-        if (cache.size())
-        {
-            auto rv = cache.front();
-            *rv = {};
-            cache.pop_front();
-            return rv;
-        }
-        auto rv = new Lexeme();
-        return rv;
-    }
-    void Add(Lexeme* lex)
-    {
-        data.push_back(lex);
-        ++current;
-        if (current > top) ++top;
-    }
-    void Next()
-    {
-        if (current < data.size())
-        {
-            if (current == top)
-            {
-                ++top;
-            }
-            ++current;
-        }
-    }
-    void Prev()
-    {
-        if (current)
-        {
-            --current;
-        }
-    }
-    Lexeme* operator*()
-    {
-        assert(current != data.size());
-        return data[current];
-    }
-    iterator Index()
-    {
-        auto it = begin();
-        std::advance(it, current);
-        return it;
-    }
-    void Index(iterator it)
-    {
-        current = it - begin();
-    }
-    void reset()
-    {
-        replaying = true;
-        current =top = 0;
-    }
-    bool RePlaying()
-    {
-        return replaying;
-    }
-    bool Reloaded()
-    {
-        return current < top;
-    }
-    void PlayAgain(iterator* index)
-    {
-        if (!index)
-        {
-            current = hold.back();
-            hold.pop_back();
-        }
-        else
-        {
-            hold.push_back(current);
-            current = *index - data.begin();
-        }
-    }
-    void Prune(unsigned maxDepth, unsigned pruneSize)
-    {
-        if (hold.size() > maxDepth && ValidPrune(pruneSize) )
-        {
-            for (int i = 0; i < pruneSize; i++)
-            {
-                if (data[i]->refcount < 2)
-                {
-                    if (cache.size() < pruneSize)
-                    {
-                        cache.push_back(data[i]);
-                    }
-                    else
-                    {
-                        delete data[i];
-                    }
-                }
-            }
-            std::rotate(data.begin() + pruneSize, data.begin(), data.end());
-            data.resize(maxDepth - pruneSize);
-            for (auto&& it : hold)
-            {
-                it -= pruneSize;
-            }
-            current -= pruneSize;
-            top -= pruneSize;
-        }
-    }
-    bool ValidPrune(unsigned pruneSize)
-    {
-        if (current < pruneSize)
-            return false;
-        if (top < pruneSize)
-            return false;
-        for (auto val : hold)
-        {
-            if (val  < pruneSize)
-                return false;
-        }
-        return true;
-    }
-    iterator begin() { return data.begin(); }
-    iterator end() { return data.end(); }
-    size_t size() const { return data.size(); }
-private:
-    bool replaying = false;
-    int current = 0;
-    int top= 0;
-    std::deque<Lexeme*> cache;
-    std::deque<int> hold;
-    std::vector<Lexeme*> data;
-};
-struct LexTokenFactory
-{
-    LexToken* Create()
-    {
-        auto tokens = new LexToken();
-        lists.insert(tokens);
-        return tokens;
-    }
-    void Destroy(LexToken* tokens)
-    {
-        delete tokens;
-        lists.erase(tokens);
-    }
-    void clear()
-    {
-        for (auto s : lists)
-        {
-            delete s;
-        }
-        lists.clear();
-    }
-    ~LexTokenFactory()
-    {
-        clear();
-    }
-private:
-    std::set<LexToken*> lists;
-};
-
-#define MATCHTYPE(tp) (currentLex->type == (tp))
-#define ISID() (currentLex->type == LexType::l_id_)
-#define ISKW() (currentLex->type == LexType::l_kw_)
+#define MATCHTYPE(tp) (currentLex && currentLex->type == (tp))
+#define ISID() (currentLex && currentLex->type == LexType::l_id_)
+#define ISKW() (currentLex && currentLex->type == LexType::l_kw_)
 #define MATCHKW(keyWord) (ISKW() && (currentLex->kw->key == keyWord))
 bool KWTYPE(unsigned types);
 #define KW() (ISKW() ? currentLex->kw->key : Keyword::none_)
@@ -334,17 +173,13 @@ extern Optimizer::LINEDATA nullLineData;
 extern int eofLine;
 extern const char* eofFile;
 extern bool parsingPreprocessorConstant;
-extern LexTokenFactory tokenFactory;
-extern std::stack<LexToken*> context;
 extern int charIndex;
 extern SymbolTable<KeywordData>* kwSymbols;
-extern Lexeme* currentLex;
-extern LexToken* currentContext;
 
 void lexini(void);
 KeywordData* searchkw(const unsigned char** p);
 void SkipToNextLine(void);
-Lexeme* getGTSym();
+void getGTSym();
 void SkipToEol();
 bool AtEol();
 void CompilePragma(const unsigned char** linePointer);
@@ -352,10 +187,8 @@ void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
 void FlushLineData(const char* file, int lineno);
 std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme* lex, int offset);
 void getsym(void);
-void BackupTokenStream(LexToken::iterator to);
-void BackupTokenStream(void);
-void SwitchTokenStream(LexToken* lexList);
-bool CompareLex(LexToken* left, LexToken* right);
+bool CompareLex(LexemeStream* left, LexemeStream* right);
 void SetAlternateParse(bool set, const std::string& val);
 long long ParseExpression(std::string& line);
+
 }  // namespace Parser

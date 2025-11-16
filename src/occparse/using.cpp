@@ -131,7 +131,7 @@ namespace Parser
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             if (!isTypename && ISID())
             {
-                auto placeHolder = currentContext->Index();
+                LexemeStreamPosition placeHolder(currentStream);
                 getsym();
                 attributes oldAttribs = basisAttribs;
                 basisAttribs = { 0 };
@@ -230,7 +230,7 @@ namespace Parser
                         tp = &stdint;
                     }
                     checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
-                    sp = makeID(StorageClass::typedef_, tp, nullptr, litlate((*placeHolder)->value.s.a));
+                    sp = makeID(StorageClass::typedef_, tp, nullptr, litlate((placeHolder.get())->value.s.a));
                     sp->sb->attribs = basisAttribs;
                     sp->tp = Type::MakeType(BasicType::typedef_, tp);
                     sp->tp->sp = sp;
@@ -296,7 +296,7 @@ namespace Parser
                 }
                 else
                 {
-                    BackupTokenStream();
+                    --*currentStream;
                 }
                 basisAttribs = oldAttribs;
             }
@@ -317,7 +317,7 @@ namespace Parser
             // there is an extension to C++17 that allows packed variables to be used as part of the pack,
             // then the using is applied to all elements of the path.   So we have to gather the path independently of
             // evaluating it...
-            std::list<std::pair<std::string, LexToken::iterator>> path;
+            std::list<std::pair<std::string,  LexemeStreamPosition>> path;
             while (true)
             {
                 if (!ISID() && !MATCHKW(Keyword::operator_))
@@ -331,14 +331,17 @@ namespace Parser
                 Type* castType;
                 getIdName(theCurrentFunc, buf, sizeof(buf), &ov, &castType);
                 getsym();
-                LexToken::iterator placeHolder = currentContext->end();;
+                LexemeStreamPosition placeHolder(currentStream);
                 if (MATCHKW(Keyword::lt_))
                 {
-                    placeHolder = currentContext->Index();
                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                     GetTemplateArguments(theCurrentFunc, nullptr, &lst);
                 }
-                path.push_back(std::pair<std::string, LexToken::iterator>(buf, placeHolder));
+                else
+                {
+                    placeHolder.Position( - 1);
+                }
+                path.push_back(std::pair<std::string, LexemeStreamPosition>(buf, placeHolder));
                 if (!MATCHKW(Keyword::classsel_))
                 {
                     break;
@@ -487,12 +490,12 @@ namespace Parser
                         }
                         else if (sp->tp->IsStructured())
                         {
-                            if (it->second != currentContext->end())
+                            if (it->second.Position() != -1)
                             {
-                                currentContext->PlayAgain(&it->second);
                                 std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                                GetTemplateArguments(theCurrentFunc, sp, &lst);
-                                currentContext->PlayAgain(nullptr);
+                                it->second.Replay([&]() {
+                                    GetTemplateArguments(theCurrentFunc, sp, &lst);
+                                });
                                 SYMBOL* sp1;
                                 sp1 = GetClassTemplate(sp, lst, false);
                                 if (sp1)

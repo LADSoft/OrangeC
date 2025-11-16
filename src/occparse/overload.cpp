@@ -5171,7 +5171,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 auto found10 = found1;
                 auto stream = noExceptTokenStreams.get(found1);
                 if (!(flags & _F_SIZEOF) || found1->tp->BaseType()->btp->IsAutoType() ||
-                    ((flags & _F_IS_NOTHROW) && stream != 0 && stream != (LexToken*)-1))
+                    ((flags & _F_IS_NOTHROW) && stream != 0 && stream != (LexemeStream*)-1))
                 {
                     if (theCurrentFunc && !(flags & _F_NOEVAL) && !found1->sb->constexpression)
                     {

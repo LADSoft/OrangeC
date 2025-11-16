@@ -27,9 +27,9 @@
 namespace Parser
 {
     extern int inStaticAssert;
-    extern std::map<SYMBOL*, std::list<LexToken*>> structureStaticAsserts;
+    extern std::map<SYMBOL*, std::list<LexemeStream*>> structureStaticAsserts;
 
-    void EnterStructureStaticAssert(SYMBOL* sym, LexToken* tokenStream);
+    void EnterStructureStaticAssert(SYMBOL* sym, LexemeStream* tokenStream);
     void ParseStructureStaticAssert(SYMBOL* sym);
     void handleStaticAssert();
 }  // namespace Parser

@@ -121,7 +121,7 @@ void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
 void getQualifiers( Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 void checkIncompleteArray(Type* tp, const char* errorfile, int errorline);
-LexToken* GetTokenStream(bool braces);
+LexemeStream* GetTokenStream(bool braces);
 void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
                            StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                            bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,

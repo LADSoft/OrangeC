@@ -63,9 +63,8 @@ bool IsCompiler();
 struct Type;
 struct Statement;
 struct FunctionBlock;
-struct LexToken;
+struct LexemeStream;
 struct Lexeme;
-struct LexContext;
 struct KeywordData;
 struct CallSite;
 struct Argument;
@@ -451,7 +450,7 @@ typedef struct expr
             struct
             {
                 Type* tp;
-                LexToken* tokenStream;
+                LexemeStream* tokenStream;
             } construct;
             struct
             {
@@ -848,7 +847,7 @@ typedef struct _constructorInitializers
     std::list<Initializer*>* init;
     int line;
     const char* file;
-    LexToken* initData;
+    LexemeStream* initData;
     int packed : 1;
     int delegating : 1;
     int valueInit : 1;
@@ -920,7 +919,7 @@ typedef struct _templateParam
         {
             SYMBOL* dflt;
             SYMBOL* val;
-            LexToken* txtdflt;
+            LexemeStream* txtdflt;
             std::list<SYMBOL*>* txtargs;
             SYMBOL* temp;
             std::list<TEMPLATEPARAMPAIR>* args;
@@ -930,7 +929,7 @@ typedef struct _templateParam
         {
             Type* dflt;
             Type* val;
-            LexToken* txtdflt;
+            LexemeStream* txtdflt;
             std::list<SYMBOL*>* txtargs;
             Type* temp;
         } byClass;
@@ -938,10 +937,10 @@ typedef struct _templateParam
         {
             EXPRESSION* dflt;
             EXPRESSION* val;
-            LexToken* txtdflt;
+            LexemeStream* txtdflt;
             std::list<SYMBOL*>* txtargs;
             EXPRESSION* temp;
-            LexToken* txttype;
+            LexemeStream* txttype;
             Type* tp;
         } byNonType;
         struct
@@ -1020,8 +1019,8 @@ struct templateListData
 {
     std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
     std::list<TEMPLATEPARAMPAIR>**ptail, **plast, **phold;
-    LexToken *head;
-    LexToken *bodyTokenStream;
+    LexemeStream *head;
+    LexemeStream *bodyTokenStream;
     SYMBOL* sp;
 };
 

@@ -185,7 +185,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
     return exp;
 }
 
-static void left_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& start, Type* seedtp,
+static void left_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
                       EXPRESSION* seedexp, Type* foldtp, EXPRESSION* foldexp)
 {
     auto it = dispatcher.find(currentLex->kw->key);
@@ -252,7 +252,7 @@ static void left_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, 
         }
     }
 }
-static void right_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& start, Type* seedtp,
+static void right_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
                        EXPRESSION* seedexp, Type* foldtp, EXPRESSION* foldexp)
 {
     auto it = dispatcher.find(currentLex->kw->key);
@@ -321,7 +321,7 @@ static void right_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp,
     }
 }
 
-void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& start,
+void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                           Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -335,7 +335,7 @@ void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSIO
         left_fold(funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& start,
+void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                            Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -349,8 +349,8 @@ void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
         right_fold(funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexToken::iterator& leftstart,
-                      Type* lefttp, EXPRESSION* leftexp, LexToken::iterator& rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
+void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& leftstart,
+                      Type* lefttp, EXPRESSION* leftexp, LexemeStreamPosition& rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
                       int flags)
 {
     if (!hasPackedExpression(leftexp, true))

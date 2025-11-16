@@ -1990,10 +1990,10 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
             if (initTokenStreams.get(sp))
             {
                 dontRegisterTemplate += templateDeclarationLevel != 0;
-                SwitchTokenStream(initTokenStreams.get(sp));
-                sp->sb->init = nullptr;
-                initialize(func, sp, StorageClass::parameter_, true, false, false, _F_TEMPLATEARGEXPANSION);
-                SwitchTokenStream(nullptr);
+                ParseOnStream(initTokenStreams.get(sp), [=]() {
+                    sp->sb->init = nullptr;
+                    initialize(func, sp, StorageClass::parameter_, true, false, false, _F_TEMPLATEARGEXPANSION);
+                });
                 dontRegisterTemplate -= templateDeclarationLevel != 0;
                 if (sp->sb->init && sp->sb->init->front()->exp && !ValidExp(&sp->sb->init->front()->exp))
                 {
@@ -2218,7 +2218,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     std::list<TEMPLATEPARAMPAIR>* defaults = nullptr;
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
-    LexToken* head = nullptr;
+    LexemeStream* head = nullptr;
     SYMBOL* oldMemberClass = instantiatingMemberFuncClass;
     std::list<TEMPLATEPARAMPAIR>::iterator itPrimary, itePrimary = itPrimary;
     if (declareSym->sb->specialized && declareSym->sb->parentTemplate &&
@@ -2303,9 +2303,10 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
             itDest->second->byClass.txtdflt = itSrc->second->byClass.txtdflt;
             itDest->second->byClass.txtargs = itSrc->second->byClass.txtargs;
             itDest->second->byNonType.txttype = itSrc->second->byNonType.txttype;
-            SwitchTokenStream(itSrc->second->byClass.txtdflt);
-            switch (itDest->second->type)
-            {
+            bool failed = false;
+            ParseOnStream(itSrc->second->byClass.txtdflt, [&]() {
+                switch (itDest->second->type)
+                {
                 case TplType::typename_: {
                     noTypeNameError++;
                     itDest->second->byClass.val = TypeGenerator::TypeId(nullptr, StorageClass::cast_, false, true, false);
@@ -2314,13 +2315,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     if (!itDest->second->byClass.val || itDest->second->byClass.val->type == BasicType::any_ ||
                         (!definingTemplate && itDest->second->byClass.val->BaseType()->type == BasicType::templateselector_))
                     {
-                        defaultParsingContext = oldContext;
-                        enclosingDeclarations.Release();
-                        PopTemplateNamespace(n);
-                        SwitchTokenStream(nullptr);
-                        enclosingDeclarations.Drop();
-                        instantiatingMemberFuncClass = oldMemberClass;
-                        return false;
+                        failed = true;
+                        return;
                     }
                     break;
                 }
@@ -2328,95 +2324,83 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     char buf[256];
                     Utils::StrCpy(buf, currentLex->value.s.a);
                     id_expression(nullptr, &itDest->second->byTemplate.val, nullptr, nullptr, nullptr, false, false, buf, sizeof(buf),
-                                        0);
+                        0);
 
                     if (!itDest->second->byTemplate.val)
                     {
-                        defaultParsingContext = oldContext;
-                        enclosingDeclarations.Release();
-                        PopTemplateNamespace(n);
-                        SwitchTokenStream(nullptr);
-                        enclosingDeclarations.Drop();
-                        instantiatingMemberFuncClass = oldMemberClass;
-                        return false;
+                        failed = true;
+                        return;
                     }
                 }
-                break;
+                                       break;
                 case TplType::int_: {
                     Type* tp1;
                     EXPRESSION* exp1 = nullptr;
                     if (itDest->second->byNonType.txttype)
                     {
                         int oldNesting = argumentNesting;
-                        auto start = currentContext->Index();
-                        SwitchTokenStream(itSrc->second->byNonType.txttype);
-                        openStructs = nullptr;
-                        structLevel = 0;
-                        argumentNesting = 0;
-                        noTypeNameError++;
-                        tp1 = TypeGenerator::TypeId(nullptr, StorageClass::parameter_, true, false, false);
-                        tp1->InstantiateDeferred();
-                        noTypeNameError--;
-                        argumentNesting = oldNesting;
-                        openStructs = oldOpenStructs;
-                        structLevel = oldStructLevel;
-                        SwitchTokenStream(nullptr);
+                        LexemeStreamPosition start(currentStream);
+                        ParseOnStream(itSrc->second->byNonType.txttype, [&]() {
+                            openStructs = nullptr;
+                            structLevel = 0;
+                            argumentNesting = 0;
+                            noTypeNameError++;
+                            tp1 = TypeGenerator::TypeId(nullptr, StorageClass::parameter_, true, false, false);
+                            tp1->InstantiateDeferred();
+                            noTypeNameError--;
+                            argumentNesting = oldNesting;
+                            openStructs = oldOpenStructs;
+                            structLevel = oldStructLevel;
+                        });
                         start;
                         Type* tp2 = tp1;
                         while (tp2->IsPtr())
                             tp2 = tp2->BaseType()->btp;
                         if (tp2->type == BasicType::any_)
                         {
-                            defaultParsingContext = oldContext;
-                            enclosingDeclarations.Release();
-                            PopTemplateNamespace(n);
-                            SwitchTokenStream(nullptr);
-                            enclosingDeclarations.Drop();
-                            instantiatingMemberFuncClass = oldMemberClass;
-                            return false;
+                            failed = true;
+                            return;
                         }
                         itDest->second->byNonType.tp = tp1;
-                    }
+                        }
                     openStructs = nullptr;
-                    structLevel = 0;
-                    expression_no_comma(nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
-                    optimize_for_constants(&exp1);
-                    openStructs = oldOpenStructs;
-                    structLevel = oldStructLevel;
-                    itDest->second->byNonType.val = exp1;
-                    if (!templateCompareTypes(itDest->second->byNonType.tp, tp1, true))
-                    {
-                        if (itDest->second->byNonType.tp->type == BasicType::auto_)
-                            itDest->second->byNonType.tp = tp1;
-                        if (!tp1->IsPtr() && !tp1->IsInt() && !isconstzero(tp1, exp1))
+                        structLevel = 0;
+                        expression_no_comma(nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
+                        optimize_for_constants(&exp1);
+                        openStructs = oldOpenStructs;
+                        structLevel = oldStructLevel;
+                        itDest->second->byNonType.val = exp1;
+                        if (!templateCompareTypes(itDest->second->byNonType.tp, tp1, true))
                         {
-                            defaultParsingContext = oldContext;
-                            enclosingDeclarations.Release();
-                            PopTemplateNamespace(n);
-                            SwitchTokenStream(nullptr);
-                            enclosingDeclarations.Drop();
-                            instantiatingMemberFuncClass = oldMemberClass;
-                            return false;
+                            if (itDest->second->byNonType.tp->type == BasicType::auto_)
+                                itDest->second->byNonType.tp = tp1;
+                            if (!tp1->IsPtr() && !tp1->IsInt() && !isconstzero(tp1, exp1))
+                            {
+                                failed = true;
+                                return;
+                            }
+                        }
+                        Type* tp2 = LookupTypeFromExpression(exp1, nullptr, false);
+                        if (!tp2 || tp2->type == BasicType::any_)
+                        {
+                            failed = true;
+                            return;
                         }
                     }
-                    Type* tp2 = LookupTypeFromExpression(exp1, nullptr, false);
-                    if (!tp2 || tp2->type == BasicType::any_)
-                    {
-                        defaultParsingContext = oldContext;
-                        enclosingDeclarations.Release();
-                        PopTemplateNamespace(n);
-                        SwitchTokenStream(nullptr);
-                        enclosingDeclarations.Drop();
-                        instantiatingMemberFuncClass = oldMemberClass;
-                        return false;
-                    }
-                }
-                break;
+                    break;
                 default:
                     break;
-            }
+                }
+            });
             PopTemplateNamespace(n);
-            SwitchTokenStream(nullptr);
+            if (failed)
+            {
+                defaultParsingContext = oldContext;
+                enclosingDeclarations.Release();
+                enclosingDeclarations.Drop();
+                instantiatingMemberFuncClass = oldMemberClass;
+                return false;
+            }
         }
         enclosingDeclarations.Release();
         if (itArgs != iteArgs)
@@ -2610,13 +2594,16 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
             cls->sb->vbaseEntries = nullptr;
             instantiatingTemplate++;
             SwapMainTemplateArgs(cls);
-            SwitchTokenStream(lex);
-            cls->sb->instantiating = true;
-            innerDeclStruct(nullptr, cls, false,
-                                  cls->tp->type == BasicType::class_ ? AccessLevel::private_ : AccessLevel::public_,
-                                  cls->sb->isfinal, &defd, false, nullptr);
-            cls->sb->instantiating = false;
-            SwitchTokenStream(nullptr);
+            // making a copy because these things can be unraveled recursively
+            // and we don't want to mess with the status of older copies.
+            auto lex1 = *lex;
+            ParseOnStream(&lex1, [&]() {
+                cls->sb->instantiating = true;
+                innerDeclStruct(nullptr, cls, false,
+                    cls->tp->type == BasicType::class_ ? AccessLevel::private_ : AccessLevel::public_,
+                    cls->sb->isfinal, &defd, false, nullptr);
+                cls->sb->instantiating = false;
+            });
             SwapMainTemplateArgs(cls);
             SetAccessibleTemplateArgs(cls->templateParams, false);
             PopTemplateNamespace(nsl);

@@ -60,6 +60,8 @@
 #include "Utils.h"
 #include "exprpacked.h"
 #include "using.h"
+#include "SymbolProperties.h";
+
 namespace Parser
 {
 
@@ -89,7 +91,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
     SYMBOL* strSym = nullptr;
     bool qualified = false;
     std::vector<TEMPLATESELECTOR>* templateSelector = nullptr;
-    LexToken::iterator placeHolder = currentContext->Index(), finalPos;
+    LexemeStreamPosition placeHolder(currentStream);
     bool hasTemplate = false;
     TEMPLATEPARAMPAIR* templateParamAsTemplate = nullptr;
     Type* dependentType = nullptr;
@@ -113,7 +115,9 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
         getsym();
         qualified = true;
     }
-    finalPos = currentContext->Index();
+
+    LexemeStreamPosition finalPos(currentStream);
+
     while (ISID() || (first && MATCHKW(Keyword::decltype_)) || (templateSelector && MATCHKW(Keyword::operator_)))
     {
         char buf[512];
@@ -146,7 +150,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
             }
             if (!qualified)
                 nssym = nullptr;
-            finalPos = currentContext->Index();
+            finalPos.Bump();
         }
         else if (templateSelector)
         {
@@ -182,7 +186,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
             if (!MATCHKW(Keyword::classsel_))
                 break;
             getsym();
-            finalPos = currentContext->Index();
+            finalPos.Bump();
         }
         else
         {
@@ -264,7 +268,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                                     if (!MATCHKW(Keyword::classsel_))
                                         break;
                                     getsym();
-                                    finalPos = currentContext->Index();
+                                    finalPos.Bump();
                                     if (!templateSelector)
                                         templateSelector = templateSelectorListFactory.CreateVector();
                                     templateSelector->push_back(TEMPLATESELECTOR{});
@@ -382,7 +386,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                     if (!MATCHKW(Keyword::classsel_))
                         break;
                     getsym();
-                    finalPos = currentContext->Index();
+                    finalPos.Bump();
                 }
                 sp_orig = sp;
                 if (sp && sp->sb && sp->sb->typeAlias && !sp->sb->templateLevel && sp->tp->IsStructured())
@@ -418,7 +422,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                     if (!MATCHKW(Keyword::classsel_))
                         break;
                     getsym();
-                    finalPos = currentContext->Index();
+                    finalPos.Bump();
                     strSym = sp;
                     qualified = true;
                     break;
@@ -602,7 +606,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                            (sp->sb->storage_class != StorageClass::namespace_ && (!sp->tp->IsStructured() || sp->templateParams))))
                     pastClassSel = true;
                 getsym();
-                finalPos = currentContext->Index();
+                finalPos.Bump();
                 if (deferred)
                 {
                     if (istypedef && sp->sb->mainsym && sp->sb->mainsym->sb->templateLevel)
@@ -665,7 +669,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                         else if (!IsPacking())
                             errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
                     }
-                    BackupTokenStream(placeHolder);
+                    placeHolder.Backup();
                     strSym = sp;
                     qualified = true;
                     break;
@@ -689,15 +693,15 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
             char buf[2000];
             buf[0] = 0;
 
-            auto end = finalPos;
+            LexemeStreamPosition end = finalPos;
             ++end;
-            for ( ; placeHolder != end; placeHolder++)
+            for ( ; placeHolder != end; ++placeHolder)
             {
                 int l = strlen(buf);
                 if (ISKW())
-                    Optimizer::my_sprintf(buf + l , sizeof(buf)-l, "%s", (*placeHolder)->kw->name);
+                    Optimizer::my_sprintf(buf + l , sizeof(buf)-l, "%s", placeHolder.get()->kw->name);
                 else if (ISID())
-                    Optimizer::my_sprintf(buf + l, sizeof(buf) - l, "%s", (*placeHolder)->value.s.a);
+                    Optimizer::my_sprintf(buf + l, sizeof(buf) - l, "%s", placeHolder.get()->value.s.a);
             }
 
             errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
@@ -707,7 +711,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
     {
         error(ERR_NO_TYPENAME_HERE);
     }
-    BackupTokenStream(finalPos);
+    finalPos.Backup();
     if (templateSelector)
     {
         auto tp = Type::MakeType(BasicType::templateselector_);
@@ -1104,7 +1108,7 @@ void nestedSearch( SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
     bool throughClass = false;
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     bool hasTemplate = false;
     bool namespaceOnly = false;
     bool typeName = false;
@@ -1245,7 +1249,7 @@ void nestedSearch( SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>
         else
             *nsv = nullptr;
     else if (!*sym)
-        BackupTokenStream(placeHolder);
+        placeHolder.Backup();
     return;
 }
 void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
@@ -1268,7 +1272,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
                     if (!MATCHKW(Keyword::closepa_))
                     {
                         needkw(Keyword::closepa_);
-                        BackupTokenStream();
+                        --*currentStream;
                     }
                     break;
                 case Keyword::openbr_:
@@ -1276,7 +1280,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
                     if (!MATCHKW(Keyword::closebr_))
                     {
                         needkw(Keyword::closebr_);
-                        BackupTokenStream();
+                        --*currentStream;
                     }
                     break;
                 case Keyword::new_:
@@ -1284,7 +1288,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
                     getsym();
                     if (!MATCHKW(Keyword::openbr_))
                     {
-                        BackupTokenStream();
+                        --*currentStream;
                     }
                     else
                     {
@@ -1293,7 +1297,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
                         if (!MATCHKW(Keyword::closebr_))
                         {
                             needkw(Keyword::closebr_);
-                            BackupTokenStream();
+                            --*currentStream;
                         }
                     }
                     break;
@@ -1321,7 +1325,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
         }
         else if (MATCHTYPE(LexType::l_astr_) || MATCHTYPE(LexType::l_u8str_))
         {
-            auto placeHolder = currentContext->Index();;
+            LexemeStreamPosition placeHolder(currentStream);;
             Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)currentLex->value.s.w;
             if (xx->count)
                 error(ERR_OPERATOR_LITERAL_EMPTY_STRING);
@@ -1342,7 +1346,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
                 else
                 {
                     error(ERR_OPERATOR_LITERAL_NEEDS_ID);
-                    BackupTokenStream(placeHolder);
+                    placeHolder.Backup();
                 }
             }
         }
@@ -1352,7 +1356,7 @@ void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
                 errorstr(ERR_INVALID_AS_OPERATOR, currentLex->kw->name);
             else
                 errorstr(ERR_INVALID_AS_OPERATOR, "");
-            BackupTokenStream();
+            --*currentStream;
         }
     }
     return;
@@ -1364,7 +1368,7 @@ void id_expression( SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
     bool throughClass = false;
     Type* castType = nullptr;
-    auto placeHolder = currentContext->Index();
+    LexemeStreamPosition placeHolder(currentStream);
     char buf[512];
     buf[0] = 0;
     int ov = 0;
@@ -1465,7 +1469,7 @@ void id_expression( SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         else
             *nsv = nullptr;
     else if (!*sym && (!encloser || encloser->tp->type != BasicType::templateselector_))
-        BackupTokenStream(placeHolder);
+        placeHolder.Backup();
     if (!*sym && idname)
     {
         Utils::StrCpy(idname, len, buf);

@@ -3214,22 +3214,22 @@ int fold_const(EXPRESSION* node)
             break;
         case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
-            SwitchTokenStream(node->v.construct.tokenStream);
-            if (node->v.construct.tp->IsArithmetic())
-            {
+            ParseOnStream(node->v.construct.tokenStream, [=]() {
+                if (node->v.construct.tp->IsArithmetic())
+                {
 
-                std::list<Initializer*>*init = nullptr, *dest = nullptr;
-                initType(nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
-                if (init)
-                    *node = *init->front()->exp;
-            }
-            else
-            {
-                EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
-                initType(nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
-                               node->v.construct.tp, exp->v.sp, false, false, 0);
-            }
-            SwitchTokenStream(nullptr);
+                    std::list<Initializer*>* init = nullptr, * dest = nullptr;
+                    initType(nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
+                    if (init)
+                        *node = *init->front()->exp;
+                }
+                else
+                {
+                    EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
+                    initType(nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
+                        node->v.construct.tp, exp->v.sp, false, false, 0);
+                }
+            });
         }
         break;
         case ExpressionNode::callsite_: {

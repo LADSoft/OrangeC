@@ -52,6 +52,7 @@
     <ClInclude Include="expreval.h" />
     <ClInclude Include="exprpacked.h" />
     <ClInclude Include="floatconv.h" />
+    <ClInclude Include="LexToken.h" />
     <ClInclude Include="staticassert.h" />
     <ClInclude Include="SymbolProperties.h" />
     <ClInclude Include="templatehash.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="expreval.cpp" />
     <ClCompile Include="exprpacked.cpp" />
     <ClCompile Include="floatconv.cpp" />
+    <ClCompile Include="LexToken.cpp" />
     <ClCompile Include="staticassert.cpp" />
     <ClCompile Include="templatehash.cpp" />
     <ClCompile Include="help.cpp" />

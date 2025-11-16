@@ -27,5 +27,5 @@
 
 namespace Parser
 {
-void displayLexeme(LexToken* lex);
+void displayLexeme(LexemeStream* lex);
 }

@@ -40,9 +40,9 @@
 namespace Parser
 {
     int inStaticAssert;
-    std::map<SYMBOL*, std::list<LexToken*>> structureStaticAsserts;
+    std::map<SYMBOL*, std::list<LexemeStream*>> structureStaticAsserts;
 
-    void EnterStructureStaticAssert(SYMBOL* sym, LexToken* tokenStream) { structureStaticAsserts[sym].push_back(tokenStream); }
+    void EnterStructureStaticAssert(SYMBOL* sym, LexemeStream* tokenStream) { structureStaticAsserts[sym].push_back(tokenStream); }
     void ParseStructureStaticAssert(SYMBOL* sym)
     {
         auto it = structureStaticAsserts.find(sym);
@@ -53,9 +53,9 @@ namespace Parser
             auto hold = it->second;
             for (auto deferred : hold)
             {
-                SwitchTokenStream(deferred);
-                handleStaticAssert();
-                SwitchTokenStream(nullptr);
+                ParseOnStream(deferred, [=]() {
+                    handleStaticAssert();
+                });
             }
             enclosingDeclarations.Drop();
             PopTemplateNamespace(n);

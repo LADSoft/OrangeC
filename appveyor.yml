@@ -1,4 +1,4 @@
-version: '6.73.{BUILD}'
+version: '7.0.{BUILD}'
 
 image: Visual Studio 2022
 

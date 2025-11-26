@@ -118,10 +118,10 @@ template <int n>
 static char* lookupName(char (&orig)[n], char* in, const char* name);
 template <int n>
 char* mangleType(char(&orig)[n], char* in, Type* tp, bool first);
-static int uniqueID;
+static int uniqueId;
 void mangleInit()
 {
-    uniqueID = 0;
+    uniqueId = 0;
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
     {
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
@@ -1309,8 +1309,8 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
     {
         case Linkage::auto_:
             if (sym->sb->parent)
-                if (sym->sb->uniqueID == 0)
-                    sym->sb->uniqueID = uniqueID++;
+                if (sym->uniqueId == 0)
+                    sym->uniqueId = uniqueId++;
             p = mangleClasses(orig, p, theCurrentFunc);
             Optimizer::my_sprintf(p, MANGLE_SIZE(p), "@%s", sym->name);
 
@@ -1341,14 +1341,14 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
         case Linkage::c_:
         default:
             if (sym->sb->parent)
-                if (sym->sb->uniqueID == 0)
-                    sym->sb->uniqueID = uniqueID++;
+                if (sym->uniqueId == 0)
+                    sym->uniqueId = uniqueId++;
             if (sym->sb->storage_class == StorageClass::localstatic_ && sym->sb->parent)
             {
                 Utils::StrCpy(orig, sym->sb->parent->sb->decoratedName);
                 Utils::StrCat(orig, "_");
                 Utils::StrCat(orig, sym->name);
-                sprintf(orig + strlen(orig), "_%d", sym->sb->uniqueID);
+                sprintf(orig + strlen(orig), "_%d", sym->uniqueId);
             }
             else
             {

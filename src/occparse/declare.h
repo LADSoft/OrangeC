@@ -85,17 +85,24 @@ struct EnclosingDeclarations
     std::deque<EnclosingDeclaration> declarations;
     std::stack<unsigned> marks;
 };
-
+extern EnclosingDeclarations enclosingDeclarations;
+struct DeclarationScope
+{
+    bool toRelease = false;
+    inline DeclarationScope(SYMBOL* sym) { enclosingDeclarations.Add(sym); }
+    inline DeclarationScope(std::list<TEMPLATEPARAMPAIR>* templ) { enclosingDeclarations.Add(templ); }
+    inline DeclarationScope() : toRelease(true) { enclosingDeclarations.Mark(); }
+    inline ~DeclarationScope() { if (toRelease) enclosingDeclarations.Release(); else enclosingDeclarations.Drop(); }
+};
 extern int inDefaultParam;
 extern char deferralBuf[100000];
 extern SYMBOL* enumSyms;
-extern EnclosingDeclarations enclosingDeclarations;
-extern int expandingParams;
+extern int isExpandingParams;
 extern Optimizer::LIST* deferred;
 extern int structLevel;
 extern Optimizer::LIST* openStructs;
-extern int parsingTrailingReturnOrUsing;
-extern int inTypedef;
+extern int processingTrailingReturnOrUsing;
+extern int processingTypedef;
 extern int resolvingStructDeclarations;
 extern std::map<int, SYMBOL*> localAnonymousUnions;
 extern int declaringInitialType;
@@ -109,7 +116,7 @@ const char* AnonymousName(void);
 const char* NewUnnamedID(void);
 SYMBOL* SymAlloc(void);
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
-SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
+SYMBOL* makeuniqueId(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
 void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable);

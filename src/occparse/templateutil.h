@@ -60,6 +60,7 @@ static bool hastemplate(EXPRESSION* exp);
 void clearoutDeduction(Type* tp);
 void pushContext(SYMBOL* cls, bool all);
 void SetTemplateNamespace(SYMBOL* sym);
+void ScopeTemplateParams(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);
 void TemplateArgInstantiateDeferred(std::list<TEMPLATEPARAMPAIR>* args, bool initialize = false);
@@ -72,7 +73,21 @@ Type* ResolveTemplateSelectors(SYMBOL* sp, Type* tp);
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx, bool returnNull = false);
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
 static std::list<TEMPLATEPARAMPAIR>* ResolveConstructor(SYMBOL* sym, TEMPLATEPARAMPAIR* tpx);
-TEMPLATEPARAMPAIR* TypeAliasSearch(const char* name, bool toponly);
+TEMPLATEPARAMPAIR* TypeAliasSearch(SYMBOL* sym, bool toponly);
 std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
 void copySyms(SYMBOL* found1, SYMBOL* sym);
+
+struct TemplateNamespaceScope
+{
+    inline TemplateNamespaceScope(SYMBOL* sym)
+    {
+        n = PushTemplateNamespace(sym);
+    }
+    inline ~TemplateNamespaceScope()
+    {
+        PopTemplateNamespace(n);
+    }
+private:
+    int n;
+};
 }  // namespace Parser

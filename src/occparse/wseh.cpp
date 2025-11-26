@@ -100,7 +100,7 @@ static void SEH_catch( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     catchstmt->type = Keyword::catch_;
     catchstmt->table = localNameSpace->front()->syms;
     parent.push_front(catchstmt);
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
     if (MATCHKW(Keyword::openpa_))
     {
@@ -126,7 +126,7 @@ static void SEH_catch( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     {
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
     st = Statement::MakeStatement(parent, StatementNode::seh_catch_);
     st->blockTail = catchstmt->blockTail;
@@ -151,7 +151,7 @@ static void SEH_finally( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     finallystmt->table = localNameSpace->front()->syms;
     parent.push_front(finallystmt);
     StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (MATCHKW(Keyword::begin_))
     {
         StatementGenerator sg(funcsp);
@@ -166,7 +166,7 @@ static void SEH_finally( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
         error(ERR_EXPECTED_CATCH_BLOCK);
     }
     StatementGenerator::FreeLocalContext(parent, funcsp, codeLabel++);
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     st = Statement::MakeStatement(parent, StatementNode::seh_finally_);
     st->blockTail = finallystmt->blockTail;
     st->lower = finallystmt->statements;
@@ -188,7 +188,7 @@ static void SEH_fault( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     faultstmt->table = localNameSpace->front()->syms;
     parent.push_front(faultstmt);
     StatementGenerator::AllocateLocalContext(parent, funcsp, codeLabel++);
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (MATCHKW(Keyword::begin_))
     {
         StatementGenerator sg(funcsp);
@@ -206,7 +206,7 @@ static void SEH_fault( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     st = Statement::MakeStatement(parent, StatementNode::seh_fault_);
     st->blockTail = faultstmt->blockTail;
     st->lower = faultstmt->statements;
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     parent.pop_front();
     return;
 }
@@ -223,7 +223,7 @@ static void SEH_try( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     trystmt->table = localNameSpace->front()->syms;
     parent.push_front(trystmt);
     getsym();
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (!MATCHKW(Keyword::begin_))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
@@ -269,7 +269,7 @@ static void SEH_try( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
         ReorderSEHRecords(parent.front()->statements, parent);
         parent.front()->statements->insert(parent.front()->statements->begin(), prev->begin(), prev->end());
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     parent.pop_front();
     return;
 }

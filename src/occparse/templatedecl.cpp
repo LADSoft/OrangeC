@@ -67,22 +67,22 @@ namespace Parser
 {
 
 int dontRegisterTemplate;
-int instantiatingTemplate;
-int inTemplateBody;
-int definingTemplate = 0;
+int templateInstantiationLevel;
+int processingTemplateBody;
+int templateDefinitionLevel = 0;
 int templateHeaderCount;
 int inTemplateSpecialization = 0;
 int inDeduceArgs;
 bool parsingSpecializationDeclaration;
 bool inTemplateType;
 int noTypeNameError;
-int inTemplateHeader;
+int processingTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
 int instantiatingFunction;
 int instantiatingClass;
 int count1;
-int inTemplateArgs;
-bool fullySpecialized;
+int processingTemplateArgs;
+bool isFullySpecialized;
 
 int templateNameTag;
 std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
@@ -91,14 +91,14 @@ struct templateListData* currents;
 
 void templateInit(void)
 {
-    inTemplateBody = false;
-    inTemplateHeader = false;
-    definingTemplate = 0;
+    processingTemplateBody = false;
+    processingTemplateHeader = false;
+    templateDefinitionLevel = 0;
     templateHeaderCount = 0;
-    instantiatingTemplate = 0;
+    templateInstantiationLevel = 0;
     instantiatingClass = 0;
     currents = nullptr;
-    inTemplateArgs = 0;
+    processingTemplateArgs = 0;
     inTemplateType = false;
     dontRegisterTemplate = 0;
     inTemplateSpecialization = 0;
@@ -109,7 +109,7 @@ void templateInit(void)
     inDeduceArgs = 0;
     classInstantiationMap.clear();
     templateNameTag = 1;
-    fullySpecialized = false;
+    isFullySpecialized = false;
     templateDeclarationLevel = 0;
 }
 void TemplateGetDeferredTokenStream(SYMBOL* sym)
@@ -119,9 +119,14 @@ void TemplateGetDeferredTokenStream(SYMBOL* sym)
         if (currents->bodyTokenStream)
         {
             if (sym->tp->IsFunction() || (sym->sb->storage_class == StorageClass::type_ && sym->tp->IsStructured()))
+            {
                 bodyTokenStreams.set(sym, currents->bodyTokenStream);
+                bodyArgs.set(sym, sym->tp->BaseType()->syms);
+            }
             else
+            {
                 initTokenStreams.set(sym, currents->bodyTokenStream);
+            }
         }
     }
 }
@@ -161,22 +166,24 @@ std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym)
     }
     return params;
 }
-void TemplateRegisterToken(Lexeme* lex)
+bool TemplateRegisterToken(Lexeme* lex, bool force)
 {
+    bool rv = false;
     if (lex && templateDeclarationLevel && !dontRegisterTemplate)
     {
-        if (inTemplateBody)
+        if (processingTemplateBody)
         {
             if (!currents->bodyTokenStream)
             {
                 currents->bodyTokenStream = streamFactory.Create();
             }
-            if (currents->bodyTokenStream->ReloadIndex() < currentStream->Index())
+            if (force || currents->bodyTokenStream->ReloadIndex() < currentStream->Index())
             {
                 if (lex->type == LexType::l_id_ && lex->refcount < 2)
                     lex->value.s.a = litlate(lex->value.s.a);
                 currents->bodyTokenStream->Add(lex);
                 currents->bodyTokenStream->ReloadIndex(currentStream->Index());
+                rv = true;
             }
         }
         else
@@ -185,15 +192,17 @@ void TemplateRegisterToken(Lexeme* lex)
             {
                 currents->head = streamFactory.Create();
             }
-            if (currents->head->ReloadIndex() < currentStream->Index())
+            if (force || currents->head->ReloadIndex() < currentStream->Index())
             {
                 if (lex->type == LexType::l_id_ && lex->refcount < 2)
                     lex->value.s.a = litlate(lex->value.s.a);
                 currents->head->Add(lex);
                 currents->head->ReloadIndex(currentStream->Index());
+                rv = true;
             }
         }
     }
+    return rv;
 }
 void UnrollTemplatePacks(std::list<TEMPLATEPARAMPAIR>* tplx)
 {
@@ -312,7 +321,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
         }
         if (!cptr || !cptr->second->packed || !cptr->second->byPack.pack)
         {
-            if (definingTemplate && (!inTemplateBody || !instantiatingTemplate))
+            if (templateDefinitionLevel && (!processingTemplateBody || !templateInstantiationLevel))
             {
                 if (!*lst)
                     *lst = templateParamPairListFactory.CreateList();
@@ -320,7 +329,7 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                 (*lst)->back().second->type = TplType::typename_;
                 (*lst)->back().second->byClass.dflt = tp;
             }
-            else if (!definingTemplate && (*tp->sp->sb->templateSelector)[1].isTemplate)
+            else if (!templateDefinitionLevel && (*tp->sp->sb->templateSelector)[1].isTemplate)
             {
                 if (!*lst)
                     *lst = templateParamPairListFactory.CreateList();
@@ -349,9 +358,8 @@ std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAI
                         for (++sel, ++sel; sel != sele; ++sel)
                         {
                             base = base1;
-                            enclosingDeclarations.Add(base->BaseType()->sp);
+                            DeclarationScope scope(base->BaseType()->sp);
                             s = classsearch(sel->name, false, false, false);
-                            enclosingDeclarations.Drop();
                             auto it1 = sel;
                             ++it1;
                             // could be optimized
@@ -445,7 +453,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
     std::list<TEMPLATEPARAMPAIR>::iterator itorig, iteorig = itorig;
     if (templ)
     {
-        auto templ1 = templ;
+       auto templ1 = templ;
         if (templ1->sb && templ1->sb->maintemplate)
             templ1 = templ1->sb->maintemplate;
         if (templ->tp && templ1->tp->type == BasicType::aggregate_ && templ->tp->syms->size() == 1)
@@ -466,7 +474,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
         }
     }
     // entered with lex set to the opening <
-    inTemplateArgs++;
+    processingTemplateArgs++;
     getsym();
     if (!MATCHKW(Keyword::rightshift_) && !MATCHKW(Keyword::gt_))
     {
@@ -483,7 +491,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                 tp = nullptr;
                 if (ISID())
                 {
-                    if (expandingParams)
+                    if (isExpandingParams)
                     {
                         auto id = currentLex->value.s.a;
                         getsym();
@@ -529,7 +537,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                 }
                 if (MATCHKW(Keyword::begin_))  // initializer list?
                 {
-                    if (definingTemplate)
+                    if (templateDefinitionLevel)
                     {
                         exp = MakeExpression(ExpressionNode::construct_);
                         exp->v.construct.tp = tp;
@@ -549,7 +557,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                         Type* tp1 = tp;
                         while (tp->IsRef())
                             tp = tp->BaseType()->btp;
-                        if (definingTemplate && tp->type == BasicType::templateparam_)
+                        if (templateDefinitionLevel && tp->type == BasicType::templateparam_)
                         {
                             if (!*lst)
                                 *lst = templateParamPairListFactory.CreateList();
@@ -568,7 +576,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                                 }
                             }
                             if (inTemplateSpecialization && !tp->templateParam->second->packed &&
-                                (!definingTemplate || instantiatingTemplate))
+                                (!IsDefiningTemplate()))
                                 error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
                         }
                         else if (tp->type == BasicType::templateparam_)
@@ -586,7 +594,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             tp->sp->sb->postExpansion = true;
                             std::list<TEMPLATEPARAMPAIR> a(itorig, iteorig);
                             auto tpl = (*tp->sp->sb->templateSelector)[1].templateParams;
-                            if (definingTemplate && !instantiatingTemplate)
+                            if (IsDefiningTemplate())
                             {
                                 lst = expandTemplateSelector(lst, &a, tp1);
                             }
@@ -595,7 +603,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                                 lst = ExpandTemplateArguments(lst, start, funcsp, &a);
                             }
                         }
-                        else if (!definingTemplate && tp->type == BasicType::templatedeferredtype_)
+                        else if (!templateDefinitionLevel && tp->type == BasicType::templatedeferredtype_)
                         {
                             std::list<TEMPLATEPARAMPAIR> a;
                             a.push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
@@ -640,20 +648,19 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                     getsym();
                     ClearPackedSequence();
                 }
-                else if (!definingTemplate && tp->type == BasicType::any_)
+                else if (!templateDefinitionLevel && tp->type == BasicType::any_)
                 {
                     error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
                 }
                 else if (tp && tp->type == BasicType::templateparam_)
                 {
-
-                    if (inTemplateArgs > 1 && tp->templateParam->second->packed)
+                    if (processingTemplateArgs > 1 && tp->templateParam->second->packed)
                     {
                         // unpacked pack gets treated as a single template param
                         if (!*lst)
                             *lst = templateParamPairListFactory.CreateList();
                         (*lst)->push_back(TEMPLATEPARAMPAIR{tp->templateParam->first, Allocate<TEMPLATEPARAM>()});
-                        if (unpackingTemplate && (!definingTemplate || instantiatingTemplate))
+                        if (unpackingTemplate && (!IsDefiningTemplate()))
                         {
                             auto tpl = LookupPackedInstance(*tp->templateParam);
                             if (tpl)
@@ -840,7 +847,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                 join:
                     skip = false;
                     name = nullptr;
-                    expstart.Bump();
+                    expstart.Position(currentStream->Index());
                     if (ISID())
                     {
                         for (auto&& s : enclosingDeclarations)
@@ -947,7 +954,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             expression_no_comma(funcsp, nullptr, &tp, &exp, nullptr, _F_INTEMPLATEPARAMS);
                             if (tp && tp->type == BasicType::templateparam_)
                             {
-                                if (parsingTrailingReturnOrUsing && exp->type != ExpressionNode::c_i_)
+                                if (processingTrailingReturnOrUsing && exp->type != ExpressionNode::c_i_)
                                 {
                                     std::list<TEMPLATEPARAMPAIR> a;
                                     a.push_back(*exp->v.sp->tp->templateParam);
@@ -996,7 +1003,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             {
                                 // lose p
                                 std::list<TEMPLATEPARAMPAIR>** tpx = lst;
-                                if (definingTemplate && tp->type == BasicType::templateparam_)
+                                if (templateDefinitionLevel && tp->type == BasicType::templateparam_)
                                 {
                                     if (!*lst)
                                         *lst = templateParamPairListFactory.CreateList();
@@ -1028,7 +1035,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                                          }
                                     }
                                 }
-                                else if (definingTemplate)
+                                else if (templateDefinitionLevel)
                                 {
                                     if (!*lst)
                                         *lst = templateParamPairListFactory.CreateList();
@@ -1067,11 +1074,11 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             if (exp)
                             {
                                 int oldStaticAssert = inStaticAssert;
-                                int oldArgumentNesting = argumentNesting;
+                                int oldArgumentNestingLevel = argumentNestingLevel;
                                 inStaticAssert = 0;
-                                argumentNesting = 0;
+                                argumentNestingLevel = 0;
                                 optimize_for_constants(&exp);
-                                argumentNesting = oldArgumentNesting;
+                                argumentNestingLevel = oldArgumentNestingLevel;
                                 inStaticAssert = oldStaticAssert;
                                 while (exp->type == ExpressionNode::comma_ && exp->right)
                                     exp = exp->right;
@@ -1120,8 +1127,8 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                             {
                                 /*
                                 * some of the stuff in chrono is too complex for the compiler right now..
-                                if (exp && !IsConstantExpression(exp, false, false)&& (!definingTemplate ||
-                                instantiatingTemplate)) error(ERR_CONSTANT_VALUE_EXPECTED);
+                                if (exp && !IsConstantExpression(exp, false, false)&& (!templateDefinitionLevel ||
+                                templateInstantiationLevel)) error(ERR_CONSTANT_VALUE_EXPECTED);
                                 */
                                 if (itorig != iteorig && itorig->second->packed)
                                 {
@@ -1149,7 +1156,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
                                     if (!*lst)
                                         *lst = templateParamPairListFactory.CreateList();
                                     (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-                                    if (exp && parsingTrailingReturnOrUsing && exp->type == ExpressionNode::templateparam_ && exp->v.sp)
+                                    if (exp && processingTrailingReturnOrUsing && exp->type == ExpressionNode::templateparam_ && exp->v.sp)
                                     {
                                         (*lst)->back().first = exp->v.sp;
                                     }
@@ -1189,7 +1196,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
     }
     if (MATCHKW(Keyword::rightshift_))
     {
-        getGTSym();
+        SplitGreaterThanFromRightShift();
     }
     else
     {
@@ -1204,7 +1211,7 @@ void  GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPAR
         }
     }
     UnrollTemplatePacks(*start);
-    inTemplateArgs--;
+    processingTemplateArgs--;
     noTypeNameError = oldnoTn;
     return;
 }
@@ -1558,16 +1565,13 @@ static SYMBOL* templateParamId(Type* tp, const char* name, int tag)
 {
     SYMBOL* rv = Allocate<SYMBOL>();
     rv->tp = tp;
-    int len = strlen(name);
-    char* buf = Allocate<char>(len + 5);
-    Utils::StrCpy(buf, len+1, name);
-    *(int*)(buf + len + 1) = tag;
-    rv->name = buf;
+    rv->name = litlate(name);
+    rv->uniqueId = tag;
     return rv;
 }
 static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    inTemplateHeader++;
+    processingTemplateHeader++;
     std::list<TEMPLATEPARAMPAIR>*lst = args, *added = nullptr;
     if (needkw(Keyword::lt_))
     {
@@ -1600,11 +1604,11 @@ static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
             }
         }
         if (MATCHKW(Keyword::rightshift_))
-            getGTSym();
+            SplitGreaterThanFromRightShift();
         else
             needkw(Keyword::gt_);
     }
-    inTemplateHeader--;
+    processingTemplateHeader--;
     return;
 }
 static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst,
@@ -1901,7 +1905,7 @@ static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPL
                 if (tp->BaseType()->type != BasicType::templateparam_ && tp->BaseType()->type != BasicType::templateselector_ &&
                     tp->BaseType()->type != BasicType::templatedeferredtype_ && tp->BaseType()->type != BasicType::enum_ &&
                     !tp->IsInt() && !tp->IsPtr() && tp->BaseType()->type != BasicType::lref_ &&
-                    (!definingTemplate || instantiatingTemplate || (tp->BaseType()->type != BasicType::any_ && tp->BaseType()->type != BasicType::templatedecltype_)))
+                    (!IsDefiningTemplate() || (tp->BaseType()->type != BasicType::any_ && tp->BaseType()->type != BasicType::templatedecltype_)))
                 {
                     if (tp->BaseType()->type == BasicType::auto_)
                         RequiresDialect::Feature(Dialect::cpp17, "auto as non-type template parameter type");
@@ -2821,7 +2825,6 @@ static void MarkDllLinkage(SYMBOL* sp, Linkage linkage)
         }
     }
 }
-int count3;
 static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMESPACEVALUEDATA*>* nsv, bool isExtern)
 {
     if (strSym)
@@ -2963,7 +2966,7 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
         Type* tp = nullptr;
         struct templateListData l;
         int count = 0;
-        int oldInstantiatingTemplate = instantiatingTemplate;
+        int oldInstantiatingTemplate = templateInstantiationLevel;
         --*currentStream;
         if (isExtern)
             error(ERR_DECLARE_SYNTAX);
@@ -2987,10 +2990,10 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
 
         currentHold.push(currents->plast);
         currents->plast = currents->ptail;
-        definingTemplate++;
+        templateDefinitionLevel++;
         while (MATCHKW(Keyword::template_))
         {
-            instantiatingTemplate = 0;
+            templateInstantiationLevel = 0;
             std::list<TEMPLATEPARAMPAIR>* temp;
             templateHeaderCount++;
             temp = (*currents->ptail) = templateParamPairListFactory.CreateList();
@@ -3005,18 +3008,18 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
                 count++;
             }
         }
-        definingTemplate--;
+        templateDefinitionLevel--;
         if (currentLex)
         {
-            definingTemplate++;
+            templateDefinitionLevel++;
             inTemplateType = count != 0;  // checks for full specialization...
-            fullySpecialized = count == 0;
+            isFullySpecialized = count == 0;
             declare(funcsp, &tp, storage_class, Linkage::none_, emptyBlockdata, true, false, true, access);
-            fullySpecialized = false;
+            isFullySpecialized = false;
             inTemplateType = false;
-            definingTemplate--;
-            instantiatingTemplate = oldInstantiatingTemplate;
-            if (!definingTemplate)
+            templateDefinitionLevel--;
+            templateInstantiationLevel = oldInstantiatingTemplate;
+            if (!templateDefinitionLevel)
             {
                 if (!tp)
                 {

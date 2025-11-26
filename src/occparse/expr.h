@@ -28,8 +28,8 @@
 namespace Parser
 {
 
-extern int argumentNesting;
-extern int inAssignRHS;
+extern int argumentNestingLevel;
+extern int assigningRHS;
 
 extern std::list<SYMBOL*> importThunks;
 extern int adjustingParams;

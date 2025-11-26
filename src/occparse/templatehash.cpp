@@ -58,7 +58,7 @@ namespace
         OrangeC::Utils::arr_eql<SHA1_DIGEST_SIZE>> classHash, functionHash;
 
     void hashType(DotNetPELib::SHA1Context& context, Type* tp, bool first);
-    int uniqueID;
+    int uniqueId;
     void hashNameSpaces(DotNetPELib::SHA1Context& context, SYMBOL* sym)
     {
         if (!sym)
@@ -1062,7 +1062,7 @@ namespace
                 {
                     if (it->second->packed)
                     {
-                        if ((definingTemplate && !instantiatingTemplate &&
+                        if ((IsDefiningTemplate() &&
                             (!it->second->byPack.pack || !it->second->byPack.pack->size())) ||
                             !hasAllArgs(nullptr, it->second->byPack.pack))
                             return false;
@@ -1150,7 +1150,7 @@ void RegisterTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* cls)
 SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<SYMBOL*>* gather, CallSite* callSite)
 {
     context.Computed = false;
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         DotNetPELib::SHA1Reset(&context);
         PUTCH('@');
@@ -1221,7 +1221,7 @@ void RegisterTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* func)
 }
 void templateHashInit()
 {
-    uniqueID = 0;
+    uniqueId = 0;
     classHash.clear();
     functionHash.clear();
 }

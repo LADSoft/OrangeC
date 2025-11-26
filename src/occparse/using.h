@@ -25,7 +25,7 @@
 #pragma once
 namespace Parser
 {
-    extern int parsingUsing;
+    extern int processingUsingStatement;
 
     void insertUsing(SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate,
         bool hasAttributes);

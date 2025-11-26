@@ -71,9 +71,8 @@ static void GetUsingName(char (&buf)[n])
     auto sym = enclosingDeclarations.GetFirst();
     if (sym)
     {
-        enclosingDeclarations.Add(sym);
+        DeclarationScope scope(sym);
         auto sp = classsearch(buf, false, false, false);
-        enclosingDeclarations.Drop();
         if (sp && sp->sb && sp->sb->usingTypedef)
         {
             if (sp->tp->IsStructured())
@@ -176,7 +175,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                     SpecializationError(buf);
                 }
             }
-            if ((!inTemplateType || parsingUsing) && MATCHKW(Keyword::openpa_))
+            if ((!inTemplateType || processingUsingStatement) && MATCHKW(Keyword::openpa_))
             {
                 CallSite funcparams = {};
                 getArgs(theCurrentFunc, &funcparams, Keyword::closepa_, true, 0);
@@ -223,9 +222,8 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                         {
                             if (t->lthis)
                             {
-                                enclosingDeclarations.Add(t->lthis);
+                                DeclarationScope scope(t->lthis);
                                 sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
-                                enclosingDeclarations.Drop();
                             }
                             if (sp)
                                 break;
@@ -243,7 +241,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                                 }
                                 if (params && params->second->byClass.val)
                                 {
-                                    if (!definingTemplate || instantiatingTemplate)
+                                    if (!IsDefiningTemplate())
                                         params->second->byClass.val->InstantiateDeferred();
                                     if (params->second->byClass.val->IsStructured())
                                     {
@@ -348,16 +346,15 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                 if (!typeName)
                     GetUsingName(buf);
 
-                if (structLevel && !definingTemplate && strSym->sb->templateLevel &&
+                if (structLevel && !templateDefinitionLevel && strSym->sb->templateLevel &&
                     (!strSym->sb->instantiated || strSym->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
                 {
                     sp = nullptr;
                 }
                 else
                 {
-                    enclosingDeclarations.Add(strSym);
+                    DeclarationScope scope(strSym);
                     sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
-                    enclosingDeclarations.Drop();
                 }
                 if (!sp)
                 {
@@ -394,7 +391,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                     istypedef = true;
                     sp = sp->tp->BaseType()->sp;
                 }
-                else if (sp && sp->sb && sp->tp->type == BasicType::typedef_ && (definingTemplate || !sp->sb->templateLevel))
+                else if (sp && sp->sb && sp->tp->type == BasicType::typedef_ && (templateDefinitionLevel || !sp->sb->templateLevel))
                 {
                     istypedef = true;
                     if (sp->tp->btp->type == BasicType::typedef_)
@@ -483,7 +480,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                 if (hasTemplateArgs)
                 {
                     deferred =
-                        inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing || (flags & _F_NOEVAL);
+                        processingTemplateHeader || parsingSpecializationDeclaration || processingTrailingReturnOrUsing || (flags & _F_NOEVAL);
                     if (currentsp)
                     {
                         sp = currentsp;
@@ -586,7 +583,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                                     }
                                     if (!sp)
                                     {
-                                        if (definingTemplate)  // || noSpecializationError)
+                                        if (templateDefinitionLevel)  // || noSpecializationError)
                                         {
                                             sp = sp1;
                                         }
@@ -600,7 +597,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                 {
                     // order matters here...
                     sp->tp = sp->tp->InitializeDeferred();
-                    sp->tp->InstantiateDeferred(false, fullySpecialized);
+                    sp->tp->InstantiateDeferred(false, isFullySpecialized);
                 }
                 if (sp && (!sp->sb ||
                            (sp->sb->storage_class != StorageClass::namespace_ && (!sp->tp->IsStructured() || sp->templateParams))))
@@ -659,7 +656,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
                 }
                 else
                 {
-                    if (!definingTemplate || !sp)
+                    if (!templateDefinitionLevel || !sp)
                     {
                         if (dependentType)
                             if (dependentType->IsStructured())
@@ -685,7 +682,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
         }
         qualified = true;
     }
-    if (pastClassSel && !typeName && !inTypedef && !hasTemplate && isType && !noTypeNameError)
+    if (pastClassSel && !typeName && !processingTypedef && !hasTemplate && isType && !noTypeNameError)
     {
 
         if (!strSym || templateSelector)
@@ -707,7 +704,7 @@ void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throug
             errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
         }
     }
-    if (!pastClassSel && typeName && !dependentType && !inTypedef && !parsingUsing && (!definingTemplate || instantiatingTemplate))
+    if (!pastClassSel && typeName && !dependentType && !processingTypedef && !processingUsingStatement && (!IsDefiningTemplate()))
     {
         error(ERR_NO_TYPENAME_HERE);
     }
@@ -1008,7 +1005,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
     if (!encloser && !ns && !namespaceOnly)
     {
         SYMBOL* ssp = enclosingDeclarations.GetFirst();
-        if (funcLevel || !ssp)
+        if (funcNestingLevel || !ssp)
         {
             if (!tagsOnly)
                 rv = search(localNameSpace->front()->syms, name);
@@ -1084,9 +1081,8 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
         }
         else if (encloser)
         {
-            enclosingDeclarations.Add(encloser);
+            DeclarationScope scope(encloser);
             rv = classsearch(name, tagsOnly, false, true);
-            enclosingDeclarations.Drop();
             if (rv && rv->sb)
                 rv->sb->throughClass = throughClass;
         }
@@ -1430,7 +1426,7 @@ void id_expression( SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
             getsym();
         }
         getIdName(funcsp, buf, sizeof(buf), &ov, &castType);
-        if (buf[0] &&(!definingTemplate || instantiatingTemplate || !encloser || encloser->tp->BaseType()->type != BasicType::templateselector_))
+        if (buf[0] &&(!IsDefiningTemplate() || !encloser || encloser->tp->BaseType()->type != BasicType::templateselector_))
         {
             if (encloser)
                 encloser->tp->InstantiateDeferred();
@@ -1570,7 +1566,7 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
 }
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress)
 {
-    return (definingTemplate && !instantiatingTemplate) || instantiatingFunction || member->sb->accessibleTemplateArgument ||
+    return IsDefiningTemplate() || instantiatingFunction || member->sb->accessibleTemplateArgument ||
            isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, AccessLevel::public_, 0);
 }
 static SYMBOL* AccessibleClassInstance(SYMBOL* parent)

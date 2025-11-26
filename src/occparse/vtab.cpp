@@ -329,7 +329,7 @@ namespace Parser
                     (tp1->BaseType()->sp->sb->templateLevel &&
                         tp2->BaseType()->sp->sb->parentTemplate != tp1->BaseType()->sp->sb->parentTemplate)))
             {
-                if (!definingTemplate)
+                if (!templateDefinitionLevel)
                 {
                     if (tp1->BaseType()->type == tp2->BaseType()->type)
                     {
@@ -461,7 +461,7 @@ namespace Parser
     }
     void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset)
     {
-        if (definingTemplate && !instantiatingTemplate)
+        if (IsDefiningTemplate())
             return;
         auto lst = base->sb->baseClasses;
         *pos = vtabEntryListFactory.CreateList();
@@ -527,7 +527,7 @@ namespace Parser
                                 sym->sb->vtabEntries->front()->virtuals->push_back(cur1);
                             }
                         }
-                        if (cur1->sb->isoverride && !found && !isfirst && (!definingTemplate || instantiatingTemplate))
+                        if (cur1->sb->isoverride && !found && !isfirst && (!IsDefiningTemplate()))
                         {
                             errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur1);
                         }

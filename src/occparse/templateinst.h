@@ -57,7 +57,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                               std::list<TEMPLATEPARAMPAIR>* src, std::list<TEMPLATEPARAMPAIR>* enclosing);
 static void SetTemplateArgAccess(SYMBOL* sym, bool accessible);
 static void SetAccessibleTemplateArgs(std::list<TEMPLATEPARAMPAIR>* args, bool accessible);
-void SwapMainTemplateArgs(SYMBOL* cls);
+void SwapMaprocessingTemplateArgs(SYMBOL* cls);
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern);
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern, StorageClass storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
@@ -87,7 +87,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
 SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args);
 bool ReplaceIntAliasParams(EXPRESSION** exp, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                            std::list<TEMPLATEPARAMPAIR>* origUsing);
-void SearchAlias(const char* name, TEMPLATEPARAMPAIR* x, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* origTemplate,
+void SearchAlias(SYMBOL* name, TEMPLATEPARAMPAIR* x, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* origTemplate,
                  std::list<TEMPLATEPARAMPAIR>* origUsing);
 static Type* ReplaceTemplateParam(Type* in);
 void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TEMPLATESELECTOR>* old, bool expression, SYMBOL* sym,

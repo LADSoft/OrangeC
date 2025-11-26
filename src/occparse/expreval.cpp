@@ -127,7 +127,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
         error(ERR_SIZEOF_UNFIXED_ENUMERATION);
     if (tp->IsFunction())
         error(ERR_SIZEOF_NO_FUNCTION);
-    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !definingTemplate)
+    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !templateDefinitionLevel)
         errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */
@@ -152,7 +152,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
         exp = nullptr;
         if (tp->IsStructured())
         {
-            if (tp->BaseType()->size == 0 && !definingTemplate)
+            if (tp->BaseType()->size == 0 && !templateDefinitionLevel)
                 errorsym(ERR_UNSIZED_TYPE, tp->BaseType()->sp);
             if (tp->BaseType()->syms)
             {
@@ -690,7 +690,7 @@ bool eval_binary_pm( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** re
     if (righttp->BaseType()->type != BasicType::memberptr_)
     {
         error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-        if (definingTemplate && !instantiatingTemplate && righttp->BaseType()->type == BasicType::templateparam_)
+        if (IsDefiningTemplate() && righttp->BaseType()->type == BasicType::templateparam_)
         {
             *resultexp = MakeExpression(kw == Keyword::pointstar_ ? ExpressionNode::pointstar_ : ExpressionNode::dotstar_,
                 *resultexp, rightexp);
@@ -1274,7 +1274,7 @@ bool eval_binary_inequality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESS
         else if ((*resulttp)->IsComplex())
             error(ERR_ILL_USE_OF_COMPLEX);
     }
-    else if ((*resulttp)->IsInt() && righttp->IsInt() && (!definingTemplate || instantiatingTemplate))
+    else if ((*resulttp)->IsInt() && righttp->IsInt() && (!IsDefiningTemplate()))
     {
         if (((*resulttp)->IsUnsigned() && !righttp->IsUnsigned()) || (righttp->IsUnsigned() && !(*resulttp)->IsUnsigned()))
             errorstr(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);
@@ -1601,7 +1601,7 @@ bool eval_binary_assign( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION*
             // unallocated var for destructor
             int offset;
             auto exp2 = relptr(rightexp, offset);
-            if (!inAssignRHS)
+            if (!assigningRHS)
             {
                 GetAssignDestructors(&(*resultexp)->v.func->destructors, *resultexp);
             }
@@ -1696,7 +1696,7 @@ bool eval_binary_assign( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION*
         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
     else if ((*resulttp)->IsVoid() || righttp->IsVoid() || (*resulttp)->type == BasicType::aggregate_)
         error(ERR_NOT_AN_ALLOWED_TYPE);
-    else if ((!definingTemplate || instantiatingTemplate) && !(*resulttp)->IsStructured() && !(*resulttp)->IsFunctionPtr() &&
+    else if ((!IsDefiningTemplate()) && !(*resulttp)->IsStructured() && !(*resulttp)->IsFunctionPtr() &&
              /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
              (*resulttp)->BaseType()->type != BasicType::memberptr_ && (*resulttp)->BaseType()->type != BasicType::templateparam_ &&
              (*resulttp)->BaseType()->type != BasicType::templateselector_ && !IsLValue(*resultexp) &&

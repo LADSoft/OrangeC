@@ -2440,7 +2440,7 @@ int opt0(EXPRESSION** node)
             break;
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 EXPRESSION* newExpr = ep->left;
                 EXPRESSION* next = ep->right;
@@ -2462,14 +2462,13 @@ int opt0(EXPRESSION** node)
                     {
                         next = next->left;
                     }
-                    enclosingDeclarations.Add(tp->BaseType()->sp);
+                    DeclarationScope scope(tp->BaseType()->sp);
                     if (next->type == ExpressionNode::callsite_)
                     {
                         Type* ctype = tp;
                         SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                         if (!sym)
                         {
-                            enclosingDeclarations.Drop();
                             break;
                         }
                         CallSite* func = Allocate<CallSite>();
@@ -2480,7 +2479,6 @@ int opt0(EXPRESSION** node)
                         sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                         if (!sym)
                         {
-                            enclosingDeclarations.Drop();
                             break;
                         }
                         EXPRESSION* temp = MakeExpression(next->v.func);
@@ -2495,7 +2493,6 @@ int opt0(EXPRESSION** node)
                         SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                         if (!sym)
                         {
-                            enclosingDeclarations.Drop();
                             break;
                         }
                         EXPRESSION* temp = MakeIntExpression(ExpressionNode::c_i_, 0);
@@ -2508,7 +2505,6 @@ int opt0(EXPRESSION** node)
                             Dereference(sym->tp, &newExpr);
                         tp = sym->tp;
                     }
-                    enclosingDeclarations.Drop();
                     ep = ep->right;
                 }
                 if (ep->type == ExpressionNode::dot_ || ep->type == ExpressionNode::pointsto_)
@@ -2531,7 +2527,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case ExpressionNode::sizeofellipse_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 int n = 0;
                 if (!(*node)->v.templateParam->second->packed)
@@ -2550,7 +2546,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateselector_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 auto tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = (*tsl)[1].sp;
@@ -2696,7 +2692,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!definingTemplate || instantiatingTemplate) &&
+            if ((!IsDefiningTemplate()) &&
                 (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
@@ -3247,7 +3243,7 @@ int fold_const(EXPRESSION* node)
                     }
                 }
                 if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression &&
-                    (argumentNesting == 0 && !inStaticAssert))
+                    (argumentNestingLevel == 0 && !inStaticAssert))
                 {
                     if (!rv && node->v.func->thisptr)
                     {
@@ -3264,7 +3260,7 @@ int fold_const(EXPRESSION* node)
         break;
 #ifdef LIBCXX17
         case ExpressionNode::cppintrinsic_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 EvaluateLibcxxConstant(&node);
             }

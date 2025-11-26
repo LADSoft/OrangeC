@@ -1107,7 +1107,7 @@ void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* 
 }
 std::list<TEMPLATEPARAMPAIR>* ExpandParams(EXPRESSION* exp)
 {
-    if (definingTemplate && !instantiatingTemplate)
+    if (IsDefiningTemplate())
         return exp->v.func->templateParams;
     if (!exp->v.func->templateParams)
         return nullptr;
@@ -1235,7 +1235,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
 {
     EXPRESSION* funcList[100];
     int count = 0;
-    if (definingTemplate && !instantiatingTemplate)
+    if (IsDefiningTemplate())
     {
         return nullptr;
     }
@@ -1306,7 +1306,7 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                 }
                 while (tp->IsRef())
                     tp = tp->BaseType()->btp;
-                enclosingDeclarations.Mark();
+                DeclarationScope scope;
                 if (tp->BaseType()->sp)
                     enclosingDeclarations.Add(tp->BaseType()->sp);
                 while (next->type == ExpressionNode::funcret_)
@@ -1319,7 +1319,6 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                     if (!sym)
                     {
-                        enclosingDeclarations.Release();
                         break;
                     }
                     CallSite* func = Allocate<CallSite>();
@@ -1333,7 +1332,6 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     noExcept = oldnoExcept;
                     if (!sym)
                     {
-                        enclosingDeclarations.Release();
                         break;
                     }
                     EXPRESSION* temp = MakeExpression(func);
@@ -1347,12 +1345,10 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                     if (!sym)
                     {
-                        enclosingDeclarations.Release();
                         break;
                     }
                     tp = sym->tp;
                 }
-                enclosingDeclarations.Release();
                 exp = exp->right;
             }
             if (exp->type != ExpressionNode::dot_ && exp->type != ExpressionNode::pointsto_)
@@ -1974,47 +1970,47 @@ void clearoutDeduction(Type* tp)
     {
         switch (tp->type)
         {
-            case BasicType::pointer_:
-                if (tp->IsArray() && tp->etype)
-                {
-                    clearoutDeduction(tp->etype);
-                }
-                tp = tp->btp;
-                break;
-            case BasicType::templateselector_:
-                clearoutDeduction((*tp->sp->sb->templateSelector)[1].sp->tp);
-                return;
-            case BasicType::const_:
-            case BasicType::volatile_:
-            case BasicType::lref_:
-            case BasicType::rref_:
-            case BasicType::restrict_:
-            case BasicType::far_:
-            case BasicType::near_:
-            case BasicType::seg_:
-            case BasicType::lrqual_:
-            case BasicType::rrqual_:
-            case BasicType::derivedfromtemplate_:
-                tp = tp->btp;
-                break;
-            case BasicType::memberptr_:
-                clearoutDeduction(tp->sp->tp);
-                tp = tp->btp;
-                break;
-            case BasicType::func_:
-            case BasicType::ifunc_: {
-                for (auto sym : *tp->syms)
-                {
-                    clearoutDeduction(sym->tp);
-                }
-                tp = tp->btp;
-                break;
+        case BasicType::pointer_:
+            if (tp->IsArray() && tp->etype)
+            {
+                clearoutDeduction(tp->etype);
             }
-            case BasicType::templateparam_:
-                tp->templateParam->second->byClass.temp = nullptr;
-                return;
-            default:
-                return;
+            tp = tp->btp;
+            break;
+        case BasicType::templateselector_:
+            clearoutDeduction((*tp->sp->sb->templateSelector)[1].sp->tp);
+            return;
+        case BasicType::const_:
+        case BasicType::volatile_:
+        case BasicType::lref_:
+        case BasicType::rref_:
+        case BasicType::restrict_:
+        case BasicType::far_:
+        case BasicType::near_:
+        case BasicType::seg_:
+        case BasicType::lrqual_:
+        case BasicType::rrqual_:
+        case BasicType::derivedfromtemplate_:
+            tp = tp->btp;
+            break;
+        case BasicType::memberptr_:
+            clearoutDeduction(tp->sp->tp);
+            tp = tp->btp;
+            break;
+        case BasicType::func_:
+        case BasicType::ifunc_: {
+            for (auto sym : *tp->syms)
+            {
+                clearoutDeduction(sym->tp);
+            }
+            tp = tp->btp;
+            break;
+        }
+        case BasicType::templateparam_:
+            tp->templateParam->second->byClass.temp = nullptr;
+            return;
+        default:
+            return;
         }
     }
 }
@@ -2039,6 +2035,45 @@ void SetTemplateNamespace(SYMBOL* sym)
         sym->sb->templateNameSpace = symListFactory.CreateList();
         sym->sb->templateNameSpace->insert(sym->sb->templateNameSpace->begin(), nameSpaceList.begin(), nameSpaceList.end());
         sym->sb->templateNameSpace->reverse();  //   will be reversed back when used
+    }
+}
+void ScopeTemplateParams(SYMBOL* sym)
+{
+    if (sym->sb->parentClass)
+    {
+        auto sym1 = sym;
+        std::stack<SYMBOL* > stk;
+        while (sym1)
+        {
+            stk.push(sym1);
+            sym1 = sym1->sb->parentClass;
+        }
+        while (!stk.empty())
+        {
+            sym1 = stk.top();
+            stk.pop();
+            if (sym1->templateParams)
+            {
+                enclosingDeclarations.Add(sym1->templateParams);
+            }
+        }
+    }
+    else
+    {
+        if (sym->templateParams)
+        {
+            enclosingDeclarations.Add(sym->templateParams);
+        }
+    }
+    auto sym1 = sym->sb->parentClass;
+    if (!sym->sb->parentClass && sym->sb->friendContext)
+    {
+        enclosingDeclarations.Add(sym->sb->friendContext);
+        SYMBOL* spt = sym->sb->friendContext->tp->BaseType()->sp;
+        if (spt->templateParams)
+        {
+            enclosingDeclarations.Add(spt->templateParams);
+        }
     }
 }
 int PushTemplateNamespace(SYMBOL* sym)
@@ -2085,7 +2120,7 @@ void PopTemplateNamespace(int n)
 }
 static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
 {
-    if (!definingTemplate)
+    if (!templateDefinitionLevel)
     {
         SYMBOL* ts = (*tso)[1].sp;
         SYMBOL* sp = nullptr;
@@ -2712,7 +2747,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx
         rv->back().second->byClass.dflt = TemplateLookupTypeFromDeclType(rv->back().second->byClass.dflt);
         if (!rv->back().second->byClass.dflt)
         {
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
                 rv->back().second->byClass.dflt = &stdany;
             else
                 rv->back().second->byClass.dflt = tpx->second->byClass.dflt;
@@ -2730,10 +2765,10 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMPAIR* tpx
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (!definingTemplate)
+    if (!templateDefinitionLevel)
     {
         std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
-        enclosingDeclarations.Add(args);
+        DeclarationScope scope(args);
         int k = 0;
         TEMPLATEPARAMPAIR* hold[200];
         if (args)
@@ -2775,7 +2810,6 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
                 }
             }
         }
-        enclosingDeclarations.Drop();
         return CopyArgsBack(args, hold, k);
     }
     return args;
@@ -2862,7 +2896,7 @@ std::list<TEMPLATEPARAMPAIR>* ResolveClassTemplateArgs(SYMBOL* sp, std::list<TEM
                 }
                 for (int i = 0; i < count; i++)
                 {
-                    auto rv = TypeAliasSearch(syms[i]->name, false);
+                    auto rv = TypeAliasSearch(syms[i], false);
                     if (rv && rv->second->packed)
                     {
                         int n1 = CountPacks(rv->second->byPack.pack);

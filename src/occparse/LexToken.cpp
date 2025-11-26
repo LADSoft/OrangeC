@@ -70,6 +70,7 @@ Lexeme* LexemeStreamPosition::get()
 }
 void LexemeStreamPosition::Backup()
 {
+    backupLex = currentLex;
     currentPosition = tokenContext->Index();
     tokenContext->Index(origPosition);
     currentLex = tokenContext->get(tokenContext->Index());
@@ -77,7 +78,10 @@ void LexemeStreamPosition::Backup()
 void LexemeStreamPosition::Restore()
 {
     tokenContext->Index(currentPosition);
-    currentLex = tokenContext->get(tokenContext->Index());
+    if (backupLex)
+        currentLex = backupLex;
+    else
+        currentLex = tokenContext->get(tokenContext->Index());
 }
 void LexemeStreamPosition::Bump()
 {
@@ -138,7 +142,6 @@ LexemeStream& LexemeStream::operator--()
     {
         --current;
     }
-    currentLex = data[current - currentBase];
     currentLex = currentStream->get(currentStream->Index());
     return *this;
 }
@@ -189,11 +192,13 @@ void LexemeStreamFactory::Initialize()
 
 void ParseOnStream(LexemeStream* newStream, std::function<void()> callback)
 {
+    auto lex1 = *newStream;
+    lex1.reset();
+
     auto lex = currentLex;
-    newStream->reset();
-    contextStack.push(newStream);
-    currentStream = newStream;
-    currentLex = newStream->get(newStream->Index());
+    contextStack.push(&lex1);
+    currentStream = &lex1;
+    currentLex = lex1.get(lex1.Index());
     callback();
     contextStack.pop();
     currentStream = contextStack.top();

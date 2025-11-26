@@ -158,9 +158,9 @@ struct StatementGenerator
 
 extern bool isCallNoreturnFunction;
 
-extern int inLoopOrConditional;
+extern int processingLoopOrConditional;
 extern int funcNesting;
-extern int funcLevel;
+extern int funcNestingLevel;
 extern int tryLevel;
 
 extern bool hasFuncCall;

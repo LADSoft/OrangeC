@@ -64,7 +64,7 @@
 namespace Parser
 {
 int inGetUserConversion;
-int inSearchingFunctions;
+int currentlyInsertingFunctions;
 int inNothrowHandler;
 int matchOverloadLevel;
 
@@ -232,7 +232,7 @@ bool matchOverload(Type* tnew, Type* told)
         ++hnew;
     }
     matchOverloadLevel--;
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         if (hold != holde)
         {
@@ -2459,9 +2459,9 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                     inGetUserConversion--;
                     if (flags & F_CONVERSION)
                     {
-                        if (found1->sb->templateLevel && !definingTemplate && found1->templateParams)
+                        if (found1->sb->templateLevel && !templateDefinitionLevel && found1->templateParams)
                         {
-                            if (!inSearchingFunctions || inTemplateArgs)
+                            if (!currentlyInsertingFunctions || processingTemplateArgs)
                                 found1 = TemplateFunctionInstantiate(found1, false);
                         }
                     }
@@ -4271,7 +4271,7 @@ void weedgathering(std::list<SYMBOL*>& gather)
 static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* args, Type* atp, int flags)
 {
     std::set<SYMBOL*> filters;
-    inSearchingFunctions++;
+    currentlyInsertingFunctions++;
     int n = 0;
     for (auto sp : gather)
     {
@@ -4344,7 +4344,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
             }
         }
     }
-    inSearchingFunctions--;
+    currentlyInsertingFunctions--;
     return n;
 }
 static void doNames(SYMBOL* sym)
@@ -4531,27 +4531,28 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
         funcList.resize(n);
 
         std::list<std::list<TEMPLATEPARAMPAIR>*> stk2;
-        int nscount = PushTemplateNamespace(sp);
-        for (auto&& s : spList)
         {
-            auto sp1 = s->sb->parentClass;
-            while (sp1)
+            TemplateNamespaceScope namespaceScope(sp);
+            for (auto&& s : spList)
             {
-                stk2.push_back(sp1->templateParams ? sp1->templateParams->front().second->bySpecialization.types : nullptr);
-                sp1 = sp1->sb->parentClass;
+                auto sp1 = s->sb->parentClass;
+                while (sp1)
+                {
+                    stk2.push_back(sp1->templateParams ? sp1->templateParams->front().second->bySpecialization.types : nullptr);
+                    sp1 = sp1->sb->parentClass;
+                }
+                auto s1 = detemplate(s, args, nullptr);
+                sp1 = s->sb->parentClass;
+                for (auto tpl : stk2)
+                {
+                    if (tpl)
+                        sp1->templateParams->front().second->bySpecialization.types = tpl;
+                    sp1 = sp1->sb->parentClass;
+                }
+                stk2.clear();
+                s = s1;
             }
-            auto s1 = detemplate(s, args, nullptr);
-            sp1 = s->sb->parentClass;
-            for (auto tpl : stk2)
-            {
-                if (tpl)
-                    sp1->templateParams->front().second->bySpecialization.types = tpl;
-                sp1 = sp1->sb->parentClass;
-            }
-            stk2.clear();
-            s = s1;
         }
-        PopTemplateNamespace(nscount);
         SYMBOL *found1 = nullptr, *found2 = nullptr;
         if (n != 1)
         {
@@ -4714,6 +4715,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
     }
     return deduced;
 }
+int count3;
 SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, Type* atp, int toErr, bool maybeConversion,
                               int flags)
 {
@@ -4721,7 +4723,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         atp = atp->BaseType()->btp;
     if (atp && !atp->IsFunction())
         atp = nullptr;
-    enclosingDeclarations.Mark();
+    DeclarationScope scope;
     if (args)
     {
         if (Optimizer::cparams.prm_cplusplus)
@@ -4793,7 +4795,6 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 *exp = MakeExpression(ExpressionNode::pc_, sp);
                 *tp = sp->tp;
             }
-            enclosingDeclarations.Release();
             return nullptr;
         }
         if (sp)
@@ -4913,7 +4914,6 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 }
                 if (n == 0)
                 {
-                    enclosingDeclarations.Release();
                     return nullptr;
                 }
 
@@ -4921,6 +4921,9 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 icsList.resize(n);
                 lenList.resize(n);
                 funcList.resize(n);
+                if (!strcmp(sp->name, ".bctr") && !strcmp(sp->sb->parentClass->name, "tuple"))
+                    if (++count3 == 2)
+                        printf("hi");
                 n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
@@ -5024,7 +5027,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         found2 = nullptr;
 #if !NDEBUG
                     // this block to aid in debugging unfound functions...
-                    if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !definingTemplate)
+                    if ((toErr & F_GOFERR) && !inDeduceArgs && (!found1 || (found1 && found2)) && !templateDefinitionLevel)
                     {
                         n = insertFuncs(&spList[0], gather, args, atp, flags);
                         if (atp || args->ascall)
@@ -5108,7 +5111,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
                         }
                     }
-                    else if ((!definingTemplate || instantiatingTemplate) && !inDeduceArgs)
+                    else if ((!IsDefiningTemplate()) && !inDeduceArgs)
                     {
                         SYMBOL* sym = SymAlloc();
                         sym->sb->parentClass = sp->sb->parentClass;
@@ -5155,7 +5158,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     found1 = found2 = nullptr;
                 }
             }
-            else if (found1->sb->deleted && !definingTemplate)
+            else if (found1->sb->deleted && !templateDefinitionLevel)
             {
                 if (toErr)
                     errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
@@ -5180,7 +5183,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
                         found1 = found1->sb->mainsym;
-                        inSearchingFunctions++;
+                        currentlyInsertingFunctions++;
                         if (found1->sb->castoperator)
                         {
                             found1 = detemplate(found1, nullptr, args->thistp->BaseType()->btp);
@@ -5189,11 +5192,11 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         {
                             found1 = detemplate(found1, args, atp);
                         }
-                        inSearchingFunctions--;
+                        currentlyInsertingFunctions--;
                         found1->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     }
                     else if (!found1->sb->templateLevel && found1->sb->parentClass && found1->sb->parentClass->templateParams &&
-                             (!definingTemplate || instantiatingTemplate) && !found1->sb->isDestructor)
+                             (!IsDefiningTemplate()) && !found1->sb->isDestructor)
                     {
                         auto old = found1;
                         if (found1->sb->mainsym)
@@ -5225,23 +5228,23 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             CollapseReferences(sym->tp);
                         }
                         CollapseReferences(found1->tp->BaseType()->btp);
-                        if (found1->sb->templateLevel && (!definingTemplate || instantiatingTemplate) && found1->templateParams)
+                        if (found1->sb->templateLevel && (!IsDefiningTemplate()) && found1->templateParams)
                         {
-                            if (!inSearchingFunctions || inTemplateArgs)
+                            if (!currentlyInsertingFunctions || processingTemplateArgs)
                             {
                                 found1 = TemplateFunctionInstantiate(found1, false);
                             }
                         }
 
                         if (found1->tp->BaseType()->btp->IsAutoType() &&
-                            !found1->sb->inlineFunc.stmt && (!inSearchingFunctions || inTemplateArgs || (flags & _F_INDECLTYPE)) && bodyTokenStreams.get(found1))
+                            !found1->sb->inlineFunc.stmt && (!currentlyInsertingFunctions || processingTemplateArgs || (flags & _F_INDECLTYPE)) && bodyTokenStreams.get(found1))
                         {
                             CompileInlineFunction(found1);
                         }
                         else if ((flags & _F_IS_NOTHROW) ||
-                                 (found1->sb->constexpression && (!definingTemplate || instantiatingTemplate)))
+                                 (found1->sb->constexpression && (!IsDefiningTemplate())))
                         {
-                            if ((!found1->sb->constexpression || (definingTemplate && !instantiatingTemplate)) && noExceptTokenStreams.get(found1))
+                            if ((!found1->sb->constexpression || IsDefiningTemplate()) && noExceptTokenStreams.get(found1))
                             {
                                 if (found1->templateParams)
                                 {
@@ -5255,7 +5258,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             }
                             else if (!!found1->sb->inlineFunc.stmt && bodyTokenStreams.get(found1))
                             {
-                                if (!inSearchingFunctions || inTemplateArgs)
+                                if (!currentlyInsertingFunctions || processingTemplateArgs)
                                 {
                                     CompileInlineFunction(found1);
                                 }
@@ -5301,7 +5304,6 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             }
         }
     }
-    enclosingDeclarations.Release();
     return sp;
 }
 SYMBOL* MatchOverloadedFunction(Type* tp, Type** mtp, SYMBOL* sym, EXPRESSION** exp, int flags)

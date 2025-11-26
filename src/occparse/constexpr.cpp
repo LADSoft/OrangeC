@@ -1471,7 +1471,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
 bool EvaluateConstexprFunction(EXPRESSION*& node)
 {
     bool rv = false;
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         if (node->v.func->sp->sb->isConstructor)
         {
@@ -1534,7 +1534,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
         }
         if (exp && exp->type == ExpressionNode::auto_)
         {
-            if (inLoopOrConditional)
+            if (processingLoopOrConditional)
                 return false;
             if (!exp->v.sp->sb->constexpression && !exp->v.sp->sb->retblk)
             {
@@ -1600,14 +1600,13 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                     }
                     if (found1)
                     {
-                        enclosingDeclarations.Mark();
+                        DeclarationScope scope;
                         pushContext(found1, false);
-                        if (found1->sb->templateLevel && !definingTemplate && node->v.func->templateParams)
+                        if (found1->sb->templateLevel && !templateDefinitionLevel && node->v.func->templateParams)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false);
                         }
                         CompileInlineFunction(found1);
-                        enclosingDeclarations.Release();
                     }
                 }
                 if (found1 && found1->sb->inlineFunc.stmt)

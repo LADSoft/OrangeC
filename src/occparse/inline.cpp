@@ -78,14 +78,14 @@ static std::list<std::pair<SYMBOL*, EXPRESSION*>> inlineLocalUninitializers;
 static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
 static std::unordered_set<std::string, StringHash> didInlines;
-static bool inInlineFunctionContext;
+static int inInlineFunctionContext;
 static CallSite* function_list[MAX_INLINE_NESTING];
 static int function_listcount;
 static int namenumber;
 
 void inlineinit(void)
 {
-    inInlineFunctionContext = false;
+    inInlineFunctionContext = 0;
     namenumber = 0;
     inlinesp_count = 0;
     inlines.clear();
@@ -130,9 +130,9 @@ void dumpInlines(void)
                             }
                             else
                             {
-                                int n = PushTemplateNamespace(sym);
+                                TemplateNamespaceScope namespaceScope(sym);
                                 if (sym->sb->parentClass)
-                                    SwapMainTemplateArgs(sym->sb->parentClass);
+                                    SwapMaprocessingTemplateArgs(sym->sb->parentClass);
                                 enclosingDeclarations.clear();
                                 if ((sym->sb->attribs.inheritable.isInline ||
                                      sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || sym->sb->forcedefault) &&
@@ -143,8 +143,7 @@ void dumpInlines(void)
                                 instantiationList.clear();
                                 enclosingDeclarations.clear();
                                 if (sym->sb->parentClass)
-                                    SwapMainTemplateArgs(sym->sb->parentClass);
-                                PopTemplateNamespace(n);
+                                    SwapMaprocessingTemplateArgs(sym->sb->parentClass);
                             }
                         }
                     }
@@ -246,16 +245,15 @@ void dumpInlines(void)
                                 SYMBOL* pc = sym;
                                 while (pc->sb->parentClass)
                                     pc = pc->sb->parentClass;
+                                DeclarationScope scope;
                                 enclosingDeclarations.Add(sym->sb->parentClass);
                                 enclosingDeclarations.Add(sym->templateParams);
-                                int n = PushTemplateNamespace(pc);
+
+                                TemplateNamespaceScope namespaceScope(pc);
                                 ParseOnStream(initTokenStreams.get(origsym), [=]() {
                                     sym->sb->init = nullptr;
                                     initialize(nullptr, sym, StorageClass::global_, true, false, false, _F_NOCONSTGEN);
-                                });
-                                PopTemplateNamespace(n);
-                                enclosingDeclarations.Drop();
-                                enclosingDeclarations.Drop();
+                                    });
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
                             Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym),
@@ -473,19 +471,7 @@ static void PushInline(SYMBOL* sym, bool traceback)
         sym = reverseOrder.top();
         reverseOrder.pop();
         EnterInstantiation(sym,  true);
-        if (sym->templateParams)
-        {
-            enclosingDeclarations.Add(sym->templateParams);
-        }
-        if (!sym->sb->parentClass && sym->sb->friendContext)
-        {
-            enclosingDeclarations.Add(sym->sb->friendContext);
-            SYMBOL* spt = sym->sb->friendContext->tp->BaseType()->sp;
-            if (spt->templateParams)
-            {
-                enclosingDeclarations.Add(spt->templateParams);
-            }
-        }
+        ScopeTemplateParams(sym);
     }
 }
 bool CompileInlineFunction(SYMBOL* sym)
@@ -496,14 +482,14 @@ bool CompileInlineFunction(SYMBOL* sym)
         if (bodyTokenStreams.get(sym))
         {
             EnterPackedContext();
-            int oldArgumentNesting = argumentNesting;
-            int oldExpandingParams = expandingParams;
+            int oldArgumentNestingLevel = argumentNestingLevel;
+            int oldExpandingParams = isExpandingParams;
             int oldconst = inConstantExpression;
             int oldanon = anonymousNotAlloc;
             anonymousNotAlloc = 0;
             inConstantExpression = 0;
-            argumentNesting = 0;
-            expandingParams = 0;
+            argumentNestingLevel = 0;
+            isExpandingParams = 0;
             if (sym->sb->specialized && sym->templateParams->size() == 1)
                 sym->sb->instantiated = true;
             int n1 = 0;
@@ -513,17 +499,17 @@ bool CompileInlineFunction(SYMBOL* sym)
             {
                 PushInline(sym, true);
             }
-            ++instantiatingTemplate;
+            ++templateInstantiationLevel;
             DeferredCompileFunction(sym);
-            --instantiatingTemplate;
+            --templateInstantiationLevel;
             instantiationList.clear();
             instantiationList = std::move(hold2);
             enclosingDeclarations.clear();
             enclosingDeclarations = std::move(hold);
             anonymousNotAlloc = oldanon;
             inConstantExpression = oldconst;
-            expandingParams = oldExpandingParams;
-            argumentNesting = oldArgumentNesting;
+            isExpandingParams = oldExpandingParams;
+            argumentNestingLevel = oldArgumentNestingLevel;
             LeavePackedContext();
         }
     }
@@ -537,11 +523,13 @@ static void GenInline(SYMBOL* sym)
     InitializeFunctionArguments(sym);
     startlab = Optimizer::nextLabel++;
     retlab = Optimizer::nextLabel++;
-    int n = PushTemplateNamespace(sym);
+    TemplateNamespaceScope namespaceScope(sym);
+    auto hold2 = std::move(instantiationList);
     PushInline(sym, false);
     genfunc(sym, true);
     PopInline();
-    PopTemplateNamespace(n);
+    instantiationList.clear();
+    instantiationList = std::move(hold2);
     LeaveInlineFunctionContext();
 }
 bool CompileAndGen(SYMBOL* sym)
@@ -559,21 +547,31 @@ bool CompileAndGen(SYMBOL* sym)
 }
 void EnterInlineFunctionContext()
 {
-    inInlineFunctionContext = true;
+    inInlineFunctionContext++;
 }
 void LeaveInlineFunctionContext()
 {
-    inInlineFunctionContext = false;
-    for (auto s : functionInlines)
+    if (inInlineFunctionContext == 1)
     {
-        CompileAndGen(s);
+         while (functionInlines.size())
+        {
+            decltype(functionInlines) current = std::move(functionInlines);
+            for (auto sym : current)
+            {
+                if (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated)
+                    CompileAndGen(sym);
+            }
+        }
     }
+    inInlineFunctionContext--;
 }
 void InsertInline(SYMBOL* sym)
 {
     if (sym->sb->storage_class == StorageClass::external_)
     {
-        return;
+        if (!sym->sb->inlineFunc.stmt && !bodyTokenStreams.get(sym))
+            return;
+        sym->sb->storage_class = StorageClass::global_;
     }
     if (enteredInlines.find(sym) == enteredInlines.end())
     {

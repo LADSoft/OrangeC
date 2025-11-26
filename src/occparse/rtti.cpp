@@ -280,6 +280,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
             else
             {
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
+                InsertInline(sym);
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)

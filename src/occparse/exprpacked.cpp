@@ -291,7 +291,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
 }
 void checkPackedExpression(EXPRESSION* exp)
 {
-    if (!hasPackedExpression(exp, true) && !definingTemplate)
+    if (!hasPackedExpression(exp, true) && !templateDefinitionLevel)
         error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER);
 }
 /*
@@ -527,7 +527,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexemeStr
         }
         if (arg.size())
         {
-            expandingParams++;
+            isExpandingParams++;
             PushPackIndex();
             int i;
             int n = arg.front();
@@ -551,7 +551,7 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexemeStr
                 }
             }
             PopPackIndex();
-            expandingParams--;
+            isExpandingParams--;
         }
     }
 }
@@ -721,8 +721,8 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORI
                     // I have also seen n be 0 during parsing...
                     auto itb = baseEntries.begin();
                     auto itv = vbaseEntries.begin();
-                    int oldArgumentNesting = argumentNesting;
-                    argumentNesting = -1;
+                    int oldArgumentNestingLevel = argumentNestingLevel;
+                    argumentNestingLevel = -1;
                     PushPackIndex();
                     for (i = 0; i < n; i++)
                     {
@@ -777,7 +777,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORI
                         });
                     }
                     PopPackIndex();
-                    argumentNesting = oldArgumentNesting;
+                    argumentNestingLevel = oldArgumentNestingLevel;
                 }
                 PushPopDefaults(defaults, funcsp->templateParams, true, false);
             }
@@ -922,7 +922,7 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
             }
             if (arg->tp && arg->tp->BaseType()->type == BasicType::templateparam_)
             {
-                doparam |= !definingTemplate || instantiatingTemplate;
+                doparam |= !IsDefiningTemplate();
             }
         }
         if (doparam)
@@ -1190,8 +1190,8 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
             }
         }
     }
-    expandingParams++;
-    if (arg.size() && (!definingTemplate || instantiatingTemplate))
+    isExpandingParams++;
+    if (arg.size() && (!IsDefiningTemplate()))
     {
         int i;
         int n = arg.front();
@@ -1210,7 +1210,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
                 SetPackIndex(i);
                 tp = TypeGenerator::TypeId(funcsp, StorageClass::parameter_, false, true, false);
             });
-            if (!definingTemplate && (!tp || tp->type == BasicType::any_))
+            if (!templateDefinitionLevel && (!tp || tp->type == BasicType::any_))
             {
                 error(ERR_UNKNOWN_TYPE_TEMPLATE_ARG);
             }
@@ -1237,7 +1237,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
             *lst = templateParamPairListFactory.CreateList();
         (*lst)->push_back(select->front());
     }
-    expandingParams--;
+    isExpandingParams--;
     PopPackIndex();
     // make it packed again...   we aren't flattening at this point.
     if (select->front().second->packed)
@@ -1314,7 +1314,7 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPos
             }
         }
     }
-    expandingParams++;
+    isExpandingParams++;
     int oldStaticAssert = inStaticAssert;
     inStaticAssert = 0;
     if (arg.size())
@@ -1355,7 +1355,7 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPos
             (*lst)->back().first = first;
     }
     inStaticAssert = oldStaticAssert;
-    expandingParams--;
+    isExpandingParams--;
     PopPackIndex();
 }
 int GetPackCount()

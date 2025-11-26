@@ -1534,7 +1534,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                         }
                         if (TemplateConstExpr(last->back().second->byClass.val, (*symArgs)->exp))
                             last->back().second->byClass.val = Type::MakeType(BasicType::const_, last->back().second->byClass.val);
-                        if (forward && !definingTemplate)
+                        if (forward && !templateDefinitionLevel)
                         {
                             last->back().second->byClass.val =
                                 GetForwardType(nullptr, last->back().second->byClass.val, (*symArgs)->exp);

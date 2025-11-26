@@ -88,10 +88,10 @@ static std::list<std::list<SYMBOL*>*> usingDirectives;
 static std::stack<std::string> nestedFuncNames;
 bool isCallNoreturnFunction;
 
-int inLoopOrConditional;
+int processingLoopOrConditional;
 
 int funcNesting;
-int funcLevel;
+int funcNestingLevel;
 int tryLevel;
 int ellipsePos;
 
@@ -124,14 +124,14 @@ void statement_ini(bool global)
     lines = nullptr;
     functionCanThrow = false;
     funcNesting = 0;
-    funcLevel = 0;
+    funcNestingLevel = 0;
     caseDestructorsForBlock = nullptr;
     caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
     controlSequences = 0;
     expressions = 0;
-    inLoopOrConditional = 0;
+    processingLoopOrConditional = 0;
     bodyIsDestructor = 0;
     inFunctionExpressionParsing = false;
     while (!expressionStatements.empty())
@@ -159,8 +159,8 @@ Statement* Statement::MakeStatement( std::list<FunctionBlock*>& parent, Statemen
     }
     st->type = stype;
     st->charpos = 0;
-    st->line = lex->errline;
-    st->file = lex->errfile;
+    st->line = lex->sourceLineNumber;
+    st->file = lex->sourceFileName;
 
     st->parent = parent.size() ? parent.front() : nullptr;
     if (&parent != &emptyBlockdata)
@@ -759,8 +759,8 @@ void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
     else if (isintconst(exp))
     {
         needkw(Keyword::colon_);
-        const char* fname = currentLex->errfile;
-        int line = currentLex->errline;
+        const char* fname = currentLex->sourceFileName;
+        int line = currentLex->sourceLineNumber;
         val = exp->v.i;
         /* need error: lost conversion on case value */
         bool found = false;
@@ -884,7 +884,7 @@ void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
     currentLineData(parent, currentLex, 0);
     st = Statement::MakeStatement(parent, StatementNode::label_);
     st->label = loopLabel;
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         addedBlock++;
@@ -950,7 +950,7 @@ void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
         errskim(skim_semi);
         skip(Keyword::semicolon_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
@@ -975,7 +975,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
     currentLineData(parent, currentLex, -1);
     forline = currentLineData(emptyBlockdata, currentLex, 0);
     getsym();
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (MATCHKW(Keyword::openpa_))
     {
         bool declaration = false;
@@ -1925,7 +1925,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
         errskim(skim_closepa);
         skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
@@ -1941,7 +1941,7 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
     bool isconstexpr = false;
     int ifbranch = codeLabel++;
     getsym();
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::constexpr_))
     {
         RequiresDialect::Feature(Dialect::cpp17, "Compile-time static if");
@@ -2109,7 +2109,7 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
         errskim(skim_closepa);
         skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
 }
@@ -2119,8 +2119,10 @@ int StatementGenerator::GetLabelValue( std::list<FunctionBlock*>* parent, Statem
     if (!spx)
     {
         spx = makeID(StorageClass::ulabel_, nullptr, nullptr, litlate(currentLex->value.s.a));
-        spx->sb->declfile = spx->sb->origdeclfile = currentLex->errfile;
-        spx->sb->declline = spx->sb->origdeclline = currentLex->errline;
+        spx->sb->declfile = spx->sb->origdeclfile = currentLex->sourceFileName;
+        spx->sb->declline = spx->sb->origdeclline = currentLex->sourceLineNumber;
+        spx->sb->declcharpos = currentLex->charindex;
+        spx->sb->realcharpos = currentLex->realcharindex;
         spx->sb->realdeclline = currentLex->linedata->lineno;
         spx->sb->declfilenum = currentLex->linedata->fileindex;
         SetLinkerNames(spx, Linkage::none_);
@@ -2407,8 +2409,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
     }
     else
     {
-        int oldInLoop = inLoopOrConditional;
-        inLoopOrConditional = 0;
+        int oldInLoop = processingLoopOrConditional;
+        processingLoopOrConditional = 0;
 
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
@@ -2496,7 +2498,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             implicit = true;
                         }
                         if (tp1->BaseType()->sp->sb->templateLevel && tp1->BaseType()->sp->templateParams &&
-                            !tp1->BaseType()->sp->sb->instantiated && !definingTemplate)
+                            !tp1->BaseType()->sp->sb->instantiated && !templateDefinitionLevel)
                         {
                             SYMBOL* sym = tp1->BaseType()->sp;
                             if (!allTemplateArgsSpecified(sym, sym->templateParams))
@@ -2912,7 +2914,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         }
         if (!returnexp)
             returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);  // errors
-        inLoopOrConditional = oldInLoop;
+        processingLoopOrConditional = oldInLoop;
     }
     currentLineData(parent, currentLex, 0);
     ThunkReturnDestructors(&destexp, nullptr, localNameSpace->front()->syms);
@@ -3046,7 +3048,7 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
     switchstmt->table = localNameSpace->front()->syms;
     parent.push_front(switchstmt);
     getsym();
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (MATCHKW(Keyword::openpa_))
     {
         getsym();
@@ -3116,7 +3118,7 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
         errskim(skim_closepa);
         skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
@@ -3139,7 +3141,7 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
     whileline = currentLineData(emptyBlockdata, currentLex, 0);
     parent.push_front(whilestmt);
     getsym();
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (MATCHKW(Keyword::openpa_))
     {
         getsym();
@@ -3218,7 +3220,7 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
         errskim(skim_closepa);
         skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     std::list<FunctionBlock*> dummy{whilestmt};
@@ -3366,7 +3368,7 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
     ++ilbefore;
     auto next = ilbefore != parent.end() ? *ilbefore : nullptr;
     bool last = false;
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (!MATCHKW(Keyword::catch_))
     {
         error(ERR_EXPECTED_CATCH_CLAUSE);
@@ -3435,7 +3437,7 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
             errskim(skim_end);
         }
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
 }
 void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
 {
@@ -3452,7 +3454,7 @@ void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
     trystmt->table = localNameSpace->front()->syms;
     funcsp->sb->anyTry = true;
     getsym();
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (!MATCHKW(Keyword::begin_))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
@@ -3478,7 +3480,7 @@ void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
             next->nosemi = true;
         ParseCatch(parent, st->breaklabel, st->label, st->endlabel);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
 }
 bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
 {
@@ -3652,7 +3654,7 @@ bool StatementGenerator::ResolvesToDeclaration( bool structured)
             else if (MATCHKW(Keyword::rightshift_))
             {
                 level--;
-                getGTSym();
+                SplitGreaterThanFromRightShift();
                 continue;
             }
             getsym();
@@ -4017,7 +4019,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     preProcessor->MarkStdPragma();
     Statement* st;
     EXPRESSION* thisptr = nullptr;
-    browse_blockstart(currentLex->errline);
+    browse_blockstart(currentLex->sourceLineNumber);
     blockstmt->type = Keyword::begin_;
     blockstmt->needlabel = before->needlabel;
     blockstmt->table = localNameSpace->front()->syms;
@@ -4141,7 +4143,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     if (first)
     {
-        browse_endfunc(funcsp, funcsp->sb->endLine = currentLex ? currentLex->errline : endline);
+        browse_endfunc(funcsp, funcsp->sb->endLine = currentLex ? currentLex->sourceLineNumber : endline);
     }
     if (!currentLex && !viaTry)
     {
@@ -4154,7 +4156,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     if (!viaTry)
     {
-        browse_blockend(endline = currentLex->errline);
+        browse_blockend(endline = currentLex->sourceLineNumber);
         currentLineData(parent, currentLex, -!first);
     }
     if (before->type == Keyword::begin_ || before->type == Keyword::switch_ || before->type == Keyword::try_ ||
@@ -4496,9 +4498,9 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
     if (stream && stream != (LexemeStream*)-1)
     {
         dontRegisterTemplate++;
-        int n = PushTemplateNamespace(funcsp);
+        TemplateNamespaceScope namespaceScope(funcsp);
+        DeclarationScope scope;
         ParseOnStream(stream, [=]() {
-            enclosingDeclarations.Mark();
             if (funcsp->sb->parentClass)
             {
                 enclosingDeclarations.Add(funcsp->sb->parentClass);
@@ -4517,7 +4519,7 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
             FreeLocalContext(emptyBlockdata, nullptr, 0);
             if (!IsConstantExpression(exp, false, false))
             {
-                if (!definingTemplate)
+                if (!templateDefinitionLevel)
                     error(ERR_CONSTANT_VALUE_EXPECTED);
             }
             else
@@ -4527,8 +4529,6 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
                     funcsp->sb->noExcept = true;
             }
         });
-        enclosingDeclarations.Release();
-        PopTemplateNamespace(n);
         noExceptTokenStreams.set(funcsp, (LexemeStream*)-1);
         dontRegisterTemplate--;
     }
@@ -4552,7 +4552,7 @@ void StatementGenerator::FunctionBody()
         funcsp->sb->noExcept = true;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor++;
-    int oldNestingCount = definingTemplate;
+    int oldNestingCount = templateDefinitionLevel;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
     bool olddontOptimizeFunction = Optimizer::dontOptimizeFunction;
@@ -4580,7 +4580,7 @@ void StatementGenerator::FunctionBody()
     auto oldGlobal = globalNameSpace->front()->usingDirectives;
     hasFuncCall = false;
     funcNesting++;
-    funcLevel++;
+    funcNestingLevel++;
     functionCanThrow = false;
     codeLabel = INT_MIN;
     hasXCInfo = false;
@@ -4603,8 +4603,8 @@ void StatementGenerator::FunctionBody()
         }
     }
 
-    if (inTemplateHeader)
-        definingTemplate--;
+    if (processingTemplateHeader)
+        templateDefinitionLevel--;
     CheckUndefinedStructures(funcsp);
     StatementGenerator::ParseNoExceptClause(funcsp);
     if (!inNoExceptHandler)
@@ -4619,7 +4619,7 @@ void StatementGenerator::FunctionBody()
         funcsp->sb->declaring = true;
         labelSyms = symbols->CreateSymbolTable();
         StatementGenerator::AssignParameterSizes(parent);
-        funcsp->sb->startLine = currentLex->errline;
+        funcsp->sb->startLine = currentLex->sourceLineNumber;
         Compound(parent, true);
         if (funcsp->tp->BaseType()->btp->IsAutoType())
         {
@@ -4631,7 +4631,7 @@ void StatementGenerator::FunctionBody()
         refreshBackendParams(funcsp);
         checkUnlabeledReferences(parent);
         checkGotoPastVLA(block->statements, true);
-        if (funcsp->tp->BaseType()->btp->IsAutoType() && !definingTemplate)
+        if (funcsp->tp->BaseType()->btp->IsAutoType() && !templateDefinitionLevel)
             funcsp->tp->BaseType()->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
         {
@@ -4723,9 +4723,9 @@ void StatementGenerator::FunctionBody()
     codeLabel = oldCodeLabel;
     functionCanThrow = oldFunctionCanThrow;
     matchReturnTypes = oldMatchReturnTypes;
-    funcLevel--;
+    funcNestingLevel--;
     funcNesting--;
-    definingTemplate = oldNestingCount;
+    templateDefinitionLevel = oldNestingCount;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
 }

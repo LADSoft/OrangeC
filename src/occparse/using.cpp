@@ -49,7 +49,7 @@ namespace CompletionCompiler
 
 namespace Parser
 {
-    int parsingUsing;
+    int processingUsingStatement;
 
     static void InsertTag(SYMBOL* sym, StorageClass storage_class, bool allowDups)
     {
@@ -107,7 +107,7 @@ namespace Parser
                             globalNameSpace->front()->usingDirectives->push_front(sp);
                             if (!IsCompiler() && currentLex)
                                 CompletionCompiler::ccInsertUsing(sp, nameSpaceList.size() ? nameSpaceList.front() : nullptr,
-                                    currentLex->errfile, currentLex->errline);
+                                    currentLex->sourceFileName, currentLex->sourceLineNumber);
                         }
                     }
                     getsym();
@@ -131,6 +131,10 @@ namespace Parser
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             if (!isTypename && ISID())
             {
+                if (currentLex->sourceLineNumber == 624 && strstr(currentLex->sourceFileName, "tuple"))
+                    printf("hi");
+                if (currentLex->sourceLineNumber == 634 && strstr(currentLex->sourceFileName, "tuple"))
+                    printf("hi");
                 LexemeStreamPosition placeHolder(currentStream);
                 getsym();
                 attributes oldAttribs = basisAttribs;
@@ -147,7 +151,7 @@ namespace Parser
                         SYMBOL* sym = nullptr, * strsym = nullptr;
                         std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
                         bool throughClass = false;
-                        parsingTrailingReturnOrUsing++;
+                        processingTrailingReturnOrUsing++;
                         bool isTemplate = false;
                         id_expression(nullptr, &sym, &strsym, nullptr, &isTemplate, false, false, nullptr, 0, 0);
                         if (sym)
@@ -168,7 +172,7 @@ namespace Parser
                                 GetTemplateArguments((*strsym->tp->sp->sb->templateSelector)[1].sp, sym, &lst);
                             }
                         }
-                        else if (definingTemplate && !instantiatingTemplate && isTemplate && strsym)
+                        else if (IsDefiningTemplate() && isTemplate && strsym)
                         {
                             while (!MATCHKW(Keyword::classsel_) && !MATCHKW(Keyword::semicolon_))
                             {
@@ -206,7 +210,7 @@ namespace Parser
                             sp->sb->templateSelector = templateSelector;
                             tp->sp = sp;
                         }
-                        parsingTrailingReturnOrUsing--;
+                        processingTrailingReturnOrUsing--;
                         if (!isTemplate)
                         {
                             Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
@@ -221,9 +225,9 @@ namespace Parser
                     }
                     else
                     {
-                        parsingUsing++;
+                        processingUsingStatement++;
                         tp = TypeGenerator::TypeId(nullptr, StorageClass::cast_, false, true, true);
-                        parsingUsing--;
+                        processingUsingStatement--;
                     }
                     if (!tp)
                     {
@@ -237,12 +241,12 @@ namespace Parser
                     sp->sb->access = access;
                     if (inTemplate)
                     {
-                        sp->sb->templateLevel = definingTemplate;
+                        sp->sb->templateLevel = templateDefinitionLevel;
                         sp->templateParams = TemplateGetParams(sp);
                         if (tp->IsStructured() || tp->BaseType()->type == BasicType::templateselector_)
                             sp->sb->typeAlias = lst;
                     }
-                    else if (sp->tp->IsDeferred() && (!definingTemplate || instantiatingTemplate))
+                    else if (sp->tp->IsDeferred() && (!IsDefiningTemplate()))
                     {
                         if (!sp->tp->BaseType()->sp->sb->templateLevel)
                             sp->tp->InstantiateDeferred();
@@ -390,9 +394,10 @@ namespace Parser
                         sp = namespacesearch(buf, nssym, true, false);
                         break;
                     case parseClass: {
-                        enclosingDeclarations.Add(strSym);
-                        sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
-                        enclosingDeclarations.Drop();
+                        {
+                            DeclarationScope scope(strSym);;
+                            sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
+                        }
                         if (!sp)
                             sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
                     }
@@ -425,31 +430,6 @@ namespace Parser
                                 }
                                 auto sp1 = tp1->BaseType()->sp;
                                 sp = sp1;
-                                /*'
-                            switch (mode)
-                            {
-                            case parseFirst:
-                                sp = namespacesearch(sp1->name, localNameSpace, false, false);
-                                if (!sp)
-                                    sp = classsearch(sp1->name, false, MATCHKW(Keyword::classsel_), false);
-                                if (!sp)
-                                    sp = namespacesearch(sp1->name, globalNameSpace, false, false);
-                                break;
-                            case parseNamespace:
-                                sp = namespacesearch(sp1->name, nssym, true, false);
-                                break;
-                            case parseClass:
-                            {
-                                enclosingDeclarations.Add(strSym);
-                                sp = classsearch(sp1->name, false, MATCHKW(Keyword::classsel_), false);
-                                enclosingDeclarations.Drop();
-                                if (!sp)
-                                    sp = classsearch(sp1->name, false, MATCHKW(Keyword::classsel_), false);
-                            }
-                            break;
-
-                            }
-                            */
                                 if (!sp || strcmp(sp->name, sp1->name) != 0)
                                 {
                                     error(ERR_TYPE_NAME_EXPECTED);
@@ -535,7 +515,7 @@ namespace Parser
                             sp->sb->storage_class != StorageClass::static_ && sp->sb->storage_class != StorageClass::localstatic_ &&
                             sp->sb->storage_class != StorageClass::constant_)))
                     {
-                        if (!definingTemplate || instantiatingTemplate)
+                        if (!IsDefiningTemplate())
                             error(ERR_TYPE_OR_VARIABLE_EXPECTED);
                         errskim(skim_semi, false);
                     }
@@ -543,7 +523,7 @@ namespace Parser
                     {
                         if (sp && sp->sb)
                         {
-                            if (!definingTemplate)
+                            if (!templateDefinitionLevel)
                             {
                                 if (sp->sb->storage_class == StorageClass::overloads_)
                                 {

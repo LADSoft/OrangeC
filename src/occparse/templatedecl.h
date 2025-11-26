@@ -27,33 +27,35 @@ namespace Parser
 {
 
 extern int dontRegisterTemplate;
-extern int instantiatingTemplate;
-extern int inTemplateBody;
-extern int definingTemplate;
+extern int templateInstantiationLevel;
+extern int processingTemplateBody;
+extern int templateDefinitionLevel;
 extern int templateHeaderCount;
 extern int inTemplateSpecialization;
 extern int inDeduceArgs;
 extern bool parsingSpecializationDeclaration;
 extern bool inTemplateType;
 extern int noTypeNameError;
-extern int inTemplateHeader;
+extern int processingTemplateHeader;
 extern SYMBOL* instantiatingMemberFuncClass;
 extern int instantiatingFunction;
 extern int instantiatingClass;
 extern int count1;
-extern int inTemplateArgs;
-extern bool fullySpecialized;
+extern int processingTemplateArgs;
+extern bool isFullySpecialized;
 
 extern int templateNameTag;
 extern std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
 
 extern struct templateListData* currents;
 
+inline bool IsDefiningTemplate() { return !(!templateDefinitionLevel | templateInstantiationLevel);  }
+
 void templateInit(void);
 void TemplateGetDeferredTokenStream(SYMBOL* sym);
 TEMPLATEPARAMPAIR* TemplateLookupSpecializationParam(const char* name);
 std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym);
-void TemplateRegisterToken(Lexeme* lex);
+bool TemplateRegisterToken(Lexeme* lex, bool force);
 static std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStream& start, SYMBOL* funcsp,
                                                  std::list<TEMPLATEPARAMPAIR>* select, bool packable);
 void UnrollTemplatePacks(std::list<TEMPLATEPARAMPAIR>* tplx);

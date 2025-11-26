@@ -146,10 +146,11 @@ struct Lexeme
     };
     struct
     {
-        int errline;
-        const char* errfile;
+        int sourceLineNumber;
+        const char* sourceFileName;
         int charindex;
         int charindexend;
+        int realcharindex;
         int filenum;
     };
     struct
@@ -179,7 +180,7 @@ extern SymbolTable<KeywordData>* kwSymbols;
 void lexini(void);
 KeywordData* searchkw(const unsigned char** p);
 void SkipToNextLine(void);
-void getGTSym();
+void SplitGreaterThanFromRightShift();
 void SkipToEol();
 bool AtEol();
 void CompilePragma(const unsigned char** linePointer);

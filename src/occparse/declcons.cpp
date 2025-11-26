@@ -107,8 +107,8 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
             FindClass(funcsp, &sym);
             char name[1024];
             auto v = Allocate<CONSTRUCTORINITIALIZER>();
-            v->line = currentLex->errline;
-            v->file = currentLex->errfile;
+            v->line = currentLex->sourceLineNumber;
+            v->file = currentLex->sourceFileName;
             v->initData = streamFactory.Create();
             name[0] = 0;
             if (ISID())
@@ -138,7 +138,7 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
                         currentLex->value.s.a = litlate(currentLex->value.s.a);
                     if (MATCHKW(Keyword::rightshift_))
                     {
-                        getGTSym();
+                        SplitGreaterThanFromRightShift();
                         tmpl--;
                         v->initData->Add(currentLex);
                     }
@@ -228,7 +228,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
     ovl->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     ovl->sb->defaulted = true;
     ovl->sb->access = AccessLevel::public_;
-    ovl->sb->templateLevel = definingTemplate;
+    ovl->sb->templateLevel = templateDefinitionLevel;
     if (!ovl->sb->decoratedName)
         SetLinkerNames(ovl, Linkage::cdecl_);
     if (!funcs)
@@ -1215,7 +1215,7 @@ static bool conditionallyDeleteDestructor(SYMBOL* sp)
 }
 static void SetDestructorNoexcept(SYMBOL* sp)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         auto stream = noExceptTokenStreams.get(sp);
         if (stream && stream  != (LexemeStream*)-1)
@@ -1266,7 +1266,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
         ++it1;
         if (it1 != itend && ((*it1)->sb->init || initTokenStreams.get(*it1)))
         {
-            if (sp->templateParams == nullptr || (!definingTemplate || instantiatingTemplate))
+            if (sp->templateParams == nullptr || (!IsDefiningTemplate()))
             {
                 // will match a default constructor but has defaulted args
                 SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
@@ -1320,6 +1320,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 // under other circumstances
                 ++it;
                 (*it)->sb->init = nullptr;
+                initTokenStreams.set(*it, nullptr);
                 localNameSpace->front()->syms = syms;
             }
         }
@@ -1955,7 +1956,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
     bool hasDelegate = false;
     if (cons->sb->constructorInitializers && *cons->sb->constructorInitializers)
     {
-        enclosingDeclarations.Mark();
+        DeclarationScope scope;
         auto ite = (*cons->sb->constructorInitializers)->end();
         if (cons->templateParams)
         {
@@ -2026,10 +2027,10 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             {
                                 needkw(bypa ? Keyword::openpa_ : Keyword::begin_);
                                 init->init = nullptr;
-                                argumentNesting++;
+                                argumentNestingLevel++;
                                 initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
                                     false, _F_MEMBERINITIALIZER | _F_PACKABLE);
-                                argumentNesting--;
+                                argumentNestingLevel--;
                                 done = true;
                                 needkw(bypa ? Keyword::closepa_ : Keyword::end_);
                             }
@@ -2047,10 +2048,10 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             if (MATCHKW(Keyword::openpa_) && init->sp->tp->BaseType()->sp->sb->trivialCons)
                             {
                                 init->init = nullptr;
-                                argumentNesting++;
+                                argumentNestingLevel++;
                                 initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
                                     false, _F_MEMBERINITIALIZER);
-                                argumentNesting--;
+                                argumentNestingLevel--;
                                 done = true;
                                 if (init->packed || MATCHKW(Keyword::ellipse_))
                                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -2306,7 +2307,6 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
             ++it;
             first = false;
         }
-        enclosingDeclarations.Release();
     }
 }
 static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
@@ -2439,8 +2439,8 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
             if (sym->sb->baseClasses)
                 for (auto bc : *sym->sb->baseClasses)
                     if (!bc->isvirtual)
-                        genConstructorCall(b, sym, *cons->sb->constructorInitializers, bc->cls, bc->offset, false, thisptr, otherptr,
-                                           cons, true, doCopy || !*cons->sb->constructorInitializers, !cons->sb->defaulted);
+                        genConstructorCall(b, sym, cons->sb->constructorInitializers  ? *cons->sb->constructorInitializers : nullptr, bc->cls, bc->offset, false, thisptr, otherptr,
+                                           cons, true, doCopy || !cons->sb->constructorInitializers ||  !*cons->sb->constructorInitializers, !cons->sb->defaulted);
             if (hasVTab(sym))
                 dovtabThunks(b, sym, thisptr, false);
             for (auto sp : *sym->tp->syms)
@@ -2451,12 +2451,12 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     if (sp->tp->IsStructured())
                     {
                         sp->tp->InitializeDeferred();
-                        genConstructorCall(b, sp->tp->BaseType()->sp, *cons->sb->constructorInitializers, sp, sp->sb->offset, true,
+                        genConstructorCall(b, sp->tp->BaseType()->sp, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp, sp->sb->offset, true,
                                            thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
                     }
                     else
                     {
-                        genConsData(b, sym, *cons->sb->constructorInitializers, sp, sp->sb->offset, thisptr, otherptr, cons, doCopy);
+                        genConsData(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp, sp->sb->offset, thisptr, otherptr, cons, doCopy);
                     }
                 }
             }
@@ -2856,7 +2856,7 @@ void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest,
     {
         EXPRESSION* thisptr;
         int oldCodeLabel = codeLabel;
-        if (definingTemplate)
+        if (templateDefinitionLevel)
             return;
         if (defaulted)
             codeLabel = INT_MIN;
@@ -3124,7 +3124,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 if (!list->nested && list->tp->IsStructured())
                 {
                     SYMBOL* sp1 = list->tp->BaseType()->sp;
-                    if (!definingTemplate && sp1->sb->templateLevel && sp1->templateParams && !sp1->sb->instantiated)
+                    if (!templateDefinitionLevel && sp1->sb->templateLevel && sp1->templateParams && !sp1->sb->instantiated)
                     {
                         if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
                             sp1 = GetClassTemplate(sp1, sp1->templateParams, false);
@@ -3324,7 +3324,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 e1 = MakeExpression(params);
             }
         }
-        if (params->sp->sb->constexpression && (argumentNesting == 0 && !inStaticAssert))
+        if (params->sp->sb->constexpression && (argumentNestingLevel == 0 && !inStaticAssert))
         {
             EXPRESSION* node = MakeExpression(params);
             if (EvaluateConstexprFunction(node))

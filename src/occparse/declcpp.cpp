@@ -83,7 +83,7 @@ void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccou
     if (base == derived || (base && derived && SameTemplate(derived->tp, base->tp)))
     {
 
-        if (!definingTemplate || instantiatingTemplate)
+        if (!IsDefiningTemplate())
         {
             if (base->templateParams && derived->templateParams && base->templateParams->front().second->bySpecialization.types &&
                 derived->templateParams->front().second->bySpecialization.types)
@@ -162,16 +162,12 @@ void DeferredCompileFunction(SYMBOL* cur)
     // function body
     if (!cur->sb->inlineFunc.stmt && (!cur->sb->templateLevel || !cur->templateParams || cur->sb->instantiated))
     {
-        int tns;
-        if (cur->sb->parentClass)
-            tns = PushTemplateNamespace(cur->sb->parentClass);
-        else
-            tns = PushTemplateNamespace(cur);
+        TemplateNamespaceScope namespaceScope(cur->sb->parentClass ? cur->sb->parentClass : cur);
         auto linesOld = lines;
         lines = nullptr;
 
         cur->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-        enclosingDeclarations.Mark();
+        DeclarationScope scope;
         if (cur->templateParams && cur->sb->templateLevel)
         {
             enclosingDeclarations.Add(cur->templateParams);
@@ -191,6 +187,21 @@ void DeferredCompileFunction(SYMBOL* cur)
         structLevel = 0;
         auto oldOpen = openStructs;
         openStructs = nullptr;
+        if (cur->sb->mainsym)
+        {
+            auto source = bodyArgs.get(cur);
+            if (source)
+            {
+                auto itd = cur->tp->BaseType()->syms->begin();
+                auto itde = cur->tp->BaseType()->syms->end();
+                auto its = source->begin();
+                auto itse = source->end();
+                for (; itd != itde && its != itse; ++itd, ++its)
+                {
+                    (*itd)->name = (*its)->name;
+                }
+            }
+        }
         ParseOnStream(bodyTokenStreams.get(cur), [=]() {
             if (cur->sb->isConstructor && MATCHKW(Keyword::colon_))
             {
@@ -204,8 +215,6 @@ void DeferredCompileFunction(SYMBOL* cur)
         lambdas = std::move(oldLambdas);
         openStructs = oldOpen;
         structLevel = oldStructLevel;
-        enclosingDeclarations.Release();
-        PopTemplateNamespace(tns);
         lines = linesOld;
     }
 }
@@ -217,7 +226,7 @@ static void RecalcArraySize(Type* tp)
 }
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         if (!arg->sb->init && initTokenStreams.get(arg))
         {
@@ -235,13 +244,13 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             if (str && str->templateParams && !allTemplateArgsSpecified(str, str->templateParams))
             {
                 initted = true;
-                oldInstantiatingTemplate = instantiatingTemplate;
-                instantiatingTemplate = 0;
-                definingTemplate++;
+                oldInstantiatingTemplate = templateInstantiationLevel;
+                templateInstantiationLevel = 0;
+                templateDefinitionLevel++;
             }
             Type* tp2;
-            int tns = PushTemplateNamespace(str ? str : func);
-            enclosingDeclarations.Mark();
+            TemplateNamespaceScope namespaceScope(str ? str : func);
+            DeclarationScope scope;
             if (str)
             {
                 enclosingDeclarations.Add(str);
@@ -280,13 +289,10 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
                     initialize(theCurrentFunc, arg, StorageClass::member_, false, false, false, 0);
                 }
             });
-            initTokenStreams.set(arg, nullptr);
-            enclosingDeclarations.Release();
-            PopTemplateNamespace(tns);
             if (initted)
             {
-                definingTemplate--;
-                instantiatingTemplate = oldInstantiatingTemplate;
+                templateDefinitionLevel--;
+                templateInstantiationLevel = oldInstantiatingTemplate;
             }
             localNameSpace = oldNS;
         }
@@ -294,8 +300,9 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
 }
 void deferredInitializeStructFunctions(SYMBOL* cur)
 {
-    enclosingDeclarations.Mark();
-    int tns = PushTemplateNamespace(cur);
+    DeclarationScope scope;
+    TemplateNamespaceScope namespaceScope(cur);
+
     enclosingDeclarations.Add(cur);
 
     if (cur->templateParams)
@@ -307,7 +314,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
     {
         if (sp->sb->storage_class == StorageClass::overloads_)
         {
-            if (definingTemplate != 1 || instantiatingTemplate)
+            if (templateDefinitionLevel != 1 || templateInstantiationLevel)
             {
                 for (auto sp1 : *sp->tp->syms)
                 {
@@ -340,14 +347,12 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
         }
     }
     //    dontRegisterTemplate--;
-    enclosingDeclarations.Release();
-    PopTemplateNamespace(tns);
 }
 void deferredInitializeStructMembers(SYMBOL* cur)
 {
     Optimizer::LIST* staticAssert;
-    int tns = PushTemplateNamespace(cur);
-    enclosingDeclarations.Mark();
+    TemplateNamespaceScope namespaceScope(cur);
+    DeclarationScope scope;
     enclosingDeclarations.Add(cur);
 
     if (cur->templateParams)
@@ -377,8 +382,6 @@ void deferredInitializeStructMembers(SYMBOL* cur)
         }
     }
     dontRegisterTemplate--;
-    enclosingDeclarations.Release();
-    PopTemplateNamespace(tns);
 }
 bool declaringTemplate(SYMBOL* sym)
 {
@@ -456,354 +459,363 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
     getsym();  // past ':'
     if (declsym->tp->BaseType()->type == BasicType::union_)
         error(ERR_UNION_CANNOT_HAVE_BASE_CLASSES);
-    enclosingDeclarations.Add(declsym);
-    do
     {
-        // this next needs work, OCC throws errors because of the gotos later in this function...
-        LexemeStreamPosition placeHolder(currentStream);
-        ParseAttributeSpecifiers(funcsp, true);
-        EnterPackedSequence();
-        if (MATCHKW(Keyword::decltype_))
+        DeclarationScope scope(declsym);
+        bool skiptoend;
+        do
         {
-            Type* tp = nullptr;
-            tp = TypeGenerator::TypeId(funcsp, StorageClass::type_, true, true, false);
-            tp->InstantiateDeferred();
-            if (!tp)
+            skiptoend = false;
+            // this next needs work, OCC throws errors because of the gotos later in this function...
+            LexemeStreamPosition placeHolder(currentStream);
+            ParseAttributeSpecifiers(funcsp, true);
+            EnterPackedSequence();
+            if (MATCHKW(Keyword::decltype_))
             {
-                error(ERR_TYPE_NAME_EXPECTED);
-            }
-            else if (!tp->IsStructured())
-            {
-                error(ERR_STRUCTURED_TYPE_EXPECTED);
-            }
-            else
-            {
-                auto bc = innerBaseClass(declsym, tp->BaseType()->sp, isvirtual, currentAccess);
-                if (bc)
-                    baseClasses->push_back(bc);
-            }
-            done = !MATCHKW(Keyword::comma_);
-            if (!done)
-                getsym();
-        }
-        else if (MATCHKW(Keyword::classsel_) || ISID())
-        {
-            char name[512];
-            name[0] = 0;
-            if (ISID())
-                Utils::StrCpy(name, currentLex->value.s.a);
-            bcsym = nullptr;
-            nestedSearch(&bcsym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
-            if (bcsym && bcsym->sb && bcsym->sb->storage_class == StorageClass::typedef_)
-            {
-                if (!bcsym->sb->templateLevel)
+                Type* tp = nullptr;
+                tp = TypeGenerator::TypeId(funcsp, StorageClass::type_, true, true, false);
+                tp->InstantiateDeferred();
+                if (!tp)
                 {
-                    // in case typedef is being used as a base class specifier
-                    Type* tp = bcsym->tp->BaseType();
-                    tp->InstantiateDeferred();
-                    tp->InitializeDeferred();
-                    if (tp->IsStructured())
-                    {
-                        bcsym = tp->sp;
-                    }
-                    else if (tp->type != BasicType::templateselector_)
-                    {
-                        bcsym = nullptr;
-                    }
+                    error(ERR_TYPE_NAME_EXPECTED);
                 }
-            }
-            getsym();
-        restart:
-            if (bcsym && bcsym->tp->type == BasicType::templateselector_)
-            {
-                //                if (!definingTemplate && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
-                //                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
-                if (MATCHKW(Keyword::lt_))
+                else if (!tp->IsStructured())
                 {
-                    inTemplateSpecialization++;
-                    std::list<TEMPLATEPARAMPAIR>* nullLst = nullptr;
-                    GetTemplateArguments(funcsp, bcsym, &nullLst);
-                    inTemplateSpecialization--;
-                    auto&& tsl = bcsym->tp->sp->sb->templateSelector->back();
-                    tsl.isTemplate = true;
-                    tsl.templateParams = nullLst;
+                    error(ERR_STRUCTURED_TYPE_EXPECTED);
                 }
-                //                bcsym = nullptr;
-                if (bcsym && (!definingTemplate || instantiatingTemplate))
+                else
                 {
-                    auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                    auto bc = innerBaseClass(declsym, tp->BaseType()->sp, isvirtual, currentAccess);
                     if (bc)
                         baseClasses->push_back(bc);
                 }
                 done = !MATCHKW(Keyword::comma_);
                 if (!done)
-                {
                     getsym();
-                    LeavePackedSequence();
-                    continue;
-                }
-                goto endloop;
             }
-            else if (bcsym &&
-                     (bcsym->sb && bcsym->sb->templateLevel ||
-                      bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == TplType::template_))
+            else if (MATCHKW(Keyword::classsel_) || ISID())
             {
-                if (bcsym->tp->type == BasicType::templateparam_)
+                char name[512];
+                name[0] = 0;
+                if (ISID())
+                    Utils::StrCpy(name, currentLex->value.s.a);
+                bcsym = nullptr;
+                nestedSearch(&bcsym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
+                if (bcsym && bcsym->sb && bcsym->sb->storage_class == StorageClass::typedef_)
                 {
-                    auto v = bcsym->tp->templateParam->second->byTemplate.val;
-                    if (v)
+                    if (!bcsym->sb->templateLevel)
                     {
-                        bcsym = v;
-                    }
-                    else
-                    {
-                        std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                        SYMBOL* sp1;
-                        inTemplateSpecialization++;
-                        GetTemplateArguments(funcsp, bcsym, &lst);
-                        inTemplateSpecialization--;
-                        currentAccess = defaultAccess;
-                        isvirtual = false;
-                        done = !MATCHKW(Keyword::comma_);
-                        if (!done)
-                            getsym();
-                        goto endloop;
-                    }
-                }
-                if (bcsym->sb->storage_class == StorageClass::typedef_)
-                {
-                    if (MATCHKW(Keyword::lt_))
-                    {
-                        std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                        SYMBOL* sp1;
-                        inTemplateSpecialization++;
-                        GetTemplateArguments(funcsp, bcsym, &lst);
-                        inTemplateSpecialization--;
-                        sp1 = GetTypeAliasSpecialization(bcsym, lst);
-                        if (sp1)
+                        // in case typedef is being used as a base class specifier
+                        Type* tp = bcsym->tp->BaseType();
+                        tp->InstantiateDeferred();
+                        tp->InitializeDeferred();
+                        if (tp->IsStructured())
                         {
-                            bcsym = sp1;
-                            bcsym->tp->InstantiateDeferred();
-                            if (bcsym->tp->IsStructured())
-                                bcsym->tp = bcsym->tp->InitializeDeferred();
-                            else
-                                bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
-                            if (definingTemplate && bcsym->tp->type == BasicType::any_)
-                            {
-                                currentAccess = defaultAccess;
-                                isvirtual = false;
-                                done = !MATCHKW(Keyword::comma_);
-                                if (!done)
-                                    getsym();
-                                LeavePackedSequence();
-                                continue;
-                            }
-                            else if (bcsym && (!definingTemplate || instantiatingTemplate))
-                            {
-                                auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
-                                if (bc)
-                                    baseClasses->push_back(bc);
-                            }
+                            bcsym = tp->sp;
+                        }
+                        else if (tp->type != BasicType::templateselector_)
+                        {
+                            bcsym = nullptr;
                         }
                     }
-                    else
+                }
+                getsym();
+            restart:
+                if (bcsym && bcsym->tp->type == BasicType::templateselector_)
+                {
+                    //                if (!templateDefinitionLevel && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
+                    //                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+                    if (MATCHKW(Keyword::lt_))
                     {
-                        SpecializationError(bcsym);
+                        inTemplateSpecialization++;
+                        std::list<TEMPLATEPARAMPAIR>* nullLst = nullptr;
+                        GetTemplateArguments(funcsp, bcsym, &nullLst);
+                        inTemplateSpecialization--;
+                        auto&& tsl = bcsym->tp->sp->sb->templateSelector->back();
+                        tsl.isTemplate = true;
+                        tsl.templateParams = nullLst;
+                    }
+                    //                bcsym = nullptr;
+                    if (bcsym && (!IsDefiningTemplate()))
+                    {
+                        auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                        if (bc)
+                            baseClasses->push_back(bc);
                     }
                     done = !MATCHKW(Keyword::comma_);
                     if (!done)
-                        getsym();
-                    LeavePackedSequence();
-                    continue;
-                }
-                else
-                {
-                    std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                    if (MATCHKW(Keyword::lt_))
                     {
-                        int i;
-                        inTemplateSpecialization++;
-                        GetTemplateArguments(funcsp, bcsym, &lst);
-                        inTemplateSpecialization--;
-                        if (MATCHKW(Keyword::ellipse_))
+                        getsym();
+                        LeavePackedSequence();
+                        continue;
+                    }
+                    skiptoend = true;
+                }
+                else if (bcsym &&
+                    (bcsym->sb && bcsym->sb->templateLevel ||
+                        bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == TplType::template_))
+                {
+                    if (bcsym->tp->type == BasicType::templateparam_)
+                    {
+                        auto v = bcsym->tp->templateParam->second->byTemplate.val;
+                        if (v)
                         {
-                            if (definingTemplate)
-                            {
-                                bcsym = GetClassTemplate(bcsym, lst, true);
-                                if (bcsym)
-                                {
-                                    bcsym->packed = true;
-                                    auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
-                                    if (bc)
-                                        baseClasses->push_back(bc);
-                                }
-                            }
-                            else
-                            {
-                                int n =  GetPackCount();
-                                if (n)
-                                {
-                                    PushPackIndex();
-                                    inTemplateArgs++;
-                                    for (int i = 0; i < n; i++)
-                                    {
-                                        SetPackIndex(i);
-                                        placeHolder.Replay([&]() {
-                                            SYMBOL* sym = nullptr;
-                                            nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
-                                            getsym();
-                                            if (sym)
-                                            {
-                                                inTemplateSpecialization++;
-                                                lst = nullptr;
-                                                GetTemplateArguments(funcsp, sym, &lst);
-                                                inTemplateSpecialization--;
-                                                sym = GetClassTemplate(sym, lst, false);
-                                                if (sym)
-                                                {
-                                                    if (allTemplateArgsSpecified(sym, sym->templateParams))
-                                                        sym = TemplateClassInstantiateInternal(sym, sym->templateParams, false);
-                                                    if (sym)
-                                                    {
-                                                        SetLinkerNames(sym, Linkage::cdecl_);
-                                                        auto bc = innerBaseClass(declsym, sym, isvirtual, currentAccess);
-                                                        if (bc)
-                                                        {
-                                                            baseClasses->push_back(bc);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-                                    inTemplateArgs--;
-                                    PopPackIndex();
-                                }
-                            }
-                            getsym();
+                            bcsym = v;
+                        }
+                        else
+                        {
+                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                            SYMBOL* sp1;
+                            inTemplateSpecialization++;
+                            GetTemplateArguments(funcsp, bcsym, &lst);
+                            inTemplateSpecialization--;
                             currentAccess = defaultAccess;
                             isvirtual = false;
                             done = !MATCHKW(Keyword::comma_);
                             if (!done)
                                 getsym();
-                            ClearPackedSequence();
+                            skiptoend = true;
+                        }
+                    }
+                    if (!skiptoend)
+                    {
+                        if (bcsym->sb->storage_class == StorageClass::typedef_)
+                        {
+                            if (MATCHKW(Keyword::lt_))
+                            {
+                                std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                                SYMBOL* sp1;
+                                inTemplateSpecialization++;
+                                GetTemplateArguments(funcsp, bcsym, &lst);
+                                inTemplateSpecialization--;
+                                sp1 = GetTypeAliasSpecialization(bcsym, lst);
+                                if (sp1)
+                                {
+                                    bcsym = sp1;
+                                    bcsym->tp->InstantiateDeferred();
+                                    if (bcsym->tp->IsStructured())
+                                        bcsym->tp = bcsym->tp->InitializeDeferred();
+                                    else
+                                        bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
+                                    if (templateDefinitionLevel && bcsym->tp->type == BasicType::any_)
+                                    {
+                                        currentAccess = defaultAccess;
+                                        isvirtual = false;
+                                        done = !MATCHKW(Keyword::comma_);
+                                        if (!done)
+                                            getsym();
+                                        LeavePackedSequence();
+                                        continue;
+                                    }
+                                    else if (bcsym && (!IsDefiningTemplate()))
+                                    {
+                                        auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                                        if (bc)
+                                            baseClasses->push_back(bc);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                SpecializationError(bcsym);
+                            }
+                            done = !MATCHKW(Keyword::comma_);
+                            if (!done)
+                                getsym();
                             LeavePackedSequence();
                             continue;
                         }
                         else
                         {
-                            bcsym = GetClassTemplate(bcsym, lst, true);
-                            if (bcsym && bcsym->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
-                                allTemplateArgsSpecified(bcsym, bcsym->templateParams))
+                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                            if (MATCHKW(Keyword::lt_))
                             {
-                                bcsym->tp = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams, false)->tp;
-                                bcsym = bcsym->tp->BaseType()->sp;
-//                                bcsym->tp->sp = bcsym;
+                                int i;
+                                inTemplateSpecialization++;
+                                GetTemplateArguments(funcsp, bcsym, &lst);
+                                inTemplateSpecialization--;
+                                if (MATCHKW(Keyword::ellipse_))
+                                {
+                                    if (templateDefinitionLevel)
+                                    {
+                                        bcsym = GetClassTemplate(bcsym, lst, true);
+                                        if (bcsym)
+                                        {
+                                            bcsym->packed = true;
+                                            auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                                            if (bc)
+                                                baseClasses->push_back(bc);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        int n = GetPackCount();
+                                        if (n)
+                                        {
+                                            PushPackIndex();
+                                            processingTemplateArgs++;
+                                            for (int i = 0; i < n; i++)
+                                            {
+                                                SetPackIndex(i);
+                                                placeHolder.Replay([&]() {
+                                                    SYMBOL* sym = nullptr;
+                                                    nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
+                                                    getsym();
+                                                    if (sym)
+                                                    {
+                                                        inTemplateSpecialization++;
+                                                        lst = nullptr;
+                                                        GetTemplateArguments(funcsp, sym, &lst);
+                                                        inTemplateSpecialization--;
+                                                        sym = GetClassTemplate(sym, lst, false);
+                                                        if (sym)
+                                                        {
+                                                            if (allTemplateArgsSpecified(sym, sym->templateParams))
+                                                                sym = TemplateClassInstantiateInternal(sym, sym->templateParams, false);
+                                                            if (sym)
+                                                            {
+                                                                SetLinkerNames(sym, Linkage::cdecl_);
+                                                                auto bc = innerBaseClass(declsym, sym, isvirtual, currentAccess);
+                                                                if (bc)
+                                                                {
+                                                                    baseClasses->push_back(bc);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    });
+                                            }
+                                            processingTemplateArgs--;
+                                            PopPackIndex();
+                                        }
+                                    }
+                                    getsym();
+                                    currentAccess = defaultAccess;
+                                    isvirtual = false;
+                                    done = !MATCHKW(Keyword::comma_);
+                                    if (!done)
+                                        getsym();
+                                    ClearPackedSequence();
+                                    LeavePackedSequence();
+                                    continue;
+                                }
+                                else
+                                {
+                                    bcsym = GetClassTemplate(bcsym, lst, true);
+                                    if (bcsym && bcsym->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
+                                        allTemplateArgsSpecified(bcsym, bcsym->templateParams))
+                                    {
+                                        bcsym->tp = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams, false)->tp;
+                                        bcsym = bcsym->tp->BaseType()->sp;
+                                        //                                bcsym->tp->sp = bcsym;
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-            else if (MATCHKW(Keyword::lt_))
-            {
-                errorstr(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
-            }
-            if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->second->packed)
-            {
-                if (bcsym->tp->templateParam->second->type != TplType::typename_)
-                    error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
-                else if (bcsym->tp->templateParam->second->byPack.pack)
+                else if (MATCHKW(Keyword::lt_))
                 {
-                    for (auto tpp : *bcsym->tp->templateParam->second->byPack.pack)
+                    errorstr(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
+                }
+                if (!skiptoend)
+                {
+                    if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->second->packed)
                     {
-                        if (!tpp.second->byClass.val->IsStructured())
+                        if (bcsym->tp->templateParam->second->type != TplType::typename_)
+                            error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
+                        else if (bcsym->tp->templateParam->second->byPack.pack)
                         {
-                            errorcurrent(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
+                            for (auto tpp : *bcsym->tp->templateParam->second->byPack.pack)
+                            {
+                                if (!tpp.second->byClass.val->IsStructured())
+                                {
+                                    errorcurrent(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
+                                }
+                                else
+                                {
+                                    auto bc = innerBaseClass(declsym, tpp.second->byClass.val->sp, isvirtual, currentAccess);
+                                    if (bc)
+                                        baseClasses->push_back(bc);
+                                }
+                            }
                         }
+                        if (!MATCHKW(Keyword::ellipse_))
+                            error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                        else
+                            getsym();
+                        currentAccess = defaultAccess;
+                        isvirtual = false;
+                        done = !MATCHKW(Keyword::comma_);
+                        if (!done)
+                            getsym();
+                    }
+                    else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->second->packed)
+                    {
+                        if (bcsym->tp->templateParam->second->type != TplType::typename_)
+                            error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                         else
                         {
-                            auto bc = innerBaseClass(declsym, tpp.second->byClass.val->sp, isvirtual, currentAccess);
-                            if (bc)
-                                baseClasses->push_back(bc);
-                        }
-                    }
-                }
-                if (!MATCHKW(Keyword::ellipse_))
-                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
-                else
-                    getsym();
-                currentAccess = defaultAccess;
-                isvirtual = false;
-                done = !MATCHKW(Keyword::comma_);
-                if (!done)
-                    getsym();
-            }
-            else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->second->packed)
-            {
-                if (bcsym->tp->templateParam->second->type != TplType::typename_)
-                    error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
-                else
-                {
-                    Type* tp = bcsym->tp->templateParam->second->byClass.val;
-                    if (tp)
-                    {
-                        tp->InstantiateDeferred();
-                        tp = tp->BaseType();
-                        if (tp->type == BasicType::templateselector_)
-                        {
-                            SYMBOL* sym = (*tp->sp->sb->templateSelector)[1].sp;
-                            for (int i = 2; i < (*tp->sp->sb->templateSelector).size() && sym; ++i)
+                            Type* tp = bcsym->tp->templateParam->second->byClass.val;
+                            if (tp)
                             {
-                                sym->tp->InstantiateDeferred();
-                                auto lst = &(*tp->sp->sb->templateSelector)[i];
-                                sym = search(sym->tp->syms, lst->name);
+                                tp->InstantiateDeferred();
+                                tp = tp->BaseType();
+                                if (tp->type == BasicType::templateselector_)
+                                {
+                                    SYMBOL* sym = (*tp->sp->sb->templateSelector)[1].sp;
+                                    for (int i = 2; i < (*tp->sp->sb->templateSelector).size() && sym; ++i)
+                                    {
+                                        sym->tp->InstantiateDeferred();
+                                        auto lst = &(*tp->sp->sb->templateSelector)[i];
+                                        sym = search(sym->tp->syms, lst->name);
+                                    }
+                                    if (sym)
+                                    {
+                                        bcsym = sym;
+                                        goto restart;
+                                    }
+                                }
                             }
-                            if (sym)
+                            if (!tp || !tp->IsStructured())
                             {
-                                bcsym = sym;
-                                goto restart;
+                                if (tp)
+                                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+                            }
+                            else
+                            {
+                                auto bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
+                                if (bc)
+                                    baseClasses->push_back(bc);
+                                currentAccess = defaultAccess;
+                                isvirtual = false;
                             }
                         }
+                        done = !MATCHKW(Keyword::comma_);
+                        if (!done)
+                            getsym();
                     }
-                    if (!tp || !tp->IsStructured())
+                    else if (bcsym && (istype(bcsym) && bcsym->tp->IsStructured()))
                     {
-                        if (tp)
-                            error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
-                    }
-                    else
-                    {
-                        auto bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
+                        auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
                         if (bc)
                             baseClasses->push_back(bc);
                         currentAccess = defaultAccess;
                         isvirtual = false;
+                        done = !MATCHKW(Keyword::comma_);
+                        if (!done)
+                            getsym();
+                    }
+                    else
+                    {
+                        if (!templateDefinitionLevel)
+                            error(ERR_CLASS_TYPE_EXPECTED);
+                        done = true;
                     }
                 }
-                done = !MATCHKW(Keyword::comma_);
-                if (!done)
-                    getsym();
-            }
-            else if (bcsym && (istype(bcsym) && bcsym->tp->IsStructured()))
-            {
-                auto bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
-                if (bc)
-                    baseClasses->push_back(bc);
-                currentAccess = defaultAccess;
-                isvirtual = false;
-                done = !MATCHKW(Keyword::comma_);
-                if (!done)
-                    getsym();
             }
             else
-            {
-                if (!definingTemplate)
-                    error(ERR_CLASS_TYPE_EXPECTED);
-                done = true;
-            }
-        }
-        else
-            switch (KW())
-            {
+                switch (KW())
+                {
                 case Keyword::virtual_:
                     isvirtual = true;
                     getsym();
@@ -823,16 +835,13 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                 default:
                     error(ERR_IDENTIFIER_EXPECTED);
                     errskim(skim_end);
-                    enclosingDeclarations.Drop();
                     return;
-            }
-    endloop:
-        LeavePackedSequence();
-        if (!done)
-            ParseAttributeSpecifiers(funcsp, true);
-    } while (!done);
-    enclosingDeclarations.Drop();
-
+                }
+            LeavePackedSequence();
+            if (!done)
+                ParseAttributeSpecifiers(funcsp, true);
+        } while (!done);
+    }
     declsym->sb->baseClasses = baseClasses;
     for (auto lst : *declsym->sb->baseClasses)
     {
@@ -1077,7 +1086,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym->tp->InstantiateDeferred();
                         if (!classOrEnumParam(sym) && (sp->tp->BaseType()->syms->size() == 1 || !classOrEnumParam((*it))))
                         {
-                            if (!definingTemplate)
+                            if (!templateDefinitionLevel)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -1095,7 +1104,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym->tp->InstantiateDeferred();
                         if (!classOrEnumParam(sym))
                         {
-                            if (!definingTemplate)
+                            if (!templateDefinitionLevel)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -1133,7 +1142,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         }
                         if (!test)
                         {
-                            if (!definingTemplate)
+                            if (!templateDefinitionLevel)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -1152,7 +1161,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym->tp->InstantiateDeferred();
                         if (!classOrEnumParam(sym))
                         {
-                            if (!definingTemplate)
+                            if (!templateDefinitionLevel)
                                 errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
@@ -1398,7 +1407,7 @@ void getDeclType( SYMBOL* funcsp, Type** tn)
         if ((*tn))
         {
             optimize_for_constants(&exp);
-            if ((definingTemplate && !instantiatingTemplate) || ((*tn)->type == BasicType::any_ && !inDeduceArgs))
+            if (IsDefiningTemplate() || ((*tn)->type == BasicType::any_ && !inDeduceArgs))
             {
                 (*tn) = Type::MakeType(BasicType::templatedecltype_);
                 (*tn)->templateDeclType = exp;
@@ -1516,7 +1525,7 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl)
 }
 void CheckIsLiteralClass(Type* tp)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         if (tp->IsRef())
             tp = tp->BaseType()->btp;

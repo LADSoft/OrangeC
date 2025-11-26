@@ -1642,7 +1642,7 @@ void SkipToNextLine(void)
     }
     getsym();
 }
-void getGTSym()
+void SplitGreaterThanFromRightShift()
 {
     const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     auto kw = searchkw(&ppgreater);
@@ -1651,6 +1651,8 @@ void getGTSym()
     lex->type = LexType::l_kw_;
     lex->kw = kw;
     currentLex = lex;
+    if (TemplateRegisterToken(currentLex, false))
+        TemplateRegisterToken(currentLex, true);
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }
 bool AtEol()
@@ -1793,7 +1795,7 @@ std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme
     int lineno;
     const char* file;
     lineno = currentLex->linedata->lineno + offset + 1;
-    file = currentLex->errfile;
+    file = currentLex->sourceFileName;
     while (lines->size() && (strcmp(lines->front()->file, file) != 0 || lineno >= lines->front()->lineno))
     {
         rv.push_back(Statement::MakeStatement(parent, StatementNode::line_, lex));
@@ -1850,6 +1852,8 @@ void getsym(void)
     {
         if (currentStream->Index() < currentStream->Base() +  currentStream->size())
         {
+            if (currentStream->Index())
+                TemplateRegisterToken(currentLex, false);
             ++*currentStream;
             if (currentStream->Index() == currentStream->size())
             {
@@ -1886,7 +1890,7 @@ void getsym(void)
         currentLex = currentStream->get(currentStream->Index());
     }
     if (!parsingPreprocessorConstant)
-        TemplateRegisterToken(currentLex);
+        TemplateRegisterToken(currentLex, false);
     bool fetched = false;
     do
     {
@@ -1931,9 +1935,9 @@ void getsym(void)
         currentStream->Add(lex);
         currentLex->linedata = &nullLineData;
 
-        charIndex = currentLex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
-        eofLine = currentLex->errline = preProcessor->GetErrLineNo();
-        eofFile = currentLex->errfile = preProcessor->GetErrFile().c_str();
+        charIndex = currentLex->charindex = currentLex->realcharindex = linePointer - (const unsigned char*)currentLine.c_str();
+        eofLine = currentLex->sourceLineNumber = preProcessor->GetErrLineNo();
+        eofFile = currentLex->sourceFileName = preProcessor->GetErrFile().c_str();
         int fileIndex = preProcessor->GetFileIndex();
         if (fileIndex != lastBrowseIndex)
         {

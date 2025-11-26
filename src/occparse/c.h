@@ -628,6 +628,7 @@ typedef struct sym
     const char* name;
     Type* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
+    int uniqueId;                                    /* unique index for local statics, template argument tags, etc... */
     unsigned short utilityIndex;
     unsigned short packed : 1;       // packed template param instance
     unsigned short synthesized : 1;  // packed template param was synthesized during parsing
@@ -640,6 +641,7 @@ typedef struct sym
         int declline, origdeclline, realdeclline; /* line number symbol was declared at */
         short declcharpos;                        /* character position symbol was declared at */
         short declfilenum;                        /* the file number */
+        short realcharpos;
         int sizeNoVirtual;                        /* size without virtual classes and thunks */
         struct sym* parent;
         struct sym* parentClass;
@@ -762,7 +764,6 @@ typedef struct sym
         int offset;                                      /* address offset of data in the given seg, or optimize register */
         int vtaboffset;                                  /* vtab offset for virtual functions */
         int label;                                       /* label number for statics */
-        int uniqueID;                                    /* unique index for local statics */
         int startLine, endLine;                          /* line numbers spanning the function */
         short paramsize;                                 /* Size of parameter list for stdcall functions */
         short accessibleTemplateArgument;                /* something used as a template argument was validated for

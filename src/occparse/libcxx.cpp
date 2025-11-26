@@ -350,7 +350,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         if (arg->tp->BaseType()->type == BasicType::templateparam_ && arg->tp->BaseType()->templateParam->first)
         {
             arg->tp = arg->tp->BaseType();
-            TEMPLATEPARAMPAIR* tpl = TypeAliasSearch(arg->tp->BaseType()->templateParam->first->name, false);
+            TEMPLATEPARAMPAIR* tpl = TypeAliasSearch(arg->tp->BaseType()->templateParam->first, false);
             if (tpl && (tpl->second->packed || tpl->second->byClass.val))
             {
                 if (tpl->second->packed)
@@ -668,11 +668,15 @@ static bool isPOD(Type* tp)
     }
     return false;
 }
-inline Argument* first(std::list<Argument*>* args) { return args->front(); }
+inline Argument* first(std::list<Argument*>* args) 
+{ 
+    return args->front(); 
+}
 inline Argument* second(std::list<Argument*>* args)
 {
     auto it = args->begin();
-    return (*++it);
+    ++it;
+    return *it;
 }
 static bool __is_nothrow(Type* tp, std::list<Argument*>* arguments, SYMBOL* ovl)
 {
@@ -1200,7 +1204,10 @@ static bool is_empty(EXPRESSION* exp)
     if (arguments->size() == 1)
     {
         if (first(arguments)->tp->IsStructured())
-            rv = first(arguments)->tp->BaseType()->syms->size() <= 1;
+            if (first(arguments)->tp->BaseType()->syms)
+                rv = first(arguments)->tp->BaseType()->syms->size() <= 1;
+            else
+               rv = true;
     }
     return rv;
 }

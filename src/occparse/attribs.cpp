@@ -143,10 +143,10 @@ namespace Parser
             {
                 if (needkw(Keyword::openpa_))
                 {
-                    if (ISID(currentLex) || ISKW(currentLex))
+                    if (ISID() || ISKW())
                     {
                         std::string name;
-                        if (ISID(currentLex))
+                        if (ISID())
                             name = currentLex->value.s.a;
                         else
                             name = currentLex->kw->name;
@@ -244,7 +244,7 @@ namespace Parser
                                 if (MATCHKW(Keyword::openpa_))
                                 {
                                     getsym();
-                                    if (ISID(currentLex))
+                                    if (ISID())
                                     {
                                         SYMBOL* sym = gsearch(currentLex->value.s.a);
                                         if (sym)
@@ -293,7 +293,7 @@ namespace Parser
                                 if (MATCHKW(Keyword::openpa_))
                                 {
                                     getsym();
-                                    if (ISID(currentLex))
+                                    if (ISID())
                                     {
                                         SYMBOL* sym = gsearch(currentLex->value.s.a);
                                         if (sym)
@@ -488,7 +488,7 @@ namespace Parser
     }
     static void balancedAttributeParameter()
     {
-        Keyword start = KW(currentLex);
+        Keyword start = KW();
         Keyword endp = (Keyword)-1;
         getsym();
         switch (start)
@@ -647,7 +647,7 @@ namespace Parser
                                     if (MATCHKW(Keyword::classsel_))
                                     {
                                         getsym();
-                                        if (!ISID(currentLex))
+                                        if (!ISID())
                                         {
                                             getsym();
                                             error(ERR_IDENTIFIER_EXPECTED);
@@ -685,7 +685,7 @@ namespace Parser
                                     if (MATCHKW(Keyword::classsel_))
                                     {
                                         getsym();
-                                        if (!ISID(currentLex))
+                                        if (!ISID())
                                         {
                                             getsym();
                                             error(ERR_IDENTIFIER_EXPECTED);
@@ -726,7 +726,7 @@ namespace Parser
                                     if (MATCHKW(Keyword::classsel_))
                                     {
                                         getsym();
-                                        if (!ISID(currentLex))
+                                        if (!ISID())
                                         {
                                             getsym();
                                             error(ERR_IDENTIFIER_EXPECTED);
@@ -811,7 +811,7 @@ namespace Parser
                                         if (MATCHKW(Keyword::classsel_))
                                         {
                                             getsym();
-                                            if (!ISID(currentLex))
+                                            if (!ISID())
                                                 error(ERR_IDENTIFIER_EXPECTED);
                                             getsym();
                                         }

@@ -364,7 +364,7 @@ void insert_file_constructor(SYMBOL* sym)
 }
 void insertDynamicInitializer(SYMBOL* sym, std::list<Initializer*>* init, bool front)
 {
-    if (!ignore_global_init && !definingTemplate)
+    if (!ignore_global_init && !templateDefinitionLevel)
     {
         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
         {
@@ -389,7 +389,7 @@ static void insertTLSInitializer(SYMBOL* sym, std::list<Initializer*>* init)
 }
 void insertDynamicDestructor(SYMBOL* sym, std::list<Initializer*>* init)
 {
-    if (!ignore_global_init && !definingTemplate)
+    if (!ignore_global_init && !templateDefinitionLevel)
     {
         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
         {
@@ -426,7 +426,7 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
                                 nullptr, litlate(fullName));
             else
                 funcsp =
-                    makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp,
+                    makeuniqueId((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_, tp,
                                  nullptr, fullName);
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
             funcsp->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(emptyBlockdata, StatementNode::block_));
@@ -437,7 +437,9 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
             SetLinkerNames(funcsp, Linkage::none_);
             startlab = Optimizer::nextLabel++;
             retlab = Optimizer::nextLabel++;
+            EnterInlineFunctionContext();
             genfunc(funcsp, !(Optimizer::architecture == ARCHITECTURE_MSIL));
+            LeaveInlineFunctionContext();
             startlab = retlab = 0;
 
             if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
@@ -535,7 +537,7 @@ static void dumpTLSInitializers(void)
             SYMBOL* funcsp;
             Type* tp = Type::MakeType(BasicType::ifunc_, Type::MakeType(BasicType::void_));
             tp->syms = symbols->CreateSymbolTable();
-            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_,
+            funcsp = makeuniqueId((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_,
                                   tp, nullptr, "__TLS_DYNAMIC_STARTUP__");
             tp->sp = funcsp;
             SetLinkerNames(funcsp, Linkage::none_);
@@ -554,7 +556,9 @@ static void dumpTLSInitializers(void)
             funcsp->sb->inlineFunc.stmt->front()->lower = &st;
             startlab = Optimizer::nextLabel++;
             retlab = Optimizer::nextLabel++;
+            EnterInlineFunctionContext();
             genfunc(funcsp, true);
+            LeaveInlineFunctionContext();
             startlab = retlab = 0;
             Optimizer::tlsstartupseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
@@ -600,7 +604,7 @@ static void dumpTLSDestructors(void)
             SYMBOL* funcsp;
             Type* tp = Type::MakeType(BasicType::ifunc_, Type::MakeType(BasicType::void_));
             tp->syms = symbols->CreateSymbolTable();
-            funcsp = makeUniqueID((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_,
+            funcsp = makeuniqueId((Optimizer::architecture == ARCHITECTURE_MSIL) ? StorageClass::global_ : StorageClass::static_,
                                   tp, nullptr, "__TLS_DYNAMIC_RUNDOWN__");
             tp->sp = funcsp;
             SetLinkerNames(funcsp, Linkage::none_);
@@ -619,7 +623,9 @@ static void dumpTLSDestructors(void)
             funcsp->sb->inlineFunc.stmt->front()->lower = &st;
             startlab = Optimizer::nextLabel++;
             retlab = Optimizer::nextLabel++;
+            EnterInlineFunctionContext();
             genfunc(funcsp, true);
+            LeaveInlineFunctionContext();
             startlab = retlab = 0;
             Optimizer::tlsrundownseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
@@ -1346,7 +1352,7 @@ static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
 {
     LexemeStreamPosition start(currentStream);
     int noeval = 0;
-    if (Optimizer::cparams.prm_cplusplus && definingTemplate && !instantiatingTemplate && sym && sym->sb->templateLevel)
+    if (Optimizer::cparams.prm_cplusplus && IsDefiningTemplate() && sym && sym->sb->templateLevel)
     {
         noeval = _F_NOEVAL | _F_PACKABLE;
     }
@@ -1495,7 +1501,7 @@ static void initialize_bool_type( SYMBOL* funcsp, int offset, StorageClass sc, T
         {
             error(ERR_EXPRESSION_SYNTAX);
         }
-        else if (itype->type != BasicType::templateparam_ && !definingTemplate)
+        else if (itype->type != BasicType::templateparam_ && !templateDefinitionLevel)
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
             castToArithmetic(false, &tp, &exp, (Keyword)-1, itype, true);
@@ -1662,7 +1668,7 @@ static void initialize_arithmetic_type( SYMBOL* funcsp, int offset, StorageClass
         else
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
-            if (itype->type != BasicType::templateparam_ && tp->type != BasicType::templateselector_ && !definingTemplate)
+            if (itype->type != BasicType::templateparam_ && tp->type != BasicType::templateselector_ && !templateDefinitionLevel)
             {
                 EXPRESSION** exp2;
                 exp2 = &exp;
@@ -2149,7 +2155,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
             while (IsCastValue(exp2))
                 exp2 = exp2->left;
         }
-        if (!definingTemplate && (referenceTypeError(tp, exp2) != exp2->type || (tp->type == BasicType::rref_ && IsLValue(exp))) &&
+        if (!templateDefinitionLevel && (referenceTypeError(tp, exp2) != exp2->type || (tp->type == BasicType::rref_ && IsLValue(exp))) &&
             (!tp->BaseType()->btp->IsStructured() || exp->type != ExpressionNode::lvalue_) &&
             (!tp->BaseType()->btp->IsPtr() || exp->type != ExpressionNode::l_p_))
         {
@@ -2524,7 +2530,7 @@ static bool designator( SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_D
             else
             {
                 getsym();
-                if (ISID(currentLex))
+                if (ISID())
                 {
                     if ((*desc)->tp->IsStructured())
                     {
@@ -3934,6 +3940,8 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                 if (exp1)
                 {
                     std::list<Initializer*>* it = nullptr;
+                    if (!itype->size)
+                        itype->size = tp1->size;
                     InsertInitializer(&it, itype, exp1, offset, false);
                     if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
                         sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
@@ -4276,7 +4284,7 @@ void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializ
             tp = ts->tp->BaseType()->templateParam->second->byClass.val;
             if (!tp)
             {
-                if (definingTemplate)
+                if (templateDefinitionLevel)
                 {
                     getsym();
                     errskim(skim_closepa);
@@ -4334,7 +4342,7 @@ void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializ
             errskim(skim_end);
             skip(Keyword::end_);
         }
-        if (!definingTemplate && !(flags & _F_TEMPLATEARGEXPANSION))
+        if (!templateDefinitionLevel && !(flags & _F_TEMPLATEARGEXPANSION))
         {
             if (itype->BaseType()->type != BasicType::templateselector_)
             {
@@ -4479,7 +4487,7 @@ void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializ
             }
             /* fallthrough */
         default:
-            if (!definingTemplate)
+            if (!templateDefinitionLevel)
                 errortype(ERR_CANNOT_INITIALIZE, tp, nullptr);
             else if (MATCHKW(Keyword::begin_))
             {
@@ -4594,7 +4602,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
                     bool deduceTemplate, int flags)
 {
     auto sp = sym->tp->BaseType()->sp;
-    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!definingTemplate || instantiatingTemplate))
+    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!IsDefiningTemplate()))
     {
         if (sym->tp->IsDeferred())
         {
@@ -4709,7 +4717,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
     {
         if (MATCHKW(Keyword::assign_))
             errskim(skim_semi);
-        if (!definingTemplate)
+        if (!templateDefinitionLevel)
             errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any Keyword::openpa_() will be eaten by an expression parser
@@ -5032,7 +5040,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
         }
         tp = tp->btp;
     }
-    if (sym->sb->constexpression && !definingTemplate)
+    if (sym->sb->constexpression && !templateDefinitionLevel)
     {
         if (!tp->IsRef() && !tp->IsPtr() && !tp->IsArithmetic() && tp->BaseType()->type != BasicType::enum_ &&
             (!tp->IsStructured() /*|| !tp->BaseType()->sp->sb->trivialCons*/))
@@ -5090,7 +5098,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
     }
     if (tp->IsConst())
     {
-        if (!definingTemplate)
+        if (!templateDefinitionLevel)
         {
             if (!sym->sb->init)
             {
@@ -5156,7 +5164,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
             errorsym(ERR_REF_MUST_INITIALIZE, sym);
         }
     }
-    if (Optimizer::architecture != ARCHITECTURE_MSIL && !instantiatingTemplate && !structLevel &&
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && !templateInstantiationLevel && !structLevel &&
         sym->sb->storage_class == StorageClass::global_ && !sym->sb->parentClass && !sym->sb->parent &&
         !sym->sb->attribs.inheritable.isInline && !sym->sb->init && !sym->sb->templateLevel &&
         (!Optimizer::cparams.prm_cplusplus || !sym->tp->IsStructured() || sym->sb->trivialCons) && !sym->tp->IsAtomic() &&
@@ -5170,7 +5178,7 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
     else if (sym->sb->storage_class == StorageClass::static_ || sym->sb->storage_class == StorageClass::global_ ||
              sym->sb->storage_class == StorageClass::localstatic_)
     {
-        if (instantiatingTemplate)
+        if (templateInstantiationLevel)
         {
             if (!sym->sb->parentClass ||
                 (sym->sb->parentClass && allTemplateArgsSpecified(sym->sb->parentClass, sym->sb->parentClass->templateParams)))

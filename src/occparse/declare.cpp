@@ -76,12 +76,12 @@ int inDefaultParam;
 char deferralBuf[100000];
 SYMBOL* enumSyms;
 EnclosingDeclarations enclosingDeclarations;
-int expandingParams;
+int isExpandingParams;
 Optimizer::LIST* deferred;
 int structLevel;
 Optimizer::LIST* openStructs;
-int parsingTrailingReturnOrUsing;
-int inTypedef;
+int processingTrailingReturnOrUsing;
+int processingTypedef;
 int resolvingStructDeclarations;
 std::map<int, SYMBOL*> localAnonymousUnions;
 int declaringInitialType;
@@ -102,11 +102,11 @@ void declare_init(void)
     structLevel = 0;
     inDefaultParam = 0;
     openStructs = nullptr;
-    argumentNesting = 0;
+    argumentNestingLevel = 0;
     symbolKey = 0;
     noNeedToSpecialize = 0;
     inConstantExpression = 0;
-    parsingUsing = 0;
+    processingUsingStatement = 0;
     structureStaticAsserts.clear();
     declaringInitialType = 0;
 }
@@ -196,8 +196,10 @@ SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* na
     sp->tp = tp;
     if (currentLex)
     {
-        sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
-        sp->sb->declline = sp->sb->origdeclline = currentLex->errline;
+        sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;
+        sp->sb->declline = sp->sb->origdeclline = currentLex->sourceLineNumber;
+        sp->sb->declcharpos = currentLex->charindex;
+        sp->sb->realcharpos = currentLex->realcharindex;
         sp->sb->realdeclline = currentLex->linedata->lineno;
         sp->sb->declfilenum = currentLex->linedata->fileindex;
     }
@@ -208,7 +210,7 @@ SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* na
     }
     return sp;
 }
-SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name)
+SYMBOL* makeuniqueId(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
     sprintf(buf, "%s_%08x", name, identityValue);
@@ -360,9 +362,10 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                     // ok found a pure function, look it up within top and
                     // check to see if it has been overrridden
                     SYMBOL* pq;
-                    enclosingDeclarations.Add(top);
-                    pq = classsearch(pi->name, false, false, true);
-                    enclosingDeclarations.Drop();
+                    {
+                        DeclarationScope scope(top);
+                        pq = classsearch(pi->name, false, false, true);
+                    }
                     if (pq && pq->tp->syms)
                     {
                         for (auto pq1 : *pq->tp->syms)
@@ -504,7 +507,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
             {
                 checkIncompleteArray(tp, p->sb->declfile, p->sb->declline);
             }
-            if (toerr && tp->IsStructured() && !tp->size && !definingTemplate)
+            if (toerr && tp->IsStructured() && !tp->size && !templateDefinitionLevel)
             {
                 errorsym(ERR_STRUCT_NOT_DEFINED, p);
             }
@@ -566,7 +569,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
 
     if (size == 0)
     {
-        if (Optimizer::cparams.prm_cplusplus && (!sp->sb->templateLevel || !definingTemplate || instantiatingTemplate))
+        if (Optimizer::cparams.prm_cplusplus && (!sp->sb->templateLevel || !IsDefiningTemplate()))
         {
             // make it non-zero size to avoid further errors...
             size = getSize(BasicType::int_);
@@ -785,7 +788,7 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
 }
 static void GetStructAliasType(SYMBOL* sym)
 {
-    if (definingTemplate && !instantiatingTemplate)
+    if (IsDefiningTemplate())
         return;
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
         return;
@@ -850,7 +853,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         sp->sb->declaringRecursive = false;
         if (!sp->sb->performedStructInitialization)
         {
-            if (!definingTemplate)
+            if (!templateDefinitionLevel)
             {
                 if (sp->sb->baseClasses)
                 {
@@ -890,7 +893,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
         }
     }
     --resolvingStructDeclarations;
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         for (i = 0; i < n; i++)
         {
@@ -909,7 +912,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             SYMBOL* sp = syms[i];
             if (!sp->sb->performedStructInitialization && !sp->sb->templateLevel)
             {
-                if (/*n > 1 &&*/ !definingTemplate)
+                if (/*n > 1 &&*/ !templateDefinitionLevel)
                 {
                     calculateStructOffsets(sp);
 
@@ -933,12 +936,12 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 {
                     if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams))
                     {
-                        int oldInstantiatingTemplate = instantiatingTemplate;
-                        instantiatingTemplate = 0;
-                        definingTemplate++;
+                        int oldInstantiatingTemplate = templateInstantiationLevel;
+                        templateInstantiationLevel = 0;
+                        templateDefinitionLevel++;
                         deferredInitializeStructFunctions(syms[i]);
-                        definingTemplate--;
-                        instantiatingTemplate = oldInstantiatingTemplate;
+                        templateDefinitionLevel--;
+                        templateInstantiationLevel = oldInstantiatingTemplate;
                     }
                     else
                     {
@@ -962,13 +965,14 @@ static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, S
         lst->data = sp;
     }
     getsym();
-    enclosingDeclarations.Add(sp);
-    sp->sb->declaring = true;
-    while (currentLex && KW() != Keyword::end_)
+    DeclarationScope scope(sp);
     {
-        FlushLineData(currentLex->errfile, currentLex->linedata->lineno);
-        switch (KW())
+        sp->sb->declaring = true;
+        while (currentLex && KW() != Keyword::end_)
         {
+            FlushLineData(currentLex->sourceFileName, currentLex->linedata->lineno);
+            switch (KW())
+            {
             case Keyword::private_:
                 sp->sb->accessspecified = true;
                 currentAccess = AccessLevel::private_;
@@ -989,12 +993,12 @@ static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, S
                 break;
             default:
                 declare(nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
-                              currentAccess);
+                    currentAccess);
                 break;
+            }
         }
+        sp->sb->declaring = false;
     }
-    sp->sb->declaring = false;
-    enclosingDeclarations.Drop();
     sp->sb->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp, false);
 
@@ -1042,7 +1046,7 @@ static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, S
         baseFinishDeclareStruct(funcsp);
         structLevel++;
     }
-    if (Optimizer::cparams.prm_cplusplus && sp->tp->syms && !definingTemplate)
+    if (Optimizer::cparams.prm_cplusplus && sp->tp->syms && !templateDefinitionLevel)
     {
         SYMBOL* cons = search(sp->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
         if (!cons)
@@ -1162,7 +1166,7 @@ void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel d
     }
     if (inTemplate && templateDeclarationLevel == 1)
     {
-        inTemplateBody++;
+        processingTemplateBody++;
     }
     if (Optimizer::cparams.prm_cplusplus)
         if (KW() == Keyword::colon_)
@@ -1191,7 +1195,7 @@ void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel d
     }
     if (inTemplate && templateDeclarationLevel == 1)
     {
-        inTemplateBody--;
+        processingTemplateBody--;
         TemplateGetDeferredTokenStream(sp);
     }
     --structLevel;
@@ -1246,13 +1250,13 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
     char newName[4096];
     BasicType type = BasicType::none_;
     SYMBOL* sp = nullptr;
-    int charindex;
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
     SYMBOL* strSym;
     AccessLevel defaultAccess;
     bool addedNew = false;
-    int declline = currentLex->errline;
+    int declline = currentLex->sourceLineNumber;
     int realdeclline = currentLex->linedata->lineno;
+    int charindex;
     bool anonymous = false;
     unsigned char* uuid;
     Linkage linkage1 = Linkage::none_, linkage2 = linkage2_in, linkage3 = Linkage::none_;
@@ -1394,8 +1398,9 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+        sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;
         sp->sb->declfilenum = currentLex->linedata->fileindex;
+        sp->sb->realcharpos = currentLex->realcharindex;
         sp->sb->attribs = basisAttribs;
         if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ ||
              storage_class == StorageClass::auto_) &&
@@ -1426,12 +1431,12 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
         if (!anonymous)
         {
             SetLinkerNames(sp, Linkage::cdecl_);
-            if (inTemplate && definingTemplate)
+            if (inTemplate && templateDefinitionLevel)
             {
                 if (MATCHKW(Keyword::lt_))
                     errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                 sp->templateParams = TemplateGetParams(sp);
-                sp->sb->templateLevel = definingTemplate;
+                sp->sb->templateLevel = templateDefinitionLevel;
                 TemplateMatching(nullptr, sp->templateParams, sp,
                                  MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
                 SetLinkerNames(sp, Linkage::cdecl_);
@@ -1479,7 +1484,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
         {
             errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
         }
-        else if (inTemplate && definingTemplate && sp->sb)
+        else if (inTemplate && templateDefinitionLevel && sp->sb)
         {
             // definition or declaration
             if (!sp->sb->templateLevel)
@@ -1501,6 +1506,13 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
                     parsingSpecializationDeclaration = false;
                     inTemplateSpecialization--;
                     sp = LookupSpecialization(sp, templateParams);
+                    if (sp != sp1)
+                    {
+                        sp->sb->declline = sp->sb->origdeclline = sp->sb->realdeclline = currentLex->sourceLineNumber;
+                        sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;	
+                        sp->sb->declcharpos = currentLex->charindex;
+                        sp->sb->realcharpos = currentLex->realcharindex;
+                    }
                     if (linkage2 != Linkage::none_)
                         sp->sb->attribs.inheritable.linkage2 = linkage2;
                     sp->templateParams = TemplateMatching(origParams, templateParams, sp,
@@ -1524,7 +1536,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
                     std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(sp);
                     sp->templateParams = TemplateMatching(sp->templateParams, templateParams, sp,
                                                           MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
-                    if (sp->sb->parentTemplate->sb->instantiations)
+                    if (0 && sp->sb->parentTemplate->sb->instantiations)
                     {
                         for (auto instant : *sp->sb->parentTemplate->sb->instantiations)
                         {
@@ -1647,9 +1659,10 @@ static void enumbody( SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, A
                 sp = makeID(StorageClass::enumconstant_, tp, 0, litlate(currentLex->value.s.a));
                 sp->name = sp->sb->decoratedName = litlate(currentLex->value.s.a);
                 sp->sb->declcharpos = currentLex->charindex;
-                sp->sb->declline = sp->sb->origdeclline = currentLex->errline;
+                sp->sb->realcharpos = currentLex->realcharindex;
+                sp->sb->declline = sp->sb->origdeclline = currentLex->sourceLineNumber;
                 sp->sb->realdeclline = currentLex->linedata->lineno;
-                sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+                sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;
                 sp->sb->declfilenum = currentLex->linedata->fileindex;
                 sp->sb->parentClass = spi->sb->parentClass;
                 sp->sb->access = access;
@@ -1712,7 +1725,7 @@ static void enumbody( SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, A
                     }
                     else
                     {
-                        if (!definingTemplate)
+                        if (!templateDefinitionLevel)
                         {
                             error(ERR_CONSTANT_VALUE_EXPECTED);
                             errskim(skim_end);
@@ -1792,7 +1805,7 @@ void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLeve
     SYMBOL* sp;
     std::list<NAMESPACEVALUEDATA*>* nsv;
     SYMBOL* strSym;
-    int declline = currentLex->errline;
+    int declline = currentLex->sourceLineNumber;
     int realdeclline = currentLex->linedata->lineno;
     bool anonymous = false;
     Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
@@ -1886,9 +1899,10 @@ void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLeve
         sp->tp->size = sp->tp->btp->size;
         sp->tp = AttributeFinish(sp, sp->tp);
         sp->sb->declcharpos = charindex;
+        sp->sb->realcharpos = currentLex->realcharindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = currentLex->errfile;
+        sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;
         sp->sb->declfilenum = currentLex->linedata->fileindex;
         if (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_)
             sp->sb->parentClass = enclosingDeclarations.GetFirst();
@@ -2368,7 +2382,7 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                 !spo->tp->BaseType()->btp->CompatibleType(sp->tp->BaseType()->btp) &&
                 !SameTemplatePointedTo(spo->tp->BaseType()->btp, sp->tp->BaseType()->btp))
             {
-                if (!definingTemplate || instantiatingTemplate)
+                if (!IsDefiningTemplate())
                     preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
             }
             else
@@ -2413,7 +2427,9 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                         {
                             SYMBOL* so = *ito1;
                             SYMBOL* s = *it1;
-                            if (so != s && ((so->sb->init && s->sb->init) ||  initTokenStreams.get(s)))
+                            auto io = initTokenStreams.get(so);
+                            auto i = initTokenStreams.get(s);
+                            if (so != s && ((so->sb->init && s->sb->init) ||  (io && i && i != io)))
                                 errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
                             if (!err && last && last->sb->init &&
                                 !(so->sb->init || s->sb->init || initTokenStreams.get(s)))
@@ -2422,9 +2438,22 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                                 errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
                             }
                             last = so;
-                            if (so->sb->init || initTokenStreams.get(s))
+                            if (so->sb->init)
                             {
                                 s->sb->init = so->sb->init;
+                            }
+                            else if (s->sb->init)
+                            {
+                                so->sb->init = s->sb->init;
+                            }
+                            else if (io)
+                            {
+                                initTokenStreams.set(s, io);
+                            }
+                            else if (i)
+                            {
+                                initTokenStreams.set(so, i);
+
                             }
                             ++ito1;
                             ++it1;
@@ -2476,7 +2505,7 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                 }
             }
         }
-        else if (!definingTemplate && spo->sb->xcMode != sp->sb->xcMode)
+        else if (!templateDefinitionLevel && spo->sb->xcMode != sp->sb->xcMode)
         {
             if (spo->sb->xcMode == xc_none && sp->sb->xcMode == xc_dynamic)
             {
@@ -2884,7 +2913,7 @@ void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool a
             if (*storage_class == StorageClass::typedef_)
             {
                 flaggedTypedef = true;
-                inTypedef++;
+                processingTypedef++;
             }
         }
         else if (KWTYPE(TT_POINTERQUAL | TT_LINKAGE))
@@ -2920,7 +2949,7 @@ void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool a
         first = false;
     }
     if (flaggedTypedef)
-        inTypedef--;
+        processingTypedef--;
     return;
 }
 static bool mismatchedOverloadLinkage(SYMBOL* sp, SymbolTable<SYMBOL>* table)
@@ -3058,8 +3087,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
             struct _ccNamespaceData nsData;
             if (!IsCompiler())
             {
-                nsData.declfile = currentLex->errfile;
-                nsData.startline = currentLex->errline;
+                nsData.declfile = currentLex->sourceFileName;
+                nsData.startline = currentLex->sourceLineNumber;
             }
             if (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_)
                 error(ERR_NAMESPACE_NO_STRUCT);
@@ -3095,7 +3124,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                       access);
                     }
                     if (!IsCompiler() && currentLex)
-                        nsData.endline = currentLex->errline;
+                        nsData.endline = currentLex->sourceLineNumber;
                     needkw(Keyword::end_);
                 }
                 for (; count; count--)
@@ -3189,6 +3218,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                 }
                 do
                 {
+                    DeclarationScope scope;
                     if (isInline)
                         linkage = Linkage::inline_;
                     bool isTemplatedCast = false;
@@ -3336,12 +3366,6 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     globalNameSpace = oldGlobals;
                                     oldGlobals = nullptr;
                                 }
-                                if (strSym && strSym->tp->type != BasicType::enum_ &&
-                                    strSym->tp->type != BasicType::templateselector_ &&
-                                    strSym->tp->type != BasicType::templatedecltype_)
-                                {
-                                    enclosingDeclarations.Drop();
-                                }
                                 break;
                             }
                         }
@@ -3424,12 +3448,6 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 globalNameSpace = oldGlobals;
                                 oldGlobals = nullptr;
                             }
-                            if (strSym && strSym->tp->type != BasicType::enum_ &&
-                                strSym->tp->type != BasicType::templateselector_ &&
-                                strSym->tp->type != BasicType::templatedecltype_)
-                            {
-                                enclosingDeclarations.Drop();
-                            }
                             break;
                         }
                     }
@@ -3438,7 +3456,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         SYMBOL* ssp = nullptr;
                         SYMBOL* spi;
                         bool checkReturn = true;
-                        if (!definingTemplate && funcsp)
+                        if (!templateDefinitionLevel && funcsp)
                             tp1 = ResolveTemplateSelectors(funcsp, tp1);
                         ssp = enclosingDeclarations.GetFirst();
                         if (!asFriend &&
@@ -3485,7 +3503,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 sp->name = litlate(AnonymousName());
                         }
                         sp->sb->parent = funcsp; /* function vars have a parent */
-                        if (instantiatingTemplate)
+                        if (templateInstantiationLevel)
                         {
                             if (sp->sb->parentClass)
                                 sp->sb->parentNameSpace = sp->sb->parentClass->sb->parentNameSpace;
@@ -3558,7 +3576,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                        !!sp->templateParams);
                         if (inTemplate && templateDeclarationLevel == 1)
                         {
-                            inTemplateBody++;
+                            processingTemplateBody++;
                         }
                         if (Optimizer::cparams.prm_cplusplus && sp->sb->isConstructor)
                         {
@@ -3682,16 +3700,16 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 }
                                 if (!sp->sb->parentClass || !sp->sb->parentClass->sb->declaring)
                                 {
-                                    if (definingTemplate == 1 && sp->templateParams && sp->templateParams->size() == 1 &&
+                                    if (templateDefinitionLevel == 1 && sp->templateParams && sp->templateParams->size() == 1 &&
                                         !sp->templateParams->front().second->bySpecialization.types)
-                                        instantiatingTemplate++;
+                                        templateInstantiationLevel++;
                                     InitializeFunctionArguments(sp);
                                     sym = searchOverloads(sp, spi->tp->syms);
-                                    if (fullySpecialized && sym && ((!sym->sb->templateLevel && !sym->sb->parentClass) || (sym->templateParams  && sym->templateParams->size() > 1)))
+                                    if (isFullySpecialized && sym && ((!sym->sb->templateLevel && !sym->sb->parentClass) || (sym->templateParams  && sym->templateParams->size() > 1)))
                                         sym = nullptr;
-                                    if (definingTemplate == 1 && sp->templateParams && sp->templateParams->size() == 1 &&
+                                    if (templateDefinitionLevel == 1 && sp->templateParams && sp->templateParams->size() == 1 &&
                                         !sp->templateParams->front().second->bySpecialization.types)
-                                        instantiatingTemplate--;
+                                        templateInstantiationLevel--;
                                     Type* retVal;
                                     TEMPLATESELECTOR* tsl = nullptr;
                                     if (!sym && storage_class_in != StorageClass::member_ &&
@@ -3753,7 +3771,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                          !sp->tp->BaseType()->btp->CompatibleType((sym)->tp->BaseType()->btp))
                                 {
                                     if (Optimizer::cparams.prm_cplusplus && sym->tp->IsFunction() &&
-                                        (sym->sb->templateLevel || definingTemplate))
+                                        (sym->sb->templateLevel || templateDefinitionLevel))
                                         checkReturn = false;
                                 }
                             }
@@ -3915,7 +3933,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     }
                                 }
                             }
-                            else if (spi->sb->templateLevel && !spi->sb->instantiated && !definingTemplate)
+                            else if (spi->sb->templateLevel && !spi->sb->instantiated && !templateDefinitionLevel)
                             {
                                 if ((strSym && !strSym->sb->templateLevel) ||
                                     spi->sb->templateLevel != sp->sb->templateLevel + (strSym != 0))
@@ -3927,6 +3945,13 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             }
                             if (spi->tp->IsFunction())
                             {
+                                if (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
+                                {
+                                    if (Optimizer::cparams.prm_cplusplus && CopyFunctionArguments(spi, sp))
+                                    {
+                                        functionDefinitions.set(spi, sp);
+                                    }
+                                }
                                 matchFunctionDeclaration(sp, spi, checkReturn, asFriend);
                             }
                             if (sp->sb->parentClass)
@@ -3977,7 +4002,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                      (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)) &&
                                      (!spi->sb->parentClass || !spi->sb->parentClass->sb->instantiated ||
                                       !spi->sb->copiedTemplateFunction)) &&
-                                    spi->sb->parentClass &&
+                                    spi->sb->parentClass && !isFullySpecialized &&
                                     !differentTemplateNames(spi->sb->parentClass->templateParams,
                                                             sp->sb->parentClass->templateParams))
                                 {
@@ -3988,7 +4013,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 {
                                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
                                 }
-                                else if (!sameQuals(sp, spi) && (!definingTemplate || instantiatingTemplate))
+                                else if (!sameQuals(sp, spi) && (!IsDefiningTemplate()))
                                 {
                                     errorsym(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
                                 }
@@ -4168,13 +4193,6 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             spi->sb->parentClass = sp->sb->parentClass;
                             spi->sb->externShim = false;
 
-                            if (spi->tp->IsFunction() && MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
-                            {
-                                if (Optimizer::cparams.prm_cplusplus && CopyFunctionArguments(spi, sp))
-                                {
-                                    functionDefinitions.set(spi, sp);
-                                }
-                            }
                             sp->sb->mainsym = spi;
 
                             sp = spi;
@@ -4204,7 +4222,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 {
                                     TemplateValidateSpecialization(templateParams);
                                 }
-                                else if (definingTemplate == 1)
+                                else if (templateDefinitionLevel == 1)
                                 {
                                     TemplateMatching(nullptr, templateParams, sp,
                                                      MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_));
@@ -4225,7 +4243,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             {
                                 if (sp->sb->constexpression && sp->sb->storage_class == StorageClass::global_)
                                     sp->sb->storage_class = StorageClass::static_;
-                                if (!asFriend || !definingTemplate || instantiatingTemplate || inTemplate)
+                                if (!asFriend || !IsDefiningTemplate() || inTemplate)
                                 {
                                     if (sp->sb->storage_class == StorageClass::external_ ||
                                         (asFriend && !MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::try_)))
@@ -4239,7 +4257,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     }
                                 }
                             }
-                            if (asFriend && !sp->sb->anonymous && !sp->tp->IsFunction() && !definingTemplate)
+                            if (asFriend && !sp->sb->anonymous && !sp->tp->IsFunction() && !templateDefinitionLevel)
                             {
                                 error(ERR_DECLARATOR_NOT_ALLOWED_HERE);
                             }
@@ -4276,7 +4294,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         }
                         if (inTemplate && templateDeclarationLevel == 1)
                         {
-                            inTemplateBody--;
+                            processingTemplateBody--;
                         }
                     }
                     if (sp)
@@ -4363,7 +4381,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                     }
                     if (inTemplate && templateDeclarationLevel == 1)
                     {
-                        inTemplateBody++;
+                        processingTemplateBody++;
                     }
 
                     if (sp->sb->constexpression)
@@ -4391,7 +4409,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         {
                             if (sp->tp->BaseType()->btp->IsAutoType())
                                 RequiresDialect::Feature(Dialect::cpp14, "Return value deduction");
-                            if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate &&
+                            if (sp->sb->hasBody && !instantiatingFunction && !templateInstantiationLevel &&
                                 (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
                                 errorsym(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == StorageClass::localstatic_)
@@ -4424,7 +4442,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             {
                                 if (!sp->sb->label)
                                     sp->sb->label = Optimizer::nextLabel++;
-                                sp->sb->uniqueID = fileIndex;
+                                sp->uniqueId = fileIndex;
                             }
 
                             if (nameSpaceList.size())
@@ -4435,7 +4453,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             {
                                 if (asFriend)
                                     sp->sb->friendContext = enclosingDeclarations.GetFirst();
-                                if (!definingTemplate)
+                                if (!templateDefinitionLevel)
                                     sp->sb->hasBody = true;
                                 Type* tp = sp->tp;
                                 if (sp->sb->storage_class == StorageClass::member_ && storage_class_in == StorageClass::member_)
@@ -4475,6 +4493,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         sp->sb->linedata = startStmt->front()->lineData;
                                     auto stream = GetTokenStream( true);
                                     bodyTokenStreams.set(sp, stream);
+                                    bodyArgs.set(sp, sp->tp->BaseType()->syms);
                                     Optimizer::SymbolManager::Get(sp);
                                     sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                     if (!sp->sb->attribs.inheritable.isInline)
@@ -4486,7 +4505,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
                                         sp->sb->attribs.inheritable.linkage != Linkage::c_)
                                     {
-                                        if ((!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !definingTemplate ||
+                                        if ((!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateDefinitionLevel ||
                                              (sp->templateParams && sp->templateParams->size() == 1)) &&
                                             strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
@@ -4494,7 +4513,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                 (sp->sb->specialized && sp->templateParams->size() == 1) || sp->sb->isDestructor)
                                             {
                                                 sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                                if (!sp->sb->parentNameSpace && (!definingTemplate || instantiatingTemplate))
+                                                if ((!sp->sb->parentNameSpace && (!IsDefiningTemplate())) || sp->sb->isDestructor)
                                                 {
                                                     InsertInline(sp);
                                                 }
@@ -4502,18 +4521,26 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         }
                                     }
                                     if (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
-                                        definingTemplate == 1 || (asFriend && definingTemplate == 2))
+                                        templateDefinitionLevel == 1 || (asFriend && templateDefinitionLevel == 2))
                                     {
                                         auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                         if (startStmt)
                                             sp->sb->linedata = startStmt->front()->lineData;
-                                        auto stream = GetTokenStream( true);
+                                        if (sp->templateParams && sp->templateParams->size() == 1 &&
+                                            (IsDefiningTemplate()) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                                        {
+                                            sp->sb->origdeclfile = currentLex->sourceFileName;
+                                            sp->sb->origdeclline = currentLex->sourceLineNumber;
+                                            sp->sb->realcharpos = currentLex->realcharindex;
+                                        }
+                                        auto stream = GetTokenStream(true);
                                         bodyTokenStreams.set(sp, stream);
+                                        bodyArgs.set(sp, sp->tp->BaseType()->syms);
                                         Optimizer::SymbolManager::Get(sp);
                                         if (asFriend)
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                         if (sp->sb->parentClass && sp->templateParams &&
-                                            (!definingTemplate || instantiatingTemplate))
+                                            (!IsDefiningTemplate()))
                                         {
                                             sp->sb->templateLevel = 0;
                                             sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
@@ -4521,7 +4548,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                             sp->sb->specialized2 = true;
                                         }
                                         if (sp->templateParams && sp->templateParams->size() == 1 &&
-                                            (!definingTemplate || instantiatingTemplate) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                                            (!IsDefiningTemplate()) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
                                             InsertInline(sp);
                                     }
                                     else
@@ -4551,7 +4578,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     {
                                         sp->sb->deleted = true;
                                         sp->sb->constexpression = true;
-                                        if (sp->sb->redeclared && !definingTemplate)
+                                        if (sp->sb->redeclared && !templateDefinitionLevel)
                                         {
                                             errorsym(ERR_DELETE_ON_REDECLARATION, sp);
                                         }
@@ -4651,7 +4678,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 (Optimizer::architecture == ARCHITECTURE_MSIL))
                                 sp->sb->label = Optimizer::nextLabel++;
                             if (Optimizer::cparams.prm_cplusplus && sp->sb->storage_class != StorageClass::type_ &&
-                                sp->sb->storage_class != StorageClass::typedef_ && structLevel && (!instantiatingTemplate) &&
+                                sp->sb->storage_class != StorageClass::typedef_ && structLevel && (!templateInstantiationLevel) &&
                                 !funcsp && (MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)))
                             {
                                 if ((MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)) &&
@@ -4678,7 +4705,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 if (Optimizer::cparams.prm_cplusplus && sp->tp->IsStructured())
                                 {
                                     SYMBOL* sp1 = sp->tp->BaseType()->sp;
-                                    if (!definingTemplate && sp1->sb->templateLevel && sp1->templateParams &&
+                                    if (!templateDefinitionLevel && sp1->sb->templateLevel && sp1->templateParams &&
                                         !sp1->sb->instantiated)
                                     {
                                         auto tn = Type::MakeType(sp1, sp1->templateParams);
@@ -4824,7 +4851,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
                     if (inTemplate && templateDeclarationLevel == 1)
                     {
-                        inTemplateBody--;
+                        processingTemplateBody--;
                         TemplateGetDeferredTokenStream(sp);
                     }
                     if (!strcmp(sp->name, "main") && !sp->sb->parentClass)
@@ -4860,17 +4887,13 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         globalNameSpace = oldGlobals;
                         oldGlobals = nullptr;
                     }
-                    if (strSym && strSym->tp->type != BasicType::enum_ && strSym->tp->type != BasicType::templateselector_)
-                    {
-                        enclosingDeclarations.Drop();
-                    }
                 } while (!asExpression && !inTemplate && MATCHKW(Keyword::comma_) && (getsym(), currentLex != nullptr));
             }
         }
     }
     FlushLineData(preProcessor->GetRealFile().c_str(), preProcessor->GetRealLineNo());
     if (needsemi && !asExpression)
-        if (definingTemplate || !needkw(Keyword::semicolon_))
+        if (templateDefinitionLevel || !needkw(Keyword::semicolon_))
         {
             errskim(skim_semi_declare);
             skip(Keyword::semicolon_);

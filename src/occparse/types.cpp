@@ -651,7 +651,7 @@ Type* Type::InitializerListType()
 }
 bool Type::InstantiateDeferred(bool noErr, bool override)
 {
-    if (!definingTemplate || instantiatingTemplate || override)
+    if (!IsDefiningTemplate() || override)
     {
         auto tp = this;
         assert(tp);
@@ -1651,7 +1651,7 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL*
             }
             else
             {
-                if (definingTemplate)
+                if (templateDefinitionLevel)
                 {
                     while (currentLex && ISID())
                         getsym();
@@ -1682,9 +1682,9 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL*
                 case Keyword::noexcept_:
                     if (Optimizer::cparams.prm_cplusplus && *sp)
                     {
-                        funcLevel++;
+                        funcNestingLevel++;
                         TypeGenerator::ExceptionSpecifiers(funcsp, *sp, storage_class);
-                        funcLevel--;
+                        funcNestingLevel--;
                     }
                     break;
                 default:
@@ -1716,15 +1716,15 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL*
         Type* tpx = nullptr;
         SymbolTable<SYMBOL>* locals = localNameSpace->front()->syms;
         localNameSpace->front()->syms = tp->BaseType()->syms;
-        funcLevel++;
+        funcNestingLevel++;
         getsym();
         ParseAttributeSpecifiers(funcsp, true);
-        parsingTrailingReturnOrUsing++;
+        processingTrailingReturnOrUsing++;
         auto old = theCurrentFunc;
         theCurrentFunc = *sp;
         tpx = TypeGenerator::TypeId(*sp, StorageClass::cast_, false, true, false);
         theCurrentFunc = old;
-        parsingTrailingReturnOrUsing--;
+        processingTrailingReturnOrUsing--;
         // weed out temporary syms that were added as part of a decltype; they will be
         // reinstated as stackblock syms later
         auto itp = localNameSpace->front()->syms->begin();
@@ -1763,7 +1763,7 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL*
             }
         }
         localNameSpace->front()->syms = locals;
-        funcLevel--;
+        funcNestingLevel--;
     }
     return tp;
 }
@@ -1861,7 +1861,7 @@ Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_cl
                     error(ERR_ARRAY_INDEX_INTEGER_TYPE);
                 else if (tpc->type != BasicType::templateparam_ && isintconst(constant) &&
                          constant->v.i <= 0 - !!enclosingDeclarations.GetFirst())
-                    if (!definingTemplate)
+                    if (!templateDefinitionLevel)
                         error(ERR_ARRAY_INVALID_INDEX);
                 if (tpc->type == BasicType::templateparam_)
                 {
@@ -1877,11 +1877,11 @@ Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_cl
                 }
                 else
                 {
-                    if (!definingTemplate && !msil)
+                    if (!templateDefinitionLevel && !msil)
                         RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
                     tpp->esize = constant;
                     tpp->etype = tpc;
-                    *vla = !msil && !definingTemplate;
+                    *vla = !msil && !templateDefinitionLevel;
                 }
             }
             tp = tpp;
@@ -1897,7 +1897,7 @@ Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_cl
         }
         if (typein && typein->IsStructured())
         {
-            checkIncompleteArray(typein, currentLex->errfile, currentLex->errline);
+            checkIncompleteArray(typein, currentLex->sourceFileName, currentLex->sourceLineNumber);
         }
     }
     else
@@ -2081,7 +2081,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
         bool oldTemplateSpecialization = inTemplateSpecialization;
         inTemplateSpecialization = inTemplateType;
         inTemplateType = false;
-        enclosingDeclarations.Mark();
+        DeclarationScope scope;
         if (Optimizer::cparams.prm_cplusplus)
         {
             bool throughClass = false;
@@ -2212,7 +2212,10 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                     }
                     sp->sb->operatorId = ov;
                     if (currentLex)
+                    {
                         sp->sb->declcharpos = currentLex->charindex;
+                        sp->sb->realcharpos = currentLex->realcharindex;
+                    }
                     *spi = sp;
                 }
             }
@@ -2222,6 +2225,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
             inTemplateSpecialization = oldTemplateSpecialization;
             sp = makeID(storage_class, tp, *spi, litlate(currentLex->value.s.a));
             sp->sb->declcharpos = currentLex->charindex;
+            sp->sb->realcharpos = currentLex->realcharindex;
             *spi = sp;
             getsym();
         }
@@ -2232,7 +2236,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
             if (!ssp)
                 ssp = enclosingDeclarations.GetFirst();
             (*spi)->sb->parentClass = ssp;
-            (*spi)->sb->templateLevel = definingTemplate;
+            (*spi)->sb->templateLevel = templateDefinitionLevel;
             templateParams = TemplateGetParams(*spi);
             (*spi)->sb->templateLevel = 0;
             (*spi)->sb->parentClass = nullptr;
@@ -2261,7 +2265,6 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
             nameSpaceList.pop_front();
             globalNameSpace->pop_front();
         }
-        enclosingDeclarations.Release();
     }
     else
     {
@@ -2273,7 +2276,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                 break;
             getsym();
             /* in a parameter, open paren followed by a type is an  unnamed function */
-            if ((storage_class == StorageClass::parameter_ || parsingUsing) &&
+            if ((storage_class == StorageClass::parameter_ || processingUsingStatement) &&
                 (MATCHKW(Keyword::closepa_) || (TypeGenerator::StartOfType(nullptr, false) &&
                     (!ISKW() || !(currentLex->kw->tokenTypes & TT_LINKAGE)))))
             {
@@ -2284,19 +2287,20 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                     SetLinkerNames(sp, Linkage::none_);
                     sp->sb->anonymous = true;
                     sp->sb->declcharpos = currentLex->charindex;
+                    sp->sb->realcharpos = currentLex->realcharindex;
                     *spi = sp;
                 }
                 tp = (*spi)->tp;
                 start.Backup();
                 tp1 = tp;
-                if (!parsingUsing)
+                if (!processingUsingStatement)
                 {
                     tp = TypeGenerator::FunctionParams(funcsp, spi, tp, inTemplate, storage_class, false);
                     tp1 = tp;
                     tp = tp->btp;
                 }
                 tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                if (!parsingUsing)
+                if (!processingUsingStatement)
                 {
                     tp1->btp = tp;
                     tp = tp1;
@@ -2320,6 +2324,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                 }
                 sp = makeID(storage_class, tp, *spi, name);
                 sp->sb->declcharpos = currentLex->charindex;
+                sp->sb->realcharpos = currentLex->realcharindex;
                 *spi = sp;
                 if (*strSym)
                 {
@@ -2477,19 +2482,19 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                 ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
                     storage_class == StorageClass::parameter_ && KW() == Keyword::and_))
             {
-                if (tp && tp->IsRef() && !instantiatingTemplate && !definingTemplate)
+                if (tp && tp->IsRef() && !templateInstantiationLevel && !templateDefinitionLevel)
                 {
                     error(ERR_NO_REF_POINTER_REF);
                 }
                 tp = Type::MakeType(MATCHKW(Keyword::and_) ? BasicType::lref_ : BasicType::rref_, tp);
-                if (instantiatingTemplate)
+                if (templateInstantiationLevel)
                     CollapseReferences(tp);
                 getsym();
                 ParseAttributeSpecifiers(funcsp, true);
                 getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
                 tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
                     linkage3, nullptr, asFriend, false, beforeOnly, false);
-                if (storage_class != StorageClass::typedef_ && !tp->IsFunction() && !definingTemplate && !instantiatingTemplate)
+                if (storage_class != StorageClass::typedef_ && !tp->IsFunction() && !IsDefiningTemplate())
                 {
                     auto tp2 = tp;
                     while (tp2 && tp2->type != BasicType::lref_ && tp2->type != BasicType::rref_)
@@ -3101,10 +3106,10 @@ founddecltype:
                         declaringInitialType = 0;
                         GetTemplateArguments(funcsp, sp, &lst);
                         declaringInitialType = oldDeclaringInitialType;
-                        if (!parsingTrailingReturnOrUsing)
+                        if (!processingTrailingReturnOrUsing)
                         {
-                            if (definingTemplate && !instantiatingTemplate && !inTemplateHeader && !declaringInitialType &&
-                                (!inTemplateArgs || parsingSpecializationDeclaration))
+                            if (IsDefiningTemplate() && !processingTemplateHeader && !declaringInitialType &&
+                                (!processingTemplateArgs || parsingSpecializationDeclaration))
                             {
                                 sp1 = GetTypeAliasSpecialization(sp, lst);
                                 if (sp1)
@@ -3200,7 +3205,7 @@ founddecltype:
                                     GetTemplateArguments(funcsp, sp1, &lst);
                                     if (sp1)
                                     {
-                                        if (definingTemplate && !instantiatingTemplate)
+                                        if (IsDefiningTemplate())
                                         {
                                             sp1 = GetClassTemplate(sp1, lst, !templateErr);
                                             tn = nullptr;
@@ -3221,7 +3226,7 @@ founddecltype:
                                             tn = Type::MakeType(sp1, lst);
                                         }
                                     }
-                                    else if (definingTemplate)
+                                    else if (templateDefinitionLevel)
                                     {
                                         sp1 = CopySymbol(sp);
                                         sp1->tp = sp->tp->CopyType();
@@ -3286,7 +3291,7 @@ founddecltype:
                                 diag("TypeGenerator::UnadornedType: expected typename template param");
                             }
                         }
-                        else if (expandingParams && tpx->type == BasicType::templateparam_ &&
+                        else if (isExpandingParams && tpx->type == BasicType::templateparam_ &&
                                  tpx->templateParam->second->byPack.pack && !tpx->templateParam->second->resolved)
                         {
                             auto tn2 = LookupPackedInstance(*tpx->templateParam);
@@ -3300,14 +3305,14 @@ founddecltype:
                     {
                         if (templateArg)
                             *templateArg = true;
-                        if (!definingTemplate)
+                        if (!templateDefinitionLevel)
                             TemplateLookupTypeFromDeclType(tpx);
                     }
                     else if (tpx->type == BasicType::templateselector_)
                     {
                         if (templateArg)
                             *templateArg = true;
-                        //                        if (!definingTemplate)
+                        //                        if (!templateDefinitionLevel)
                         //                        {
                         //                            tn = SynthesizeType(sp->tp, nullptr, false);
                         //                        }
@@ -3359,7 +3364,7 @@ founddecltype:
                         if (sp->sb->templateLevel)
                         {
                             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                            if (definingTemplate)
+                            if (templateDefinitionLevel)
                                 tn = sp->tp;
                             else
                                 tn = nullptr;
@@ -3368,13 +3373,13 @@ founddecltype:
                                 if (sp->sb->parentTemplate)
                                     sp = sp->sb->parentTemplate;
                                 GetTemplateArguments(funcsp, sp, &lst);
-                                if (definingTemplate && !instantiatingTemplate)
+                                if (IsDefiningTemplate())
                                 {
                                     auto sp1 = GetClassTemplate(sp, lst, !templateErr);
                                     if (sp1)
                                     {
                                         sp = sp1;
-                                        if (sp && (!definingTemplate || inTemplateBody))
+                                        if (sp && (!templateDefinitionLevel || processingTemplateBody))
                                             sp->tp = sp->tp->InitializeDeferred();
                                     }
                                     else
@@ -3428,10 +3433,10 @@ founddecltype:
                             {
                                 tn = sp->tp;
                             }
-                            if (!definingTemplate && tn->IsStructured() && tn->BaseType()->sp->sb->templateLevel &&
+                            if (!templateDefinitionLevel && tn->IsStructured() && tn->BaseType()->sp->sb->templateLevel &&
                                 !tn->BaseType()->sp->sb->instantiated)
                             {
-                                if (definingTemplate && !instantiatingTemplate)
+                                if (IsDefiningTemplate())
                                 {
                                     sp = GetClassTemplate(tn->BaseType()->sp, tn->BaseType()->sp->templateParams, false);
                                     if (sp)
@@ -3481,7 +3486,7 @@ founddecltype:
                 if (!tn || tn->type == BasicType::any_ || tn->BaseType()->type == BasicType::templateparam_)
                 {
                     SYMBOL* sym = (*strSym->tp->BaseType()->sp->sb->templateSelector)[1].sp;
-                    if (!isTypedef && (!definingTemplate || instantiatingTemplate) && sym->tp->IsStructured() &&
+                    if (!isTypedef && (!IsDefiningTemplate()) && sym->tp->IsStructured() &&
                         (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) &&
                          (!sym->sb->templateLevel ||
                           allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
@@ -3500,17 +3505,16 @@ founddecltype:
                 foundsomething = true;
                 getsym();
             }
-            else if (strSym && strSym->sb->templateLevel && !definingTemplate)
+            else if (strSym && strSym->sb->templateLevel && !templateDefinitionLevel)
             {
                 tn = strSym->tp;
-                enclosingDeclarations.Add(tn->sp);
+                DeclarationScope scope(tn->sp);
                 sp = classsearch(currentLex->value.s.a, false, false, true);
                 if (sp)
                 {
                     tn = sp->tp;
                     foundsomething = true;
                 }
-                enclosingDeclarations.Drop();
                 getsym();
             }
             else if (MATCHKW(Keyword::decltype_))
@@ -3538,7 +3542,7 @@ founddecltype:
                 }
                 else
                 {
-                    if (!definingTemplate && !typeName)
+                    if (!templateDefinitionLevel && !typeName)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
                     }
@@ -3777,9 +3781,9 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 error(ERR_CONSTEXPR_NO_PARAM);
             }
             bool templType = inTemplateType;
-            if (fullySpecialized)
-                ++instantiatingTemplate;
-            inTemplateType = !!definingTemplate;
+            if (isFullySpecialized)
+                ++templateInstantiationLevel;
+            inTemplateType = !!templateDefinitionLevel;
             EnterPackedSequence();
             if (MATCHKW(Keyword::ellipse_))
             {
@@ -3875,7 +3879,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                     checkPackedType(spi);
                     if (tp2->type == BasicType::templateparam_ && tp2->templateParam->second->packed)
                     {
-                        if (!definingTemplate ||
+                        if (!templateDefinitionLevel ||
                             (!funcptr && tp2->type == BasicType::templateparam_ && tp2->templateParam->first &&
                                 !inCurrentTemplate(tp2->templateParam->first->name) && definedInTemplate(tp2->templateParam->first->name)))
                         {
@@ -3966,7 +3970,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                         PushPackIndex();
                         int n = GetPackCount();
                         bool first = true;
-                        inTemplateArgs++;
+                        processingTemplateArgs++;
                         for (int i = 0; i < n; i++)
                         {
                             SetPackIndex(i);
@@ -4003,7 +4007,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                             clone->tp->UpdateRootTypes();
                         }
                         current;
-                        inTemplateArgs--;
+                        processingTemplateArgs--;
                         PopPackIndex();
                         clonedParams = true;
                     }
@@ -4018,7 +4022,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                     if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::assign_))
                     {
                         if (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || structLevel ||
-                            (definingTemplate == 1 && !instantiatingTemplate))
+                            (templateDefinitionLevel == 1 && !templateInstantiationLevel))
                         {
                             auto stream = GetTokenStream(false);
                             initTokenStreams.set(spi, stream);
@@ -4094,8 +4098,8 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
             }
             ClearPackedSequence();
             LeavePackedSequence();
-            if (fullySpecialized)
-                --instantiatingTemplate;
+            if (isFullySpecialized)
+                --templateInstantiationLevel;
             inTemplateType = templType;
             if (!MATCHKW(Keyword::comma_) && (!Optimizer::cparams.prm_cplusplus || !MATCHKW(Keyword::ellipse_)))
                 break;
@@ -4477,7 +4481,7 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
 
 static Type* replaceTemplateSelector(Type* tp)
 {
-    if (!definingTemplate && tp->type == BasicType::templateselector_ && (*tp->sp->sb->templateSelector)[1].isTemplate)
+    if (!templateDefinitionLevel && tp->type == BasicType::templateselector_ && (*tp->sp->sb->templateSelector)[1].isTemplate)
     {
         SYMBOL* sp2 = (*tp->sp->sb->templateSelector)[1].sp;
         if ((*tp->sp->sb->templateSelector)[1].isDeclType)

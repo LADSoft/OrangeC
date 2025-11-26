@@ -2224,19 +2224,19 @@ EXPRESSION* EvaluateDest(EXPRESSION* exp, Type* tp)
 }
 void SetRuntimeData( EXPRESSION* exp, SYMBOL* sym)
 {
-    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && currentLex->errfile)
+    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && currentLex->sourceFileName)
     {
         auto runtimeData = Allocate<Optimizer::RUNTIMEDATA>();
-        const char* p = strrchr(currentLex->errfile, '/');
+        const char* p = strrchr(currentLex->sourceFileName, '/');
         if (!p)
-            p = strrchr(currentLex->errfile, '\\');
+            p = strrchr(currentLex->sourceFileName, '\\');
         if (!p)
-            p = currentLex->errfile;
+            p = currentLex->sourceFileName;
         else
             p++;
         runtimeData->fileName = p;
         runtimeData->varName = sym->sb->decoratedName;
-        runtimeData->lineno = currentLex->errline;
+        runtimeData->lineno = currentLex->sourceLineNumber;
         runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
         exp->runtimeData = runtimeData;
     }

@@ -275,8 +275,10 @@ static EXPRESSION* inasm_ident(void)
             sym = SymAlloc();
             sym->sb->storage_class = StorageClass::ulabel_;
             sym->name = litlate(nm);
-            sym->sb->declfile = sym->sb->origdeclfile = currentLex->errfile;
-            sym->sb->declline = sym->sb->origdeclline = currentLex->errline;
+            sym->sb->declfile = sym->sb->origdeclfile = currentLex->sourceFileName;
+            sym->sb->declline = sym->sb->origdeclline = currentLex->sourceLineNumber;
+            sym->sb->declcharpos = currentLex->charindex;
+            sym->sb->realcharpos = currentLex->realcharindex;
             sym->sb->realdeclline = currentLex->linedata->lineno;
             sym->sb->declfilenum = currentLex->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
@@ -362,8 +364,10 @@ static EXPRESSION* inasm_label(void)
         sym = SymAlloc();
         sym->sb->storage_class = StorageClass::label_;
         sym->name = litlate(currentLex->value.s.a);
-        sym->sb->declfile = sym->sb->origdeclfile = currentLex->errfile;
-        sym->sb->declline = sym->sb->origdeclline = currentLex->errline;
+        sym->sb->declfile = sym->sb->origdeclfile = currentLex->sourceFileName;
+        sym->sb->declline = sym->sb->origdeclline = currentLex->sourceLineNumber;
+        sym->sb->declcharpos = currentLex->charindex;
+        sym->sb->realcharpos = currentLex->realcharindex;
         sym->sb->realdeclline = currentLex->linedata->lineno;
         sym->sb->declfilenum = currentLex->linedata->fileindex;
         sym->tp = Type::MakeType(BasicType::unsigned_);

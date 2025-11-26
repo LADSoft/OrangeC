@@ -405,7 +405,7 @@ void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                                            true, false, nullptr, false);
         (*tp)->InstantiateDeferred();
         (*tp)->InitializeDeferred();
-        if ((*tp)->IsStructured() && !(*tp)->size && (!definingTemplate || !(*tp)->BaseType()->sp->sb->templateLevel))
+        if ((*tp)->IsStructured() && !(*tp)->size && (!templateDefinitionLevel || !(*tp)->BaseType()->sp->sb->templateLevel))
         {
             (*tp) = (*tp)->BaseType()->sp->tp;
             if (!(*tp)->size && !deduceTemplate)
@@ -512,8 +512,7 @@ void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                     {
                         bcall = nullptr;
                     }
-                    if (currentLex)
-                        --*currentStream;
+                    --*currentStream;
                     --*currentStream;
                 }
                 else
@@ -651,7 +650,7 @@ void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
-                        else if (!definingTemplate || ((*tp)->IsInt() && isintconst(*exp)))
+                        else if (!templateDefinitionLevel || ((*tp)->IsInt() && isintconst(*exp)))
                         {
                             cast(*tp, exp);
                         }
@@ -760,9 +759,8 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
         return false;
     if ((*tp)->IsStructured())
     {
-        enclosingDeclarations.Add((*tp)->BaseType()->sp);
+        DeclarationScope scope((*tp)->BaseType()->sp);
         s2 = classsearch(name, false, false, true);
-        enclosingDeclarations.Drop();
         funcparams->thistp = Type::MakeType(BasicType::pointer_, (*tp)->BaseType());
         funcparams->thisptr = *exp;
     }
@@ -867,16 +865,15 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         default:
             break;
         }
-        enclosingDeclarations.Mark();
+        DeclarationScope scope;
         // next find some occurrance in the class or struct
         if ((*tp)->IsStructured())
         {
             int n;
             enclosingDeclarations.Add((*tp)->BaseType()->sp);
             s2 = classsearch(name, false, false, true);
-            n = PushTemplateNamespace((*tp)->BaseType()->sp);  // used for more than just templates here
+            TemplateNamespaceScope namespaceScope((*tp)->BaseType()->sp);  // used for more than just templates here
             s4 = namespacesearch(name, globalNameSpace, false, false);
-            PopTemplateNamespace(n);
         }
         else
         {
@@ -884,9 +881,8 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             {
                 std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
                 tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
-                int n = PushTemplateNamespace(tpClean->BaseType()->sp);  // used for more than just templates here
+                TemplateNamespaceScope namespaceScope(tpClean->BaseType()->sp);  // used for more than just templates here
                 s4 = namespacesearch(name, globalNameSpace, false, false);
-                PopTemplateNamespace(n);
                 tpClean->sp->sb->templateNameSpace = nullptr;
             }
         }
@@ -894,9 +890,8 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         {
             if (tp1->IsStructured())
             {
-                int n = PushTemplateNamespace(tp1->BaseType()->sp);  // used for more than just templates here
+                TemplateNamespaceScope namespaceScope(tp1->BaseType()->sp);  // used for more than just templates here
                 s5 = namespacesearch(name, globalNameSpace, false, false);
-                PopTemplateNamespace(n);
                 auto exp3 = exp1;
                 while (exp3->type == ExpressionNode::comma_)
                     exp3 = exp3->right;
@@ -911,16 +906,14 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             {
                 std::list<SYMBOL*> aa{ tp1->BaseType()->sp->sb->parentNameSpace };
                 tp1->BaseType()->sp->sb->templateNameSpace = tp1->BaseType()->sp->sb->parentNameSpace ? &aa : nullptr;
-                int n = PushTemplateNamespace(tp1->BaseType()->sp);  // used for more than just templates here
+                TemplateNamespaceScope namespaceScope(tp1->BaseType()->sp);  // used for more than just templates here
                 s5 = namespacesearch(name, globalNameSpace, false, false);
-                PopTemplateNamespace(n);
                 tp1->BaseType()->sp->sb->templateNameSpace = nullptr;
             }
         }
         // quit if there are no matches because we will use the default...
         if (!s1 && !s2 && !s4 && !s5)
         {
-            enclosingDeclarations.Release();
             return false;
         }
         // finally make a shell to put all this in and add shims for any builtins we want to try
@@ -1084,12 +1077,10 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             expression_arguments(funcsp, tp, exp, 0, true);
             if (s3->sb->defaulted && kw == Keyword::assign_)
                 createAssignment(s3->sb->parentClass, s3);
-            enclosingDeclarations.Release();
             CheckCalledException(s3, funcparams->thisptr);
             StatementGenerator::DestructorsForArguments(funcparams->arguments);
             return true;
         }
-        enclosingDeclarations.Release();
     }
     return false;
 }
@@ -1225,9 +1216,8 @@ void expression_new( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, i
     {
         if ((*tp)->IsStructured())
         {
-            enclosingDeclarations.Add((*tp)->BaseType()->sp);
+            DeclarationScope scope((*tp)->BaseType()->sp);
             s1 = classsearch(name, false, false, true);
-            enclosingDeclarations.Drop();
         }
     }
     if (!s1)
@@ -1291,7 +1281,7 @@ void expression_new( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, i
             {
                 if (!initializers->arguments->front()->tp->SameType(*tp) || initializers->arguments->size() > 1)
                 {
-                    if (!definingTemplate)
+                    if (!templateDefinitionLevel)
                         error(ERR_NEED_NUMERIC_EXPRESSION);
                 }
                 else
@@ -1440,7 +1430,7 @@ void expression_delete( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global
         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         return;
     }
-    if (!definingTemplate && (*tp)->BaseType()->btp->IsStructured())
+    if (!templateDefinitionLevel && (*tp)->BaseType()->btp->IsStructured())
     {
         (*tp)->BaseType()->btp->InstantiateDeferred();
         if ((*tp)->BaseType()->btp->BaseType()->sp->tp->size == 0)
@@ -1459,9 +1449,8 @@ void expression_delete( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global
     {
         if ((*tp)->IsStructured())
         {
-            enclosingDeclarations.Add((*tp)->BaseType()->sp);
+            DeclarationScope scope((*tp)->BaseType()->sp);
             s1 = classsearch(name, false, false, true);
-            enclosingDeclarations.Drop();
         }
     }
     if (!s1)

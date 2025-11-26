@@ -88,8 +88,8 @@
 
 namespace Parser
 {
-int argumentNesting;
-int inAssignRHS;
+int argumentNestingLevel;
+int assigningRHS;
 
 std::list<SYMBOL*> importThunks;
 static SYMBOL* msilToString;
@@ -113,10 +113,10 @@ void expr_init(void)
 {
     importThunks.clear();
     inGetUserConversion = 0;
-    inSearchingFunctions = 0;
+    currentlyInsertingFunctions = 0;
     inNothrowHandler = 0;
     argFriend = nullptr;
-    argumentNesting = 0;
+    argumentNestingLevel = 0;
     strtab.clear();
 }
 void thunkForImportTable(EXPRESSION** exp)
@@ -585,10 +585,8 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
         {
             if (MATCHKW(Keyword::lt_))
             {
-                getsym();
                 std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                 SYMBOL* sp1 = sym;
-                --*currentStream;
                 GetTemplateArguments(funcsp, sp1, &lst);
 
                 bool deferred = false;
@@ -610,7 +608,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                         sym = sp1;
                         *tp = sym->tp;
                     }
-                    else if (definingTemplate && !instantiatingTemplate)
+                    else if (IsDefiningTemplate())
                         *tp = &stdint;
                     else
                         errorsym(ERR_NO_TEMPLATE_MATCHES, sym);
@@ -1084,7 +1082,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
             }
             else
             {
-                if (!definingTemplate)
+                if (!templateDefinitionLevel)
                     error(ERR_IDENTIFIER_EXPECTED);
                 *exp = MakeIntExpression(ExpressionNode::c_i_, 1);
             }
@@ -1113,7 +1111,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                         if (!(flags & _F_AMPERSAND))
                             Dereference(&stdint, exp);
                     }
-                    else if (!definingTemplate)
+                    else if (!templateDefinitionLevel)
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
                     }
@@ -1205,7 +1203,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
         if (strSym && strSym->tp->type == BasicType::templateselector_)
         {
             SYMBOL* sym = (*strSym->tp->BaseType()->sp->sb->templateSelector)[1].sp;
-            if ((!definingTemplate || instantiatingTemplate) &&
+            if ((!IsDefiningTemplate()) &&
                 (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) &&
                  (!sym->sb->templateLevel ||
                   allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
@@ -1237,10 +1235,15 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
         sym = SymAlloc();
         sym->name = name;
         sym->sb->attribs.inheritable.used = true;
-        sym->sb->declfile = sym->sb->origdeclfile = currentLex->errfile;
-        sym->sb->declline = sym->sb->origdeclline = currentLex->errline;
-        sym->sb->realdeclline = currentLex->linedata->lineno;
-        sym->sb->declfilenum = currentLex->linedata->fileindex;
+        if (currentLex)
+        {
+            sym->sb->declfile = sym->sb->origdeclfile = currentLex->sourceFileName;
+            sym->sb->declline = sym->sb->origdeclline = currentLex->sourceLineNumber;
+            sym->sb->declcharpos = currentLex->charindex;
+            sym->sb->realcharpos = currentLex->realcharindex;
+            sym->sb->realdeclline = currentLex->linedata->lineno;
+            sym->sb->declfilenum = currentLex->linedata->fileindex;
+        }
         getsym();
         if (MATCHKW(Keyword::openpa_))
         {
@@ -1294,21 +1297,21 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
             *tp = sym->tp;
             Dereference(&stdint, exp);
             SetLinkerNames(sym, Linkage::c_);
-            if (!nsv && (!strSym || !definingTemplate ||
+            if (!nsv && (!strSym || !templateDefinitionLevel ||
                             (!strSym->sb->templateLevel && strSym->tp->type != BasicType::templateselector_ &&
                             strSym->tp->type != BasicType::templatedecltype_)))
             {
                 char buf[4000];
                 buf[0] = 0;
                 auto currentPos = currentStream->Index();
-                placeHolder.Restore();
+                placeHolder.Backup();
                 while (currentStream->Index() != currentPos)
                 {
                     if (ISKW())
                     {
                         Utils::StrCat(buf, currentLex->kw->name);
                     }
-                    else if (ISID(find))
+                    else if (ISID())
                     {
                         Utils::StrCat(buf, currentLex->value.s.a);
                     }
@@ -1428,7 +1431,7 @@ static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool
             tp1->InstantiateDeferred();
             if (!(*tp)->CompatibleType(tp1))
             {
-                if (!definingTemplate)
+                if (!templateDefinitionLevel)
                     error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
             }
             else if ((*tp)->IsStructured())
@@ -1456,7 +1459,7 @@ static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool
         *tp = &stdvoid;
     }
     else if (!(*tp)->IsStructured() || (points && !typein->IsPtr()) ||
-             (parsingTrailingReturnOrUsing && (*tp)->IsStructured() && definingTemplate && !instantiatingTemplate &&
+             (processingTrailingReturnOrUsing && (*tp)->IsStructured() && IsDefiningTemplate() &&
               (*tp)->BaseType()->sp->sb->templateLevel))
     {
         if (Optimizer::cparams.prm_cplusplus && ISKW() && (currentLex->kw->tokenTypes & TT_BASETYPE))
@@ -1509,7 +1512,7 @@ static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool
             }
             *tp = &stdvoid;
         }
-        else if (definingTemplate && Optimizer::cparams.prm_cplusplus)
+        else if (templateDefinitionLevel && Optimizer::cparams.prm_cplusplus)
         {
             *exp = MakeExpression(points ? ExpressionNode::pointsto_ : ExpressionNode::dot_, *exp);
             EXPRESSION** ptr = &(*exp)->right;
@@ -1571,9 +1574,8 @@ static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool
             SYMBOL* sp2 = nullptr;
             if (Optimizer::cparams.prm_cplusplus)
             {
-                enclosingDeclarations.Add((*tp)->BaseType()->sp);
+                DeclarationScope scope((*tp)->BaseType()->sp);
                 id_expression(funcsp, &sp2, nullptr, nullptr, &isTemplate, false, true, nullptr, 0, 0);
-                enclosingDeclarations.Drop();
             }
             else
             {
@@ -1581,7 +1583,7 @@ static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool
             }
             if (!sp2)
             {
-                if (!definingTemplate || !(*tp)->BaseType()->sp->sb->templateLevel)
+                if (!templateDefinitionLevel || !(*tp)->BaseType()->sp->sb->templateLevel)
                     errorNotMember((*tp)->BaseType()->sp, nullptr, currentLex->value.s.a ? currentLex->value.s.a : "unknown");
                 getsym();
                 while (ISID())
@@ -1853,7 +1855,7 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
                     }
                     else
                     {
-                        if (sp->sb->templateLevel && !definingTemplate && sp->templateParams)
+                        if (sp->sb->templateLevel && !templateDefinitionLevel && sp->templateParams)
                         {
                             sp = TemplateFunctionInstantiate(sp, false);
                         }
@@ -2125,7 +2127,7 @@ static void expression_bracket( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                 if (!(*tp)->array && !(*tp)->vla)
                     Dereference(*tp, exp);
             }
-            else if (!definingTemplate || (*tp)->BaseType()->type != BasicType::templateselector_)
+            else if (!templateDefinitionLevel || (*tp)->BaseType()->type != BasicType::templateselector_)
             {
                 if (IsPacking())
                 {
@@ -2498,7 +2500,7 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
             if (!p->exp)
                 p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
             optimize_for_constants(&p->exp);
-            if ((!definingTemplate || instantiatingTemplate) && p->tp && p->tp->type == BasicType::templateselector_)
+            if ((!IsDefiningTemplate()) && p->tp && p->tp->type == BasicType::templateselector_)
                 p->tp = LookupTypeFromExpression(p->exp, nullptr, false);
             if (finish != Keyword::closepa_)
             {
@@ -2537,7 +2539,7 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
                 {
                     // lose p
                     getsym();
-                    if (definingTemplate)
+                    if (templateDefinitionLevel)
                     {
                         (*lptr)->push_back(p);
                         p->exp->packedfunc = true;
@@ -2554,7 +2556,7 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
                 }
                 else
                 {
-                    // fixme            if (toErr && argumentNesting <= 1)
+                    // fixme            if (toErr && argumentNestingLevel <= 1)
                     //                        checkUnpackedExpression(p->exp);
                     (*lptr)->push_back(p);
                 }
@@ -2586,21 +2588,21 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
 }
 void getInitList( SYMBOL* funcsp, std::list<Argument*>** owner)
 {
-    argumentNesting++;
+    argumentNestingLevel++;
     getInitInternal(funcsp, owner, Keyword::end_, false, true, true, 0);
-    argumentNesting--;
+    argumentNestingLevel--;
 }
 void  getArgs( SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack, int flags)
 {
-    argumentNesting++;
-    getInitInternal(funcsp, &funcparams->arguments, finish, true, allowPack, argumentNesting == 1, flags);
-    argumentNesting--;
+    argumentNestingLevel++;
+    getInitInternal(funcsp, &funcparams->arguments, finish, true, allowPack, argumentNestingLevel == 1, flags);
+    argumentNestingLevel--;
 }
 void GetConstructorInitializers( SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack)
 {
-    argumentNesting++;
+    argumentNestingLevel++;
     getInitInternal(funcsp, &funcparams->arguments, finish, true, allowPack, false, 0);
-    argumentNesting--;
+    argumentNestingLevel--;
 }
 static int simpleDerivation(EXPRESSION* exp)
 {
@@ -3244,7 +3246,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
     if (it != itend && (*it)->sb->thisPtr)
         ++it;
     while (it != itend && (itl != itle || (*it)->sb->init != nullptr ||
-                           ((!definingTemplate || instantiatingTemplate) && initTokenStreams.get(*it) != nullptr)))
+                           ((!IsDefiningTemplate()) && initTokenStreams.get(*it) != nullptr)))
     {
         SYMBOL* sym = *it;
         Argument* p;
@@ -4427,7 +4429,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
             funcparams->fcall = *exp;
             *exp = MakeExpression(funcparams);
         }
-        else if (!definingTemplate)
+        else if (!templateDefinitionLevel)
         {
             error(ERR_CALL_OF_NONFUNCTION);
         }
@@ -4458,7 +4460,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
         }
     }
 
-    if (/*(!definingTemplate || instantiatingTemplate) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
+    if (/*(!IsDefiningTemplate()) &&*/ funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(funcsp, funcparams->sp, tp, exp))
         return;
 
@@ -4466,7 +4468,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
     {
         getArgs(funcsp, funcparams, Keyword::closepa_, true, flags);
     }
-    if (funcparams->astemplate && (argumentNesting || inStaticAssert))
+    if (funcparams->astemplate && (argumentNestingLevel || inStaticAssert))
     {
         // if we hit a packed template param here, then this is going to be a candidate
         // for some other function's packed expression
@@ -4530,8 +4532,8 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
         funcExpr.v.func = funcparams;
         if (funcparams->sp->sb && funcparams->sp->sb->storage_class == StorageClass::overloads_ &&
             (funcparams->sp->tp->type != BasicType::aggregate_ || funcparams->sp->tp->syms->size() < 2 ||
-             (!parsingTrailingReturnOrUsing && (!MATCHKW(Keyword::ellipse_) || unpackingTemplate) &&
-              (!(flags & _F_INDECLTYPE) || !inTemplateArgs || unpackingTemplate || !hasPackedExpression(&funcExpr, true)))))
+             (!processingTrailingReturnOrUsing && (!MATCHKW(Keyword::ellipse_) || unpackingTemplate) &&
+              (!(flags & _F_INDECLTYPE) || !processingTemplateArgs || unpackingTemplate || !hasPackedExpression(&funcExpr, true)))))
         {
             Type* tp1;
             // note at this pointer the arglist does NOT have the this pointer,
@@ -4658,7 +4660,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
             }
             else
             {
-                if (!definingTemplate && !(flags & _F_INDECLTYPE))
+                if (!templateDefinitionLevel && !(flags & _F_INDECLTYPE))
                     errortype(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, *tp, nullptr);
             }
         }
@@ -4676,9 +4678,9 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
                         doit = !!arg->tp->templateParam->second->byPack.pack;
                 }
             }
-            if (doit && !definingTemplate && !(flags & _F_INDECLTYPE) && (!MATCHKW(Keyword::ellipse_) || unpackingTemplate))
+            if (doit && !templateDefinitionLevel && !(flags & _F_INDECLTYPE) && (!MATCHKW(Keyword::ellipse_) || unpackingTemplate))
                 error(ERR_CALL_OF_NONFUNCTION);
-            if ((!definingTemplate || instantiatingTemplate) && (flags & _F_INDECLTYPE))
+            if ((!IsDefiningTemplate()) && (flags & _F_INDECLTYPE))
                 *tp = &stdany;
         }
     }
@@ -4751,7 +4753,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
                 std::list<Argument*>* temp2 = &temp1;
                 if (initializerListType)
                 {
-                    if (funcparams->sp->sb->constexpression && (argumentNesting == 0 && !inStaticAssert))
+                    if (funcparams->sp->sb->constexpression && (argumentNestingLevel == 0 && !inStaticAssert))
                     {
                         EXPRESSION* node = MakeExpression(funcparams);
                         if (EvaluateConstexprFunction(node))
@@ -4888,7 +4890,13 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
                 funcparams->ascall = true;
                 funcparams->functp = *tp;
 
+                auto tp2 = *tp;
+                while (tp2->btp) tp2 = tp2->btp;
                 *tp = ResolveTemplateSelectors((*tp)->BaseType()->sp, (*tp)->BaseType()->btp);
+                if (tp2->type == BasicType::templateparam_ && tp2->templateParam->second->byClass.val)
+                {
+                    *tp= tp2->templateParam->second->byClass.val;
+                }
                 if ((*tp)->IsRef())
                 {
                     auto reftype = (*tp)->type;
@@ -5014,7 +5022,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
                 }
                 GetAssignDestructors(&funcparams->destructors, *exp);
             }
-            else if (definingTemplate && !instantiatingTemplate && (*tp)->type == BasicType::aggregate_)
+            else if (IsDefiningTemplate() && (*tp)->type == BasicType::aggregate_)
             {
                 *exp = MakeExpression(ExpressionNode::funcret_, *exp);
                 *tp = Type::MakeType(BasicType::templatedecltype_);
@@ -6659,9 +6667,9 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                 }
                             }
                         }
-                        //  fixme                      else if (!inTemplateArgs)
+                        //  fixme                      else if (!processingTemplateArgs)
                         //                       {
-                        //                          if (argumentNesting <= 1)
+                        //                          if (argumentNestingLevel <= 1)
                         //                           checkUnpackedExpression(*exp);
                         //                 }
                         needkw(Keyword::closepa_);
@@ -7025,7 +7033,7 @@ static void expression_sizeof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 *tp = &stdunsigned;
                 *exp = MakeIntExpression(ExpressionNode::c_i_, 1);
             }
-            else if (definingTemplate)
+            else if (templateDefinitionLevel)
             {
                 *exp = MakeIntExpression(ExpressionNode::sizeofellipse_, 0);
                 (*exp)->v.templateParam = (*tp)->templateParam;
@@ -7203,7 +7211,7 @@ static void expression_ampersand( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSI
                 if ((exp1)->type != ExpressionNode::const_ && exp1->type != ExpressionNode::assign_)
                     if (!IsLValue(exp1))
                         if (Optimizer::cparams.prm_ansi || !IsCastValue(exp1))
-                            if (!definingTemplate || instantiatingTemplate || exp1->type != ExpressionNode::templateselector_)
+                            if (!IsDefiningTemplate() || exp1->type != ExpressionNode::templateselector_)
                                 error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
             if (IsLValue(exp1))
             {
@@ -7292,7 +7300,7 @@ static void expression_ampersand( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSI
             {
                 if (!btp->array && !btp->vla && !btp->IsStructured() && btp->BaseType()->type != BasicType::memberptr_ &&
                     btp->BaseType()->type != BasicType::templateparam_)
-                    if (!definingTemplate || instantiatingTemplate || (*exp)->type != ExpressionNode::templateselector_)
+                    if (!IsDefiningTemplate() || (*exp)->type != ExpressionNode::templateselector_)
                         error(ERR_LVALUE);
             }
             if (btp->type != BasicType::memberptr_)
@@ -7324,7 +7332,7 @@ static void expression_deref( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int f
         ;
         if (!(*tp)->IsPtr())
         {
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
                 error(ERR_DEREF);
             Dereference(&stdpointer, exp);
         }
@@ -8857,9 +8865,9 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                     }
                     else
                     {
-                        ++inAssignRHS;
+                        ++assigningRHS;
                         expression_assign(funcsp, *tp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
-                        --inAssignRHS;
+                        --assigningRHS;
                         if (!needkw(Keyword::end_))
                         {
                             errskim(skim_end);
@@ -8869,9 +8877,9 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                 }
                 else
                 {
-                    ++inAssignRHS;
+                    ++assigningRHS;
                     expression_assign(funcsp, *tp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
-                    --inAssignRHS;
+                    --assigningRHS;
                 }
                 break;
             case Keyword::asplus_:
@@ -8896,9 +8904,9 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         --*currentStream;
                     return;
                 }
-                ++inAssignRHS;
+                ++assigningRHS;
                 expression_assign(funcsp, *tp, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
-                --inAssignRHS;
+                --assigningRHS;
                 break;
             case Keyword::asmod_:
             case Keyword::asleftshift_:
@@ -8922,9 +8930,9 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         --*currentStream;
                     return;
                 }
-                ++inAssignRHS;
+                ++assigningRHS;
                 expression_assign(funcsp, nullptr, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
-                --inAssignRHS;
+                --assigningRHS;
                 break;
             default:
                 return;

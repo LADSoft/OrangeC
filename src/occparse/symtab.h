@@ -139,7 +139,7 @@ inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
     {
         if (IsCompiler() || this != CompletionCompiler::ccSymbols)
         {
-            if (!structLevel || !definingTemplate)
+            if (!structLevel || !templateDefinitionLevel)
             {
                 SYMBOL* sym = search(this, in->name);
                 if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)

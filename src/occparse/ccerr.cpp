@@ -134,7 +134,7 @@ void EnterInstantiation(SYMBOL* sym, bool symDirect)
 {
     if (!symDirect)
     {
-        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(currentLex->errfile, currentLex->errline, sym));
+        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(currentLex->sourceFileName, currentLex->sourceLineNumber, sym));
     }
     else
     {
@@ -242,7 +242,8 @@ void DisableTrivialWarnings()
     Warning::Instance()->Clear();
     if (!Optimizer::cparams.prm_warning)
         for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
-            Warning::Instance()->SetFlag(i, Warning::Disable);
+            if (errors[i].level & CE_WARNING)
+                Warning::Instance()->SetFlag(i, Warning::Disable);
     if (!Optimizer::cparams.prm_extwarning)
         for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
             if (errors[i].level & CE_TRIVIALWARNING)
@@ -324,7 +325,7 @@ static bool alwaysErr(int err)
             return false;
     }
 }
-static bool ignoreErrdefiningTemplate(int err)
+static bool ignoreErrtemplateDefinitionLevel(int err)
 {
     switch (err)
     {
@@ -399,8 +400,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         if (currentLex)
         {
-            file = currentLex->errfile;
-            line = currentLex->errline;
+            file = currentLex->sourceFileName;
+            line = currentLex->sourceLineNumber;
         }
         else
         {
@@ -413,7 +414,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     const char* listerr;
     char nameb[265], *name = nameb;
     if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs ||
-        (definingTemplate && !instantiatingTemplate && ignoreErrdefiningTemplate(err)))
+        (IsDefiningTemplate() && ignoreErrtemplateDefinitionLevel(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
@@ -423,8 +424,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         if (!contextStack.empty() && currentStream->get(currentStream->Index())->type != LexType::none_)
         {
             auto index = currentStream->Index() - 1;
-            line = currentStream->get(index)->errline;
-            file = currentStream->get(index)->errfile;
+            line = currentStream->get(index)->sourceLineNumber;
+            file = currentStream->get(index)->sourceFileName;
         }
         else
         {
@@ -884,7 +885,7 @@ void errskim( Keyword* skimlist, bool assumeTemplate)
         if (!bal)
         {
             int i;
-            Keyword kw = KW(currentLex);
+            Keyword kw = KW();
             for (i = 0; skimlist[i] != Keyword::none_; i++)
                 if (kw == skimlist[i])
                     return;
@@ -2036,7 +2037,7 @@ static bool HasConstexprConstructor(Type* tp)
 }
 void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         for (auto sym : *cons->tp->syms)
         {
@@ -2065,7 +2066,7 @@ void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 }
 bool MustSpecialize(const char* name)
 {
-    if (noNeedToSpecialize || (definingTemplate && !instantiatingTemplate))
+    if (noNeedToSpecialize || IsDefiningTemplate())
         return false;
     for (auto&& sst : enclosingDeclarations)
     {
@@ -2087,7 +2088,7 @@ void SpecializationError(SYMBOL* sym)
 }
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         for (auto cur : *sym->tp->syms)
         {

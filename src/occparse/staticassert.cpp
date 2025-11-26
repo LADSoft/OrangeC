@@ -48,8 +48,8 @@ namespace Parser
         auto it = structureStaticAsserts.find(sym);
         if (it != structureStaticAsserts.end())
         {
-            int n = PushTemplateNamespace(sym);
-            enclosingDeclarations.Add(sym);
+            TemplateNamespaceScope namespaceScope(sym);
+            DeclarationScope(sym);
             auto hold = it->second;
             for (auto deferred : hold)
             {
@@ -57,8 +57,6 @@ namespace Parser
                     handleStaticAssert();
                 });
             }
-            enclosingDeclarations.Drop();
-            PopTemplateNamespace(n);
         }
     }
     void handleStaticAssert()
@@ -92,7 +90,7 @@ namespace Parser
             expr2->left = expr->type == ExpressionNode::select_ ? expr->left : expr;
             optimize_for_constants(&expr2);
             inConstantExpression--;
-            if (!isarithmeticconst(expr2) && !definingTemplate)
+            if (!isarithmeticconst(expr2) && !templateDefinitionLevel)
                 error(ERR_CONSTANT_VALUE_EXPECTED);
             v = expr2->v.i;
 
@@ -128,7 +126,7 @@ namespace Parser
                 errskim(skim_closepa);
                 skip(Keyword::closepa_);
             }
-            else if (!v && (!definingTemplate))  // || instantiatingTemplate))
+            else if (!v && (!templateDefinitionLevel))  // || templateInstantiationLevel))
             {
                 errorstr(ERR_STATIC_ASSERT, buf);
             }

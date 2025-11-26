@@ -391,7 +391,7 @@ static void convertCallToTemplate(SYMBOL* func)
     if (func->templateParams->size())
         RequiresDialect::Feature(Dialect::cpp14, "Generic lambdas");
 
-    func->sb->templateLevel = definingTemplate;
+    func->sb->templateLevel = templateDefinitionLevel;
     func->sb->parentTemplate = func;
 }
 static SYMBOL* createPtrToCaller(SYMBOL* self)
@@ -461,7 +461,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         if (lambdas.front()->functp->IsAutoType())
             func->tp->BaseType()->btp = &stdauto;  // convert return type back to auto
         cloneTemplateParams(func);
-        func->sb->templateLevel = definingTemplate;
+        func->sb->templateLevel = templateDefinitionLevel;
         func->sb->parentTemplate = func;
         std::string val = "{return ___self->operator()(";
         for (auto sym : *lambdas.front()->func->tp->BaseType()->syms)
@@ -476,6 +476,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         getsym();
         auto stream = GetTokenStream(  true);
         bodyTokenStreams.set(func, stream);
+        bodyArgs.set(func, func->tp->BaseType()->syms);
         SetAlternateParse(false, "");
     }
     func->tp->UpdateRootTypes();
@@ -527,7 +528,7 @@ static void createConverter(SYMBOL* self)
         if (!f->arguments)
             f->arguments = argumentListFactory.CreateList();
         func->templateParams = caller->templateParams;
-        func->sb->templateLevel = definingTemplate;
+        func->sb->templateLevel = templateDefinitionLevel;
         func->sb->parentTemplate = func;
         func->tp->BaseType()->btp = Type::MakeType(BasicType::templatedecltype_);
         func->tp->BaseType()->btp->templateDeclType = MakeExpression(f);
@@ -563,8 +564,9 @@ static void createConverter(SYMBOL* self)
         getsym();
         auto stream = GetTokenStream( true);
         bodyTokenStreams.set(func, stream);
+        bodyArgs.set(func, func->tp->BaseType()->syms);
         SetAlternateParse(false, "");
-        func->sb->templateLevel = definingTemplate;
+        func->sb->templateLevel = templateDefinitionLevel;
         func->sb->parentTemplate = func;
     }
     func->tp->UpdateRootTypes();
@@ -595,7 +597,7 @@ static void finishClass(void)
     createConstructorsForLambda(lambdas.front()->cls);
     if (lambdas.front()->templateFunctions)
     {
-        definingTemplate++;
+        templateDefinitionLevel++;
         dontRegisterTemplate++;
         convertCallToTemplate(lambdas.front()->func);
     }
@@ -604,7 +606,7 @@ static void finishClass(void)
     createConverter(self);
     if (lambdas.front()->templateFunctions)
     {
-        definingTemplate--;
+        templateDefinitionLevel--;
         dontRegisterTemplate--;
     }
     if (!lambdas.front()->isMutable)
@@ -1063,9 +1065,9 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
         ParseAttributeSpecifiers(funcsp, true);
         if (MATCHKW(Keyword::noexcept_))
         {
-            funcLevel++;
+            funcNestingLevel++;
             TypeGenerator::ExceptionSpecifiers(funcsp, self->func, self->func->sb->storage_class);
-            funcLevel--;
+            funcNestingLevel--;
         }
         if (MATCHKW(Keyword::pointsto_))
         {
@@ -1098,22 +1100,30 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
     lambdas.front()->func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     lambdas.front()->func->sb->attribs.inheritable.isInline = true;
     lambdas.front()->templateFunctions = lambda_get_template_state(lambdas.front()->func);
-    enclosingDeclarations.Add(self->cls);
-    if (lambdas.front()->captureThis)
     {
-        if (lambdas.size() > 1)
+        DeclarationScope scope(self->cls);
+        if (lambdas.front()->captureThis)
         {
-            SYMBOL* parent = makeID(StorageClass::member_, &stdpointer, NULL, "$parent");
-            lambda_insert(parent, lambdas.front());
-        }
-        if (lambdas.front()->thisByVal)
-        {
-            if (lambdas.front()->enclosingFunc)
+            if (lambdas.size() > 1)
             {
-                auto ths =
-                    makeID(StorageClass::member_,
-                           lambda_type(lambdas.front()->enclosingFunc->tp->BaseType()->syms->front()->tp->BaseType()->btp, cmValue),
-                           NULL, "*this");
+                SYMBOL* parent = makeID(StorageClass::member_, &stdpointer, NULL, "$parent");
+                lambda_insert(parent, lambdas.front());
+            }
+            if (lambdas.front()->thisByVal)
+            {
+                if (lambdas.front()->enclosingFunc)
+                {
+                    auto ths =
+                        makeID(StorageClass::member_,
+                            lambda_type(lambdas.front()->enclosingFunc->tp->BaseType()->syms->front()->tp->BaseType()->btp, cmValue),
+                            NULL, "*this");
+                    SetLinkerNames(ths, Linkage::cdecl_);
+                    lambda_insert(ths, lambdas.front());
+                }
+            }
+            else
+            {
+                auto ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
                 SetLinkerNames(ths, Linkage::cdecl_);
                 lambda_insert(ths, lambdas.front());
             }
@@ -1124,32 +1134,26 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
             SetLinkerNames(ths, Linkage::cdecl_);
             lambda_insert(ths, lambdas.front());
         }
-    }
-    else
-    {
-        auto ths = makeID(StorageClass::member_, &stdpointer, NULL, "$this");
-        SetLinkerNames(ths, Linkage::cdecl_);
-        lambda_insert(ths, lambdas.front());
-    }
-    if (MATCHKW(Keyword::begin_))
-    {
-        auto stream = GetTokenStream(true);
-        bodyTokenStreams.set(self->func, stream);
-        if (!lambdas.front()->templateFunctions)
+        if (MATCHKW(Keyword::begin_))
         {
-            ParseOnStream(stream, [=]() {
-                SetLinkerNames(self->func, Linkage::cdecl_);
-                StatementGenerator sg(self->func);
-                sg.FunctionBody();
-                sg.BodyGen();
-            });
+            auto stream = GetTokenStream(true);
+            bodyTokenStreams.set(self->func, stream);
+            bodyArgs.set(self->func, self->func->tp->BaseType()->syms);
+            if (!lambdas.front()->templateFunctions)
+            {
+                ParseOnStream(stream, [=]() {
+                    SetLinkerNames(self->func, Linkage::cdecl_);
+                    StatementGenerator sg(self->func);
+                    sg.FunctionBody();
+                    sg.BodyGen();
+                    });
+            }
+        }
+        else
+        {
+            error(ERR_LAMBDA_FUNCTION_BODY_EXPECTED);
         }
     }
-    else
-    {
-        error(ERR_LAMBDA_FUNCTION_BODY_EXPECTED);
-    }
-    enclosingDeclarations.Drop();
     localNameSpace->front()->syms = self->oldSyms;
     localNameSpace->front()->tags = self->oldTags;
     finishClass();

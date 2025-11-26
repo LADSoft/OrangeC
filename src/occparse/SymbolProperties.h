@@ -71,6 +71,7 @@ private:
             hash = hash_string(hash, sym->name);
             hash = hash_string(hash, sym->sb->origdeclfile);
             hash = hash + (std::hash<int>()(sym->sb->origdeclline) << 1);
+            hash = hash + (std::hash<int>()(sym->sb->realcharpos) << 2);
             return hash;
         }
     private:
@@ -108,5 +109,6 @@ inline SymbolProperty<LexemeStream*> bodyTokenStreams;
 inline SymbolProperty<LexemeStream*> initTokenStreams;
 inline SymbolProperty<LexemeStream*> noExceptTokenStreams;
 inline SymbolProperty<SYMBOL*> functionDefinitions;
+inline SymbolProperty<SymbolTable<SYMBOL>*> bodyArgs;
 
 }  // namespace Parser

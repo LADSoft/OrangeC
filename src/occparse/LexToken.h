@@ -50,6 +50,7 @@ private:
     int origPosition;
     int currentPosition = 0;
     LexemeStream* tokenContext;
+    Lexeme* backupLex = nullptr;
 };
 struct LexemeTokenFactory
 {

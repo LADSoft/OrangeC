@@ -93,7 +93,8 @@ class OS
     static std::string GetFullPath(const std::string& filename);
     static int GetProcessId();
     static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
-
+    static std::string LookupShellNames();
+    static bool IsUnixLikeShell(const std::string&);
   private:
     static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;

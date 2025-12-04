@@ -233,10 +233,14 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         return 0;
     int rv = 0;
     std::string cmd = cmdin;
-    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
+    std::string varname = OS::LookupShellNames();
+    if (!OS::IsUnixLikeShell(varname))
     {
+        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command before NormalizeFileName: ", cmdin);
+
         cmd = OS::NormalizeFileName(cmdin);
+        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command after NormalizeFileName: ", cmd);
+
     }
     std::string make;
     Variable* v1 = VariableContainer::Instance()->Lookup("MAKE");

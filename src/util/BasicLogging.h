@@ -39,13 +39,14 @@ class BasicLogger
         if (verbosity >= (int)verbositylevel)
         {
             // I'd really love something like fmt::format here, or std::format, but alas, c++14 vs c++20
-            std::cout << prologue;
             auto arr = {stringify(args)...};
+            // Add everything together so that there's no chance of it being split up
+            std::string total = prologue + " ";
             for (auto&& val : arr)
             {
-                std::cout << val;
+                total += val;
             }
-            std::cout << std::endl;
+            std::cout << total << std::endl;
         }
     }
     template <typename... Args>

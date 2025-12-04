@@ -323,4 +323,5 @@ std::string WINDOWSJobServer::PassThroughCommandString()
 bool WINDOWSJobServer::TryTakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 bool WINDOWSJobServer::TakeNewJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
 bool WINDOWSJobServer::ReleaseJob() { throw std::runtime_error("Windows job servers are unavailable on POSIX"); }
+WINDOWSJobServer::~WINDOWSJobServer() = default;
 }  // namespace OMAKE

@@ -111,7 +111,7 @@ void OS::TerminateAll()
 #endif
     }
 }
-static bool is_unixlike_shell(const std::string& str)
+bool OS::IsUnixLikeShell(const std::string& str)
 {
     using namespace std::string_literals;
     std::array arr = {"cmd"s, "cmd.exe"s, "command"s, "command.com"s};
@@ -123,6 +123,28 @@ static bool is_unixlike_shell(const std::string& str)
         }
     }
     return true;
+}
+static Variable* var_lookup_shell_names()
+{
+    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("MSYSCON");
+    }
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("COMSPEC");
+    }
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("ComSpec");
+    }
+    return v;
+}
+std::string OS::LookupShellNames()
+{
+    Variable* v = var_lookup_shell_names();
+    return v ? v->GetValue() : "";
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
@@ -418,20 +440,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 #ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
 
-    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
-    {
-        v = VariableContainer::Instance()->Lookup("COMSPEC");
-        if (!v)
-        {
-            v = VariableContainer::Instance()->Lookup("ComSpec");
-        }
-        if (!v)
-        {
-            OS::WriteErrorToConsole("Somehow both SHELL and COMSPEC are undefined!");
-            throw std::runtime_error("No valid shells found");
-        }
-    }
+    Variable* v = var_lookup_shell_names();
     std::string shell = v->GetValue();
     std::string cmd = shell;
     if (v->GetFlavor() == Variable::f_recursive)
@@ -440,9 +449,10 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd = r.Evaluate();
     }
     bool asapp = true;
-    if (is_unixlike_shell(shell))
+    Variable* shell_flags = VariableContainer::Instance()->Lookup(".SHELLFLAGS");
+    if (IsUnixLikeShell(shell))
     {
-        cmd = v->GetValue() + " -c ";
+        cmd = v->GetValue() + " " + shell_flags->GetValue() + " ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v && v->GetValue().find_first_of("\\") != std::string::npos)
@@ -458,7 +468,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     }
     else
     {
-        cmd += " /c ";
+        cmd += " " + shell_flags->GetValue() + " ";
     }
     cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
@@ -747,27 +757,15 @@ std::string OS::SpawnWithRedirect(const std::string command)
 #ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
     std::string rv;
-    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
-    {
-        v = VariableContainer::Instance()->Lookup("COMSPEC");
-        if (!v)
-        {
-            v = VariableContainer::Instance()->Lookup("ComSpec");
-        }
-        if (!v)
-        {
-            OS::WriteErrorToConsole("Somehow both SHELL and COMSPEC are undefined!");
-            throw std::runtime_error("No valid shells found");
-        }
-    }
+    Variable* v = var_lookup_shell_names();
+
     std::string cmd = v->GetValue();
     if (v->GetFlavor() == Variable::f_recursive)
     {
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    if (is_unixlike_shell(v->GetValue()))
+    if (IsUnixLikeShell(v->GetValue()))
     {
         cmd = v->GetValue() + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
@@ -1056,8 +1054,8 @@ std::string OS::NormalizeFileName(const std::string file)
     // with '\\' when not in a string
     int stringchar = 0;
     bool escape = false;
-    auto shell_var = VariableContainer::Instance()->Lookup("SHELL");
-    bool counts_as_sh_exe = shell_var ? true : false;
+    auto shell_var = OS::LookupShellNames();
+    bool counts_as_sh_exe = IsUnixLikeShell(shell_var);
     OrangeC::Utils::BasicLogger::extremedebug("Counts as sh_exe in NormalizeFileName: " + std::to_string(counts_as_sh_exe));
     for (size_t i = 0; i < name.size(); i++)
     {

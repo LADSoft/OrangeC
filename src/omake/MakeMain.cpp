@@ -585,14 +585,8 @@ int MakeMain::Run(int argc, char** argv)
         OS::InitJobServer();
         SetVariable("MAKE", proper_make.c_str(), Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-        if (!v)
+        if (!OS::IsUnixLikeShell(OS::LookupShellNames()))
         {
-            v = VariableContainer::Instance()->Lookup("MSYSCON");  // detect MSYS version of comspec
-            if (!v)
-                v = VariableContainer::Instance()->Lookup("COMSPEC");
-            if (!v)
-                v = VariableContainer::Instance()->Lookup("ComSpec");
-
             SetVariable(".SHELLFLAGS", "/c", Variable::o_environ, false);
         }
         else

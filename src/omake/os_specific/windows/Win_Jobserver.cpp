@@ -95,4 +95,5 @@ std::string POSIXJobServer::PassThroughCommandString()
 {
     throw std::runtime_error("POSIX jobservers are not supported on windows");
 }
+POSIXJobServer::~POSIXJobServer() = default;
 }  // namespace OMAKE

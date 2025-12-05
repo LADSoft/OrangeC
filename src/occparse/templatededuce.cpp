@@ -2064,7 +2064,7 @@ void CTADLookup(SYMBOL* funcsp, EXPRESSION** exp, Type** templateType, CallSite*
     if (funcparams->arguments)
     {
         auto exp_in = *exp;
-        bool toconst = (*templateType)->IsConst(), tovol = (*templateType)->IsConst();
+        bool toconst = (*templateType)->IsConst(), tovol = (*templateType)->IsVolatile();
         Type* thstp = Type::MakeType(BasicType::pointer_, (*templateType)->BaseType());
         if (toconst)
             thstp = Type::MakeType(BasicType::const_, thstp);

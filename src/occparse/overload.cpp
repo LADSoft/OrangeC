@@ -4572,7 +4572,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                 }
             }
             SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, args->arguments->size(), n, &funcList[0]);
-            WeedTemplates(&spList[0], n, args, nullptr);
+//            WeedTemplates(&spList[0], n, args, nullptr);
             for (int i = 0; i < n && !found1; i++)
             {
                 if (spList[i] && !spList[i]->sb->deleted)

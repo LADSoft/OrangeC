@@ -5576,7 +5576,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
         {
             sym1 = sp;
             auto sym2 = sym1->tp->syms->front();
-            if (sym1->tp->syms->size() == 1 && sym1->tp->type == tpb)
+            if (sym1->tp->syms->size() == 1 && sym2->tp->type == tpb)
             {
                 found = true;
                 break;

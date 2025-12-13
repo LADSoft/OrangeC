@@ -236,10 +236,10 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     std::string varname = OS::LookupShellNames();
     if (!OS::IsUnixLikeShell(varname))
     {
-        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command before NormalizeFileName: ", cmdin);
+        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command before NormalizeFileName: ", cmdin);
 
         cmd = OS::NormalizeFileName(cmdin);
-        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command after NormalizeFileName: ", cmd);
+        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command after NormalizeFileName: ", cmd);
 
     }
     std::string make;

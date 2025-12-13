@@ -95,6 +95,7 @@ class OS
     static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
     static std::string LookupShellNames();
     static bool IsUnixLikeShell(const std::string&);
+    static std::string AbsPath(const std::string&);
   private:
     static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;

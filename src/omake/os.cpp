@@ -411,6 +411,27 @@ void OS::JobRundown()
     if (jobFile.size())
         RemoveFile(jobFile);
 }
+// NOTE: This only works on paths that actually currently exist.
+// This is a problem.
+// This is (hopefully) temporary as we switch to a newer libcxx however
+std::string OS::AbsPath(const std::string& str)
+{
+#ifdef _WIN32
+    char* buf = _fullpath(nullptr, str.c_str(), 0);
+    std::string outstr(buf);
+    free(buf);
+    return outstr;
+#else
+    char* buf = realpath(str.c_str(), nullptr);
+    if (buf == nullptr)
+    {
+        throw std::system_error(errno, std::system_category());
+    }
+    std::string outstr(buf);
+    free(buf);
+    return outstr;
+#endif
+}
 int OS::GetCurrentJobs() { return localJobServer->GetCurrentJobs(); }
 #ifdef TARGET_OS_WINDOWS
 void spin_and_report_single_process(HANDLE handle, DWORD ms_wait, const std::string& command_to_print, DWORD procid)

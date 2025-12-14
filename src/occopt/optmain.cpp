@@ -61,6 +61,7 @@
 #include "localprotect.h"
 
 // #define x64_compiler
+#if 0
 #ifndef __SANITIZE_ADDRESS__
 #ifndef x64_compiler
 // this overloading of operator new/delete is a speed optimization
@@ -126,6 +127,7 @@ void operator delete(void* p) noexcept
     }
 }
 
+#endif
 #endif
 #endif
 
@@ -394,35 +396,40 @@ void ProcessFunction(FunctionData* fd)
 }
 void ProcessFunctions()
 {
+    std::deque<BaseData*> queue;
     for (auto v : baseData)
     {
         if (v->type == DT_FUNC)
         {
-            temporarySymbols = v->funcData->temporarySymbols;
-            functionVariables = v->funcData->variables;
-            computedLabels = v->funcData->computedLabels;
-            blockCount = v->funcData->blockCount;
-            exitBlock = v->funcData->exitBlock;
-            fastcallAlias = v->funcData->fastcallAlias;
-            tempCount = v->funcData->tempCount;
-            dontOptimizeFunction = v->funcData->dontOptimize;
-            intermed_head = v->funcData->instructionList;
-            intermed_tail = intermed_head;
-            while (intermed_tail && intermed_tail->fwd)
-                intermed_tail = intermed_tail->fwd;
-            fltexp = v->funcData->fltexp;
-            currentFunction = v->funcData->name;
-            loadHash = v->funcData->loadHash;
-            ProcessFunction(v->funcData);
-            v->funcData->temporarySymbols = temporarySymbols;
-            v->funcData->variables = functionVariables;
-            v->funcData->blockCount = blockCount;
-            v->funcData->exitBlock = exitBlock;
-            v->funcData->fastcallAlias = fastcallAlias;
-            v->funcData->tempCount = tempCount;
-            v->funcData->instructionList = intermed_head;
-            v->funcData->fltexp = fltexp;
+            queue.push_back(v);
         }
+    }
+    for (auto v : queue)
+    {
+        temporarySymbols = v->funcData->temporarySymbols;
+        functionVariables = v->funcData->variables;
+        computedLabels = v->funcData->computedLabels;
+        blockCount = v->funcData->blockCount;
+        exitBlock = v->funcData->exitBlock;
+        fastcallAlias = v->funcData->fastcallAlias;
+        tempCount = v->funcData->tempCount;
+        dontOptimizeFunction = v->funcData->dontOptimize;
+        intermed_head = v->funcData->instructionList;
+        intermed_tail = intermed_head;
+        while (intermed_tail && intermed_tail->fwd)
+            intermed_tail = intermed_tail->fwd;
+        fltexp = v->funcData->fltexp;
+        currentFunction = v->funcData->name;
+        loadHash = v->funcData->loadHash;
+        ProcessFunction(v->funcData);
+        v->funcData->temporarySymbols = temporarySymbols;
+        v->funcData->variables = functionVariables;
+        v->funcData->blockCount = blockCount;
+        v->funcData->exitBlock = exitBlock;
+        v->funcData->fastcallAlias = fastcallAlias;
+        v->funcData->tempCount = tempCount;
+        v->funcData->instructionList = intermed_head;
+        v->funcData->fltexp = fltexp;
     }
 }
 bool LoadFile(SharedMemory* parserMem)

@@ -2432,7 +2432,7 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                             if (so != s && ((so->sb->init && s->sb->init) ||  (io && i && i != io)))
                                 errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
                             if (!err && last && last->sb->init &&
-                                !(so->sb->init || s->sb->init || initTokenStreams.get(s)))
+                                !(so->sb->init || s->sb->init || initTokenStreams.get(s) || initTokenStreams.get(so)))
                             {
                                 err = true;
                                 errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
@@ -2853,8 +2853,18 @@ static bool CopyFunctionArguments(SYMBOL* spi, SYMBOL* sp)
             ++dest;
         while (src != srce && dest != deste)
         {
-            changed = changed || !strcmp((*dest)->name, (*src)->name);
-            (*dest)->name = (*src)->name;
+            bool ischanged = strcmp((*dest)->name, (*src)->name) != 0;
+            changed = changed || !ischanged;;
+            if ((*src)->sb->anonymous)
+            {
+                (*src)->name = (*dest)->name;
+            }
+            else if (ischanged)
+            {
+                auto tokens = initTokenStreams.get(*dest);
+                (*dest)->name = (*src)->name;
+                initTokenStreams.set(*dest, tokens);
+            }
             ++src;
             ++dest;
         }

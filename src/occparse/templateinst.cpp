@@ -2476,8 +2476,6 @@ void SwapMaprocessingTemplateArgs(SYMBOL* cls)
 }
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args, bool isExtern)
 {
-    if (!strcmp(sym->name, "_MetaBase"))
-        printf("hi");
     std::list<TEMPLATEPARAMPAIR>::iterator ita, itae;
     if (args)
     {
@@ -5067,7 +5065,7 @@ void SpecifyTemplateSelector(std::vector<TEMPLATESELECTOR>** rvs, std::vector<TE
                             bool replaced = false;
                             x->back().second = Allocate<TEMPLATEPARAM>();
                             *x->back().second = *ittp->second;
-                            if (!expression && ittp->second->type == TplType::int_ && ittp->second->byNonType.dflt)
+                            if (ittp->second->type == TplType::int_ && ittp->second->byNonType.dflt)
                             {
                                 x->back().second->byNonType.dflt = copy_expression(x->back().second->byNonType.dflt);
                                 replaced = ReplaceIntAliasParams(&x->back().second->byNonType.dflt, sym, origTemplate, origUsing);
@@ -6241,10 +6239,6 @@ SYMBOL* ParseLibcxxAliases(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
 {
-    if (!strcmp(sp->name, "_EnableExplicitTupleLikeConstructor") && !IsDefiningTemplate())
-        printf("hi");
-    if (!strcmp(sp->name, "_EnableImplicitTupleLikeConstructor") && !IsDefiningTemplate())
-        printf("hi");
     std::list<TEMPLATEPARAMPAIR> temp;
     std::list<std::pair<SYMBOL*, SYMBOL*>> newNames;
     if (!args)
@@ -6323,8 +6317,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
             Type tp1 = {};
             Type::MakeType(tp1, BasicType::templateselector_);
             tp1.sp = rv;
-            if (!strcmp((*rv->sb->templateSelector)[1].sp->name, "_MetaBase") && !IsDefiningTemplate())
-                printf("hi");
             if (!parsingSpecializationDeclaration)
                 rv->tp = SynthesizeType(&tp1, args, false);
             if (rv->tp->IsStructured())

@@ -4921,9 +4921,6 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 icsList.resize(n);
                 lenList.resize(n);
                 funcList.resize(n);
-                if (!strcmp(sp->name, ".bctr") && !strcmp(sp->sb->parentClass->name, "tuple"))
-                    if (++count3 == 2)
-                        printf("hi");
                 n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {

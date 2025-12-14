@@ -131,10 +131,6 @@ namespace Parser
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             if (!isTypename && ISID())
             {
-                if (currentLex->sourceLineNumber == 624 && strstr(currentLex->sourceFileName, "tuple"))
-                    printf("hi");
-                if (currentLex->sourceLineNumber == 634 && strstr(currentLex->sourceFileName, "tuple"))
-                    printf("hi");
                 LexemeStreamPosition placeHolder(currentStream);
                 getsym();
                 attributes oldAttribs = basisAttribs;

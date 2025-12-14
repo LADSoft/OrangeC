@@ -4346,92 +4346,99 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
         funcparams->fcall = exp_in->right;
         exp_in->right = MakeExpression(funcparams);
     }
-    else if (exp_in->type != ExpressionNode::callsite_ || (*tp)->IsFunctionPtr() || (*tp)->IsStructured())
+    else if (exp_in->type != ExpressionNode::callsite_ || (*tp)->IsFunctionPtr() || (*tp)->IsStructured()) 
     {
-        Type* tpx = *tp;
-        SYMBOL* sym;
-        funcparams = Allocate<CallSite>();
-        if (exp_in->type == ExpressionNode::templateselector_)
+        if (exp_in->type != ExpressionNode::templateselector_ || !processingTrailingReturnOrUsing)
         {
-            auto tsl = exp_in->v.templateSelector;
-            SYMBOL* ts = (*tsl)[1].sp;
-            SYMBOL* sp = ts;
-            if ((!sp->sb || !sp->sb->instantiated) && (*tsl)[1].isTemplate)
+            Type* tpx = *tp;
+            SYMBOL* sym;
+            funcparams = Allocate<CallSite>();
+            if (exp_in->type == ExpressionNode::templateselector_)
             {
-                std::list<TEMPLATEPARAMPAIR>* current = (*tsl)[1].templateParams;
-                sp = GetClassTemplate(ts, current, true);
-            }
-            if (sp && sp->tp->type == BasicType::templateselector_)
-            {
-                Type* tp = sp->tp;
-                tp = SynthesizeType(tp, nullptr, false);
-                if (tp && tp->IsStructured())
-                    sp = tp->BaseType()->sp;
-            }
-            sym = nullptr;
-            if (sp)
-            {
-                sp->tp->InstantiateDeferred();
-                sp = sp->tp->sp;
-                auto find = (*tsl).begin();
-                ++find;
-                ++find;
-                for (; find != (*tsl).end() && sp;)
+                auto tsl = exp_in->v.templateSelector;
+                SYMBOL* ts = (*tsl)[1].sp;
+                SYMBOL* sp = ts;
+                if ((!sp->sb || !sp->sb->instantiated) && (*tsl)[1].isTemplate)
                 {
-                    SYMBOL* spo = sp;
-                    if (!spo->tp->IsStructured())
-                        break;
-
-                    sp = search(spo->tp->syms, find->name);
-                    if (!sp)
-                    {
-                        sp = classdata(find->name, spo, nullptr, false, false);
-                        if (sp == (SYMBOL*)-1)
-                            sp = nullptr;
-                    }
-                    if (sp && sp->tp->type != BasicType::aggregate_ && sp->sb->access != AccessLevel::public_)
-                    {
-                        sp = nullptr;
-                        break;
-                    }
-                    auto it1 = find;
-                    ++it1;
-                    if (it1 == (*tsl).end() && sp)
-                    {
-                        funcparams->astemplate = find->isTemplate;
-                        funcparams->templateParams = LiftTemplateParams(find->templateParams);
-                    }
-                    ++find;
+                    std::list<TEMPLATEPARAMPAIR>* current = (*tsl)[1].templateParams;
+                    sp = GetClassTemplate(ts, current, true);
                 }
-                if (find == (*tsl).end())
-                    sym = sp;
+                if (sp && sp->tp->type == BasicType::templateselector_)
+                {
+                    Type* tp = sp->tp;
+                    tp = SynthesizeType(tp, nullptr, false);
+                    if (tp && tp->IsStructured())
+                        sp = tp->BaseType()->sp;
+                }
+                sym = nullptr;
+                if (sp)
+                {
+                    sp->tp->InstantiateDeferred();
+                    sp = sp->tp->sp;
+                    auto find = (*tsl).begin();
+                    ++find;
+                    ++find;
+                    for (; find != (*tsl).end() && sp;)
+                    {
+                        SYMBOL* spo = sp;
+                        if (!spo->tp->IsStructured())
+                            break;
+
+                        sp = search(spo->tp->syms, find->name);
+                        if (!sp)
+                        {
+                            sp = classdata(find->name, spo, nullptr, false, false);
+                            if (sp == (SYMBOL*)-1)
+                                sp = nullptr;
+                        }
+                        if (sp && sp->tp->type != BasicType::aggregate_ && sp->sb->access != AccessLevel::public_)
+                        {
+                            sp = nullptr;
+                            break;
+                        }
+                        auto it1 = find;
+                        ++it1;
+                        if (it1 == (*tsl).end() && sp)
+                        {
+                            funcparams->astemplate = find->isTemplate;
+                            funcparams->templateParams = LiftTemplateParams(find->templateParams);
+                        }
+                        ++find;
+                    }
+                    if (find == (*tsl).end())
+                        sym = sp;
+                }
+            }
+            else
+            {
+                if (tpx->type == BasicType::templateparam_)
+                {
+                    if (tpx->templateParam->second->type == TplType::typename_ && tpx->templateParam->second->byClass.val)
+                    {
+                        tpx = tpx->templateParam->second->byClass.val;
+                        if (tpx->sp && tpx->sp->sb->storage_class == StorageClass::typedef_)
+                            tpx = tpx->btp;
+                    }
+                }
+                if (tpx->IsPtr())
+                    tpx = tpx->BaseType()->btp;
+                sym = tpx->BaseType()->sp;
+            }
+            if (sym)
+            {
+                funcparams->sp = sym;
+                funcparams->functp = sym->tp;
+                funcparams->fcall = *exp;
+                *exp = MakeExpression(funcparams);
+            }
+            else if (!templateDefinitionLevel)
+            {
+                error(ERR_CALL_OF_NONFUNCTION);
             }
         }
         else
         {
-            if (tpx->type == BasicType::templateparam_)
-            {
-                if (tpx->templateParam->second->type == TplType::typename_ && tpx->templateParam->second->byClass.val)
-                {
-                    tpx = tpx->templateParam->second->byClass.val;
-                    if (tpx->sp && tpx->sp->sb->storage_class == StorageClass::typedef_)
-                        tpx = tpx->btp;
-                }
-            }
-            if (tpx->IsPtr())
-                tpx = tpx->BaseType()->btp;
-            sym = tpx->BaseType()->sp;
-        }
-        if (sym)
-        {
-            funcparams->sp = sym;
-            funcparams->functp = sym->tp;
-            funcparams->fcall = *exp;
-            *exp = MakeExpression(funcparams);
-        }
-        else if (!templateDefinitionLevel)
-        {
-            error(ERR_CALL_OF_NONFUNCTION);
+            funcparams = Allocate<CallSite>();
         }
     }
     else
@@ -4467,7 +4474,17 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
     if (!noLex)
     {
         getArgs(funcsp, funcparams, Keyword::closepa_, true, flags);
+        if ((*exp)->type == ExpressionNode::templateselector_ && processingTrailingReturnOrUsing)
+        {
+            (*exp)->v.templateSelector->back().arguments = funcparams->arguments;
+            (*exp)->v.templateSelector->back().asCall = true;
+        }
     }
+    if ((*exp)->type == ExpressionNode::templateselector_ && processingTrailingReturnOrUsing)
+    {
+        return;
+    }
+
     if (funcparams->astemplate && (argumentNestingLevel || inStaticAssert))
     {
         // if we hit a packed template param here, then this is going to be a candidate

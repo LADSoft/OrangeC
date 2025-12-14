@@ -261,21 +261,24 @@ bool SameTemplate(Type* P, Type* A, bool quals)
                                                                                         : PL->second->byClass.dflt;
                     Type* pa = PA->second->byClass.val /*&& !PL->second->byClass.dflt*/ ? PA->second->byClass.val
                                                                                         : PA->second->byClass.dflt;
-                    if (!pl || !pa)
-                        break;
-                    if ((PAd || PA->second->byClass.val) && (PLd || PL->second->byClass.val) && !templateCompareTypes(pa, pl, true))
+                    if ((pl && pa) || !PL->second->byClass.txtdflt || !PA->second->byClass.txtdflt)
                     {
-                        break;
-                    }
-                    // now make sure the qualifiers match...
-                    if (quals)
-                    {
-                        int n = 0;
-                        e_cvsrn xx[5];
-                        getQualConversion(pl, pa, nullptr, &n, xx);
-                        if (n != 1 || xx[0] != CV_IDENTITY)
+                        if (!pl || !pa)
+                            break;
+                        if ((PAd || PA->second->byClass.val) && (PLd || PL->second->byClass.val) && !templateCompareTypes(pa, pl, true))
                         {
                             break;
+                        }
+                        // now make sure the qualifiers match...
+                        if (quals)
+                        {
+                            int n = 0;
+                            e_cvsrn xx[5];
+                            getQualConversion(pl, pa, nullptr, &n, xx);
+                            if (n != 1 || xx[0] != CV_IDENTITY)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
@@ -285,8 +288,11 @@ bool SameTemplate(Type* P, Type* A, bool quals)
                                                                                              : PL->second->byTemplate.dflt;
                     SYMBOL* pat = PA->second->byTemplate.val && !PL->second->byTemplate.dflt ? PA->second->byTemplate.val
                                                                                              : PA->second->byTemplate.dflt;
-                    if ((plt || pat) && !exactMatchOnTemplateParams(PL->second->byTemplate.args, PA->second->byTemplate.args))
-                        break;
+                    if ((plt && pat) || !PL->second->byClass.txtdflt || !PA->second->byClass.txtdflt)
+                    {
+                        if ((plt || pat) && !exactMatchOnTemplateParams(PL->second->byTemplate.args, PA->second->byTemplate.args))
+                            break;
+                    }
                 }
                 else if (PL->second->type == TplType::int_)
                 {
@@ -294,10 +300,13 @@ bool SameTemplate(Type* P, Type* A, bool quals)
                                                                                                : PL->second->byNonType.dflt;
                     EXPRESSION* pat = PA->second->byNonType.val && !PA->second->byNonType.dflt ? PA->second->byNonType.val
                                                                                                : PA->second->byNonType.dflt;
-                    if (!templateCompareTypes(PL->second->byNonType.tp, PA->second->byNonType.tp, true))
-                        break;
-                    if ((!plt || !pat) || !equalTemplateMakeIntExpression(plt, pat))
-                        break;
+                    if ((plt && pat) || !PL->second->byClass.txtdflt || !PA->second->byClass.txtdflt)
+                    {
+                        if (!templateCompareTypes(PL->second->byNonType.tp, PA->second->byNonType.tp, true))
+                            break;
+                        if ((!plt || !pat) || !equalTemplateMakeIntExpression(plt, pat))
+                            break;
+                    }
                 }
             }
             ++PL;

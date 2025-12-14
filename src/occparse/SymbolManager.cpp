@@ -86,6 +86,8 @@ void Optimizer::SymbolManager::clear()
     initTokenStreams.clear();
     bodyTokenStreams.clear();
     noExceptTokenStreams.clear();
+    functionDefinitions.clear();
+    bodyArgs.clear();
 }
 
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym, bool definingFunction)

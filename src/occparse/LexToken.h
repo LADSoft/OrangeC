@@ -156,8 +156,8 @@ struct LexemeStreamFactory
         for (auto s : lists)
         {
             delete s;
-            lists.clear();
         }
+        lists.clear();
     }
 private:
     static void Initialize();

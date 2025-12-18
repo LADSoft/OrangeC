@@ -32,6 +32,6 @@ namespace Parser
     SYMBOL* LookupTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
     SYMBOL* LookupGeneratedTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym);
     void RegisterTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* cls);
-    SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, std::list<Argument*>* args);
+    SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<SYMBOL*>* gather, CallSite* callSite);
     void RegisterTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* func);
 }  // namespace Parser

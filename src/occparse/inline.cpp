@@ -567,6 +567,8 @@ void LeaveInlineFunctionContext()
 }
 void InsertInline(SYMBOL* sym)
 {
+    if (sym->sb->dontinstantiate)
+        return;
     if (sym->sb->storage_class == StorageClass::external_)
     {
         if (!sym->sb->inlineFunc.stmt && !bodyTokenStreams.get(sym))

@@ -5316,15 +5316,15 @@ static void expression_string( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
         sym = LookupSym(name);
         if (sym)
         {
-            SYMBOL *sym1 = nullptr, *sym2 = nullptr;
+            SYMBOL *sym1 = nullptr, *first_param = nullptr;
             bool found = false;
-            for (auto sym3 : *sym->tp->syms)
+            for (auto candidate_function : *sym->tp->syms)
             {
-                sym2 = sym3->tp->syms->front();
-                if (sym3->tp->syms->size() > 1 && sym2->tp->IsPtr())
-                    if (sym2->tp->btp->IsConst() && sym2->tp->btp->BaseType()->type == tpb)
+                first_param = candidate_function->tp->syms->front();
+                if (candidate_function->tp->syms->size() > 1 && first_param->tp->IsPtr())
+                    if (first_param->tp->btp->IsConst() && first_param->tp->btp->BaseType()->type == tpb)
                     {
-                        sym1 = sym3;
+                        sym1 = candidate_function;
                         found = true;
                         break;
                     }
@@ -5337,7 +5337,7 @@ static void expression_string( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 f->fcall = MakeExpression(ExpressionNode::pc_, sym1);
                 f->arguments = argumentListFactory.CreateList();
                 auto arg = Allocate<Argument>();
-                arg->tp = sym2->tp;
+                arg->tp = first_param->tp;
                 arg->exp = *exp;
                 f->arguments->push_back(arg);
                 arg = Allocate<Argument>();
@@ -5571,6 +5571,29 @@ static bool getSuffixedChar( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
         }
     }
     errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, currentLex->suffix);
+    if (sym)
+    {
+        SYMBOL *sym1 = nullptr, *sym2;
+        for (auto sp : *sym->tp->syms)
+        {
+            sym1 = sp;
+            sym2 = sym1->tp->syms->front();
+            // We want to narrow the candidates down to "reasonable" candidates, AKA candidates with only one parameter
+            // Other candidates should be ignored as being incorrect for the operator.
+            if (sym1->tp->syms->size() == 1)
+            {
+                if (sym2->tp->type != tpb)
+                {
+                    char holder[1000];
+                    char holder1[1000];
+                    Type* typ = Type::MakeType(tpb, nullptr);
+                    sym2->tp->BasicTypeToString(holder + sizeof(holder), holder);
+                    typ->BasicTypeToString(holder1 + sizeof(holder1), holder1);
+                    fprintf(stderr, "\tCandidate '%s' found at %s(%d) tried, wrong base type, wanted %s, has %s\n", sym1->name, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
+                }
+            }
+        }
+    }
     return false;
 }
 static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
@@ -5676,6 +5699,65 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
         }
     }
     errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, currentLex->suffix);
+    SYMBOL* sym1 = nullptr;
+    auto found = false;
+    if (sym)
+    {
+        for (auto sp : *sym->tp->syms)
+        {
+            sym1 = sp;
+            auto sym2 = sym1->tp->syms->front();
+            if (sym1->tp->syms->size() == 1)
+            {
+                if (sym2->tp->type != tpb)
+                {
+                    char holder[1000];
+                    char holder1[1000];
+                    Type* typ = Type::MakeType(tpb, nullptr);
+                    sym1->tp->BasicTypeToString(holder + 1000 - 1, holder);
+                    typ->BasicTypeToString(holder1 + 1000 - 1, holder1);
+                    fprintf(stderr,
+                            "\tCandidate '%s' found at %s(%d) was tried, but the basetype %s was incompatible with type: %s\n",
+                            name, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
+                    fflush(stderr);
+                }
+            }
+            else
+            {
+                std::string holder;
+                holder.resize(10000);
+                sym1->tp->BasicTypeToString(holder.data() + holder.capacity() - 1, holder.data());
+
+                fprintf(stderr, "\tCandidate %s was checked, but had more than one potential parameter\n", holder.c_str());
+                fflush(stderr);
+            }
+        }
+        // not found, look for parameter of type const char *
+        for (auto sp : *sym->tp->syms)
+        {
+            Type* tpx;
+            sym1 = sp;
+            auto sym2 = sym1->tp->syms->front();
+            tpx = sym2->tp;
+            if (sym1->tp->syms->size() == 1 && tpx->IsPtr())
+            {
+                tpx = tpx->BaseType()->btp;
+                if (!tpx->IsConst())
+                {
+                    if (tpx->BaseType()->type != BasicType::char_)
+                    {
+                        char holder[1000];
+                        tpx->BasicTypeToString(holder + sizeof(holder), holder);
+                        fprintf(stderr, "\tA candidate was found, but the parameter was to something that was not a const char* %s(%d), parameter type: %s\n", sym2->sb->declfile, sym2->sb->declline, holder);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        fprintf(stderr, "\tNo candidates were found\n");
+    }
     return false;
 }
 static void  atomic_modify_specific_op(Parser::SYMBOL* funcsp, Parser::Type** tp,

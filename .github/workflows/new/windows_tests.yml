@@ -1,4 +1,4 @@
-name: windows smoke test
+name: windows tests
 
 on:
   push:
@@ -6,21 +6,18 @@ on:
   pull_request:
     branches: [ "master" ]
 
-permissions:
-  contents: write
-
 jobs:
   build:
 
     runs-on: windows-latest
 
-    timeout-minutes : 30
+    timeout-minutes : 60
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
       with:
         repository: c-testsuite/c-testsuite
         path: c-testsuite
@@ -32,10 +29,10 @@ jobs:
       run: copy "$env:GITHUB_WORKSPACE/c-testsuite/tests/single-exec/*.*" "$env:GITHUB_WORKSPACE/tests/c-testsuite" > NUL
     - name: Build
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS /DWITHOUT_ZIP=YES fullbuild -j:8
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=MS fullbuild -j:8
     - name: Orange C Test
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests"  -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests" -j:8 PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
     - name: occil test
       run: |
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occil" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
@@ -43,11 +40,6 @@ jobs:
       run: |
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occpr" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
          &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/tests/occpr" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC
-    - name: Create Artifacts
+    - name: LIBCXX tests
       run: |
-         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" ORANGEC="$env:GITHUB_WORKSPACE" zip
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Binaries
-        path: dist/ZippedBinaries.zip
+         &$env:GITHUB_WORKSPACE/src/omake "-C$env:GITHUB_WORKSPACE/src" PATH="$env:PATH;$env:GITHUB_WORKSPACE/bin" ORANGEC="$env:GITHUB_WORKSPACE" /DCOMPILER=OCC test

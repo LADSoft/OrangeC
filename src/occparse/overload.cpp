@@ -1089,6 +1089,18 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                     BasicType refa = BasicType::rref_;
                     if (ta)
                     {
+                        if (expa)
+                        {
+                            auto exp = expa;
+                            if (exp->type == ExpressionNode::thisref_)
+                                exp = exp->left;
+                            if (exp->type == ExpressionNode::callsite_ && exp->v.func->functp->IsFunction())
+                            {
+                                auto tp1 = exp->v.func->functp->BaseType()->btp->BaseType();
+                                if (tp1->type == BasicType::lref_)
+                                    refa = BasicType::lref_;
+                            }
+                        }
                         if (ta->lref || ta->BaseType()->lref)
                             refa = BasicType::lref_;
                     }
@@ -4029,7 +4041,7 @@ SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp)
 
                 globalNameSpace->push_front(ns->sb->nameSpaceValues->front());
             }
-            if (args && !FunctionTemplateCandidate(sym->templateParams, args->templateParams))
+             if (args && !FunctionTemplateCandidate(sym->templateParams, args->templateParams))
                 sym = nullptr;
             else if (atp)
                 sym = TemplateDeduceArgsFromType(sym, atp);
@@ -4568,7 +4580,6 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                 }
             }
             SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, args->arguments->size(), n, &funcList[0]);
-//            WeedTemplates(&spList[0], n, args, nullptr);
             for (int i = 0; i < n && !found1; i++)
             {
                 if (spList[i] && !spList[i]->sb->deleted)
@@ -4606,7 +4617,6 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                     else
                         spList[v.first] = nullptr;
                 SelectBestFunc(&spList[0], &icsList[0], &lenList[0], args, args->arguments->size(), n, &funcList[0]);
-                WeedTemplates(&spList[0], n, args, nullptr);
                 for (int i = 0; i < n && !found1; i++)
                 {
                     if (spList[i] && !spList[i]->sb->deleted)

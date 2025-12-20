@@ -1647,7 +1647,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     funcparams->arguments->push_back(Allocate<Argument>());
                                     funcparams->arguments->front()->tp = declSP->tp;
                                     funcparams->arguments->front()->exp = st->select;
-                                    CallConstructor(&ctype, &decl, funcparams, false, 0, true, false, false, false, false, false,
+                                    CallConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false,
                                                     true);
                                     st->select = decl;
                                     declDest = declExp;

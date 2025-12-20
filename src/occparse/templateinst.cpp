@@ -1899,24 +1899,6 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
     bool usesParams = !!args && args->size();
     auto it = func->tp->BaseType()->syms->begin();
     auto ite = func->tp->BaseType()->syms->end();
-    if (func->sb->isConstructor && args)
-    {
-        // get rid of potential constructor calls
-        // that would involve a by_val template the same class as the constructor is in
-        auto it1 = it;
-        if (it1 != it && (*it1)->sb->thisPtr)
-            ++it1;
-        auto ita = args->begin();
-        auto itae = args->end();
-        while (it1 != ite && ita != itae)
-        {
-            if ((*ita)->tp && (*ita)->tp->IsStructured() && (*ita)->tp->BaseType()->sp->sb->templateLevel &&
-                SameTemplate(func->sb->parentClass->tp, (*ita)->tp, true))
-                return nullptr;
-            ++it1;
-            ++ita;
-        }
-    }
     inDefaultParam++;
     std::list<Argument*> arg1;
     if (args)

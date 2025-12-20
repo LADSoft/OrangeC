@@ -56,7 +56,7 @@
 #include "declcpp.h"
 #include "beinterf.h"
 #include "overload.h"
-
+#include "SymbolProperties.h"
 namespace Parser
 {
 
@@ -130,11 +130,11 @@ void DumpErrorNameToHelpMap()
     printf("Name to help map Keyword::end_.\n");
 }
 
-void EnterInstantiation(LexList* lex, SYMBOL* sym)
+void EnterInstantiation(SYMBOL* sym, bool symDirect)
 {
-    if (lex)
+    if (!symDirect)
     {
-        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(lex->data->errfile, lex->data->errline, sym));
+        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(currentLex->sourceFileName, currentLex->sourceLineNumber, sym));
     }
     else
     {
@@ -242,7 +242,8 @@ void DisableTrivialWarnings()
     Warning::Instance()->Clear();
     if (!Optimizer::cparams.prm_warning)
         for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
-            Warning::Instance()->SetFlag(i, Warning::Disable);
+            if (errors[i].level & CE_WARNING)
+                Warning::Instance()->SetFlag(i, Warning::Disable);
     if (!Optimizer::cparams.prm_extwarning)
         for (int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++)
             if (errors[i].level & CE_TRIVIALWARNING)
@@ -324,7 +325,7 @@ static bool alwaysErr(int err)
             return false;
     }
 }
-static bool ignoreErrdefiningTemplate(int err)
+static bool ignoreErrtemplateDefinitionLevel(int err)
 {
     switch (err)
     {
@@ -399,8 +400,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         if (currentLex)
         {
-            file = currentLex->data->errfile;
-            line = currentLex->data->errline;
+            file = currentLex->sourceFileName;
+            line = currentLex->sourceLineNumber;
         }
         else
         {
@@ -413,18 +414,18 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     const char* listerr;
     char nameb[265], *name = nameb;
     if ((Optimizer::cparams.prm_makestubs && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue()) || inDeduceArgs ||
-        (definingTemplate && !instantiatingTemplate && ignoreErrdefiningTemplate(err)))
+        (IsDefiningTemplate() && ignoreErrtemplateDefinitionLevel(err)))
         if (err != ERR_STATIC_ASSERT && err != ERR_DELETED_FUNCTION_REFERENCED && !(errors[err].level & CE_NOTE))
         {
             return false;
         }
     if (!file)
     {
-        if (context && context->last->data->type != LexType::none_)
+        if (!contextStack.empty() && currentStream->get(currentStream->Index())->type != LexType::none_)
         {
-            LexList* lex = context->cur ? context->cur->prev : context->last;
-            line = lex->data->errline;
-            file = lex->data->errfile;
+            auto index = currentStream->Index() - 1;
+            line = currentStream->get(index)->sourceLineNumber;
+            file = currentStream->get(index)->sourceFileName;
         }
         else
         {
@@ -611,6 +612,8 @@ void errorcurrent(int err) { printerr(err, nullptr, 0); }
 void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
     char buf[4096];
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char unopped[UNMANGLE_BUFFER_SIZE];
     const char* last = "typename";
     char lastb[UNMANGLE_BUFFER_SIZE];
@@ -678,6 +681,8 @@ void errorstr(int err, const char* val)
 void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
 void errorsym(int err, SYMBOL* sym)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char buf[UNMANGLE_BUFFER_SIZE];
     if (sym->sb)
     {
@@ -695,6 +700,8 @@ void errorsym(int err, SYMBOL* sym)
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char buf[UNMANGLE_BUFFER_SIZE];
     if (!sym->sb->decoratedName)
     {
@@ -705,6 +712,8 @@ void errorsym(int err, SYMBOL* sym, int line, const char* file)
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char one[UNMANGLE_BUFFER_SIZE], two[UNMANGLE_BUFFER_SIZE];
     unmangle(one, sym1->sb->decoratedName);
     unmangle(two, sym2->sb->decoratedName);
@@ -712,6 +721,8 @@ void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char two[UNMANGLE_BUFFER_SIZE];
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
@@ -761,6 +772,8 @@ void errorabstract(int error, SYMBOL* sp)
 }
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 {
+    if (Warning::Instance()->IsSet(err, Warning::Disable))
+        return;
     char argbuf[UNMANGLE_BUFFER_SIZE];
     char buf[UNMANGLE_BUFFER_SIZE];
     if (declsp->sb->anonymous)
@@ -777,24 +790,24 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     currentErrorLine = 0;
     printerr(err, nullptr, 0, argbuf, buf);
 }
-static BALANCE* newbalance(LexList* lex, BALANCE* bal)
+static BALANCE* newbalance( BALANCE* bal)
 {
     BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
     rv->count = 0;
-    if (KW(lex) == Keyword::openpa_)
+    if (KW() == Keyword::openpa_)
         rv->type = BAL_PAREN;
-    else if (KW(lex) == Keyword::openbr_)
+    else if (KW() == Keyword::openbr_)
         rv->type = BAL_BRACKET;
-    else if (KW(lex) == Keyword::lt_)
+    else if (KW() == Keyword::lt_)
         rv->type = BAL_LT;
     else
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance(LexList* lex, BALANCE** bal, bool assumeTemplate)
+static void setbalance( BALANCE** bal, bool assumeTemplate)
 {
-    switch (KW(lex))
+    switch (KW())
     {
         case Keyword::end_:
             while (*bal && (*bal)->type != BAL_BEGIN)
@@ -833,25 +846,25 @@ static void setbalance(LexList* lex, BALANCE** bal, bool assumeTemplate)
             break;
         case Keyword::begin_:
             if (!*bal || (*bal)->type != BAL_BEGIN)
-                *bal = newbalance(lex, *bal);
+                *bal = newbalance(*bal);
             (*bal)->count++;
             break;
         case Keyword::openpa_:
             if (!*bal || (*bal)->type != BAL_PAREN)
-                *bal = newbalance(lex, *bal);
+                *bal = newbalance(*bal);
             (*bal)->count++;
             break;
 
         case Keyword::openbr_:
             if (!*bal || (*bal)->type != BAL_BRACKET)
-                *bal = newbalance(lex, *bal);
+                *bal = newbalance(*bal);
             (*bal)->count++;
             break;
         case Keyword::lt_:
             if (assumeTemplate)
             {
                 if (!*bal || (*bal)->type != BAL_LT)
-                    *bal = newbalance(lex, *bal);
+                    *bal = newbalance(*bal);
                 (*bal)->count++;
             }
             break;
@@ -862,35 +875,35 @@ static void setbalance(LexList* lex, BALANCE** bal, bool assumeTemplate)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim(LexList** lex, Keyword* skimlist, bool assumeTemplate)
+void errskim( Keyword* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
     {
-        if (!*lex)
+        if (!currentLex)
             break;
         if (!bal)
         {
             int i;
-            Keyword kw = KW(*lex);
+            Keyword kw = KW();
             for (i = 0; skimlist[i] != Keyword::none_; i++)
                 if (kw == skimlist[i])
                     return;
         }
-        setbalance(*lex, &bal, assumeTemplate);
-        *lex = getsym();
+        setbalance(&bal, assumeTemplate);
+        getsym();
     }
 }
-void skip(LexList** lex, Keyword kw)
+void skip( Keyword kw)
 {
-    if (MATCHKW(*lex, kw))
-        *lex = getsym();
+    if (MATCHKW(kw))
+        getsym();
 }
-bool needkw(LexList** lex, Keyword kw)
+bool needkw( Keyword kw)
 {
-    if (lex && MATCHKW(*lex, kw))
+    if (currentLex && MATCHKW(kw))
     {
-        *lex = getsym();
+        getsym();
         return true;
     }
     else
@@ -1335,7 +1348,7 @@ void checkUnlabeledReferences(std::list<FunctionBlock*>& block)
             Statement* st;
             specerror(ERR_UNDEFINED_LABEL, sp->name, sp->sb->declfile, sp->sb->declline);
             sp->sb->storage_class = StorageClass::label_;
-            st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
+            st = Statement::MakeStatement(block, StatementNode::label_);
             st->label = sp->sb->offset;
         }
     }
@@ -1381,7 +1394,7 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                 {
                     for (auto sp1 : *sp->tp->syms)
                     {
-                        if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile &&
+                        if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !bodyTokenStreams.get(sp1) &&
                             !sp1->sb->templateLevel)
                         {
                             errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
@@ -1421,7 +1434,7 @@ static void usageErrorCheck(SYMBOL* sp)
          sp->sb->storage_class == StorageClass::localstatic_) &&
         !sp->sb->assigned && !sp->sb->attribs.inheritable.used && !sp->sb->altered)
     {
-        if (!structLevel || !sp->sb->deferredCompile)
+        if (!structLevel || !initTokenStreams.get(sp))
             errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
     sp->sb->attribs.inheritable.used = true;
@@ -2024,15 +2037,15 @@ static bool HasConstexprConstructor(Type* tp)
 }
 void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         for (auto sym : *cons->tp->syms)
         {
             if (sym->sb->constexpression)
             {
                 std::unordered_set<std::string, StringHash> initialized;
-                if (sym->sb->memberInitializers)
-                    for (auto m : *sym->sb->memberInitializers)
+                if (sym->sb->constructorInitializers && *sym->sb->constructorInitializers)
+                    for (auto m : **sym->sb->constructorInitializers)
                         initialized.insert(m->name);
                 for (auto sp : *sym->sb->parentClass->tp->syms)
                 {
@@ -2053,7 +2066,7 @@ void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
 }
 bool MustSpecialize(const char* name)
 {
-    if (noNeedToSpecialize || (definingTemplate && !instantiatingTemplate))
+    if (noNeedToSpecialize || IsDefiningTemplate())
         return false;
     for (auto&& sst : enclosingDeclarations)
     {
@@ -2075,7 +2088,7 @@ void SpecializationError(SYMBOL* sym)
 }
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
 {
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         for (auto cur : *sym->tp->syms)
         {
@@ -2099,7 +2112,7 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
                     {
                         if (cur1->tp->IsFunction())
                             if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt &&
-                                !cur1->tp->BaseType()->sp->sb->deferredCompile)
+                                !bodyTokenStreams.get(cur1->tp->BaseType()->sp))
                                 errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                     }
                     if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)

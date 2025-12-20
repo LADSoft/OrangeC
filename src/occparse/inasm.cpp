@@ -61,7 +61,6 @@ namespace Parser
 {
 static Optimizer::ASMREG* regimage;
 static Optimizer::ASMNAME* insdata;
-static LexList* lex;
 
 static SYMBOL* lastsym;
 static e_opcode op;
@@ -183,7 +182,7 @@ static void inasm_err(int errnum)
     //    *lptr = 0;
     //    lastch = ' ';
     errorstr(ERR_ASM, assembler_errors[errnum]);
-    lex = getsym();
+    getsym();
 }
 static void setreg(std::vector<int>& srcRegs, Optimizer::ASMREG* regImage)
 {
@@ -205,19 +204,19 @@ static void setreg(std::vector<int>& srcRegs, Optimizer::ASMREG* regImage)
 }
 static void inasm_txsym(void)
 {
-    if (lex && ISID(lex))
+    if (currentLex && ISID())
     {
-        ASM_HASH_ENTRY* e = search(asmHash, lex->data->value.s.a);
+        ASM_HASH_ENTRY* e = search(asmHash, currentLex->value.s.a);
         if (e)
         {
             if (e->instruction)
             {
-                lex->data->type = LexType::l_asmInstruction_;
+                currentLex->type = LexType::l_asmInstruction_;
                 insdata = (Optimizer::ASMNAME*)e->data;
             }
             else
             {
-                lex->data->type = LexType::l_asmRegister_;
+                currentLex->type = LexType::l_asmRegister_;
                 regimage = (Optimizer::ASMREG*)e->data;
             }
         }
@@ -225,12 +224,12 @@ static void inasm_txsym(void)
 }
 static void inasm_getsym(void)
 {
-    lex = getsym();
+    getsym();
     inasm_txsym();
 }
-static void inasm_needkw(LexList** lex, Keyword Kw)
+static void inasm_needkw( Keyword Kw)
 {
-    needkw(lex, Kw);
+    needkw(Kw);
     inasm_txsym();
 }
 static AMODE* inasm_const(void)
@@ -238,7 +237,7 @@ static AMODE* inasm_const(void)
     AMODE* rv = nullptr;
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
-    lex = optimized_expression(lex, theCurrentFunc, nullptr, &tp, &exp, false);
+    optimized_expression(theCurrentFunc, nullptr, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -261,13 +260,13 @@ static EXPRESSION* inasm_ident(void)
 {
     EXPRESSION* node = 0;
 
-    if (lex->data->type != LexType::l_id_)
+    if (currentLex->type != LexType::l_id_)
         error(ERR_IDENTIFIER_EXPECTED);
     else
     {
         SYMBOL* sym;
         char nm[256];
-        Utils::StrCpy(nm, lex->data->value.s.a);
+        Utils::StrCpy(nm, currentLex->value.s.a);
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */
@@ -276,10 +275,12 @@ static EXPRESSION* inasm_ident(void)
             sym = SymAlloc();
             sym->sb->storage_class = StorageClass::ulabel_;
             sym->name = litlate(nm);
-            sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
-            sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
-            sym->sb->realdeclline = lex->data->linedata->lineno;
-            sym->sb->declfilenum = lex->data->linedata->fileindex;
+            sym->sb->declfile = sym->sb->origdeclfile = currentLex->sourceFileName;
+            sym->sb->declline = sym->sb->origdeclline = currentLex->sourceLineNumber;
+            sym->sb->declcharpos = currentLex->charindex;
+            sym->sb->realcharpos = currentLex->realcharindex;
+            sym->sb->realdeclline = currentLex->linedata->lineno;
+            sym->sb->declfilenum = currentLex->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
             sym->tp = Type::MakeType(BasicType::unsigned_);
             sym->sb->offset = codeLabel++;
@@ -299,6 +300,7 @@ static EXPRESSION* inasm_ident(void)
                     break;
                 case StorageClass::overloads_:
                     node = MakeExpression(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());
+                    sym->tp->syms->front()->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     InsertInline(sym->tp->syms->front());
                     break;
                 case StorageClass::localstatic_:
@@ -309,7 +311,10 @@ static EXPRESSION* inasm_ident(void)
                     node = MakeExpression(ExpressionNode::global_, sym);
                     InsertGlobal(sym);
                     if (sym->tp->IsFunction())
+                    {
+                        sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                         InsertInline(sym);
+                    }
                     Optimizer::EnterExternal(sym1);
                     break;
                 }
@@ -347,22 +352,24 @@ static EXPRESSION* inasm_label(void)
 {
     EXPRESSION* node;
     SYMBOL* sym;
-    if (!ISID(lex))
+    if (!ISID())
     {
-        lex = getsym();
+        getsym();
         return nullptr;
     }
     /* No such identifier */
     /* label, put it in the symbol table */
-    if ((sym = search(labelSyms, lex->data->value.s.a)) == 0)
+    if ((sym = search(labelSyms, currentLex->value.s.a)) == 0)
     {
         sym = SymAlloc();
         sym->sb->storage_class = StorageClass::label_;
-        sym->name = litlate(lex->data->value.s.a);
-        sym->sb->declfile = sym->sb->origdeclfile = lex->data->errfile;
-        sym->sb->declline = sym->sb->origdeclline = lex->data->errline;
-        sym->sb->realdeclline = lex->data->linedata->lineno;
-        sym->sb->declfilenum = lex->data->linedata->fileindex;
+        sym->name = litlate(currentLex->value.s.a);
+        sym->sb->declfile = sym->sb->origdeclfile = currentLex->sourceFileName;
+        sym->sb->declline = sym->sb->origdeclline = currentLex->sourceLineNumber;
+        sym->sb->declcharpos = currentLex->charindex;
+        sym->sb->realcharpos = currentLex->realcharindex;
+        sym->sb->realdeclline = currentLex->linedata->lineno;
+        sym->sb->declfilenum = currentLex->linedata->fileindex;
         sym->tp = Type::MakeType(BasicType::unsigned_);
         sym->sb->offset = codeLabel++;
         SetLinkerNames(sym, Linkage::none_);
@@ -384,7 +391,7 @@ static EXPRESSION* inasm_label(void)
         sym->sb->storage_class = StorageClass::label_;
     }
     inasm_getsym();
-    if (lex->data->type == LexType::l_asmInstruction_)
+    if (currentLex->type == LexType::l_asmInstruction_)
     {
         if (insdata->atype == op_reserved)
         {
@@ -397,7 +404,7 @@ static EXPRESSION* inasm_label(void)
             return 0;
         }
     }
-    else if (!MATCHKW(lex, Keyword::colon_))
+    else if (!MATCHKW(Keyword::colon_))
     {
         inasm_err(ERR_LABEL_EXPECTED);
         return 0;
@@ -437,7 +444,7 @@ static int inasm_getsize(void)
             break;
     };
     inasm_getsym();
-    if (MATCHTYPE(lex, LexType::l_asmRegister_))
+    if (MATCHTYPE(LexType::l_asmRegister_))
     {
         if (regimage->regtype == am_ext)
         {
@@ -449,7 +456,7 @@ static int inasm_getsize(void)
             inasm_getsym();
         }
     }
-    if (!lex || (lex->data->type != LexType::l_asmRegister_ && !ISID(lex) && !MATCHKW(lex, Keyword::openbr_)))
+    if (!currentLex || (currentLex->type != LexType::l_asmRegister_ && !ISID() && !MATCHKW(Keyword::openbr_)))
     {
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
@@ -461,14 +468,14 @@ static int inasm_getsize(void)
 
 static int getscale(int* scale)
 {
-    if (MATCHKW(lex, Keyword::star_))
+    if (MATCHKW(Keyword::star_))
     {
         inasm_getsym();
-        if (lex)
+        if (currentLex)
         {
-            if ((MATCHTYPE(lex, LexType::i_) || MATCHTYPE(lex, LexType::ui_)) && !*scale)
+            if ((MATCHTYPE(LexType::i_) || MATCHTYPE(LexType::ui_)) && !*scale)
             {
-                switch ((int)lex->data->value.i)
+                switch ((int)currentLex->value.i)
                 {
                     case 1:
                         *scale = 0;
@@ -588,9 +595,9 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
         int rg = -1;
         if (regimage)
             rg = regimage->regnum;
-        if (lex)
+        if (currentLex)
         {
-            switch (lex->data->type)
+            switch (currentLex->type)
             {
                 case LexType::l_asmRegister_:
                     // well regimage != null but...
@@ -610,7 +617,7 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
                             }
                             seg = rg;
                             inasm_getsym();
-                            if (!MATCHKW(lex, Keyword::colon_))
+                            if (!MATCHKW(Keyword::colon_))
                             {
                                 inasm_err(ERR_INVALID_INDEX_MODE);
                                 return 0;
@@ -665,15 +672,15 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
                 case LexType::ul_:
                     if (node)
                         node = MakeExpression(subtract ? ExpressionNode::sub_ : ExpressionNode::add_, node,
-                                              MakeIntExpression(ExpressionNode::c_i_, lex->data->value.i));
+                                              MakeIntExpression(ExpressionNode::c_i_, currentLex->value.i));
                     else if (subtract)
-                        node = MakeIntExpression(ExpressionNode::c_i_, -lex->data->value.i);
+                        node = MakeIntExpression(ExpressionNode::c_i_, -currentLex->value.i);
                     else
-                        node = MakeIntExpression(ExpressionNode::c_i_, lex->data->value.i);
+                        node = MakeIntExpression(ExpressionNode::c_i_, currentLex->value.i);
                     inasm_getsym();
                     break;
                 case LexType::l_kw_:
-                    if (MATCHKW(lex, Keyword::plus_) || MATCHKW(lex, Keyword::minus_))
+                    if (MATCHKW(Keyword::plus_) || MATCHKW(Keyword::minus_))
                     {
                         if (node)
                             node = MakeExpression(ExpressionNode::add_, node, MakeIntExpression(ExpressionNode::c_i_, 0));
@@ -707,17 +714,17 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
                     break;
             }
         }
-        if (MATCHKW(lex, Keyword::closebr_))
+        if (MATCHKW(Keyword::closebr_))
         {
             inasm_getsym();
             break;
         }
-        if (!MATCHKW(lex, Keyword::plus_) && !MATCHKW(lex, Keyword::minus_))
+        if (!MATCHKW(Keyword::plus_) && !MATCHKW(Keyword::minus_))
         {
             inasm_err(ERR_INVALID_INDEX_MODE);
             return 0;
         }
-        if (MATCHKW(lex, Keyword::minus_))
+        if (MATCHKW(Keyword::minus_))
             subtract = true;
         else
             subtract = false;
@@ -769,9 +776,9 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
     bool done = false;
     lastsym = 0;
     inasm_txsym();
-    if (lex)
+    if (currentLex)
     {
-        switch (lex->data->type)
+        switch (currentLex->type)
         {
             case LexType::l_wchr_:
             case LexType::l_achr_:
@@ -783,7 +790,7 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
             case LexType::l_asmRegister_:
                 break;
             case LexType::l_kw_:
-                switch (KW(lex))
+                switch (KW())
                 {
                     case Keyword::openbr_:
                     case Keyword::minus_:
@@ -799,7 +806,7 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
                 return 0;
         }
     }
-    if (MATCHTYPE(lex, LexType::l_asmRegister_))
+    if (MATCHTYPE(LexType::l_asmRegister_))
     {
         if (regimage->regtype == am_ext)
         {
@@ -809,9 +816,9 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
     while (!done)
     {
         done = true;
-        if (lex)
+        if (currentLex)
         {
-            switch (lex->data->type)
+            switch (currentLex->type)
             {
                 case LexType::l_asmRegister_:
                     if (regimage->regtype == am_ext)
@@ -822,21 +829,21 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
                     if (regimage->regtype == am_freg)
                     {
                         inasm_getsym();
-                        if (MATCHKW(lex, Keyword::openpa_))
+                        if (MATCHKW(Keyword::openpa_))
                         {
                             inasm_getsym();
-                            if (!lex || (lex->data->type != LexType::i_ && lex->data->type != LexType::ui_) ||
-                                lex->data->value.i < 0 || lex->data->value.i > 7)
+                            if (!currentLex || (currentLex->type != LexType::i_ && currentLex->type != LexType::ui_) ||
+                                currentLex->value.i < 0 || currentLex->value.i > 7)
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                                 return 0;
                             }
                             inasm_getsym();
-                            inasm_needkw(&lex, Keyword::closepa_);
+                            inasm_needkw(Keyword::closepa_);
                         }
                         else
-                            lex->data->value.i = 0;
-                        rv->preg = lex->data->value.i;
+                            currentLex->value.i = 0;
+                        rv->preg = currentLex->value.i;
                         rv->mode = am_freg;
                         sz = ISZ_LDOUBLE;
                     }
@@ -849,7 +856,7 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
                         }
                         rv->seg = seg = regimage->regnum;
                         inasm_getsym();
-                        if (MATCHKW(lex, Keyword::colon_))
+                        if (MATCHKW(Keyword::colon_))
                         {
                             inasm_getsym();
                             done = false;
@@ -881,7 +888,7 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
                     }
                     break;
                 case LexType::l_kw_:
-                    switch (KW(lex))
+                    switch (KW())
                     {
                         case Keyword::openbr_:
                             rv = inasm_mem(srcRegs);
@@ -946,8 +953,8 @@ static AMODE* aimmed(long long i)
 static AMODE* inasm_immed(void)
 {
     AMODE* rv;
-    if (lex)
-        switch (lex->data->type)
+    if (currentLex)
+        switch (currentLex->type)
         {
             case LexType::i_:
             case LexType::ui_:
@@ -955,7 +962,7 @@ static AMODE* inasm_immed(void)
             case LexType::ul_:
             case LexType::l_wchr_:
             case LexType::l_achr_:
-                rv = aimmed(lex->data->value.i);
+                rv = aimmed(currentLex->value.i);
                 rv->length = ISZ_UINT;
                 inasm_getsym();
                 return rv;
@@ -988,8 +995,8 @@ int isrm(AMODE* ap, int dreg_allowed)
 AMODE* getimmed(void)
 {
     AMODE* rv;
-    if (lex)
-        switch (lex->data->type)
+    if (currentLex)
+        switch (currentLex->type)
         {
             case LexType::i_:
             case LexType::ui_:
@@ -997,7 +1004,7 @@ AMODE* getimmed(void)
             case LexType::ul_:
             case LexType::l_wchr_:
             case LexType::l_achr_:
-                rv = aimmed(lex->data->value.i);
+                rv = aimmed(currentLex->value.i);
                 inasm_getsym();
                 return rv;
             default:
@@ -1011,7 +1018,7 @@ AMODE* getimmed(void)
 e_opcode inasm_op(void)
 {
     int op;
-    if (!lex || lex->data->type != LexType::l_asmInstruction_)
+    if (!currentLex || currentLex->type != LexType::l_asmInstruction_)
     {
         inasm_err(ERR_INVALID_OPCODE);
         return (e_opcode)-1;
@@ -1033,7 +1040,7 @@ static OCODE* make_ocode(AMODE* ap1, AMODE* ap2, AMODE* ap3)
     o->oper1 = ap1;
     o->oper2 = ap2;
     o->oper3 = ap3;
-    return o;
+    return o;//////////
 }
 static int getData(Statement* snp)
 {
@@ -1043,8 +1050,8 @@ static int getData(Statement* snp)
     {
         Type* tp;
         EXPRESSION* expr;
-        lex = getsym();
-        lex = optimized_expression(lex, nullptr, nullptr, &tp, &expr, false);
+        getsym();
+        optimized_expression(nullptr, nullptr, &tp, &expr, false);
         if (tp && (isintconst(expr) || isfloatconst(expr)))
         {
             switch (size)
@@ -1095,10 +1102,10 @@ static int getData(Statement* snp)
         else
         {
             error(ERR_CONSTANT_VALUE_EXPECTED);
-            lex = SkipToNextLine();
+            SkipToNextLine();
             break;
         }
-    } while (lex && MATCHKW(lex, Keyword::comma_));
+    } while (currentLex && MATCHKW(Keyword::comma_));
     return 1;
 }
 static void AssembleInstruction(OCODE* ins)
@@ -1147,27 +1154,26 @@ static void AssembleInstruction(OCODE* ins)
         }
     }
 }
-LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
+void inlineAsm(std::list<FunctionBlock*>& parent)
 {
     Statement* snp;
     OCODE* rv;
     EXPRESSION* node;
     lastsym = 0;
-    lex = inlex; /* patch to not have to rewrite entire module for new frontend */
     inasm_txsym();
     std::vector<int> srcRegs;
     std::vector<int> destRegs;
     do
     {
-        snp = Statement::MakeStatement(lex, parent, StatementNode::passthrough_);
-        if (!lex)
+        snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
+        if (!currentLex)
         {
-            return lex;
+            return;
         }
         bool atend;
-        if (lex->data->type != LexType::l_asmInstruction_)
+        if (currentLex->type != LexType::l_asmInstruction_)
         {
-            if (MATCHKW(lex, Keyword::int_))
+            if (MATCHKW(Keyword::int_))
             {
                 inasm_getsym();
                 op = op_int;
@@ -1177,38 +1183,38 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
             }
             node = inasm_label();
             if (!node)
-                return lex;
-            if (MATCHKW(lex, Keyword::semicolon_))
+                return;
+            if (MATCHKW(Keyword::semicolon_))
                 inasm_getsym();
 
             snp->type = StatementNode::label_;
             snp->label = node->v.i;
-            return lex;
+            return;
         }
         if (insdata->atype == op_reserved)
         {
             getData(snp);
-            return lex;
+            return;
         }
         atend = AtEol();
         op = inasm_op();
         if (op == (e_opcode)-1)
         {
 
-            return lex;
+            return;
         }
         {
             rv = beLocalAllocate<OCODE>();
             if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
-                if (!atend && !MATCHKW(lex, Keyword::semicolon_))
+                if (!atend && !MATCHKW(Keyword::semicolon_))
                 {
                     rv->oper1 = inasm_amode(false, srcRegs, destRegs);
-                    if (MATCHKW(lex, Keyword::comma_))
+                    if (MATCHKW(Keyword::comma_))
                     {
                         inasm_getsym();
                         rv->oper2 = inasm_amode(false, srcRegs, destRegs);
-                        if (MATCHKW(lex, Keyword::comma_))
+                        if (MATCHKW(Keyword::comma_))
                         {
                             inasm_getsym();
                             rv->oper3 = inasm_amode(false, srcRegs, destRegs);
@@ -1223,7 +1229,7 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
                     inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                 if (rv == (OCODE*)-2)
                     inasm_err(ERR_INVALID_SIZE);
-                return lex;
+                return;
             }
         }
         if (rv->oper1 && rv->oper2)
@@ -1269,7 +1275,7 @@ LexList* inlineAsm(LexList* inlex, std::list<FunctionBlock*>& parent)
         if (theCurrentFunc)
             theCurrentFunc->sb->noinline = true;
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);
-    return lex;
+    return;
 }
 void adjustcodelab(void* select, int offset)
 {

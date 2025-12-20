@@ -85,24 +85,30 @@ struct EnclosingDeclarations
     std::deque<EnclosingDeclaration> declarations;
     std::stack<unsigned> marks;
 };
-
+extern EnclosingDeclarations enclosingDeclarations;
+struct DeclarationScope
+{
+    bool toRelease = false;
+    inline DeclarationScope(SYMBOL* sym) { enclosingDeclarations.Add(sym); }
+    inline DeclarationScope(std::list<TEMPLATEPARAMPAIR>* templ) { enclosingDeclarations.Add(templ); }
+    inline DeclarationScope() : toRelease(true) { enclosingDeclarations.Mark(); }
+    inline ~DeclarationScope() { if (toRelease) enclosingDeclarations.Release(); else enclosingDeclarations.Drop(); }
+};
 extern int inDefaultParam;
 extern char deferralBuf[100000];
 extern SYMBOL* enumSyms;
-extern EnclosingDeclarations enclosingDeclarations;
-extern int expandingParams;
+extern int isExpandingParams;
 extern Optimizer::LIST* deferred;
 extern int structLevel;
 extern Optimizer::LIST* openStructs;
-extern int parsingTrailingReturnOrUsing;
-extern int inTypedef;
+extern int processingTrailingReturnOrUsing;
+extern int processingTypedef;
 extern int resolvingStructDeclarations;
 extern std::map<int, SYMBOL*> localAnonymousUnions;
 extern int declaringInitialType;
 
 // declare.cpp
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
-void EnterStructureStaticAssert(SYMBOL* sym, LexList* deferredCompile);
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);
 void WeedExterns(void);
@@ -110,25 +116,25 @@ const char* AnonymousName(void);
 const char* NewUnnamedID(void);
 SYMBOL* SymAlloc(void);
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
-SYMBOL* makeUniqueID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
+SYMBOL* makeuniqueId(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
-LexList* innerDeclStruct(LexList* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
+void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
                          bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable);
-LexList* declstruct(LexList* lex, SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
+void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
                     Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression);
-LexList* declenum(LexList* lex, SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);
+void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);
 void sizeQualifiers(Type* tp);
-LexList* parse_declspec(LexList* lex, Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
-LexList* getQualifiers(LexList* lex, Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
+void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
+void getQualifiers( Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 void checkIncompleteArray(Type* tp, const char* errorfile, int errorline);
-LexList* getDeferredData(LexList* lex, LexList** savePos, bool braces);
-LexList* getStorageAndType(LexList* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
+LexemeStream* GetTokenStream(bool braces);
+void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
                            StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
                            bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,
                            Linkage* linkage2, Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest,
                            bool* templateArg, bool* asFriend);
 
-LexList* declare(LexList* lex, SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage,
+bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage,
                  std::list<FunctionBlock*>& block, bool needsemi, int asExpression, bool inTemplate, AccessLevel access);
 }  // namespace Parser

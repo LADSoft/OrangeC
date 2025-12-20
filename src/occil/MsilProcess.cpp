@@ -38,7 +38,7 @@
 #include "occil.h"
 #include "ildata.h"
 #include "MsilProcess.h"
-#include "using.h"
+#include "msilusing.h"
 #include "invoke.h"
 #include "memory.h"
 #include "OptUtils.h"

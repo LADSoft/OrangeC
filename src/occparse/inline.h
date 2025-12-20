@@ -35,7 +35,10 @@ void dumpvc1Thunks(void);
 void dumpMemberPointers();
 
 SYMBOL* getvc1Thunk(int offset);
-bool CompileInline(SYMBOL* sym, bool toplevel);
+bool CompileInlineFunction(SYMBOL* sym);
+bool CompileAndGen(SYMBOL* sym);
+void EnterInlineFunctionContext();
+void LeaveInlineFunctionContext();
 void InsertInline(SYMBOL* sym);
 void InsertInlineData(SYMBOL* sym);
 void InsertRttiType(SYMBOL* tp);

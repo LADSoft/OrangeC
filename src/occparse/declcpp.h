@@ -28,32 +28,15 @@
 #include <stack>
 namespace Parser
 {
-extern attributes basisAttribs;
-
-extern std::list<SYMBOL*> nameSpaceList;
-extern char anonymousNameSpaceName[512];
 extern int noNeedToSpecialize;
-extern int parsingUsing;
-extern int inStaticAssert;
-
-typedef struct
-{
-    VTABENTRY* entry;
-    SYMBOL* func;
-    SYMBOL* name;
-} THUNK;
 
 // decl group
-void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset);
-void calculateVirtualBaseOffsets(SYMBOL* sym);
 void deferredInitializeStructFunctions(SYMBOL* cur);
 void deferredInitializeStructMembers(SYMBOL* cur);
-bool usesVTab(SYMBOL* sym);
-LexList* baseClasses(LexList* lex, SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess);
+void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
-LexList* handleStaticAssert(LexList* lex);
 void CheckIsLiteralClass(Type* tp);
-LexList* GetStructuredBinding(LexList* lex, SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
+void GetStructuredBinding( SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
                               std::list<FunctionBlock*>& block);
 // templatedecl.cpp
 bool declaringTemplate(SYMBOL* sym);
@@ -62,15 +45,10 @@ void CollapseReferences(Type* tp_in);
 // stmt.cpp
 EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);
 //
-void dumpVTab(SYMBOL* sym);
 int classRefCount(SYMBOL* base, SYMBOL* derived);
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
-void deferredCompileOne(SYMBOL* cur);
+void DeferredCompileFunction(SYMBOL* cur);
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
-LexList* insertUsing(LexList* lex, SYMBOL** sp_out, AccessLevel access, StorageClass storage_class, bool inTemplate,
-                     bool hasAttributes);
-Type* AttributeFinish(SYMBOL* sym, Type* tp);
-bool ParseAttributeSpecifiers(LexList** lex, SYMBOL* funcsp, bool always);
 bool MatchesConstFunction(SYMBOL* sym);
-LexList* getDeclType(LexList* lex, SYMBOL* funcsp, Type** tn);
+void getDeclType( SYMBOL* funcsp, Type** tn);
 }  // namespace Parser

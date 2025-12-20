@@ -36,7 +36,7 @@
 #include "config.h"
 #include "ildata.h"
 #include "occil.h"
-#include "using.h"
+#include "msilusing.h"
 #include "MsilProcess.h"
 #include "CmdFiles.h"
 #define STARTUP_TYPE_STARTUP 1

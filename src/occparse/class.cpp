@@ -59,6 +59,8 @@
 #include "symtab.h"
 #include "Utils.h"
 #include "exprpacked.h"
+#include "using.h"
+#include "SymbolProperties.h";
 
 namespace Parser
 {
@@ -69,9 +71,8 @@ static void GetUsingName(char (&buf)[n])
     auto sym = enclosingDeclarations.GetFirst();
     if (sym)
     {
-        enclosingDeclarations.Add(sym);
+        DeclarationScope scope(sym);
         auto sp = classsearch(buf, false, false, false);
-        enclosingDeclarations.Drop();
         if (sp && sp->sb && sp->sb->usingTypedef)
         {
             if (sp->tp->IsStructured())
@@ -79,7 +80,7 @@ static void GetUsingName(char (&buf)[n])
         }
     }
 }
-LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly,
+void nestedPath( SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* throughClass, bool tagsOnly,
                     StorageClass storage_class, bool isType, int flags)
 {
     (void)tagsOnly;
@@ -89,7 +90,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
     SYMBOL* strSym = nullptr;
     bool qualified = false;
     std::vector<TEMPLATESELECTOR>* templateSelector = nullptr;
-    LexList *placeholder = lex, *finalPos;
+    LexemeStreamPosition placeHolder(currentStream);
     bool hasTemplate = false;
     TEMPLATEPARAMPAIR* templateParamAsTemplate = nullptr;
     Type* dependentType = nullptr;
@@ -102,32 +103,34 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
     if (ns)
         *ns = nullptr;
 
-    if (MATCHKW(lex, Keyword::typename_))
+    if (MATCHKW(Keyword::typename_))
     {
         typeName = true;
-        lex = getsym();
+        getsym();
     }
-    if (MATCHKW(lex, Keyword::classsel_))
+    if (MATCHKW(Keyword::classsel_))
     {
         nssym = rootNameSpace;
-        lex = getsym();
+        getsym();
         qualified = true;
     }
-    finalPos = lex;
-    while (ISID(lex) || (first && MATCHKW(lex, Keyword::decltype_)) || (templateSelector && MATCHKW(lex, Keyword::operator_)))
+
+    LexemeStreamPosition finalPos(currentStream);
+
+    while (ISID() || (first && MATCHKW(Keyword::decltype_)) || (templateSelector && MATCHKW(Keyword::operator_)))
     {
         char buf[512];
         SYMBOL* sp = nullptr;
         int ovdummy;
-        if (first && MATCHKW(lex, Keyword::decltype_))
+        if (first && MATCHKW(Keyword::decltype_))
         {
             Type* tp = nullptr;
-            lex = getDeclType(lex, theCurrentFunc, &tp);
-            if (!tp || (!tp->IsStructured() && tp->type != BasicType::templatedecltype_) || !MATCHKW(lex, Keyword::classsel_))
+            getDeclType(theCurrentFunc, &tp);
+            if (!tp || (!tp->IsStructured() && tp->type != BasicType::templatedecltype_) || !MATCHKW(Keyword::classsel_))
                 break;
             if (tp->IsAutoType())
                 RequiresDialect::Feature(Dialect::cpp14, "decltype(auto)");
-            lex = getsym();
+            getsym();
             if (tp->type == BasicType::templatedecltype_)
             {
                 if (!templateSelector)
@@ -146,12 +149,12 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             }
             if (!qualified)
                 nssym = nullptr;
-            finalPos = lex;
+            finalPos.Bump();
         }
         else if (templateSelector)
         {
-            lex = getIdName(lex, nullptr, buf, sizeof(buf), & ovdummy, nullptr);
-            lex = getsym();
+            getIdName(nullptr, buf, sizeof(buf), & ovdummy, nullptr);
+            getsym();
 
             if (!typeName)
                 GetUsingName(buf);
@@ -163,32 +166,32 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             if (hasTemplate)
             {
                 templateSelector->back().isTemplate = true;
-                if (MATCHKW(lex, Keyword::lt_))
+                if (MATCHKW(Keyword::lt_))
                 {
-                    lex = GetTemplateArguments(lex, nullptr, nullptr, &templateSelector->back().templateParams);
+                    GetTemplateArguments(nullptr, nullptr, &templateSelector->back().templateParams);
                 }
-                else if (MATCHKW(lex, Keyword::classsel_))
+                else if (MATCHKW(Keyword::classsel_))
                 {
                     SpecializationError(buf);
                 }
             }
-            if ((!inTemplateType || parsingUsing) && MATCHKW(lex, Keyword::openpa_))
+            if ((!inTemplateType || processingUsingStatement) && MATCHKW(Keyword::openpa_))
             {
                 CallSite funcparams = {};
-                lex = getArgs(lex, theCurrentFunc, &funcparams, Keyword::closepa_, true, 0);
+                getArgs(theCurrentFunc, &funcparams, Keyword::closepa_, true, 0);
                 templateSelector->back().arguments = funcparams.arguments;
                 templateSelector->back().asCall = true;
             }
-            if (!MATCHKW(lex, Keyword::classsel_))
+            if (!MATCHKW(Keyword::classsel_))
                 break;
-            lex = getsym();
-            finalPos = lex;
+            getsym();
+            finalPos.Bump();
         }
         else
         {
             SYMBOL* sp_orig;
-            lex = getIdName(lex, nullptr, buf, sizeof(buf), &ovdummy, nullptr);
-            lex = getsym();
+            getIdName(nullptr, buf, sizeof(buf), &ovdummy, nullptr);
+            getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;
             bool istypedef = false;
@@ -219,15 +222,14 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                         {
                             if (t->lthis)
                             {
-                                enclosingDeclarations.Add(t->lthis);
-                                sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
-                                enclosingDeclarations.Drop();
+                                DeclarationScope scope(t->lthis);
+                                sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
                             }
                             if (sp)
                                 break;
                         }
                         if (!sp)
-                            sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
+                            sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
                         if (sp && sp->tp->type == BasicType::templateparam_)
                         {
                             TEMPLATEPARAMPAIR* params = sp->tp->templateParam;
@@ -239,7 +241,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                 }
                                 if (params && params->second->byClass.val)
                                 {
-                                    if (!definingTemplate || instantiatingTemplate)
+                                    if (!IsDefiningTemplate())
                                         params->second->byClass.val->InstantiateDeferred();
                                     if (params->second->byClass.val->IsStructured())
                                     {
@@ -257,14 +259,14 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                 }
                                 else
                                 {
-                                    if (MATCHKW(lex, Keyword::lt_))
+                                    if (MATCHKW(Keyword::lt_))
                                     {
-                                        lex = GetTemplateArguments(lex, nullptr, sp, &current);
+                                        GetTemplateArguments(nullptr, sp, &current);
                                     }
-                                    if (!MATCHKW(lex, Keyword::classsel_))
+                                    if (!MATCHKW(Keyword::classsel_))
                                         break;
-                                    lex = getsym();
-                                    finalPos = lex;
+                                    getsym();
+                                    finalPos.Bump();
                                     if (!templateSelector)
                                         templateSelector = templateSelectorListFactory.CreateVector();
                                     templateSelector->push_back(TEMPLATESELECTOR{});
@@ -295,7 +297,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     SYMBOL* cached = nullptr;
                     if (!qualified)
                         sp = namespacesearch(buf, localNameSpace, qualified, tagsOnly);
-                    if (sp && MATCHKW(lex, Keyword::classsel_) && !istype(sp))
+                    if (sp && MATCHKW(Keyword::classsel_) && !istype(sp))
                     {
                         cached = sp;
                         sp = nullptr;
@@ -344,16 +346,15 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 if (!typeName)
                     GetUsingName(buf);
 
-                if (structLevel && !definingTemplate && strSym->sb->templateLevel &&
+                if (structLevel && !templateDefinitionLevel && strSym->sb->templateLevel &&
                     (!strSym->sb->instantiated || strSym->sb->attribs.inheritable.linkage4 != Linkage::virtual_))
                 {
                     sp = nullptr;
                 }
                 else
                 {
-                    enclosingDeclarations.Add(strSym);
-                    sp = classsearch(buf, false, MATCHKW(lex, Keyword::classsel_), false);
-                    enclosingDeclarations.Drop();
+                    DeclarationScope scope(strSym);
+                    sp = classsearch(buf, false, MATCHKW(Keyword::classsel_), false);
                 }
                 if (!sp)
                 {
@@ -370,19 +371,19 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     if (hasTemplate)
                     {
                         templateSelector->back().isTemplate = true;
-                        if (MATCHKW(lex, Keyword::lt_))
+                        if (MATCHKW(Keyword::lt_))
                         {
-                            lex = GetTemplateArguments(lex, nullptr, nullptr, &templateSelector->back().templateParams);
+                            GetTemplateArguments(nullptr, nullptr, &templateSelector->back().templateParams);
                         }
-                        else if (MATCHKW(lex, Keyword::classsel_))
+                        else if (MATCHKW(Keyword::classsel_))
                         {
                             errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, buf);
                         }
                     }
-                    if (!MATCHKW(lex, Keyword::classsel_))
+                    if (!MATCHKW(Keyword::classsel_))
                         break;
-                    lex = getsym();
-                    finalPos = lex;
+                    getsym();
+                    finalPos.Bump();
                 }
                 sp_orig = sp;
                 if (sp && sp->sb && sp->sb->typeAlias && !sp->sb->templateLevel && sp->tp->IsStructured())
@@ -390,7 +391,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                     istypedef = true;
                     sp = sp->tp->BaseType()->sp;
                 }
-                else if (sp && sp->sb && sp->tp->type == BasicType::typedef_ && (definingTemplate || !sp->sb->templateLevel))
+                else if (sp && sp->sb && sp->tp->type == BasicType::typedef_ && (templateDefinitionLevel || !sp->sb->templateLevel))
                 {
                     istypedef = true;
                     if (sp->tp->btp->type == BasicType::typedef_)
@@ -415,36 +416,36 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             {
                 if (sp && sp->tp->BaseType()->type == BasicType::enum_)
                 {
-                    if (!MATCHKW(lex, Keyword::classsel_))
+                    if (!MATCHKW(Keyword::classsel_))
                         break;
-                    lex = getsym();
-                    finalPos = lex;
+                    getsym();
+                    finalPos.Bump();
                     strSym = sp;
                     qualified = true;
                     break;
                 }
                 else if (sp)
                 {
-                    if (sp->sb && sp->sb->templateLevel && (!sp->sb->instantiated || MATCHKW(lex, Keyword::lt_)))
+                    if (sp->sb && sp->sb->templateLevel && (!sp->sb->instantiated || MATCHKW(Keyword::lt_)))
                     {
                         hasTemplateArgs = true;
-                        if (MATCHKW(lex, Keyword::lt_))
+                        if (MATCHKW(Keyword::lt_))
                         {
                             current = nullptr;
-                            lex = GetTemplateArguments(lex, nullptr, sp_orig, &current);
+                            GetTemplateArguments(nullptr, sp_orig, &current);
                         }
-                        else if (MATCHKW(lex, Keyword::classsel_))
+                        else if (MATCHKW(Keyword::classsel_))
                         {
                             currentsp = sp;
                             if (!istypedef)
                                 SpecializationError(sp);
                         }
-                        if (!MATCHKW(lex, Keyword::classsel_))
+                        if (!MATCHKW(Keyword::classsel_))
                             break;
                     }
                     else
                     {
-                        if (!MATCHKW(lex, Keyword::classsel_))
+                        if (!MATCHKW(Keyword::classsel_))
                             break;
                         if (hasTemplate && (sp->tp->BaseType()->type != BasicType::templateparam_ ||
                                             sp->tp->BaseType()->templateParam->second->type != TplType::template_))
@@ -456,19 +457,19 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 else if (templateParamAsTemplate)
                 {
                     hasTemplateArgs = true;
-                    if (MATCHKW(lex, Keyword::lt_))
+                    if (MATCHKW(Keyword::lt_))
                     {
-                        lex = GetTemplateArguments(lex, nullptr, sp, &current);
+                        GetTemplateArguments(nullptr, sp, &current);
                     }
-                    else if (MATCHKW(lex, Keyword::classsel_))
+                    else if (MATCHKW(Keyword::classsel_))
                     {
                         currentsp = sp;
                         SpecializationError(sp);
                     }
-                    if (!MATCHKW(lex, Keyword::classsel_))
+                    if (!MATCHKW(Keyword::classsel_))
                         break;
                 }
-                else if (!MATCHKW(lex, Keyword::classsel_))
+                else if (!MATCHKW(Keyword::classsel_))
                     break;
                 if (templateParamAsTemplate)
                 {
@@ -479,7 +480,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 if (hasTemplateArgs)
                 {
                     deferred =
-                        inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing || (flags & _F_NOEVAL);
+                        processingTemplateHeader || parsingSpecializationDeclaration || processingTrailingReturnOrUsing || (flags & _F_NOEVAL);
                     if (currentsp)
                     {
                         sp = currentsp;
@@ -582,7 +583,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                                     }
                                     if (!sp)
                                     {
-                                        if (definingTemplate)  // || noSpecializationError)
+                                        if (templateDefinitionLevel)  // || noSpecializationError)
                                         {
                                             sp = sp1;
                                         }
@@ -596,13 +597,13 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 {
                     // order matters here...
                     sp->tp = sp->tp->InitializeDeferred();
-                    sp->tp->InstantiateDeferred(false, fullySpecialized);
+                    sp->tp->InstantiateDeferred(false, isFullySpecialized);
                 }
                 if (sp && (!sp->sb ||
                            (sp->sb->storage_class != StorageClass::namespace_ && (!sp->tp->IsStructured() || sp->templateParams))))
                     pastClassSel = true;
-                lex = getsym();
-                finalPos = lex;
+                getsym();
+                finalPos.Bump();
                 if (deferred)
                 {
                     if (istypedef && sp->sb->mainsym && sp->sb->mainsym->sb->templateLevel)
@@ -655,7 +656,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                 }
                 else
                 {
-                    if (!definingTemplate || !sp)
+                    if (!templateDefinitionLevel || !sp)
                     {
                         if (dependentType)
                             if (dependentType->IsStructured())
@@ -665,7 +666,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
                         else if (!IsPacking())
                             errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
                     }
-                    lex = prevsym(placeholder);
+                    placeHolder.Backup();
                     strSym = sp;
                     qualified = true;
                     break;
@@ -674,14 +675,14 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
         }
         first = false;
         hasTemplate = false;
-        if (MATCHKW(lex, Keyword::template_))
+        if (MATCHKW(Keyword::template_))
         {
             hasTemplate = true;
-            lex = getsym();
+            getsym();
         }
         qualified = true;
     }
-    if (pastClassSel && !typeName && !inTypedef && !hasTemplate && isType && !noTypeNameError)
+    if (pastClassSel && !typeName && !processingTypedef && !hasTemplate && isType && !noTypeNameError)
     {
 
         if (!strSym || templateSelector)
@@ -689,24 +690,25 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
             char buf[2000];
             buf[0] = 0;
 
-            while (placeholder != finalPos->next)
+            LexemeStreamPosition end = finalPos;
+            ++end;
+            for ( ; placeHolder != end; ++placeHolder)
             {
                 int l = strlen(buf);
-                if (ISKW(placeholder))
-                    Optimizer::my_sprintf(buf + l , sizeof(buf)-l, "%s", placeholder->data->kw->name);
-                else if (ISID(placeholder))
-                    Optimizer::my_sprintf(buf + l, sizeof(buf) - l, "%s", placeholder->data->value.s.a);
-                placeholder = placeholder->next;
+                if (ISKW())
+                    Optimizer::my_sprintf(buf + l , sizeof(buf)-l, "%s", placeHolder.get()->kw->name);
+                else if (ISID())
+                    Optimizer::my_sprintf(buf + l, sizeof(buf) - l, "%s", placeHolder.get()->value.s.a);
             }
 
             errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
         }
     }
-    if (!pastClassSel && typeName && !dependentType && !inTypedef && !parsingUsing && (!definingTemplate || instantiatingTemplate))
+    if (!pastClassSel && typeName && !dependentType && !processingTypedef && !processingUsingStatement && (!IsDefiningTemplate()))
     {
         error(ERR_NO_TYPENAME_HERE);
     }
-    lex = prevsym(finalPos);
+    finalPos.Backup();
     if (templateSelector)
     {
         auto tp = Type::MakeType(BasicType::templateselector_);
@@ -727,7 +729,7 @@ LexList* nestedPath(LexList* lex, SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>**
         else
             error(ERR_QUALIFIED_NAME_NOT_ALLOWED_HERE);
     }
-    return lex;
+    return;
 }
 SYMBOL* classdata(const char* name, SYMBOL* cls, SYMBOL* last, bool isvirtual, bool tagsOnly)
 {
@@ -831,21 +833,21 @@ TEMPLATEPARAMPAIR* getTemplateStruct(char* name)
     }
     return nullptr;
 }
-LexList* tagsearch(LexList* lex, char* name, int len, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
+void tagsearch( char* name, int len, SYMBOL** rsp, SymbolTable<SYMBOL>** table, SYMBOL** strSym_out,
                    std::list<NAMESPACEVALUEDATA*>** nsv_out, StorageClass storage_class)
 {
     std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
     SYMBOL* strSym = nullptr;
 
     *rsp = nullptr;
-    if (ISID(lex) || MATCHKW(lex, Keyword::classsel_))
+    if (ISID() || MATCHKW(Keyword::classsel_))
     {
-        lex = nestedSearch(lex, rsp, &strSym, &nsv, nullptr, nullptr, true, storage_class, false, false);
+        nestedSearch(rsp, &strSym, &nsv, nullptr, nullptr, true, storage_class, false, false);
         if (*rsp)
         {
             Utils::StrCpy(name, len, (*rsp)->name);
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::begin_))
+            getsym();
+            if (MATCHKW(Keyword::begin_))
             {
                 // specify EXACTLY the first result if it is a definition
                 // otherwise what is found by nestedSearch is fine...
@@ -870,11 +872,11 @@ LexList* tagsearch(LexList* lex, char* name, int len, SYMBOL** rsp, SymbolTable<
                 }
             }
         }
-        else if (ISID(lex))
+        else if (ISID())
         {
-            Utils::StrCpy(name, len, lex->data->value.s.a);
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::begin_))
+            Utils::StrCpy(name, len, currentLex->value.s.a);
+            getsym();
+            if (MATCHKW(Keyword::begin_))
             {
                 if (nsv || strSym)
                 {
@@ -912,7 +914,7 @@ LexList* tagsearch(LexList* lex, char* name, int len, SYMBOL** rsp, SymbolTable<
     }
     *nsv_out = nsv;
     *strSym_out = strSym;
-    return lex;
+    return;
 }
 SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, bool toErr)
 {
@@ -1003,7 +1005,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
     if (!encloser && !ns && !namespaceOnly)
     {
         SYMBOL* ssp = enclosingDeclarations.GetFirst();
-        if (funcLevel || !ssp)
+        if (funcNestingLevel || !ssp)
         {
             if (!tagsOnly)
                 rv = search(localNameSpace->front()->syms, name);
@@ -1079,9 +1081,8 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
         }
         else if (encloser)
         {
-            enclosingDeclarations.Add(encloser);
+            DeclarationScope scope(encloser);
             rv = classsearch(name, tagsOnly, false, true);
-            enclosingDeclarations.Drop();
             if (rv && rv->sb)
                 rv->sb->throughClass = throughClass;
         }
@@ -1097,13 +1098,13 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, std::list<NAMESPACEVALU
     }
     return rv;
 }
-LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor,
+void nestedSearch( SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv, bool* destructor,
                       bool* isTemplate, bool tagsOnly, StorageClass storage_class, bool errIfNotFound, bool isType)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
     bool throughClass = false;
-    LexList* placeholder = lex;
+    LexemeStreamPosition placeHolder(currentStream);
     bool hasTemplate = false;
     bool namespaceOnly = false;
     bool typeName = false;
@@ -1112,24 +1113,24 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
     if (!Optimizer::cparams.prm_cplusplus &&
         ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions))
     {
-        if (ISID(lex))
+        if (ISID())
         {
             if (tagsOnly)
-                *sym = tsearch(lex->data->value.s.a);
+                *sym = tsearch(currentLex->value.s.a);
             else
-                *sym = gsearch(lex->data->value.s.a);
+                *sym = gsearch(currentLex->value.s.a);
         }
-        return lex;
+        return;
     }
-    if (MATCHKW(lex, Keyword::typename_))
+    if (MATCHKW(Keyword::typename_))
     {
         typeName = true;
     }
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType, 0);
+    nestedPath(&encloser, &ns, &throughClass, tagsOnly, storage_class, isType, 0);
     if (Optimizer::cparams.prm_cplusplus)
     {
 
-        if (MATCHKW(lex, Keyword::complx_))
+        if (MATCHKW(Keyword::complx_))
         {
             if (destructor)
             {
@@ -1139,17 +1140,17 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
             {
                 error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
             }
-            lex = getsym();
+            getsym();
         }
-        else if (MATCHKW(lex, Keyword::template_))
+        else if (MATCHKW(Keyword::template_))
         {
-            lex = getsym();
+            getsym();
             if (isTemplate)
                 *isTemplate = true;
             hasTemplate = true;
         }
     }
-    if (ISID(lex) || MATCHKW(lex, Keyword::operator_))
+    if (ISID() || MATCHKW(Keyword::operator_))
     {
         if (encloser && encloser->tp->type == BasicType::templateselector_)
         {
@@ -1163,10 +1164,10 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         else
         {
             char buf[512];
-            if (!ISID(lex))
+            if (!ISID())
             {
                 int ovdummy;
-                lex = getIdName(lex, nullptr, buf, sizeof(buf), & ovdummy, nullptr);
+                getIdName(nullptr, buf, sizeof(buf), & ovdummy, nullptr);
                 *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                 if (!*sym)
                     encloser = nullptr;
@@ -1177,7 +1178,7 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
             }
             else
             {
-                TEMPLATEPARAMPAIR* tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
+                TEMPLATEPARAMPAIR* tparam = TemplateLookupSpecializationParam(currentLex->value.s.a);
                 if (tparam)
                 {
                     *sym = tparam->first;
@@ -1186,20 +1187,20 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
                 {
                     if (encloser)
                     {
-                        Utils::StrCpy(buf, lex->data->value.s.a);
+                        Utils::StrCpy(buf, currentLex->value.s.a);
                         if (!typeName)
                             GetUsingName(buf);
                         *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                     }
                     else
                     {
-                        *sym = finishSearch(lex->data->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
+                        *sym = finishSearch(currentLex->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                     }
                     if (!*sym)
                         encloser = nullptr;
                     if (errIfNotFound && !*sym)
                     {
-                        errorstr(ERR_UNDEFINED_IDENTIFIER, lex->data->value.s.a);
+                        errorstr(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
                     }
                 }
             }
@@ -1244,55 +1245,55 @@ LexList* nestedSearch(LexList* lex, SYMBOL** sym, SYMBOL** strSym, std::list<NAM
         else
             *nsv = nullptr;
     else if (!*sym)
-        lex = prevsym(placeholder);
-    return lex;
+        placeHolder.Backup();
+    return;
 }
-LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
+void getIdName( SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
 {
     buf[0] = 0;
-    if (ISID(lex))
+    if (ISID())
     {
-        Utils::StrCpy(buf, len, lex->data->value.s.a);
+        Utils::StrCpy(buf, len, currentLex->value.s.a);
     }
-    else if (MATCHKW(lex, Keyword::operator_))
+    else if (MATCHKW(Keyword::operator_))
     {
-        lex = getsym();
-        if (ISKW(lex) && lex->data->kw->key >= Keyword::new_ && lex->data->kw->key <= Keyword::complx_)
+        getsym();
+        if (ISKW() && currentLex->kw->key >= Keyword::new_ && currentLex->kw->key <= Keyword::complx_)
         {
-            Keyword kw = lex->data->kw->key;
+            Keyword kw = currentLex->kw->key;
             switch (kw)
             {
                 case Keyword::openpa_:
-                    lex = getsym();
-                    if (!MATCHKW(lex, Keyword::closepa_))
+                    getsym();
+                    if (!MATCHKW(Keyword::closepa_))
                     {
-                        needkw(&lex, Keyword::closepa_);
-                        lex = backupsym();
+                        needkw(Keyword::closepa_);
+                        --*currentStream;
                     }
                     break;
                 case Keyword::openbr_:
-                    lex = getsym();
-                    if (!MATCHKW(lex, Keyword::closebr_))
+                    getsym();
+                    if (!MATCHKW(Keyword::closebr_))
                     {
-                        needkw(&lex, Keyword::closebr_);
-                        lex = backupsym();
+                        needkw(Keyword::closebr_);
+                        --*currentStream;
                     }
                     break;
                 case Keyword::new_:
                 case Keyword::delete_:
-                    lex = getsym();
-                    if (!MATCHKW(lex, Keyword::openbr_))
+                    getsym();
+                    if (!MATCHKW(Keyword::openbr_))
                     {
-                        lex = backupsym();
+                        --*currentStream;
                     }
                     else
                     {
                         kw = (Keyword)((int)kw - (int)Keyword::new_ + (int)Keyword::complx_ + 1);
-                        lex = getsym();
-                        if (!MATCHKW(lex, Keyword::closebr_))
+                        getsym();
+                        if (!MATCHKW(Keyword::closebr_))
                         {
-                            needkw(&lex, Keyword::closebr_);
-                            lex = backupsym();
+                            needkw(Keyword::closebr_);
+                            --*currentStream;
                         }
                     }
                     break;
@@ -1301,10 +1302,10 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Ty
             }
             Utils::StrCpy(buf, len, overloadNameTab[*ov = (int)kw - (int)Keyword::new_ + CI_NEW]);
         }
-        else if (ISID(lex) || TypeGenerator::StartOfType(lex, nullptr, false))  // potential cast operator
+        else if (ISID() || TypeGenerator::StartOfType(nullptr, false))  // potential cast operator
         {
             Type* tp = nullptr;
-            tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, true, true, false);
+            tp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, true, true, false);
             if (!tp)
             {
                 errorstr(ERR_INVALID_AS_OPERATOR, "");
@@ -1318,52 +1319,52 @@ LexList* getIdName(LexList* lex, SYMBOL* funcsp, char* buf, int len, int* ov, Ty
             }
             Utils::StrCpy(buf, len, overloadNameTab[*ov = CI_CAST]);
         }
-        else if (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_u8str_)
+        else if (MATCHTYPE(LexType::l_astr_) || MATCHTYPE(LexType::l_u8str_))
         {
-            LexList* placeholder = lex;
-            Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)lex->data->value.s.w;
+            LexemeStreamPosition placeHolder(currentStream);;
+            Optimizer::SLCHAR* xx = (Optimizer::SLCHAR*)currentLex->value.s.w;
             if (xx->count)
                 error(ERR_OPERATOR_LITERAL_EMPTY_STRING);
-            if (lex->data->suffix)
+            if (currentLex->suffix)
             {
-                Optimizer::my_sprintf(buf, len, "%s@%s", overloadNameTab[CI_LIT], lex->data->suffix);
+                Optimizer::my_sprintf(buf, len, "%s@%s", overloadNameTab[CI_LIT], currentLex->suffix);
                 *ov = CI_LIT;
             }
             else
             {
-                lex = getsym();
+                getsym();
 
-                if (ISID(lex))
+                if (ISID())
                 {
-                    Optimizer::my_sprintf(buf, len, "%s@%s", overloadNameTab[CI_LIT], lex->data->value.s.a);
+                    Optimizer::my_sprintf(buf, len, "%s@%s", overloadNameTab[CI_LIT], currentLex->value.s.a);
                     *ov = CI_LIT;
                 }
                 else
                 {
                     error(ERR_OPERATOR_LITERAL_NEEDS_ID);
-                    prevsym(placeholder);
+                    placeHolder.Backup();
                 }
             }
         }
         else
         {
-            if (ISKW(lex))
-                errorstr(ERR_INVALID_AS_OPERATOR, lex->data->kw->name);
+            if (ISKW())
+                errorstr(ERR_INVALID_AS_OPERATOR, currentLex->kw->name);
             else
                 errorstr(ERR_INVALID_AS_OPERATOR, "");
-            lex = backupsym();
+            --*currentStream;
         }
     }
-    return lex;
+    return;
 }
-LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+void id_expression( SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
                        bool* isTemplate, bool tagsOnly, bool membersOnly, char* idname, int len, int flags)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
     bool throughClass = false;
     Type* castType = nullptr;
-    LexList* placeholder = lex;
+    LexemeStreamPosition placeHolder(currentStream);
     char buf[512];
     buf[0] = 0;
     int ov = 0;
@@ -1372,38 +1373,38 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
 
     *sym = nullptr;
 
-    if (MATCHKW(lex, Keyword::classsel_))
+    if (MATCHKW(Keyword::classsel_))
         namespaceOnly = true;
     if (!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL))
     {
-        if (ISID(lex))
+        if (ISID())
         {
             if (idname)
-                Utils::StrCpy(idname, len, lex->data->value.s.a);
+                Utils::StrCpy(idname, len, currentLex->value.s.a);
             if (tagsOnly)
-                *sym = tsearch(lex->data->value.s.a);
+                *sym = tsearch(currentLex->value.s.a);
             else
             {
                 SYMBOL* ssp = enclosingDeclarations.GetFirst();
                 if (ssp)
                 {
-                    *sym = search(ssp->tp->syms, lex->data->value.s.a);
+                    *sym = search(ssp->tp->syms, currentLex->value.s.a);
                 }
                 if (*sym == nullptr)
-                    *sym = gsearch(lex->data->value.s.a);
+                    *sym = gsearch(currentLex->value.s.a);
             }
         }
-        return lex;
+        return;
     }
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, StorageClass::global_, false, flags);
-    if (MATCHKW(lex, Keyword::complx_))
+    nestedPath(&encloser, &ns, &throughClass, tagsOnly, StorageClass::global_, false, flags);
+    if (MATCHKW(Keyword::complx_))
     {
-        lex = getsym();
-        if (ISID(lex))
+        getsym();
+        if (ISID())
         {
             if (encloser)
             {
-                if (strcmp(encloser->name, lex->data->value.s.a))
+                if (strcmp(encloser->name, currentLex->value.s.a))
                 {
                     error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
                 }
@@ -1417,15 +1418,15 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
     }
     else
     {
-        if (MATCHKW(lex, Keyword::template_))
+        if (MATCHKW(Keyword::template_))
         {
             if (isTemplate)
                 *isTemplate = true;
             hasTemplate = true;
-            lex = getsym();
+            getsym();
         }
-        lex = getIdName(lex, funcsp, buf, sizeof(buf), &ov, &castType);
-        if (buf[0] &&(!definingTemplate || instantiatingTemplate || !encloser || encloser->tp->BaseType()->type != BasicType::templateselector_))
+        getIdName(funcsp, buf, sizeof(buf), &ov, &castType);
+        if (buf[0] &&(!IsDefiningTemplate() || !encloser || encloser->tp->BaseType()->type != BasicType::templateselector_))
         {
             if (encloser)
                 encloser->tp->InstantiateDeferred();
@@ -1464,12 +1465,12 @@ LexList* id_expression(LexList* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strS
         else
             *nsv = nullptr;
     else if (!*sym && (!encloser || encloser->tp->type != BasicType::templateselector_))
-        lex = prevsym(placeholder);
+        placeHolder.Backup();
     if (!*sym && idname)
     {
         Utils::StrCpy(idname, len, buf);
     }
-    return lex;
+    return;
 }
 SYMBOL* LookupSym(char* name)
 {
@@ -1565,7 +1566,7 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
 }
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, AccessLevel minAccess, bool asAddress)
 {
-    return (definingTemplate && !instantiatingTemplate) || instantiatingFunction || member->sb->accessibleTemplateArgument ||
+    return IsDefiningTemplate() || instantiatingFunction || member->sb->accessibleTemplateArgument ||
            isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, AccessLevel::public_, 0);
 }
 static SYMBOL* AccessibleClassInstance(SYMBOL* parent)

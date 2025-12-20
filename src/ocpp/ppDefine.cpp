@@ -419,14 +419,14 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
     std::string insert;
     if (name == "__FILE__")
     {
-        std::string errfile = include->GetErrFile();
-        int n = errfile.find('\\');
+        std::string sourceFileName = include->GetErrFile();
+        int n = sourceFileName.find('\\');
         while (n != std::string::npos)
         {
-            errfile.replace(n, 1, "\\\\");
-            n = errfile.find('\\', n + 2);
+            sourceFileName.replace(n, 1, "\\\\");
+            n = sourceFileName.find('\\', n + 2);
         }
-        insert = std::string("\"") + errfile + "\"";
+        insert = std::string("\"") + sourceFileName + "\"";
     }
     else if (name == "__LINE__")
     {

@@ -52,7 +52,7 @@
 #include "constopt.h"
 #include "OptUtils.h"
 #ifndef ORANGE_NO_MSIL
-#    include "using.h"
+#    include "msilusing.h"
 #endif
 #include "declare.h"
 #include "memory.h"
@@ -74,6 +74,10 @@
 #include "exprpacked.h"
 #include "lambda.h"
 #include "unmangle.h"
+#include "SymbolProperties.h"
+#include "casts.h"
+#include "attribs.h"
+
 #define MAX_INLINE_EXPRESSIONS 3
 
 namespace Parser
@@ -84,10 +88,10 @@ static std::list<std::list<SYMBOL*>*> usingDirectives;
 static std::stack<std::string> nestedFuncNames;
 bool isCallNoreturnFunction;
 
-int inLoopOrConditional;
+int processingLoopOrConditional;
 
 int funcNesting;
-int funcLevel;
+int funcNestingLevel;
 int tryLevel;
 int ellipsePos;
 
@@ -120,14 +124,14 @@ void statement_ini(bool global)
     lines = nullptr;
     functionCanThrow = false;
     funcNesting = 0;
-    funcLevel = 0;
+    funcNestingLevel = 0;
     caseDestructorsForBlock = nullptr;
     caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
     controlSequences = 0;
     expressions = 0;
-    inLoopOrConditional = 0;
+    processingLoopOrConditional = 0;
     bodyIsDestructor = 0;
     inFunctionExpressionParsing = false;
     while (!expressionStatements.empty())
@@ -146,15 +150,17 @@ bool msilManaged(SYMBOL* s)
     return false;
 }
 
-Statement* Statement::MakeStatement(LexList* lex, std::list<FunctionBlock*>& parent, StatementNode stype)
+Statement* Statement::MakeStatement( std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme *lex)
 {
     Statement* st = Allocate<Statement>();
     if (!lex)
-        lex = context->cur ? context->cur->prev : context->last;
+    {
+        lex = currentStream->get(currentStream->Index() ? currentStream->Index()-1 :  0);
+    }
     st->type = stype;
     st->charpos = 0;
-    st->line = lex->data->errline;
-    st->file = lex->data->errfile;
+    st->line = lex->sourceLineNumber;
+    st->file = lex->sourceFileName;
 
     st->parent = parent.size() ? parent.front() : nullptr;
     if (&parent != &emptyBlockdata)
@@ -179,9 +185,9 @@ Statement* Statement::MakeStatement(LexList* lex, std::list<FunctionBlock*>& par
     }
     return st;
 }
-void FunctionBlock::AddThis(LexList* lex, std::list<FunctionBlock*>& parent)
+void FunctionBlock::AddThis( std::list<FunctionBlock*>& parent)
 {
-    Statement* st = Statement::MakeStatement(lex, parent, StatementNode::block_);
+    Statement* st = Statement::MakeStatement(parent, StatementNode::block_);
     st->blockTail = this->blockTail;
     st->lower = this->statements;
 }
@@ -190,11 +196,11 @@ void StatementGenerator::AllocateLocalContext(std::list<FunctionBlock*>& block, 
     SymbolTable<SYMBOL>* tn = symbols->CreateSymbolTable();
     Statement* st;
     Optimizer::LIST* l;
-    st = Statement::MakeStatement(nullptr, block, StatementNode::dbgblock_);
+    st = Statement::MakeStatement(block, StatementNode::dbgblock_);
     st->label = 1;
     if (block.size() && Optimizer::cparams.prm_debug)
     {
-        st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
+        st = Statement::MakeStatement(block, StatementNode::label_);
         st->label = label;
     }
     tn->Next(localNameSpace->front()->syms);
@@ -225,14 +231,14 @@ void StatementGenerator::FreeLocalContext(std::list<FunctionBlock*>& block, SYMB
     Statement* st;
     if (block.size() && Optimizer::cparams.prm_debug)
     {
-        st = Statement::MakeStatement(nullptr, block, StatementNode::label_);
+        st = Statement::MakeStatement(block, StatementNode::label_);
         st->label = label;
     }
     checkUnused(localNameSpace->front()->syms);
     if (sym)
         sym->sb->value.i--;
 
-    st = Statement::MakeStatement(nullptr, block, StatementNode::expr_);
+    st = Statement::MakeStatement(block, StatementNode::expr_);
     StatementGenerator::DestructorsForBlock(&st->select, localNameSpace->front()->syms, true);
     localNameSpace->front()->syms = localNameSpace->front()->syms->Next();
     localNameSpace->front()->tags = localNameSpace->front()->tags->Next();
@@ -252,7 +258,7 @@ void StatementGenerator::FreeLocalContext(std::list<FunctionBlock*>& block, SYMB
         sym->sb->inlineFunc.syms = locals;
         sym->sb->inlineFunc.tags = tags;
     }
-    st = Statement::MakeStatement(nullptr, block, StatementNode::dbgblock_);
+    st = Statement::MakeStatement(block, StatementNode::dbgblock_);
     st->label = 0;
 }
 bool StatementGenerator::IsSelectTrue(EXPRESSION* exp)
@@ -276,11 +282,11 @@ void StatementGenerator::MarkInitializersAsDeclarations(std::list<Statement*>& l
 void StatementGenerator::SelectionExpression(std::list<FunctionBlock*>& parent, EXPRESSION** exp, Keyword kw, bool* declaration)
 {
     Type* tp = nullptr;
-    bool hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
+    bool hasAttributes = ParseAttributeSpecifiers(funcsp, true);
     (void)parent;
     bool structured = false;
-    if (TypeGenerator::StartOfType(lex, &structured, false) &&
-        (!Optimizer::cparams.prm_cplusplus || StatementGenerator::ResolvesToDeclaration(lex, structured)))
+    if (TypeGenerator::StartOfType(&structured, false) &&
+        (!Optimizer::cparams.prm_cplusplus || StatementGenerator::ResolvesToDeclaration(structured)))
     {
         if (declaration)
         {
@@ -305,18 +311,18 @@ void StatementGenerator::SelectionExpression(std::list<FunctionBlock*>& parent, 
             (*exp)->size = tp;
             tp = &stdint;
         }
-        if ((kw == Keyword::if_ || kw == Keyword::switch_) && MATCHKW(lex, Keyword::semicolon_))
+        if ((kw == Keyword::if_ || kw == Keyword::switch_) && MATCHKW(Keyword::semicolon_))
             RequiresDialect::Feature(Dialect::cpp17, "Initializer in if or switch statement");
     }
     else
     {
         if (hasAttributes)
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-        /*		bool openparen = MATCHKW(lex, Keyword::openpa_); */
+        /*		bool openparen = MATCHKW(Keyword::openpa_); */
         if (declaration)
             *declaration = false;
         inFunctionExpressionParsing = true;
-        lex = expression(lex, funcsp, nullptr, &tp, exp, kw != Keyword::for_ && kw != Keyword::rangefor_ ? _F_SELECTOR : 0);
+        expression(funcsp, nullptr, &tp, exp, kw != Keyword::for_ && kw != Keyword::rangefor_ ? _F_SELECTOR : 0);
         if (tp)
         {
             if (tp->type == BasicType::memberptr_)
@@ -627,7 +633,7 @@ void StatementGenerator::ThunkGotoDestructors(EXPRESSION** exp, std::list<Functi
 void StatementGenerator::StartOfCaseGroup(std::list<FunctionBlock*>& parent)
 {
     caseLevel++;
-    Statement* st = Statement::MakeStatement(nullptr, parent, StatementNode::dbgblock_);
+    Statement* st = Statement::MakeStatement(parent, StatementNode::dbgblock_);
     st->label = 1;
 }
 void StatementGenerator::EndOfCaseGroup(std::list<FunctionBlock*>& parent)
@@ -635,7 +641,7 @@ void StatementGenerator::EndOfCaseGroup(std::list<FunctionBlock*>& parent)
     if (caseLevel)
     {
         caseLevel--;
-        Statement* st = Statement::MakeStatement(nullptr, parent, StatementNode::dbgblock_);
+        Statement* st = Statement::MakeStatement(parent, StatementNode::dbgblock_);
         st->label = 0;
     }
 }
@@ -659,7 +665,7 @@ void StatementGenerator::HandleEndOfCase(std::list<FunctionBlock*>& parent)
         StatementGenerator::DestructorsForBlock(&exp, localNameSpace->front()->syms, false);
         if (exp)
         {
-            st = Statement::MakeStatement(nullptr, parent, StatementNode::nop_);
+            st = Statement::MakeStatement(parent, StatementNode::nop_);
             st->destexp = exp;
         }
         DestructSymbolsInTable(localNameSpace->front()->syms);
@@ -697,10 +703,10 @@ void StatementGenerator::ParseBreak(std::list<FunctionBlock*>& parent)
     {
         canFallThrough = true;
         Statement* st;
-        currentLineData(parent, lex, 0);
+        currentLineData(parent, currentLex, 0);
         if (last != parent.end())
             ThunkReturnDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
-        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+        st = Statement::MakeStatement(parent, StatementNode::goto_);
         st->label = (*breakableStatement)->breaklabel;
         st->destexp = exp;
         auto range = std::list<FunctionBlock*>(breakableStatement, parent.end());
@@ -709,7 +715,7 @@ void StatementGenerator::ParseBreak(std::list<FunctionBlock*>& parent)
         (*breakableStatement)->needlabel = false;
         (*breakableStatement)->hasbreak = true;
     }
-    lex = getsym();
+    getsym();
 }
 void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
 {
@@ -718,7 +724,7 @@ void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
     FunctionBlock* switchstmt = nullptr;
-    lex = getsym();
+    getsym();
     bool found = false;
     for (auto s : parent)
     {
@@ -745,16 +751,16 @@ void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
         canFallThrough = true;
     }
 
-    lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+    optimized_expression(funcsp, nullptr, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
     }
     else if (isintconst(exp))
     {
-        needkw(&lex, Keyword::colon_);
-        const char* fname = lex->data->errfile;
-        int line = lex->data->errline;
+        needkw(Keyword::colon_);
+        const char* fname = currentLex->sourceFileName;
+        int line = currentLex->sourceLineNumber;
         val = exp->v.i;
         /* need error: lost conversion on case value */
         bool found = false;
@@ -773,7 +779,7 @@ void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
         }
         if (!found)
         {
-            Statement* st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+            Statement* st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = codeLabel++;
             codeLabel++;  // reserve a label in case a bingen is used in the back Keyword::end_...
             auto data = Allocate<CASEDATA>();
@@ -787,8 +793,8 @@ void StatementGenerator::ParseCase(std::list<FunctionBlock*>& parent)
     else
     {
         error(ERR_CASE_INTEGER_CONSTANT);
-        errskim(&lex, skim_colon);
-        skip(&lex, Keyword::colon_);
+        errskim(skim_colon);
+        skip(Keyword::colon_);
     }
 }
 void StatementGenerator::ParseContinue(std::list<FunctionBlock*>& parent)
@@ -817,19 +823,19 @@ void StatementGenerator::ParseContinue(std::list<FunctionBlock*>& parent)
         Statement* st;
         if (last != parent.end())
             ThunkReturnDestructors(&exp, (*last)->table, localNameSpace->front()->syms);
-        currentLineData(parent, lex, 0);
-        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+        currentLineData(parent, currentLex, 0);
+        st = Statement::MakeStatement(parent, StatementNode::goto_);
         st->label = (*continuableStatement)->continuelabel;
         st->destexp = exp;
         auto range = std::list<FunctionBlock*>(continuableStatement, parent.end());
         ThunkCatchCleanup(st, parent, range);
         parent.front()->needlabel = true;
     }
-    lex = getsym();
+    getsym();
 }
 void StatementGenerator::ParseDefault(std::list<FunctionBlock*>& parent)
 {
-    lex = getsym();
+    getsym();
     std::list<FunctionBlock*>::iterator defaultableStatement;
     EXPRESSION* exp = nullptr;
     bool found = false;
@@ -851,7 +857,7 @@ void StatementGenerator::ParseDefault(std::list<FunctionBlock*>& parent)
         if (!canFallThrough && !basisAttribs.uninheritable.fallthrough)
             error(ERR_FALLTHROUGH);
         canFallThrough = true;
-        Statement* st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+        Statement* st = Statement::MakeStatement(parent, StatementNode::label_);
         st->label = codeLabel++;
         if ((*defaultableStatement)->defaultlabel != -1)
             error(ERR_SWITCH_HAS_DEFAULT);
@@ -859,7 +865,7 @@ void StatementGenerator::ParseDefault(std::list<FunctionBlock*>& parent)
         (*defaultableStatement)->needlabel = false;
         parent.front()->needlabel = false;
     }
-    needkw(&lex, Keyword::colon_);
+    needkw(Keyword::colon_);
 }
 void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
 {
@@ -869,86 +875,86 @@ void StatementGenerator::ParseDo(std::list<FunctionBlock*>& parent)
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
     int loopLabel = codeLabel++;
-    lex = getsym();
+    getsym();
     dostmt->breaklabel = codeLabel++;
     dostmt->continuelabel = codeLabel++;
     dostmt->type = Keyword::do_;
     dostmt->table = localNameSpace->front()->syms;
     parent.push_front(dostmt);
-    currentLineData(parent, lex, 0);
-    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+    currentLineData(parent, currentLex, 0);
+    st = Statement::MakeStatement(parent, StatementNode::label_);
     st->label = loopLabel;
-    inLoopOrConditional++;
+    processingLoopOrConditional++;
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         addedBlock++;
         AllocateLocalContext(parent, funcsp, codeLabel++);
     }
     // this next needed for strength reduction; we need to know definitively where the expression starts....
-    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+    st = Statement::MakeStatement(parent, StatementNode::label_);
     st->label = codeLabel++;
     st->blockInit = true;
     do
     {
         lastLabelStmt = dostmt->statements->back();
         StatementWithoutNonconst(parent, true);
-    } while (lex && dostmt->statements->back() != lastLabelStmt && dostmt->statements->back()->purelabel);
+    } while (currentLex && dostmt->statements->back() != lastLabelStmt && dostmt->statements->back()->purelabel);
     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
     {
         addedBlock--;
         FreeLocalContext(parent, funcsp, codeLabel++);
     }
     before->nosemi = false;
-    if (MATCHKW(lex, Keyword::while_))
+    if (MATCHKW(Keyword::while_))
     {
-        lex = getsym();
+        getsym();
         if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
             AllocateLocalContext(parent, funcsp, codeLabel++);
         }
-        if (MATCHKW(lex, Keyword::openpa_))
+        if (MATCHKW(Keyword::openpa_))
         {
-            lex = getsym();
+            getsym();
             SelectionExpression(parent, &select, Keyword::do_, nullptr);
-            if (!MATCHKW(lex, Keyword::closepa_))
+            if (!MATCHKW(Keyword::closepa_))
             {
                 error(ERR_DOWHILE_NEEDS_CLOSEPA);
-                errskim(&lex, skim_closepa);
-                skip(&lex, Keyword::closepa_);
+                errskim(skim_closepa);
+                skip(Keyword::closepa_);
             }
             else
-                lex = getsym();
-            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                getsym();
+            st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = dostmt->continuelabel;
-            currentLineData(parent, lex, 0);
-            st = Statement::MakeStatement(lex, parent, StatementNode::select_);
+            currentLineData(parent, currentLex, 0);
+            st = Statement::MakeStatement(parent, StatementNode::select_);
             st->select = select;
             if (!dostmt->hasbreak && (dostmt->needlabel || IsSelectTrue(st->select)))
                 before->needlabel = true;
             st->label = loopLabel;
-            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = dostmt->breaklabel;
         }
         else
         {
             error(ERR_DOWHILE_NEEDS_OPENPA);
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
     }
     else
     {
         before->nosemi = true;
         error(ERR_DO_STMT_NEEDS_WHILE);
-        errskim(&lex, skim_semi);
-        skip(&lex, Keyword::semicolon_);
+        errskim(skim_semi);
+        skip(Keyword::semicolon_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
-    dostmt->AddThis(lex, parent);
+    dostmt->AddThis(parent);
 }
 void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
 {
@@ -966,15 +972,15 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
     parent.push_front(forstmt);
     auto beforeit = parent.begin();
     ++beforeit;
-    currentLineData(parent, lex, -1);
-    forline = currentLineData(emptyBlockdata, lex, 0);
-    lex = getsym();
-    inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::openpa_))
+    currentLineData(parent, currentLex, -1);
+    forline = currentLineData(emptyBlockdata, currentLex, 0);
+    getsym();
+    processingLoopOrConditional++;
+    if (MATCHKW(Keyword::openpa_))
     {
         bool declaration = false;
-        lex = getsym();
-        if (!MATCHKW(lex, Keyword::semicolon_))
+        getsym();
+        if (!MATCHKW(Keyword::semicolon_))
         {
             bool hasColon = false;
             if ((Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor) ||
@@ -986,15 +992,15 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
             }
             if (Optimizer::cparams.prm_cplusplus)
             {
-                LexList* origLex = lex;
-                while (lex && !MATCHKW(lex, Keyword::semicolon_) && !MATCHKW(lex, Keyword::colon_))
-                    lex = getsym();
-                hasColon = MATCHKW(lex, Keyword::colon_);
-                lex = prevsym(origLex);
+                LexemeStreamPosition origLex(currentStream);
+                while (currentLex && !MATCHKW(Keyword::semicolon_) && !MATCHKW(Keyword::colon_))
+                    getsym();
+                hasColon = MATCHKW(Keyword::colon_);
+                origLex.Backup();
             }
 
             SelectionExpression(parent, &init, hasColon ? Keyword::rangefor_ : Keyword::for_, &declaration);
-            if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor && declaration && MATCHKW(lex, Keyword::colon_))
+            if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_oldfor && declaration && MATCHKW(Keyword::colon_))
             {
                 // range based for statement
                 // we will ignore 'init'.
@@ -1005,7 +1011,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 {
                     diag("statement_for: Cannot get range based range variable");
                     declExp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                    errskim(&lex, skim_end);
+                    errskim(skim_end);
                     return;
                 }
                 else
@@ -1018,17 +1024,17 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     declExp = MakeExpression(ExpressionNode::auto_, declSP);
                     declSP->sb->assigned = declSP->sb->attribs.inheritable.used = true;
                 }
-                lex = getsym();
+                getsym();
 
                 auto page = localNameSpace->front()->syms;
                 localNameSpace->front()->syms = static_cast<SymbolTable<SYMBOL>*>(localNameSpace->front()->syms->Next());
-                if (MATCHKW(lex, Keyword::begin_))
+                if (MATCHKW(Keyword::begin_))
                 {
                     Type* matchtp = &stdint;
                     EXPRESSION *begin, *size;
                     std::deque<std::pair<Type*, EXPRESSION*>> save;
                     std::list<Argument*>* lst = nullptr;
-                    lex = getInitList(lex, funcsp, &lst);
+                    getInitList(funcsp, &lst);
                     int offset = 0;
 
                     if (lst)
@@ -1071,7 +1077,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                     }
                                     else
                                     {
-                                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                        st = Statement::MakeStatement(parent, StatementNode::expr_);
                                         st->select = newExp;
                                         newExp = base;
                                         CallDestructor(matchtp->sp, matchtp->sp, &newExp,
@@ -1089,7 +1095,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 {
                                     lstitem->exp->left->v.func->thisptr->v.sp->sb->dest = nullptr;
                                     lstitem->exp->left->v.func->thisptr = base;
-                                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                    st = Statement::MakeStatement(parent, StatementNode::expr_);
                                     st->select = lstitem->exp;
                                 }
                                 else if (!callConstructorParam(&ctype, &newExp, ittp, lstitem->exp, true, false, true, false, true))
@@ -1098,14 +1104,14 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 }
                                 else
                                 {
-                                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                    st = Statement::MakeStatement(parent, StatementNode::expr_);
                                     st->select = newExp;
                                 }
                                 newExp = base;
                             }
                             else
                             {
-                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(parent, StatementNode::expr_);
                                 Dereference(matchtp, &base);
                                 st->select = MakeExpression(ExpressionNode::assign_, base, lstitem->exp);
                             }
@@ -1136,13 +1142,13 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     tp2->array = true;
                     EXPRESSION* val = AnonymousVar(StorageClass::auto_, tp2);
                     select = ConverInitializersToExpression(tp2, nullptr, val, funcsp, init, nullptr, false);
-                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                    st = Statement::MakeStatement(parent, StatementNode::expr_);
                     st->select = select;
                     select = val;
                 }
                 else
                 {
-                    lex = expression_no_comma(lex, funcsp, nullptr, &selectTP, &select, nullptr, 0);
+                    expression_no_comma(funcsp, nullptr, &selectTP, &select, nullptr, 0);
                 }
                 localNameSpace->front()->syms = page;
                 if (!selectTP || selectTP->type == BasicType::any_)
@@ -1160,12 +1166,12 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     if (selectTP->IsStructured())
                         selectTP = selectTP->BaseType()->sp->tp;
                     Dereference(&stdpointer, &rangeExp);
-                    needkw(&lex, Keyword::closepa_);
+                    needkw(Keyword::closepa_);
                     while (IsCastValue(select))
                         select = select->left;
                     if (IsLValue(select) && select->type != ExpressionNode::l_ref_ && !selectTP->IsStructured())
                         select = select->left;
-                    //                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                    //                    st = Statement::MakeStatement(parent, StatementNode::expr_);
                     //                    st->select = MakeExpression(ExpressionNode::assign_, rangeExp, select);
                     rangeExp = select;
                     if (!selectTP->IsStructured())
@@ -1454,20 +1460,20 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             {
                                 Dereference(iteratorType->BaseType()->sp->sb->structuredAliasType, &ibegin->v.func->returnEXP);
                                 Dereference(iteratorType->BaseType()->sp->sb->structuredAliasType, &iend->v.func->returnEXP);
-                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(parent, StatementNode::expr_);
                                 st->select = MakeExpression(ExpressionNode::assign_, ibegin->v.func->returnEXP, ibegin);
                                 ibegin->v.func->returnEXP = nullptr;
                                 ibegin->v.func->returnSP = nullptr;
-                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(parent, StatementNode::expr_);
                                 st->select = MakeExpression(ExpressionNode::assign_, iend->v.func->returnEXP, iend);
                                 iend->v.func->returnEXP = nullptr;
                                 iend->v.func->returnSP = nullptr;
                             }
                             else
                             {
-                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(parent, StatementNode::expr_);
                                 st->select = ibegin;
-                                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                st = Statement::MakeStatement(parent, StatementNode::expr_);
                                 st->select = iend;
                             }
                         }
@@ -1478,9 +1484,9 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             eEnd = AnonymousVar(StorageClass::auto_, tpx);
                             Dereference(&stdpointer, &eBegin);
                             Dereference(&stdpointer, &eEnd);
-                            st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                            st = Statement::MakeStatement(parent, StatementNode::expr_);
                             st->select = MakeExpression(ExpressionNode::assign_, eBegin, ibegin);
-                            st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                            st = Statement::MakeStatement(parent, StatementNode::expr_);
                             st->select = MakeExpression(ExpressionNode::assign_, eEnd, iend);
                         }
                         if (iteratorType->IsRef())
@@ -1501,12 +1507,12 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             }
                         }
 
-                        st = Statement::MakeStatement(lex, parent, StatementNode::select_);
+                        st = Statement::MakeStatement(parent, StatementNode::select_);
                         st->label = parent.front()->breaklabel;
                         st->altlabel = testlabel;
                         st->select = compare;
 
-                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(parent, StatementNode::label_);
                         st->label = loopLabel;
                         st->blockInit = true;
 
@@ -1514,7 +1520,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         AllocateLocalContext(dummy, funcsp, codeLabel++);
 
                         // initialize var here
-                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                        st = Statement::MakeStatement(parent, StatementNode::expr_);
                         if (!selectTP->IsStructured())
                         {
                             DeduceAuto(&declSP->tp, selectTP, declExp, false);
@@ -1660,17 +1666,17 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         {
                             lastLabelStmt = parent.front()->statements->back();
                             StatementWithoutNonconst(parent, true);
-                        } while (lex && parent.front()->statements->back() != lastLabelStmt &&
+                        } while (currentLex && parent.front()->statements->back() != lastLabelStmt &&
                                  parent.front()->statements->back()->purelabel);
                         FreeLocalContext(parent, funcsp, codeLabel++);
                         if (declDest)
                         {
-                            st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                            st = Statement::MakeStatement(parent, StatementNode::expr_);
                             st->select = declDest;
                         }
-                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(parent, StatementNode::label_);
                         st->label = parent.front()->continuelabel;
-                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                        st = Statement::MakeStatement(parent, StatementNode::expr_);
 
                         // do ++ here
                         if (!selectTP->IsStructured())
@@ -1711,7 +1717,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                         auto dest = st->select->v.func->returnEXP;
                                         CallDestructor(st->select->v.func->returnSP->tp->BaseType()->sp, nullptr, &dest, nullptr,
                                                        true, true, false, true);
-                                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                                        st = Statement::MakeStatement(parent, StatementNode::expr_);
                                         st->select = dest;
                                     }
                                 }
@@ -1722,16 +1728,16 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         {
                             parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());
                         }
-                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(parent, StatementNode::label_);
                         st->label = testlabel;
 
-                        st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
+                        st = Statement::MakeStatement(parent, StatementNode::notselect_);
                         st->label = loopLabel;
                         st->select = compare;
 
                         if (!parent.front()->hasbreak && (!st->select || IsSelectFalse(st->select)))
                             before->needlabel = true;
-                        st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                        st = Statement::MakeStatement(parent, StatementNode::label_);
                         st->label = parent.front()->breaklabel;
                         before->hassemi = parent.front()->hassemi;
                         before->nosemi = parent.front()->nosemi;
@@ -1744,7 +1750,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 while (addedBlock--)
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 parent.pop_front();
-                forstmt->AddThis(lex, parent);
+                forstmt->AddThis(parent);
                 return;
             }
             else
@@ -1766,7 +1772,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         {
                             if (declSP->tp->IsStructured() && !declSP->tp->BaseType()->sp->sb->trivialCons)
                             {
-                                lex = initialize(lex, funcsp, declSP, StorageClass::auto_, false, false, false, 0);
+                                initialize(funcsp, declSP, StorageClass::auto_, false, false, false, 0);
                             }
                             else
                             {
@@ -1778,28 +1784,28 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
             }
         }
         // normal FOR statement continues here
-        if (!needkw(&lex, Keyword::semicolon_))
+        if (!needkw(Keyword::semicolon_))
         {
             error(ERR_FOR_NEEDS_SEMI);
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
         else
         {
-            if (!MATCHKW(lex, Keyword::semicolon_))
+            if (!MATCHKW(Keyword::semicolon_))
             {
                 Type* tp = nullptr;
-                lex = optimized_expression(lex, funcsp, nullptr, &tp, &select, true);
+                optimized_expression(funcsp, nullptr, &tp, &select, true);
                 if (!tp)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
             }
-            if (!needkw(&lex, Keyword::semicolon_))
+            if (!needkw(Keyword::semicolon_))
             {
                 error(ERR_FOR_NEEDS_SEMI);
-                errskim(&lex, skim_closepa);
-                skip(&lex, Keyword::closepa_);
+                errskim(skim_closepa);
+                skip(Keyword::closepa_);
             }
             else
             {
@@ -1808,10 +1814,10 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     addedBlock++;
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                if (!MATCHKW(lex, Keyword::closepa_))
+                if (!MATCHKW(Keyword::closepa_))
                 {
                     Type* tp = nullptr;
-                    lex = expression_comma(lex, funcsp, nullptr, &tp, &incrementer, nullptr, 0);
+                    expression_comma(funcsp, nullptr, &tp, &incrementer, nullptr, 0);
                     if (!tp)
                     {
                         error(ERR_EXPRESSION_SYNTAX);
@@ -1821,11 +1827,11 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         optimize_for_constants(&incrementer);
                     }
                 }
-                if (!MATCHKW(lex, Keyword::closepa_))
+                if (!MATCHKW(Keyword::closepa_))
                 {
                     error(ERR_FOR_NEEDS_CLOSEPA);
-                    errskim(&lex, skim_closepa);
-                    skip(&lex, Keyword::closepa_);
+                    errskim(skim_closepa);
+                    skip(Keyword::closepa_);
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
                         addedBlock--;
@@ -1834,31 +1840,31 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                 }
                 else
                 {
-                    lex = getsym();
+                    getsym();
                     // this next needed for strength reduction; we need to know definitively where the expression starts....
-                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(parent, StatementNode::label_);
                     st->label = codeLabel++;
                     st->blockInit = true;
 
                     if (init)
                     {
-                        st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                        st = Statement::MakeStatement(parent, StatementNode::expr_);
                         st->select = init;
                     }
                     if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_optimize_for_size ||
                         (Optimizer::chosenAssembler->arch->denyopts & DO_NOENTRYIF))
                     {
-                        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+                        st = Statement::MakeStatement(parent, StatementNode::goto_);
                         st->label = testlabel;
                     }
                     else
                     {
-                        st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
+                        st = Statement::MakeStatement(parent, StatementNode::notselect_);
                         st->label = parent.front()->breaklabel;
                         st->altlabel = testlabel;
                         st->select = select;
                     }
-                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(parent, StatementNode::label_);
                     st->label = loopLabel;
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
@@ -1869,7 +1875,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     {
                         lastLabelStmt = parent.front()->statements->back();
                         StatementWithoutNonconst(parent, true);
-                    } while (lex && parent.front()->statements->back() != lastLabelStmt &&
+                    } while (currentLex && parent.front()->statements->back() != lastLabelStmt &&
                              parent.front()->statements->back()->purelabel);
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
@@ -1877,9 +1883,9 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                         FreeLocalContext(parent, funcsp, codeLabel++);
                     }
                     assignmentUsages(incrementer, false);
-                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(parent, StatementNode::label_);
                     st->label = parent.front()->continuelabel;
-                    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                    st = Statement::MakeStatement(parent, StatementNode::expr_);
                     st->select = incrementer;
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                     {
@@ -1890,22 +1896,22 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                     {
                         parent.front()->statements->insert(parent.front()->statements->end(), forline->begin(), forline->end());
                     }
-                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(parent, StatementNode::label_);
                     st->label = testlabel;
                     if (select)
                     {
-                        st = Statement::MakeStatement(lex, parent, StatementNode::select_);
+                        st = Statement::MakeStatement(parent, StatementNode::select_);
                         st->label = loopLabel;
                         st->select = select;
                     }
                     else
                     {
-                        st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+                        st = Statement::MakeStatement(parent, StatementNode::goto_);
                         st->label = loopLabel;
                     }
                     if (!parent.front()->hasbreak && (!st->select || IsSelectFalse(st->select)))
                         before->needlabel = true;
-                    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                    st = Statement::MakeStatement(parent, StatementNode::label_);
                     st->label = parent.front()->breaklabel;
                     before->hassemi = parent.front()->hassemi;
                     before->nosemi = parent.front()->nosemi;
@@ -1916,14 +1922,14 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
     else
     {
         error(ERR_FOR_NEEDS_OPENPA);
-        errskim(&lex, skim_closepa);
-        skip(&lex, Keyword::closepa_);
+        errskim(skim_closepa);
+        skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
-    forstmt->AddThis(lex, parent);
+    forstmt->AddThis(parent);
 }
 void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
 {
@@ -1934,17 +1940,17 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
     bool needlabelelse = false;
     bool isconstexpr = false;
     int ifbranch = codeLabel++;
-    lex = getsym();
-    inLoopOrConditional++;
-    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::constexpr_))
+    getsym();
+    processingLoopOrConditional++;
+    if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::constexpr_))
     {
         RequiresDialect::Feature(Dialect::cpp17, "Compile-time static if");
         isconstexpr = true;
-        lex = getsym();
+        getsym();
     }
-    if (MATCHKW(lex, Keyword::openpa_))
+    if (MATCHKW(Keyword::openpa_))
     {
-        lex = getsym();
+        getsym();
         if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
@@ -1952,26 +1958,26 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
         }
         bool declaration = false;
         SelectionExpression(parent, &select, Keyword::if_, &declaration);
-        if (declaration && MATCHKW(lex, Keyword::semicolon_))
+        if (declaration && MATCHKW(Keyword::semicolon_))
         {
-            lex = getsym();
+            getsym();
             init = select;
             SelectionExpression(parent, &select, Keyword::if_, nullptr);
         }
-        if (MATCHKW(lex, Keyword::closepa_))
+        if (MATCHKW(Keyword::closepa_))
         {
             if (isconstexpr && !IsConstantExpression(select, false, true))
                 error(ERR_CONSTANT_VALUE_EXPECTED);
             bool optimized = false;
             std::list<Statement*>::iterator sti;
-            currentLineData(parent, lex, 0);
-            lex = getsym();
+            currentLineData(parent, currentLex, 0);
+            getsym();
             if (init)
             {
-                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                st = Statement::MakeStatement(parent, StatementNode::expr_);
                 st->select = init;
             }
-            st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
+            st = Statement::MakeStatement(parent, StatementNode::notselect_);
             st->label = ifbranch;
             st->select = select;
             sti = parent.front()->statements->end();
@@ -1986,16 +1992,16 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
             {
                 lastLabelStmt = parent.front()->statements->back();
                 StatementWithoutNonconst(parent, true);
-            } while (lex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
+            } while (currentLex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
             needlabelif = parent.front()->needlabel;
-            if (MATCHKW(lex, Keyword::else_))
+            if (MATCHKW(Keyword::else_))
             {
                 int elsebr = codeLabel++;
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
                 }
-                st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+                st = Statement::MakeStatement(parent, StatementNode::goto_);
                 st->label = elsebr;
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                 {
@@ -2018,20 +2024,20 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
                         (*sti)->label = (*st1)->label;
                     }
                 }
-                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(parent, StatementNode::label_);
                 st->label = ifbranch;
                 if (!parent.front()->nosemi && !parent.front()->hassemi)
                     errorint(ERR_NEEDY, ';');
                 if (parent.front()->nosemi && parent.front()->hassemi)
                     error(ERR_MISPLACED_ELSE);
-                currentLineData(parent, lex, 0);
-                lex = getsym();
+                currentLineData(parent, currentLex, 0);
+                getsym();
                 parent.front()->needlabel = false;
                 do
                 {
                     lastLabelStmt = parent.front()->statements->back();
                     StatementWithoutNonconst(parent, true);
-                } while (lex && parent.front()->statements->back() != lastLabelStmt &&
+                } while (currentLex && parent.front()->statements->back() != lastLabelStmt &&
                          parent.front()->statements->back()->purelabel);
                 if ((Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size) && !optimized)
                 {
@@ -2056,7 +2062,7 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
                     FreeLocalContext(parent, funcsp, codeLabel++);
                     addedBlock--;
                 }
-                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(parent, StatementNode::label_);
                 st->label = elsebr;
             }
             else
@@ -2083,7 +2089,7 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
                     FreeLocalContext(parent, funcsp, codeLabel++);
                     addedBlock--;
                 }
-                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(parent, StatementNode::label_);
                 st->label = ifbranch;
             }
             if (parent.front()->hassemi)
@@ -2093,30 +2099,32 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
         else
         {
             error(ERR_IF_NEEDS_CLOSEPA);
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
     }
     else
     {
         error(ERR_IF_NEEDS_OPENPA);
-        errskim(&lex, skim_closepa);
-        skip(&lex, Keyword::closepa_);
+        errskim(skim_closepa);
+        skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
 }
-int StatementGenerator::GetLabelValue(LexList* lex, std::list<FunctionBlock*>* parent, Statement* st)
+int StatementGenerator::GetLabelValue( std::list<FunctionBlock*>* parent, Statement* st)
 {
-    SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
+    SYMBOL* spx = search(labelSyms, currentLex->value.s.a);
     if (!spx)
     {
-        spx = makeID(StorageClass::ulabel_, nullptr, nullptr, litlate(lex->data->value.s.a));
-        spx->sb->declfile = spx->sb->origdeclfile = lex->data->errfile;
-        spx->sb->declline = spx->sb->origdeclline = lex->data->errline;
-        spx->sb->realdeclline = lex->data->linedata->lineno;
-        spx->sb->declfilenum = lex->data->linedata->fileindex;
+        spx = makeID(StorageClass::ulabel_, nullptr, nullptr, litlate(currentLex->value.s.a));
+        spx->sb->declfile = spx->sb->origdeclfile = currentLex->sourceFileName;
+        spx->sb->declline = spx->sb->origdeclline = currentLex->sourceLineNumber;
+        spx->sb->declcharpos = currentLex->charindex;
+        spx->sb->realcharpos = currentLex->realcharindex;
+        spx->sb->realdeclline = currentLex->linedata->lineno;
+        spx->sb->declfilenum = currentLex->linedata->fileindex;
         SetLinkerNames(spx, Linkage::none_);
         spx->sb->offset = codeLabel++;
         if (!spx->sb->gotoTable)
@@ -2144,22 +2152,22 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     (void)parent;
-    lex = getsym();
-    currentLineData(parent, lex, 0);
-    if (ISID(lex))
+    getsym();
+    currentLineData(parent, currentLex, 0);
+    if (ISID())
     {
         // standard c/c++ goto
-        SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
+        SYMBOL* spx = search(labelSyms, currentLex->value.s.a);
         FunctionBlock* block = Allocate<FunctionBlock>();
         parent.push_front(block);
         block->type = Keyword::begin_;
         block->table = localNameSpace->front()->syms;
-        Statement* st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+        Statement* st = Statement::MakeStatement(parent, StatementNode::goto_);
         st->explicitGoto = true;
         int lbl = 0;
         if (!spx)
         {
-            lbl = StatementGenerator::GetLabelValue(lex, &parent, st);
+            lbl = StatementGenerator::GetLabelValue(&parent, st);
         }
         else
         {
@@ -2168,17 +2176,17 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
             ThunkCatchCleanup(st, parent, *spx->sb->gotoBlockTable);
         }
         st->label = lbl;
-        lex = getsym();
+        getsym();
         before->needlabel = true;
         parent.pop_front();
-        block->AddThis(lex, parent);
+        block->AddThis(parent);
         canFallThrough = true;
     }
-    else if (MATCHKW(lex, Keyword::star_))
+    else if (MATCHKW(Keyword::star_))
     {
         // extension: computed goto
         FunctionBlock* block = Allocate<FunctionBlock>();
-        Statement* st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+        Statement* st = Statement::MakeStatement(parent, StatementNode::goto_);
         parent.push_front(block);
         block->type = Keyword::begin_;
         block->table = localNameSpace->front()->syms;
@@ -2186,10 +2194,10 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
         st->indirectGoto = true;
         Optimizer::dontOptimizeFunction = true;  // don't optimize
         // turn off optimizations
-        lex = getsym();
+        getsym();
         Type* tp = nullptr;
         EXPRESSION* exp = nullptr;
-        lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, 0);
+        expression_no_comma(funcsp, nullptr, &tp, &exp, nullptr, 0);
         if (!tp)
             error(ERR_IDENTIFIER_EXPECTED);
         else if (!tp->IsPtr())
@@ -2197,7 +2205,7 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
         else
         {
             st->select = exp;
-            block->AddThis(lex, parent);
+            block->AddThis(parent);
         }
         before->needlabel = true;
         parent.pop_front();
@@ -2206,8 +2214,8 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
     else
     {
         error(ERR_GOTO_NEEDS_LABEL);
-        errskim(&lex, skim_semi);
-        skip(&lex, Keyword::semicolon_);
+        errskim(skim_semi);
+        skip(Keyword::semicolon_);
     }
     if (funcsp->sb->constexpression)
         error(ERR_CONSTEXPR_FUNC_NO_GOTO);
@@ -2215,9 +2223,9 @@ void StatementGenerator::ParseGoto(std::list<FunctionBlock*>& parent)
 void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
-    SYMBOL* spx = search(labelSyms, lex->data->value.s.a);
+    SYMBOL* spx = search(labelSyms, currentLex->value.s.a);
     Statement* st;
-    st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+    st = Statement::MakeStatement(parent, StatementNode::label_);
     if (spx)
     {
         if (spx->sb->storage_class == StorageClass::ulabel_)
@@ -2237,7 +2245,7 @@ void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
     }
     else
     {
-        spx = makeID(StorageClass::label_, nullptr, nullptr, litlate(lex->data->value.s.a));
+        spx = makeID(StorageClass::label_, nullptr, nullptr, litlate(currentLex->value.s.a));
         SetLinkerNames(spx, Linkage::none_);
         spx->sb->offset = codeLabel++;
         if (!spx->sb->gotoTable)
@@ -2258,7 +2266,7 @@ void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
     st->label = spx->sb->offset;
     st->purelabel = true;
     getsym();       /* Keyword::colon_ */
-    lex = getsym(); /* next sym */
+    getsym(); /* next sym */
     before->needlabel = false;
 }
 EXPRESSION* StatementGenerator::ConvertReturnToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
@@ -2390,8 +2398,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         error(ERR_NORETURN);
     funcsp->sb->retcount++;
 
-    lex = getsym();
-    if (MATCHKW(lex, Keyword::semicolon_))
+    getsym();
+    if (MATCHKW(Keyword::semicolon_))
     {
         if (!funcsp->tp->BaseType()->btp->IsVoid())
         {
@@ -2401,17 +2409,17 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
     }
     else
     {
-        int oldInLoop = inLoopOrConditional;
-        inLoopOrConditional = 0;
+        int oldInLoop = processingLoopOrConditional;
+        processingLoopOrConditional = 0;
 
         Type* tp1 = nullptr;
         EXPRESSION* exp1 = nullptr;
-        if (MATCHKW(lex, Keyword::begin_))
+        if (MATCHKW(Keyword::begin_))
         {
             if (functionReturnType->IsAutoType())
             {
                 error(ERR_AUTO_RETURN_TYPE_CANNOT_BE_RESOLVED);
-                errskim(&lex, skim_end);
+                errskim(skim_end);
                 tp1 = &stdint;
                 exp1 = MakeIntExpression(ExpressionNode::c_i_, 0);
                 AdjustForAutoReturnType(tp1, exp1);
@@ -2419,7 +2427,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         }
         else
         {
-            lex = optimized_expression(lex, funcsp, functionReturnType, &tp1, &exp1,
+            optimized_expression(funcsp, functionReturnType, &tp1, &exp1,
                                        !functionReturnType->IsStructured() && !functionReturnType->IsBitInt() &&
                                            functionReturnType->BaseType()->type != BasicType::memberptr_);
             if (!tp1)
@@ -2450,7 +2458,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                 sp->sb->offset = funcsp->sb->paramsize;
             Dereference(&stdpointer, &en);
             if (Optimizer::cparams.prm_cplusplus && functionReturnType->IsStructured() &&
-                (!functionReturnType->BaseType()->sp->sb->trivialCons || MATCHKW(lex, Keyword::begin_)))
+                (!functionReturnType->BaseType()->sp->sb->trivialCons || MATCHKW(Keyword::begin_)))
             {
                 bool implicit = false;
                 if (functionReturnType->BaseType()->sp->sb->templateLevel && functionReturnType->BaseType()->sp->templateParams &&
@@ -2462,12 +2470,12 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                     if (sym && allTemplateArgsSpecified(sym, sym->templateParams))
                         functionReturnType = TemplateClassInstantiate(sym, sym->templateParams, false, StorageClass::global_)->tp;
                 }
-                if (MATCHKW(lex, Keyword::begin_))
+                if (MATCHKW(Keyword::begin_))
                 {
                     implicit = true;
                     std::list<Initializer*>*init = nullptr, *dest = nullptr;
                     SYMBOL* sym = AnonymousVar(StorageClass::localstatic_, functionReturnType)->v.sp;
-                    lex = initType(lex, funcsp, 0, StorageClass::auto_, &init, &dest, functionReturnType, sym, false, false, 0);
+                    initType(funcsp, 0, StorageClass::auto_, &init, &dest, functionReturnType, sym, false, false, 0);
                     returnexp = ConverInitializersToExpression(functionReturnType, nullptr, nullptr, funcsp, init, en, false);
                     returntype = functionReturnType;
                     if (sym)
@@ -2490,7 +2498,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             implicit = true;
                         }
                         if (tp1->BaseType()->sp->sb->templateLevel && tp1->BaseType()->sp->templateParams &&
-                            !tp1->BaseType()->sp->sb->instantiated && !definingTemplate)
+                            !tp1->BaseType()->sp->sb->instantiated && !templateDefinitionLevel)
                         {
                             SYMBOL* sym = tp1->BaseType()->sp;
                             if (!allTemplateArgsSpecified(sym, sym->templateParams))
@@ -2742,10 +2750,10 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         else
         {
             bool needend = false;
-            if (MATCHKW(lex, Keyword::begin_))
+            if (MATCHKW(Keyword::begin_))
             {
                 needend = true;
-                lex = getsym();
+                getsym();
             }
             returnexp = exp1;
             if (tp1->BaseType()->type == BasicType::templateparam_)
@@ -2821,10 +2829,10 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
             }
             if (needend)
             {
-                if (!needkw(&lex, Keyword::end_))
+                if (!needkw(Keyword::end_))
                 {
-                    errskim(&lex, skim_end);
-                    skip(&lex, Keyword::end_);
+                    errskim(skim_end);
+                    skip(Keyword::end_);
                 }
             }
             if (functionReturnType->BaseType()->type == BasicType::object_)
@@ -2906,11 +2914,11 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         }
         if (!returnexp)
             returnexp = MakeIntExpression(ExpressionNode::c_i_, 0);  // errors
-        inLoopOrConditional = oldInLoop;
+        processingLoopOrConditional = oldInLoop;
     }
-    currentLineData(parent, lex, 0);
+    currentLineData(parent, currentLex, 0);
     ThunkReturnDestructors(&destexp, nullptr, localNameSpace->front()->syms);
-    st = Statement::MakeStatement(lex, parent, StatementNode::return_);
+    st = Statement::MakeStatement(parent, StatementNode::return_);
     st->select = returnexp;
     st->destexp = destexp;
     ThunkCatchCleanup(st, parent, emptyBlockdata);  // to top level
@@ -3039,11 +3047,11 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
     switchstmt->type = Keyword::switch_;
     switchstmt->table = localNameSpace->front()->syms;
     parent.push_front(switchstmt);
-    lex = getsym();
-    inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::openpa_))
+    getsym();
+    processingLoopOrConditional++;
+    if (MATCHKW(Keyword::openpa_))
     {
-        lex = getsym();
+        getsym();
         if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
@@ -3053,11 +3061,11 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
         SelectionExpression(parent, &select, Keyword::switch_, &declaration);
         if (declaration)
         {
-            if (!needkw(&lex, Keyword::semicolon_))
+            if (!needkw(Keyword::semicolon_))
             {
                 error(ERR_FOR_NEEDS_SEMI);
-                errskim(&lex, skim_closepa);
-                skip(&lex, Keyword::closepa_);
+                errskim(skim_closepa);
+                skip(Keyword::closepa_);
             }
             else
             {
@@ -3065,16 +3073,16 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
                 SelectionExpression(parent, &select, Keyword::if_, nullptr);
             }
         }
-        if (MATCHKW(lex, Keyword::closepa_))
+        if (MATCHKW(Keyword::closepa_))
         {
-            currentLineData(parent, lex, 0);
-            lex = getsym();
+            currentLineData(parent, currentLex, 0);
+            getsym();
             if (init)
             {
-                st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+                st = Statement::MakeStatement(parent, StatementNode::expr_);
                 st->select = init;
             }
-            st = Statement::MakeStatement(lex, parent, StatementNode::switch_);
+            st = Statement::MakeStatement(parent, StatementNode::switch_);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
             switchstmt->cases = casedataListFactory.CreateList();
@@ -3088,10 +3096,10 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
             if (st->label == -1)
             {
                 st->label = codeLabel;
-                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(parent, StatementNode::label_);
                 st->label = codeLabel++;
             }
-            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = switchstmt->breaklabel;
             if (!switchstmt->nosemi && !switchstmt->hassemi)
                 errorint(ERR_NEEDY, ';');
@@ -3100,21 +3108,21 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
         else
         {
             error(ERR_SWITCH_NEEDS_CLOSEPA);
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
     }
     else
     {
         error(ERR_SWITCH_NEEDS_OPENPA);
-        errskim(&lex, skim_closepa);
-        skip(&lex, Keyword::closepa_);
+        errskim(skim_closepa);
+        skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     parent.pop_front();
-    switchstmt->AddThis(lex, parent);
+    switchstmt->AddThis(parent);
     canFallThrough = oldfallthrough;
 }
 void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
@@ -3130,13 +3138,13 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
     whilestmt->continuelabel = codeLabel++;
     whilestmt->type = Keyword::while_;
     whilestmt->table = localNameSpace->front()->syms;
-    whileline = currentLineData(emptyBlockdata, lex, 0);
+    whileline = currentLineData(emptyBlockdata, currentLex, 0);
     parent.push_front(whilestmt);
-    lex = getsym();
-    inLoopOrConditional++;
-    if (MATCHKW(lex, Keyword::openpa_))
+    getsym();
+    processingLoopOrConditional++;
+    if (MATCHKW(Keyword::openpa_))
     {
-        lex = getsym();
+        getsym();
         if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
         {
             addedBlock++;
@@ -3144,35 +3152,35 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
         }
         bool declaration = false;
         SelectionExpression(parent, &select, Keyword::while_, &declaration);
-        if (!MATCHKW(lex, Keyword::closepa_))
+        if (!MATCHKW(Keyword::closepa_))
         {
             error(ERR_WHILE_NEEDS_CLOSEPA);
 
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
         else
         {
-            lex = getsym();
+            getsym();
             if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_optimize_for_size ||
                 (Optimizer::chosenAssembler->arch->denyopts & DO_NOENTRYIF))
             {
-                st = Statement::MakeStatement(lex, parent, StatementNode::goto_);
+                st = Statement::MakeStatement(parent, StatementNode::goto_);
                 st->label = whilestmt->continuelabel;
             }
             else
             {
                 // this next needed for strength reduction; we need to know definitively where the expression starts....
-                st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+                st = Statement::MakeStatement(parent, StatementNode::label_);
                 st->label = codeLabel++;
                 st->blockInit = true;
-                st = Statement::MakeStatement(lex, parent, StatementNode::notselect_);
+                st = Statement::MakeStatement(parent, StatementNode::notselect_);
                 st->label = whilestmt->breaklabel;
                 st->altlabel = whilestmt->continuelabel;
                 st->select = select;
             }
 
-            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = loopLabel;
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
@@ -3183,24 +3191,24 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
             {
                 lastLabelStmt = whilestmt->statements->back();
                 StatementWithoutNonconst(parent, true);
-            } while (lex && whilestmt->statements->back() != lastLabelStmt && whilestmt->statements->back()->purelabel);
+            } while (currentLex && whilestmt->statements->back() != lastLabelStmt && whilestmt->statements->back()->purelabel);
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
             {
                 addedBlock--;
                 FreeLocalContext(parent, funcsp, codeLabel++);
             }
-            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = whilestmt->continuelabel;
             if (whileline)
             {
                 parent.front()->statements->insert(parent.front()->statements->end(), whileline->begin(), whileline->end());
             }
-            st = Statement::MakeStatement(lex, parent, StatementNode::select_);
+            st = Statement::MakeStatement(parent, StatementNode::select_);
             st->label = loopLabel;
             st->select = select;
             if (!whilestmt->hasbreak && IsSelectTrue(st->select))
                 before->needlabel = true;
-            st = Statement::MakeStatement(lex, parent, StatementNode::label_);
+            st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = whilestmt->breaklabel;
             before->hassemi = whilestmt->hassemi;
             before->nosemi = whilestmt->nosemi;
@@ -3209,15 +3217,15 @@ void StatementGenerator::ParseWhile(std::list<FunctionBlock*>& parent)
     else
     {
         error(ERR_WHILE_NEEDS_OPENPA);
-        errskim(&lex, skim_closepa);
-        skip(&lex, Keyword::closepa_);
+        errskim(skim_closepa);
+        skip(Keyword::closepa_);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
     std::list<FunctionBlock*> dummy{whilestmt};
     parent.pop_front();
-    whilestmt->AddThis(lex, parent);
+    whilestmt->AddThis(parent);
 }
 bool StatementGenerator::NoSideEffect(EXPRESSION* exp)
 {
@@ -3261,20 +3269,19 @@ void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
     Type* tp = nullptr;
     auto oldLines = lines;
     lines = nullptr;
-    (void)parent;
 
-    auto prevlex = lex;
-    lex = optimized_expression(prevlex, funcsp, nullptr, &tp, &select, true);
+    auto prevlex = currentStream->Index();
+    optimized_expression(funcsp, nullptr, &tp, &select, true);
     if (expressionReturns.size())
         expressionReturns.back() = std::move(std::pair<EXPRESSION*, Type*>(select, tp));
     lines = oldLines;
 
-    currentLineData(parent, prevlex, 0);
-    st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+    currentLineData(parent, currentStream->get(prevlex), 0);
+    st = Statement::MakeStatement(parent, StatementNode::expr_);
     st->select = select;
     if (!tp)
     {
-        lex = getsym();
+        getsym();
         error(ERR_EXPRESSION_SYNTAX);
     }
     else if (tp->type != BasicType::void_ && tp->type != BasicType::any_)
@@ -3317,18 +3324,18 @@ void StatementGenerator::ParseExpr(std::list<FunctionBlock*>& parent)
 }
 void StatementGenerator::AsmDeclare()
 {
-    Keyword kw = lex->data->kw->key;
+    Keyword kw = currentLex->kw->key;
     do
     {
-        lex = getsym();
-        if (lex)
+        getsym();
+        if (currentLex)
         {
-            if (ISID(lex))
+            if (ISID())
             {
-                SYMBOL* sym = search(globalNameSpace->front()->syms, lex->data->value.s.a);
+                SYMBOL* sym = search(globalNameSpace->front()->syms, currentLex->value.s.a);
                 if (!sym)
                 {
-                    sym = makeID(StorageClass::label_, nullptr, nullptr, litlate(lex->data->value.s.a));
+                    sym = makeID(StorageClass::label_, nullptr, nullptr, litlate(currentLex->value.s.a));
                 }
                 switch (kw)
                 {
@@ -3350,9 +3357,9 @@ void StatementGenerator::AsmDeclare()
                 error(ERR_IDENTIFIER_EXPECTED);
                 break;
             }
-            lex = getsym();
+            getsym();
         }
-    } while (lex && MATCHKW(lex, Keyword::comma_));
+    } while (currentLex && MATCHKW(Keyword::comma_));
 }
 void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label, int startlab, int endlab)
 {
@@ -3361,36 +3368,36 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
     ++ilbefore;
     auto next = ilbefore != parent.end() ? *ilbefore : nullptr;
     bool last = false;
-    inLoopOrConditional++;
-    if (!MATCHKW(lex, Keyword::catch_))
+    processingLoopOrConditional++;
+    if (!MATCHKW(Keyword::catch_))
     {
         error(ERR_EXPECTED_CATCH_CLAUSE);
     }
-    while (MATCHKW(lex, Keyword::catch_))
+    while (MATCHKW(Keyword::catch_))
     {
         if (last)
             error(ERR_NO_MORE_CATCH_CLAUSES_ALLOWED);
-        lex = getsym();
-        if (needkw(&lex, Keyword::openpa_))
+        getsym();
+        if (needkw(Keyword::openpa_))
         {
             Statement* st;
             Type* tp = nullptr;
             FunctionBlock* catchstmt = Allocate<FunctionBlock>();
-            ParseAttributeSpecifiers(&lex, funcsp, true);
+            ParseAttributeSpecifiers(funcsp, true);
             catchstmt->breaklabel = label;
             catchstmt->defaultlabel = -1; /* no default */
             catchstmt->type = Keyword::catch_;
             catchstmt->table = localNameSpace->front()->syms;
             parent.push_front(catchstmt);
             AllocateLocalContext(parent, funcsp, codeLabel++);
-            if (MATCHKW(lex, Keyword::ellipse_))
+            if (MATCHKW(Keyword::ellipse_))
             {
                 last = true;
-                lex = getsym();
+                getsym();
             }
             else
             {
-                lex = declare(lex, funcsp, &tp, StorageClass::catchvar_, Linkage::none_, parent, false, true, false,
+                declare(funcsp, &tp, StorageClass::catchvar_, Linkage::none_, parent, false, true, false,
                               AccessLevel::public_);
             }
             if (tp && tp->IsStructured())
@@ -3399,9 +3406,9 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
                 if (cc && cc->sb->isExplicit)
                     error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             }
-            if (needkw(&lex, Keyword::closepa_))
+            if (needkw(Keyword::closepa_))
             {
-                if (MATCHKW(lex, Keyword::begin_))
+                if (MATCHKW(Keyword::begin_))
                 {
                     Compound(parent, false);
                     before->nosemi = true;
@@ -3416,7 +3423,7 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
             }
             FreeLocalContext(parent, funcsp, codeLabel++);
             parent.pop_front();
-            st = Statement::MakeStatement(lex, parent, StatementNode::catch_);
+            st = Statement::MakeStatement(parent, StatementNode::catch_);
             st->label = startlab;
             st->endlabel = endlab;
             st->altlabel = codeLabel++;
@@ -3427,10 +3434,10 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
         }
         else
         {
-            errskim(&lex, skim_end);
+            errskim(skim_end);
         }
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
 }
 void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
 {
@@ -3446,9 +3453,9 @@ void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
     trystmt->type = Keyword::try_;
     trystmt->table = localNameSpace->front()->syms;
     funcsp->sb->anyTry = true;
-    lex = getsym();
-    inLoopOrConditional++;
-    if (!MATCHKW(lex, Keyword::begin_))
+    getsym();
+    processingLoopOrConditional++;
+    if (!MATCHKW(Keyword::begin_))
     {
         error(ERR_EXPECTED_TRY_BLOCK);
     }
@@ -3462,7 +3469,7 @@ void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
         FreeLocalContext(parent, funcsp, codeLabel++);
         parent.pop_front();
         before->needlabel = trystmt->needlabel;
-        st = Statement::MakeStatement(lex, parent, StatementNode::try_);
+        st = Statement::MakeStatement(parent, StatementNode::try_);
         st->label = codeLabel++;
         st->endlabel = codeLabel++;
         st->breaklabel = trystmt->breaklabel;
@@ -3473,7 +3480,7 @@ void StatementGenerator::ParseTry(std::list<FunctionBlock*>& parent)
             next->nosemi = true;
         ParseCatch(parent, st->breaklabel, st->label, st->endlabel);
     }
-    inLoopOrConditional--;
+    processingLoopOrConditional--;
 }
 bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
 {
@@ -3483,45 +3490,45 @@ bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
     if (StatementGenerator::HasInlineAsm())
     {
         before->hassemi = false;
-        lex = getsym();
-        if (MATCHKW(lex, Keyword::begin_))
+        getsym();
+        if (MATCHKW(Keyword::begin_))
         {
-            lex = getsym();
-            while (lex && !MATCHKW(lex, Keyword::end_))
+            getsym();
+            while (currentLex && !MATCHKW(Keyword::end_))
             {
-                currentLineData(parent, lex, 0);
-                lex = inlineAsm(lex, parent);
-                if (KW(lex) == Keyword::semicolon_)
+                currentLineData(parent, currentLex, 0);
+                inlineAsm(parent);
+                if (KW() == Keyword::semicolon_)
                 {
-                    skip(&lex, Keyword::semicolon_);
+                    skip(Keyword::semicolon_);
                 }
             }
-            needkw(&lex, Keyword::end_);
+            needkw(Keyword::end_);
             before->nosemi = true;
-            return lex != nullptr;
+            return !currentLex;
         }
         else
         {
-            currentLineData(parent, lex, 0);
-            while (Optimizer::cparams.prm_assemble && lex && MATCHKW(lex, Keyword::semicolon_))
-                lex = SkipToNextLine();
-            if (lex)
+            currentLineData(parent, currentLex, 0);
+            while (Optimizer::cparams.prm_assemble && currentLex && MATCHKW(Keyword::semicolon_))
+                SkipToNextLine();
+            if (currentLex)
             {
                 if (Optimizer::cparams.prm_assemble &&
-                    (MATCHKW(lex, Keyword::public_) || MATCHKW(lex, Keyword::extern_) || MATCHKW(lex, Keyword::const_)))
+                    (MATCHKW(Keyword::public_) || MATCHKW(Keyword::extern_) || MATCHKW(Keyword::const_)))
                 {
                     AsmDeclare();
                 }
                 else
                 {
-                    lex = inlineAsm(lex, parent);
+                    inlineAsm(parent);
                 }
-                if (MATCHKW(lex, Keyword::semicolon_))
+                if (MATCHKW(Keyword::semicolon_))
                 {
                     if (Optimizer::cparams.prm_assemble)
-                        lex = SkipToNextLine();
+                        SkipToNextLine();
                     else
-                        skip(&lex, Keyword::semicolon_);
+                        skip(Keyword::semicolon_);
                 }
             }
             before->hassemi = true;
@@ -3533,28 +3540,28 @@ bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
         /* if we get here the backend doesn't have an assembler, for now we
          * are just going to make an error and scan past tokens
          */
-        lex = getsym();
+        getsym();
         errorstr(ERR_ASM, "Assembly language not supported by this compiler");
-        if (MATCHKW(lex, Keyword::begin_))
+        if (MATCHKW(Keyword::begin_))
         {
-            while (lex && !MATCHKW(lex, Keyword::end_))
+            while (currentLex && !MATCHKW(Keyword::end_))
             {
-                currentLineData(parent, lex, 0);
-                lex = getsym();
+                currentLineData(parent, currentLex, 0);
+                getsym();
             }
-            needkw(&lex, Keyword::end_);
+            needkw(Keyword::end_);
             before->nosemi = true;
         }
         else
         {
             /* problematic, ASM keyword without a block->  Skip to Keyword::end_ of line... */
-            currentLineData(parent, lex, 0);
+            currentLineData(parent, currentLex, 0);
             before->hassemi = true;
             SkipToEol();
-            lex = getsym();
+            getsym();
         }
     }
-    return lex != nullptr;
+    return !currentLex;
 }
 void StatementGenerator::AssignInReverse(std::list<Statement*>* current, EXPRESSION** exp)
 {
@@ -3580,7 +3587,7 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
     declareAndInitialize = false;
     memset(&block, 0, sizeof(block));
     parent.push_front(&block);
-    lex = declare(lex, funcsp, tp, StorageClass::auto_, Linkage::none_, parent, false, asExpression, false, AccessLevel::public_);
+    declare(funcsp, tp, StorageClass::auto_, Linkage::none_, parent, false, asExpression, false, AccessLevel::public_);
     parent.pop_front();
 
     // move any auto assignments
@@ -3593,12 +3600,12 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
         {
             if (stmt->type == StatementNode::varstart_)
             {
-                Statement* s = Statement::MakeStatement(lex, parent, StatementNode::varstart_);
+                Statement* s = Statement::MakeStatement(parent, StatementNode::varstart_);
                 s->select = stmt->select;
             }
             else if (stmt->type == StatementNode::line_)
             {
-                Statement* s = Statement::MakeStatement(lex, parent, StatementNode::line_);
+                Statement* s = Statement::MakeStatement(parent, StatementNode::line_);
                 s->lineData = stmt->lineData;
             }
         }
@@ -3610,11 +3617,11 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
             errorint(ERR_NEEDY, '=');
     }
 }
-bool StatementGenerator::ResolvesToDeclaration(LexList* lex, bool structured)
+bool StatementGenerator::ResolvesToDeclaration( bool structured)
 {
-    LexList* placeholder = lex;
-    if (ISKW(lex))
-        switch (KW(lex))
+    LexemeStreamPosition placeHolder(currentStream);
+    if (ISKW())
+        switch (KW())
         {
             case Keyword::struct_:
             case Keyword::union_:
@@ -3624,90 +3631,91 @@ bool StatementGenerator::ResolvesToDeclaration(LexList* lex, bool structured)
             default:
                 break;
         }
-    lex = getsym();
-    while (MATCHKW(lex, Keyword::classsel_))
+    getsym();
+    while (MATCHKW(Keyword::classsel_))
     {
-        lex = getsym();
-        lex = getsym();
+        getsym();
+        getsym();
     }
-    if (MATCHKW(lex, Keyword::lt_))
+    if (MATCHKW(Keyword::lt_))
     {
         int level = 1;
-        lex = getsym();
-        while (level && lex != nullptr && !MATCHKW(lex, Keyword::semicolon_))
+        getsym();
+        while (level && currentLex && !MATCHKW(Keyword::semicolon_))
         {
-            if (MATCHKW(lex, Keyword::lt_))
+            if (MATCHKW(Keyword::lt_))
             {
                 level++;
             }
-            else if (MATCHKW(lex, Keyword::gt_))
+            else if (MATCHKW(Keyword::gt_))
             {
                 level--;
             }
-            else if (MATCHKW(lex, Keyword::rightshift_))
+            else if (MATCHKW(Keyword::rightshift_))
             {
                 level--;
-                lex = getGTSym(lex);
+                SplitGreaterThanFromRightShift();
                 continue;
             }
-            lex = getsym();
+            getsym();
         }
     }
-    if (MATCHKW(lex, Keyword::begin_))
+    if (MATCHKW(Keyword::begin_))
     {
-        prevsym(placeholder);
+        placeHolder.Backup();
         return false;
     }
-    if (MATCHKW(lex, Keyword::openpa_))
+    if (MATCHKW(Keyword::openpa_))
     {
         bool hasStar = false;
         bool hasThis = false;
         int level = 1;
-        lex = getsym();
-        while (level && lex != nullptr && !MATCHKW(lex, Keyword::semicolon_))
+        getsym();
+        while (level && currentLex && !MATCHKW(Keyword::semicolon_))
         {
-            if (hasStar && MATCHKW(lex, Keyword::this_))
+            if (hasStar && MATCHKW(Keyword::this_))
             {
                 hasThis = true;
             }
-            if (MATCHKW(lex, Keyword::openpa_))
+            if (MATCHKW(Keyword::openpa_))
             {
                 level++;
             }
-            else if (MATCHKW(lex, Keyword::closepa_))
+            else if (MATCHKW(Keyword::closepa_))
             {
                 level--;
             }
-            else if (MATCHKW(lex, Keyword::star_))
+            else if (MATCHKW(Keyword::star_))
             {
                 hasStar = true;
             }
-            lex = getsym();
+            getsym();
         }
-        if (MATCHKW(lex, Keyword::assign_) || ((hasStar || !structured) && !hasThis && MATCHKW(lex, Keyword::openpa_)) ||
-            MATCHKW(lex, Keyword::openbr_))
+        if (MATCHKW(Keyword::assign_) || ((hasStar || !structured) && !hasThis && MATCHKW(Keyword::openpa_)) ||
+            MATCHKW(Keyword::openbr_))
         {
-            prevsym(placeholder);
+            placeHolder.Backup();
             return true;
         }
-        prevsym(placeholder);
+        placeHolder.Backup();
         return false;
     }
-    prevsym(placeholder);
+    placeHolder.Backup();
     return true;
 }
 
 void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool viacontrol)
 {
     auto before = parent.front();
-    LexList* start = lex;
-    ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (ISID(lex))
+    LexemeStreamPosition start(currentStream);
+    bool first = true;
+    ParseAttributeSpecifiers(funcsp, true);
+    if (ISID())
     {
-        lex = getsym();
-        if (MATCHKW(lex, Keyword::colon_))
+        getsym();
+        if (MATCHKW(Keyword::colon_))
         {
-            lex = backupsym();
+            --*currentStream;
             ParseLabel(parent);
             before->needlabel = false;
             before->nosemi = true;
@@ -3715,15 +3723,15 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
         }
         else
         {
-            lex = backupsym();
+            --*currentStream;
         }
     }
-    if (before->needlabel && !MATCHKW(lex, Keyword::case_) && !MATCHKW(lex, Keyword::default_) && !MATCHKW(lex, Keyword::begin_))
+    if (before->needlabel && !MATCHKW(Keyword::case_) && !MATCHKW(Keyword::default_) && !MATCHKW(Keyword::begin_))
         error(ERR_UNREACHABLE_CODE);
 
-    if (!MATCHKW(lex, Keyword::begin_))
+    if (!MATCHKW(Keyword::begin_))
     {
-        if (MATCHKW(lex, Keyword::throw_))
+        if (MATCHKW(Keyword::throw_))
             before->needlabel = true;
         else
             before->needlabel = false;
@@ -3732,7 +3740,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
     inFunctionExpressionParsing = false;
     before->nosemi = false;
     expressionStatements.push(&parent);
-    switch (KW(lex))
+    switch (KW())
     {
         case Keyword::try_:
             canFallThrough = false;
@@ -3757,7 +3765,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
         case Keyword::end_:
             /* don't know how it could get here :) */
             //			error(ERR_UNEXPECTED_END_OF_BLOCKDATA);
-            //			lex = getsym();
+            //			getsym();
             canFallThrough = false;
             before->hassemi = true;
             expressionStatements.pop();
@@ -3789,12 +3797,12 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
         case Keyword::else_:
             canFallThrough = false;
             error(ERR_MISPLACED_ELSE);
-            skip(&lex, Keyword::else_);
+            skip(Keyword::else_);
             before->nosemi = true;
             break;
         case Keyword::case_:
             EndOfCaseGroup(parent);
-            while (KW(lex) == Keyword::case_)
+            while (KW() == Keyword::case_)
             {
                 if (Optimizer::cparams.prm_cplusplus)
                     HandleEndOfCase(parent);
@@ -3852,49 +3860,49 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
             return;
         case Keyword::seh_try_:
             canFallThrough = false;
-            lex = ParseSEH(lex, funcsp, parent);
+            ParseSEH(funcsp, parent);
             break;
         case Keyword::seh_catch_:
         case Keyword::seh_finally_:
         case Keyword::seh_fault_:
             canFallThrough = false;
             error(ERR_SEH_HANDLER_WITHOUT_TRY);
-            lex = ParseSEH(lex, funcsp, parent);
+            ParseSEH(funcsp, parent);
             break;
         default: {
             canFallThrough = false;
             bool structured = false;
 
-            if (MATCHKW(lex, Keyword::typedef_) ||
-                ((TypeGenerator::StartOfType(lex, &structured, false) &&
+            if (MATCHKW(Keyword::typedef_) ||
+                ((TypeGenerator::StartOfType(&structured, false) &&
                   ((!Optimizer::cparams.prm_cplusplus &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
-                   StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
-                MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::constexpr_) ||
-                MATCHKW(lex, Keyword::decltype_) || MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::template_))
+                   StatementGenerator::ResolvesToDeclaration(structured)))) ||
+                MATCHKW(Keyword::namespace_) || MATCHKW(Keyword::using_) || MATCHKW(Keyword::constexpr_) ||
+                MATCHKW(Keyword::decltype_) || MATCHKW(Keyword::static_assert_) || MATCHKW(Keyword::template_))
             {
                 RequiresDialect::Feature(Dialect::c99, "Intermingled declarations");
                 if (viacontrol)
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (MATCHKW(lex, Keyword::typedef_) ||
-                       ((TypeGenerator::StartOfType(lex, &structured, false) &&
+                while (MATCHKW(Keyword::typedef_) ||
+                       ((TypeGenerator::StartOfType(&structured, false) &&
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
-                          StatementGenerator::ResolvesToDeclaration(lex, structured)))) ||
-                       MATCHKW(lex, Keyword::namespace_) || MATCHKW(lex, Keyword::using_) || MATCHKW(lex, Keyword::decltype_) ||
-                       MATCHKW(lex, Keyword::static_assert_) || MATCHKW(lex, Keyword::constexpr_) ||
-                       MATCHKW(lex, Keyword::template_))
+                          StatementGenerator::ResolvesToDeclaration(structured)))) ||
+                       MATCHKW(Keyword::namespace_) || MATCHKW(Keyword::using_) || MATCHKW(Keyword::decltype_) ||
+                       MATCHKW(Keyword::static_assert_) || MATCHKW(Keyword::constexpr_) ||
+                       MATCHKW(Keyword::template_))
                 {
                     std::list<Statement*>* prev = before->statements;
                     before->statements = nullptr;
                     declareAndInitialize = false;
-                    if (start)
+                    if (first && start.Position() != currentStream->Index())
                     {
-                        lex = prevsym(start);
-                        start = nullptr;
+                        start.Backup();
                     }
-                    lex = declare(lex, funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
+                    first = false;
+                    declare(funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
                                   AccessLevel::public_);
                     // this originally did the last existing statement as well
                     if (before->statements)
@@ -3911,10 +3919,10 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                     {
                         before->statements = prev;
                     }
-                    if (MATCHKW(lex, Keyword::semicolon_))
+                    if (MATCHKW(Keyword::semicolon_))
                     {
                         before->hassemi = true;
-                        skip(&lex, Keyword::semicolon_);
+                        skip(Keyword::semicolon_);
                     }
                     else
                         break;
@@ -3940,10 +3948,10 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
     if (before->nosemi && expressionReturns.size())
         expressionReturns.back() = std::move(std::pair<EXPRESSION*, Type*>(nullptr, &stdvoid));
     expressionStatements.pop();
-    if (MATCHKW(lex, Keyword::semicolon_))
+    if (MATCHKW(Keyword::semicolon_))
     {
         before->hassemi = true;
-        skip(&lex, Keyword::semicolon_);
+        skip(Keyword::semicolon_);
     }
     else
         before->hassemi = false;
@@ -3960,7 +3968,7 @@ bool StatementGenerator::ThunkReturnInMain(std::list<FunctionBlock*>& parent, bo
 {
     if (always || (!strcmp(funcsp->name, "main") && !funcsp->sb->parentClass && !funcsp->sb->parentNameSpace))
     {
-        Statement* s = Statement::MakeStatement(nullptr, parent, StatementNode::return_);
+        Statement* s = Statement::MakeStatement(parent, StatementNode::return_);
         s->select = MakeIntExpression(ExpressionNode::c_i_, 0);
         return true;
     }
@@ -4011,12 +4019,12 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     preProcessor->MarkStdPragma();
     Statement* st;
     EXPRESSION* thisptr = nullptr;
-    browse_blockstart(lex->data->errline);
+    browse_blockstart(currentLex->sourceLineNumber);
     blockstmt->type = Keyword::begin_;
     blockstmt->needlabel = before->needlabel;
     blockstmt->table = localNameSpace->front()->syms;
     parent.push_front(blockstmt);
-    currentLineData(parent, lex, 0);
+    currentLineData(parent, currentLex, 0);
     AllocateLocalContext(parent, funcsp, codeLabel++);
     before->needlabel = false;
 
@@ -4036,15 +4044,15 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         }
         if (Optimizer::cparams.prm_cplusplus && funcsp->sb->isConstructor && funcsp->sb->parentClass)
         {
-            ParseMemberInitializers(funcsp->sb->parentClass, funcsp);
+            ParseConstructorInitializers(funcsp->sb->parentClass, funcsp);
             thisptr =
                 thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, funcsp->tp->BaseType()->syms, true, false, false);
         }
     }
-    bool viaTry = MATCHKW(lex, Keyword::try_);
+    bool viaTry = MATCHKW(Keyword::try_);
     if (!viaTry)
     {
-        lex = getsym(); /* past { */
+        getsym(); /* past { */
     }
     if (blockstmt->statements)
         st = blockstmt->statements->back();
@@ -4056,11 +4064,11 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         std::list<FunctionBlock*> tempBlockData = {blockstmt};
         expressionStatements.push(&tempBlockData);
         // have to defer so we can get expression like constructor calls
-        while (TypeGenerator::StartOfType(lex, nullptr, false))
+        while (TypeGenerator::StartOfType(nullptr, false))
         {
             blockstmt->statements = nullptr;
             declareAndInitialize = false;
-            lex = declare(lex, funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
+            declare(funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
                           AccessLevel::public_);
             if (blockstmt->statements)
             {
@@ -4070,9 +4078,9 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
                 else
                     prev = blockstmt->statements;
             }
-            if (MATCHKW(lex, Keyword::semicolon_))
+            if (MATCHKW(Keyword::semicolon_))
             {
-                lex = getsym();
+                getsym();
             }
             else
             {
@@ -4111,7 +4119,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
             }
         }
     }
-    currentLineData(parent, lex, -1);
+    currentLineData(parent, currentLex, -1);
     blockstmt->nosemi = true; /* in case it is an empty body */
     if (viaTry)
     {
@@ -4119,13 +4127,13 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     else
     {
-        while (lex && !MATCHKW(lex, Keyword::end_))
+        while (currentLex && !MATCHKW(Keyword::end_))
         {
             if (!blockstmt->hassemi && !blockstmt->nosemi)
                 errorint(ERR_NEEDY, ';');
-            if (MATCHKW(lex, Keyword::semicolon_))
+            if (MATCHKW(Keyword::semicolon_))
             {
-                lex = getsym();  // helps in error processing to not do default statement processing here...
+                getsym();  // helps in error processing to not do default statement processing here...
             }
             else
             {
@@ -4135,12 +4143,12 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     if (first)
     {
-        browse_endfunc(funcsp, funcsp->sb->endLine = lex ? lex->data->errline : endline);
+        browse_endfunc(funcsp, funcsp->sb->endLine = currentLex ? currentLex->sourceLineNumber : endline);
     }
-    if (!lex && !viaTry)
+    if (!currentLex && !viaTry)
     {
         parent.pop_front();
-        needkw(&lex, Keyword::end_);
+        needkw(Keyword::end_);
         if (expressionReturns.size())
             expressionReturns.pop_back();
 
@@ -4148,8 +4156,8 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     if (!viaTry)
     {
-        browse_blockend(endline = lex->data->errline);
-        currentLineData(parent, lex, -!first);
+        browse_blockend(endline = currentLex->sourceLineNumber);
+        currentLineData(parent, currentLex, -!first);
     }
     if (before->type == Keyword::begin_ || before->type == Keyword::switch_ || before->type == Keyword::try_ ||
         before->type == Keyword::catch_ || before->type == Keyword::do_)
@@ -4235,7 +4243,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     if (!viaTry)
     {
-        needkw(&lex, Keyword::end_);
+        needkw(Keyword::end_);
     }
     if (before->type == Keyword::catch_)
     {
@@ -4243,7 +4251,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         if (sym)
         {
             CallSite* funcparams = Allocate<CallSite>();
-            Statement* st = Statement::MakeStatement(lex, parent, StatementNode::expr_);
+            Statement* st = Statement::MakeStatement(parent, StatementNode::expr_);
             Argument* arg1 = Allocate<Argument>();  // exception table
             makeXCTab(funcsp);
             sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
@@ -4262,7 +4270,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     {
         if (thisptr)
         {
-            Statement::MakeStatement(nullptr, parent, StatementNode::return_);
+            Statement::MakeStatement(parent, StatementNode::return_);
             ReturnThIsPtr(blockstmt->statements, thisptr);
         }
     }
@@ -4270,7 +4278,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     ++it;
     std::list<FunctionBlock*> dummy(it, parent.end());
     parent.pop_front();
-    blockstmt->AddThis(lex, parent);
+    blockstmt->AddThis(parent);
     preProcessor->ReleaseStdPragma();
 }
 void StatementGenerator::AssignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
@@ -4316,7 +4324,7 @@ void StatementGenerator::AssignCParams(int* base, SymbolTable<SYMBOL>* params, T
     (void)rv;
     for (auto sym : *params)
     {
-        Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
+        Statement* s = Statement::MakeStatement(block, StatementNode::varstart_);
         s->select = MakeExpression(ExpressionNode::auto_, sym);
         StatementGenerator::AssignParam(funcsp, base, sym);
     }
@@ -4329,7 +4337,7 @@ void StatementGenerator::AssignPascalParams(int* base, SymbolTable<SYMBOL>* para
     while (!stk.empty())
     {
         StatementGenerator::AssignParam(funcsp, base, stk.top());
-        Statement* s = Statement::MakeStatement(lex, block, StatementNode::varstart_);
+        Statement* s = Statement::MakeStatement(block, StatementNode::varstart_);
         s->select = MakeExpression(ExpressionNode::auto_, stk.top());
         stk.pop();
     }
@@ -4486,43 +4494,42 @@ void StatementGenerator::HandleInlines()
 }
 void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
 {
-    if (funcsp->sb->deferredNoexcept && funcsp->sb->deferredNoexcept != (LexList*)-1)
+    auto stream = noExceptTokenStreams.get(funcsp);
+    if (stream && stream != (LexemeStream*)-1)
     {
         dontRegisterTemplate++;
-        LexList* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
-        int n = PushTemplateNamespace(funcsp);
-        enclosingDeclarations.Mark();
-        if (funcsp->sb->parentClass)
-        {
-            enclosingDeclarations.Add(funcsp->sb->parentClass);
-            auto tpl = funcsp->sb->parentClass->templateParams;
-            if (tpl)
-                enclosingDeclarations.Add(tpl);
-        }
-        Type* tp = nullptr;
-        EXPRESSION* exp = nullptr;
-        AllocateLocalContext(emptyBlockdata, nullptr, 0);
-        for (auto sp2 : *funcsp->tp->BaseType()->syms)
-        {
-            localNameSpace->front()->syms->Add(sp2);
-        }
-        lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
-        FreeLocalContext(emptyBlockdata, nullptr, 0);
-        if (!IsConstantExpression(exp, false, false))
-        {
-            if (!definingTemplate)
-                error(ERR_CONSTANT_VALUE_EXPECTED);
-        }
-        else
-        {
-            funcsp->sb->xcMode = exp->v.i ? xc_none : xc_all;
-            if (exp->v.i)
-                funcsp->sb->noExcept = true;
-        }
-        SetAlternateLex(nullptr);
-        enclosingDeclarations.Release();
-        PopTemplateNamespace(n);
-        funcsp->sb->deferredNoexcept = (LexList*)-1;
+        TemplateNamespaceScope namespaceScope(funcsp);
+        DeclarationScope scope;
+        ParseOnStream(stream, [=]() {
+            if (funcsp->sb->parentClass)
+            {
+                enclosingDeclarations.Add(funcsp->sb->parentClass);
+                auto tpl = funcsp->sb->parentClass->templateParams;
+                if (tpl)
+                    enclosingDeclarations.Add(tpl);
+            }
+            Type* tp = nullptr;
+            EXPRESSION* exp = nullptr;
+            AllocateLocalContext(emptyBlockdata, nullptr, 0);
+            for (auto sp2 : *funcsp->tp->BaseType()->syms)
+            {
+                localNameSpace->front()->syms->Add(sp2);
+            }
+            optimized_expression(funcsp, nullptr, &tp, &exp, false);
+            FreeLocalContext(emptyBlockdata, nullptr, 0);
+            if (!IsConstantExpression(exp, false, false))
+            {
+                if (!templateDefinitionLevel)
+                    error(ERR_CONSTANT_VALUE_EXPECTED);
+            }
+            else
+            {
+                funcsp->sb->xcMode = exp->v.i ? xc_none : xc_all;
+                if (exp->v.i)
+                    funcsp->sb->noExcept = true;
+            }
+        });
+        noExceptTokenStreams.set(funcsp, (LexemeStream*)-1);
         dontRegisterTemplate--;
     }
 }
@@ -4545,7 +4552,7 @@ void StatementGenerator::FunctionBody()
         funcsp->sb->noExcept = true;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor++;
-    int oldNestingCount = definingTemplate;
+    int oldNestingCount = templateDefinitionLevel;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
     bool olddontOptimizeFunction = Optimizer::dontOptimizeFunction;
@@ -4573,7 +4580,7 @@ void StatementGenerator::FunctionBody()
     auto oldGlobal = globalNameSpace->front()->usingDirectives;
     hasFuncCall = false;
     funcNesting++;
-    funcLevel++;
+    funcNestingLevel++;
     functionCanThrow = false;
     codeLabel = INT_MIN;
     hasXCInfo = false;
@@ -4596,8 +4603,8 @@ void StatementGenerator::FunctionBody()
         }
     }
 
-    if (inTemplateHeader)
-        definingTemplate--;
+    if (processingTemplateHeader)
+        templateDefinitionLevel--;
     CheckUndefinedStructures(funcsp);
     StatementGenerator::ParseNoExceptClause(funcsp);
     if (!inNoExceptHandler)
@@ -4605,14 +4612,14 @@ void StatementGenerator::FunctionBody()
         FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
         if (!funcsp->sb->linedata)
         {
-            startStmt = currentLineData(emptyBlockdata, lex, 0);
+            startStmt = currentLineData(emptyBlockdata, currentLex, 0);
             if (startStmt)
                 funcsp->sb->linedata = startStmt->front()->lineData;
         }
         funcsp->sb->declaring = true;
         labelSyms = symbols->CreateSymbolTable();
         StatementGenerator::AssignParameterSizes(parent);
-        funcsp->sb->startLine = lex->data->errline;
+        funcsp->sb->startLine = currentLex->sourceLineNumber;
         Compound(parent, true);
         if (funcsp->tp->BaseType()->btp->IsAutoType())
         {
@@ -4624,11 +4631,11 @@ void StatementGenerator::FunctionBody()
         refreshBackendParams(funcsp);
         checkUnlabeledReferences(parent);
         checkGotoPastVLA(block->statements, true);
-        if (funcsp->tp->BaseType()->btp->IsAutoType() && !definingTemplate)
+        if (funcsp->tp->BaseType()->btp->IsAutoType() && !templateDefinitionLevel)
             funcsp->tp->BaseType()->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
         {
-            if ((!oldNoexcept || funcsp->sb->isDestructor) && funcsp->sb->noExcept && !funcsp->sb->deferredNoexcept && !noExcept)
+            if ((!oldNoexcept || funcsp->sb->isDestructor) && funcsp->sb->noExcept && !noExcept && !noExceptTokenStreams.get(funcsp) )
             {
                 // destructor needs to be demoted
                 funcsp->sb->noExcept = false;
@@ -4663,7 +4670,7 @@ void StatementGenerator::FunctionBody()
         if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
         {
             funcsp->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-            funcsp->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(lex, emptyBlockdata, StatementNode::block_));
+            funcsp->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(emptyBlockdata, StatementNode::block_));
             funcsp->sb->inlineFunc.stmt->front()->lower = block->statements;
             funcsp->sb->inlineFunc.stmt->front()->blockTail = block->blockTail;
             funcsp->sb->declaring = false;
@@ -4682,6 +4689,7 @@ void StatementGenerator::FunctionBody()
                 }
                 if (Optimizer::cparams.prm_cplusplus && funcsp->sb->declaredAsInline && funcsp->sb->declaredAsExtern)
                 {
+                    funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     InsertInline(funcsp);
                 }
             }
@@ -4715,9 +4723,9 @@ void StatementGenerator::FunctionBody()
     codeLabel = oldCodeLabel;
     functionCanThrow = oldFunctionCanThrow;
     matchReturnTypes = oldMatchReturnTypes;
-    funcLevel--;
+    funcNestingLevel--;
     funcNesting--;
-    definingTemplate = oldNestingCount;
+    templateDefinitionLevel = oldNestingCount;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
 }
@@ -4725,6 +4733,7 @@ void StatementGenerator::BodyGen()
 {
     if (funcsp->sb->inlineFunc.stmt)
     {
+        EnterInlineFunctionContext();
         if (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ ||
             (funcsp->sb->attribs.inheritable.isInline && !funcsp->sb->promotedToInline))
         {
@@ -4758,6 +4767,7 @@ void StatementGenerator::BodyGen()
                 }
             }
         }
+        LeaveInlineFunctionContext();
     }
 }
 }  // namespace Parser

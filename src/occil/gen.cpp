@@ -39,7 +39,7 @@
 #include "msilInit.h"
 #include "symfuncs.h"
 #include "OptUtils.h"
-#include "using.h"
+#include "msilusing.h"
 #include "ioptimizer.h"
 #include "Delegate.h"
 #include "Utils.h"

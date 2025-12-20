@@ -29,6 +29,8 @@ namespace Parser
 {
 extern std::list<NAMESPACEVALUEDATA*>*globalNameSpace, *localNameSpace, *rootNameSpace;
 extern SymbolTable<SYMBOL>* labelSyms;
+extern std::list<SYMBOL*> nameSpaceList;
+extern char anonymousNameSpaceName[512];
 
 void namespaceinit();
 void unvisitUsingDirectives(NAMESPACEVALUEDATA* v);
@@ -38,5 +40,5 @@ void searchNS(SYMBOL* sym, SYMBOL* nssp, std::list<SYMBOL*>& gather);
 SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly);
 SYMBOL* gsearch(const char* name);
 SYMBOL* tsearch(const char* name);
-LexList* insertNamespace(LexList* lex, Linkage linkage, StorageClass storage_class, bool* linked);
+void insertNamespace( Linkage linkage, StorageClass storage_class, bool* linked);
 }  // namespace Parser

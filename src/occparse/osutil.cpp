@@ -45,7 +45,7 @@
 #include "occparse.h"
 #include "ildata.h"
 #ifndef ORANGE_NO_MSIL
-#    include "using.h"
+#    include "msilusing.h"
 #endif
 #include "configx86.h"
 #include "OptUtils.h"

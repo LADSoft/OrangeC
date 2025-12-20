@@ -23,6 +23,8 @@
  *
  */
 
+#include <stack>
+
 #include "compiler.h"
 #include "config.h"
 #include "templatedecl.h"
@@ -57,6 +59,10 @@
 #include <cassert>
 #include "exprpacked.h"
 #include "Utils.h"
+#include "SymbolProperties.h"
+#include "using.h"
+#include "attribs.h"
+
 namespace Parser
 {
 static Type* RootType(Type* tp)
@@ -645,7 +651,7 @@ Type* Type::InitializerListType()
 }
 bool Type::InstantiateDeferred(bool noErr, bool override)
 {
-    if (!definingTemplate || instantiatingTemplate || override)
+    if (!IsDefiningTemplate() || override)
     {
         auto tp = this;
         assert(tp);
@@ -1528,17 +1534,17 @@ void Type::ToString(char* top, char* buf)
     ToString(top, buf, typ2);
 }
 
-void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class)
+void TypeGenerator::ExceptionSpecifiers(SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class)
 {
     (void)storage_class;
-    switch (KW(lex))
+    switch (KW())
     {
         case Keyword::throw_:
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::openpa_))
+            getsym();
+            if (MATCHKW(Keyword::openpa_))
             {
-                lex = getsym();
-                if (MATCHKW(lex, Keyword::closepa_))
+                getsym();
+                if (MATCHKW(Keyword::closepa_))
                 {
                     sp->sb->xcMode = xc_none;
                     sp->sb->noExcept = true;
@@ -1550,14 +1556,14 @@ void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* s
                     sp->sb->xcMode = xc_dynamic;
                     if (!sp->sb->xc)
                         sp->sb->xc = Allocate<xcept>();
-                    lex = backupsym();
+                    --*currentStream;
                     do
                     {
                         Type* tp = nullptr;
-                        lex = getsym();
-                        if (!MATCHKW(lex, Keyword::closepa_))
+                        getsym();
+                        if (!MATCHKW(Keyword::closepa_))
                         {
-                            tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
+                            tp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, false, true, false);
                             if (!tp)
                             {
                                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1568,13 +1574,13 @@ void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* s
                                 Optimizer::LIST* p = Allocate<Optimizer::LIST>();
                                 if (tp->type == BasicType::templateparam_ && tp->templateParam->second->packed)
                                 {
-                                    if (!MATCHKW(lex, Keyword::ellipse_))
+                                    if (!MATCHKW(Keyword::ellipse_))
                                     {
                                         error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                     }
                                     else
                                     {
-                                        lex = getsym();
+                                        getsym();
                                     }
                                 }
                                 p->next = sp->sb->xc->xcDynamic;
@@ -1582,28 +1588,29 @@ void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* s
                                 sp->sb->xc->xcDynamic = p;
                             }
                         }
-                    } while (MATCHKW(lex, Keyword::comma_));
+                    } while (MATCHKW(Keyword::comma_));
                 }
-                needkw(&lex, Keyword::closepa_);
+                needkw(Keyword::closepa_);
             }
             else
             {
-                needkw(&lex, Keyword::openpa_);
+                needkw(Keyword::openpa_);
             }
             break;
         case Keyword::noexcept_:
-            lex = getsym();
-            if (MATCHKW(lex, Keyword::openpa_))
+            getsym();
+            if (MATCHKW(Keyword::openpa_))
             {
-                lex = getsym();
-                lex = getDeferredData(lex, &sp->sb->deferredNoexcept, false);
-                needkw(&lex, Keyword::closepa_);
+                getsym();
+                auto stream = GetTokenStream(false);
+                noExceptTokenStreams.set(sp, stream);
+                needkw(Keyword::closepa_);
             }
             else
             {
                 sp->sb->xcMode = xc_none;
                 sp->sb->noExcept = true;
-                sp->sb->deferredNoexcept = (LexList*)-1;
+                noExceptTokenStreams.set(sp, (LexemeStream*)-1);
                 if (!sp->sb->xc)
                     sp->sb->xc = Allocate<xcept>();
             }
@@ -1612,7 +1619,7 @@ void TypeGenerator::ExceptionSpecifiers(LexList*& lex, SYMBOL* funcsp, SYMBOL* s
             break;
     }
 }
-Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* funcsp, SYMBOL** sp, Type* tp,
+Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL** sp, Type* tp,
                                                          StorageClass storage_class)
 {
     bool foundFinal = false;
@@ -1622,62 +1629,62 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* 
     bool foundVolatile = false;
     bool foundand = false;
     bool foundland = false;
-    while (lex != nullptr && !done)
+    while (currentLex && !done)
     {
-        if (ISID(lex))
+        if (ISID())
         {
-            if (!strcmp(lex->data->value.s.a, "final"))
+            if (!strcmp(currentLex->value.s.a, "final"))
             {
                 if (foundFinal)
                     error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
                 foundFinal = true;
                 (*sp)->sb->isfinal = true;
-                lex = getsym();
+                getsym();
             }
-            else if (!strcmp(lex->data->value.s.a, "override"))
+            else if (!strcmp(currentLex->value.s.a, "override"))
             {
                 if (foundOverride)
                     error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
                 foundOverride = true;
                 (*sp)->sb->isoverride = true;
-                lex = getsym();
+                getsym();
             }
             else
             {
-                if (definingTemplate)
+                if (templateDefinitionLevel)
                 {
-                    while (lex && ISID(lex))
-                        lex = getsym();
+                    while (currentLex && ISID())
+                        getsym();
                 }
                 done = true;
             }
         }
         else
-            switch (KW(lex))
+            switch (KW())
             {
                 case Keyword::const_:
                     foundConst = true;
-                    lex = getsym();
+                    getsym();
                     break;
                 case Keyword::volatile_:
                     foundVolatile = true;
-                    lex = getsym();
+                    getsym();
                     break;
                 case Keyword::and_:
                     foundand = true;
-                    lex = getsym();
+                    getsym();
                     break;
                 case Keyword::land_:
                     foundland = true;
-                    lex = getsym();
+                    getsym();
                     break;
                 case Keyword::throw_:
                 case Keyword::noexcept_:
                     if (Optimizer::cparams.prm_cplusplus && *sp)
                     {
-                        funcLevel++;
-                        TypeGenerator::ExceptionSpecifiers(lex, funcsp, *sp, storage_class);
-                        funcLevel--;
+                        funcNestingLevel++;
+                        TypeGenerator::ExceptionSpecifiers(funcsp, *sp, storage_class);
+                        funcNestingLevel--;
                     }
                     break;
                 default:
@@ -1703,21 +1710,21 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* 
     {
         tp = Type::MakeType(BasicType::rrqual_, tp);
     }
-    ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (MATCHKW(lex, Keyword::pointsto_))
+    ParseAttributeSpecifiers(funcsp, true);
+    if (MATCHKW(Keyword::pointsto_))
     {
         Type* tpx = nullptr;
         SymbolTable<SYMBOL>* locals = localNameSpace->front()->syms;
         localNameSpace->front()->syms = tp->BaseType()->syms;
-        funcLevel++;
-        lex = getsym();
-        ParseAttributeSpecifiers(&lex, funcsp, true);
-        parsingTrailingReturnOrUsing++;
+        funcNestingLevel++;
+        getsym();
+        ParseAttributeSpecifiers(funcsp, true);
+        processingTrailingReturnOrUsing++;
         auto old = theCurrentFunc;
         theCurrentFunc = *sp;
-        tpx = TypeGenerator::TypeId(lex, *sp, StorageClass::cast_, false, true, false);
+        tpx = TypeGenerator::TypeId(*sp, StorageClass::cast_, false, true, false);
         theCurrentFunc = old;
-        parsingTrailingReturnOrUsing--;
+        processingTrailingReturnOrUsing--;
         // weed out temporary syms that were added as part of a decltype; they will be
         // reinstated as stackblock syms later
         auto itp = localNameSpace->front()->syms->begin();
@@ -1756,7 +1763,7 @@ Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(LexList*& lex, SYMBOL* 
             }
         }
         localNameSpace->front()->syms = locals;
-        funcLevel--;
+        funcNestingLevel--;
     }
     return tp;
 }
@@ -1768,7 +1775,7 @@ void TypeGenerator::ResolveVLAs(Type* tp)
         tp = tp->btp;
     }
 }
-Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals,
+Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals,
                                bool first, bool msil)
 {
     if (tp)
@@ -1778,19 +1785,19 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
     Type* typein = tp;
     bool unsized = false;
     bool empty = false;
-    lex = getsym(); /* past '[' */
-    *quals = TypeGenerator::PointerQualifiers(lex, *quals, true);
-    if (MATCHKW(lex, Keyword::star_))
+    getsym(); /* past '[' */
+    *quals = TypeGenerator::PointerQualifiers(*quals, true);
+    if (MATCHKW(Keyword::star_))
     {
         RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
         if (storage_class != StorageClass::parameter_)
             error(ERR_UNSIZED_VLA_PARAMETER);
-        lex = getsym();
+        getsym();
         unsized = true;
     }
-    else if (!MATCHKW(lex, Keyword::closebr_))
+    else if (!MATCHKW(Keyword::closebr_))
     {
-        lex = expression_no_comma(lex, funcsp, nullptr, &tpc, &constant, nullptr, 0);
+        expression_no_comma(funcsp, nullptr, &tpc, &constant, nullptr, 0);
         if (tpc)
         {
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -1799,7 +1806,7 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
             }
             optimize_for_constants(&constant);
         }
-        *quals = TypeGenerator::PointerQualifiers(lex, *quals, true);
+        *quals = TypeGenerator::PointerQualifiers(*quals, true);
         if (!tpc)
         {
             tpc = &stdint;
@@ -1823,16 +1830,16 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
             error(ERR_ONLY_FIRST_INDEX_MAY_BE_EMPTY);
         empty = true;
     }
-    if (MATCHKW(lex, Keyword::closebr_))
+    if (MATCHKW(Keyword::closebr_))
     {
         Type *tpp, *tpb = tp;
-        lex = getsym();
-        ParseAttributeSpecifiers(&lex, funcsp, true);
-        if (MATCHKW(lex, Keyword::openbr_))
+        getsym();
+        ParseAttributeSpecifiers(funcsp, true);
+        if (MATCHKW(Keyword::openbr_))
         {
             if (*quals)
                 error(ERR_QUAL_LAST_ARRAY_ELEMENT);
-            tp = TypeGenerator::ArrayType(lex, funcsp, tp, storage_class, vla, quals, false, msil);
+            tp = TypeGenerator::ArrayType(funcsp, tp, storage_class, vla, quals, false, msil);
         }
         tpp = Type::MakeType(BasicType::pointer_, tp);
         if (tpp->btp)
@@ -1854,7 +1861,7 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
                     error(ERR_ARRAY_INDEX_INTEGER_TYPE);
                 else if (tpc->type != BasicType::templateparam_ && isintconst(constant) &&
                          constant->v.i <= 0 - !!enclosingDeclarations.GetFirst())
-                    if (!definingTemplate)
+                    if (!templateDefinitionLevel)
                         error(ERR_ARRAY_INVALID_INDEX);
                 if (tpc->type == BasicType::templateparam_)
                 {
@@ -1870,11 +1877,11 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
                 }
                 else
                 {
-                    if (!definingTemplate && !msil)
+                    if (!templateDefinitionLevel && !msil)
                         RequiresDialect::Feature(Dialect::c99, "Variable Length Array");
                     tpp->esize = constant;
                     tpp->etype = tpc;
-                    *vla = !msil && !definingTemplate;
+                    *vla = !msil && !templateDefinitionLevel;
                 }
             }
             tp = tpp;
@@ -1890,40 +1897,40 @@ Type* TypeGenerator::ArrayType(LexList*& lex, SYMBOL* funcsp, Type* tp, StorageC
         }
         if (typein && typein->IsStructured())
         {
-            checkIncompleteArray(typein, lex->data->errfile, lex->data->errline);
+            checkIncompleteArray(typein, currentLex->sourceFileName, currentLex->sourceLineNumber);
         }
     }
     else
     {
         error(ERR_ARRAY_NEED_CLOSEBRACKET);
-        errskim(&lex, skim_comma);
+        errskim(skim_comma);
     }
     return tp;
 }
-Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
+Type* TypeGenerator::AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
                                int consdest, bool funcptr)
 {
     bool isvla = false;
     Type* quals = nullptr;
     Type* tp1 = nullptr;
     EXPRESSION* exp = nullptr;
-    if (ISKW(lex))
+    if (ISKW())
     {
-        switch (KW(lex))
+        switch (KW())
         {
             case Keyword::openpa_:
                 if (*sp)
                 {
-                    tp1 = tp = TypeGenerator::FunctionParams(lex, funcsp, sp, tp, inTemplate, storage_class, funcptr);
+                    tp1 = tp = TypeGenerator::FunctionParams(funcsp, sp, tp, inTemplate, storage_class, funcptr);
                     if (tp1->type == BasicType::func_)
                     {
                         tp = tp->btp;
-                        tp = TypeGenerator::AfterName(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
+                        tp = TypeGenerator::AfterName(funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                         tp1->btp = tp;
                         tp = tp1;
                         if (Optimizer::cparams.prm_cplusplus)
                         {
-                            tp = TypeGenerator::FunctionQualifiersAndTrailingReturn(lex, funcsp, sp, tp, storage_class);
+                            tp = TypeGenerator::FunctionQualifiersAndTrailingReturn(funcsp, sp, tp, storage_class);
                         }
                     }
                     tp->UpdateRootTypes();
@@ -1934,7 +1941,7 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
                 }
                 break;
             case Keyword::openbr_:
-                tp = TypeGenerator::ArrayType(lex, funcsp, tp, (*sp) ? (*sp)->sb->storage_class : storage_class, &isvla, &quals,
+                tp = TypeGenerator::ArrayType(funcsp, tp, (*sp) ? (*sp)->sb->storage_class : storage_class, &isvla, &quals,
                                               true, false);
                 if (!tp)
                 {
@@ -1980,8 +1987,8 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
                         else if (!(*sp)->tp->IsInt() && (*sp)->tp->BaseType()->type != BasicType::enum_)
                             error(ERR_BIT_FIELD_INTEGER_TYPE);
                     }
-                    lex = getsym();
-                    lex = optimized_expression(lex, funcsp, nullptr, &tp1, &exp, false);
+                    getsym();
+                    optimized_expression(funcsp, nullptr, &tp1, &exp, false);
                     if (tp1 && exp && isintconst(exp))
                     {
                         int n = tp->size * Optimizer::chosenAssembler->arch->bits_per_mau;
@@ -2001,7 +2008,7 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
                         if (tp)
                             tp->bits = 1;
                         error(ERR_CONSTANT_VALUE_EXPECTED);
-                        errskim(&lex, skim_semi_declare);
+                        errskim(skim_semi_declare);
                     }
                 }
                 break;
@@ -2009,15 +2016,15 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
                 if (Optimizer::cparams.prm_cplusplus && inTemplate)
                 {
                     std::list<TEMPLATEPARAMPAIR>* templateParams = TemplateGetParams(*sp);
-                    lex = GetTemplateArguments(lex, funcsp, *sp, &templateParams->front().second->bySpecialization.types);
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
+                    GetTemplateArguments(funcsp, *sp, &templateParams->front().second->bySpecialization.types);
+                    tp = TypeGenerator::AfterName(funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                 }
                 else
                 {
                     TEMPLATEPARAM* templateParam = Allocate<TEMPLATEPARAM>();
                     templateParam->type = TplType::new_;
-                    lex = GetTemplateArguments(lex, funcsp, *sp, &templateParam->bySpecialization.types);
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, sp, inTemplate, storage_class, consdest, false);
+                    GetTemplateArguments(funcsp, *sp, &templateParam->bySpecialization.types);
+                    tp = TypeGenerator::AfterName(funcsp, tp, sp, inTemplate, storage_class, consdest, false);
                     if (tp && tp->IsFunction())
                     {
                         std::list<TEMPLATEPARAMPAIR>* lst = templateParamPairListFactory.CreateList();
@@ -2038,23 +2045,23 @@ Type* TypeGenerator::AfterName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL**
     }
     return tp;
 }
-Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym,
-                                std::list<NAMESPACEVALUEDATA*>** nsv, bool inTemplate, StorageClass storage_class, Linkage* linkage,
-                                Linkage* linkage2, Linkage* linkage3, bool* notype, bool asFriend, int consdest, bool beforeOnly,
-                                bool funcptr)
+Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym,
+    std::list<NAMESPACEVALUEDATA*>** nsv, bool inTemplate, StorageClass storage_class, Linkage* linkage,
+    Linkage* linkage2, Linkage* linkage3, bool* notype, bool asFriend, int consdest, bool beforeOnly,
+    bool funcptr)
 {
     SYMBOL* sp;
     Type* ptype = nullptr;
     BasicType xtype = BasicType::none_;
-    LexList* pos = lex;
+    LexemeStreamPosition pos(currentStream);
     bool doneAfter = false;
 
-    if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && MATCHKW(lex, Keyword::openbr_))
+    if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions && MATCHKW(Keyword::openbr_))
     {
         // managed array
         bool isvla = false;
         Type* quals = nullptr;
-        tp = TypeGenerator::ArrayType(lex, funcsp, tp, storage_class, &isvla, &quals, true, true);
+        tp = TypeGenerator::ArrayType(funcsp, tp, storage_class, &isvla, &quals, true, true);
         if (quals)
         {
             Type* q2 = quals;
@@ -2066,34 +2073,34 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
         tp->UpdateRootTypes();
         //        doneAfter = true;
     }
-    if (ISID(lex) || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::operator_) ||
-        (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::ellipse_)))
+    if (ISID() || MATCHKW(Keyword::classsel_) || MATCHKW(Keyword::operator_) ||
+        (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::ellipse_)))
     {
         SYMBOL* strSymX = nullptr;
         std::list<NAMESPACEVALUEDATA*>* nsvX = nullptr;
         bool oldTemplateSpecialization = inTemplateSpecialization;
         inTemplateSpecialization = inTemplateType;
         inTemplateType = false;
-        enclosingDeclarations.Mark();
+        DeclarationScope scope;
         if (Optimizer::cparams.prm_cplusplus)
         {
             bool throughClass = false;
             bool pack = false;
-            if (MATCHKW(lex, Keyword::ellipse_))
+            if (MATCHKW(Keyword::ellipse_))
             {
                 pack = true;
-                lex = getsym();
+                getsym();
             }
-            lex = nestedPath(lex, &strSymX, &nsvX, &throughClass, false, storage_class, false, 0);
+            nestedPath(&strSymX, &nsvX, &throughClass, false, storage_class, false, 0);
             inTemplateSpecialization = oldTemplateSpecialization;
             if (strSymX)
             {
-                if (structLevel && strSymX->tp->type == BasicType::templateselector_ && !MATCHKW(lex, Keyword::star_) &&
-                    !MATCHKW(lex, Keyword::complx_))
+                if (structLevel && strSymX->tp->type == BasicType::templateselector_ && !MATCHKW(Keyword::star_) &&
+                    !MATCHKW(Keyword::complx_))
                 {
                     tp = strSymX->tp;
                     strSymX = nullptr;
-                    lex = getsym();
+                    getsym();
                     if (notype)
                         *notype = false;
                 }
@@ -2106,16 +2113,16 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             }
             if (nsv)
                 *nsv = nsvX;
-            if (strSymX && MATCHKW(lex, Keyword::star_))
+            if (strSymX && MATCHKW(Keyword::star_))
             {
                 bool inparen = false;
                 if (pack)
                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
-                lex = getsym();
-                if (funcptr && MATCHKW(lex, Keyword::openpa_))
+                getsym();
+                if (funcptr && MATCHKW(Keyword::openpa_))
                 {
                     inparen = true;
-                    lex = getsym();
+                    getsym();
                 }
                 ptype = Type::MakeType(BasicType::memberptr_, tp);
                 if (strSymX->tp->type == BasicType::templateselector_)
@@ -2124,13 +2131,13 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     ptype->sp = strSymX;
                 tp = ptype;
                 tp->UpdateRootTypes();
-                lex = getQualifiers(lex, &tp, linkage, linkage2, linkage3, nullptr);
+                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
                 if (strSym)
                     *strSym = nullptr;
                 if (nsv)
                     *nsv = nullptr;
-                tp = TypeGenerator::BeforeName(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                                               linkage3, nullptr, asFriend, false, beforeOnly, false);
+                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                    linkage3, nullptr, asFriend, false, beforeOnly, false);
                 if (tp && (ptype != tp && tp->IsRef()))
                 {
                     error(ERR_NO_REF_POINTER_REF);
@@ -2138,10 +2145,10 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                 ptype->size = getSize(BasicType::pointer_) + getSize(BasicType::int_) * 2;
                 if (inparen)
                 {
-                    if (!needkw(&lex, Keyword::closepa_))
+                    if (!needkw(Keyword::closepa_))
                     {
-                        errskim(&lex, skim_closepa);
-                        skip(&lex, Keyword::closepa_);
+                        errskim(skim_closepa);
+                        skip(Keyword::closepa_);
                     }
                 }
             }
@@ -2151,10 +2158,10 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                 buf[0] = '\0';
                 int ov = 0;
                 Type* castType = nullptr;
-                if (MATCHKW(lex, Keyword::complx_))
+                if (MATCHKW(Keyword::complx_))
                 {
-                    lex = getsym();
-                    if (!ISID(lex) || !*strSym || strcmp((*strSym)->name, lex->data->value.s.a))
+                    getsym();
+                    if (!ISID() || !*strSym || strcmp((*strSym)->name, currentLex->value.s.a))
                     {
                         error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
                     }
@@ -2167,7 +2174,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                 }
                 else
                 {
-                    lex = getIdName(lex, funcsp, buf, sizeof(buf), & ov, &castType);
+                    getIdName(funcsp, buf, sizeof(buf), &ov, &castType);
                 }
                 if (!buf[0])
                 {
@@ -2181,7 +2188,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     }
                     else
                     {
-                        lex = prevsym(pos);
+                        pos.Backup();
                     }
                 }
                 else
@@ -2201,11 +2208,14 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
                     {
                         sp = makeID(storage_class, tp, *spi, litlate(buf));
                         sp->packed = pack;
-                        lex = getsym();
+                        getsym();
                     }
                     sp->sb->operatorId = ov;
-                    if (lex)
-                        sp->sb->declcharpos = lex->data->charindex;
+                    if (currentLex)
+                    {
+                        sp->sb->declcharpos = currentLex->charindex;
+                        sp->sb->realcharpos = currentLex->realcharindex;
+                    }
                     *spi = sp;
                 }
             }
@@ -2213,10 +2223,11 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
         else
         {
             inTemplateSpecialization = oldTemplateSpecialization;
-            sp = makeID(storage_class, tp, *spi, litlate(lex->data->value.s.a));
-            sp->sb->declcharpos = lex->data->charindex;
+            sp = makeID(storage_class, tp, *spi, litlate(currentLex->value.s.a));
+            sp->sb->declcharpos = currentLex->charindex;
+            sp->sb->realcharpos = currentLex->realcharindex;
             *spi = sp;
-            lex = getsym();
+            getsym();
         }
         if (inTemplate && *spi)
         {
@@ -2225,7 +2236,7 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
             if (!ssp)
                 ssp = enclosingDeclarations.GetFirst();
             (*spi)->sb->parentClass = ssp;
-            (*spi)->sb->templateLevel = definingTemplate;
+            (*spi)->sb->templateLevel = templateDefinitionLevel;
             templateParams = TemplateGetParams(*spi);
             (*spi)->sb->templateLevel = 0;
             (*spi)->sb->parentClass = nullptr;
@@ -2246,295 +2257,297 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
         {
             nsvX = nullptr;
         }
-        ParseAttributeSpecifiers(&lex, funcsp, true);
+        ParseAttributeSpecifiers(funcsp, true);
         if (!doneAfter)
-            tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+            tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
         if (nsvX)
         {
             nameSpaceList.pop_front();
             globalNameSpace->pop_front();
         }
-        enclosingDeclarations.Release();
     }
     else
-        switch (KW(lex))
+    {
+        LexemeStreamPosition start(currentStream);
+        switch (KW())
         {
-            LexList* start;
-            case Keyword::openpa_:
-                if (beforeOnly)
-                    break;
-                start = lex;
-                lex = getsym();
-                /* in a parameter, open paren followed by a type is an  unnamed function */
-                if ((storage_class == StorageClass::parameter_ || parsingUsing) &&
-                    (MATCHKW(lex, Keyword::closepa_) || (TypeGenerator::StartOfType(lex, nullptr, false) &&
-                                                         (!ISKW(lex) || !(lex->data->kw->tokenTypes & TT_LINKAGE)))))
+        case Keyword::openpa_:
+            if (beforeOnly)
+                break;
+            getsym();
+            /* in a parameter, open paren followed by a type is an  unnamed function */
+            if ((storage_class == StorageClass::parameter_ || processingUsingStatement) &&
+                (MATCHKW(Keyword::closepa_) || (TypeGenerator::StartOfType(nullptr, false) &&
+                    (!ISKW() || !(currentLex->kw->tokenTypes & TT_LINKAGE)))))
+            {
+                Type* tp1;
+                if (!*spi)
                 {
-                    Type* tp1;
-                    if (!*spi)
-                    {
-                        sp = makeID(storage_class, tp, *spi, NewUnnamedID());
-                        SetLinkerNames(sp, Linkage::none_);
-                        sp->sb->anonymous = true;
-                        sp->sb->declcharpos = lex->data->charindex;
-                        *spi = sp;
-                    }
-                    tp = (*spi)->tp;
-                    lex = prevsym(start);
-                    tp1 = tp;
-                    if (!parsingUsing)
-                    {
-                        tp = TypeGenerator::FunctionParams(lex, funcsp, spi, tp, inTemplate, storage_class, false);
-                        tp1 = tp;
-                        tp = tp->btp;
-                    }
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                    if (!parsingUsing)
-                    {
-                        tp1->btp = tp;
-                        tp = tp1;
-                    }
-                    tp1->UpdateRootTypes();
-                    return tp;
-                }
-                else if (Optimizer::cparams.prm_cplusplus && consdest)
-                {
-                    // constructor or destructor name
-                    const char* name;
-                    if (consdest == CT_DEST)
-                    {
-                        tp = &stdvoid;
-                        name = overloadNameTab[CI_DESTRUCTOR];
-                    }
-                    else
-                    {
-                        tp = Type::MakeType(BasicType::pointer_, tp);
-                        name = overloadNameTab[CI_CONSTRUCTOR];
-                    }
-                    sp = makeID(storage_class, tp, *spi, name);
-                    sp->sb->declcharpos = lex->data->charindex;
+                    sp = makeID(storage_class, tp, *spi, NewUnnamedID());
+                    SetLinkerNames(sp, Linkage::none_);
+                    sp->sb->anonymous = true;
+                    sp->sb->declcharpos = currentLex->charindex;
+                    sp->sb->realcharpos = currentLex->realcharindex;
                     *spi = sp;
-                    if (*strSym)
-                    {
-                        enclosingDeclarations.Add(*strSym);
-                    }
-                    lex = prevsym(start);
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                    if (*strSym)
-                    {
-                        enclosingDeclarations.Drop();
-                    }
                 }
-                else if (MATCHKW(lex, Keyword::openbr_))
+                tp = (*spi)->tp;
+                start.Backup();
+                tp1 = tp;
+                if (!processingUsingStatement)
                 {
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                    needkw(&lex, Keyword::closepa_);
+                    tp = TypeGenerator::FunctionParams(funcsp, spi, tp, inTemplate, storage_class, false);
+                    tp1 = tp;
+                    tp = tp->btp;
+                }
+                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                if (!processingUsingStatement)
+                {
+                    tp1->btp = tp;
+                    tp = tp1;
+                }
+                tp1->UpdateRootTypes();
+                return tp;
+            }
+            else if (Optimizer::cparams.prm_cplusplus && consdest)
+            {
+                // constructor or destructor name
+                const char* name;
+                if (consdest == CT_DEST)
+                {
+                    tp = &stdvoid;
+                    name = overloadNameTab[CI_DESTRUCTOR];
                 }
                 else
                 {
-                    /* stdcall et.al. before the ptr means one thing in borland,
-                     * stdcall after means another
-                     * we are treating them both the same, e.g. the resulting
-                     * pointer-to-function will be stdcall linkage either way
-                     */
-                    attributes oldAttribs = basisAttribs;
+                    tp = Type::MakeType(BasicType::pointer_, tp);
+                    name = overloadNameTab[CI_CONSTRUCTOR];
+                }
+                sp = makeID(storage_class, tp, *spi, name);
+                sp->sb->declcharpos = currentLex->charindex;
+                sp->sb->realcharpos = currentLex->realcharindex;
+                *spi = sp;
+                if (*strSym)
+                {
+                    enclosingDeclarations.Add(*strSym);
+                }
+                start.Backup();
+                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                if (*strSym)
+                {
+                    enclosingDeclarations.Drop();
+                }
+            }
+            else if (MATCHKW(Keyword::openbr_))
+            {
+                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                needkw(Keyword::closepa_);
+            }
+            else
+            {
+                /* stdcall et.al. before the ptr means one thing in borland,
+                 * stdcall after means another
+                 * we are treating them both the same, e.g. the resulting
+                 * pointer-to-function will be stdcall linkage either way
+                 */
+                attributes oldAttribs = basisAttribs;
 
-                    basisAttribs = {0};
+                basisAttribs = { 0 };
 
-                    ParseAttributeSpecifiers(&lex, funcsp, true);
-                    lex = getQualifiers(lex, &tp, linkage, linkage2, linkage3, nullptr);
-                    ptype = TypeGenerator::BeforeName(lex, funcsp, ptype, spi, strSym, nsv, inTemplate, storage_class, linkage,
-                                                      linkage2, linkage3, nullptr, asFriend, false, beforeOnly, true);
-                    basisAttribs = oldAttribs;
-                    if (!needkw(&lex, Keyword::closepa_))
+                ParseAttributeSpecifiers(funcsp, true);
+                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                ptype = TypeGenerator::BeforeName(funcsp, ptype, spi, strSym, nsv, inTemplate, storage_class, linkage,
+                    linkage2, linkage3, nullptr, asFriend, false, beforeOnly, true);
+                basisAttribs = oldAttribs;
+                if (!needkw(Keyword::closepa_))
+                {
+                    errskim(skim_closepa);
+                    skip(Keyword::closepa_);
+                }
+                if (ptype->IsFunctionPtr() && !MATCHKW(Keyword::openpa_) && !MATCHKW(Keyword::openbr_))
+                {
+                    auto  atype = tp->BaseType();
+                    if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
+                        atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                    auto tp1 = ptype;
+                    ptype = ptype->BaseType()->btp->BaseType();
+                    ptype->btp = tp;
+                    tp = tp1;
+                    tp->UpdateRootTypes();
+                }
+                else
+                {
+                    if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
+                        ptype->BaseType()->type != BasicType::memberptr_))
                     {
-                        errskim(&lex, skim_closepa);
-                        skip(&lex, Keyword::closepa_);
+                        // if here is not a potential pointer to func
+                        if (!ptype)
+                            tp = &stdint;
+                        ptype = nullptr;
                     }
-                    if (ptype->IsFunctionPtr() && !MATCHKW(lex, Keyword::openpa_) && !MATCHKW(lex, Keyword::openbr_))
+                    tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, true);
+                    if (ptype)
                     {
-                        auto  atype = tp->BaseType();
+                        // pointer to func or pointer to memberfunc
+                        Type* atype = tp;
+                        tp = ptype;
+                        if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
+                            atype->BaseType()->byRefArray = true;
+                        while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
+                            ptype->BaseType()->type == BasicType::memberptr_) &&
+                            ptype->btp)
+                            if (ptype->btp->type == BasicType::any_)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                ptype = ptype->btp;
+                            }
+                        ptype->btp = atype;
+                        ptype->rootType = atype->rootType;
+                        tp->UpdateRootTypes();
+
+                        atype = tp->BaseType();
                         if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
                             atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
-                        auto tp1 = ptype;
-                        ptype =ptype->BaseType()->btp->BaseType();
-                        ptype->btp = tp;
-                        tp = tp1;
-                        tp->UpdateRootTypes();
                     }
-                    else
-                    {
-                        if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
-                            ptype->BaseType()->type != BasicType::memberptr_))
-                        {
-                            // if here is not a potential pointer to func
-                            if (!ptype)
-                                tp = &stdint;
-                            ptype = nullptr;
-                        }
-                        tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, true);
-                        if (ptype)
-                        {
-                            // pointer to func or pointer to memberfunc
-                            Type* atype = tp;
-                            tp = ptype;
-                            if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
-                                atype->BaseType()->byRefArray = true;
-                            while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
-                                ptype->BaseType()->type == BasicType::memberptr_) &&
-                                ptype->btp)
-                                if (ptype->btp->type == BasicType::any_)
-                                {
-                                    break;
-                                }
-                                else
-                                {
-                                    ptype = ptype->btp;
-                                }
-                            ptype->btp = atype;
-                            ptype->rootType = atype->rootType;
-                            tp->UpdateRootTypes();
-
-                            atype = tp->BaseType();
-                            if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
-                                atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
-                        }
-                    }
-                    if (*spi)
-                        (*spi)->tp = tp;
-                    if (tp && tp->IsFunction())
-                        sizeQualifiers(tp->BaseType()->btp);
-                    if (tp)
-                        sizeQualifiers(tp);
                 }
+                if (*spi)
+                    (*spi)->tp = tp;
+                if (tp && tp->IsFunction())
+                    sizeQualifiers(tp->BaseType()->btp);
+                if (tp)
+                    sizeQualifiers(tp);
+            }
+            break;
+        case Keyword::star_: {
+            if (tp && tp->IsRef())
+            {
+                error(ERR_NO_REF_POINTER_REF);
+            }
+            bool inparen = false;
+            getsym();
+            if (funcptr && MATCHKW(Keyword::openpa_))
+            {
+                getsym();
+                // this isn't perfect, it doesn't work with nested parens around the identifier
+
+                if (!ISID())
+                    --*currentStream;
+                else
+                    inparen = true;
+            }
+            ParseAttributeSpecifiers(funcsp, true);
+            ptype = tp;
+            while (ptype && ptype->type != BasicType::pointer_ && xtype == BasicType::none_)
+            {
+                if (ptype->type == BasicType::far_)
+                    xtype = BasicType::pointer_;
+                else if (ptype->type == BasicType::near_)
+                    xtype = BasicType::pointer_;
+                else if (ptype->type == BasicType::seg_)
+                    xtype = BasicType::seg_;
+                ptype = ptype->btp;
+            }
+            if (xtype == BasicType::none_)
+                xtype = BasicType::pointer_;
+            tp = Type::MakeType(xtype, tp);
+            getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+            tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                linkage3, nullptr, asFriend, false, beforeOnly, false);
+            if (inparen)
+            {
+                if (!needkw(Keyword::closepa_))
+                {
+                    errskim(skim_closepa);
+                    skip(Keyword::closepa_);
+                }
+            }
+        }
+                           break;
+        case Keyword::and_:
+        case Keyword::land_:
+            if (storage_class == StorageClass::catchvar_)
+            {
+                // already a ref;
+                getsym();
+                ParseAttributeSpecifiers(funcsp, true);
+                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                    linkage3, nullptr, asFriend, false, beforeOnly, false);
                 break;
-            case Keyword::star_: {
-                if (tp && tp->IsRef())
+            }
+            // using the C++ reference operator as the ref keyword...
+            if (Optimizer::cparams.prm_cplusplus ||
+                ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
+                    storage_class == StorageClass::parameter_ && KW() == Keyword::and_))
+            {
+                if (tp && tp->IsRef() && !templateInstantiationLevel && !templateDefinitionLevel)
                 {
                     error(ERR_NO_REF_POINTER_REF);
                 }
-                bool inparen = false;
-                lex = getsym();
-                if (funcptr && MATCHKW(lex, Keyword::openpa_))
+                tp = Type::MakeType(MATCHKW(Keyword::and_) ? BasicType::lref_ : BasicType::rref_, tp);
+                if (templateInstantiationLevel)
+                    CollapseReferences(tp);
+                getsym();
+                ParseAttributeSpecifiers(funcsp, true);
+                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                    linkage3, nullptr, asFriend, false, beforeOnly, false);
+                if (storage_class != StorageClass::typedef_ && !tp->IsFunction() && !IsDefiningTemplate())
                 {
-                    lex = getsym();
-                    // this isn't perfect, it doesn't work with nested parens around the identifier
-
-                    if (!ISID(lex))
-                        lex = backupsym();
-                    else
-                        inparen = true;
-                }
-                ParseAttributeSpecifiers(&lex, funcsp, true);
-                ptype = tp;
-                while (ptype && ptype->type != BasicType::pointer_ && xtype == BasicType::none_)
-                {
-                    if (ptype->type == BasicType::far_)
-                        xtype = BasicType::pointer_;
-                    else if (ptype->type == BasicType::near_)
-                        xtype = BasicType::pointer_;
-                    else if (ptype->type == BasicType::seg_)
-                        xtype = BasicType::seg_;
-                    ptype = ptype->btp;
-                }
-                if (xtype == BasicType::none_)
-                    xtype = BasicType::pointer_;
-                tp = Type::MakeType(xtype, tp);
-                lex = getQualifiers(lex, &tp, linkage, linkage2, linkage3, nullptr);
-                tp = TypeGenerator::BeforeName(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                                               linkage3, nullptr, asFriend, false, beforeOnly, false);
-                if (inparen)
-                {
-                    if (!needkw(&lex, Keyword::closepa_))
+                    auto tp2 = tp;
+                    while (tp2 && tp2->type != BasicType::lref_ && tp2->type != BasicType::rref_)
                     {
-                        errskim(&lex, skim_closepa);
-                        skip(&lex, Keyword::closepa_);
+                        if ((tp2->type == BasicType::const_ || tp2->type == BasicType::volatile_))
+                        {
+                            error(ERR_REF_NO_QUALIFIERS);
+                            break;
+                        }
+                        tp2 = tp2->btp;
                     }
                 }
             }
             break;
-            case Keyword::and_:
-            case Keyword::land_:
-                if (storage_class == StorageClass::catchvar_)
-                {
-                    // already a ref;
-                    lex = getsym();
-                    ParseAttributeSpecifiers(&lex, funcsp, true);
-                    lex = getQualifiers(lex, &tp, linkage, linkage2, linkage3, nullptr);
-                    tp = TypeGenerator::BeforeName(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                                                   linkage3, nullptr, asFriend, false, beforeOnly, false);
-                    break;
-                }
-                // using the C++ reference operator as the ref keyword...
-                if (Optimizer::cparams.prm_cplusplus ||
-                    ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
-                     storage_class == StorageClass::parameter_ && KW(lex) == Keyword::and_))
-                {
-                    if (tp && tp->IsRef() && !instantiatingTemplate && !definingTemplate)
-                    {
-                        error(ERR_NO_REF_POINTER_REF);
-                    }
-                    tp = Type::MakeType(MATCHKW(lex, Keyword::and_) ? BasicType::lref_ : BasicType::rref_, tp);
-                    if (instantiatingTemplate)
-                        CollapseReferences(tp);
-                    lex = getsym();
-                    ParseAttributeSpecifiers(&lex, funcsp, true);
-                    lex = getQualifiers(lex, &tp, linkage, linkage2, linkage3, nullptr);
-                    tp = TypeGenerator::BeforeName(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                                                   linkage3, nullptr, asFriend, false, beforeOnly, false);
-                    if (storage_class != StorageClass::typedef_ && !tp->IsFunction() && !definingTemplate && !instantiatingTemplate)
-                    {
-                        auto tp2 = tp;
-                        while (tp2 && tp2->type != BasicType::lref_ && tp2->type != BasicType::rref_)
-                        {
-                            if ((tp2->type == BasicType::const_ || tp2->type == BasicType::volatile_))
-                            {
-                                error(ERR_REF_NO_QUALIFIERS);
-                                break;
-                            }
-                            tp2 = tp2->btp;
-                        }
-                    }
-                }
-                break;
-            case Keyword::colon_: /* may have unnamed bit fields */
-                *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
-                SetLinkerNames(*spi, Linkage::none_);
-                (*spi)->sb->anonymous = true;
-                tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                break;
-            case Keyword::gt_:
-            case Keyword::comma_:
-                break;
-            default:
-                if (beforeOnly)
-                    return tp;
-                if (tp && (tp->IsStructured() || tp->type == BasicType::enum_) && KW(lex) == Keyword::semicolon_)
-                {
-                    tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                    *spi = nullptr;
-                    return tp;
-                }
-                if (storage_class != StorageClass::parameter_ && storage_class != StorageClass::cast_ &&
-                    storage_class != StorageClass::catchvar_ && !asFriend)
-                {
-                    if (MATCHKW(lex, Keyword::openpa_) || MATCHKW(lex, Keyword::openbr_) || MATCHKW(lex, Keyword::assign_) ||
-                        MATCHKW(lex, Keyword::semicolon_))
-                        error(ERR_IDENTIFIER_EXPECTED);
-                    else
-                        errortype(ERR_IMPROPER_USE_OF_TYPE, tp, nullptr);
-                }
-                if (!tp)
-                {
-                    *spi = nullptr;
-                    return tp;
-                }
-                *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
-                SetLinkerNames(*spi, Linkage::none_);
-                (*spi)->sb->anonymous = true;
-                tp = TypeGenerator::AfterName(lex, funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                break;
+        case Keyword::colon_: /* may have unnamed bit fields */
+            *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
+            SetLinkerNames(*spi, Linkage::none_);
+            (*spi)->sb->anonymous = true;
+            tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+            break;
+        case Keyword::gt_:
+        case Keyword::comma_:
+            break;
+        default:
+            if (beforeOnly)
+                return tp;
+            if (tp && (tp->IsStructured() || tp->type == BasicType::enum_) && KW() == Keyword::semicolon_)
+            {
+                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                *spi = nullptr;
+                return tp;
+            }
+            if (storage_class != StorageClass::parameter_ && storage_class != StorageClass::cast_ &&
+                storage_class != StorageClass::catchvar_ && !asFriend)
+            {
+                if (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::openbr_) || MATCHKW(Keyword::assign_) ||
+                    MATCHKW(Keyword::semicolon_))
+                    error(ERR_IDENTIFIER_EXPECTED);
+                else
+                    errortype(ERR_IMPROPER_USE_OF_TYPE, tp, nullptr);
+            }
+            if (!tp)
+            {
+                *spi = nullptr;
+                return tp;
+            }
+            *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
+            SetLinkerNames(*spi, Linkage::none_);
+            (*spi)->sb->anonymous = true;
+            tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+            break;
         }
+    }
     if (tp && (ptype = tp->BaseType()))
     {
         if (ptype->IsFunctionPtr())
@@ -2551,10 +2564,10 @@ Type* TypeGenerator::BeforeName(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL*
         // an error occurred
         tp = &stdint;
     }
-    ParseAttributeSpecifiers(&lex, funcsp, true);
+    ParseAttributeSpecifiers(funcsp, true);
     return tp;
 }
-Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate,
+Type* TypeGenerator::UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate,
                                    StorageClass storage_class, Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in,
                                    AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
                                    bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool* asfriend,
@@ -2581,11 +2594,11 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
     int bitintbits = 0;
 
     *defd = false;
-    while (KWTYPE(lex, TT_BASETYPE) || MATCHKW(lex, Keyword::decltype_))
+    while (KWTYPE(TT_BASETYPE) || MATCHKW(Keyword::decltype_))
     {
         if (foundtypeof)
             flagerror = true;
-        switch (KW(lex))
+        switch (KW())
         {
             case Keyword::int_:
                 if (foundint)
@@ -2735,18 +2748,18 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                     case BasicType::bitint_:
                         RequiresDialect::Keyword(Dialect::c23, "_Bitint");
                         type = BasicType::unsigned_bitint_;
-                        lex = getsym();
-                        needkw(&lex, Keyword::openpa_);
+                        getsym();
+                        needkw(Keyword::openpa_);
                         {
                             Type* tp = nullptr;
                             EXPRESSION* exp = nullptr;
-                            lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                            optimized_expression(funcsp, nullptr, &tp, &exp, false);
                             if (!tp || !tp->IsInt() || !isintconst(exp))
                                 error(ERR_NEED_INTEGER_EXPRESSION);
                             bitintbits = exp->v.i;
                         }
-                        if (!MATCHKW(lex, Keyword::closepa_))
-                            needkw(&lex, Keyword::closepa_);
+                        if (!MATCHKW(Keyword::closepa_))
+                            needkw(Keyword::closepa_);
                         break;
                     default:
                         flagerror = true;
@@ -2787,18 +2800,18 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                         flagerror = true;
                         break;
                 }
-                lex = getsym();
-                needkw(&lex, Keyword::openpa_);
+                getsym();
+                needkw(Keyword::openpa_);
                 {
                     Type* tp = nullptr;
                     EXPRESSION* exp = nullptr;
-                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                    optimized_expression(funcsp, nullptr, &tp, &exp, false);
                     if (!tp || !tp->IsInt() || !isintconst(exp))
                         error(ERR_NEED_INTEGER_EXPRESSION);
                     bitintbits = exp->v.i;
                 }
-                if (!MATCHKW(lex, Keyword::closepa_))
-                    needkw(&lex, Keyword::closepa_);
+                if (!MATCHKW(Keyword::closepa_))
+                    needkw(Keyword::closepa_);
                 break;
             case Keyword::wchar_t_:
                 if (type == BasicType::none_)
@@ -2936,7 +2949,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                 if (foundsigned || foundunsigned || type != BasicType::none_)
                     flagerror = true;
                 declaringInitialType = 0;
-                lex = declstruct(lex, funcsp, &tn, inTemplate, asfriend && *asfriend, storage_class, *linkage2_in, access, defd,
+                declstruct(funcsp, &tn, inTemplate, asfriend && *asfriend, storage_class, *linkage2_in, access, defd,
                                  constexpression);
                 declaringInitialType = oldDeclaringInitialType;
                 goto exit;
@@ -2944,7 +2957,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                 if (foundsigned || foundunsigned || type != BasicType::none_)
                     flagerror = true;
                 declaringInitialType = 0;
-                lex = declenum(lex, funcsp, &tn, storage_class, access, false, defd);
+                declenum(funcsp, &tn, storage_class, access, false, defd);
                 declaringInitialType = oldDeclaringInitialType;
                 goto exit;
             case Keyword::void_:
@@ -2953,7 +2966,7 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                 type = BasicType::void_;
                 break;
             case Keyword::decltype_:
-                //                lex = getDeclType(lex, funcsp, &tn);
+                //                getDeclType(funcsp, &tn);
                 type = BasicType::void_; /* won't really be used */
                 foundtypeof = true;
                 if (foundsomething)
@@ -2961,17 +2974,17 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                 goto founddecltype;
             case Keyword::typeof_:
             case Keyword::typeof_unqual_: {
-                auto kw = KW(lex);
+                auto kw = KW();
                 type = BasicType::void_; /* won't really be used */
                 foundtypeof = true;
                 if (foundsomething)
                     flagerror = true;
-                lex = getsym();
-                if (MATCHKW(lex, Keyword::openpa_))
+                getsym();
+                if (MATCHKW(Keyword::openpa_))
                 {
                     EXPRESSION* exp;
-                    lex = getsym();
-                    lex = expression_no_check(lex, nullptr, nullptr, &tn, &exp, 0);
+                    getsym();
+                    expression_no_check(nullptr, nullptr, &tn, &exp, 0);
                     if (tn)
                     {
                         optimize_for_constants(&exp);
@@ -2980,20 +2993,20 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                     {
                         error(ERR_EXPRESSION_SYNTAX);
                     }
-                    if (!MATCHKW(lex, Keyword::closepa_))
-                        needkw(&lex, Keyword::closepa_);
+                    if (!MATCHKW(Keyword::closepa_))
+                        needkw(Keyword::closepa_);
                 }
-                else if (ISID(lex) || MATCHKW(lex, Keyword::classsel_))
+                else if (ISID() || MATCHKW(Keyword::classsel_))
                 {
                     SYMBOL* sp;
-                    lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, storage_class, true, true);
+                    nestedSearch(&sp, nullptr, nullptr, nullptr, nullptr, false, storage_class, true, true);
                     if (sp)
                         tn = sp->tp;
                 }
                 else
                 {
                     error(ERR_IDENTIFIER_EXPECTED);
-                    errskim(&lex, skim_semi_declare);
+                    errskim(skim_semi_declare);
                 }
                 if (kw == Keyword::typeof_unqual_)
                     tn = tn->BaseType();
@@ -3001,11 +3014,11 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
             break;
             case Keyword::atomic_:
                 RequiresDialect::Keyword(Dialect::c11, "_Atomic");
-                lex = getsym();
-                if (needkw(&lex, Keyword::openpa_))
+                getsym();
+                if (needkw(Keyword::openpa_))
                 {
                     tn = nullptr;
-                    tn = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
+                    tn = TypeGenerator::TypeId(funcsp, StorageClass::cast_, false, true, false);
                     if (tn)
                     {
                         quals = Type::MakeType(BasicType::atomic_, quals);
@@ -3019,31 +3032,31 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
                     {
                         error(ERR_EXPRESSION_SYNTAX);
                     }
-                    if (!MATCHKW(lex, Keyword::closepa_))
+                    if (!MATCHKW(Keyword::closepa_))
                     {
-                        needkw(&lex, Keyword::closepa_);
-                        errskim(&lex, skim_closepa);
-                        skip(&lex, Keyword::closepa_);
+                        needkw(Keyword::closepa_);
+                        errskim(skim_closepa);
+                        skip(Keyword::closepa_);
                     }
                 }
                 else
                 {
-                    errskim(&lex, skim_closepa);
-                    skip(&lex, Keyword::closepa_);
+                    errskim(skim_closepa);
+                    skip(Keyword::closepa_);
                 }
                 break;
             case Keyword::underlying_type_: {
-                lex = getsym();
-                underlying_type(&lex, funcsp, &tn);
-                lex = backupsym();
+                getsym();
+                underlying_type(funcsp, &tn);
+                --*currentStream;
                 break;
             }
             default:
                 break;
         }
         foundsomething = true;
-        lex = getsym();
-        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3, asfriend);
+        getsym();
+        getQualifiers(&quals, &linkage, &linkage2, &linkage3, asfriend);
         if (linkage != Linkage::none_)
         {
             *linkage_in = linkage;
@@ -3053,50 +3066,50 @@ Type* TypeGenerator::UnadornedType(LexList*& lex, SYMBOL* funcsp, Type* tp, SYMB
         if (linkage3 != Linkage::none_)
             *linkage3_in = linkage3;
     }
-    if (type == BasicType::signed_)  // BasicType::signed_ is just an internal placeholder
+    if (type == BasicType::signed_)  // BasicType::signed_ is just an internal placeHolder
         type = BasicType::int_;
 founddecltype:
     if (!foundsomething)
     {
         bool typeName = false;
         type = BasicType::int_;
-        if (MATCHKW(lex, Keyword::typename_))
+        if (MATCHKW(Keyword::typename_))
         {
             typeName = true;
-            //   lex = getsym();
+            //   getsym();
         }
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);
-        else if (ISID(lex) || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::complx_) ||
-                 MATCHKW(lex, Keyword::decltype_) || MATCHKW(lex, Keyword::typename_))
+        else if (ISID() || MATCHKW(Keyword::classsel_) || MATCHKW(Keyword::complx_) ||
+                 MATCHKW(Keyword::decltype_) || MATCHKW(Keyword::typename_))
         {
             std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
             SYMBOL* strSym = nullptr;
             SYMBOL* sp = nullptr;
             bool destructor = false;
-            LexList* placeholder = lex;
+            LexemeStreamPosition placeHolder(currentStream);
             bool inTemplate = false;  // hides function parameter
-            lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, false, storage_class, false, true);
+            nestedSearch(&sp, &strSym, &nsv, &destructor, &inTemplate, false, storage_class, false, true);
             if (sp && (istype(sp) || (sp->sb && ((sp->sb->storage_class == StorageClass::type_ && inTemplate) ||
                                                  (sp->sb->storage_class == StorageClass::typedef_ && sp->sb->templateLevel)))))
             {
                 if (sp->sb && sp->sb->attribs.uninheritable.deprecationText && !sp->tp->IsStructured())
                     deprecateMessage(sp);
-                lex = getsym();
+                getsym();
                 if (sp->sb && sp->sb->storage_class == StorageClass::typedef_ && sp->sb->templateLevel)
                 {
-                    if (MATCHKW(lex, Keyword::lt_))
+                    if (MATCHKW(Keyword::lt_))
                     {
                         // throwaway
                         std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                         SYMBOL* sp1;
                         declaringInitialType = 0;
-                        lex = GetTemplateArguments(lex, funcsp, sp, &lst);
+                        GetTemplateArguments(funcsp, sp, &lst);
                         declaringInitialType = oldDeclaringInitialType;
-                        if (!parsingTrailingReturnOrUsing)
+                        if (!processingTrailingReturnOrUsing)
                         {
-                            if (definingTemplate && !instantiatingTemplate && !inTemplateHeader && !declaringInitialType &&
-                                (!inTemplateArgs || parsingSpecializationDeclaration))
+                            if (IsDefiningTemplate() && !processingTemplateHeader && !declaringInitialType &&
+                                (!processingTemplateArgs || parsingSpecializationDeclaration))
                             {
                                 sp1 = GetTypeAliasSpecialization(sp, lst);
                                 if (sp1)
@@ -3173,26 +3186,26 @@ founddecltype:
                                 }
                                 if (inTemplate)
                                 {
-                                    if (MATCHKW(lex, Keyword::lt_))
+                                    if (MATCHKW(Keyword::lt_))
                                     {
                                         // throwaway
                                         std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                                        lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
+                                        GetTemplateArguments(funcsp, nullptr, &lst);
                                     }
                                     errorsym(ERR_NOT_A_TEMPLATE, sp);
                                 }
                             }
                             else if (tpx->templateParam->second->type == TplType::template_)
                             {
-                                if (MATCHKW(lex, Keyword::lt_))
+                                if (MATCHKW(Keyword::lt_))
                                 {
 
                                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                                     SYMBOL* sp1 = tpx->templateParam->second->byTemplate.val;
-                                    lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
+                                    GetTemplateArguments(funcsp, sp1, &lst);
                                     if (sp1)
                                     {
-                                        if (definingTemplate && !instantiatingTemplate)
+                                        if (IsDefiningTemplate())
                                         {
                                             sp1 = GetClassTemplate(sp1, lst, !templateErr);
                                             tn = nullptr;
@@ -3213,7 +3226,7 @@ founddecltype:
                                             tn = Type::MakeType(sp1, lst);
                                         }
                                     }
-                                    else if (definingTemplate)
+                                    else if (templateDefinitionLevel)
                                     {
                                         sp1 = CopySymbol(sp);
                                         sp1->tp = sp->tp->CopyType();
@@ -3278,7 +3291,7 @@ founddecltype:
                                 diag("TypeGenerator::UnadornedType: expected typename template param");
                             }
                         }
-                        else if (expandingParams && tpx->type == BasicType::templateparam_ &&
+                        else if (isExpandingParams && tpx->type == BasicType::templateparam_ &&
                                  tpx->templateParam->second->byPack.pack && !tpx->templateParam->second->resolved)
                         {
                             auto tn2 = LookupPackedInstance(*tpx->templateParam);
@@ -3292,14 +3305,14 @@ founddecltype:
                     {
                         if (templateArg)
                             *templateArg = true;
-                        if (!definingTemplate)
+                        if (!templateDefinitionLevel)
                             TemplateLookupTypeFromDeclType(tpx);
                     }
                     else if (tpx->type == BasicType::templateselector_)
                     {
                         if (templateArg)
                             *templateArg = true;
-                        //                        if (!definingTemplate)
+                        //                        if (!templateDefinitionLevel)
                         //                        {
                         //                            tn = SynthesizeType(sp->tp, nullptr, false);
                         //                        }
@@ -3331,17 +3344,17 @@ founddecltype:
                             TEMPLATESELECTOR* l = &(*tpx->sp->sb->templateSelector).back();
                             if (l->isTemplate)
                             {
-                                if (MATCHKW(lex, Keyword::lt_))
+                                if (MATCHKW(Keyword::lt_))
                                 {
                                     std::list<TEMPLATEPARAMPAIR>* current = nullptr;
-                                    lex = GetTemplateArguments(lex, nullptr, nullptr, &current);
+                                    GetTemplateArguments(nullptr, nullptr, &current);
                                 }
                             }
                         }
                     }
                     else
                     {
-                        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3, nullptr);
+                        getQualifiers(&quals, &linkage, &linkage2, &linkage3, nullptr);
                         if (linkage != Linkage::none_)
                         {
                             *linkage_in = linkage;
@@ -3351,22 +3364,22 @@ founddecltype:
                         if (sp->sb->templateLevel)
                         {
                             std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                            if (definingTemplate)
+                            if (templateDefinitionLevel)
                                 tn = sp->tp;
                             else
                                 tn = nullptr;
-                            if (MATCHKW(lex, Keyword::lt_))
+                            if (MATCHKW(Keyword::lt_))
                             {
                                 if (sp->sb->parentTemplate)
                                     sp = sp->sb->parentTemplate;
-                                lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                                if (definingTemplate && !instantiatingTemplate)
+                                GetTemplateArguments(funcsp, sp, &lst);
+                                if (IsDefiningTemplate())
                                 {
                                     auto sp1 = GetClassTemplate(sp, lst, !templateErr);
                                     if (sp1)
                                     {
                                         sp = sp1;
-                                        if (sp && (!definingTemplate || inTemplateBody))
+                                        if (sp && (!templateDefinitionLevel || processingTemplateBody))
                                             sp->tp = sp->tp->InitializeDeferred();
                                     }
                                     else
@@ -3401,11 +3414,11 @@ founddecltype:
                         {
                             if (inTemplate)
                             {
-                                if (MATCHKW(lex, Keyword::lt_))
+                                if (MATCHKW(Keyword::lt_))
                                 {
                                     // throwaway
                                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
-                                    lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
+                                    GetTemplateArguments(funcsp, nullptr, &lst);
                                 }
                                 errorsym(ERR_NOT_A_TEMPLATE, sp);
                             }
@@ -3420,10 +3433,10 @@ founddecltype:
                             {
                                 tn = sp->tp;
                             }
-                            if (!definingTemplate && tn->IsStructured() && tn->BaseType()->sp->sb->templateLevel &&
+                            if (!templateDefinitionLevel && tn->IsStructured() && tn->BaseType()->sp->sb->templateLevel &&
                                 !tn->BaseType()->sp->sb->instantiated)
                             {
-                                if (definingTemplate && !instantiatingTemplate)
+                                if (IsDefiningTemplate())
                                 {
                                     sp = GetClassTemplate(tn->BaseType()->sp, tn->BaseType()->sp->templateParams, false);
                                     if (sp)
@@ -3440,7 +3453,7 @@ founddecltype:
                             //                           errorsym(ERR_CANNOT_ACCESS, sp);
                         }
                         // DAL
-                        if (Optimizer::cparams.prm_cplusplus && sp && MATCHKW(lex, Keyword::openpa_) &&
+                        if (Optimizer::cparams.prm_cplusplus && sp && MATCHKW(Keyword::openpa_) &&
                             ((strSym && ((strSym->sb->mainsym && strSym->sb->mainsym == sp->sb->mainsym) ||
                                          strSym == sp->sb->mainsym || SameTemplate(strSym->tp, sp->tp))) ||
                              (!strSym && (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_) &&
@@ -3473,7 +3486,7 @@ founddecltype:
                 if (!tn || tn->type == BasicType::any_ || tn->BaseType()->type == BasicType::templateparam_)
                 {
                     SYMBOL* sym = (*strSym->tp->BaseType()->sp->sb->templateSelector)[1].sp;
-                    if (!isTypedef && (!definingTemplate || instantiatingTemplate) && sym->tp->IsStructured() &&
+                    if (!isTypedef && (!IsDefiningTemplate()) && sym->tp->IsStructured() &&
                         (sym->sb && sym->sb->instantiated && !declaringTemplate(sym) &&
                          (!sym->sb->templateLevel ||
                           allTemplateArgsSpecified(sym, (*strSym->tp->sp->sb->templateSelector)[1].templateParams))))
@@ -3484,36 +3497,35 @@ founddecltype:
                     tn = strSym->tp;
                 }
                 foundsomething = true;
-                lex = getsym();
+                getsym();
             }
             else if (strSym && strSym->tp->BaseType()->type == BasicType::templatedecltype_)
             {
                 tn = strSym->tp;
                 foundsomething = true;
-                lex = getsym();
+                getsym();
             }
-            else if (strSym && strSym->sb->templateLevel && !definingTemplate)
+            else if (strSym && strSym->sb->templateLevel && !templateDefinitionLevel)
             {
                 tn = strSym->tp;
-                enclosingDeclarations.Add(tn->sp);
-                sp = classsearch(lex->data->value.s.a, false, false, true);
+                DeclarationScope scope(tn->sp);
+                sp = classsearch(currentLex->value.s.a, false, false, true);
                 if (sp)
                 {
                     tn = sp->tp;
                     foundsomething = true;
                 }
-                enclosingDeclarations.Drop();
-                lex = getsym();
+                getsym();
             }
-            else if (MATCHKW(lex, Keyword::decltype_))
+            else if (MATCHKW(Keyword::decltype_))
             {
-                lex = getDeclType(lex, funcsp, &tn);
+                getDeclType(funcsp, &tn);
                 if (tn)
                     foundsomething = true;
             }
             else if (isTypedef)
             {
-                lex = getsym();
+                getsym();
                 if (sp && sp->tp->type == BasicType::templateselector_)
                 {
                     tn = sp->tp;
@@ -3521,16 +3533,16 @@ founddecltype:
                     TEMPLATESELECTOR* l = &(*tn->sp->sb->templateSelector)[1];
                     if (l->isTemplate)
                     {
-                        if (MATCHKW(lex, Keyword::lt_))
+                        if (MATCHKW(Keyword::lt_))
                         {
                             std::list<TEMPLATEPARAMPAIR>* current = nullptr;
-                            lex = GetTemplateArguments(lex, nullptr, nullptr, &current);
+                            GetTemplateArguments(nullptr, nullptr, &current);
                         }
                     }
                 }
                 else
                 {
-                    if (!definingTemplate && !typeName)
+                    if (!templateDefinitionLevel && !typeName)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
                     }
@@ -3540,15 +3552,15 @@ founddecltype:
             }
             else if (Optimizer::cparams.prm_cplusplus)
             {
-                if (typeName || ISID(lex))
+                if (typeName || ISID())
                 {
                     tn = Type::MakeType(BasicType::any_);
-                    if (lex->data->type == LexType::l_id_)
+                    if (currentLex->type == LexType::l_id_)
                     {
-                        SYMBOL* sp = makeID(StorageClass::global_, tn, nullptr, litlate(lex->data->value.s.a));
+                        SYMBOL* sp = makeID(StorageClass::global_, tn, nullptr, litlate(currentLex->value.s.a));
                         tn->sp = sp;
                     }
-                    lex = getsym();
+                    getsym();
                     foundsomething = true;
                 }
                 else
@@ -3557,7 +3569,7 @@ founddecltype:
                     {
                         error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
                     }
-                    lex = prevsym(placeholder);
+                    placeHolder.Backup();
                 }
             }
         }
@@ -3667,21 +3679,20 @@ exit:
     sizeQualifiers(tp);
     return tp;
 }
-Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic)
+Type* TypeGenerator::PointerQualifiers(Type* tp, bool allowstatic)
 {
-    while (KWTYPE(lex, TT_TYPEQUAL) || (allowstatic && MATCHKW(lex, Keyword::static_)))
+    while (KWTYPE(TT_TYPEQUAL) || (allowstatic && MATCHKW(Keyword::static_)))
     {
         Type* tpn;
-        Type* tpl;
-        if (MATCHKW(lex, Keyword::intrinsic_))
+        if (MATCHKW(Keyword::intrinsic_))
         {
-            lex = getsym();
+            getsym();
             continue;
         }
         tpn = Allocate<Type>();
         if (tp)
             tpn->size = tp->size;
-        switch (KW(lex))
+        switch (KW())
         {
             case Keyword::static_:
                 tpn->type = BasicType::static_;
@@ -3691,14 +3702,14 @@ Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic
                 break;
             case Keyword::atomic_:
                 RequiresDialect::Keyword(Dialect::c11, "_Atomic");
-                lex = getsym();
-                if (MATCHKW(lex, Keyword::openpa_))
+                getsym();
+                if (MATCHKW(Keyword::openpa_))
                 {
                     // being used as  a type specifier not a qualifier
-                    lex = backupsym();
+                    --*currentStream;
                     return tp;
                 }
-                lex = backupsym();
+                --*currentStream;
                 tpn->type = BasicType::atomic_;
                 break;
             case Keyword::volatile_:
@@ -3723,12 +3734,12 @@ Type* TypeGenerator::PointerQualifiers(LexList*& lex, Type* tp, bool allowstatic
         if (tp)
             tpn->rootType = tp->rootType;
         tp = tpn;
-        lex = getsym();
+        getsym();
     }
     return tp;
 }
 int count4;
-Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate,
+Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate,
                                     StorageClass storage_class, bool funcptr)
 {
     (void)storage_class;
@@ -3739,10 +3750,10 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
     bool pastfirst = false;
     bool voiderror = false;
     bool hasellipse = false;
-    LexList* placeholder = lex;
+    LexemeStreamPosition placeHolder(currentStream);
     NAMESPACEVALUEDATA internalNS = {};
     SymbolTable<SYMBOL>* symbolTable = symbols->CreateSymbolTable();
-    lex = getsym();
+    getsym();
     if (tp == nullptr)
         tp = &stdint;
     tp1 = Type::MakeType(BasicType::func_, tp);
@@ -3754,27 +3765,27 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
     attributes oldAttribs = basisAttribs;
 
     basisAttribs = {0};
-    ParseAttributeSpecifiers(&lex, funcsp, true);
+    ParseAttributeSpecifiers(funcsp, true);
     bool structured = false;
-    if (TypeGenerator::StartOfType(lex, &structured, true) &&
-            (!Optimizer::cparams.prm_cplusplus || StatementGenerator::ResolvesToDeclaration(lex, structured)) ||
-        MATCHKW(lex, Keyword::constexpr_))
+    if (TypeGenerator::StartOfType(&structured, true) &&
+            (!Optimizer::cparams.prm_cplusplus || StatementGenerator::ResolvesToDeclaration(structured)) ||
+        MATCHKW(Keyword::constexpr_))
     {
         sp->sb->hasproto = true;
-        while (TypeGenerator::StartOfType(lex, nullptr, true) || MATCHKW(lex, Keyword::ellipse_) ||
-               MATCHKW(lex, Keyword::constexpr_))
+        while (TypeGenerator::StartOfType(nullptr, true) || MATCHKW(Keyword::ellipse_) ||
+               MATCHKW(Keyword::constexpr_))
         {
-            if (MATCHKW(lex, Keyword::constexpr_))
+            if (MATCHKW(Keyword::constexpr_))
             {
-                lex = getsym();
+                getsym();
                 error(ERR_CONSTEXPR_NO_PARAM);
             }
             bool templType = inTemplateType;
-            if (fullySpecialized)
-                ++instantiatingTemplate;
-            inTemplateType = !!definingTemplate;
+            if (isFullySpecialized)
+                ++templateInstantiationLevel;
+            inTemplateType = !!templateDefinitionLevel;
             EnterPackedSequence();
-            if (MATCHKW(lex, Keyword::ellipse_))
+            if (MATCHKW(Keyword::ellipse_))
             {
                 if (!pastfirst)
                     break;
@@ -3788,7 +3799,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 SetLinkerNames(spi, Linkage::none_);
                 spi->tp = Type::MakeType(BasicType::ellipse_);
                 tp->syms->Add(spi);
-                lex = getsym();
+                getsym();
                 hasellipse = true;
                 ClearPackedSequence();
             }
@@ -3808,9 +3819,9 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 Type* tp2;
                 spi = nullptr;
                 tp1 = nullptr;
-                LexList* start = lex;
+                LexemeStreamPosition start(currentStream);
                 noTypeNameError++;
-                lex = getStorageAndType(lex, funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
+                getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
                                         &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
                                         AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
                 noTypeNameError--;
@@ -3819,12 +3830,12 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 else if (tp1->IsAutoType() && !lambdas.size())
                     error(ERR_AUTO_NOT_ALLOWED_IN_PARAMETER);
                 else if (Optimizer::cparams.prm_cplusplus && tp->btp->IsStructured() &&
-                         (MATCHKW(lex, Keyword::openpa_) || MATCHKW(lex, Keyword::begin_)))
+                         (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::begin_)))
                 {
-                    LexList* cur = lex;
-                    lex = getsym();
-                    if (!MATCHKW(lex, Keyword::star_) && !MATCHKW(lex, Keyword::and_) &&
-                        !TypeGenerator::StartOfType(lex, nullptr, true))
+                    LexemeStreamPosition cur(currentStream);
+                    getsym();
+                    if (!MATCHKW(Keyword::star_) && !MATCHKW(Keyword::and_) &&
+                        !TypeGenerator::StartOfType(nullptr, true))
                     {
                         if (*spin)
                         {
@@ -3833,12 +3844,12 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             // will do initialization later...
                         }
                         localNameSpace->pop_front();
-                        lex = prevsym(placeholder);
+                        placeHolder.Backup();
                         return tp;
                     }
-                    lex = prevsym(cur);
+                    cur.Backup();
                 }
-                tp1 = TypeGenerator::BeforeName(lex, funcsp, tp1, &spi, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
+                tp1 = TypeGenerator::BeforeName(funcsp, tp1, &spi, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
                                                 &linkage3, nullptr, false, false, false, false);
                 if (!spi)
                 {
@@ -3852,13 +3863,13 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 while (tp2->IsPtr() || tp2->IsRef())
                     tp2 = tp2->BaseType()->btp;
                 tp2 = tp2->BaseType();
-                if (spi->sb->anonymous && MATCHKW(lex, Keyword::ellipse_))
+                if (spi->sb->anonymous && MATCHKW(Keyword::ellipse_))
                 {
                     if (IsPacking() || (tp2->templateParam && tp2->templateParam->second->packed))
                     {
                         spi->packed = true;
                     }
-                    lex = getsym();
+                    getsym();
                 }
                 spi->tp = tp1;
                 spi->sb->attribs.inheritable.linkage = linkage;
@@ -3868,7 +3879,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                     checkPackedType(spi);
                     if (tp2->type == BasicType::templateparam_ && tp2->templateParam->second->packed)
                     {
-                        if (!definingTemplate ||
+                        if (!templateDefinitionLevel ||
                             (!funcptr && tp2->type == BasicType::templateparam_ && tp2->templateParam->first &&
                                 !inCurrentTemplate(tp2->templateParam->first->name) && definedInTemplate(tp2->templateParam->first->name)))
                         {
@@ -3955,26 +3966,26 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                     }
                     else
                     {
-                        LexList* current = lex;
+                        auto current = currentStream->Index();
                         PushPackIndex();
                         int n = GetPackCount();
                         bool first = true;
-                        inTemplateArgs++;
+                        processingTemplateArgs++;
                         for (int i = 0; i < n; i++)
                         {
                             SetPackIndex(i);
-                            lex = SetAlternateLex(start);
-                            noTypeNameError++;
-                            tp1 = nullptr;
-                            lex = getStorageAndType(lex, funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
-                                &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
-                                AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
-                            noTypeNameError--;
+                            start.Replay([&]() {
+                                noTypeNameError++;
+                                tp1 = nullptr;
+                                getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
+                                    &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
+                                    AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
+                                noTypeNameError--;
                             
-                            SYMBOL* spi1 = nullptr;;
-                            tp1 = TypeGenerator::BeforeName(lex, funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
-                                &linkage3, nullptr, false, false, false, false);
-                            SetAlternateLex(nullptr);
+                                SYMBOL* spi1 = nullptr;;
+                                tp1 = TypeGenerator::BeforeName(funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
+                                    &linkage3, nullptr, false, false, false, false);
+                            });
 
                             SYMBOL* clone = CopySymbol(spi);
                             clone->tp = tp1; 
@@ -3995,8 +4006,8 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             first = false;
                             clone->tp->UpdateRootTypes();
                         }
-                        lex = current;
-                        inTemplateArgs--;
+                        current;
+                        processingTemplateArgs--;
                         PopPackIndex();
                         clonedParams = true;
                     }
@@ -4008,12 +4019,13 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                     {
                         tp1 = Type::MakeType(BasicType::pointer_, tp1);
                     }
-                    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, Keyword::assign_))
+                    if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::assign_))
                     {
                         if (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || structLevel ||
-                            (definingTemplate == 1 && !instantiatingTemplate))
+                            (templateDefinitionLevel == 1 && !templateInstantiationLevel))
                         {
-                            lex = getDeferredData(lex, &spi->sb->deferredCompile, false);
+                            auto stream = GetTokenStream(false);
+                            initTokenStreams.set(spi, stream);
                         }
                         else
                         {
@@ -4028,7 +4040,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                                 sym = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                                 anonymousNotAlloc--;
                                 sym->sb->stackblock = !spi->tp->IsRef();
-                                lex = initialize(lex, funcsp, sym, StorageClass::auto_, true, false, false,
+                                initialize(funcsp, sym, StorageClass::auto_, true, false, false,
                                                  0); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
                                 if (spi->sb->init->front()->exp && spi->sb->init->front()->exp->type == ExpressionNode::thisref_)
@@ -4040,7 +4052,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                             }
                             else
                             {
-                                lex = initialize(lex, funcsp, spi, StorageClass::auto_, true, false, false,
+                                initialize(funcsp, spi, StorageClass::auto_, true, false, false,
                                                  0); /* also reserves space */
                             }
                             if (spi->sb->init)
@@ -4086,21 +4098,21 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
             }
             ClearPackedSequence();
             LeavePackedSequence();
-            if (fullySpecialized)
-                --instantiatingTemplate;
+            if (isFullySpecialized)
+                --templateInstantiationLevel;
             inTemplateType = templType;
-            if (!MATCHKW(lex, Keyword::comma_) && (!Optimizer::cparams.prm_cplusplus || !MATCHKW(lex, Keyword::ellipse_)))
+            if (!MATCHKW(Keyword::comma_) && (!Optimizer::cparams.prm_cplusplus || !MATCHKW(Keyword::ellipse_)))
                 break;
-            if (MATCHKW(lex, Keyword::comma_))
-                lex = getsym();
+            if (MATCHKW(Keyword::comma_))
+                getsym();
             pastfirst = true;
             basisAttribs = {0};
-            ParseAttributeSpecifiers(&lex, funcsp, true);
+            ParseAttributeSpecifiers(funcsp, true);
         }
-        if (!needkw(&lex, Keyword::closepa_))
+        if (!needkw(Keyword::closepa_))
         {
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
         // weed out temporary syms that were added as part of the default; they will be
         // reinstated as stackblock syms later
@@ -4114,7 +4126,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
             it = it1;
         }
     }
-    else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID(lex))
+    else if (!Optimizer::cparams.prm_cplusplus && !(Optimizer::architecture == ARCHITECTURE_MSIL) && ISID())
     {
         RequiresDialect::Removed(Dialect::c23, "K&R prototypes");
         SYMBOL* spo = nullptr;
@@ -4133,9 +4145,9 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 }
             }
         }
-        while (ISID(lex) || MATCHKW(lex, Keyword::ellipse_))
+        while (ISID() || MATCHKW(Keyword::ellipse_))
         {
-            if (MATCHKW(lex, Keyword::ellipse_))
+            if (MATCHKW(Keyword::ellipse_))
             {
                 if (!pastfirst)
                     break;
@@ -4148,29 +4160,29 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 spi->sb->anonymous = true;
                 SetLinkerNames(spi, Linkage::none_);
                 spi->tp = Type::MakeType(BasicType::ellipse_);
-                lex = getsym();
+                getsym();
                 hasellipse = true;
                 tp->syms->Add(spi);
             }
             else
             {
-                spi = makeID(StorageClass::parameter_, 0, 0, litlate(lex->data->value.s.a));
+                spi = makeID(StorageClass::parameter_, 0, 0, litlate(currentLex->value.s.a));
                 SetLinkerNames(spi, Linkage::none_);
                 tp->syms->Add(spi);
             }
-            lex = getsym();
-            if (!MATCHKW(lex, Keyword::comma_))
+            getsym();
+            if (!MATCHKW(Keyword::comma_))
                 break;
-            lex = getsym();
+            getsym();
         }
-        if (!needkw(&lex, Keyword::closepa_))
+        if (!needkw(Keyword::closepa_))
         {
-            errskim(&lex, skim_closepa);
-            skip(&lex, Keyword::closepa_);
+            errskim(skim_closepa);
+            skip(Keyword::closepa_);
         }
-        if (TypeGenerator::StartOfType(lex, nullptr, false))
+        if (TypeGenerator::StartOfType(nullptr, false))
         {
-            while (TypeGenerator::StartOfType(lex, nullptr, false))
+            while (TypeGenerator::StartOfType(nullptr, false))
             {
                 Optimizer::ADDRESS address;
                 bool blocked;
@@ -4182,7 +4194,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 bool defd = false;
                 bool notype = false;
                 tp1 = nullptr;
-                lex = getStorageAndType(lex, funcsp, nullptr, false, false, nullptr, &storage_class, &storage_class, &address,
+                getStorageAndType(funcsp, nullptr, false, false, nullptr, &storage_class, &storage_class, &address,
                                         &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
                                         AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
 
@@ -4190,13 +4202,13 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 {
                     Type* tpx = tp1;
                     spi = nullptr;
-                    tpx = TypeGenerator::BeforeName(lex, funcsp, tpx, &spi, nullptr, nullptr, false, StorageClass::parameter_,
+                    tpx = TypeGenerator::BeforeName(funcsp, tpx, &spi, nullptr, nullptr, false, StorageClass::parameter_,
                                                     &linkage, &linkage2, &linkage3, nullptr, false, false, false, false);
                     sizeQualifiers(tpx);
                     if (!spi || spi->sb->anonymous)
                     {
                         error(ERR_IDENTIFIER_EXPECTED);
-                        errskim(&lex, skim_end);
+                        errskim(skim_end);
                         break;
                     }
                     else
@@ -4242,9 +4254,9 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                         {
                             spo->tp = tpx;
                         }
-                        if (MATCHKW(lex, Keyword::comma_))
+                        if (MATCHKW(Keyword::comma_))
                         {
-                            lex = getsym();
+                            getsym();
                         }
                         else
                         {
@@ -4252,7 +4264,7 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                         }
                     }
                 }
-                needkw(&lex, Keyword::semicolon_);
+                needkw(Keyword::semicolon_);
             }
         }
         if (tp->syms->size())
@@ -4269,30 +4281,30 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
         }
         else if (spo)
             tp->syms = spo->tp->syms;
-        if (!MATCHKW(lex, Keyword::begin_))
+        if (!MATCHKW(Keyword::begin_))
             error(ERR_FUNCTION_BODY_EXPECTED);
     }
-    else if (MATCHKW(lex, Keyword::ellipse_))
+    else if (MATCHKW(Keyword::ellipse_))
     {
         spi = makeID(StorageClass::parameter_, tp1, nullptr, NewUnnamedID());
         spi->sb->anonymous = true;
         SetLinkerNames(spi, Linkage::none_);
         spi->tp = Type::MakeType(BasicType::ellipse_);
         tp->syms->Add(spi);
-        lex = getsym();
-        if (!MATCHKW(lex, Keyword::closepa_))
+        getsym();
+        if (!MATCHKW(Keyword::closepa_))
         {
             error(ERR_FUNCTION_PARAMETER_EXPECTED);
-            errskim(&lex, skim_closepa);
+            errskim(skim_closepa);
         }
-        skip(&lex, Keyword::closepa_);
+        skip(Keyword::closepa_);
     }
     else if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c23 ||
              ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
-              !MATCHKW(lex, Keyword::closepa_) && *spin))
+              !MATCHKW(Keyword::closepa_) && *spin))
     {
         // () is a function
-        if (MATCHKW(lex, Keyword::closepa_))
+        if (MATCHKW(Keyword::closepa_))
         {
             spi = makeID(StorageClass::parameter_, tp1, nullptr, NewUnnamedID());
             spi->sb->anonymous = true;
@@ -4300,21 +4312,21 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
             SetLinkerNames(spi, Linkage::none_);
             spi->tp = Type::MakeType(BasicType::void_);
             tp->syms->Add(spi);
-            lex = getsym();
+            getsym();
         }
         // else may have a constructor
         else if (*spin)
         {
             (*spin)->tp = tp = tp->btp;
             // constructor initialization
-            lex = backupsym();
+            --*currentStream;
             // will do initialization later...
         }
         else
         {
             currentErrorLine = 0;
             error(ERR_FUNCTION_PARAMETER_EXPECTED);
-            errskim(&lex, skim_closepa);
+            errskim(skim_closepa);
         }
     }
     else
@@ -4341,21 +4353,21 @@ Type* TypeGenerator::FunctionParams(LexList*& lex, SYMBOL* funcsp, SYMBOL** spin
                 }
             }
         }
-        if (!MATCHKW(lex, Keyword::closepa_))
+        if (!MATCHKW(Keyword::closepa_))
         {
             error(ERR_FUNCTION_PARAMETER_EXPECTED);
-            errskim(&lex, skim_closepa);
+            errskim(skim_closepa);
         }
-        skip(&lex, Keyword::closepa_);
+        skip(Keyword::closepa_);
     }
     localNameSpace->pop_front();
     basisAttribs = oldAttribs;
-    ParseAttributeSpecifiers(&lex, funcsp, true);
+    ParseAttributeSpecifiers(funcsp, true);
     if (voiderror)
         error(ERR_VOID_ONLY_PARAMETER);
     return tp;
 }
-Type* TypeGenerator::TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing)
+Type* TypeGenerator::TypeId(SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing)
 {
     Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
@@ -4366,12 +4378,12 @@ Type* TypeGenerator::TypeId(LexList*& lex, SYMBOL* funcsp, StorageClass storage_
     bool oldTemplateType = inTemplateType;
     Type* tp = nullptr;
 
-    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
-    tp = TypeGenerator::UnadornedType(lex, funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_,
+    getQualifiers(&tp, &linkage, &linkage2, &linkage3, nullptr);
+    tp = TypeGenerator::UnadornedType(funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_,
                                       &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr,
                                       nullptr, false, false, inUsing, nullptr, false);
-    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
-    tp = TypeGenerator::BeforeName(lex, funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3,
+    getQualifiers(&tp, &linkage, &linkage2, &linkage3, nullptr);
+    tp = TypeGenerator::BeforeName(funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3,
                                    &notype, false, false, beforeOnly, false); /* fixme at file scope init */
     sizeQualifiers(tp);
     if (notype)
@@ -4399,29 +4411,29 @@ bool istype(SYMBOL* sym)
     return (sym->tp->type != BasicType::templateselector_ && sym->sb->storage_class == StorageClass::type_) ||
            sym->sb->storage_class == StorageClass::typedef_;
 }
-bool TypeGenerator::StartOfType(LexList*& lex, bool* structured, bool assumeType)
+bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
 {
     if (structured)
         *structured = false;
     auto old = lines;
-    if (!lex)
+    if (!currentLex)
         return false;
 
-    if (lex->data->type == LexType::l_id_)
+    if (currentLex->type == LexType::l_id_)
     {
-        auto tparam = TemplateLookupSpecializationParam(lex->data->value.s.a);
+        auto tparam = TemplateLookupSpecializationParam(currentLex->value.s.a);
         if (tparam)
         {
-            LexList* placeHolder = lex;
+            LexemeStreamPosition placeHolder(currentStream);
             bool member;
-            lex = getsym();
-            member = MATCHKW(lex, Keyword::classsel_);
+            getsym();
+            member = MATCHKW(Keyword::classsel_);
             if (member)
             {
-                lex = getsym();
-                member = MATCHKW(lex, Keyword::star_);
+                getsym();
+                member = MATCHKW(Keyword::star_);
             }
-            lex = prevsym(placeHolder);
+            placeHolder.Backup();
             if (!member)
             {
                 lines = old;
@@ -4429,18 +4441,18 @@ bool TypeGenerator::StartOfType(LexList*& lex, bool* structured, bool assumeType
             }
         }
     }
-    if (lex->data->type == LexType::l_id_ || MATCHKW(lex, Keyword::classsel_) || MATCHKW(lex, Keyword::decltype_))
+    if (currentLex->type == LexType::l_id_ || MATCHKW(Keyword::classsel_) || MATCHKW(Keyword::decltype_))
     {
-        bool isdecltype = MATCHKW(lex, Keyword::decltype_);
+        bool isdecltype = MATCHKW(Keyword::decltype_);
         SYMBOL *sym, *strSym = nullptr;
-        LexList* placeholder = lex;
+        LexemeStreamPosition placeHolder(currentStream);
         bool dest = false;
         EnterPackedSequence();
-        nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
+        nestedSearch(&sym, &strSym, nullptr, &dest, nullptr, false, StorageClass::global_, false, false);
         ClearPackedSequence();
         LeavePackedSequence();
         if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
-            prevsym(placeholder);
+            placeHolder.Backup();
         lines = old;
         if (structured && sym && istype(sym))
         {
@@ -4463,13 +4475,13 @@ bool TypeGenerator::StartOfType(LexList*& lex, bool* structured, bool assumeType
     else
     {
         lines = old;
-        return KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS | TT_TYPENAME);
+        return KWTYPE(TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS | TT_TYPENAME);
     }
 }
 
 static Type* replaceTemplateSelector(Type* tp)
 {
-    if (!definingTemplate && tp->type == BasicType::templateselector_ && (*tp->sp->sb->templateSelector)[1].isTemplate)
+    if (!templateDefinitionLevel && tp->type == BasicType::templateselector_ && (*tp->sp->sb->templateSelector)[1].isTemplate)
     {
         SYMBOL* sp2 = (*tp->sp->sb->templateSelector)[1].sp;
         if ((*tp->sp->sb->templateSelector)[1].isDeclType)

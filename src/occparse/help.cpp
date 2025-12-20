@@ -414,7 +414,7 @@ SYMBOL* getFunctionSP(Type** tp)
     }
     return nullptr;
 }
-LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
+void concatStringsInternal( StringData** str, int* elems)
 {
     Optimizer::SLCHAR** list;
     char* suffix = nullptr;
@@ -423,31 +423,31 @@ LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
     LexType type = LexType::l_astr_;
     StringData* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
-    while (lex &&
-           (lex->data->type == LexType::l_astr_ || lex->data->type == LexType::l_wstr_ || lex->data->type == LexType::l_ustr_ ||
-            lex->data->type == LexType::l_Ustr_ || lex->data->type == LexType::l_msilstr_ || lex->data->type == LexType::l_u8str_))
+    while (currentLex &&
+           (currentLex->type == LexType::l_astr_ || currentLex->type == LexType::l_wstr_ || currentLex->type == LexType::l_ustr_ ||
+            currentLex->type == LexType::l_Ustr_ || currentLex->type == LexType::l_msilstr_ || currentLex->type == LexType::l_u8str_))
     {
-        if (lex->data->type == LexType::l_u8str_)
+        if (currentLex->type == LexType::l_u8str_)
             type = LexType::l_u8str_;
-        else if (lex->data->type == LexType::l_msilstr_)
+        else if (currentLex->type == LexType::l_msilstr_)
             type = LexType::l_msilstr_;
-        else if (lex->data->type == LexType::l_Ustr_)
+        else if (currentLex->type == LexType::l_Ustr_)
             type = LexType::l_Ustr_;
-        else if (type != LexType::l_Ustr_ && type != LexType::l_msilstr_ && lex->data->type == LexType::l_ustr_)
+        else if (type != LexType::l_Ustr_ && type != LexType::l_msilstr_ && currentLex->type == LexType::l_ustr_)
             type = LexType::l_ustr_;
         else if (type != LexType::l_Ustr_ && type != LexType::l_ustr_ && type != LexType::l_msilstr_ &&
-                 lex->data->type == LexType::l_wstr_)
+                 currentLex->type == LexType::l_wstr_)
             type = LexType::l_wstr_;
-        if (lex->data->suffix)
+        if (currentLex->suffix)
         {
             if (suffix)
             {
-                if (strcmp(lex->data->suffix, suffix) != 0)
+                if (strcmp(currentLex->suffix, suffix) != 0)
                     error(ERR_LITERAL_SUFFIX_MISMATCH);
             }
             else
             {
-                suffix = lex->data->suffix;
+                suffix = currentLex->suffix;
             }
         }
         if (pos >= count)
@@ -458,9 +458,9 @@ LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
             count += 10;
         }
         if (elems)
-            *elems += ((Optimizer::SLCHAR*)lex->data->value.s.w)->count;
-        list[pos++] = (Optimizer::SLCHAR*)lex->data->value.s.w;
-        lex = getsym();
+            *elems += ((Optimizer::SLCHAR*)currentLex->value.s.w)->count;
+        list[pos++] = (Optimizer::SLCHAR*)currentLex->value.s.w;
+        getsym();
     }
     string = Allocate<StringData>();
     string->strtype = type;
@@ -469,15 +469,15 @@ LexList* concatStringsInternal(LexList* lex, StringData** str, int* elems)
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(Optimizer::SLCHAR*));
     *str = string;
-    return lex;
+    return;
 }
-LexList* concatStrings(LexList* lex, EXPRESSION** expr, LexType* tp, int* elems)
+void concatStrings( EXPRESSION** expr, LexType* tp, int* elems)
 {
     StringData* data;
-    lex = concatStringsInternal(lex, &data, elems);
+    concatStringsInternal(&data, elems);
     *expr = stringlit(data);
     *tp = data->strtype;
-    return lex;
+    return;
 }
 bool isintconst(EXPRESSION* exp)
 {
@@ -793,7 +793,7 @@ bool TakeAddress(EXPRESSION** exp, Type* extended)
         switch ((*last)->type)
         {
             case ExpressionNode::auto_:
-                SetRuntimeData(currentLex, *last, (*last)->v.sp);
+                SetRuntimeData(*last, (*last)->v.sp);
                 (*last)->v.sp->sb->addressTaken = true;
                 break;
             case ExpressionNode::pc_:
@@ -2222,21 +2222,21 @@ EXPRESSION* EvaluateDest(EXPRESSION* exp, Type* tp)
     }
     return result;
 }
-void SetRuntimeData(LexList* lex, EXPRESSION* exp, SYMBOL* sym)
+void SetRuntimeData( EXPRESSION* exp, SYMBOL* sym)
 {
-    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && lex->data->errfile)
+    if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && currentLex->sourceFileName)
     {
         auto runtimeData = Allocate<Optimizer::RUNTIMEDATA>();
-        const char* p = strrchr(lex->data->errfile, '/');
+        const char* p = strrchr(currentLex->sourceFileName, '/');
         if (!p)
-            p = strrchr(lex->data->errfile, '\\');
+            p = strrchr(currentLex->sourceFileName, '\\');
         if (!p)
-            p = lex->data->errfile;
+            p = currentLex->sourceFileName;
         else
             p++;
         runtimeData->fileName = p;
         runtimeData->varName = sym->sb->decoratedName;
-        runtimeData->lineno = lex->data->errline;
+        runtimeData->lineno = currentLex->sourceLineNumber;
         runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
         exp->runtimeData = runtimeData;
     }

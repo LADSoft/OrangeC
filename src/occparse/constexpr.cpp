@@ -57,7 +57,7 @@
 #include "mangle.h"
 #include "types.h"
 #include "overload.h"
-
+#include "SymbolProperties.h"
 namespace Parser
 {
 static int functionNestingCount;
@@ -84,7 +84,7 @@ bool checkconstexprfunc(EXPRESSION* node)
     if (node->type == ExpressionNode::callsite_ && node->v.func->sp)
     {
         if (node->v.func->sp->sb->constexpression &&
-            (node->v.func->sp->sb->inlineFunc.stmt || node->v.func->sp->sb->deferredCompile))
+            (node->v.func->sp->sb->inlineFunc.stmt || bodyTokenStreams.get(node->v.func->sp)))
         {
             if (node->v.func->arguments)
                 for (auto t : *node->v.func->arguments)
@@ -248,8 +248,8 @@ bool isConstexprConstructor(SYMBOL* sym)
         if (ismemberdata(sp) && !sp->sb->init)
         {
             bool found = false;
-            if (sym->sb->memberInitializers)
-                for (auto memberInit : *sym->sb->memberInitializers)
+            if (sym->sb->constructorInitializers && *sym->sb->constructorInitializers)
+                for (auto memberInit : **sym->sb->constructorInitializers)
                     if (!strcmp(memberInit->name, sp->name))
                     {
                         found = true;
@@ -392,9 +392,9 @@ static EXPRESSION* ConstExprInitializeMembers(SYMBOL* sym, EXPRESSION* thisptr, 
             exp->v.constexprData.data[sp->sb->offset] = expx;
         }
     }
-    if (sym->sb->memberInitializers)
+    if (sym->sb->constructorInitializers && *sym->sb->constructorInitializers)
     {
-        for (auto m : *sym->sb->memberInitializers)
+        for (auto m : **sym->sb->constructorInitializers)
 
             if (m->init)
             {
@@ -1471,7 +1471,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
 bool EvaluateConstexprFunction(EXPRESSION*& node)
 {
     bool rv = false;
-    if (!definingTemplate || instantiatingTemplate)
+    if (!IsDefiningTemplate())
     {
         if (node->v.func->sp->sb->isConstructor)
         {
@@ -1534,7 +1534,7 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
         }
         if (exp && exp->type == ExpressionNode::auto_)
         {
-            if (inLoopOrConditional)
+            if (processingLoopOrConditional)
                 return false;
             if (!exp->v.sp->sb->constexpression && !exp->v.sp->sb->retblk)
             {
@@ -1578,33 +1578,35 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
             SYMBOL* found1 = node->v.func->sp;
             if (found1->tp->IsFunction())
             {
-                if (!found1->sb->inlineFunc.stmt && found1->sb->deferredCompile)
+                if (!found1->sb->inlineFunc.stmt && bodyTokenStreams.get(found1))
                 {
                     if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
-                        found1 = found1->sb->mainsym;
-                        if (found1)
+                        if (!allTemplateArgsSpecified(found1, found1->templateParams))
                         {
-                            if (found1->sb->castoperator)
+                            found1 = found1->sb->mainsym;
+                            if (found1)
                             {
-                                found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
-                            }
-                            else
-                            {
-                                found1 = detemplate(found1, node->v.func, nullptr);
+                                if (found1->sb->castoperator)
+                                {
+                                    found1 = detemplate(found1, nullptr, node->v.func->thistp->BaseType()->btp);
+                                }
+                                else
+                                {
+                                    found1 = detemplate(found1, node->v.func, nullptr);
+                                }
                             }
                         }
                     }
                     if (found1)
                     {
-                        enclosingDeclarations.Mark();
+                        DeclarationScope scope;
                         pushContext(found1, false);
-                        if (found1->sb->templateLevel && !definingTemplate && node->v.func->templateParams)
+                        if (found1->sb->templateLevel && !templateDefinitionLevel && node->v.func->templateParams)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false);
                         }
-                        CompileInline(found1, false);
-                        enclosingDeclarations.Release();
+                        CompileInlineFunction(found1);
                     }
                 }
                 if (found1 && found1->sb->inlineFunc.stmt)

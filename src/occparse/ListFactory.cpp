@@ -37,7 +37,7 @@ ListFactory<FunctionBlock*> blockDataListFactory;
 ListFactory<Initializer*> initListFactory;
 ListFactory<struct _ccNamespaceData*> ccNameSpaceDataListFactory;
 ListFactory<struct __lambda*> lambdaListFactory;
-ListFactory<struct _memberInitializers*> memberInitializersListFactory;
+ListFactory<struct _constructorInitializers*> constructorInitializerListFactory;
 ListFactory<struct _baseClass*> baseClassListFactory;
 ListFactory<struct _vtabEntry*> vtabEntryListFactory;
 ListFactory<struct _vbaseEntry*> vbaseEntryListFactory;
@@ -60,7 +60,7 @@ void ListFactoryInit()
     initListFactory.Reset();
     ccNameSpaceDataListFactory.Reset();
     lambdaListFactory.Reset();
-    memberInitializersListFactory.Reset();
+    constructorInitializerListFactory.Reset();
     baseClassListFactory.Reset();
     vtabEntryListFactory.Reset();
     vbaseEntryListFactory.Reset();

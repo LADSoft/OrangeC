@@ -60,6 +60,8 @@
 #include "constopt.h"
 #include "Utils.h"
 #include "SymbolProperties.h"
+#include "sha1.h"
+#include "templatehash.h"
 
 namespace Parser
 {
@@ -1090,6 +1092,18 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, e_cvsrn* seql, e_
                     BasicType refa = BasicType::rref_;
                     if (ta)
                     {
+                        if (expa)
+                        {
+                            auto exp = expa;
+                            if (exp->type == ExpressionNode::thisref_)
+                                exp = exp->left;
+                            if (exp->type == ExpressionNode::callsite_ && exp->v.func->functp->IsFunction())
+                            {
+                                auto tp1 = exp->v.func->functp->BaseType()->btp->BaseType();
+                                if (tp1->type == BasicType::lref_)
+                                    refa = BasicType::lref_;
+                            }
+                        }
                         if (ta->lref || ta->BaseType()->lref)
                             refa = BasicType::lref_;
                     }
@@ -1788,7 +1802,8 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                             arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, funcparams->thistp,
                                                         funcparams->thisptr, funcList ? funcList[i][k] : nullptr,
                                                         funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
-                            xindex++;
+                            if (!spList[i]->sb->castoperator)
+                                xindex++;
                         }
                         else
                         {
@@ -4713,7 +4728,66 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
     }
     return deduced;
 }
-int count3;
+static bool ConfusedRefs(SYMBOL* sp, std::list<SYMBOL*>& viableCandidates)
+{
+    if (viableCandidates.size() > 1)
+    {
+        bool found = false;
+        for (auto a : *sp->tp->BaseType()->syms)
+        {
+            found = a->tp->IsRef() && (a->tp->BaseType()->type == BasicType::rref_ || a->tp->BaseType()->btp->IsConst());
+            if (found)
+                break;
+        }
+        if (found)
+        {
+            for (std::list<SYMBOL*>::iterator it = viableCandidates.begin(); it != viableCandidates.end(); ++it)
+            {
+                if (strcmp((*it)->sb->decoratedName, sp->sb->decoratedName) == 0)
+                {
+                    viableCandidates.erase(it);
+                    break;
+                }
+            }
+            while (!viableCandidates.empty())
+            {
+                SYMBOL* candidate = viableCandidates.front();
+                viableCandidates.pop_front();
+                if (candidate->tp->BaseType()->syms->size() == sp->tp->BaseType()->syms->size())
+                {
+                    auto its = sp->tp->BaseType()->syms->begin();
+                    auto itse = sp->tp->BaseType()->syms->end();
+                    auto itc = candidate->tp->BaseType()->syms->begin();
+                    if ((*its)->sb->thisPtr == (*itc)->sb->thisPtr)
+                    {
+                        if ((*its)->sb->thisPtr)
+                        {
+                            ++its;
+                            ++itc;
+                        }
+                        while (its != itse)
+                        {
+                            if (!(((*its)->tp->IsRef() && (*itc)->tp->IsRef()
+                                && ((*its)->tp->BaseType()->type == BasicType::rref_ || (*its)->tp->BaseType()->btp->IsConst())
+                                && ((*itc)->tp->BaseType()->type == BasicType::rref_ || (*itc)->tp->BaseType()->btp->IsConst())
+                                && ((*its)->tp->BaseType()->btp->BaseType()->CompatibleType((*itc)->tp->BaseType()->btp->BaseType())
+                                    || SameTemplate((*its)->tp->BaseType()->btp->BaseType(), (*itc)->tp->BaseType()->btp->BaseType())))
+                                    || (*its)->tp->CompatibleType((*itc)->tp) || SameTemplate((*its)->tp, (*itc)->tp)))
+                            {
+                                break;
+                            }
+                            ++its;
+                            ++itc;
+                        }
+                        if (its != itse)
+                            return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
 SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite* args, Type* atp, int toErr, bool maybeConversion,
                               int flags)
 {
@@ -4863,9 +4937,25 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 GetMemberCasts(gather, args->arguments->front()->tp->BaseType()->sp);
         }
         // pass 3 - the actual argument-based resolution
+        DotNetPELib::SHA1Context context;
+        context.Computed = false;
+        std::list<SYMBOL*> viableCandidates;
         if (gather.size())
         {
-
+            auto candidate = LookupTemplateFunction(context, sp, &gather, args);
+            if (candidate)
+            {
+                candidate->tp->BaseType()->btp->UpdateRootTypes();
+                *exp = MakeExpression(ExpressionNode::pc_, candidate);
+                *tp = candidate->tp;
+                return candidate;
+            }
+            else if (args->arguments)
+            {
+                for (auto a : *args->arguments)
+                    if (a->tp && a->tp->type == BasicType::aggregate_)
+                        context.Computed = false;
+            }
             Optimizer::LIST* lst2;
             int n = 0;
             ResolveArgumentFunctions(args, toErr);
@@ -4922,6 +5012,9 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 n = insertFuncs(&spList[0], gather, args, atp, flags);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
+                    for (int i = 0; i < n; i++)
+                        if (spList[i] && !spList[i]->sb->instantiated)
+                            viableCandidates.push_back(spList[i]);
                     bool hasDest = false;
                     bool hasImplicit = false;
                     std::unordered_map<int, SYMBOL*> storage;
@@ -5229,6 +5322,10 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             {
                                 found1 = TemplateFunctionInstantiate(found1, false);
                             }
+                            else
+                            {
+                                context.Computed = false;
+                            }
                         }
 
                         if (found1->tp->BaseType()->btp->IsAutoType() &&
@@ -5271,6 +5368,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 }
                 else
                 {
+                    context.Computed = false;
                     CollapseReferences(found1->tp->BaseType()->btp);
                 }
                 if (found1)
@@ -5293,9 +5391,19 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             sp = found1;
             if (sp)
             {
+                if (sp->tp->BaseType()->syms)
+                {
+                    for (auto a : *sp->tp->BaseType()->syms)
+                    {
+                        if (a->tp->IsStructured() && a->tp->BaseType()->sp->sb->initializer_list)
+                            context.Computed = false;
+                    }
+                }
                 sp->tp->BaseType()->btp->UpdateRootTypes();
                 *exp = MakeExpression(ExpressionNode::pc_, sp);
                 *tp = sp->tp;
+                if (context.Computed && !ConfusedRefs(sp, viableCandidates))
+                    RegisterTemplateFunction(context, sp);
             }
         }
     }

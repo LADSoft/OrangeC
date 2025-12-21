@@ -5727,7 +5727,6 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 std::string holder;
                 holder.resize(10000);
                 sym1->tp->ToString(holder.data() + holder.capacity() - 1, holder.data());
-
                 fprintf(stderr, "\tCandidate %s was checked, but had more than one potential parameter\n", holder.c_str());
                 fflush(stderr);
             }

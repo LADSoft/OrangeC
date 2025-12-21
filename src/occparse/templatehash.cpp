@@ -45,6 +45,7 @@
 #include "templateHash.h"
 #include "mangle.h"
 #include "constopt.h"
+#include "overload.h"
 
 #define PUTCH(ch) { unsigned char a = ch; SHA1Input(&context,&a, sizeof(a)); }
 #define PUTSTRING(str) SHA1Input(&context, (const unsigned char *)str, strlen(str));
@@ -57,7 +58,7 @@ namespace
     std::unordered_map<std::array<unsigned char, SHA1_DIGEST_SIZE>, SYMBOL*, OrangeC::Utils::fnv1a32_arr<SHA1_DIGEST_SIZE>,
         OrangeC::Utils::arr_eql<SHA1_DIGEST_SIZE>> classHash, functionHash;
 
-    void hashType(DotNetPELib::SHA1Context& context, Type* tp, bool first);
+    void hashType(DotNetPELib::SHA1Context& context, Type* tp, EXPRESSION* exp, bool first);
     int uniqueId;
     void hashNameSpaces(DotNetPELib::SHA1Context& context, SYMBOL* sym)
     {
@@ -370,7 +371,7 @@ namespace
                     PUTCH('?');
                     getName(context, exp->v.func->sp);
                     PUTCH('.');
-                    hashType(context, exp->v.func->sp->tp, true);
+                    hashType(context, exp->v.func->sp->tp, nullptr, true);
                 }
                 break;
             }
@@ -383,7 +384,7 @@ namespace
                     PUTCH('?');
                     PUTSTRING(exp->v.sp->name);
                     PUTCH('.');
-                    hashType(context, exp->v.sp->tp, true);
+                    hashType(context, exp->v.sp->tp, nullptr, true);
                 }
                 else
                 {
@@ -465,7 +466,7 @@ namespace
                         if (it->second->byPack.pack)
                         {
                             for (auto pack : *it->second->byPack.pack)
-                                hashType(context, pack.second->byClass.val ? pack.second->byClass.val : pack.second->byClass.dflt, true);
+                                hashType(context, pack.second->byClass.val ? pack.second->byClass.val : pack.second->byClass.dflt, nullptr, true);
                         }
                         else
                         {
@@ -477,11 +478,11 @@ namespace
                     {
                         if (it->second->byClass.val)
                         {
-                            hashType(context, it->second->byClass.val, true);
+                            hashType(context, it->second->byClass.val, nullptr, true);
                         }
                         else if (it->second->byClass.dflt)
                         {
-                            hashType(context, it->second->byClass.dflt, true);
+                            hashType(context, it->second->byClass.dflt, nullptr, true);
                         }
                         else
                         {
@@ -490,17 +491,17 @@ namespace
                     }
                     else if (sym->sb && sym->sb->instantiated && it->second->byClass.val)
                     {
-                        hashType(context, it->second->byClass.val, true);
+                        hashType(context, it->second->byClass.val, nullptr, true);
                     }
                     else
                     {
                         if (it->second->byClass.dflt)
                         {
-                            hashType(context, it->second->byClass.dflt, true);
+                            hashType(context, it->second->byClass.dflt, nullptr, true);
                         }
                         else if (byDflt && it->second->byClass.val)
                         {
-                            hashType(context, it->second->byClass.val, true);
+                            hashType(context, it->second->byClass.val, nullptr, true);
                         }
                         else
                         {
@@ -546,7 +547,7 @@ namespace
                         }
                         else
                         {
-                            hashType(context, it->second->byNonType.tp, true);
+                            hashType(context, it->second->byNonType.tp, nullptr, true);
                         }
                         if ((bySpecial || sym->sb && sym->sb->instantiated) && it->second->byNonType.val)
                         {
@@ -608,7 +609,7 @@ namespace
         }
     }
 
-    void hashType(DotNetPELib::SHA1Context& context, Type* tp, bool first)
+    void hashType(DotNetPELib::SHA1Context& context, Type* tp, EXPRESSION* exp, bool first)
     {
         int i;
         if (!tp)
@@ -646,6 +647,15 @@ namespace
                         PUTCH('r');
                     if (tp->IsRRefQual())
                         PUTCH('R');
+                    if (exp)
+                    {
+                        bool lref = false, rref = false;
+                        GetRefs(nullptr, tp, exp, lref, rref);
+                        if (lref)
+                            PUTCH('s');
+                        if (rref)
+                            PUTCH('S');
+                    }
                 }
                 hashClasses(context, tp->BaseType()->sp->sb->parentClass);
                 if (tp->BaseType()->sp->sb->parent)
@@ -665,14 +675,32 @@ namespace
                     PUTCH('r');
                 if (tp->IsRRefQual())
                     PUTCH('R');
+                if (exp)
+                {
+                    if (tp->lref)
+                        PUTCH('s');
+                    if (tp->rref)
+                        PUTCH('S');
+                }
                 tp = tp->BaseType();
+                if (exp)
+                {
+                    if (tp->lref)
+                        PUTCH('s');
+                    if (tp->rref)
+                        PUTCH('S');
+                }
                 if (tp->IsInt() && tp->btp && tp->btp->type == BasicType::enum_)
                     tp = tp->btp;
                 switch (tp->type)
                 {
                     case BasicType::derivedfromtemplate_:
                     case BasicType::typedef_:
+                    case BasicType::templateparam_:
                         break;
+                    case BasicType::func_:
+                    case BasicType::ifunc_:
+                        PUTTYPE(BasicType::func_);
                     default:
                         PUTTYPE(tp->type);
                         break;
@@ -690,7 +718,7 @@ namespace
                     for (auto sym : *tp->syms)
                     {
                         if (!sym->sb->thisPtr)
-                            hashType(context, sym->tp, true);
+                            hashType(context, sym->tp, exp, true);
                     }
                     PUTCH('.');
                     // return value comes next
@@ -704,7 +732,7 @@ namespace
                         for (auto sym : *tp->btp->BaseType()->syms)
                         {
                             if (!sym->sb->thisPtr)
-                                hashType(context, sym->tp, true);
+                                hashType(context, sym->tp, exp, true);
                         }
                         PUTCH('.');
                         tp = tp->btp;  // so we can get to tp->btp->btp
@@ -757,9 +785,12 @@ namespace
                                     auto dflt = tpl.second->byClass.dflt;
                                     if (!dflt)
                                         dflt = tpl.second->byClass.val;
-                                    if (dflt && dflt->BaseType()->type != BasicType::templateparam_)
+                                    auto tp1 = dflt;
+                                    while (tp1->IsRef() || tp1->IsPtr())
+                                        tp1 = tp1->BaseType()->btp;
+                                    if (tp1 && tp1->BaseType()->type != BasicType::templateparam_)
                                     {
-                                        hashType(context, dflt, false);
+                                        hashType(context, dflt, exp, false);
                                     }
                                     else
                                     {
@@ -776,7 +807,7 @@ namespace
                                 dflt = tp->templateParam->second->byClass.val;
                             if (dflt && dflt->BaseType()->type != BasicType::templateparam_)
                             {
-                                hashType(context, dflt, false);
+                                hashType(context, dflt, exp, false);
                             }
                             else
                             {
@@ -841,6 +872,7 @@ namespace
         {
             std::string name;
             int declline;
+            const char* declfile;
         };
         struct HashCompare
         {
@@ -852,7 +884,9 @@ namespace
                 }
                 else if (left.declline == right.declline)
                 {
-                    return left.name < right.name;
+                    int n = strcmp(left.declfile, right.declfile);
+                    if (n < 0)
+                        return left.name < right.name;
                 }
                 return false;
             }
@@ -864,11 +898,11 @@ namespace
             {
                 if (s->sb)
                 {
-                    hashSet.insert(HashIndex{ s->name, s->sb->declline });
+                    hashSet.insert(HashIndex{ s->name, s->sb->declline, s->sb->declfile });
                 }
                 else
                 {
-                    hashSet.insert(HashIndex{ s->name, -1 });
+                    hashSet.insert(HashIndex{ s->name, -1, ""});
                 }
             }
             for (auto&& s : hashSet)
@@ -915,7 +949,7 @@ namespace
             }
             else
             {
-                hashType(context, arg->tp, true);
+                hashType(context, arg->tp, arg->exp, true);
             }
         }
     }
@@ -1157,55 +1191,38 @@ SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, s
         PUTSTRING(sym->name);
         if (callSite->templateParams)
             hashTemplate(context, sym, callSite->templateParams);
-        hashFunctionArgs(context, callSite->arguments);
+        if (callSite->arguments)
+            hashFunctionArgs(context, callSite->arguments);
         if (callSite->thistp)
         {
-            hashType(context, callSite->thistp, true);
+            hashType(context, callSite->thistp, callSite->thisptr, true);
         }
         if (callSite->returnSP)
         {
-            hashType(context, callSite->returnSP->tp, true);
+            hashType(context, callSite->returnSP->tp, callSite->returnEXP, true);
         }
-        if (gather->size() == 1 && gather->front()->tp->BaseType()->syms->size() == 1)
+        for (auto&& overloadHolder : *gather)
         {
-            // optimization for no overloads...
-            sym = gather->front()->tp->BaseType()->syms->front();
-            hashCandidates(context, sym->tp->BaseType()->syms);
-            hashTemplateParents(context, sym);
-            DotNetPELib::SHA1Result(&context);
-            std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-            std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-            auto it = functionHash.find(array);
-            if (it != functionHash.end())
+            for (auto func : *overloadHolder->tp->BaseType()->syms)
             {
-                return it->second;
-            }
-        }
-        else
-        {
-            for (auto&& overloadHolder : *gather)
-            {
-                DotNetPELib::SHA1Context innerContext = context;
-                hashCandidates(innerContext, overloadHolder->tp->BaseType()->syms);
-                hashTemplateParents(innerContext, sym);
-                for (auto func : *overloadHolder->tp->BaseType()->syms)
+                if (!func->sb->instantiated)
                 {
+                    hashTemplateParents(context, func);
+                    hashType(context, func->tp->BaseType()->btp, nullptr, true);
                     for (auto arg : *func->tp->BaseType()->syms)
                     {
-                        DotNetPELib::SHA1Context innerContext2 = innerContext;
-                        hashType(innerContext2, arg->tp, true);
-                        DotNetPELib::SHA1Result(&innerContext2);
-                        std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-                        std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-                        auto it = functionHash.find(array);
-                        if (it != functionHash.end())
-                        {
-                            context = innerContext;
-                            return it->second;
-                        }
+                        hashType(context, arg->tp, nullptr, true);
                     }
                 }
             }
+        }
+        DotNetPELib::SHA1Result(&context);
+        std::array<unsigned char, SHA1_DIGEST_SIZE> array;
+        std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
+        auto it = functionHash.find(array);
+        if (it != functionHash.end())
+        {
+            return it->second;
         }
     }
     return nullptr;

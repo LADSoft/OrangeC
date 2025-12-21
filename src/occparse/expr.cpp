@@ -5587,8 +5587,8 @@ static bool getSuffixedChar( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     char holder[1000];
                     char holder1[1000];
                     Type* typ = Type::MakeType(tpb, nullptr);
-                    sym2->tp->BasicTypeToString(holder + sizeof(holder), holder);
-                    typ->BasicTypeToString(holder1 + sizeof(holder1), holder1);
+                    sym2->tp->ToString(holder + sizeof(holder), holder);
+                    typ->ToString(holder1 + sizeof(holder1), holder1);
                     fprintf(stderr, "\tCandidate '%s' found at %s(%d) tried, wrong base type, wanted %s, has %s\n", sym1->name, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
                 }
             }
@@ -5714,8 +5714,8 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     char holder[1000];
                     char holder1[1000];
                     Type* typ = Type::MakeType(tpb, nullptr);
-                    sym1->tp->BasicTypeToString(holder + 1000 - 1, holder);
-                    typ->BasicTypeToString(holder1 + 1000 - 1, holder1);
+                    sym1->tp->ToString(holder + 1000 - 1, holder);
+                    typ->ToString(holder1 + 1000 - 1, holder1);
                     fprintf(stderr,
                             "\tCandidate '%s' found at %s(%d) was tried, but the basetype %s was incompatible with type: %s\n",
                             name, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
@@ -5726,7 +5726,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
             {
                 std::string holder;
                 holder.resize(10000);
-                sym1->tp->BasicTypeToString(holder.data() + holder.capacity() - 1, holder.data());
+                sym1->tp->ToString(holder.data() + holder.capacity() - 1, holder.data());
 
                 fprintf(stderr, "\tCandidate %s was checked, but had more than one potential parameter\n", holder.c_str());
                 fflush(stderr);
@@ -5747,7 +5747,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     if (tpx->BaseType()->type != BasicType::char_)
                     {
                         char holder[1000];
-                        tpx->BasicTypeToString(holder + sizeof(holder), holder);
+                        tpx->ToString(holder + sizeof(holder), holder);
                         fprintf(stderr, "\tA candidate was found, but the parameter was to something that was not a const char* %s(%d), parameter type: %s\n", sym2->sb->declfile, sym2->sb->declline, holder);
                     }
                 }

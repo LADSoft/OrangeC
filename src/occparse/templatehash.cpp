@@ -42,7 +42,7 @@
 #include "templateinst.h"
 #include "templateutil.h"
 #include "sha1.h"
-#include "templateHash.h"
+#include "templatehash.h"
 #include "mangle.h"
 #include "constopt.h"
 #include "overload.h"

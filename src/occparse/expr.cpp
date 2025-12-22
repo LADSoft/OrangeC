@@ -5589,7 +5589,7 @@ static bool getSuffixedChar( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     Type* typ = Type::MakeType(tpb, nullptr);
                     sym2->tp->ToString(holder + sizeof(holder), holder);
                     typ->ToString(holder1 + sizeof(holder1), holder1);
-                    fprintf(stderr, "\tCandidate '%s' found at %s(%d) tried, wrong base type, wanted %s, has %s\n", sym1->name, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
+                    printerr(ERR_CANDIDATE_INCORRECT_TYPE, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
                 }
             }
         }
@@ -5716,10 +5716,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     Type* typ = Type::MakeType(tpb, nullptr);
                     sym1->tp->ToString(holder + 1000 - 1, holder);
                     typ->ToString(holder1 + 1000 - 1, holder1);
-                    fprintf(stderr,
-                            "\tCandidate '%s' found at %s(%d) was tried, but the basetype %s was incompatible with type: %s\n",
-                            name, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
-                    fflush(stderr);
+                    printerr(ERR_CANDIDATE_INCORRECT_TYPE, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
                 }
             }
             else

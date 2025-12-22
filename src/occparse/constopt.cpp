@@ -64,6 +64,7 @@
 #include "libcxx.h"
 #include "overload.h"
 #include "class.h"
+#include "staticassert.h"
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -2439,7 +2440,7 @@ int opt0(EXPRESSION** node)
             break;
         case ExpressionNode::dot_:
         case ExpressionNode::pointsto_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 EXPRESSION* newExpr = ep->left;
                 EXPRESSION* next = ep->right;
@@ -2461,14 +2462,13 @@ int opt0(EXPRESSION** node)
                     {
                         next = next->left;
                     }
-                    enclosingDeclarations.Add(tp->BaseType()->sp);
+                    DeclarationScope scope(tp->BaseType()->sp);
                     if (next->type == ExpressionNode::callsite_)
                     {
                         Type* ctype = tp;
                         SYMBOL* sym = classsearch(next->v.func->sp->name, false, false, false);
                         if (!sym)
                         {
-                            enclosingDeclarations.Drop();
                             break;
                         }
                         CallSite* func = Allocate<CallSite>();
@@ -2479,7 +2479,6 @@ int opt0(EXPRESSION** node)
                         sym = GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, 0);
                         if (!sym)
                         {
-                            enclosingDeclarations.Drop();
                             break;
                         }
                         EXPRESSION* temp = MakeExpression(next->v.func);
@@ -2494,7 +2493,6 @@ int opt0(EXPRESSION** node)
                         SYMBOL* sym = classsearch(GetSymRef(next)->v.sp->name, false, false, false);
                         if (!sym)
                         {
-                            enclosingDeclarations.Drop();
                             break;
                         }
                         EXPRESSION* temp = MakeIntExpression(ExpressionNode::c_i_, 0);
@@ -2507,7 +2505,6 @@ int opt0(EXPRESSION** node)
                             Dereference(sym->tp, &newExpr);
                         tp = sym->tp;
                     }
-                    enclosingDeclarations.Drop();
                     ep = ep->right;
                 }
                 if (ep->type == ExpressionNode::dot_ || ep->type == ExpressionNode::pointsto_)
@@ -2530,7 +2527,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case ExpressionNode::sizeofellipse_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 int n = 0;
                 if (!(*node)->v.templateParam->second->packed)
@@ -2549,7 +2546,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateselector_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 auto tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = (*tsl)[1].sp;
@@ -2695,7 +2692,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!definingTemplate || instantiatingTemplate) &&
+            if ((!IsDefiningTemplate()) &&
                 (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
@@ -3213,22 +3210,22 @@ int fold_const(EXPRESSION* node)
             break;
         case ExpressionNode::construct_: {
             node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
-            LexList* lex = SetAlternateLex(node->v.construct.deferred);
-            if (node->v.construct.tp->IsArithmetic())
-            {
+            ParseOnStream(node->v.construct.tokenStream, [=]() {
+                if (node->v.construct.tp->IsArithmetic())
+                {
 
-                std::list<Initializer*>*init = nullptr, *dest = nullptr;
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
-                if (init)
-                    *node = *init->front()->exp;
-            }
-            else
-            {
-                EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
-                lex = initType(lex, nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
-                               node->v.construct.tp, exp->v.sp, false, false, 0);
-            }
-            SetAlternateLex(nullptr);
+                    std::list<Initializer*>* init = nullptr, * dest = nullptr;
+                    initType(nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
+                    if (init)
+                        *node = *init->front()->exp;
+                }
+                else
+                {
+                    EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
+                    initType(nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
+                        node->v.construct.tp, exp->v.sp, false, false, 0);
+                }
+            });
         }
         break;
         case ExpressionNode::callsite_: {
@@ -3246,7 +3243,7 @@ int fold_const(EXPRESSION* node)
                     }
                 }
                 if (node->v.func->sp && node->v.func->sp->sb->constexpression && !node->v.func->sp->sb->builtin_constexpression &&
-                    (argumentNesting == 0 && !inStaticAssert))
+                    (argumentNestingLevel == 0 && !inStaticAssert))
                 {
                     if (!rv && node->v.func->thisptr)
                     {
@@ -3263,7 +3260,7 @@ int fold_const(EXPRESSION* node)
         break;
 #ifdef LIBCXX17
         case ExpressionNode::cppintrinsic_:
-            if (!definingTemplate || instantiatingTemplate)
+            if (!IsDefiningTemplate())
             {
                 EvaluateLibcxxConstant(&node);
             }
@@ -3319,7 +3316,6 @@ int fold_const(EXPRESSION* node)
 }
 
 /*
-
  * remove type casts from constant nodes and change their size
  */
 int typedconsts(EXPRESSION* node1)
@@ -3963,16 +3959,16 @@ void optimize_for_constants(EXPRESSION** expr)
         rebalance(expr);
     }
 }
-LexList* optimized_expression(LexList* lex, SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
+void optimized_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
 {
     if (commaallowed)
-        lex = expression(lex, funcsp, atp, tp, expr, 0);
+        expression(funcsp, atp, tp, expr, 0);
     else
-        lex = expression_no_comma(lex, funcsp, atp, tp, expr, nullptr, 0);
+        expression_no_comma(funcsp, atp, tp, expr, nullptr, 0);
     if (*tp)
     {
         optimize_for_constants(expr);
     }
-    return lex;
+    return;
 }
 }  // namespace Parser

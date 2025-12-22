@@ -146,9 +146,9 @@ void errortype(int err, Type* tp1, Type* tp2);
 void errorConversionOrCast(bool convert, Type* tp1, Type* tp2);
 void errorabstract(int error, SYMBOL* sp);
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp);
-void errskim(LexList** lex, Keyword* skimlist, bool assumeTemplate = false);
-void skip(LexList** lex, Keyword kw);
-bool needkw(LexList** lex, Keyword kw);
+void errskim( Keyword* skimlist, bool assumeTemplate = false);
+void skip( Keyword kw);
+bool needkw( Keyword kw);
 void specerror(int err, const char* name, const char* file, int line);
 void unmarkGotos(VLASHIM* shim);
 void checkGotoPastVLA(std::list<Statement*>* stmt, bool first);
@@ -167,7 +167,7 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
 void checkauto(Type* tp1, int err);
 void checkscope(Type* tp1, Type* tp2);
 void CheckThroughConstObject(Type* tp, EXPRESSION* exp);
-void EnterInstantiation(LexList* lex, SYMBOL* sp);
+void EnterInstantiation(SYMBOL* sp, bool symDirect);
 void LeaveInstantiation();
 
 template <size_t n>

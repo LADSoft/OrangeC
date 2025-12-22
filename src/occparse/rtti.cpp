@@ -52,6 +52,7 @@
 #include "cppbltin.h"
 #include "overload.h"
 #include "Utils.h"
+#include "SymbolProperties.h"
 namespace Parser
 {
 SymbolTable<SYMBOL>* rttiSyms;
@@ -256,7 +257,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
         // may not have been created...
         if (sym)
         {
-            if (!sym->sb->inlineFunc.stmt && !sym->sb->deferredCompile)
+            if (!sym->sb->inlineFunc.stmt && !bodyTokenStreams.get(sym))
             {
                 // if it is deleted we just won't call it...
                 // still need the xt table entry though...
@@ -271,6 +272,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
                     if (exp && exp->left)
                     {
                         sym = exp->left->v.func->sp;
+                        sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                         InsertInline(sym);
                     }
                 }
@@ -278,6 +280,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
             else
             {
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
+                InsertInline(sym);
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)

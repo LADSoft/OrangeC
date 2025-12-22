@@ -28,7 +28,7 @@
 namespace Parser
 {
 extern int inGetUserConversion;
-extern int inSearchingFunctions;
+extern int currentlyInsertingFunctions;
 extern int inNothrowHandler;
 extern int matchOverloadLevel;
 

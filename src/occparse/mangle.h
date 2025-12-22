@@ -26,20 +26,28 @@
 #pragma once
 
 #define MANGLE_DEFERRED_TYPE_CHAR '{'
+#define IT_THRESHOLD 2
+#define IT_OV_THRESHOLD 2
+#define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(char*))
+
+#define MAX_MANGLE_NAME_COUNT 36
+
 
 namespace Parser
 {
+extern char hashdNames[MAX_MANGLE_NAME_COUNT][256];
+
 extern const char* overloadNameTab[];
 extern const char* msiloverloadNameTab[];
 
 extern const char* overloadXlateTab[];
+extern char mangledNames[MAX_MANGLE_NAME_COUNT][256];
 extern int mangledNamesCount;
 
 void mangleInit(void);
 char* mangleNameSpaces(char* in, SYMBOL* sym);
 
 char* mangleType(char* in, int len, Type* tp, bool first);
-bool GetTemplateArgumentName(std::list<TEMPLATEPARAMPAIR>* params, std::string& result, bool byVal);
 void GetClassKey(char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition = false);
 }  // namespace Parser

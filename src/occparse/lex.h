@@ -22,10 +22,13 @@
  *
  *
  */
-
 #pragma once
 
-#define MAX_LOOKBACK 1024
+#include <cassert>
+#include <algorithm>
+
+#include "LexToken.h"
+
 namespace Parser
 {
 /* error list */
@@ -134,64 +137,59 @@ struct StringData
 
 struct Lexeme
 {
+    Lexeme() = default;
     LexType type;
-    struct u_val value;
-    char* litaslit;
-    char* suffix;
-    Optimizer::LINEDATA* linedata;
-    int errline;
-    const char* errfile;
-    int charindex;
-    int charindexend;
-    int filenum;
-    KeywordData* kw;
-    SYMBOL* typequal;
-    int registered : 1;
+    union
+    {
+        struct u_val value;
+        KeywordData* kw;
+    };
+    struct
+    {
+        int sourceLineNumber;
+        const char* sourceFileName;
+        int charindex;
+        int charindexend;
+        int realcharindex;
+        int filenum;
+    };
+    struct
+    {
+        unsigned refcount;
+        char* litaslit;
+        char* suffix;
+        Optimizer::LINEDATA* linedata;
+        SYMBOL* typequal;
+    };
 };
 
-struct LexList
-{
-    LexList *next, *prev;
-    Lexeme* data;
-};
-struct LexContext
-{
-    LexContext* next;
-    LexList* cur;
-    LexList* last;
-};
-
-#define MATCHTYPE(lex, tp) (lex && (lex)->data->type == (tp))
-#define ISID(lex) (lex && (lex)->data->type == LexType::l_id_)
-#define ISKW(lex) (lex && (lex)->data->type == LexType::l_kw_)
-#define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->data->kw->key == keyWord))
-bool KWTYPE(LexList* lex, unsigned types);
-#define KW(lex) (ISKW(lex) ? (lex)->data->kw->key : Keyword::none_)
+#define MATCHTYPE(tp) (currentLex && currentLex->type == (tp))
+#define ISID() (currentLex && currentLex->type == LexType::l_id_)
+#define ISKW() (currentLex && currentLex->type == LexType::l_kw_)
+#define MATCHKW(keyWord) (ISKW() && (currentLex->kw->key == keyWord))
+bool KWTYPE(unsigned types);
+#define KW() (ISKW() ? currentLex->kw->key : Keyword::none_)
 
 extern Optimizer::LINEDATA nullLineData;
 extern int eofLine;
 extern const char* eofFile;
 extern bool parsingPreprocessorConstant;
-extern LexContext* context;
 extern int charIndex;
 extern SymbolTable<KeywordData>* kwSymbols;
-extern LexList* currentLex;
 
 void lexini(void);
 KeywordData* searchkw(const unsigned char** p);
-LexList* SkipToNextLine(void);
-LexList* getGTSym(LexList* in);
+void SkipToNextLine(void);
+void SplitGreaterThanFromRightShift();
 void SkipToEol();
 bool AtEol();
 void CompilePragma(const unsigned char** linePointer);
 void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
 void FlushLineData(const char* file, int lineno);
-std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, LexList* lex, int offset);
-LexList* getsym(void);
-LexList* prevsym(LexList* lex);
-LexList* backupsym(void);
-LexList* SetAlternateLex(LexList* lexList);
-bool CompareLex(LexList* left, LexList* right);
+std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme* lex, int offset);
+void getsym(void);
+bool CompareLex(LexemeStream* left, LexemeStream* right);
 void SetAlternateParse(bool set, const std::string& val);
 long long ParseExpression(std::string& line);
+
 }  // namespace Parser

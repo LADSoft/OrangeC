@@ -84,7 +84,9 @@
 #include "exprpacked.h"
 #include <cstdlib>
 #include <cstdio>
-
+#include "sha1.h"
+#include "templateHash.h"
+#if 0
 //#define x64_compiler
 #ifndef __SANITIZE_ADDRESS__
 #ifndef x64_compiler
@@ -165,6 +167,7 @@ void operator delete(void* p) noexcept
 #    endif
 #endif
 #endif
+#endif
 #ifndef ORANGE_NO_MSIL
 using namespace DotNetPELib;
 PELib* peLib;
@@ -217,7 +220,7 @@ int ccDBOpen(const char* name);
 void diag(const char* fmt, ...)
 {
     using namespace Parser;
-    if (!definingTemplate)
+    if (!templateDefinitionLevel)
     {
         if (Optimizer::cparams.prm_diag)
         {
@@ -361,7 +364,6 @@ void compile(bool global)
 {
     fileIndex++;
     SET_GLOBAL(true, 1);
-    LexList* lex = nullptr;
     Optimizer::SymbolManager::clear();
     ListFactoryInit();
     helpinit();
@@ -383,6 +385,7 @@ void compile(bool global)
     lexini();
     setglbdefs();
     templateInit();
+    templateHashInit();
 
     if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {
@@ -416,14 +419,14 @@ void compile(bool global)
     EnterPackedContext();
     if (Optimizer::cparams.prm_assemble)
     {
-        lex = getsym();
-        if (lex)
+        getsym();
+        if (currentLex)
         {
             FunctionBlock bd;
             memset(&bd, 0, sizeof(bd));
             bd.type = Keyword::begin_;
             std::list<FunctionBlock*> block{&bd};
-            StatementGenerator sg(lex, nullptr);
+            StatementGenerator sg(nullptr);
             while (sg.ParseAsm(block))
                 ;
             if (IsCompiler())
@@ -434,16 +437,16 @@ void compile(bool global)
     }
     else
     {
-        lex = getsym();
-        if (lex)
+        getsym();
+        if (currentLex)
         {
-            while ((lex = declare(lex, nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                  AccessLevel::public_)) != nullptr)
+            while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
+                                  AccessLevel::public_))
             {
-                if (MATCHKW(lex, Keyword::end_))
+                if (MATCHKW(Keyword::end_))
                 {
-                    lex = getsym();
-                    if (!lex)
+                    getsym();
+                    if (!currentLex)
                         break;
                 }
             }
@@ -760,7 +763,7 @@ MAINTRY
             statement_ini(true);
             packed_init();
             EnterPackedContext();
-            while (getsym() != nullptr)
+            while (getsym(), currentLex)
                 ;
         }
         if (Optimizer::cparams.prm_makestubs)

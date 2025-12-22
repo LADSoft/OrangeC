@@ -58,6 +58,9 @@
 
 namespace Parser
 {
+    static const int LexCacheDepth = 20000;
+    static const int LexCachePrune = 1000;
+
 #ifndef LONGLONG_MAX
 #    define LONGLONG_MAX LONG_MAX
 #endif
@@ -66,11 +69,8 @@ int eofLine;
 const char* eofFile;
 bool parsingPreprocessorConstant;
 
-LexContext* context;
-
 int charIndex;
 
-LexList* currentLex;
 Optimizer::LINEDATA nullLineData = {0, "", "", 0, 0};
 
 static bool valid;
@@ -81,15 +81,14 @@ static std::string currentLine;
 static int lastBrowseIndex;
 static unsigned char* bitIntBuffer;
 static std::deque<ppDefine::TokenPos>::const_iterator tokenIterator;
+
 struct ParseHold
 {
     std::string currentLine;
-    LexContext* context;
     int charIndex;
 };
 
 static std::stack<ParseHold> parseStack;
-LexContext* contextHold;
 
 KeywordData keywords[] = {
     {"!", 1, Keyword::not_, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
@@ -398,14 +397,12 @@ SymbolTableFactory<KeywordData> lexFactory;
 SymbolTable<KeywordData>* kwSymbols;
 
 static bool kwmatches(KeywordData* kw);
-static LexContext* AllocateContext();
 
 void lexini(void)
 /*
  * create a keyword table
  */
 {
-    contextHold = nullptr;
     bool old = Optimizer::cparams.prm_extwarning;
     Optimizer::cparams.prm_extwarning = false;
     int i;
@@ -418,7 +415,6 @@ void lexini(void)
     }
     llminus1 = 0;
     llminus1--;
-    context = AllocateContext();
     nextFree = 0;
     currentLine = "";
     linePointer = (const unsigned char*)currentLine.c_str();
@@ -426,35 +422,16 @@ void lexini(void)
         parseStack.pop();
     lastBrowseIndex = 0;
     Optimizer::cparams.prm_extwarning = old;
-}
-
-static LexContext* AllocateContext()
-{
-    if (!contextHold)
-    {
-        return Allocate<LexContext>();
-    }
-    else
-    {
-        auto rv = contextHold;
-        contextHold = contextHold->next;
-        *rv = {};
-        return rv;
-    }
-}
-static void FreeContext(LexContext* context)
-{
-    context->next = contextHold;
-    contextHold = context;
+    lextokeninit();
 }
 
 /*-------------------------------------------------------------------------*/
-bool KWTYPE(LexList* lex, unsigned types)
+bool KWTYPE(unsigned types)
 {
     int rv = 0;
-    if (ISKW(lex))
+    if (ISKW())
     {
-        if ((lex)->data->kw->key == Keyword::auto_)
+        if (currentLex->kw->key == Keyword::auto_)
         {
             if (Optimizer::cparams.prm_cplusplus)
             {
@@ -466,17 +443,17 @@ bool KWTYPE(LexList* lex, unsigned types)
                 // in C2x it is a storage class if another type is present
                 // or a type if one isn't
                 // and in earlier versions of C it is a storage_class
-                lex = getsym();
+                getsym();
                 bool s;
-                rv = TypeGenerator::StartOfType(lex, &s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
-                lex = backupsym();
+                rv = TypeGenerator::StartOfType(&s, false) ? TT_STORAGE_CLASS : TT_BASETYPE;
+                --*currentStream;
                 if (rv == TT_BASETYPE)
                     RequiresDialect::Feature(Dialect::c23, "auto as a type");
             }
         }
         else
         {
-            rv = (lex)->data->kw->tokenTypes;
+            rv = currentLex->kw->tokenTypes;
         }
     }
     return rv & types;
@@ -1655,29 +1632,27 @@ int getId(const unsigned char** ptr, unsigned char* dest)
     *dest = 0;
     return 0;
 }
-LexList* SkipToNextLine(void)
+void SkipToNextLine(void)
 {
 
-    if (!context->next)
+    if (contextStack.size() == 1)
     {
         SkipToEol();
-        context->cur = nullptr;
+        currentLex = nullptr;
     }
-    return getsym();
+    getsym();
 }
-LexList* getGTSym(LexList* in)
+void SplitGreaterThanFromRightShift()
 {
-    static LexList lex;
-    static Lexeme data;
     const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
-    KeywordData* kw;
-    kw = searchkw(&ppgreater);
-    lex = *in;
-    lex.data = &data;
-    *lex.data = *in->data;
-    lex.data->type = LexType::l_kw_;
-    lex.data->kw = kw;
-    return &lex;
+    auto kw = searchkw(&ppgreater);
+    auto lex = Allocate<Lexeme>();
+    *lex = *currentLex;
+    lex->type = LexType::l_kw_;
+    lex->kw = kw;
+    currentLex = lex;
+    if (TemplateRegisterToken(currentLex, false))
+        TemplateRegisterToken(currentLex, true);
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }
 bool AtEol()
@@ -1698,7 +1673,7 @@ static void ReplaceStringInString(std::string& string, const std::string& val, c
 }
 void CompilePragma(const unsigned char** linePointer)
 {
-    Keyword err;
+    char err = 0;
     while (isspace(*(*linePointer)))
         (*linePointer)++;
     if (**linePointer == '(')
@@ -1706,7 +1681,6 @@ void CompilePragma(const unsigned char** linePointer)
         (*linePointer)++;
         while (isspace(*(*linePointer)))
             (*linePointer)++;
-        err = Keyword::none_;
         if (**linePointer == '"')
         {
             (*linePointer)++;
@@ -1733,13 +1707,13 @@ void CompilePragma(const unsigned char** linePointer)
             (*linePointer)++;
             return;
         }
-        err = Keyword::closepa_;
+        err = ')';
     }
     else
     {
-        err = Keyword::openpa_;
+        err = '(';
     }
-    needkw(nullptr, (Keyword)err);
+    errorint(ERR_NEEDY, err);
 }
 void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std::pair<int, int>> positions)
 {
@@ -1813,18 +1787,18 @@ void FlushLineData(const char* file, int lineno)
         }
     }
 }
-std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, LexList* lex, int offset)
+std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme* lex, int offset )
 {
     if (!lex || !lines)
         return nullptr;
     std::list<Statement*> rv;
     int lineno;
     const char* file;
-    lineno = lex->data->linedata->lineno + offset + 1;
-    file = lex->data->errfile;
+    lineno = currentLex->linedata->lineno + offset + 1;
+    file = currentLex->sourceFileName;
     while (lines->size() && (strcmp(lines->front()->file, file) != 0 || lineno >= lines->front()->lineno))
     {
-        rv.push_back(Statement::MakeStatement(lex, parent, StatementNode::line_));
+        rv.push_back(Statement::MakeStatement(parent, StatementNode::line_, lex));
         rv.back()->lineData = lines->front();
         lines->pop_front();
     }
@@ -1857,14 +1831,13 @@ static void DumpPreprocessedLine()
         fputc('\n', cppFile);
     }
 }
-LexList* getsym(void)
+void getsym(void)
 {
     static std::deque<std::pair<int, int>> annotations;
-    static LexList* last;
     static const char* origLine = "";
-    LexList* lex;
     KeywordData* kw;
     LexType tp;
+    Lexeme* lex = nullptr;
     bool contin;
     FPF rval;
     long long ival;
@@ -1875,52 +1848,49 @@ LexList* getsym(void)
     static int trailer;
     Optimizer::SLCHAR* strptr;
 
-    if (context->cur)
+    if (currentStream->RePlaying() || currentStream->Reloaded())
     {
-        LexList* rv;
-        rv = context->cur;
-        if (context->last == rv->prev)
-            TemplateRegisterDeferred(context->last);
-        context->last = rv;
-        context->cur = context->cur->next;
-        if (rv->data->linedata && rv->data->linedata != &nullLineData)
+        if (currentStream->Index() < currentStream->Base() +  currentStream->size())
         {
-            if (!lines)
-                lines = lineDataListFactory.CreateList();
-            while (lines->size() > 1)
-                lines->pop_back();
-            if (lines->size() == 1)
+            if (currentStream->Index())
+                TemplateRegisterToken(currentLex, false);
+            ++*currentStream;
+            if (currentStream->Index() == currentStream->size())
             {
-                lines->front() = rv->data->linedata;
+                currentLex = nullptr;
+                return;
             }
-            else
+            currentLex = currentStream->get(currentStream->Index());
+            if (currentLex->linedata && currentLex->linedata != &nullLineData)
             {
-                lines->push_back(rv->data->linedata);
+                if (!lines)
+                    lines = lineDataListFactory.CreateList();
+                while (lines->size() > 1)
+                    lines->pop_back();
+                if (lines->size() == 1)
+                {
+                    lines->front() = currentLex->linedata;
+                }
+                else
+                {
+                    lines->push_back(currentLex->linedata);
+                }
             }
+            return;
         }
-        currentLex = rv;
-        return rv;
+        else if (currentStream->RePlaying())
+        {
+            currentLex = nullptr;
+            return;
+        }
     }
-    else if (context->next)
+    if (currentStream->size() > LexCacheDepth)
     {
-        return nullptr;
+        currentStream->Prune(LexCacheDepth, LexCachePrune);    
+        currentLex = currentStream->get(currentStream->Index());
     }
-    lex = Allocate<LexList>();
-    lex->data = Allocate<Lexeme>();
-    lex->data->linedata = nullptr;
-    lex->prev = context->last;
-    context->last = lex;
-    context->last->data->linedata = &nullLineData;
-
-    lex->next = nullptr;
-    if (lex->prev)
-        lex->prev->next = lex;
-    if (++nextFree >= MAX_LOOKBACK)
-        nextFree = 0;
-    lex->data->registered = false;
     if (!parsingPreprocessorConstant)
-        TemplateRegisterDeferred(last);
-    last = nullptr;
+        TemplateRegisterToken(currentLex, false);
     bool fetched = false;
     do
     {
@@ -1937,9 +1907,8 @@ LexList* getsym(void)
 #endif
                 if (parseStack.size() || !preProcessor->GetLine(currentLine))
                 {
-                    if (lex->prev)
-                        lex->prev->next = nullptr;
-                    return nullptr;
+                    currentLex = nullptr;
+                    return;
                 }
                 linePointer = (const unsigned char*)currentLine.c_str();
                 if (cppFile)
@@ -1962,9 +1931,13 @@ LexList* getsym(void)
                 }
             }
         } while (*linePointer == 0);
-        charIndex = lex->data->charindex = linePointer - (const unsigned char*)currentLine.c_str();
-        eofLine = lex->data->errline = preProcessor->GetErrLineNo();
-        eofFile = lex->data->errfile = preProcessor->GetErrFile().c_str();
+        currentLex =  lex = LexemeTokenFactory::Instantiation().Create();
+        currentStream->Add(lex);
+        currentLex->linedata = &nullLineData;
+
+        charIndex = currentLex->charindex = currentLex->realcharindex = linePointer - (const unsigned char*)currentLine.c_str();
+        eofLine = currentLex->sourceLineNumber = preProcessor->GetErrLineNo();
+        eofFile = currentLex->sourceFileName = preProcessor->GetErrFile().c_str();
         int fileIndex = preProcessor->GetFileIndex();
         if (fileIndex != lastBrowseIndex)
         {
@@ -1979,12 +1952,12 @@ LexList* getsym(void)
                 cval = (char)cval;
             if (tp == LexType::l_uchr_ && (cval & 0xffff0000))
                 error(ERR_INVALID_CHAR_CONSTANT);
-            lex->data->value.i = cval;
+            currentLex->value.i = cval;
             if (!Optimizer::cparams.prm_cplusplus)
-                lex->data->type = LexType::i_;
+                currentLex->type = LexType::i_;
             else
-                lex->data->type = tp;
-            lex->data->suffix = nullptr;
+                currentLex->type = tp;
+            currentLex->suffix = nullptr;
             if (isstartchar(*linePointer))
             {
                 char suffix[256], *p = suffix;
@@ -1994,14 +1967,14 @@ LexList* getsym(void)
                 if (!Optimizer::cparams.prm_cplusplus)
                     error(ERR_INVCONST);
                 else
-                    lex->data->suffix = litlate(suffix);
+                    currentLex->suffix = litlate(suffix);
             }
         }
         else if ((strptr = getString(&linePointer, &tp)) != nullptr)
         {
-            lex->data->value.s.w = (LCHAR*)strptr;
-            lex->data->type = tp;
-            lex->data->suffix = nullptr;
+            currentLex->value.s.w = (LCHAR*)strptr;
+            currentLex->type = tp;
+            currentLex->suffix = nullptr;
             if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {
                 char suffix[256], *p = suffix;
@@ -2011,7 +1984,7 @@ LexList* getsym(void)
                 if (!Optimizer::cparams.prm_cplusplus)
                     error(ERR_INVCONST);
                 else
-                    lex->data->suffix = litlate(suffix);
+                    currentLex->suffix = litlate(suffix);
             }
         }
         else if (*linePointer != 0)
@@ -2021,34 +1994,34 @@ LexList* getsym(void)
             const unsigned char* end = linePointer;
             unsigned char* bitintValue;
             LexType tp;
-            lex->data->suffix = nullptr;
+            currentLex->suffix = nullptr;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival, &bitintValue)) != (unsigned)INT_MIN)
             {
                 if (tp == LexType::bitint_ || tp == LexType::ubitint_)
                 {
-                    lex->data->value.b.bits = ival;
-                    lex->data->value.b.value = bitintValue;
+                    currentLex->value.b.bits = ival;
+                    currentLex->value.b.value = bitintValue;
                 }
                 else
                 {
                     if (tp < LexType::l_f_)
                     {
-                        lex->data->value.i = ival;
+                        currentLex->value.i = ival;
                     }
                     else
                     {
-                        lex->data->value.f = Allocate<FPF>();
-                        *lex->data->value.f = rval;
+                        currentLex->value.f = Allocate<FPF>();
+                        *currentLex->value.f = rval;
                     }
                     if (suffix[0])
                     {
-                        lex->data->suffix = litlate((char*)suffix);
+                        currentLex->suffix = litlate((char*)suffix);
                         memcpy(suffix, start, end - start);
                         suffix[end - start] = 0;
-                        lex->data->litaslit = litlate((char*)suffix);
+                        currentLex->litaslit = litlate((char*)suffix);
                     }
                 }
-                lex->data->type = tp;
+                currentLex->type = tp;
             }
             else if ((kw = searchkw(&linePointer)) != nullptr)
             {
@@ -2060,14 +2033,14 @@ LexList* getsym(void)
                 }
                 else
                 {
-                    lex->data->type = LexType::l_kw_;
-                    lex->data->kw = kw;
+                    currentLex->type = LexType::l_kw_;
+                    currentLex->kw = kw;
                 }
             }
             else if (getId(&linePointer, buf + pos) != INT_MIN)
             {
-                lex->data->value.s.a = (char*)buf + pos;
-                lex->data->type = LexType::l_id_;
+                currentLex->value.s.a = (char*)buf + pos;
+                currentLex->type = LexType::l_id_;
                 pos += strlen((char*)buf + pos) + 1;
                 if (pos >= sizeof(buf) - 512)
                     pos = 0;
@@ -2108,8 +2081,8 @@ LexList* getsym(void)
                 start -= trailer;
                 end -= trailer;
             }
-            lex->data->charindex = start;
-            lex->data->charindexend = end;
+            currentLex->charindex = start;
+            currentLex->charindexend = end;
 #ifdef TESTANNOTATE
             //            printf("%d %d\n", start, end);
             annotations.push_back(std::pair<int, int>(start, end));
@@ -2118,73 +2091,27 @@ LexList* getsym(void)
     } while (contin);
     if (lines && lines->size())
     {
-        lex->data->linedata = lines->front();
+        currentLex->linedata = lines->front();
     }
     else
     {
-        lex->data->linedata = &nullLineData;
+        currentLex->linedata = &nullLineData;
     }
     currentLex = lex;
-    return last = lex;
 }
-LexList* prevsym(LexList* lex)
+bool CompareLex(LexemeStream* ileft, LexemeStream* iright)
 {
-    if (lex)
+    auto itl = ileft->begin();
+    auto itle = ileft->end();
+    auto itr = iright->begin();
+    auto itre = iright->end();
+    for (; itl != itle && itr != itre; *++itl, ++itr)
     {
-        if (lex->next)
-        {
-            context->cur = lex->next;
-        }
-        else
-        {
-            context->cur = nullptr;
-        }
-    }
-    return lex;
-}
-LexList* backupsym(void)
-{
-    if (context->cur)
-    {
-        context->cur = context->cur->prev;
-        if (!context->cur)
-            context->cur = context->last;
-    }
-    else
-    {
-        context->cur = context->last;
-    }
-    return context->cur->prev;
-}
-LexList* SetAlternateLex(LexList* lexList)
-{
-    if (lexList)
-    {
-        LexContext* newContext = AllocateContext();
-        newContext->next = context;
-        context = newContext;
-        context->cur = lexList->next;
-        context->last = lexList;
-        TemplateRegisterDeferred(lexList);
-        currentLex = lexList;
-        return lexList;
-    }
-    else
-    {
-        auto c = context;
-        context = context->next;
-        currentLex = context->last;
-        FreeContext(c);
-        return nullptr;
-    }
-}
-bool CompareLex(LexList* left, LexList* right)
-{
-    while (left && right)
-    {
-        if (left->data->type != right->data->type)
+        auto left = (*itl);
+        auto right = (*itr);
+        if (left->type != right->type)
             break;
-        switch (left->data->type)
+        switch (left->type)
         {
             case LexType::i_:
             case LexType::ui_:
@@ -2192,36 +2119,36 @@ bool CompareLex(LexList* left, LexList* right)
             case LexType::ul_:
             case LexType::ll_:
             case LexType::ull_:
-                if (left->data->value.i != right->data->value.i)
+                if (left->value.i != right->value.i)
                     return false;
                 break;
             case LexType::l_f_:
             case LexType::l_d_:
             case LexType::l_ld_:
-                if (left->data->value.f != right->data->value.f)
+                if (left->value.f != right->value.f)
                     return false;
                 break;
             case LexType::l_I_:
                 break;
             case LexType::l_kw_:
-                if (left->data->kw != right->data->kw)
+                if (left->kw != right->kw)
                     return false;
                 break;
             case LexType::l_id_:
             case LexType::l_astr_:
             case LexType::l_u8str_:
             case LexType::l_msilstr_:
-                if (strcmp(left->data->value.s.a, right->data->value.s.a))
+                if (strcmp(left->value.s.a, right->value.s.a))
                     return false;
                 break;
             case LexType::l_wstr_:
             case LexType::l_ustr_:
             case LexType::l_Ustr_:
                 int i;
-                for (i = 0; left->data->value.s.w[i] && right->data->value.s.w[i]; i++)
-                    if (left->data->value.s.w[i] != right->data->value.s.w[i])
+                for (i = 0; left->value.s.w[i] && right->value.s.w[i]; i++)
+                    if (left->value.s.w[i] != right->value.s.w[i])
                         break;
-                if (left->data->value.s.w[i] || right->data->value.s.w[i])
+                if (left->value.s.w[i] || right->value.s.w[i])
                     return false;
                 break;
 
@@ -2229,16 +2156,14 @@ bool CompareLex(LexList* left, LexList* right)
             case LexType::l_wchr_:
             case LexType::l_uchr_:
             case LexType::l_Uchr_:
-                if (left->data->value.i != right->data->value.i)
+                if (left->value.i != right->value.i)
                     return false;
             case LexType::l_qualifiedName_:
             default:
                 return false;
         }
-        left = left->next;
-        right = right->next;
     }
-    return !left && !right;
+    return itl == itle && itr == itre;
 }
 void SetAlternateParse(bool set, const std::string& val)
 {
@@ -2246,32 +2171,36 @@ void SetAlternateParse(bool set, const std::string& val)
     if (set)
     {
         int n = (int)(linePointer - (unsigned char*)currentLine.c_str());
-        parseStack.push(std::move(ParseHold{std::move(currentLine), context, n}));
+        parseStack.push(std::move(ParseHold{std::move(currentLine), n}));
         currentLine = val;
         linePointer = (const unsigned char*)currentLine.c_str();
-        context = AllocateContext();
+        contextStack.push(streamFactory.Create());
+        currentStream = contextStack.top();
+        currentLex = nullptr;
     }
     else if (parseStack.size())
     {
-        FreeContext(context);
+        auto tokens = contextStack.top();
+        contextStack.pop();
+        currentStream = contextStack.top();
+        if (currentStream->size())
+            currentLex = currentStream->get(currentStream->Index());
+        streamFactory.Destroy(tokens);
         currentLine = std::move(parseStack.top().currentLine);
         linePointer = (const unsigned char*)currentLine.c_str() + parseStack.top().charIndex;
-        context = parseStack.top().context;
         parseStack.pop();
     }
 }
 long long ParseExpression(std::string& line)
 {
-    LexContext* oldContext = context;
-    LexContext* newContext = AllocateContext();
-    context = newContext;
+    LexemeStream tokenList;
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
     SetAlternateParse(true, line);
-    LexList* lex = getsym();
+    getsym();
     parsingPreprocessorConstant = true;
     dontRegisterTemplate++;
-    lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
+    expression_no_comma(nullptr, nullptr, &tp, &exp, nullptr, 0);
     dontRegisterTemplate--;
     if (tp)
     {
@@ -2287,8 +2216,6 @@ long long ParseExpression(std::string& line)
         error(ERR_CONSTANT_VALUE_EXPECTED);
     }
     SetAlternateParse(false, "");
-    context = oldContext;
-    FreeContext(newContext);
     return exp ? exp->v.i : 0;
 }
 }  // namespace Parser

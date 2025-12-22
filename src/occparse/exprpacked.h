@@ -47,21 +47,21 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void GatherPackedTypes(int* count, SYMBOL** arg, Type* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 int CountPacks(std::list<TEMPLATEPARAMPAIR>* packs);
-void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexList* start, EXPRESSION* packedExp);
+void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexemeStreamPosition& start, EXPRESSION* packedExp);
 void checkPackedType(SYMBOL* sym);
 void checkPackedExpression(EXPRESSION* exp);
 // void checkUnpackedExpression(EXPRESSION* exp);
-void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<MEMBERINITIALIZERS*>::iterator& init,
-                             std::list<MEMBERINITIALIZERS*>::iterator& initend, std::list<MEMBERINITIALIZERS*>* mi,
+void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORINITIALIZER*>::iterator& init,
+                             std::list<CONSTRUCTORINITIALIZER*>::iterator& initend, std::list<CONSTRUCTORINITIALIZER*>* mi,
                              std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase);
-void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack,
-                                    std::list<MEMBERINITIALIZERS*>** p, LexList* start, std::list<Argument*>* list);
+void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack,
+                                    std::list<CONSTRUCTORINITIALIZER*>** p, LexemeStream* start, std::list<Argument*>* list);
 std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp);
 std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, SYMBOL* funcsp,
                                                        std::list<TEMPLATEPARAMPAIR>* select);
-std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start, SYMBOL* funcsp,
+std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* funcsp,
                                                        std::list<TEMPLATEPARAMPAIR>* select);
-void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexList* start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
+void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
                              Type** tp, EXPRESSION** exp);
 int GetPackCount();
 }  // namespace Parser

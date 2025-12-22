@@ -22,6 +22,7 @@
  *
  *
  */
+#pragma once
 
 /* the long long type is 8 bytes...  if neither long long nor the long type is 8 byte in the compiler
  * this is compiled with, things will still work, however long long constants will be limited in size

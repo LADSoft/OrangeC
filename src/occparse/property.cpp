@@ -139,10 +139,10 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     memset(&b, 0, sizeof(b));
     Dereference(sym->tp, &left);
     Dereference(sym->tp, &right);
-    st = Statement::MakeStatement(nullptr, b, StatementNode::expr_);
+    st = Statement::MakeStatement(b, StatementNode::expr_);
     st->select = MakeExpression(ExpressionNode::assign_, left, right);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
+    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
@@ -155,16 +155,16 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     std::list<FunctionBlock*> b{&bd};
     p->tp->type = BasicType::ifunc_;
     memset(&b, 0, sizeof(b));
-    st = Statement::MakeStatement(nullptr, b, StatementNode::return_);
+    st = Statement::MakeStatement(b, StatementNode::return_);
     st->select = MakeExpression(ExpressionNode::global_, backing);
     Dereference(sym->tp, &st->select);
     p->sb->inlineFunc.stmt = stmtListFactory.CreateList();
-    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(nullptr, emptyBlockdata, StatementNode::block_));
+    p->sb->inlineFunc.stmt->push_back(Statement::MakeStatement(emptyBlockdata, StatementNode::block_));
     p->sb->inlineFunc.stmt->front()->lower = bd.statements;
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
-LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
+void initialize_property( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
 {
     if (sym->tp->IsStructured())
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
@@ -172,15 +172,15 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
         error(ERR_NO_PROPERTY_IN_FUNCTION);
     if (sym->sb->storage_class != StorageClass::external_)
     {
-        if (MATCHKW(lex, Keyword::begin_))
+        if (MATCHKW(Keyword::begin_))
         {
             SYMBOL *get = nullptr, *set = nullptr;
             SYMBOL* prototype = nullptr;
-            lex = getsym();
-            while (ISID(lex))
+            getsym();
+            while (ISID())
             {
                 bool err = false;
-                if (!strcmp(lex->data->value.s.a, "get"))
+                if (!strcmp(currentLex->value.s.a, "get"))
                 {
                     if (get)
                     {
@@ -192,7 +192,7 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
                         get = prototype = CreateGetterPrototype(sym);
                     }
                 }
-                else if (!strcmp(lex->data->value.s.a, "set"))
+                else if (!strcmp(currentLex->value.s.a, "set"))
                 {
                     if (set)
                     {
@@ -209,16 +209,16 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
                     error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
                     err = true;
                 }
-                lex = getsym();
+                getsym();
                 if (err)
                 {
-                    needkw(&lex, Keyword::begin_);
-                    errskim(&lex, skim_end);
-                    needkw(&lex, Keyword::end_);
+                    needkw(Keyword::begin_);
+                    errskim(skim_end);
+                    needkw(Keyword::end_);
                 }
                 else
                 {
-                    StatementGenerator sg(lex, prototype);
+                    StatementGenerator sg(prototype);
                     sg.FunctionBody();
                     sg.BodyGen();
                     insertfunc(prototype, globalNameSpace->front()->syms);
@@ -229,7 +229,7 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
             if (set)
                 sym->sb->has_property_setter = true;
             msilCreateProperty(sym, get, set);
-            needkw(&lex, Keyword::end_);
+            needkw(Keyword::end_);
         }
         else  // create default getter and setter
         {
@@ -268,7 +268,7 @@ LexList* initialize_property(LexList* lex, SYMBOL* funcsp, SYMBOL* sym, StorageC
         }
         InsertGlobal(sym);
     }
-    return lex;
+    return;
 }
 Type* find_boxed_type(Type* in)
 {

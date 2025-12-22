@@ -6,7 +6,7 @@
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
+ *     the Free Software Foundation, either version 3 of theba License, or
  *     (at your option) any later version.
  *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -63,9 +63,8 @@ bool IsCompiler();
 struct Type;
 struct Statement;
 struct FunctionBlock;
-struct LexList;
+struct LexemeStream;
 struct Lexeme;
-struct LexContext;
 struct KeywordData;
 struct CallSite;
 struct Argument;
@@ -451,7 +450,7 @@ typedef struct expr
             struct
             {
                 Type* tp;
-                LexList* deferred;
+                LexemeStream* tokenStream;
             } construct;
             struct
             {
@@ -629,6 +628,7 @@ typedef struct sym
     const char* name;
     Type* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
+    int uniqueId;                                    /* unique index for local statics, template argument tags, etc... */
     unsigned short utilityIndex;
     unsigned short packed : 1;       // packed template param instance
     unsigned short synthesized : 1;  // packed template param was synthesized during parsing
@@ -641,6 +641,7 @@ typedef struct sym
         int declline, origdeclline, realdeclline; /* line number symbol was declared at */
         short declcharpos;                        /* character position symbol was declared at */
         short declfilenum;                        /* the file number */
+        short realcharpos;
         int sizeNoVirtual;                        /* size without virtual classes and thunks */
         struct sym* parent;
         struct sym* parentClass;
@@ -738,8 +739,6 @@ typedef struct sym
         unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1;                       // temporary boolean...
-        unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
-                                                         // specialization was pushed from the generalized version of the template
         unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
         unsigned va_typeof : 1;                          // MSIL: a va_typeof symbol
         unsigned has_property_setter : 1;                // a property has a setter
@@ -765,7 +764,6 @@ typedef struct sym
         int offset;                                      /* address offset of data in the given seg, or optimize register */
         int vtaboffset;                                  /* vtab offset for virtual functions */
         int label;                                       /* label number for statics */
-        int uniqueID;                                    /* unique index for local statics */
         int startLine, endLine;                          /* line numbers spanning the function */
         short paramsize;                                 /* Size of parameter list for stdcall functions */
         short accessibleTemplateArgument;                /* something used as a template argument was validated for
@@ -781,7 +779,7 @@ typedef struct sym
         struct sym* typedefSym;
         struct sym* mainsym;                                        /* pointer to the global version of a copied symbol */
         struct sym* maintemplate;                                   /* pointer to the global version of a copied symbol */
-        std::list<struct _memberInitializers*>* memberInitializers; /* initializers for constructor */
+        std::list<struct _constructorInitializers*>** constructorInitializers; /* initializers for constructor */
         std::list<Statement*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
         std::list<FunctionBlock*>* gotoBlockTable;
         /* these fields depend on storage_class */
@@ -789,8 +787,6 @@ typedef struct sym
         std::list<struct _baseClass*>* baseClasses;
         std::list<struct _vbaseEntry*>* vbaseEntries;
         std::list<struct _vtabEntry*>* vtabEntries;
-        LexList* deferredCompile;
-        LexList* deferredNoexcept;
         std::list<struct sym*>* templateNameSpace;
         short templateLevel;
         std::list<TEMPLATEPARAMPAIR>* typeAlias;
@@ -844,7 +840,7 @@ typedef struct __lambdasp
     LAMBDA* enclosing;
 } LAMBDASP;
 
-typedef struct _memberInitializers
+typedef struct _constructorInitializers
 {
     const char* name;
     SYMBOL* sp;
@@ -852,11 +848,11 @@ typedef struct _memberInitializers
     std::list<Initializer*>* init;
     int line;
     const char* file;
-    LexList* initData;
+    LexemeStream* initData;
     int packed : 1;
     int delegating : 1;
     int valueInit : 1;
-} MEMBERINITIALIZERS;
+} CONSTRUCTORINITIALIZER;
 
 typedef struct _baseClass
 {
@@ -924,7 +920,7 @@ typedef struct _templateParam
         {
             SYMBOL* dflt;
             SYMBOL* val;
-            LexList* txtdflt;
+            LexemeStream* txtdflt;
             std::list<SYMBOL*>* txtargs;
             SYMBOL* temp;
             std::list<TEMPLATEPARAMPAIR>* args;
@@ -934,7 +930,7 @@ typedef struct _templateParam
         {
             Type* dflt;
             Type* val;
-            LexList* txtdflt;
+            LexemeStream* txtdflt;
             std::list<SYMBOL*>* txtargs;
             Type* temp;
         } byClass;
@@ -942,10 +938,10 @@ typedef struct _templateParam
         {
             EXPRESSION* dflt;
             EXPRESSION* val;
-            LexList* txtdflt;
+            LexemeStream* txtdflt;
             std::list<SYMBOL*>* txtargs;
             EXPRESSION* temp;
-            LexList* txttype;
+            LexemeStream* txttype;
             Type* tp;
         } byNonType;
         struct
@@ -1024,8 +1020,8 @@ struct templateListData
 {
     std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
     std::list<TEMPLATEPARAMPAIR>**ptail, **plast, **phold;
-    LexList *head, *tail;
-    LexList *bodyHead, *bodyTail;
+    LexemeStream *head;
+    LexemeStream *bodyTokenStream;
     SYMBOL* sp;
 };
 

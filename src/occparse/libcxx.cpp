@@ -48,6 +48,8 @@
 #include "exprcpp.h"
 #include "overload.h"
 #include "constopt.h"
+#include "casts.h"
+
 namespace Parser
 {
 int inNoExceptHandler;
@@ -308,17 +310,17 @@ void libcxx_builtins(void)
     }
 }
 static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool initialize = false);
-static LexList* GetTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr);
+static void GetTypeList( SYMBOL* funcsp, std::list<Argument*>** lptr);
 void EvaluateLibcxxConstant(EXPRESSION** exp);
 
-bool parseBuiltInTypelistFunc(LexList** lex, SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+bool parseBuiltInTypelistFunc( SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     auto it = intrinsicHash.find(sym->name);
     if (it != intrinsicHash.end())
     {
         (*exp) = MakeExpression(ExpressionNode::cppintrinsic_);
         (*exp)->v.cppintrinsicName = it->first.c_str();
-        *lex = GetTypeList(*lex, funcsp, &(*exp)->v.cppintrinsicArgs);
+        GetTypeList(funcsp, &(*exp)->v.cppintrinsicArgs);
 #ifndef LIBCXX17
         EvaluateLibcxxConstant(exp);
 #endif
@@ -348,7 +350,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         if (arg->tp->BaseType()->type == BasicType::templateparam_ && arg->tp->BaseType()->templateParam->first)
         {
             arg->tp = arg->tp->BaseType();
-            TEMPLATEPARAMPAIR* tpl = TypeAliasSearch(arg->tp->BaseType()->templateParam->first->name, false);
+            TEMPLATEPARAMPAIR* tpl = TypeAliasSearch(arg->tp->BaseType()->templateParam->first, false);
             if (tpl && (tpl->second->packed || tpl->second->byClass.val))
             {
                 if (tpl->second->packed)
@@ -393,15 +395,15 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         }
     }
 }
-static LexList* GetTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>** lptr)
+static void GetTypeList( SYMBOL* funcsp, std::list<Argument*>** lptr)
 {
     if (!*lptr)
         *lptr = argumentListFactory.CreateList();
     do
     {
         Type* tp = nullptr;
-        lex = getsym(); /* past ( or , */
-        tp = TypeGenerator::TypeId(lex, funcsp, StorageClass::cast_, false, true, false);
+        getsym(); /* past ( or , */
+        tp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, false, true, false);
         if (!tp)
             break;
         auto arg = Allocate<Argument>();
@@ -409,15 +411,15 @@ static LexList* GetTypeList(LexList* lex, SYMBOL* funcsp, std::list<Argument*>**
         (*lptr)->push_back(arg);
         if (tp->type == BasicType::templateparam_)
         {
-            if (MATCHKW(lex, Keyword::ellipse_))
+            if (MATCHKW(Keyword::ellipse_))
             {
-                lex = getsym();
+                getsym();
                 tp->templateParam->second->packed = true;
             }
         }
-    } while (MATCHKW(lex, Keyword::comma_));
-    needkw(&lex, Keyword::closepa_);
-    return lex;
+    } while (MATCHKW(Keyword::comma_));
+    needkw(Keyword::closepa_);
+    return;
 }
 static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
 {
@@ -666,11 +668,15 @@ static bool isPOD(Type* tp)
     }
     return false;
 }
-inline Argument* first(std::list<Argument*>* args) { return args->front(); }
+inline Argument* first(std::list<Argument*>* args) 
+{ 
+    return args->front(); 
+}
 inline Argument* second(std::list<Argument*>* args)
 {
     auto it = args->begin();
-    return (*++it);
+    ++it;
+    return *it;
 }
 static bool __is_nothrow(Type* tp, std::list<Argument*>* arguments, SYMBOL* ovl)
 {
@@ -1198,7 +1204,10 @@ static bool is_empty(EXPRESSION* exp)
     if (arguments->size() == 1)
     {
         if (first(arguments)->tp->IsStructured())
-            rv = first(arguments)->tp->BaseType()->syms->size() <= 1;
+            if (first(arguments)->tp->BaseType()->syms)
+                rv = first(arguments)->tp->BaseType()->syms->size() <= 1;
+            else
+               rv = true;
     }
     return rv;
 }
@@ -1856,13 +1865,13 @@ SYMBOL* RemoveReference(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
     }
     return sym;
 }
-bool underlying_type(LexList** lex, SYMBOL* funcsp, Type** tp)
+bool underlying_type( SYMBOL* funcsp, Type** tp)
 {
     static EXPRESSION* exp = MakeExpression(ExpressionNode::cppintrinsic_);
     bool rv = false;
     std::list<Argument*>* arguments = nullptr;
 
-    *lex = GetTypeList(*lex, funcsp, &arguments);
+    GetTypeList(funcsp, &arguments);
     if (arguments->size() == 1)
     {
         exp->v.cppintrinsicArgs = arguments;

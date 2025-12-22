@@ -23,72 +23,74 @@
  *
  */
 
+#include <stack>
+
 #include "compiler.h"
 #include "lex.h"
 namespace Parser
 {
-void displayLexeme(LexList* lex)
+void displayLexeme(Lexeme* lex)
 {
     const LCHAR* w;
-    switch (lex->data->type)
+    switch (currentLex->type)
     {
         case LexType::i_:
-            printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
+            printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", currentLex->value.i);
             break;
         case LexType::ui_:
-            printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
+            printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER "\n", currentLex->value.i);
             break;
         case LexType::l_:
-            printf("long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
+            printf("long constant: " LLONG_FORMAT_SPECIFIER "\n", currentLex->value.i);
             break;
         case LexType::ul_:
-            printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
+            printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER "\n", currentLex->value.i);
             break;
         case LexType::ll_:
-            printf("long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
+            printf("long long constant: " LLONG_FORMAT_SPECIFIER "\n", currentLex->value.i);
             break;
         case LexType::ull_:
-            printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->data->value.i);
+            printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", currentLex->value.i);
             break;
         case LexType::l_f_:
-            printf("float constant: %s\n", ((std::string)*lex->data->value.f).c_str());
+            printf("float constant: %s\n", ((std::string)*currentLex->value.f).c_str());
             break;
         case LexType::l_d_:
-            printf("double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
+            printf("double constant: %s\n", ((std::string)*currentLex->value.f).c_str());
             break;
         case LexType::l_ld_:
-            printf("long double constant: %s\n", ((std::string)*lex->data->value.f).c_str());
+            printf("long double constant: %s\n", ((std::string)*currentLex->value.f).c_str());
             break;
         case LexType::l_u8str_:
         case LexType::l_astr_:
         case LexType::l_msilstr_:
         case LexType::l_wstr_:
-            if (lex->data->type == LexType::l_wstr_)
+            if (currentLex->type == LexType::l_wstr_)
                 printf("wide string: ");
-            else if (lex->data->type == LexType::l_msilstr_)
+            else if (currentLex->type == LexType::l_msilstr_)
                 printf("msil string: ");
-            else if (lex->data->type == LexType::l_astr_)
+            else if (currentLex->type == LexType::l_astr_)
                 printf("ascii string: ");
-            else if (lex->data->type == LexType::l_u8str_)
+            else if (currentLex->type == LexType::l_u8str_)
                 printf("utf8 string: ");
-            w = lex->data->value.s.w;
+            w = currentLex->value.s.w;
             while (*w)
                 fputc(*w++, stdout);
             fputc('\n', stdout);
             break;
         case LexType::l_achr_:
         case LexType::l_wchr_:
-            if (lex->data->type == LexType::l_wchr_)
+            if (currentLex->type == LexType::l_wchr_)
                 printf("wide char: ");
             else
                 printf("ascii char: ");
-            fputc((int)lex->data->value.i, stdout);
+            fputc((int)currentLex->value.i, stdout);
             break;
         case LexType::l_id_:
-            printf("id: %s\n", lex->data->value.s.a);
+            printf("id: %s\n", currentLex->value.s.a);
             break;
         case LexType::l_kw_:
-            printf("kw: %s\n", lex->data->kw->name);
+            printf("kw: %s\n", currentLex->kw->name);
             break;
         default:
             printf("***** unknown token\n");

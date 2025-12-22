@@ -69,6 +69,7 @@
 #include "overload.h"
 #include "class.h"
 #include "exprpacked.h"
+#include "casts.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -83,7 +84,7 @@
 
 namespace Parser
 {
-typedef bool (*EvalFunc)(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+typedef bool (*EvalFunc)( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                          EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
 
 static std::unordered_map<Keyword, EvalFunc, EnumClassHash> dispatcher = {
@@ -126,7 +127,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
         error(ERR_SIZEOF_UNFIXED_ENUMERATION);
     if (tp->IsFunction())
         error(ERR_SIZEOF_NO_FUNCTION);
-    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !definingTemplate)
+    if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !templateDefinitionLevel)
         errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */
@@ -151,7 +152,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
         exp = nullptr;
         if (tp->IsStructured())
         {
-            if (tp->BaseType()->size == 0 && !definingTemplate)
+            if (tp->BaseType()->size == 0 && !templateDefinitionLevel)
                 errorsym(ERR_UNSIZED_TYPE, tp->BaseType()->sp);
             if (tp->BaseType()->syms)
             {
@@ -184,10 +185,10 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
     return exp;
 }
 
-static void left_fold(LexList* lex, SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexList* start, Type* seedtp,
+static void left_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
                       EXPRESSION* seedexp, Type* foldtp, EXPRESSION* foldexp)
 {
-    auto it = dispatcher.find(lex->data->kw->key);
+    auto it = dispatcher.find(currentLex->kw->key);
     if (it == dispatcher.end())
     {
         *resulttp = foldtp;
@@ -243,7 +244,7 @@ static void left_fold(LexList* lex, SYMBOL* funcsp, Type** resulttp, EXPRESSION*
                                 errorConversionOrCast(true, e->tp, &stdint);
                 }
             }
-            if (!it->second(lex, funcsp, nullptr, resulttp, resultexp, *resulttp, *resultexp, e->tp, e->exp, false, 0))
+            if (!it->second(funcsp, nullptr, resulttp, resultexp, *resulttp, *resultexp, e->tp, e->exp, false, 0))
             {
                 (*resultexp)->v.logicaldestructors.left = logicaldestructorsleft;
                 (*resultexp)->v.logicaldestructors.right = logicaldestructorsright;
@@ -251,10 +252,10 @@ static void left_fold(LexList* lex, SYMBOL* funcsp, Type** resulttp, EXPRESSION*
         }
     }
 }
-static void right_fold(LexList* lex, SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexList* start, Type* seedtp,
+static void right_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
                        EXPRESSION* seedexp, Type* foldtp, EXPRESSION* foldexp)
 {
-    auto it = dispatcher.find(lex->data->kw->key);
+    auto it = dispatcher.find(currentLex->kw->key);
     if (it == dispatcher.end())
     {
         *resulttp = foldtp;
@@ -311,7 +312,7 @@ static void right_fold(LexList* lex, SYMBOL* funcsp, Type** resulttp, EXPRESSION
                                 errorConversionOrCast(true, e->tp, &stdint);
                 }
             }
-            if (!it->second(lex, funcsp, nullptr, resulttp, resultexp, e->tp, e->exp, *resulttp, *resultexp, false, 0))
+            if (!it->second(funcsp, nullptr, resulttp, resultexp, e->tp, e->exp, *resulttp, *resultexp, false, 0))
             {
                 (*resultexp)->v.logicaldestructors.left = logicaldestructorsleft;
                 (*resultexp)->v.logicaldestructors.right = logicaldestructorsright;
@@ -320,7 +321,7 @@ static void right_fold(LexList* lex, SYMBOL* funcsp, Type** resulttp, EXPRESSION
     }
 }
 
-void eval_unary_left_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList* start,
+void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                           Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -331,10 +332,10 @@ void eval_unary_left_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** result
     }
     else
     {
-        left_fold(lex, funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
+        left_fold(funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_unary_right_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList* start,
+void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                            Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -345,11 +346,11 @@ void eval_unary_right_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
     }
     else
     {
-        right_fold(lex, funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
+        right_fold(funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_binary_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexList* leftstart,
-                      Type* lefttp, EXPRESSION* leftexp, LexList* rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
+void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& leftstart,
+                      Type* lefttp, EXPRESSION* leftexp, LexemeStreamPosition& rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
                       int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -363,7 +364,7 @@ void eval_binary_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
         }
         else
         {
-            left_fold(lex, funcsp, resulttp, resultexp, leftstart, lefttp, leftexp, righttp, rightexp);
+            left_fold(funcsp, resulttp, resultexp, leftstart, lefttp, leftexp, righttp, rightexp);
         }
     }
     else
@@ -376,12 +377,12 @@ void eval_binary_fold(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
         }
         else
         {
-            right_fold(lex, funcsp, resulttp, resultexp, rightstart, righttp, rightexp, lefttp, leftexp);
+            right_fold(funcsp, resulttp, resultexp, rightstart, righttp, rightexp, lefttp, leftexp);
         }
     }
 }
 
-void eval_unary_plus(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+void eval_unary_plus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                      EXPRESSION* leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
@@ -397,7 +398,7 @@ void eval_unary_plus(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, E
         else
         {
             LookupSingleAggregate(*resulttp, resultexp);
-            castToArithmetic(false, resulttp, resultexp, KW(lex), nullptr, true);
+            castToArithmetic(false, resulttp, resultexp, KW(), nullptr, true);
         }
     }
     if ((*resulttp)->IsStructured())
@@ -421,7 +422,7 @@ void eval_unary_plus(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, E
         *resulttp = &stdint;
     }
 }
-void eval_unary_minus(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+void eval_unary_minus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                       EXPRESSION* leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
@@ -437,7 +438,7 @@ void eval_unary_minus(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
         }
         else
         {
-            castToArithmetic(false, resulttp, resultexp, KW(lex), nullptr, true);
+            castToArithmetic(false, resulttp, resultexp, KW(), nullptr, true);
         }
     }
     if ((*resulttp)->IsStructured())
@@ -467,7 +468,7 @@ void eval_unary_minus(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, 
         *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
     }
 }
-void eval_unary_not(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+void eval_unary_not( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                     EXPRESSION* leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
@@ -483,7 +484,7 @@ void eval_unary_not(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
         }
         else
         {
-            castToArithmetic(false, resulttp, resultexp, KW(lex), nullptr, false);
+            castToArithmetic(false, resulttp, resultexp, KW(), nullptr, false);
         }
     }
     if ((*resulttp)->IsStructured())
@@ -507,7 +508,7 @@ void eval_unary_not(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
     else
         *resulttp = &stdint;
 }
-void eval_unary_complement(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+void eval_unary_complement( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                            EXPRESSION* leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
@@ -516,13 +517,13 @@ void eval_unary_complement(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
     if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
-            FindOperatorFunction(ovcl_unary_int, KW(lex), funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
+            FindOperatorFunction(ovcl_unary_int, KW(), funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
         {
             return;
         }
         else
         {
-            castToArithmetic(true, resulttp, resultexp, KW(lex), nullptr, true);
+            castToArithmetic(true, resulttp, resultexp, KW(), nullptr, true);
         }
     }
     if ((*resulttp)->IsStructured())
@@ -558,7 +559,7 @@ void eval_unary_complement(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
             cast((*resulttp)->BaseType(), resultexp);
     }
 }
-void eval_unary_autoincdec(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+void eval_unary_autoincdec( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                            EXPRESSION* leftexp, bool ismutable, int flags)
 {
     *resulttp = lefttp;
@@ -566,13 +567,13 @@ void eval_unary_autoincdec(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
     if ((*resulttp)->IsStructuredMath())
     {
         if ((Optimizer::cparams.prm_cplusplus || Optimizer::architecture == ARCHITECTURE_MSIL) &&
-            FindOperatorFunction(ovcl_unary_prefix, KW(lex), funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
+            FindOperatorFunction(ovcl_unary_prefix, KW(), funcsp, resulttp, resultexp, nullptr, nullptr, nullptr, flags))
         {
             return;
         }
         else
         {
-            castToArithmetic(false, resulttp, resultexp, KW(lex), nullptr, true);
+            castToArithmetic(false, resulttp, resultexp, KW(), nullptr, true);
         }
     }
     if ((*resulttp)->IsStructured())
@@ -596,7 +597,7 @@ void eval_unary_autoincdec(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
     }
     else
     {
-        Keyword kw = KW(lex);
+        Keyword kw = KW();
         EXPRESSION* exp3 = nullptr;
         if ((*resultexp)->left->type == ExpressionNode::callsite_ || (*resultexp)->left->type == ExpressionNode::thisref_)
         {
@@ -651,10 +652,10 @@ void eval_unary_autoincdec(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resul
             *resultexp = MakeExpression(ExpressionNode::comma_, exp3, *resultexp);
     }
 }
-bool eval_binary_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_pm( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                     EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     if ((*resulttp)->IsStructuredMath(righttp) && Optimizer::cparams.prm_cplusplus && kw == Keyword::pointstar_ &&
@@ -672,15 +673,15 @@ bool eval_binary_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
             *resulttp = (*resulttp)->btp;
             if (!(*resulttp)->IsStructured())
             {
-                errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, lex->data->kw->name);
+                errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, currentLex->kw->name);
             }
         }
         else
-            errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, lex->data->kw->name);
+            errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, currentLex->kw->name);
     }
     else if (!(*resulttp)->IsStructured())
     {
-        errorstr(ERR_STRUCTURED_TYPE_EXPECTED, lex->data->kw->name);
+        errorstr(ERR_STRUCTURED_TYPE_EXPECTED, currentLex->kw->name);
     }
     if (righttp->IsFunction() && (*resulttp)->IsStructured())
     {
@@ -689,7 +690,7 @@ bool eval_binary_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
     if (righttp->BaseType()->type != BasicType::memberptr_)
     {
         error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-        if (definingTemplate && !instantiatingTemplate && righttp->BaseType()->type == BasicType::templateparam_)
+        if (IsDefiningTemplate() && righttp->BaseType()->type == BasicType::templateparam_)
         {
             *resultexp = MakeExpression(kw == Keyword::pointstar_ ? ExpressionNode::pointstar_ : ExpressionNode::dotstar_,
                 *resultexp, rightexp);
@@ -777,10 +778,10 @@ bool eval_binary_pm(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EX
     return false;
 }
 
-bool eval_binary_times(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_times( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                        EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
@@ -906,10 +907,10 @@ bool eval_binary_times(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp,
     }
     return false;
 }
-bool eval_binary_add(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_add( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                      EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
@@ -1114,10 +1115,10 @@ bool eval_binary_add(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, E
     }
     return false;
 }
-bool eval_binary_shift(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_shift( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                        EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
@@ -1178,13 +1179,13 @@ bool eval_binary_shift(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp,
     }
     return false;
 }
-bool eval_binary_inequality(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_inequality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                             EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
-    auto opname = lex->data->kw->name;
+    auto opname = currentLex->kw->name;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
     ResolveTemplateVariable(&righttp, &rightexp, *resulttp, atp);
     if ((*resulttp)->IsStructuredMath(righttp))
@@ -1273,7 +1274,7 @@ bool eval_binary_inequality(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resu
         else if ((*resulttp)->IsComplex())
             error(ERR_ILL_USE_OF_COMPLEX);
     }
-    else if ((*resulttp)->IsInt() && righttp->IsInt() && (!definingTemplate || instantiatingTemplate))
+    else if ((*resulttp)->IsInt() && righttp->IsInt() && (!IsDefiningTemplate()))
     {
         if (((*resulttp)->IsUnsigned() && !righttp->IsUnsigned()) || (righttp->IsUnsigned() && !(*resulttp)->IsUnsigned()))
             errorstr(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);
@@ -1302,10 +1303,10 @@ bool eval_binary_inequality(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resu
         *resulttp = &stdint;
     return false;
 }
-bool eval_binary_equality(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_equality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                           EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     ResolveTemplateVariable(resulttp, resultexp, righttp, atp);
@@ -1472,10 +1473,10 @@ bool eval_binary_equality(LexList* lex, SYMBOL* funcsp, Type* atp, Type** result
         *resulttp = &stdint;
     return false;
 }
-bool eval_binary_logical(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_logical( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                          EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     auto type = ExpressionNode::or_;
     switch (kw)
     {
@@ -1561,10 +1562,10 @@ bool eval_binary_logical(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resultt
     *resultexp = MakeExpression(type, *resultexp, rightexp);
     return false;
 }
-bool eval_binary_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_assign( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                         EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     auto selovcl = ovcl_assign_any;
@@ -1600,7 +1601,7 @@ bool eval_binary_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp
             // unallocated var for destructor
             int offset;
             auto exp2 = relptr(rightexp, offset);
-            if (!inAssignRHS)
+            if (!assigningRHS)
             {
                 GetAssignDestructors(&(*resultexp)->v.func->destructors, *resultexp);
             }
@@ -1695,7 +1696,7 @@ bool eval_binary_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp
         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
     else if ((*resulttp)->IsVoid() || righttp->IsVoid() || (*resulttp)->type == BasicType::aggregate_)
         error(ERR_NOT_AN_ALLOWED_TYPE);
-    else if ((!definingTemplate || instantiatingTemplate) && !(*resulttp)->IsStructured() && !(*resulttp)->IsFunctionPtr() &&
+    else if ((!IsDefiningTemplate()) && !(*resulttp)->IsStructured() && !(*resulttp)->IsFunctionPtr() &&
              /*((*resulttp)->btp && !(*resulttp)->btp->IsPtr()) &&*/ (!(*resulttp)->IsArray() || !(*resulttp)->BaseType()->msil) &&
              (*resulttp)->BaseType()->type != BasicType::memberptr_ && (*resulttp)->BaseType()->type != BasicType::templateparam_ &&
              (*resulttp)->BaseType()->type != BasicType::templateselector_ && !IsLValue(*resultexp) &&
@@ -2262,10 +2263,10 @@ bool eval_binary_assign(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp
         thunkForImportTable(resultexp);
     return false;
 }
-bool eval_binary_comma(LexList* lex, SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
+bool eval_binary_comma( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
                        EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
-    auto kw = KW(lex);
+    auto kw = KW();
     *resulttp = lefttp;
     *resultexp = leftexp;
     if ((Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL)) &&

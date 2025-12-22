@@ -31,7 +31,11 @@ namespace DotNetPELib {
  */
 typedef struct SHA1Context
 {
-    unsigned Message_Digest[5]; /* Message Digest (output)          */
+    union
+    {
+        unsigned Message_Digest[5]; /* Message Digest (output)          */
+        unsigned char Message_Digest_Bytes[20];
+    };
 
     unsigned Length_Low;        /* Message length in bits           */
     unsigned Length_High;       /* Message length in bits           */
@@ -52,5 +56,6 @@ void SHA1Input( SHA1Context *,
                 const unsigned char *,
                 unsigned);
 
+#define SHA1_DIGEST_SIZE 20
 } // NameSpace
 #endif

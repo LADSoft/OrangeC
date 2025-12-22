@@ -9,7 +9,6 @@
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
     <ClCompile Include="..\occil\msilInit.cpp" />
-    <ClCompile Include="..\occil\using.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />
     <ClCompile Include="..\occopt\configx86.cpp" />
@@ -94,6 +93,14 @@
     <ClCompile Include="..\occparse\exprpacked.cpp" />
     <ClCompile Include="..\ocpp\TokenSettings.cpp" />
     <ClCompile Include="..\ocpp\ppEmbed.cpp" />
+    <ClCompile Include="..\occparse\templatehash.cpp" />
+    <ClCompile Include="..\occparse\staticassert.cpp" />
+    <ClCompile Include="..\occparse\casts.cpp" />
+    <ClCompile Include="..\occparse\attribs.cpp" />
+    <ClCompile Include="..\occparse\vtab.cpp" />
+    <ClCompile Include="..\occil\msilusing.cpp" />
+    <ClCompile Include="..\occparse\using.cpp" />
+    <ClCompile Include="..\occparse\LexToken.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="db.h" />
@@ -103,5 +110,7 @@
     <ClInclude Include="..\occparse\overload.h" />
     <ClInclude Include="..\occparse\namespace.h" />
     <ClInclude Include="..\occparse\exprpacked.h" />
+    <ClInclude Include="..\occparse\templatehash.h" />
+    <ClInclude Include="..\occparse\SymbolProperties.h" />
   </ItemGroup>
 </Project>

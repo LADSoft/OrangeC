@@ -5714,7 +5714,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     char holder[1000];
                     char holder1[1000];
                     Type* typ = Type::MakeType(tpb, nullptr);
-                    sym1->tp->ToString(holder + 1000 - 1, holder);
+                    sym2->tp->ToString(holder + 1000 - 1, holder);
                     typ->ToString(holder1 + 1000 - 1, holder1);
                     printerr(ERR_CANDIDATE_INCORRECT_TYPE, sym1->sb->declfile, sym1->sb->declline, holder, holder1);
                 }
@@ -5724,8 +5724,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 std::string holder;
                 holder.resize(10000);
                 sym1->tp->ToString(holder.data() + holder.capacity() - 1, holder.data());
-                fprintf(stderr, "\tCandidate %s was checked, but had more than one potential parameter\n", holder.c_str());
-                fflush(stderr);
+                printerr(ERR_NOTE_GENERIC, sym1->sb->declfile, sym1->sb->declline, "Candidate was checked, but had more than one potential parameter");
             }
         }
         // not found, look for parameter of type const char *
@@ -5744,7 +5743,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                     {
                         char holder[1000];
                         tpx->ToString(holder + sizeof(holder), holder);
-                        fprintf(stderr, "\tA candidate was found, but the parameter was to something that was not a const char* %s(%d), parameter type: %s\n", sym2->sb->declfile, sym2->sb->declline, holder);
+                        printerr(ERR_CANDIDATE_INCORRECT_TYPE, sym2->sb->declfile, sym2->sb->declline, "const char*", holder);
                     }
                 }
             }
@@ -5752,7 +5751,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     }
     else
     {
-        fprintf(stderr, "\tNo candidates were found\n");
+        printerr(ERR_NOTE_GENERIC, currentLex->sourceFileName, currentLex->sourceLineNumber, "No candidates were found");
     }
     return false;
 }

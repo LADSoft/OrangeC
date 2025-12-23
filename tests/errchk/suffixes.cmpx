@@ -1,0 +1,7 @@
+Error(316)    suffixes.cpp(6):  Could not find a match for literal suffix '_s'
+note:         suffixes.cpp(2):  Candidate was checked, but had more than one potential parameter
+Error(316)    suffixes.cpp(7):  Could not find a match for literal suffix '_s2'
+note:         suffixes.cpp(7):  No candidates were found
+Error(316)    suffixes.cpp(8):  Could not find a match for literal suffix '_s3'
+note:         suffixes.cpp(3):  Candidate tried, but has the wrong type, wanted unsigned long long, but has long double
+3 Errors

@@ -630,6 +630,7 @@ ERRLIST(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, 556, "Cannot mod
         CE_ERROR)
 ERRLIST(ERR_REFERENCED_IN_CALL_FROM, 557, "Referenced in call from '%s'", CE_NOTE)
 ERRLIST(ERR_CANDIDATE_INCORRECT_TYPE, 558, "Candidate tried, but has the wrong type, wanted %s, but has %s", CE_NOTE)
+ERRLIST(ERR_NOTE_GENERIC, 559, "%s", CE_NOTE)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP

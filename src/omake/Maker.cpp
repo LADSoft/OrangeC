@@ -32,6 +32,7 @@
 #include "Parser.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include "BasicLogging.h"
 #include <fstream>
 #include <list>
 #include <cstdlib>
@@ -63,6 +64,10 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
         std::string shtest = v->GetValue();
         std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
         OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos || shtest.find("BASH.EXE") != std::string::npos);
+    }
+    else
+    {
+        OS::SetSHEXE(false);
     }
 }
 Maker::~Maker() {}
@@ -640,6 +645,16 @@ void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env
 {
     std::list<std::shared_ptr<RuleList>> list;
     promise.set_value(runner.RunOne(&list, depend, env, keepGoing));
+    std::string goal_value = "";
+    if (depend)
+    {
+        goal_value = depend->GetGoal();
+    }
+    else
+    {
+        goal_value = "Depend was null'd out";
+    }
+    OrangeC::Utils::BasicLogger::debug("Cleaning a runner: " + goal_value);
 }
 int Maker::RunCommands(bool keepGoing)
 {
@@ -664,6 +679,7 @@ int Maker::RunCommands(bool keepGoing)
     {
         std::promise<int> promise;
         workingList.push_back(promise.get_future());
+        OrangeC::Utils::BasicLogger::debug("Creating a runner: " + i->GetGoal());
         auto thrd = std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise));
         workingThreads.push_back(std::move(thrd));
         if (MakeMain::jobs.GetValue() == 1)

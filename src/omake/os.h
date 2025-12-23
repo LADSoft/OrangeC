@@ -74,7 +74,9 @@ class OS
     static void JobRundown();
     static bool TakeJob();
     static void GiveJob();
-    static void WriteToConsole(std::string string);
+    static int GetCurrentJobs();
+    static void WriteToConsole(const std::string& string);
+    static void WriteErrorToConsole(const std::string& string);
     static void ToConsole(std::deque<std::string>& strings);
     static void AddConsole(std::deque<std::string>& strings, std::string string);
     static int Spawn(const std::string command, EnvironmentStrings& environment, std::string* output);
@@ -83,15 +85,17 @@ class OS
     static Time GetFileTime(const std::string fileName);
     static void SetFileTime(const std::string fileName, Time time);
     static std::string GetWorkingDir();
-    static bool SetWorkingDir(const std::string name);
-    static void RemoveFile(const std::string name);
+    static bool SetWorkingDir(const std::string& name);
+    static void RemoveFile(const std::string& name);
     static std::string NormalizeFileName(const std::string name);
     static void CreateThread(void* func, void* data);
     static void InitJobServer();
     static std::string GetFullPath(const std::string& filename);
     static int GetProcessId();
     static std::recursive_mutex& GetConsoleMutex() { return consoleMutex; }
-
+    static std::string LookupShellNames();
+    static bool IsUnixLikeShell(const std::string&);
+    static std::string AbsPath(const std::string&);
   private:
     static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;

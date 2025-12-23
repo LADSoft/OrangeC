@@ -42,6 +42,8 @@
 #include <cstdio>
 #include <algorithm>
 #include <sstream>
+#include <filesystem>
+#include "BasicLogging.h"
 
 CmdSwitchParser MakeMain::SwitchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(SwitchParser, 'f', ' ', {"file"});
@@ -71,9 +73,10 @@ CmdSwitchBool MakeMain::keepResponseFiles(SwitchParser, 'K');
 CmdSwitchInt MakeMain::jobs(SwitchParser, 'j', INT_MAX, 1, INT_MAX);
 CmdSwitchString MakeMain::jobServer(SwitchParser, 0, 0, {"jobserver-auth"});
 CmdSwitchCombineString MakeMain::jobOutputMode(SwitchParser, 'O');
+CmdSwitchString MakeMain::verbose2(SwitchParser, 'y', 'y', {"verbose"});
 
 const char* MakeMain::helpText =
-R"help([options] goals\n"
+    R"help([options] goals\n"
 
 This program is a make utility simiar to gnu make.
 It runs scripts which define how to create some type of output
@@ -94,21 +97,32 @@ usually an executable program image or data for it.
 /t    Touch                   /u    Debug warnings
 /w    Print make status       --eval=STRING evaluate a statement
 /!    No logo                 /? or --help  this help
+/v    Verbose
 --jobserver-auth=xxxx               Name a jobserver to use for getting jobs
 --version                           Show version info
 --no-builtin-rules                  Ignore builtin rules
 --no-builtin-vars                   Ignore builtin variables
-
+--verbose                           Verbose
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 
 const char* MakeMain::usageText = "[options] goals\n";
-
+#ifdef _WIN32
+// Default variables for OrangeC on windows
 const char* MakeMain::builtinVars =
     "CC=${ORANGEC}/bin/occ\n"
     "CXX=${ORANGEC}/bin/occ\n"
     "AS=${ORANGEC}/bin/oasm\n";
+#else
+// Default variables on UNIX, these are system wide default symlinks, use em.
+const char* MakeMain::builtinVars =
+    "CC=cc\n"
+    "CXX=c++\n"
+    "AS=as\n"
+    "YACC=yacc\n"
+    "LEX=lex\n";
 
+#endif
 const char* MakeMain::builtinRules =
     "%.o: %.c .__BUILTIN\n"
     "\t${CC} ${CPPFLAGS} ${CFLAGS} -o $@ -c $<\n"
@@ -125,8 +139,7 @@ const char* MakeMain::builtinRules =
 
 int MakeMain::makeLevel;
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     MakeMain Main;
     return Main.Run(argc, argv);
@@ -249,9 +262,25 @@ void MakeMain::SetMakeFlags()
     {
         vals += "u";
     }
-    // not setting -T so we don't make it recursive
+
+    // if (verbose.GetValue())
+    //{
+    //     vals += "v";
+    // }
+    //  not setting -T so we don't make it recursive
     if (vals == "-")
         vals = "";
+    if (verbose2.GetExists())
+    {
+        vals += std::string(" -y");
+        auto value = verbose2.GetValue();
+        for (int i = 0; i < value.length(); i++)
+        {
+            vals += "y";
+        }
+        OrangeC::Utils::BasicLogger::extremedebug("Verbosity intended: ",
+                                                  std::to_string(verbose2.GetExists() + verbose2.GetValue().length()));
+    }
     if (jobs.GetExists())
     {
         int n = jobs.GetValue();
@@ -312,11 +341,18 @@ bool MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef TARGET_OS_WINDOWS
-    char** env = environ;
-#else
-    char** env = 0;
+// https://www.man7.org/linux/man-pages/man7/environ.7.html
+/*
+ *Historically and by standard, environ must be declared in the
+ *user program.  However, as a (nonstandard) programmer
+ *convenience, environ is declared in the header file <unistd.h> if
+ *the _GNU_SOURCE feature test macro is defined (see
+ *feature_test_macros(7)).
+ */
+#ifndef TARGET_OS_WINDOWS
+    extern char** environ;
 #endif
+    char** env = environ;
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;
@@ -496,6 +532,18 @@ int MakeMain::Run(int argc, char** argv)
     }
     auto files =
         ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText, [this]() { return !help.GetValue(); });
+    LoadEnvironment();
+    OrangeC::Utils::BasicLogger::SetVerbosity((int)verbose2.GetExists() + verbose2.GetValue().length());
+    auto* var = VariableContainer::Instance()->Lookup("MAKE_LEVEL");
+    if (!var)
+    {
+        OrangeC::Utils::BasicLogger::SetPrologue(std::string("[OMAKE(") + std::to_string(OS::GetProcessId()) + ",0)]");
+    }
+    else
+    {
+        OrangeC::Utils::BasicLogger::SetPrologue(std::string("[OMAKE(") + std::to_string(OS::GetProcessId()) + "," +
+                                                 var->GetValue() + ")]");
+    }
     LoadEquates(files);
     char* cpath = getenv("CPATH");
     if (cpath)
@@ -513,18 +561,18 @@ int MakeMain::Run(int argc, char** argv)
             return 2;
         }
     }
-
     if (cancelKeep.GetValue())
     {
         cancelKeep.SetValue(false);
         keepGoing.SetValue(false);
     }
-
     if (!LoadJobArgs())
         ToolChain::Usage(helpText);
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());
+    std::string make_command_path = files[0];
+    std::string proper_make = OS::AbsPath(make_command_path);
     while (!done && !Eval::GetErrCount())
     {
         VariableContainer::Instance()->Clear();
@@ -535,21 +583,15 @@ int MakeMain::Run(int argc, char** argv)
         LoadCmdDefines();
         RunEquates();
         OS::InitJobServer();
-        SetVariable("MAKE", files[0].c_str(), Variable::o_environ, false);
+        SetVariable("MAKE", proper_make.c_str(), Variable::o_environ, false);
         Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-        if (!v)
+        if (!OS::IsUnixLikeShell(OS::LookupShellNames()))
         {
-            v = VariableContainer::Instance()->Lookup("MSYSCON");  // detect MSYS version of comspec
-            if (!v)
-                v = VariableContainer::Instance()->Lookup("COMSPEC");
-            if (!v)
-                v = VariableContainer::Instance()->Lookup("ComSpec");
-            if (v)
-            {
-                std::string val = v->GetValue();
-                SetVariable("SHELL", val, Variable::o_environ, false);
-                SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
-            }
+            SetVariable(".SHELLFLAGS", "/c", Variable::o_environ, false);
+        }
+        else
+        {
+            SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
         }
 
         std::string wd = OS::GetWorkingDir();
@@ -607,7 +649,7 @@ int MakeMain::Run(int argc, char** argv)
             if (treeBuild.GetValue())
                 files = "treetop.mak";
             else
-                files = "makefile";
+                files = "Makefile";
         }
         if (treeBuild.GetValue())
             SetTreePath(files);

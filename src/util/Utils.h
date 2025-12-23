@@ -58,6 +58,7 @@ class Utils
     {
         fprintf(stderr, "Fatal error: ");
         fputs(format, stderr);
+        fflush(stderr);
         if (cleanup)
             cleanup();
         exit(1);
@@ -68,6 +69,7 @@ class Utils
         fprintf(stderr, "Fatal error: ");
         fprintf(stderr, format, arg...);
         fputc('\n', stderr);
+        fflush(stderr);
         if (cleanup)
             cleanup();
         exit(1);

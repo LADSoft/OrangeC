@@ -1,5 +1,6 @@
 #include "../../JobServer.h"
 #include "../../semaphores.h"
+#include "BasicLogging.h"
 #include <stdexcept>
 
 namespace OMAKE
@@ -36,21 +37,33 @@ bool WINDOWSJobServer::TryTakeNewJob()
     }
     // Increment beforehand so that we don't accidentally wait too much with this...
     current_jobs++;
-    bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
-    if (ret == false)
+    if (current_jobs != 1)
     {
-        current_jobs--;
+        bool ret = semaphore.TryWait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
+        if (ret == false)
+        {
+            current_jobs--;
+        }
+        return ret;
     }
-    return ret;
+    return true;
 }
 bool WINDOWSJobServer::TakeNewJob()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Taking new job, current number of jobs: ", current_jobs.load());
     if (server_name.length() == 0)
     {
         throw std::runtime_error("Job server used without initializing the underlying parameters");
     }
+    // Logic behind this choice, TryWait attempts to wait for a period once, if unobtained then check if current_jobs >= 1, if
+    // current_jobs == 0 we have a free slot again, thus, use it.
+    bool taken = false;
+    while (!taken && current_jobs >= 1)
+    {
+        using namespace std::chrono_literals;
+        taken = semaphore.WaitFor(1s);
+    }
     current_jobs++;
-    semaphore.Wait();  // Wait until you have a job to claim it, only do this if we need to actually have a job
     return true;
 }
 bool WINDOWSJobServer::ReleaseJob()
@@ -63,11 +76,13 @@ bool WINDOWSJobServer::ReleaseJob()
     {
         throw std::runtime_error("Job server has returned more jobs than it has consumed");
     }
-    else
+    else if (current_jobs > 1)
     {
         semaphore.Post();
     }
     current_jobs--;  // Wait until after the job is done to release it
+    OrangeC::Utils::BasicLogger::extremedebug("Released job, current number of jobs: ", current_jobs.load());
+
     return true;
 }
 std::string WINDOWSJobServer::PassThroughCommandString() { return server_name; }
@@ -80,4 +95,5 @@ std::string POSIXJobServer::PassThroughCommandString()
 {
     throw std::runtime_error("POSIX jobservers are not supported on windows");
 }
+POSIXJobServer::~POSIXJobServer() = default;
 }  // namespace OMAKE

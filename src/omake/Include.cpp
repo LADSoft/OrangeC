@@ -99,7 +99,7 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
             }
             while (!includeDirs.empty())
             {
-                current = Eval::ExtractFirst(includeDirs, ";") + "\\" + name;
+                current = Eval::ExtractFirst(includeDirs, CmdFiles::DIR_SEP) + CmdFiles::DIR_SEP + name;
                 if (access(current.c_str(), 0) != -1)
                     break;
             }

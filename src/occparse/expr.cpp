@@ -847,7 +847,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                             funcparams->sp->sb->attribs.inheritable.used = true;
                             funcparams->fcall = MakeExpression(ExpressionNode::pc_, funcparams->sp);
                             if (!MATCHKW(Keyword::openpa_))
-                                if (funcparams->sp->sb->attribs.inheritable.isInline)
+                                if (funcparams->sp->sb->attribs.inheritable.isInline && (Optimizer::architecture != ARCHITECTURE_MSIL))
                                 {
                                     funcparams->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                     InsertInline(funcparams->sp);

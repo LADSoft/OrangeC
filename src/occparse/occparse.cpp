@@ -85,7 +85,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include "sha1.h"
-#include "templateHash.h"
+#include "templatehash.h"
 #if 0
 //#define x64_compiler
 #ifndef __SANITIZE_ADDRESS__

@@ -48,6 +48,7 @@
 #include "types.h"
 #include "namespace.h"
 #include "symtab.h"
+#include "stmt.h"
 
 namespace Parser
 {
@@ -223,9 +224,10 @@ namespace Parser
                                         func = sp;
                                 }
                                 InitializeFunctionArguments(func);
-                                InsertInline(func);
                                 if (func->sb->defaulted && !func->sb->inlineFunc.stmt && func->sb->isDestructor)
                                     createDestructor(func->sb->parentClass);
+                                StatementGenerator sg(func);
+                                sg.CompileFunctionFromStream();
                                 if (func->sb->ispure)
                                 {
                                     Optimizer::genaddress(0);
@@ -284,7 +286,6 @@ namespace Parser
     {
         if (IsCompiler())
         {
-            EnterInlineFunctionContext();
             THUNK thunks[1000];
             SYMBOL* xtSym = RTTIDumpType(sym->tp->BaseType());
             int count = 0;
@@ -310,7 +311,6 @@ namespace Parser
                     Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
                 }
             }
-            LeaveInlineFunctionContext();
         }
     }
     static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)

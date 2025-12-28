@@ -49,6 +49,12 @@ void diag(const char* fmt, ...);
 namespace Parser
 {
 
+struct SymbolLocation
+{
+    SYMBOL* sym;
+    const char* declfile;
+    int declline;
+};
 class RequiresDialect
 {
   public:
@@ -109,7 +115,7 @@ extern Keyword skim_closebr[];
 extern Keyword skim_comma[];
 extern Keyword skim_colon[];
 extern Keyword skim_templateend[];
-extern std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
+extern std::deque<SymbolLocation> instantiationList;
 
 void DisableWarning(int num);
 void EnableWarning(int num);
@@ -167,7 +173,7 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings);
 void checkauto(Type* tp1, int err);
 void checkscope(Type* tp1, Type* tp2);
 void CheckThroughConstObject(Type* tp, EXPRESSION* exp);
-void EnterInstantiation(SYMBOL* sp, bool symDirect);
+void EnterInstantiation(SymbolLocation location);
 void LeaveInstantiation();
 
 template <size_t n>

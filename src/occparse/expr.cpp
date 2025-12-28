@@ -850,7 +850,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                                 if (funcparams->sp->sb->attribs.inheritable.isInline && (Optimizer::architecture != ARCHITECTURE_MSIL))
                                 {
                                     funcparams->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                    InsertInline(funcparams->sp);
+                                    funcparams->sp->sb->generateInline = true;
                                 }
                         }
                         funcparams->functp = funcparams->sp->tp;
@@ -1862,7 +1862,8 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
                     }
                     if (sp->tp->BaseType()->btp->IsAutoType() && bodyTokenStreams.get(sp) && !sp->sb->inlineFunc.stmt)
                     {
-                        CompileInlineFunction(sp);
+                        StatementGenerator sg(sp);
+                        sg.CompileFunctionFromStream();
                     }
                 }
                 for (auto sym : *sp->tp->BaseType()->syms)
@@ -4572,6 +4573,11 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
                 tp1 = tp1->btp;
             if (sym)
             {
+                if (!(flags & (_F_SIZEOF | _F_INDECLTYPE | _F_NOEVAL)))
+                {
+                    StatementGenerator sg(sym);
+                    sg.CompileFunctionFromStream();
+                }
                 sym->sb->attribs.inheritable.used = true;
                 if (sym->sb->decoratedName[0] == '@' && currentLex)
                     browse_usage(sym, currentLex->linedata->fileindex);

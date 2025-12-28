@@ -801,6 +801,8 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
         *exp = MakeExpression(funcparams);
         *tp = s3->tp;
         CheckCalledException(s3, *exp);
+        StatementGenerator sg(s3);
+        sg.CompileFunctionFromStream();
         return true;
     }
     funcparams->thistp = nullptr;
@@ -1079,6 +1081,8 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
                 createAssignment(s3->sb->parentClass, s3);
             CheckCalledException(s3, funcparams->thisptr);
             StatementGenerator::DestructorsForArguments(funcparams->arguments);
+            StatementGenerator sg(s3);
+            sg.CompileFunctionFromStream();
             return true;
         }
     }

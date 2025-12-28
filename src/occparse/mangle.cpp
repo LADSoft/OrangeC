@@ -163,6 +163,13 @@ static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
     {
         Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
     }
+    if (sym->tp->IsStructured())
+    {
+        if (!sym->uniqueId)
+           sym->uniqueId = uniqueId++;
+        in += strlen(in);
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%d", sym->uniqueId);
+    }
     in += strlen(in);
     return in;
 }

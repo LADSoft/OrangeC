@@ -2891,7 +2891,8 @@ void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest,
         if (defaulted)
             codeLabel = oldCodeLabel;
     }
-    InsertInline(sp);
+    StatementGenerator sg(dest);
+    sg.CompileFunctionFromStream();
 }
 void createDestructor(SYMBOL* sp)
 {
@@ -3050,6 +3051,8 @@ bool CallDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         }
         if (dest1 && dest1->sb->defaulted && !dest1->sb->inlineFunc.stmt)
             createDestructor(sp);
+        StatementGenerator sg(dest1);
+        sg.CompileFunctionFromStream();
         params->functp = dest1->tp;
         params->sp = dest1;
         params->ascall = true;
@@ -3068,6 +3071,7 @@ bool CallDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
                     params->arguments = argumentListFactory.CreateList();
                 params->arguments->push_back(x);
                 params->sp->sb->noinline = true;
+                params->sp->sb->generateInline = true;
             }
             *exp = MakeExpression(params);
         }
@@ -3280,6 +3284,11 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                 // properly
                 createConstructor(cons1->sb->parentClass, cons1);
             }
+            if (!inNoExceptHandler)
+            {
+                StatementGenerator sg(cons1);
+                sg.CompileFunctionFromStream();
+            }
             noExcept &= cons1->sb->noExcept;
             if (arrayElms)
             {
@@ -3320,6 +3329,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                         params->arguments = argumentListFactory.CreateList();
                     params->arguments->push_back(x);
                     params->sp->sb->noinline = true;
+                    params->sp->sb->generateInline = true;
                 }
                 e1 = MakeExpression(params);
             }

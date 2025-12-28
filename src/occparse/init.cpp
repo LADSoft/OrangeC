@@ -437,9 +437,7 @@ static void callDynamic(const char* name, int startupType, int index, std::list<
             SetLinkerNames(funcsp, Linkage::none_);
             startlab = Optimizer::nextLabel++;
             retlab = Optimizer::nextLabel++;
-            EnterInlineFunctionContext();
             genfunc(funcsp, !(Optimizer::architecture == ARCHITECTURE_MSIL));
-            LeaveInlineFunctionContext();
             startlab = retlab = 0;
 
             if (!(Optimizer::chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
@@ -556,9 +554,7 @@ static void dumpTLSInitializers(void)
             funcsp->sb->inlineFunc.stmt->front()->lower = &st;
             startlab = Optimizer::nextLabel++;
             retlab = Optimizer::nextLabel++;
-            EnterInlineFunctionContext();
             genfunc(funcsp, true);
-            LeaveInlineFunctionContext();
             startlab = retlab = 0;
             Optimizer::tlsstartupseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
@@ -623,9 +619,7 @@ static void dumpTLSDestructors(void)
             funcsp->sb->inlineFunc.stmt->front()->lower = &st;
             startlab = Optimizer::nextLabel++;
             retlab = Optimizer::nextLabel++;
-            EnterInlineFunctionContext();
             genfunc(funcsp, true);
-            LeaveInlineFunctionContext();
             startlab = retlab = 0;
             Optimizer::tlsrundownseg();
             Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
@@ -709,7 +703,8 @@ int dumpMemberPtr(SYMBOL* sym, Type* membertp, bool make_label)
                 {
                     genned1->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                 }
-                InsertInline(genned1);
+                StatementGenerator sg(genned1);
+                sg.CompileFunctionFromStream();
             }
             else
             {
@@ -1834,7 +1829,8 @@ static void initialize_pointer_type( SYMBOL* funcsp, int offset, StorageClass sc
                 {
                     (*exp2)->v.func->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                 }
-                InsertInline((*exp2)->v.func->sp);
+                StatementGenerator sg((*exp2)->v.func->sp);
+                sg.CompileFunctionFromStream();
             }
             if (tp->type == BasicType::memberptr_)
             {

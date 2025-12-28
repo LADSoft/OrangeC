@@ -2657,7 +2657,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             f->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
         }
-        InsertInline(f->sp);
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
     if (f->rttiType)
@@ -2666,7 +2665,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         InsertRttiType(f->rttiType2);
     if (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
     {
-        if (CompileInlineFunction(f->sp) && !f->sp->sb->noinline)
+        StatementGenerator sg(f->sp);
+        if (sg.CompileFunctionFromStream(true, true) && !f->sp->sb->noinline)
         {
             {
                 DeclarationScope scope;
@@ -2685,13 +2685,21 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 gen_arg_destructors(funcsp, f->arguments, f->destructors);
                 return ap;
             }
+            else
+            {
+                f->sp->sb->generateInline = true;
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    f->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                    if (f->sp->sb->declaredAsInline)
+                    {
+                        StatementGenerator sg(f->sp);
+                        sg.BodyGen();
+                    }
+                }
+            }
         }
     }
-    if (Optimizer::cparams.prm_cplusplus && (f->sp->sb->inlineFunc.stmt || bodyTokenStreams.get(f->sp)))
-    {
-        f->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-    }
-    InsertInline(f->sp);
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(f->sp)))
         managed = true;
@@ -3813,13 +3821,13 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 node->type == ExpressionNode::absolute_)
             {
                 Optimizer::EnterExternal(sym);
-                if (sym->inlineSym)
+                if (sym->vtabSym)
                 {
-                    if (Optimizer::cparams.prm_cplusplus && (sym->inlineSym->sb->inlineFunc.stmt || bodyTokenStreams.get(sym->inlineSym)))
+                    if (Optimizer::cparams.prm_cplusplus && (sym->vtabSym->sb->inlineFunc.stmt || bodyTokenStreams.get(sym->vtabSym)))
                     {
-                        sym->inlineSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                        sym->vtabSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     }
-                    InsertInline(sym->inlineSym);
+                    InsertInline(sym->vtabSym);
                 }
                 else if (node->v.sp->tp->IsFunction())
                 {
@@ -3827,7 +3835,8 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                     {
                         node->v.sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     }
-                    InsertInline(node->v.sp);
+                    StatementGenerator sg(node->v.sp);
+                    sg.CompileFunctionFromStream();
                 }
             }
             if (sym->imaddress && (Optimizer::architecture != ARCHITECTURE_MSIL))

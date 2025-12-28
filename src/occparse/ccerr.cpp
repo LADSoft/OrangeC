@@ -71,7 +71,7 @@ Keyword skim_closebr[] = {Keyword::closebr_, Keyword::semicolon_, Keyword::end_,
 Keyword skim_comma[] = {Keyword::comma_, Keyword::closepa_, Keyword::closebr_, Keyword::semicolon_, Keyword::end_, Keyword::none_};
 Keyword skim_colon[] = {Keyword::colon_, Keyword::case_, Keyword::default_, Keyword::semicolon_, Keyword::end_, Keyword::none_};
 Keyword skim_templateend[] = {Keyword::gt_, Keyword::semicolon_, Keyword::end_, Keyword::none_};
-std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
+std::deque<SymbolLocation> instantiationList;
 
 static Optimizer::LIST* listErrors;
 static const char* currentErrorFile;
@@ -130,28 +130,28 @@ void DumpErrorNameToHelpMap()
     printf("Name to help map Keyword::end_.\n");
 }
 
-void EnterInstantiation(SYMBOL* sym, bool symDirect)
+void EnterInstantiation(SymbolLocation location)
 {
-    if (!symDirect)
-    {
-        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(currentLex->sourceFileName, currentLex->sourceLineNumber, sym));
-    }
-    else
-    {
-        instantiationList.push_front(std::tuple<const char*, int, SYMBOL*>(sym->sb->declfile, sym->sb->declline, sym));
-    }
+    instantiationList.push_front(location);
 }
-void LeaveInstantiation() { instantiationList.pop_front(); }
+void LeaveInstantiation() 
+{ 
+    instantiationList.pop_front(); 
+}
 static void DumpInstantiations()
 {
-    for (auto i : instantiationList)
+    bool show = false;
+    for (auto&& i : instantiationList)
     {
-        if (std::get<2>(i)->sb->templateLevel)
-            errorsym(ERR_REFERENCED_IN_INSTANTIATION, std::get<2>(i), std::get<1>(i), std::get<0>(i));
+        if (i.sym->sb->templateLevel)
+            show = true;
     }
-    if (!instantiationList.empty() && preProcessor->GetErrLineNo())
+    if (show)
     {
-        printerr(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo());
+        for (auto&& i : instantiationList)
+        {
+            errorsym(ERR_REFERENCED_IN_INSTANTIATION, i.sym, i.declline, i.declfile);
+        }
     }
 }
 static bool ValidateWarning(int num)

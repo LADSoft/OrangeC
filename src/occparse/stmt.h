@@ -88,7 +88,11 @@ struct StatementGenerator
     bool ParseAsm(std::list<FunctionBlock*>& parent);
     void Compound(std::list<FunctionBlock*>& parent, bool first);
     void FunctionBody();
+    bool CompileFunctionFromStream(bool withC = false, bool now = false);
+    void GenerateDeferredFunctions();
+    void GenerateFunctionIntermediateCode();
     void BodyGen();
+    bool CompileFunctionFromStreamInternal();
 
     static void SetFunctionDefine(std::string name, bool set);
     static int GetLabelValue( std::list<FunctionBlock*>* parent, Statement* st);

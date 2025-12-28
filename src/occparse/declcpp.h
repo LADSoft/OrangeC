@@ -47,7 +47,6 @@ EXPRESSION* addLocalDestructor(EXPRESSION* exp, SYMBOL* decl);
 //
 int classRefCount(SYMBOL* base, SYMBOL* derived);
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
-void DeferredCompileFunction(SYMBOL* cur);
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
 bool MatchesConstFunction(SYMBOL* sym);
 void getDeclType( SYMBOL* funcsp, Type** tn);

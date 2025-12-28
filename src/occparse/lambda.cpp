@@ -408,6 +408,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     func->sb->parentClass = lambdas.front()->cls;
     func->sb->attribs.inheritable.linkage = Linkage::cdecl_;
     func->sb->attribs.inheritable.isInline = true;
+    func->sb->declaredAsInline = true;
     func->sb->storage_class = StorageClass::static_;
     func->sb->access = AccessLevel::private_;
 
@@ -498,6 +499,7 @@ static void createConverter(SYMBOL* self)
     func->sb->parentClass = lambdas.front()->cls;
     func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     func->sb->attribs.inheritable.isInline = true;
+    func->sb->declaredAsInline = true;
     func->sb->storage_class = StorageClass::member_;
     func->sb->castoperator = true;
     func->tp->syms = symbols->CreateSymbolTable();
@@ -813,7 +815,10 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
     SYMLIST* hrl;
     Type* ltp;
     if (funcsp)
+    {
         funcsp->sb->noinline = true;
+        funcsp->sb->generateInline = true;
+    }
     self = Allocate<LAMBDA>();
     ltp = Type::MakeType(BasicType::struct_);
     ltp->syms = symbols->CreateSymbolTable();
@@ -1099,6 +1104,7 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
     lambdas.front()->func->tp->rootType = lambdas.front()->func->tp;
     lambdas.front()->func->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
     lambdas.front()->func->sb->attribs.inheritable.isInline = true;
+    lambdas.front()->func->sb->declaredAsInline = true;
     lambdas.front()->templateFunctions = lambda_get_template_state(lambdas.front()->func);
     {
         DeclarationScope scope(self->cls);

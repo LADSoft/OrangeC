@@ -605,7 +605,7 @@ struct attributes
         unsigned used : 1;                              /* value has been fetched */
         unsigned nonstring : 1;                         /* value is not a zero terminated string */
         unsigned zstring : 1;                           // (argument) was tagged as a zero terminated string
-        unsigned isInline : 1;                          /* function or data is inlined */
+        unsigned isInline;                          /* function or data is inlined */
         unsigned isInlineData : 1;                      /* data is inlined */
         unsigned excludeFromExplicitInstantiation : 1;  // template member should be instantiated implicitly
     } inheritable;
@@ -716,6 +716,7 @@ typedef struct sym
         unsigned stackblock : 1;              // stacked structure in C++ mode
         unsigned islambda : 1;                // lambda closure struct
         unsigned noinline : 1;                // don't inline an inline qualified function
+        unsigned generateInline : 1;     // generate a body for this inline function
         unsigned didinline : 1;               // already genned an inline func for this symbol
         unsigned simpleFunc : 1;              // simple enough to override the max_nesting inline requirement
         unsigned anyTry : 1;                  // function has either external or internal try statement

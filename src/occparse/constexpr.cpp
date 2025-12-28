@@ -1606,7 +1606,8 @@ bool EvaluateConstexprFunction(EXPRESSION*& node)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false);
                         }
-                        CompileInlineFunction(found1);
+                        StatementGenerator sg(found1);
+                        sg.CompileFunctionFromStreamInternal();
                     }
                 }
                 if (found1 && found1->sb->inlineFunc.stmt)

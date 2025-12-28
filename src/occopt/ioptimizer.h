@@ -251,7 +251,7 @@ struct SimpleSymbol
     struct _imode_* imvalue;
     struct _im_list* imind;
     struct _imode_* imstore;
-    struct Parser::sym* inlineSym;
+    struct Parser::sym* vtabSym;
 };
 enum se_type
 {

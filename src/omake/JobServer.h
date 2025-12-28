@@ -7,6 +7,8 @@
 #include <utility>
 #include <memory>
 #include "semaphores.h"
+#include <stack>
+#include <mutex>
 // The main issue with using semaphores alone for Linux is that named semaphores
 // on linux can't be used without knowing the state of every application taking
 // the named semaphores, a solution to this is to use a jobserver, in order for
@@ -25,7 +27,7 @@ class JobServer : public IJobServer
 {
   protected:
     // The maximum number of jobs, can be any value we like so long as it's above or equal to one
-    int max_jobs;
+    int max_jobs = 0;
     // The current job count, starts at zero and we can *ALWAYS* assume that there is at least one job available, because of this,
     // the expected jobs is always at least 1 as the max of the current jobs
     std::atomic<int> current_jobs = 0;
@@ -35,7 +37,7 @@ class JobServer : public IJobServer
     // extra time AFAICT
     virtual void ReleaseAllJobs()
     {
-        while (current_jobs > 1)
+        while (current_jobs >= 1)
         {
             ReleaseJob();
         }
@@ -50,6 +52,8 @@ class JobServer : public IJobServer
     static std::shared_ptr<JobServer> GetJobServer(const std::string& auth_string, int max_jobs);
     // Creates an OMAKE compatible job server, allowing for the main class to move out when needed
     static std::shared_ptr<JobServer> GetJobServer(int max_jobs, bool ignored);
+    /// Get the current number of taken jobs, as reported via seq_cst atomic current_jobs
+    int GetCurrentJobs() { return current_jobs.load(); }
 };
 // Use composition to our advantage: if we have a JobServer and we know it's either one of these, we can use the same code
 // without having to worry if it's POSIX or Windows except at the calling barrier
@@ -57,9 +61,12 @@ class POSIXJobServer : public JobServer
 {
     friend class JobServer;
     int readfd = -1, writefd = -1;
+    std::string fifo_name;
+    int fifo_fd = -1;
     int get_read_fd() { return readfd; }
     int get_write_fd() { return writefd; }
-
+    std::stack<char> popped_char_stack;
+    std::mutex char_stack_mutex;
   public:
     std::string PassThroughCommandString();
     bool TakeNewJob();
@@ -68,6 +75,9 @@ class POSIXJobServer : public JobServer
     // Need these to be public in order to do std::make_shared on em'
     POSIXJobServer(int max_jobs);
     POSIXJobServer(int read, int write);
+    POSIXJobServer(std::string);
+    POSIXJobServer(std::string, int max_jobs);
+    ~POSIXJobServer();
 };
 class WINDOWSJobServer : public JobServer
 {

@@ -24,5 +24,5 @@
  */
 
 #include "Depends.h"
-
-Depends::~Depends() {}
+#include "BasicLogging.h"
+Depends::~Depends() { OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Depends with goal: " + this->GetGoal() + " is being destructed"); }

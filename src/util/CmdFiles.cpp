@@ -22,9 +22,10 @@
  *
  *
  */
-
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    include <glob.h>
+#    include <string.h>
 #    define _access access
 #else
 #    include <io.h>
@@ -32,7 +33,7 @@
 
 #include "CmdFiles.h"
 #include "CmdSwitch.h"
-
+#include <filesystem>
 using namespace std;  // borland puts the io stuff in the std namespace...
                       // microsoft does not seem to.
 
@@ -79,6 +80,15 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);
     }
+#else
+    glob_t glob_fils;
+    memset(&glob_fils, 0, sizeof(glob_fils));
+    int retval = glob(q.c_str(), GLOB_NOSORT | GLOB_TILDE | GLOB_ONLYDIR, NULL, &glob_fils);
+    for (size_t i = 0; i < glob_fils.gl_pathc; i++)
+    {
+        rv |= Add(std::string(glob_fils.gl_pathv[i]) + DIR_SEP + name, recurseDirs);
+    }
+    globfree(&glob_fils);
 #endif
     return rv;
 }
@@ -133,7 +143,24 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);
     }
+#else
+    glob_t glob_fils;
+    memset(&glob_fils, 0, sizeof(glob_fils));
+    // sorting on this is being disabled so we don't call qsort when someone doesn't ask.
+    // I don't know if this matters to anyone -- chugga_fan
+    int retval = glob(name.c_str(), GLOB_NOSORT | GLOB_TILDE | GLOB_MARK, NULL, &glob_fils);
+    for (size_t i = 0; i < glob_fils.gl_pathc; i++)
+    {
+        std::string possible = std::string(glob_fils.gl_pathv[i]);
+        if (possible[possible.size() - 1] != '/')
+        {
+            names.push_back(possible);
+            rv = true;
+        }
+    }
+    globfree(&glob_fils);
 #endif
+
     if (recurseDirs)
     {
         rv |= RecurseDirs(path, lname, recurseDirs);

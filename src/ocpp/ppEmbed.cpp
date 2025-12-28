@@ -13,6 +13,7 @@
 #include <strstream>
 #include <algorithm>
 #include <cstdio>
+#include <algorithm>
 #include "ppExpr.h"
 std::function<embeder::embeder_func> embeder::embed_elements;
 struct visitor_struct

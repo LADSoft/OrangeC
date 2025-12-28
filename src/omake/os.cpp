@@ -24,11 +24,22 @@
  */
 
 #define _CRT_SECURE_NO_WARNINGS
-
+#ifdef __unix__
+#    define HAVE_UNISTD_H
+#endif
 #ifdef HAVE_UNISTD_H
+#    define _POSIX_C_SOURCE 200809L
+#    include <fcntl.h>
+#    include <sys/stat.h>
+#    include <spawn.h>
+#    include <signal.h>
 #    include <unistd.h>
 #    define _SH_DENYNO 0
-#    include <xmmintrin.h>
+#    include <wordexp.h>
+#    include <wait.h>
+#    include <unistd.h>
+#    include <poll.h>
+
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -68,6 +79,8 @@
 #include <mutex>
 #include <memory>
 #include "JobServer.h"
+#include "CmdFiles.h"
+#include "BasicLogging.h"
 // #define DEBUG
 static std::mutex processIdMutex;
 // This is required because GetFullPathName and SetCurrentDirectory and GetCurrentDirectory are
@@ -82,20 +95,62 @@ std::string OS::jobFile;
 std::shared_ptr<OMAKE::JobServer> OS::localJobServer = nullptr;
 #ifdef TARGET_OS_WINDOWS
 static std::set<HANDLE> processIds;
+#else
+static std::set<int> processIds;
 #endif
 std::recursive_mutex OS::consoleMutex;
 void OS::TerminateAll()
 {
     std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
-#ifdef TARGET_OS_WINDOWS
     for (auto a : processIds)
+    {
+#ifdef TARGET_OS_WINDOWS
         TerminateProcess(a, 0);
+#else
+        kill(a, 0);
 #endif
+    }
+}
+bool OS::IsUnixLikeShell(const std::string& str)
+{
+    using namespace std::string_literals;
+    std::array arr = {"cmd"s, "cmd.exe"s, "command"s, "command.com"s};
+    for (auto&& val : arr)
+    {
+        if (str.find(val) != std::string::npos)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+static Variable* var_lookup_shell_names()
+{
+    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("MSYSCON");
+    }
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("COMSPEC");
+    }
+    if (!v)
+    {
+        v = VariableContainer::Instance()->Lookup("ComSpec");
+    }
+    return v;
+}
+std::string OS::LookupShellNames()
+{
+    Variable* v = var_lookup_shell_names();
+    return v ? v->GetValue() : "";
 }
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Entering QuoteCommand");
     std::string rv;
-    bool sh = exe.find("sh.exe") != std::string::npos || exe.find("bash.exe") != std::string::npos;
+    bool sh = exe.find("sh") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
         rv = std::move(command);
@@ -134,6 +189,7 @@ std::string OS::QuoteCommand(std::string exe, std::string command)
         }
         rv.push_back('"');
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Exiting QuoteCommand");
     return rv;
 }
 bool Time::operator>(const Time& last)
@@ -152,7 +208,7 @@ bool Time::operator>=(const Time& last)
 
 void OS::Init() {}
 
-void OS::WriteToConsole(std::string string)
+void OS::WriteToConsole(const std::string& string)
 {
     std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
 #ifdef TARGET_OS_WINDOWS
@@ -163,10 +219,21 @@ void OS::WriteToConsole(std::string string)
     printf("%s\n", string.c_str());
 #endif
 }
+void OS::WriteErrorToConsole(const std::string& string)
+{
+    std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
+#ifdef TARGET_OS_WINDOWS
+
+    DWORD written;
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), string.c_str(), string.size(), &written, nullptr);
+#else
+    fprintf(stderr, "%s\n", string.c_str());
+#endif
+}
 void OS::ToConsole(std::deque<std::string>& strings)
 {
     std::lock_guard<decltype(consoleMutex)> lg(consoleMutex);
-    for (const auto & s : strings)
+    for (const auto& s : strings)
     {
         WriteToConsole(std::move(s));
     }
@@ -195,6 +262,7 @@ bool OS::TakeJob()
 void OS::GiveJob() { localJobServer->ReleaseJob(); }
 std::string OS::GetFullPath(const std::string& fullname)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Enter OS::GetFullPath");
     std::lock_guard<decltype(DirectoryMutex)> lg(DirectoryMutex);
     std::string recievingbuffer;
 #ifdef TARGET_OS_WINDOWS
@@ -209,12 +277,23 @@ std::string OS::GetFullPath(const std::string& fullname)
     {
         // Do error handling somewhere
     }
+#else
+    // https://pubs.opengroup.org/onlinepubs/000095399/functions/realpath.html
+    recievingbuffer.resize(PATH_MAX);
+    if (realpath(fullname.c_str(), recievingbuffer.data()))
+    {
+        recievingbuffer.resize(strlen(recievingbuffer.c_str()));
+        return recievingbuffer;
+    }
 #endif
+    OrangeC::Utils::BasicLogger::extremedebug("Exit OS::GetFullPath");
+
     return recievingbuffer;
 }
 std::string OS::JobName() { return jobName; }
 void OS::InitJobServer()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Enter InitJobServer");
     bool first = false;
     std::string name;
     if (!localJobServer)
@@ -222,10 +301,13 @@ void OS::InitJobServer()
         if (MakeMain::jobServer.GetExists())
         {
             name = MakeMain::jobServer.GetValue();
+            OrangeC::Utils::BasicLogger::extremedebug("Getting from a current job server in InitJobServer");
             localJobServer = OMAKE::JobServer::GetJobServer(name);
+            OrangeC::Utils::BasicLogger::extremedebug("Made a new job server from existing in InitJobServer");
         }
         else
         {
+            OrangeC::Utils::BasicLogger::extremedebug("Making a new jobserver in InitJobServer");
             localJobServer = OMAKE::JobServer::GetJobServer(jobsLeft);
             name = localJobServer->PassThroughCommandString();
             MakeMain::jobServer.SetValue(std::move(name));
@@ -238,10 +320,12 @@ void OS::InitJobServer()
                      "if this message appears"
                   << std::endl;
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Exit InitJobServer");
 }
 bool OS::first = false;
 void OS::JobInit()
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Enter JobInit");
     std::string name = MakeMain::jobServer.GetValue();
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
@@ -280,11 +364,9 @@ void OS::JobInit()
                 tempfile[0] = 0;
         }
         if (tempfile[0] == 0)
-#ifdef TARGET_OS_WINDOWS
-            Utils::StrCpy(tempfile, ".\\");
-#else
-            Utils::StrCpy(tempfile, "./");
-#endif
+        {
+            Utils::StrCpy(tempfile, CmdFiles::DIR_SEP);
+        }
         Utils::StrCpy(tempfile, (name + ".flg").c_str());
         OS::WriteToConsole("Flag file name: " + name + ".flg");
         int fil = -1;
@@ -322,30 +404,76 @@ void OS::JobInit()
         }
         free(temp);
     }
+    OrangeC::Utils::BasicLogger::extremedebug("Exit JobInit");
 }
 void OS::JobRundown()
 {
     if (jobFile.size())
         RemoveFile(jobFile);
 }
+// NOTE: This only works on paths that actually currently exist.
+// This is a problem.
+// This is (hopefully) temporary as we switch to a newer libcxx however
+std::string OS::AbsPath(const std::string& str)
+{
+#ifdef _WIN32
+    char* buf = _fullpath(nullptr, str.c_str(), 0);
+    std::string outstr(buf);
+    free(buf);
+    return outstr;
+#else
+    char* buf = realpath(str.c_str(), nullptr);
+    if (buf == nullptr)
+    {
+        throw std::system_error(errno, std::system_category());
+    }
+    std::string outstr(buf);
+    free(buf);
+    return outstr;
+#endif
+}
+int OS::GetCurrentJobs() { return localJobServer->GetCurrentJobs(); }
+#ifdef TARGET_OS_WINDOWS
+void spin_and_report_single_process(HANDLE handle, DWORD ms_wait, const std::string& command_to_print, DWORD procid)
+{
+    DWORD wait_response;
+    while ((wait_response = WaitForSingleObject(handle, ms_wait)) == WAIT_TIMEOUT)
+    {
+        OrangeC::Utils::BasicLogger::extremedebug("Waiting for command ", command_to_print, " (procid: ", std::to_string(procid),
+                                                  ") to return, number of jobs: ", OS::GetCurrentJobs());
+    }
+    if (wait_response == WAIT_FAILED)
+    {
+        DWORD last_error = GetLastError();
+        OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_INFO, "WaitForSingleObject for ", command_to_print,
+                                         " failed with GetLastError of: ", std::to_string(last_error));
+    }
+    if (wait_response == WAIT_ABANDONED)
+    {
+        OrangeC::Utils::BasicLogger::extremedebug("WaitForSingleObject somehow returned WAIT_ABANDONED");
+    }
+}
+#endif
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
+                                     "Entering OS::Spawn(command, env, output)");
 #ifdef TARGET_OS_WINDOWS
     std::string command1 = command;
 
-    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
-        return -1;
-    std::string cmd = v->GetValue();
+    Variable* v = var_lookup_shell_names();
+    std::string shell = v->GetValue();
+    std::string cmd = shell;
     if (v->GetFlavor() == Variable::f_recursive)
     {
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
     bool asapp = true;
-    if (cmd.find("bash") != std::string::npos || cmd.find("sh") != std::string::npos)
+    Variable* shell_flags = VariableContainer::Instance()->Lookup(".SHELLFLAGS");
+    if (IsUnixLikeShell(shell))
     {
-        cmd = "sh.exe -c ";
+        cmd = v->GetValue() + " " + shell_flags->GetValue() + " ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v && v->GetValue().find_first_of("\\") != std::string::npos)
@@ -361,7 +489,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     }
     else
     {
-        cmd += " /c ";
+        cmd += " " + shell_flags->GetValue() + " ";
     }
     cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
@@ -428,11 +556,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
+        OrangeC::Utils::BasicLogger::extremedebug("Opened command: ", command1);
         {
             std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.insert(pi.hProcess);
         }
-        WaitForSingleObject(pi.hProcess, INFINITE);
+        spin_and_report_single_process(pi.hProcess, 1000, command1, pi.dwProcessId);
         {
             std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
             processIds.erase(pi.hProcess);
@@ -458,9 +587,11 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         rv = x;
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        OrangeC::Utils::BasicLogger::extremedebug("Closing command: ", command1);
     }
     else
     {
+        OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", cmd);
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
@@ -469,7 +600,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 
                 processIds.insert(pi.hProcess);
             }
-            WaitForSingleObject(pi.hProcess, INFINITE);
+            spin_and_report_single_process(pi.hProcess, 1000, cmd, pi.dwProcessId);
             {
                 std::lock_guard<decltype(processIdMutex)> guard(processIdMutex);
 
@@ -494,6 +625,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             rv = x;
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
+            OrangeC::Utils::BasicLogger::extremedebug("Closing spawned command: ", cmd);
         }
         else
         {
@@ -510,26 +642,153 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 #    endif
     return rv;
 #else
-    return -1;
+    std::vector<std::string> parent_strs;
+    for (auto&& str : environment)
+    {
+        parent_strs.push_back(str.name + "=" + str.value);
+    }
+    std::vector<char*> strs;
+
+    for (auto&& str : parent_strs)
+    {
+        strs.push_back(const_cast<char*>(str.data()));
+    }
+    strs.push_back(nullptr);
+    posix_spawn_file_actions_t spawn_file_actions;
+    posix_spawn_file_actions_init(&spawn_file_actions);
+    posix_spawnattr_t spawn_attr;
+    posix_spawnattr_init(&spawn_attr);
+
+    pid_t default_pid = 0;
+    auto shell_var = VariableContainer::Instance()->Lookup("SHELL");
+    // Default to a basic shell if we have an issue
+    std::string shell_var_value = "/bin/sh";
+    if (shell_var != nullptr)
+    {
+        shell_var_value = shell_var->GetValue();
+    }
+    else
+    {
+        OS::WriteToConsole(
+            "Warning: The current shell var for $(SHELL) somehow is not set according to OS::Spawn, please report this to the "
+            "developers! Using /bin/sh.");
+    }
+
+    int pipe_cout[2];
+    pipe(pipe_cout);
+    // Copy the spawned program's stdout to the pipe's input
+    int ret = posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
+    if (ret)
+    {
+        printf("Line: %d, Errno: %d, error: %s\n", __LINE__, errno, strerror(errno));
+        return -1;
+    }
+    ret = posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);
+    if (ret)
+    {
+        printf("Line: %d, Errno: %d, error: %s\n", __LINE__, errno, strerror(errno));
+        return -1;
+    }
+    ret = posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[0]);
+    if (ret)
+    {
+        printf("Line: %d, Errno: %d, error: %s\n", __LINE__, errno, strerror(errno));
+        return -1;
+    }
+    const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
+    char cwd[PATH_MAX];
+    getcwd(cwd, PATH_MAX);
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", command);
+    ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, strs.data());
+    std::string output_str;
+    posix_spawn_file_actions_destroy(&spawn_file_actions);
+    posix_spawnattr_destroy(&spawn_attr);
+    if (ret != 0)
+    {
+        printf("Failed to spawn, errno: %d, err: %s, command: %s\ncwd:%s\n", errno, strerror(errno), command.c_str(), cwd);
+        close(pipe_cout[0]);
+        close(pipe_cout[1]);
+        return -1;
+    }
+    int status;
+    int ret_wait = 0;
+    bool exit_condition = false;
+    do
+    {
+        struct pollfd polls[2] = {};
+        polls[0].events = POLLIN;
+        polls[0].fd = pipe_cout[0];
+        polls[0].revents = 0;
+        polls[1].events = POLLIN;
+        polls[1].fd = pipe_cout[1];
+        polls[1].revents = 0;
+
+        int poll_ret = poll(polls, 2, 100);
+        char bytes_to_read[1000];
+        if (poll_ret > 0 && polls[0].revents & POLLIN)
+        {
+            int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                OS::WriteToConsole(std::string(bytes_to_read, bytes_read));
+            }
+        }
+        if (poll_ret > 0 && polls[1].revents & POLLIN)
+        {
+            int bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                OS::WriteErrorToConsole(std::string(bytes_to_read, bytes_read));
+            }
+        }
+        if ((poll_ret && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
+        {
+            ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
+            if (ret == -1)
+            {
+                OS::WriteToConsole("An error has occured!");
+            }
+            if (ret_wait == 0)
+            {
+                continue;
+            }
+            exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            if (WIFEXITED(status))
+            {
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " exited. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+            }
+            if (WIFSTOPPED(status))
+            {
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " stopped. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+            }
+            status = WEXITSTATUS(status);
+        }
+        OrangeC::Utils::BasicLogger::extremedebug("Waiting on command: ", command, " with PID: ", default_pid);
+    } while (!exit_condition);
+    close(pipe_cout[0]);
+    close(pipe_cout[1]);
+    OrangeC::Utils::BasicLogger::debug("OS::Spawn returning from command: " + command + " with status: " + std::to_string(status));
+    return status;
 #endif
 }
 std::string OS::SpawnWithRedirect(const std::string command)
 {
 #ifdef TARGET_OS_WINDOWS
-    std::string command1 = std::move(command);
+    std::string command1 = command;
     std::string rv;
-    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
-    if (!v)
-        return "";
+    Variable* v = var_lookup_shell_names();
+
     std::string cmd = v->GetValue();
     if (v->GetFlavor() == Variable::f_recursive)
     {
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    if (cmd.find("bash.exe") != std::string::npos || cmd.find("sh.exe") != std::string::npos)
+    if (IsUnixLikeShell(v->GetValue()))
     {
-        cmd = "sh.exe -c ";
+        cmd = v->GetValue() + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v && v->GetValue().find_first_of("\\") != std::string::npos)
@@ -559,6 +818,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     startup.hStdOutput = pipeWriteDuplicate;
     startup.hStdError = pipeWriteDuplicate;
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", cmd);
     if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, nullptr, nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -583,7 +843,113 @@ std::string OS::SpawnWithRedirect(const std::string command)
     CloseHandle(pipeWriteDuplicate);
     return rv;
 #else
-    return "";
+
+    // Basing a lot of following code on this, but not directly:
+    // https://stackoverflow.com/a/27328610
+
+    posix_spawn_file_actions_t spawn_file_actions;
+    posix_spawn_file_actions_init(&spawn_file_actions);
+    posix_spawnattr_t spawn_attr;
+    posix_spawnattr_init(&spawn_attr);
+
+    pid_t default_pid = 0;
+    auto shell_var = VariableContainer::Instance()->Lookup("SHELL");
+    // Default to a basic shell if we have an issue
+    std::string shell_var_value = "/bin/sh";
+    if (shell_var != nullptr)
+    {
+        shell_var_value = shell_var->GetValue();
+    }
+    else
+    {
+        OS::WriteToConsole(
+            "Warning: The current shell var for $(SHELL) somehow is not set according to OS::Spawn, please report this to the "
+            "developers! Using /bin/sh.");
+    }
+
+    int pipe_cout[2];
+    pipe(pipe_cout);
+    // Copy the spawned program's stdout to the pipe's input
+    posix_spawn_file_actions_adddup2(&spawn_file_actions, pipe_cout[1], 1);
+    posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[1]);
+    posix_spawn_file_actions_addclose(&spawn_file_actions, pipe_cout[0]);
+    OrangeC::Utils::BasicLogger::extremedebug("Spawning command: ", command);
+    const char* args[] = {shell_var_value.c_str(), "-c", "--", command.c_str(), nullptr};
+    int ret = posix_spawn(&default_pid, shell_var_value.c_str(), &spawn_file_actions, &spawn_attr, (char* const*)args, environ);
+    std::string output_str;
+    posix_spawn_file_actions_destroy(&spawn_file_actions);
+    posix_spawnattr_destroy(&spawn_attr);
+    if (ret != 0)
+    {
+        std::cerr << "Posix spawn failed" << std::endl;
+        close(pipe_cout[0]);
+        close(pipe_cout[1]);
+        return "";
+    }
+    int status;
+    int ret_wait = 0;
+    bool exit_condition = false;
+    do
+    {
+        struct pollfd polls[2] = {};
+        polls[0].events = POLLIN;
+        polls[0].fd = pipe_cout[0];
+        polls[0].revents = 0;
+        polls[1].events = POLLIN;
+        polls[1].fd = pipe_cout[1];
+        polls[1].revents = 0;
+
+        int poll_ret = poll(polls, 2, 100);
+        char bytes_to_read[1000];
+        if (poll_ret > 0 && polls[0].revents & POLLIN)
+        {
+            char bytes_to_read[1000];
+            int bytes_read = read(pipe_cout[0], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                output_str += std::string(bytes_to_read, bytes_read);
+            }
+        }
+        if (poll_ret > 0 && polls[1].revents & POLLIN)
+        {
+            char bytes_to_read[1000];
+            int bytes_read = read(pipe_cout[1], bytes_to_read, sizeof(bytes_to_read));
+            if (bytes_read > 0)
+            {
+                OS::WriteErrorToConsole(std::string(bytes_to_read, bytes_read));
+            }
+        }
+        if ((poll_ret > 0 && !(polls[0].revents & POLLIN) && !(polls[1].revents & POLLIN)) || poll_ret == 0)
+        {
+            ret_wait = waitpid(default_pid, &status, WUNTRACED | WNOHANG);
+            if (ret == -1)
+            {
+                OS::WriteToConsole("An error has occured!");
+            }
+            if (ret_wait == 0)
+            {
+                continue;
+            }
+            exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
+            if (WIFEXITED(status))
+            {
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " exited. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+            }
+            if (WIFSTOPPED(status))
+            {
+                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " stopped. ret_wait: " +
+                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+            }
+            status = WEXITSTATUS(status);
+        }
+
+    } while (!exit_condition);
+    close(pipe_cout[0]);
+    close(pipe_cout[1]);
+    OrangeC::Utils::BasicLogger::debug("OS::SpawnWithRedirect returning from command: " + command +
+                                       " with status: " + std::to_string(status));
+    return output_str;
 #endif
 }
 Time OS::GetCurrentTime()
@@ -604,7 +970,9 @@ Time OS::GetCurrentTime()
     Time rv(t, systemTime.wMilliseconds);
     return rv;
 #else
-    Time rv;
+    auto cur_time = std::chrono::system_clock::now();
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(cur_time.time_since_epoch());
+    Time rv(secs.count(), std::chrono::duration_cast<std::chrono::milliseconds>(cur_time.time_since_epoch()).count());
     return rv;
 #endif
 }
@@ -631,9 +999,18 @@ Time OS::GetFileTime(const std::string fileName)
         Time rv(t, systemTime.wMilliseconds);
         return rv;
     }
+#else
+    struct stat file_status;
+    if (stat(fileName.c_str(), &file_status) == 0)
+    {
+        // POSIX-2008 uses timespecs per spec https://www.man7.org/linux/man-pages/man3/stat.3type.html
+        struct timespec ts = file_status.st_mtim;
+        // S and MS of the file,
+        Time rv(ts.tv_sec, ts.tv_nsec / 1'000'000);
+        return rv;
+    }
 #endif
-    Time rv;
-    return rv;
+    return Time();
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
@@ -660,27 +1037,37 @@ void OS::SetFileTime(const std::string fileName, Time time)
         ::SetFileTime(h, nullptr, nullptr, &mod);
         CloseHandle(h);
     }
+#else
+    int fd = open(fileName.c_str(), 0);
+    if (fd > 0)
+    {
+        struct timespec times[2];
+
+        clock_gettime(CLOCK_REALTIME, &times[0]);
+        times[1] = times[0];
+        futimens(fd, times);
+        close(fd);
+    }
 #endif
 }
 std::string OS::GetWorkingDir()
 {
-    char buf[260];
-    getcwd(buf, 260);
-    return buf;
-}
-void OS::CreateThread(void* func, void* data)
-{
-#ifdef TARGET_OS_WINDOWS
-#    ifdef BCC32c
-    DWORD tid;
-    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
-#    else
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
+#ifdef _WIN32
+#    ifndef PATH_MAX
+#        define PATH_MAX MAX_PATH
 #    endif
 #endif
+    char buf[PATH_MAX];
+    char* ret = getcwd(buf, PATH_MAX);
+    if (ret == NULL)
+    {
+        fprintf(stderr, "GetWorkingDir failed!\n");
+        fflush(stderr);
+    }
+    return ret;
 }
-bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
-void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
+bool OS::SetWorkingDir(const std::string& name) { return !chdir(name.c_str()); }
+void OS::RemoveFile(const std::string& name) { unlink(name.c_str()); }
 std::string OS::NormalizeFileName(const std::string file)
 {
     std::string name = std::move(file);
@@ -688,6 +1075,9 @@ std::string OS::NormalizeFileName(const std::string file)
     // with '\\' when not in a string
     int stringchar = 0;
     bool escape = false;
+    auto shell_var = OS::LookupShellNames();
+    bool counts_as_sh_exe = IsUnixLikeShell(shell_var);
+    OrangeC::Utils::BasicLogger::extremedebug("Counts as sh_exe in NormalizeFileName: " + std::to_string(counts_as_sh_exe));
     for (size_t i = 0; i < name.size(); i++)
     {
         if (stringchar)
@@ -703,7 +1093,7 @@ std::string OS::NormalizeFileName(const std::string file)
         {
             stringchar = name[i];
         }
-        else if (isSHEXE)
+        else if (counts_as_sh_exe)
         {
             if (name[i] == '\\' && (!i || name[i - 1] != '='))
                 name[i] = '/';

@@ -485,7 +485,7 @@ ERRLIST(ERR_PACK_SPECIFIER_REQUIRED_HERE, 432, "Pack ... specifier required here
 ERRLIST(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED, 433, "'Class' template parameter expected", CE_ERROR)
 ERRLIST(ERR_CLASS_TYPE_EXPECTED, 434, "Structured type expected", CE_ERROR)
 ERRLIST(ERR_PACKED_TEMPLATE_PARAMETER_NOT_ALLOWED_HERE, 435, "Packed template parameter not allowed here", CE_ERROR)
-ERRLIST(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, 436, "In template instantiation started in '%s'", CE_NOTE)
+ERRLIST(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, 436, "In template instantiation started here", CE_NOTE)
 ERRLIST(ERR_IMPROPER_USE_OF_TYPE, 437, "Invalid use of type '%s'", CE_ERROR)
 ERRLIST(ERR_REQUIRES_TEMPLATE_HEADER, 438, "Requires template<> header", CE_ERROR)
 ERRLIST(ERR_MUTABLE_NON_CONST, 439, "Mutable member '%s' must be non-const", CE_ERROR)
@@ -629,8 +629,10 @@ ERRLIST(ERR_AUTO_RETURN_TYPE_CANNOT_BE_RESOLVED, 555, "'auto' return type cannot
 ERRLIST(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, 556, "Cannot modify member '%s' accessed through const object",
         CE_ERROR)
 ERRLIST(ERR_REFERENCED_IN_CALL_FROM, 557, "Referenced in call from '%s'", CE_NOTE)
+ERRLIST(ERR_CANDIDATE_INCORRECT_TYPE, 558, "Candidate tried, but has the wrong type, wanted %s, but has %s", CE_NOTE)
+ERRLIST(ERR_NOTE_GENERIC, 559, "%s", CE_NOTE)
 #undef ERRLIST
 #undef ERRSCHEMA
 #undef ERRWITHHELP
 #undef ERRWITHWARNFLAG
-#undef ERRWITHWARNFLAGHELP	
+#undef ERRWITHWARNFLAGHELP

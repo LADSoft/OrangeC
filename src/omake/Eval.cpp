@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <sstream>
 #include "Utils.h"
+#include "BasicLogging.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -112,9 +113,11 @@ void Eval::Clear()
 
 std::string Eval::Evaluate()
 {
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Eval::Evaluate called with str: " + str);
     std::string rv = ParseMacroLine(str);
     if (expandWildcards)
         rv = wildcardinternal(rv);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Eval::Evaluate called with str: " + str);
     return rv;
 }
 
@@ -160,11 +163,12 @@ void Eval::RemoveVPath(const std::string& path)
 }
 std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
 {
+    OrangeC::Utils::BasicLogger::log(10, "Calling Eval::ExtractFirst with value: ", value, " and seps: ", seps);
     StripLeadingSpaces(value);
-    int n = value.size();
+    size_t n = value.size();
     if (seps == " " && (value[0] == '"' || value[0] == '\''))
     {
-        int m = value.find_first_of(value[0], 1);
+        size_t m = value.find_first_of(value[0], 1);
         if (m != std::string::npos)
             n = m + 1;
     }
@@ -215,6 +219,7 @@ std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
         value.replace(0, n, "");
     else
         value.replace(0, n + 1, "");
+    OrangeC::Utils::BasicLogger::log(10, "Returning from Eval::ExtractFirst with value: ", value, " and rv: ", rv);
 
     return rv;
 }
@@ -255,8 +260,8 @@ size_t Eval::MacroSpan(const std::string line, size_t pos)
 std::string Eval::ParseMacroLine(const std::string& in)
 {
     std::string rv;
-    int n = 0;
-    int m = in.find_first_of('$');
+    size_t n = 0;
+    size_t m = in.find_first_of('$');
     while (m != std::string::npos)
     {
         rv += in.substr(n, m - n);
@@ -543,6 +548,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
 }
 std::string Eval::ExpandMacro(const std::string& name)
 {
+    OrangeC::Utils::BasicLogger::extremedebug("Expanding macro: ", name);
     std::string rv;
     std::string extra;
 
@@ -592,7 +598,7 @@ std::string Eval::ExpandMacro(const std::string& name)
         else
         {
         join:
-            int m = name.find_first_of(':');
+            size_t m = name.find_first_of(':');
             if (m != std::string::npos)
             {
                 extra = name.substr(m);
@@ -631,7 +637,7 @@ std::string Eval::ExpandMacro(const std::string& name)
     }
     if (!extra.empty())
     {
-        int m = extra.find_first_not_of(' ');
+        size_t m = extra.find_first_not_of(' ');
         if (m < 0 || extra[m] != ':')
         {
             error("Invalid macro qualifier");
@@ -639,12 +645,12 @@ std::string Eval::ExpandMacro(const std::string& name)
         else
         {
             m++;
-            unsigned m1 = extra.find_first_of('=');
+            size_t m1 = extra.find_first_of('=');
             if (m1 != std::string::npos)
             {
                 std::string pat = extra.substr(m, m1 - m);
                 std::string rep = extra.substr(m1 + 1);
-                unsigned n = pat.find_first_not_of(' ');
+                size_t n = pat.find_first_not_of(' ');
                 if (n != std::string::npos)
                 {
                     if (pat[n] == '.')
@@ -1169,6 +1175,7 @@ std::string Eval::notdir(const std::string& names)
     std::string working = names;
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
+    std::string temp = working;
     std::string rv;
     while (!working.empty())
     {
@@ -1183,6 +1190,7 @@ std::string Eval::notdir(const std::string& names)
             rv += " ";
         rv += intermed;
     }
+    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: " + names + " evaluated names " + working + " returns: " + rv);
     return rv;
 }
 
@@ -1282,6 +1290,8 @@ std::string Eval::addprefix(const std::string& arglist)
 
 std::string Eval::wildcard(const std::string& arglist)
 {
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Called Eval::wildcard with argslist: " + arglist);
+
     std::string names = strip(arglist);
     std::string rv;
     names = wildcardinternal(names);
@@ -1295,11 +1305,13 @@ std::string Eval::wildcard(const std::string& arglist)
             rv += current;
         }
     }
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcard: " + rv);
 
     return rv;
 }
 std::string Eval::wildcardinternal(std::string& names)
 {
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Called Eval::wildcardinternal with argslist: " + names);
     CmdFiles files;
     while (!names.empty())
     {
@@ -1313,6 +1325,7 @@ std::string Eval::wildcardinternal(std::string& names)
             rv += " ";
         rv += name;
     }
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcardinternal: " + rv);
     return rv;
 }
 
@@ -1348,7 +1361,7 @@ std::string Eval::realpath(const std::string& arglist)
     {
         std::string thisOne = ExtractFirst(text, " ");
         if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/')  // windows specific
-            thisOne = OS::GetWorkingDir() + '/' + thisOne;
+            thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
         if (!rv.empty())
             rv += " ";
         rv += thisOne;
@@ -1479,6 +1492,7 @@ std::string Eval::foreach (const std::string& arglist)
 
 std::string Eval::call(const std::string& arglist)
 {
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Called Eval::call with argslist: " + arglist);
     std::string sub = arglist;
     std::string args;
     std::string rv;

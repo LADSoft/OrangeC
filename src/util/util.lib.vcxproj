@@ -204,12 +204,14 @@
     <ClCompile Include="UTF8.cpp" />
     <ClCompile Include="UTF8Table.cpp" />
     <ClCompile Include="UTF8Upper.cpp" />
+    <ClCompile Include="BasicLogging.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="winsystem.c" />
     <ClCompile Include="xml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FNV_hash.h" />
+    <ClInclude Include="BasicLogging.h" />
     <ClInclude Include="CmdFiles.h" />
     <ClInclude Include="CmdSwitch.h" />
     <ClInclude Include="SharedMemory.h" />

@@ -31,6 +31,7 @@ else
 NULLDEV := NUL
 COPY := copy
 endif
+export NULLDEV
 
 ifndef _TREEROOT
 ifeq "$(COMPILER)" "gcc-linux"

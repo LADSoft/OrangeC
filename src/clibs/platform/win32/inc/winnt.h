@@ -2264,6 +2264,8 @@ BOOLEAN __cdecl _BitScanReverse(DWORD *, DWORD);
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
 
+#ifndef __MSIL__
+
 FORCEINLINE BOOLEAN _InlineBitScanForward64(DWORD *Index, DWORD64 Mask) {
     if (_BitScanForward(Index, (DWORD)Mask)) {
         return 1;
@@ -2289,6 +2291,7 @@ FORCEINLINE BOOLEAN _InlineBitScanReverse64(DWORD *Index, DWORD64 Mask) {
 }
 
 #define BitScanReverse64  _InlineBitScanReverse64
+#endif
 
 #if 0
 #define InterlockedIncrement16  _InterlockedIncrement16
@@ -2381,26 +2384,32 @@ LONG /* __cdecl */ __stdcall InterlockedDecrement(LONG volatile *);
 LONG /* __cdecl */ __stdcall InterlockedExchange(LONG volatile *, LONG);
 LONG /* __cdecl */ __stdcall InterlockedExchangeAdd(LONG volatile *, LONG);
 
+#ifndef __MSIL__
 FORCEINLINE LONG _InlineInterlockedAdd(LONG volatile *Addend, LONG Value) {
     return InterlockedExchangeAdd(Addend, Value) + Value;
 }
+#endif
 
 LONG /* __cdecl */ __stdcall InterlockedCompareExchange(LONG volatile *, LONG, LONG);
 
 #undef _InterlockedExchangePointer
 
+#ifndef __MSIL__
 FORCEINLINE PVOID _InlineInterlockedExchangePointer(PVOID volatile *Destination, PVOID Value) {
     return (PVOID)InterlockedExchange((LONG volatile *)Destination, (LONG)Value);
 }
+#endif
 
 #define InterlockedExchangePointer  _InlineInterlockedExchangePointer
 #define InterlockedExchangePointerAcquire  _InlineInterlockedExchangePointer
 #define InterlockedExchangePointerRelease  _InlineInterlockedExchangePointer
 #define InterlockedExchangePointerNoFence  _InlineInterlockedExchangePointer
 
+#ifndef __MSIL__
 FORCEINLINE PVOID _InlineInterlockedCompareExchangePointer(PVOID volatile *Destination, PVOID ExChange, PVOID Comperand) {
     return (PVOID)InterlockedCompareExchange((LONG volatile *)Destination, (LONG)ExChange, (LONG)Comperand);
 }
+#endif
 
 #define InterlockedCompareExchangePointer  _InlineInterlockedCompareExchangePointer
 #define InterlockedCompareExchangePointerAcquire  _InlineInterlockedCompareExchangePointer
@@ -2472,6 +2481,7 @@ SHORT /* __cdecl */ __stdcall InterlockedDecrement16(SHORT volatile *);
 #define InterlockedCompareExchange64  _InterlockedCompareExchange64
 #endif
 
+#ifndef __MSIL__
 FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 Value) {
     LONG64 Old;
     do {
@@ -2479,6 +2489,7 @@ FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 
     } while (InterlockedCompareExchange64(Destination, Old & Value, Old) != Old);
     return Old;
 }
+#endif
 
 #if 0
 #define InterlockedAnd64  _InlineInterlockedAnd64
@@ -2487,6 +2498,7 @@ FORCEINLINE LONG64 _InlineInterlockedAnd64(LONG64 volatile *Destination, LONG64 
 #define InterlockedAnd64NoFence  _InlineInterlockedAnd64
 #endif
 
+#ifndef __MSIL__
 FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value) {
     LONG64 Old;
     do {
@@ -2494,6 +2506,7 @@ FORCEINLINE LONG64 _InlineInterlockedAdd64(LONG64 volatile *Addend, LONG64 Value
     } while (InterlockedCompareExchange64(Addend, Old + Value, Old) != Old);
     return Old + Value;
 }
+#endif
 
 #if 0
 #define InterlockedAdd64  _InlineInterlockedAdd64
@@ -2520,6 +2533,7 @@ LONG /*__cdecl*/ __stdcall InterlockedXor(LONG volatile *, LONG);
 #define InterlockedXor  _InterlockedXor
 #endif
 
+#ifndef __MSIL__
 LONGLONG FORCEINLINE _InlineInterlockedOr64(LONGLONG volatile *Destination, LONGLONG Value) {
     LONGLONG Old;
     do {
@@ -2527,11 +2541,12 @@ LONGLONG FORCEINLINE _InlineInterlockedOr64(LONGLONG volatile *Destination, LONG
     } while (InterlockedCompareExchange64(Destination, Old | Value, Old) != Old);
     return Old;
 }
-
+#endif
 #if 0
 #define InterlockedOr64  _InlineInterlockedOr64
 #endif
 
+#ifndef __MSIL__
 FORCEINLINE LONG64 _InlineInterlockedXor64(LONG64 volatile *Destination, LONG64 Value) {
     LONG64 Old;
     do {
@@ -2539,11 +2554,12 @@ FORCEINLINE LONG64 _InlineInterlockedXor64(LONG64 volatile *Destination, LONG64 
     } while (InterlockedCompareExchange64(Destination, Old ^ Value, Old) != Old);
     return Old;
 }
-
+#endif
 #if 0
 #define InterlockedXor64  _InlineInterlockedXor64
 #endif
 
+#ifndef __MSIL__
 LONGLONG FORCEINLINE _InlineInterlockedIncrement64(LONGLONG volatile *Addend) {
     LONGLONG Old;
     do {
@@ -2551,12 +2567,14 @@ LONGLONG FORCEINLINE _InlineInterlockedIncrement64(LONGLONG volatile *Addend) {
     } while (InterlockedCompareExchange64(Addend, Old + 1, Old) != Old);
     return Old + 1;
 }
+#endif
 
 #if 0
 #define InterlockedIncrement64  _InlineInterlockedIncrement64
 #define InterlockedIncrementAcquire64  InterlockedIncrement64
 #endif
 
+#ifndef __MSIL__
 FORCEINLINE LONGLONG _InlineInterlockedDecrement64(LONGLONG volatile *Addend) {
     LONGLONG Old;
     do {
@@ -2564,11 +2582,12 @@ FORCEINLINE LONGLONG _InlineInterlockedDecrement64(LONGLONG volatile *Addend) {
     } while (InterlockedCompareExchange64(Addend, Old - 1, Old) != Old);
     return Old - 1;
 }
-
+#endif
 #if 0
 #define InterlockedDecrement64  _InlineInterlockedDecrement64
 #endif
 
+#ifndef __MSIL__
 FORCEINLINE LONGLONG _InlineInterlockedExchange64(LONGLONG volatile *Target, LONGLONG Value) {
     LONGLONG Old;
     do {
@@ -2576,13 +2595,14 @@ FORCEINLINE LONGLONG _InlineInterlockedExchange64(LONGLONG volatile *Target, LON
     } while (InterlockedCompareExchange64(Target, Value, Old) != Old);
     return Old;
 }
-
+#endif
 #if 0
 #define InterlockedExchange64  _InlineInterlockedExchange64
 #define InterlockedExchangeAcquire64  InterlockedExchange64
 #define InterlockedExchangeNoFence64  _InlineInterlockedExchange64
 #endif
 
+#ifndef __MSIL__
 FORCEINLINE LONGLONG _InlineInterlockedExchangeAdd64(LONGLONG volatile *Addend, LONGLONG Value) {
     LONGLONG Old;
     do {
@@ -2590,7 +2610,7 @@ FORCEINLINE LONGLONG _InlineInterlockedExchangeAdd64(LONGLONG volatile *Addend, 
     } while (InterlockedCompareExchange64(Addend, Old + Value, Old) != Old);
     return Old;
 }
-
+#endif
 #if 0
 #define InterlockedExchangeAdd64  _InlineInterlockedExchangeAdd64
 #define InterlockedExchangeAddNoFence64  _InlineInterlockedExchangeAdd64
@@ -2641,11 +2661,13 @@ void __cdecl _mm_pause(VOID);
 
 #define YieldProcessor  _mm_pause
 
+#ifndef __MSIL__
 FORCEINLINE VOID MemoryBarrier(VOID) {
     LONG Barrier;
     (void)InterlockedOr(&Barrier, 0);
     return;
 }
+#endif
 
 #define _MM_HINT_T0  1
 #define _MM_HINT_T1  2
@@ -2679,8 +2701,10 @@ DWORD64 __cdecl __rdtsc(void);
 
 #pragma intrinsic(__rdtsc)
 
+#ifndef __MSIL__
 __inline PVOID GetFiberData( void )    { return *(PVOID *) (ULONG_PTR) __readfsdword (0x10); }
 __inline PVOID GetCurrentFiber( void ) { return (PVOID) (ULONG_PTR) __readfsdword (0x10); }
+#endif
 
 #endif /* _M_IX86 */
 
@@ -10680,7 +10704,7 @@ FORCEINLINE PVOID GetCurrentFiber(void) { return (PVOID)__readgsqword(FIELD_OFFS
 FORCEINLINE PVOID GetFiberData(void) { return *(PVOID *)GetCurrentFiber(); }
 #endif /* _M_AMD64 */
 
-#if defined(_M_IX86)
+#if defined(_M_IX86) && !defined(__MSIL__)
 
 #define PcTeb  0x18
 

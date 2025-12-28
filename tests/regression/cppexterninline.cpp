@@ -4,7 +4,7 @@ inline void aa();
 inline void bb();
 extern inline void cc();
 void dd();
-exterin inline void ee();
+extern inline void ee();
 
 inline void aa()
 {

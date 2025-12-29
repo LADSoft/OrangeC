@@ -12,12 +12,12 @@ clean:
 
 %.tst: %.c
 	-occ /1 /c /! $< > $*.tst
-	del $*.o
+	-del $*.o
 	fc /b $*.cmpx $*.tst
 
 %.tst: %.cpp
 	-occ /1 /c /! $< > $*.tst
-	del $*.o
+	-del $*.o
 	fc /b $*.cmpx $*.tst
 
 

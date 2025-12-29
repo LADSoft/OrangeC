@@ -273,14 +273,16 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
                     {
                         sym = exp->left->v.func->sp;
                         sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                        InsertInline(sym);
+                        StatementGenerator sg(sym);
+                        sg.CompileFunctionFromStream();
                     }
                 }
             }
             else
             {
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
-                InsertInline(sym);
+                StatementGenerator sg(sym);
+                sg.CompileFunctionFromStream();
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)

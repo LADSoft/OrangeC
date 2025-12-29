@@ -2497,7 +2497,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
                 if (!strchr(sym->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
                     classInstantiationMap[sym->sb->decoratedName] = cls;
             }
-            EnterInstantiation(sym, true);
+            EnterInstantiation({ sym, currentLex ? currentLex->sourceFileName : 0, currentLex ? currentLex->sourceLineNumber : 0 });
             EnterPackedContext();
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;

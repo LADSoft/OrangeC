@@ -85,6 +85,9 @@ namespace Parser
 void refreshBackendParams(SYMBOL* funcsp);
 
 static std::list<std::list<SYMBOL*>*> usingDirectives;
+static std::list<SYMBOL*> deferredCompiles, generations;
+static std::set<std::string> deferredCompilesIndex;
+
 static std::stack<std::string> nestedFuncNames;
 bool isCallNoreturnFunction;
 
@@ -140,6 +143,9 @@ void statement_ini(bool global)
     while (!nestedFuncNames.empty())
         nestedFuncNames.pop();
     StatementGenerator::SetFunctionDefine("", true);
+    deferredCompiles.clear();
+    deferredCompilesIndex.clear();
+    generations.clear();
 }
 bool msilManaged(SYMBOL* s)
 {
@@ -3042,6 +3048,7 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
     EXPRESSION *select = nullptr, *init = nullptr;
     int addedBlock = 0;
     funcsp->sb->noinline = true;
+    funcsp->sb->generateInline = true;
     switchstmt->breaklabel = codeLabel++;
     switchstmt->defaultlabel = -1; /* no default */
     switchstmt->type = Keyword::switch_;
@@ -4198,6 +4205,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
             {
                 Optimizer::SymbolManager::Get(funcsp)->anyTry = true;
                 funcsp->sb->noinline = true;
+                funcsp->sb->generateInline = true;
             }
             insertXCInfo(funcsp);
         }
@@ -4464,6 +4472,7 @@ void StatementGenerator::HandleInlines()
                 if (ht->size())
                 {
                     funcsp->sb->noinline = true;
+                    funcsp->sb->generateInline = true;
                     break;
                 }
                 ht = ht->Next();
@@ -4471,24 +4480,26 @@ void StatementGenerator::HandleInlines()
             if (funcsp->sb->inlineFunc.syms->Next())
             {
                 if (funcsp->sb->inlineFunc.syms->Next()->size())
-                    funcsp->sb->noinline = true;
-            }
-        }
-        if (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
-        {
-
-            for (auto head : *funcsp->tp->BaseType()->syms)
-            {
-                if (head->tp->IsStructured())
                 {
                     funcsp->sb->noinline = true;
-                    break;
+                    funcsp->sb->generateInline = true;
                 }
+            }
+        }
+
+        for (auto head : *funcsp->tp->BaseType()->syms)
+        {
+            if (head->tp->IsStructured())
+            {
+                funcsp->sb->noinline = true;
+                funcsp->sb->generateInline = true;
+                break;
             }
         }
         if (CountInlineStatements(funcsp->sb->inlineFunc.stmt) > 100)
         {
             funcsp->sb->noinline = true;
+            funcsp->sb->generateInline = true;
         }
     }
 }
@@ -4547,6 +4558,7 @@ void StatementGenerator::SetFunctionDefine(std::string name, bool set)
 }
 void StatementGenerator::FunctionBody()
 {
+    EnterInstantiation({ funcsp, currentLex ? currentLex->sourceFileName : 0, currentLex ? currentLex->sourceLineNumber : 0 });
     int oldNoexcept = funcsp->sb->noExcept;
     if (bodyIsDestructor)
         funcsp->sb->noExcept = true;
@@ -4573,6 +4585,8 @@ void StatementGenerator::FunctionBody()
     int oldControlSequences = controlSequences;
     bool oldNoExcept = noExcept;
     int oldEllipsePos = ellipsePos;
+    bool oldNoreturn = isCallNoreturnFunction;
+    isCallNoreturnFunction = 0;
     ellipsePos = 0;
     noExcept = true;
     expressions = 0;
@@ -4690,7 +4704,7 @@ void StatementGenerator::FunctionBody()
                 if (Optimizer::cparams.prm_cplusplus && funcsp->sb->declaredAsInline && funcsp->sb->declaredAsExtern)
                 {
                     funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                    InsertInline(funcsp);
+                    CompileFunctionFromStream();
                 }
             }
         }
@@ -4707,6 +4721,7 @@ void StatementGenerator::FunctionBody()
     }
     SetFunctionDefine(funcsp->name, false);
     functionReturnType = oldReturnType;
+    isCallNoreturnFunction = oldNoreturn;
     ellipsePos = oldEllipsePos;
     noExcept = oldNoExcept;
     controlSequences = oldControlSequences;
@@ -4728,14 +4743,184 @@ void StatementGenerator::FunctionBody()
     templateDefinitionLevel = oldNestingCount;
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
+    LeaveInstantiation();
+}
+bool StatementGenerator::CompileFunctionFromStreamInternal()
+{
+    if (!funcsp->sb->inlineFunc.stmt)
+    {
+        if (bodyTokenStreams.get(funcsp))
+        {
+            EnterPackedContext();
+            int oldArgumentNestingLevel = argumentNestingLevel;
+            int oldExpandingParams = isExpandingParams;
+            int oldconst = inConstantExpression;
+            int oldanon = anonymousNotAlloc;
+            int oldInsertingFunctons = currentlyInsertingFunctions;
+            currentlyInsertingFunctions = 0;
+            anonymousNotAlloc = 0;
+            inConstantExpression = 0;
+            argumentNestingLevel = 0;
+            isExpandingParams = 0;
+            if (funcsp->sb->specialized && funcsp->templateParams->size() == 1)
+                funcsp->sb->instantiated = true;
+            int n1 = 0;
+            ++templateInstantiationLevel;
+            std::list<LAMBDA*> oldLambdas;
+            // function body
+            if (!funcsp->sb->inlineFunc.stmt && (!funcsp->sb->templateLevel || !funcsp->templateParams || funcsp->sb->instantiated))
+            {
+                TemplateNamespaceScope namespaceScope(funcsp->sb->parentClass ? funcsp->sb->parentClass : funcsp);
+                auto linesOld = lines;
+                lines = nullptr;
+
+                funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                DeclarationScope scope;
+                if (funcsp->templateParams && funcsp->sb->templateLevel)
+                {
+                    enclosingDeclarations.Add(funcsp->templateParams);
+                }
+                if (funcsp->sb->parentClass)
+                {
+                    enclosingDeclarations.Add(funcsp->sb->parentClass);
+                    if (funcsp->sb->parentClass->templateParams)
+                    {
+                        enclosingDeclarations.Add(funcsp->sb->parentClass->templateParams);
+                    }
+                }
+                dontRegisterTemplate++;
+                oldLambdas = lambdas;
+                lambdas.clear();
+                int oldStructLevel = structLevel;
+                structLevel = 0;
+                auto oldOpen = openStructs;
+                openStructs = nullptr;
+                if (funcsp->sb->mainsym)
+                {
+                    auto source = bodyArgs.get(funcsp);
+                    if (source)
+                    {
+                        auto itd = funcsp->tp->BaseType()->syms->begin();
+                        auto itde = funcsp->tp->BaseType()->syms->end();
+                        auto its = source->begin();
+                        auto itse = source->end();
+                        for (; itd != itde && its != itse; ++itd, ++its)
+                        {
+                            (*itd)->name = (*its)->name;
+                        }
+                    }
+                }
+                ParseOnStream(bodyTokenStreams.get(funcsp), [=]() {
+                    if (funcsp->sb->isConstructor && MATCHKW(Keyword::colon_))
+                    {
+                        getsym();
+                        *funcsp->sb->constructorInitializers = GetConstructorInitializers(nullptr, funcsp);
+                    }
+                    StatementGenerator sg(funcsp);
+                    sg.FunctionBody();
+                    });
+                dontRegisterTemplate--;
+                lambdas = std::move(oldLambdas);
+                openStructs = oldOpen;
+                structLevel = oldStructLevel;
+                lines = linesOld;
+            }
+            --templateInstantiationLevel;
+            currentlyInsertingFunctions = oldInsertingFunctons;
+            anonymousNotAlloc = oldanon;
+            inConstantExpression = oldconst;
+            isExpandingParams = oldExpandingParams;
+            argumentNestingLevel = oldArgumentNestingLevel;
+            LeavePackedContext();
+        }
+    }
+    return funcsp->sb->inlineFunc.stmt;
+}
+bool StatementGenerator::CompileFunctionFromStream(bool withC, bool now)
+{
+    if ((Optimizer::cparams.prm_cplusplus || withC) && !funcsp->sb->dontinstantiate && !IsDefiningTemplate())
+    {
+        if (funcsp->sb->storage_class == StorageClass::external_)
+        {
+            if (!funcsp->sb->inlineFunc.stmt && !bodyTokenStreams.get(funcsp))
+                return false;
+            funcsp->sb->storage_class = StorageClass::global_;
+        }
+        if (deferredCompilesIndex.find(funcsp->sb->decoratedName) == deferredCompilesIndex.end())
+        {
+            deferredCompilesIndex.insert(funcsp->sb->decoratedName);
+            generations.push_back(funcsp);
+            if (!funcsp->sb->inlineFunc.stmt)
+            {
+                if (bodyTokenStreams.get(funcsp))
+                {
+                    CompileFunctionFromStreamInternal();
+                }
+                else
+                {
+                    deferredCompiles.push_back(funcsp);
+                }
+            }
+        }
+        else if (now)
+        {
+            if (!funcsp->sb->inlineFunc.stmt)
+            {
+                if (bodyTokenStreams.get(funcsp))
+                {
+                    generations.push_back(funcsp);
+                    CompileFunctionFromStreamInternal();
+                }
+            }
+        }
+    }
+    return funcsp->sb->inlineFunc.stmt;
+}
+void StatementGenerator::GenerateFunctionIntermediateCode()
+{
+    funcsp->sb->didinline = true;
+    InitializeFunctionArguments(funcsp);
+    startlab = Optimizer::nextLabel++;
+    retlab = Optimizer::nextLabel++;
+    TemplateNamespaceScope namespaceScope(funcsp);
+    genfunc(funcsp, true);
+}
+void StatementGenerator::GenerateDeferredFunctions()
+{
+    auto dc = std::move(deferredCompiles);
+    for (auto func : dc)
+    {
+        funcsp = func;
+        CompileFunctionFromStreamInternal();
+    }
+    bool done = false;
+    while (!done)
+    {
+        done = true;
+        auto g = std::move(generations);
+        for (auto func : g)
+        {
+            funcsp = func;
+            if (funcsp->sb->inlineFunc.stmt)
+            {
+                if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL) || !func->sb->attribs.inheritable.isInline || func->sb->generateInline)
+                {
+                    GenerateFunctionIntermediateCode();
+                    done = false;
+                }
+                else
+                {
+                    generations.push_back(func);
+                }
+            }
+        }
+    }
 }
 void StatementGenerator::BodyGen()
 {
     if (funcsp->sb->inlineFunc.stmt)
     {
-        EnterInlineFunctionContext();
-        if (funcsp->sb->attribs.inheritable.linkage4 == Linkage::virtual_ ||
-            (funcsp->sb->attribs.inheritable.isInline && !funcsp->sb->promotedToInline))
+        if (Optimizer::cparams.prm_cplusplus && funcsp->sb->attribs.inheritable.isInline && !funcsp->sb->promotedToInline && !funcsp->sb->generateInline && !funcsp->sb->declaredAsExtern)
         {
             if (funcsp->sb->attribs.inheritable.isInline)
                 funcsp->sb->attribs.inheritable.linkage2 = Linkage::none_;
@@ -4757,17 +4942,14 @@ void StatementGenerator::BodyGen()
             {
                 if (!TotalErrors())
                 {
-                    int oldstartlab = startlab;
-                    int oldretlab = retlab;
-                    startlab = Optimizer::nextLabel++;
-                    retlab = Optimizer::nextLabel++;
-                    genfunc(funcsp, true);
-                    retlab = oldretlab;
-                    startlab = oldstartlab;
+                    if (deferredCompilesIndex.find(funcsp->sb->decoratedName) == deferredCompilesIndex.end())
+                    {
+                        generations.push_back(funcsp);
+                        deferredCompilesIndex.insert(funcsp->sb->decoratedName);
+                    }
                 }
             }
         }
-        LeaveInlineFunctionContext();
     }
 }
 }  // namespace Parser

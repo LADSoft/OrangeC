@@ -3410,6 +3410,38 @@ founddecltype:
                             if (sp)
                                 tn = sp->tp;
                         }
+                        else if (sp->tp->IsStructured() && MATCHKW(Keyword::lt_) && sp->tp->BaseType()->sp->sb->templateLevel)
+                        {
+                            sp = sp->tp->BaseType()->sp;
+                            std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
+                            if (templateDefinitionLevel)
+                                tn = sp->tp;
+                            else
+                                tn = nullptr;
+                            if (sp->sb->parentTemplate)
+                                sp = sp->sb->parentTemplate;
+                            GetTemplateArguments(funcsp, sp, &lst);
+                            if (IsDefiningTemplate())
+                            {
+                                auto sp1 = GetClassTemplate(sp, lst, !templateErr);
+                                if (sp1)
+                                {
+                                    sp = sp1;
+                                    if (sp && (!templateDefinitionLevel || processingTemplateBody))
+                                        sp->tp = sp->tp->InitializeDeferred();
+                                }
+                                else
+                                {
+                                    tn = Type::MakeType(sp, lst);
+                                    sp = nullptr;
+                                }
+                            }
+                            else
+                            {
+                                tn = Type::MakeType(sp, lst);
+                                sp = nullptr;
+                            }
+                        }
                         else
                         {
                             if (inTemplate)

@@ -299,9 +299,11 @@ static EXPRESSION* inasm_ident(void)
                     node = MakeExpression(ExpressionNode::absolute_, sym);
                     break;
                 case StorageClass::overloads_:
-                    node = MakeExpression(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());
-                    sym->tp->syms->front()->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                    InsertInline(sym->tp->syms->front());
+                {
+                    node = MakeExpression(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());                    
+                    StatementGenerator sg(sym->tp->syms->front());
+                    sg.CompileFunctionFromStream();
+                }
                     break;
                 case StorageClass::localstatic_:
                 case StorageClass::global_:
@@ -312,8 +314,8 @@ static EXPRESSION* inasm_ident(void)
                     InsertGlobal(sym);
                     if (sym->tp->IsFunction())
                     {
-                        sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                        InsertInline(sym);
+                        StatementGenerator sg(sym);
+                        sg.CompileFunctionFromStream();
                     }
                     Optimizer::EnterExternal(sym1);
                     break;
@@ -1273,7 +1275,10 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             regs[i+ ASM_SRC_REG_START] = srcRegs[i] + 1;
         snp->assemblyRegs = regs;
         if (theCurrentFunc)
+        {
             theCurrentFunc->sb->noinline = true;
+            theCurrentFunc->sb->generateInline = true;
+        }
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);
     return;
 }

@@ -1577,10 +1577,12 @@ static SYMBOL* AccessibleClassInstance(SYMBOL* parent)
     {
         if (s.str)
         {
+            auto s1 = parent->sb->mainsym ? parent->sb->mainsym : parent;
             SYMBOL* srch = s.str;
             while (srch)
             {
-                if (srch == parent || classRefCount(parent, srch))
+                auto s2 = srch->sb->mainsym ? srch->sb->mainsym : srch;
+                if (s1 == s2 || classRefCount(parent, srch))
                     break;
                 srch = srch->sb->parentClass;
             }

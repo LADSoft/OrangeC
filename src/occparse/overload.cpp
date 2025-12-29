@@ -5327,11 +5327,11 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 context.Computed = false;
                             }
                         }
-
                         if (found1->tp->BaseType()->btp->IsAutoType() &&
                             !found1->sb->inlineFunc.stmt && (!currentlyInsertingFunctions || processingTemplateArgs || (flags & _F_INDECLTYPE)) && bodyTokenStreams.get(found1))
                         {
-                            CompileInlineFunction(found1);
+                            StatementGenerator sg(found1);
+                            sg.CompileFunctionFromStream(false, true);
                         }
                         else if ((flags & _F_IS_NOTHROW) ||
                                  (found1->sb->constexpression && (!IsDefiningTemplate())))
@@ -5352,7 +5352,8 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             {
                                 if (!currentlyInsertingFunctions || processingTemplateArgs)
                                 {
-                                    CompileInlineFunction(found1);
+                                    StatementGenerator sg(found1);
+                                    sg.CompileFunctionFromStream();
                                 }
                             }
                         }

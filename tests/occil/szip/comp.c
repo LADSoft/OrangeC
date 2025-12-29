@@ -9,4 +9,4 @@
 #include "sz_srt.c"
 #include "reorder.c"
 
-int setmode() { }
+int setmode( int a, int b) { }

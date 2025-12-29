@@ -156,68 +156,6 @@ int classRefCount(SYMBOL* base, SYMBOL* derived)
         ccount++;
     return ccount;
 }
-void DeferredCompileFunction(SYMBOL* cur)
-{
-    std::list<LAMBDA*> oldLambdas;
-    // function body
-    if (!cur->sb->inlineFunc.stmt && (!cur->sb->templateLevel || !cur->templateParams || cur->sb->instantiated))
-    {
-        TemplateNamespaceScope namespaceScope(cur->sb->parentClass ? cur->sb->parentClass : cur);
-        auto linesOld = lines;
-        lines = nullptr;
-
-        cur->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-        DeclarationScope scope;
-        if (cur->templateParams && cur->sb->templateLevel)
-        {
-            enclosingDeclarations.Add(cur->templateParams);
-        }
-        if (cur->sb->parentClass)
-        {
-            enclosingDeclarations.Add(cur->sb->parentClass);
-            if (cur->sb->parentClass->templateParams)
-            {
-                enclosingDeclarations.Add(cur->sb->parentClass->templateParams);
-            }
-        }
-        dontRegisterTemplate++;
-        oldLambdas = lambdas;
-        lambdas.clear();
-        int oldStructLevel = structLevel;
-        structLevel = 0;
-        auto oldOpen = openStructs;
-        openStructs = nullptr;
-        if (cur->sb->mainsym)
-        {
-            auto source = bodyArgs.get(cur);
-            if (source)
-            {
-                auto itd = cur->tp->BaseType()->syms->begin();
-                auto itde = cur->tp->BaseType()->syms->end();
-                auto its = source->begin();
-                auto itse = source->end();
-                for (; itd != itde && its != itse; ++itd, ++its)
-                {
-                    (*itd)->name = (*its)->name;
-                }
-            }
-        }
-        ParseOnStream(bodyTokenStreams.get(cur), [=]() {
-            if (cur->sb->isConstructor && MATCHKW(Keyword::colon_))
-            {
-                getsym();
-                *cur->sb->constructorInitializers = GetConstructorInitializers(nullptr, cur);
-            }
-            StatementGenerator sg(cur);
-            sg.FunctionBody();
-         });
-        dontRegisterTemplate--;
-        lambdas = std::move(oldLambdas);
-        openStructs = oldOpen;
-        structLevel = oldStructLevel;
-        lines = linesOld;
-    }
-}
 static void RecalcArraySize(Type* tp)
 {
     if (tp->BaseType()->btp->IsArray())

@@ -1026,7 +1026,7 @@ static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, S
             sp->sb->vtabsp->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
             sp->sb->vtabsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
             sp->sb->vtabsp->sb->decoratedName = sp->sb->vtabsp->name;
-            Optimizer::SymbolManager::Get(sp->sb->vtabsp)->inlineSym = sp;
+            Optimizer::SymbolManager::Get(sp->sb->vtabsp)->vtabSym = sp;
             if (sp->sb->vtabsp->sb->attribs.inheritable.linkage2 == Linkage::import_)
             {
                 sp->sb->vtabsp->sb->dontinstantiate = true;
@@ -3330,7 +3330,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             sp->sb->attribs.inheritable.isInline = true;
                         }
                     }
-                    else if (!Optimizer::cparams.prm_profiler && Optimizer::cparams.prm_optimize_for_speed && tp1->IsFunction() &&
+                    else if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_profiler && Optimizer::cparams.prm_optimize_for_speed && tp1->IsFunction() &&
                              storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
                     {
                         if (!strSym)
@@ -4493,6 +4493,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                 {
                                     sp->sb->instantiatedInlineInClass = true;
                                 }
+                                bool directCompile = false;
                                 if (storage_class_in != StorageClass::member_ && TemplateFullySpecialized(sp->sb->parentClass))
                                 {
                                     sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
@@ -4507,7 +4508,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     Optimizer::SymbolManager::Get(sp);
                                     sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                     if (!sp->sb->attribs.inheritable.isInline)
-                                        InsertInline(sp);
+                                        directCompile = true;
                                 }
                                 else
                                 {
@@ -4525,13 +4526,13 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                 sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                                 if ((!sp->sb->parentNameSpace && (!IsDefiningTemplate())) || sp->sb->isDestructor)
                                                 {
-                                                    InsertInline(sp);
+                                                    directCompile = true;
                                                 }
                                             }
                                         }
                                     }
-                                    if (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
-                                        templateDefinitionLevel == 1 || (asFriend && templateDefinitionLevel == 2))
+                                    if (!directCompile && (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
+                                        templateDefinitionLevel == 1 || (asFriend && templateDefinitionLevel == 2)))
                                     {
                                         auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                         if (startStmt)
@@ -4559,7 +4560,10 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         }
                                         if (sp->templateParams && sp->templateParams->size() == 1 &&
                                             (!IsDefiningTemplate()) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
-                                            InsertInline(sp);
+                                        {
+                                            StatementGenerator sg(sp);
+                                            sg.CompileFunctionFromStream();
+                                        }
                                     }
                                     else
                                     {
@@ -4619,7 +4623,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                 createAssignment(sp->sb->parentClass, sp);
                                             sp->sb->forcedefault = true;
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                            InsertInline(sp);
+                                            StatementGenerator sg(sp);
+                                            sg.CompileFunctionFromStream();
                                         }
                                         getsym();
                                     }

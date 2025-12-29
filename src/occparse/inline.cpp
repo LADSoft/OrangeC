@@ -71,8 +71,6 @@ static std::unordered_set<SYMBOL*> enteredInlines;
 static std::list<SYMBOL*> inlines, inlineVTabs, inlineData, inlineRttis, functionInlines;
 static std::unordered_map<SYMBOL*, SYMBOL*> contextMap;
 static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
-static void PushInline(SYMBOL* sym, bool traceback);
-static inline void PopInline() { enclosingDeclarations.Release(); }
 static std::list<std::tuple<int, Optimizer::SimpleSymbol*, int, int>> inlineMemberPtrData;
 static std::list<std::pair<SYMBOL*, EXPRESSION*>> inlineLocalUninitializers;
 static int inlinesp_count;
@@ -101,10 +99,8 @@ void inlineinit(void)
     functionInlines.clear();
 }
 
-static void GenInline(SYMBOL* sym);
 static bool inSearch(SYMBOL* sp) { return didInlines.find(sp->sb->decoratedName) != didInlines.end(); }
 static void inInsert(SYMBOL* sym) { didInlines.insert(sym->sb->decoratedName); }
-static void UndoPreviousCodegen(SYMBOL* sym) {}
 static void DumpInlineLocalUninitializer(std::pair<SYMBOL*, EXPRESSION*>& uninit);
 
 void dumpInlines(void)
@@ -117,37 +113,8 @@ void dumpInlines(void)
             do
             {
                 done = true;
-                for (auto sym : inlines)
-                {
-                    if (!sym->sb->dontinstantiate  &&
-                        (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated))
-                    {
-                        if (!sym->sb->didinline && !sym->sb->dontinstantiate)
-                        {
-                            if (inSearch(sym))
-                            {
-                                sym->sb->didinline = true;
-                            }
-                            else
-                            {
-                                TemplateNamespaceScope namespaceScope(sym);
-                                if (sym->sb->parentClass)
-                                    SwapMaprocessingTemplateArgs(sym->sb->parentClass);
-                                enclosingDeclarations.clear();
-                                if ((sym->sb->attribs.inheritable.isInline ||
-                                     sym->sb->attribs.inheritable.linkage4 == Linkage::virtual_ || sym->sb->forcedefault) &&
-                                    CompileAndGen(sym))
-                                {
-                                    done = false;
-                                }
-                                instantiationList.clear();
-                                enclosingDeclarations.clear();
-                                if (sym->sb->parentClass)
-                                    SwapMaprocessingTemplateArgs(sym->sb->parentClass);
-                            }
-                        }
-                    }
-                }
+                StatementGenerator sg(nullptr);
+                sg.GenerateDeferredFunctions();
                 startlab = retlab = 0;
                 for (auto sym : inlineVTabs)
                 {
@@ -201,7 +168,7 @@ void dumpInlines(void)
                     DumpInlineLocalUninitializer(local);
                 }
                 inlineLocalUninitializers.clear();
-            } while (!done);
+           } while (!done);
             std::stack<SYMBOL*> destructors;
             for (auto sym : inlineData)
             {
@@ -444,163 +411,14 @@ SYMBOL* getvc1Thunk(int offset)
     }
     return rv;
 }
-static void PushInline(SYMBOL* sym, bool traceback)
-{
-    enclosingDeclarations.Mark();
-    std::stack<SYMBOL*> reverseOrder;
-    reverseOrder.push(sym);
-    if (traceback)
-    {
-        std::unordered_set<SYMBOL*> visited;
-        visited.insert(sym);
-        while ((sym = contextMap[sym]))
-        {
-            if (visited.find(sym) == visited.end())
-            {
-                visited.insert(sym);
-                reverseOrder.push(sym);
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-    while (!reverseOrder.empty())
-    {
-        sym = reverseOrder.top();
-        reverseOrder.pop();
-        EnterInstantiation(sym,  true);
-        ScopeTemplateParams(sym);
-    }
-}
-bool CompileInlineFunction(SYMBOL* sym)
-{
-    contextMap[sym] = theCurrentFunc;
-    if (!sym->sb->inlineFunc.stmt)
-    {
-        if (bodyTokenStreams.get(sym))
-        {
-            EnterPackedContext();
-            int oldArgumentNestingLevel = argumentNestingLevel;
-            int oldExpandingParams = isExpandingParams;
-            int oldconst = inConstantExpression;
-            int oldanon = anonymousNotAlloc;
-            anonymousNotAlloc = 0;
-            inConstantExpression = 0;
-            argumentNestingLevel = 0;
-            isExpandingParams = 0;
-            if (sym->sb->specialized && sym->templateParams->size() == 1)
-                sym->sb->instantiated = true;
-            int n1 = 0;
-            auto hold = std::move(enclosingDeclarations);
-            auto hold2 = std::move(instantiationList);
-            if (Optimizer::cparams.prm_cplusplus)
-            {
-                PushInline(sym, true);
-            }
-            ++templateInstantiationLevel;
-            DeferredCompileFunction(sym);
-            --templateInstantiationLevel;
-            instantiationList.clear();
-            instantiationList = std::move(hold2);
-            enclosingDeclarations.clear();
-            enclosingDeclarations = std::move(hold);
-            anonymousNotAlloc = oldanon;
-            inConstantExpression = oldconst;
-            isExpandingParams = oldExpandingParams;
-            argumentNestingLevel = oldArgumentNestingLevel;
-            LeavePackedContext();
-        }
-    }
-    return sym->sb->inlineFunc.stmt;
-}
-static void GenInline(SYMBOL* sym)
-{
-    UndoPreviousCodegen(sym);
-    sym->sb->didinline = true;
-    EnterInlineFunctionContext();
-    InitializeFunctionArguments(sym);
-    startlab = Optimizer::nextLabel++;
-    retlab = Optimizer::nextLabel++;
-    TemplateNamespaceScope namespaceScope(sym);
-    auto hold2 = std::move(instantiationList);
-    PushInline(sym, false);
-    genfunc(sym, true);
-    PopInline();
-    instantiationList.clear();
-    instantiationList = std::move(hold2);
-    LeaveInlineFunctionContext();
-}
-bool CompileAndGen(SYMBOL* sym)
-{
-    if (!inSearch(sym))
-    {
-        if (CompileInlineFunction(sym))
-        {
-            inInsert(sym);
-            GenInline(sym);
-            return true;
-        }
-    }
-    return false;
-}
-void EnterInlineFunctionContext()
-{
-    inInlineFunctionContext++;
-}
-void LeaveInlineFunctionContext()
-{
-    if (inInlineFunctionContext == 1)
-    {
-         while (functionInlines.size())
-        {
-            decltype(functionInlines) current = std::move(functionInlines);
-            for (auto sym : current)
-            {
-                if (Optimizer::SymbolManager::Test(sym) && !Optimizer::SymbolManager::Test(sym)->generated)
-                    CompileAndGen(sym);
-            }
-        }
-    }
-    inInlineFunctionContext--;
-}
 void InsertInline(SYMBOL* sym)
 {
     if (sym->sb->dontinstantiate)
         return;
-    if (sym->sb->storage_class == StorageClass::external_)
-    {
-        if (!sym->sb->inlineFunc.stmt && !bodyTokenStreams.get(sym))
-            return;
-        sym->sb->storage_class = StorageClass::global_;
-    }
     if (enteredInlines.find(sym) == enteredInlines.end())
     {
         enteredInlines.insert(sym);
-        contextMap[sym] = theCurrentFunc;
-        if (sym->tp->IsFunction())
-        {
-            if (Optimizer::cparams.prm_cplusplus && bodyTokenStreams.get(sym))
-            {
-                if (inInlineFunctionContext)
-                {
-                    functionInlines.push_back(sym);
-                }
-                else
-                {
-                    CompileAndGen(sym);
-                }
-            }
-            else
-            {
-                inlines.push_back(sym);
-            }
-        }
-        else
-        {
-            inlineVTabs.push_back(sym);
-        }
+        inlineVTabs.push_back(sym);
     }
 }
 void InsertInlineData(SYMBOL* sym)

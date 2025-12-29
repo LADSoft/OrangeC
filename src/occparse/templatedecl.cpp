@@ -2577,7 +2577,8 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
                     {
                         instance = TemplateFunctionInstantiate(instance, true);
                         spi->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                        InsertInline(instance);
+                        StatementGenerator sg(instance);
+                        sg.CompileFunctionFromStream();
                     }
                 }
                 *sp = instance;
@@ -2622,7 +2623,8 @@ static void referenceInstanceMembers(SYMBOL* cls, bool excludeFromExplicitInstan
                             }
                             if (!sym->sb->deleted)
                             {
-                                InsertInline(sym);
+                                StatementGenerator sg(sym);
+                                sg.CompileFunctionFromStream();
                             }
                         }
                     }
@@ -2855,7 +2857,8 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
         {
             sp->sb->dontinstantiate = false;
             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-            InsertInline(sp);
+            StatementGenerator sg(sp);
+            sg.CompileFunctionFromStream();
         }
     }
     else

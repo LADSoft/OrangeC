@@ -81,6 +81,10 @@ future_error::~future_error() _NOEXCEPT
 {
 }
 
+__assoc_sub_state::~__assoc_sub_state() _NOEXCEPT
+{
+}
+
 void
 __assoc_sub_state::__on_zero_shared() _NOEXCEPT
 {

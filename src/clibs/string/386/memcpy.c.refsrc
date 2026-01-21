@@ -1,0 +1,79 @@
+#include <stdint.h>
+inline void* memcpy_basic(void* dest, const void* src, size_t n)
+{
+    for (size_t i = 0; i < n; i++)
+    {
+        ((char*)dest)[i] = ((const char*)src)[i];
+    }
+    return dest;
+}
+inline void* memmove_backwards_basic(void* s1, const void* s2, size_t sz)
+{
+    while (sz > 0)
+    {
+        sz--;
+        ((char*)s1)[sz] = ((const char*)s2)[sz];
+    }
+    return s1;
+}
+inline void* memmove_backwards(void* s1, const void* s2, size_t sz)
+{
+    if (sz < 256)
+    {
+        return memmove_backwards_basic(s1, s2, sz);
+    }
+    char* src_end = (const char*)s2 + sz;
+    char* dest_end = (const char*)s1 + sz;
+    __asm
+    {
+        // If DF=1 ESI and EDI are subtracted each time, otherwise ESI and EDI are added to.
+        mov esi, [src_end];
+        mov edi, [dest_end];
+        mov ecx, [sz];
+        std;
+        rep movsb;
+        cld;
+    }
+    return s1;
+}
+inline void* memcpy_repmovs(void* s1, const void* s2, size_t sz)
+{
+    // Garbage heuristic, check 3.7.6.3 of the Intel Architecture Optimization manual.
+    // In theory, once we confirm that this "style" is faster, an optimization pass to make the function absolutely tiny is
+    // available
+    if (sz < 256)
+    {
+        return memcpy_basic(s1, s2, sz);
+    }
+    __asm
+    {
+        mov esi, [s2];
+        mov edi, [s1];
+        mov ecx, [sz];
+        cld;
+        rep movsb;
+    }
+    return s1;
+}
+
+void* _RTL_FUNC memcpy(void* dest, const void* src, size_t sz)
+{
+    // Do we overlap?
+    if (((uintptr_t)src) < ((uintptr_t)dest) && ((uintptr_t)dest) < (((uintptr_t)src) + sz))
+    {
+        size_t distance_beyond = ((uintptr_t)src) + sz - ((uintptr_t)dest);
+        size_t inverse_distance_beyond = sz - distance_beyond;
+        memmove_backwards_basic((char*)dest + inverse_distance_beyond, dest, distance_beyond);
+        // Copy the values in-between dest and src to dest
+        return memcpy_repmovs(dest, src, inverse_distance_beyond);
+    }
+    else
+    {
+        // Destination + size goes into source
+        // That is fine, we can do a forward copy without issue
+        return memcpy_repmovs(dest, src, sz);
+    }
+    return dest;
+}
+
+void* _RTL_FUNC memmove(void* dest, const void* src, size_t n) { return memcpy(dest, src, n); }

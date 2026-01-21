@@ -228,6 +228,7 @@ namespace Parser
                                     createDestructor(func->sb->parentClass);
                                 StatementGenerator sg(func);
                                 sg.CompileFunctionFromStream();
+                                Optimizer::SymbolManager::Get(func)->functionUsed = true;
                                 if (func->sb->ispure)
                                 {
                                     Optimizer::genaddress(0);

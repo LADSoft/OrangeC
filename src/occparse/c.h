@@ -6,7 +6,7 @@
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of theba License, or
+ *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
@@ -605,7 +605,7 @@ struct attributes
         unsigned used : 1;                              /* value has been fetched */
         unsigned nonstring : 1;                         /* value is not a zero terminated string */
         unsigned zstring : 1;                           // (argument) was tagged as a zero terminated string
-        unsigned isInline;                          /* function or data is inlined */
+        unsigned isInline : 1;                          /* function or data is inlined */
         unsigned isInlineData : 1;                      /* data is inlined */
         unsigned excludeFromExplicitInstantiation : 1;  // template member should be instantiated implicitly
     } inheritable;
@@ -628,7 +628,7 @@ typedef struct sym
     const char* name;
     Type* tp;
     std::list<TEMPLATEPARAMPAIR>* templateParams;
-    int uniqueId;                                    /* unique index for local statics, template argument tags, etc... */
+    unsigned templateId;
     unsigned short utilityIndex;
     unsigned short packed : 1;       // packed template param instance
     unsigned short synthesized : 1;  // packed template param was synthesized during parsing
@@ -765,6 +765,7 @@ typedef struct sym
         int offset;                                      /* address offset of data in the given seg, or optimize register */
         int vtaboffset;                                  /* vtab offset for virtual functions */
         int label;                                       /* label number for statics */
+        unsigned uniqueId;                  /* unique id for variables and stuff */
         int startLine, endLine;                          /* line numbers spanning the function */
         short paramsize;                                 /* Size of parameter list for stdcall functions */
         short accessibleTemplateArgument;                /* something used as a template argument was validated for

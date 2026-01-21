@@ -232,6 +232,7 @@ struct SimpleSymbol
     unsigned ispure : 1;
     unsigned dontinstantiate : 1;
     unsigned initialized : 1;
+    unsigned functionUsed : 1;
     // new for intermediate
     unsigned inCatch : 1;          // used inside a catch block
     unsigned usedasbit : 1;        /* used in a bit field op */

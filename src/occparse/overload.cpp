@@ -2118,7 +2118,10 @@ void InitializeFunctionArguments(SYMBOL* sym, bool initialize)
         }
     }
     if (!sym->sb->decoratedName || strchr(sym->sb->decoratedName, MANGLE_DEFERRED_TYPE_CHAR))
+    {
         SetLinkerNames(sym, Linkage::cpp_);
+        sym->sb->symRef = nullptr;
+    }
 }
 SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate_in,
                           SYMBOL** userFunc, bool honorExplicit)
@@ -2418,7 +2421,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                     }
                 }
             }
-            SelectBestFunc(spList, icsList, lenList, &funcparams, 2, funcs, nullptr);
+            SelectBestFunc(spList, icsList, lenList, &funcparams, 1, funcs, nullptr);   
             WeedTemplates(spList, funcs, &funcparams, nullptr);
             found1 = found2 = nullptr;
             for (int i = 0; i < funcs && !found1; i++)

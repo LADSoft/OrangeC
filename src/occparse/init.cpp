@@ -213,6 +213,7 @@ void dumpStartups(void)
                     s = search(s->tp->syms, starts.first.c_str());
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
                     s->sb->attribs.inheritable.used = true;
+                    Optimizer::SymbolManager::Get(s)->functionUsed = true;
                 }
             }
         }
@@ -230,6 +231,7 @@ void dumpStartups(void)
                     s->sb->attribs.uninheritable.constructorPriority < 256 ? s->sb->attribs.uninheritable.constructorPriority : 255,
                     STARTUP_TYPE_STARTUP);
                 s->sb->attribs.inheritable.used = true;
+                Optimizer::SymbolManager::Get(s)->functionUsed = true;
             }
         }
         started = false;
@@ -250,6 +252,7 @@ void dumpStartups(void)
                     s = search(s->tp->syms, starts.first.c_str());
                     Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
                     s->sb->attribs.inheritable.used = true;
+                    Optimizer::SymbolManager::Get(s)->functionUsed = true;
                 }
             }
         }
@@ -267,6 +270,7 @@ void dumpStartups(void)
                     s->sb->attribs.uninheritable.destructorPriority < 256 ? s->sb->attribs.uninheritable.destructorPriority : 255,
                     STARTUP_TYPE_RUNDOWN);
                 s->sb->attribs.inheritable.used = true;
+                Optimizer::SymbolManager::Get(s)->functionUsed = true;
             }
         }
     }

@@ -87,7 +87,7 @@ struct StatementGenerator
 
     bool ParseAsm(std::list<FunctionBlock*>& parent);
     void Compound(std::list<FunctionBlock*>& parent, bool first);
-    void FunctionBody();
+    void FunctionBody(bool enter = true);
     bool CompileFunctionFromStream(bool withC = false, bool now = false);
     void GenerateDeferredFunctions();
     void GenerateFunctionIntermediateCode();

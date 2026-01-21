@@ -2396,7 +2396,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                 {
                     if (sp->sb->init && (spMatch == nullptr || sp == spMatch))
                     {
-                        if (sp->tp->IsStructured())
+                        if (sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->trivialCons)
                         {
                             genConstructorCall(b, sp->tp->BaseType()->sp, *cons->sb->constructorInitializers, sp, sp->sb->offset, true,
                                                thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
@@ -2448,9 +2448,9 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                 if ((sp->sb->storage_class == StorageClass::member_ || sp->sb->storage_class == StorageClass::mutable_) &&
                     sp->tp->type != BasicType::aggregate_ && !sp->sb->wasUsing)
                 {
-                    if (sp->tp->IsStructured())
+                    sp->tp->InitializeDeferred();
+                    if (sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->trivialCons)
                     {
-                        sp->tp->InitializeDeferred();
                         genConstructorCall(b, sp->tp->BaseType()->sp, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp, sp->sb->offset, true,
                                            thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
                     }

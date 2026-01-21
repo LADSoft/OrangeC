@@ -2651,6 +2651,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     Optimizer::SimpleExpression* varargarray = nullptr;
     if (!f->sp || !f->fcall)
         return Optimizer::make_immed(ISZ_UINT, 0);
+    if (f->sp->tp->IsFunction())
+        Optimizer::SymbolManager::Get(f->sp)->functionUsed = true;
     if (!f->ascall)
     {
         if (Optimizer::cparams.prm_cplusplus && (f->sp->sb->inlineFunc.stmt || bodyTokenStreams.get(f->sp)))
@@ -3837,6 +3839,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                     }
                     StatementGenerator sg(node->v.sp);
                     sg.CompileFunctionFromStream();
+                    Optimizer::SymbolManager::Get(node->v.sp)->functionUsed = true;
                 }
             }
             if (sym->imaddress && (Optimizer::architecture != ARCHITECTURE_MSIL))

@@ -7,8 +7,8 @@
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
+ *     (at your option) any later version.sg
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -275,6 +275,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
                         sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                         StatementGenerator sg(sym);
                         sg.CompileFunctionFromStream();
+                        Optimizer::SymbolManager::Get(sym)->functionUsed = true;
                     }
                 }
             }
@@ -283,6 +284,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
                 sym = (SYMBOL*)sym->tp->BaseType()->syms->front();
                 StatementGenerator sg(sym);
                 sg.CompileFunctionFromStream();
+                Optimizer::SymbolManager::Get(sym)->functionUsed = true;
             }
             Optimizer::SymbolManager::Get(sym);
             if (sym && sym->sb->attribs.inheritable.linkage2 == Linkage::import_)

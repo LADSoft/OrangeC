@@ -165,10 +165,10 @@ static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
     }
     if (sym->tp->IsStructured())
     {
-        if (!sym->uniqueId)
-           sym->uniqueId = uniqueId++;
+        if (!sym->sb->uniqueId)
+           sym->sb->uniqueId = uniqueId++;
         in += strlen(in);
-        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%d", sym->uniqueId);
+        Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%d", sym->sb->uniqueId);
     }
     in += strlen(in);
     return in;
@@ -1316,8 +1316,8 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
     {
         case Linkage::auto_:
             if (sym->sb->parent)
-                if (sym->uniqueId == 0)
-                    sym->uniqueId = uniqueId++;
+                if (sym->sb->uniqueId == 0)
+                    sym->sb->uniqueId = uniqueId++;
             p = mangleClasses(orig, p, theCurrentFunc);
             Optimizer::my_sprintf(p, MANGLE_SIZE(p), "@%s", sym->name);
 
@@ -1348,14 +1348,14 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
         case Linkage::c_:
         default:
             if (sym->sb->parent)
-                if (sym->uniqueId == 0)
-                    sym->uniqueId = uniqueId++;
+                if (sym->sb->uniqueId == 0)
+                    sym->sb->uniqueId = uniqueId++;
             if (sym->sb->storage_class == StorageClass::localstatic_ && sym->sb->parent)
             {
                 Utils::StrCpy(orig, sym->sb->parent->sb->decoratedName);
                 Utils::StrCat(orig, "_");
                 Utils::StrCat(orig, sym->name);
-                sprintf(orig + strlen(orig), "_%d", sym->uniqueId);
+                sprintf(orig + strlen(orig), "_%d", sym->sb->uniqueId);
             }
             else
             {

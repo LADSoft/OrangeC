@@ -191,7 +191,7 @@ typedef long long __time_t_64;
     {
         return _localtime64(__timer);
     }
-    inline time_t _IMPORT time(time_t* __timer)
+    inline time_t time(time_t* __timer)
     {
         return _time64(__timer);
     }

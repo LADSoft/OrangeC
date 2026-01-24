@@ -463,6 +463,7 @@ void compile(bool global)
         dumpInlines();
         dumpImportThunks();
         dumpStartups();
+        dumpInlines();
         if (IsCompiler())
         {
             dumpLits();

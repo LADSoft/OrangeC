@@ -602,6 +602,7 @@ typedef __char32_t char32_t;
 
 #define _LIBCPP_DISABLE_EXTENSION_WARNING
 #elif defined(_LIBCPP_COMPILER_ORANGEC)
+#  define _LIBCPP_ABI_BAD_FUNCTION_CALL_KEY_FUNCTION
 #define NEW_ORANGEC_THREADING_BEHAVIOR
 #define _ALIGNAS(x) alignas(x)
 #define _ALIGNAS_TYPE(x) alignas(_LIBCPP_ALIGNOF(x))

@@ -330,7 +330,9 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(Parser::Type* tp)
         if (tp1->IsPtr())
             tp1 = &stdpointer;
         if (tp1->BaseType()->type == BasicType::enum_)
-            tp1 = tp1->btp;
+        {
+            tp1 = tp1->BaseType()->btp;
+        }
         rv->structuredAlias = Get(tp1);
     }
     if ((tp->IsStructured() && tp->BaseType()->sp->sb->templateLevel && !tp->BaseType()->sp->sb->instantiated) ||
@@ -688,13 +690,13 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
     {
         Utils::StrCat(buf, old->sb->parent->sb->decoratedName);
         int l = strlen(buf);
-        my_sprintf(buf + l, sizeof(buf) - l, "%d", old->uniqueId);
+        my_sprintf(buf + l, sizeof(buf) - l, "%d", old->sb->uniqueId);
     }
     Utils::StrCat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
     if (old->sb->storage_class == StorageClass::static_ && !old->sb->parent)
     {
         int l = strlen(buf);
-        my_sprintf(buf + l, sizeof(buf) - l, "%d", old->uniqueId);
+        my_sprintf(buf + l, sizeof(buf) - l, "%d", old->sb->uniqueId);
     }
     if (old->sb->storage_class == StorageClass::type_)
         Utils::StrCat(buf, "#");
@@ -710,7 +712,9 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Lookup(struct Parser::sym* old)
 {
     if (old->sb->symRef)
+    {
         return old->sb->symRef;
+    }
     Optimizer::SimpleSymbol* rv = symbols[Key(old)];
     if (rv)
         old->sb->symRef = rv;

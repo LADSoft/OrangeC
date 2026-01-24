@@ -788,6 +788,8 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
 }
 static void GetStructAliasType(SYMBOL* sym)
 {
+return; // there are problems with this when compiling for debug mode.   I think we would have to have a separate version
+// of the library for debug mode and im not prepared to do that right now.
     if (IsDefiningTemplate())
         return;
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -4452,7 +4454,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             {
                                 if (!sp->sb->label)
                                     sp->sb->label = Optimizer::nextLabel++;
-                                sp->uniqueId = fileIndex;
+                                sp->sb->uniqueId = fileIndex;
                             }
 
                             if (nameSpaceList.size())

@@ -1566,7 +1566,7 @@ static SYMBOL* templateParamId(Type* tp, const char* name, int tag)
     SYMBOL* rv = Allocate<SYMBOL>();
     rv->tp = tp;
     rv->name = litlate(name);
-    rv->uniqueId = tag;
+    rv->templateId = tag;
     return rv;
 }
 static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
@@ -2668,7 +2668,8 @@ static void dontInstantiateInstanceMembers(SYMBOL* cls, bool excludeFromExplicit
                     {
                         if (!excludeFromExplicitInstantiation && !sym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
                         {
-                            sym->sb->dontinstantiate = true;
+                            if (!sym->sb->isConstructor || !cls->sb->trivialCons)
+                                sym->sb->dontinstantiate = true;
                         }
                     }
                 }

@@ -4838,7 +4838,7 @@ TEMPLATEPARAMPAIR* TypeAliasSearch(SYMBOL* sym,  bool toponly)
             {
                 if (arg.first && !strcmp(arg.first->name, sym->name))
                 {
-                    if (sym->uniqueId == arg.first->uniqueId)
+                    if (sym->templateId == arg.first->templateId)
                         return &arg;
                 }
             }

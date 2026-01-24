@@ -10,6 +10,10 @@
 
 namespace std {
 
+bad_variant_access::~bad_variant_access() noexcept
+{
+}
+
 const char* bad_variant_access::what() const noexcept {
   return "bad_variant_access";
 }

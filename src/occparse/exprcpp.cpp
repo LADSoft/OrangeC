@@ -1026,7 +1026,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         funcparams->ascall = true;
         Type* ctype = *tp;
         s3 = GetOverloadedFunction(&ctype, &funcparams->fcall, s3, funcparams, nullptr, F_GOFDELETEDERR, false, flags);
-        if (s3)
+        if (s3 && (!ismember(s3) || !s3->sb->parentClass->sb->trivialCons || strcmp(s3->name, overloadNameTab[CI_ASSIGN]) != 0))
         {
             if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
                 errorsym(ERR_CANNOT_ACCESS, s3);

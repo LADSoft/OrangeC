@@ -1150,8 +1150,9 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                 ParseOnStream(stream, [=]() {
                     SetLinkerNames(self->func, Linkage::cdecl_);
                     StatementGenerator sg(self->func);
-                    sg.FunctionBody();
-                    sg.BodyGen();
+                    // defer referencing it until the lambda is used
+                    // as it might not have the right name yet...
+                    sg.FunctionBody(false);
                     });
             }
         }

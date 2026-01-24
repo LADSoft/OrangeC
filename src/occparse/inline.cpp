@@ -243,10 +243,11 @@ void dumpInlines(void)
                                 Optimizer::genstorage(sym->tp->BaseType()->size);
                             }
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
-                            if (sym->sb->dest)
+                            if (sym->sb->dest && !sym->sb->parent)
                                 destructors.push(sym);
                             if (sym->sb->init && sym->sb->init->front()->exp && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
-                                CreateInlineConstructor(sym);
+                                if (!sym->sb->parent)
+                                    CreateInlineConstructor(sym);
                         }
                     }
                     else
@@ -279,11 +280,12 @@ void dumpInlines(void)
                                 else
                                     Optimizer::genstorage(sym->tp->BaseType()->size);
                                 Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
-                                if (sym->sb->dest)
+                                if (sym->sb->dest && !sym->sb->parent)
                                     destructors.push(sym);
                                 if (sym->sb->init && sym->sb->init->front()->exp &&
                                     sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
-                                    CreateInlineConstructor(sym);
+                                    if (!sym->sb->parent)
+                                        CreateInlineConstructor(sym);
                             }
                         }
                     }
@@ -336,9 +338,14 @@ void dumpMemberPointer(std::tuple<int, Optimizer::SimpleSymbol*, int, int>& data
     if (sym)
     {
         if (sym == (Optimizer::SimpleSymbol*)-1)
+        {
             Optimizer::genaddress(0);
+        }
         else
+        {
+            sym->functionUsed = true;
             Optimizer::genref(sym, 0);
+        }
     }
     Optimizer::genint(offset1);
     Optimizer::genint(offset2);

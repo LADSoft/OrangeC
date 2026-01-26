@@ -80,13 +80,15 @@ static bool HasMake(const std::string& cmd, const std::string& make)
             {
                 m = cmd.find_first_of(" \n\t\r\v", m + 1);
             }
-            if ( m != std::string::npos && m > n)
+            if (m != std::string::npos && m > n)
                 return true;
             // hack for autoconfig texts which use '&& $(MAKE) ...'
             // a more complete solution would look for any bash operator I guess...
-            while (n > 0 && !isspace(cmd[n]) && cmd[n] != '&') n--;
-            while (n > 0 && isspace(cmd[n])) n--;
-            if (n > 1 && cmd[n] == '&' && cmd[n-1] == '&')
+            while (n > 0 && !isspace(cmd[n]) && cmd[n] != '&')
+                n--;
+            while (n > 0 && isspace(cmd[n]))
+                n--;
+            if (n > 1 && cmd[n] == '&' && cmd[n - 1] == '&')
                 return true;
         }
     }
@@ -236,11 +238,12 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
     std::string varname = OS::LookupShellNames();
     if (!OS::IsUnixLikeShell(varname))
     {
-        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command before NormalizeFileName: ", cmdin);
+        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,
+                                         "Command before NormalizeFileName: ", cmdin);
 
         cmd = OS::NormalizeFileName(cmdin);
-        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Command after NormalizeFileName: ", cmd);
-
+        OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,
+                                         "Command after NormalizeFileName: ", cmd);
     }
     std::string make;
     Variable* v1 = VariableContainer::Instance()->Lookup("MAKE");
@@ -354,8 +357,8 @@ bool Spawner::split(const std::string& cmd)
 }
 std::string Spawner::shell(const std::string& cmd)
 {
-    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_WARNING,
-                                     OS::JobName() + " is running $(shell " + cmd + " )");
+    OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_WARNING, OS::JobName(), " is running $(shell ", cmd,
+                                     " )");
     std::string rv = OS::SpawnWithRedirect(cmd);
     int n = rv.size();
     while (n && (rv[n - 1] == '\r' || rv[n - 1] == '\n'))

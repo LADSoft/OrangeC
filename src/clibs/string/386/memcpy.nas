@@ -90,6 +90,10 @@ _memmove:
 _memcpy:
 ; Line 59: void* _RTL_FUNC memcpy(void* dest, const void* src, size_t sz) 
         sub     esp,byte 014h
+;       dest location: 04h
+;       src location:  08h
+;       size location: 0ch
+;       Stack size: 4 * 4 + 14h = 24h
         push    ebx
         push    ebp
         push    esi
@@ -144,8 +148,7 @@ L_97:
 ; Line 18: } 
 ; Line 68:         return memcpy_repmovs(dest, src, inverse_distance_beyond); 
         push    esi
-        mov     eax,dword [esp-010h+028h]
-        push    eax
+        push    dword [esp-010h+028h]
         push    edi
         call    _memcpy_repmovs ; memcpy_repmovs
         add     esp,byte 0ch
@@ -156,8 +159,7 @@ L_81:
 ; Line 71:     { 
 ; Line 74:         return memcpy_repmovs(dest, src, sz); 
         push    ebx
-        mov     eax,dword [esp-010h+028h]
-        push    eax
+        push    dword [esp-010h+028h]
         push    edi
         call    _memcpy_repmovs ; memcpy_repmovs
         add     esp,byte 0ch

@@ -21,15 +21,13 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(int max_jobs)
     int pid = getpid();
     std::string omake_string = "OMAKE";
     std::string combined = omake_string + std::to_string(pid);
-    OrangeC::Utils::BasicLogger::log(5,
-                                     "GetJobServer making new job server: " + combined + " job count: " + std::to_string(max_jobs));
+    OrangeC::Utils::BasicLogger::log(5, "GetJobServer making new job server: ", combined, " job count: ", std::to_string(max_jobs));
     return std::make_shared<WINDOWSJobServer>(combined, max_jobs);
 #else
     int pid = getpid();
     std::string omake_string = "OMAKE";
     std::string combined = omake_string + std::to_string(pid);
-    OrangeC::Utils::BasicLogger::log(5,
-                                     "GetJobServer making new job server: " + combined + " job count: " + std::to_string(max_jobs));
+    OrangeC::Utils::BasicLogger::log(5, "GetJobServer making new job server: ", combined, " job count: ", std::to_string(max_jobs));
 
     return std::make_shared<POSIXJobServer>(combined, max_jobs);
 #endif
@@ -45,8 +43,8 @@ std::shared_ptr<JobServer> JobServer::GetJobServer(const std::string& auth_strin
     {
         std::string new_string = std::string(auth_string.begin() + found + strlen("auth:"), auth_string.end());
         OrangeC::Utils::BasicLogger::log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG,
-                                         "GetJobServer(std::string) auth based, string: " + auth_string +
-                                             " new string: " + new_string);
+                                         "GetJobServer(std::string) auth based, string: ", auth_string,
+                                         " new string: ", new_string);
         return std::make_shared<POSIXJobServer>(new_string);
     }
     else

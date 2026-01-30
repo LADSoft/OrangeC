@@ -933,13 +933,15 @@ std::string OS::SpawnWithRedirect(const std::string command)
             exit_condition = (WIFEXITED(status) || WIFSTOPPED(status));
             if (WIFEXITED(status))
             {
-                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " exited. ret_wait: " +
-                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+                OrangeC::Utils::BasicLogger::debug("Process with command: ", command,
+                                                   " exited. ret_wait: ", std::to_string(ret_wait),
+                                                   " status: ", std::to_string(status));
             }
             if (WIFSTOPPED(status))
             {
-                OrangeC::Utils::BasicLogger::debug("Process with command: " + command + " stopped. ret_wait: " +
-                                                   std::to_string(ret_wait) + " status: " + std::to_string(status));
+                OrangeC::Utils::BasicLogger::debug("Process with command: ", command,
+                                                   " stopped. ret_wait: ", std::to_string(ret_wait),
+                                                   " status: ", std::to_string(status));
             }
             status = WEXITSTATUS(status);
         }
@@ -947,8 +949,8 @@ std::string OS::SpawnWithRedirect(const std::string command)
     } while (!exit_condition);
     close(pipe_cout[0]);
     close(pipe_cout[1]);
-    OrangeC::Utils::BasicLogger::debug("OS::SpawnWithRedirect returning from command: " + command +
-                                       " with status: " + std::to_string(status));
+    OrangeC::Utils::BasicLogger::debug("OS::SpawnWithRedirect returning from command: ", command,
+                                       " with status: ", std::to_string(status));
     return output_str;
 #endif
 }

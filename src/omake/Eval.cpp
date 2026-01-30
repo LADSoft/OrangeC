@@ -113,11 +113,11 @@ void Eval::Clear()
 
 std::string Eval::Evaluate()
 {
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Eval::Evaluate called with str: " + str);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Eval::Evaluate called with str: ", str);
     std::string rv = ParseMacroLine(str);
     if (expandWildcards)
         rv = wildcardinternal(rv);
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Eval::Evaluate called with str: " + str);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Eval::Evaluate called with str: ", str);
     return rv;
 }
 
@@ -1190,7 +1190,7 @@ std::string Eval::notdir(const std::string& names)
             rv += " ";
         rv += intermed;
     }
-    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: " + names + " evaluated names " + working + " returns: " + rv);
+    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: ", names, " evaluated names ", working, " returns: ", rv);
     return rv;
 }
 
@@ -1290,7 +1290,7 @@ std::string Eval::addprefix(const std::string& arglist)
 
 std::string Eval::wildcard(const std::string& arglist)
 {
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Called Eval::wildcard with argslist: " + arglist);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Called Eval::wildcard with argslist: ", arglist);
 
     std::string names = strip(arglist);
     std::string rv;
@@ -1305,13 +1305,13 @@ std::string Eval::wildcard(const std::string& arglist)
             rv += current;
         }
     }
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcard: " + rv);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcard: ", rv);
 
     return rv;
 }
 std::string Eval::wildcardinternal(std::string& names)
 {
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Called Eval::wildcardinternal with argslist: " + names);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Called Eval::wildcardinternal with argslist: ", names);
     CmdFiles files;
     while (!names.empty())
     {
@@ -1325,7 +1325,7 @@ std::string Eval::wildcardinternal(std::string& names)
             rv += " ";
         rv += name;
     }
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcardinternal: " + rv);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcardinternal: ", rv);
     return rv;
 }
 
@@ -1492,7 +1492,7 @@ std::string Eval::foreach (const std::string& arglist)
 
 std::string Eval::call(const std::string& arglist)
 {
-    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Called Eval::call with argslist: " + arglist);
+    OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3, "Called Eval::call with argslist: ", arglist);
     std::string sub = arglist;
     std::string args;
     std::string rv;

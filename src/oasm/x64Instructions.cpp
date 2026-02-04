@@ -2,250 +2,930 @@
 
 #include "x64Instructions.h"
 
-const char* const opcodeTable[631] = {
-    "",           "",           "",           "",          "",           "",           "",          "",          "",
-    "",           "",           "",           "",          "",           "",           "",          "",          "",
-    "",           "",           "",           "",          "",           "",           "",          "",          "",
-    "",           "",           "",           "",          "",           "aaa",        "aad",       "aam",       "aas",
-    "adc",        "add",        "and",        "arpl",      "bound",      "bsf",        "bsr",       "bswap",     "bt",
-    "btc",        "btr",        "bts",        "call",      "cbw",        "cdq",        "cdqe",      "clc",       "cld",
-    "cli",        "clts",       "cmc",        "cmova",     "cmovae",     "cmovb",      "cmovbe",    "cmovc",     "cmove",
-    "cmovg",      "cmovge",     "cmovl",      "cmovle",    "cmovna",     "cmovnae",    "cmovnb",    "cmovnbe",   "cmovnc",
-    "cmovne",     "cmovng",     "cmovnge",    "cmovnl",    "cmovnle",    "cmovno",     "cmovnp",    "cmovns",    "cmovnz",
-    "cmovo",      "cmovp",      "cmovpe",     "cmovpo",    "cmovs",      "cmovz",      "cmp",       "cmps",      "cmpsb",
-    "cmpsw",      "cmpsd",      "cmpsq",      "cmpxchg",   "cmpxchg8b",  "cmpxchg16b", "cpuid",     "cqo",       "cwd",
-    "cwde",       "daa",        "das",        "dec",       "div",        "enter",      "esc",       "f2xm1",     "fabs",
-    "fadd",       "faddp",      "fbld",       "fbstp",     "fchs",       "fclex",      "fnclex",    "fcmovb",    "fcmovbe",
-    "fcmove",     "fcmovnb",    "fcmovnbe",   "fcmovne",   "fcmovnu",    "fcmovu",     "fcom",      "fcomi",     "fcomip",
-    "fcomp",      "fcompp",     "fcos",       "fdecstp",   "fdisi",      "fdiv",       "fdivp",     "fdivr",     "fdivrp",
-    "feni",       "ffree",      "ffreep",     "fiadd",     "ficom",      "ficomp",     "fidiv",     "fidivr",    "fild",
-    "fimul",      "fincstp",    "finit",      "fninit",    "fist",       "fistp",      "fisub",     "fisubr",    "fld",
-    "fld1",       "fldcw",      "fldenv",     "fldl2e",    "fldl2t",     "fldlg2",     "fldln2",    "fldpi",     "fldz",
-    "fmul",       "fmulp",      "fnop",       "fnsave",    "fpatan",     "fprem",      "fprem1",    "fptan",     "frndint",
-    "frstor",     "fsave",      "fscale",     "fsetpm",    "fsin",       "fsincos",    "fsqrt",     "fst",       "fstcw",
-    "fnstcw",     "fstenv",     "fnstenv",    "fstp",      "fstsw",      "fnstsw",     "fsub",      "fsubp",     "fsubr",
-    "fsubrp",     "ftst",       "fucom",      "fucomi",    "fucomip",    "fucomp",     "fucompp",   "fwait",     "fxam",
-    "fxch",       "fxch4",      "fxch7",      "fxrstor",   "fxsave",     "fxtract",    "fyl2x",     "fyl2xp1",   "hlt",
-    "icebp",      "idiv",       "imul",       "in",        "ins",        "insb",       "insw",      "insd",      "inc",
-    "int",        "int1",       "int3",       "into",      "invd",       "invlpg",     "iret",      "iretw",     "iretd",
-    "iretq",      "ja",         "jae",        "jb",        "jbe",        "jc",         "jcxz",      "jecxz",     "je",
-    "jg",         "jge",        "jl",         "jle",       "jmp",        "jna",        "jnae",      "jnb",       "jnbe",
-    "jnc",        "jne",        "jng",        "jnge",      "jnl",        "jnle",       "jno",       "jnp",       "jns",
-    "jnz",        "jo",         "jp",         "jpe",       "jpo",        "js",         "jz",        "lahf",      "lar",
-    "lds",        "lea",        "leave",      "les",       "lfence",     "lfs",        "lgdt",      "lgs",       "lidt",
-    "lldt",       "lmsw",       "lods",       "lodsb",     "lodsw",      "lodsd",      "lodsq",     "loop",      "loope",
-    "loopne",     "loopnz",     "loopz",      "lsl",       "lss",        "ltr",        "mov",       "movs",      "movbe",
-    "movsb",      "movsw",      "movsd",      "movsq",     "movsx",      "movzx",      "movsxd",    "mul",       "neg",
-    "nop",        "not",        "or",         "out",       "outs",       "outsb",      "outsw",     "outsd",     "pop",
-    "popa",       "popaw",      "popad",      "popcnt",    "popf",       "popfw",      "popfd",     "popfq",     "prefetchnta",
-    "prefetcht0", "prefetcht1", "prefetcht2", "push",      "pusha",      "pushaw",     "pushad",    "pushf",     "pushfw",
-    "pushfd",     "pushfq",     "rcl",        "rcr",       "rdmsr",      "rdpmc",      "rdtsc",     "ret",       "retf",
-    "rol",        "ror",        "rsm",        "sahf",      "sal",        "sar",        "sbb",       "scas",      "scasb",
-    "scasw",      "scasd",      "scasq",      "seta",      "setae",      "setb",       "setbe",     "setc",      "sete",
-    "setg",       "setge",      "setl",       "setle",     "setna",      "setnae",     "setnb",     "setnbe",    "setnc",
-    "setne",      "setng",      "setnge",     "setnl",     "setnle",     "setno",      "setnp",     "setns",     "setnz",
-    "seto",       "setp",       "setpe",      "setpo",     "sets",       "setz",       "sfence",    "sgdt",      "shl",
-    "shld",       "shr",        "shrd",       "sidt",      "sldt",       "smsw",       "stc",       "std",       "sti",
-    "stos",       "stosb",      "stosw",      "stosd",     "stosq",      "str",        "sub",       "syscall",   "sysenter",
-    "sysexit",    "sysret",     "test",       "ud2",       "verr",       "verw",       "wait",      "wbinvd",    "wrmsr",
-    "xadd",       "xchg",       "xlat",       "xlatb",     "xor",        "xrstor",     "xrstor64",  "xsave",     "xsave64",
-    "xsetbv",     "addpd",      "addps",      "addsd",     "addss",      "addsubpd",   "addsubps",  "andnpd",    "andnps",
-    "andpd",      "andps",      "blendpd",    "blendps",   "cmppd",      "cmpps",      "comisd",    "comiss",    "cvtdq2pd",
-    "cvtdq2ps",   "cvtpd2dq",   "cvtpd2pi",   "cvtpd2ps",  "cvtpi2pd",   "cvtpi2ps",   "cvtps2dq",  "cvtps2pd",  "cvtps2pi",
-    "cvtsd2si",   "cvtsd2ss",   "cvtsi2sd",   "cvtsi2ss",  "cvtss2sd",   "cvtss2si",   "cvttpd2dq", "cvttpd2pi", "cvttps2dq",
-    "cvttps2pi",  "cvttsd2si",  "cvttss2si",  "divpd",     "divps",      "divsd",      "divss",     "dppd",      "dpps",
-    "hsubpd",     "hsubps",     "insertps",   "lddqu",     "maskmovdqu", "maskmovq",   "maxpd",     "maxps",     "maxsd",
-    "maxss",      "mfence",     "pause",      "minpd",     "minps",      "minsd",      "minss",     "monitor",   "movapd",
-    "movaps",     "movd",       "movq",       "movddup",   "movdq2q",    "movdqa",     "movdqu",    "movhlps",   "movhpd",
-    "movhps",     "movlhps",    "movlpd",     "movlps",    "movmskpd",   "movmskps",   "movntdq",   "movnti",    "movntpd",
-    "movntd",     "movntq",     "movq2dq",    "movshdup",  "movsldup",   "movss",      "movupd",    "movups",    "mpsadbw",
-    "mulpd",      "mulps",      "mulsd",      "mulss",     "orpd",       "orps",       "packssdw",  "packsswb",  "packusdw",
-    "paddb",      "paddd",      "paddq",      "paddsw",    "paddusb",    "paddusw",    "paddw",     "palignr",   "pand",
-    "pandn",      "pavgb",      "pavgw",      "pblendw",   "pcmpeqb",    "pcmpeqd",    "pcmpeqw",   "pcmpestri", "pcmpestrm",
-    "pcmpgtb",    "pcmpgtd",    "pcmpgtw",    "pextrb",    "pextrd",     "pextrq",     "pextrw",    "pinsrb",    "pinsrd",
-    "pinsrq",     "pinsrw",     "pmaddwd",    "pmaxsw",    "pmaxub",     "pminsw",     "pminub",    "pmovmskb",  "pmulhuw",
-    "pmulhw",     "pmullw",     "pmuludq",    "psadbw",    "pshufd",     "pshufhw",    "pshuflw",   "pshufw",    "pslld",
-    "pslldq",     "psllq",      "psllw",      "psrad",     "psraw",      "psrld",      "psrldq",    "psrlq",     "psrlw",
-    "psubb",      "psubd",      "psubq",      "psubsb",    "psubsw",     "psubusb",    "psubusw",   "punpckhbw", "punpckhdq",
-    "punpckhqdq", "punpckhwd",  "punpcklbw",  "punpckldq", "punpcklqdq", "punpcklwd",  "pxor",      "rcpps",     "rcpss",
-    "roundpd",    "roundps",    "roundsd",    "roundss",   "rsqrtps",    "rsqrtss",    "shufpd",    "shufps",    "sqrtpd",
-    "sqrtps",     "sqrtsd",     "sqrtss",     "subpd",     "subps",      "subsd",      "subss",     "ucomisd",   "ucomiss",
-    "unpckhpd",   "unpckhps",   "unpcklpd",   "unpcklps",  "xorpd",      "xorps",      "invept",    "invvpid",   "vmcall",
-    "vmclear",    "vmlaunch",   "vmptrld",    "vmptrst",   "vmread",     "vmresume",   "vmwrite",   "vmxoff",    "vmxon",
-    "a16",        "a32",        "lock",       "o16",       "o32",        "rep",        "repe",      "repne",     "repnz",
-    "repz",
+const char * const opcodeTable[631] = {
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"aaa",
+	"aad",
+	"aam",
+	"aas",
+	"adc",
+	"add",
+	"and",
+	"arpl",
+	"bound",
+	"bsf",
+	"bsr",
+	"bswap",
+	"bt",
+	"btc",
+	"btr",
+	"bts",
+	"call",
+	"cbw",
+	"cdq",
+	"cdqe",
+	"clc",
+	"cld",
+	"cli",
+	"clts",
+	"cmc",
+	"cmova",
+	"cmovae",
+	"cmovb",
+	"cmovbe",
+	"cmovc",
+	"cmove",
+	"cmovg",
+	"cmovge",
+	"cmovl",
+	"cmovle",
+	"cmovna",
+	"cmovnae",
+	"cmovnb",
+	"cmovnbe",
+	"cmovnc",
+	"cmovne",
+	"cmovng",
+	"cmovnge",
+	"cmovnl",
+	"cmovnle",
+	"cmovno",
+	"cmovnp",
+	"cmovns",
+	"cmovnz",
+	"cmovo",
+	"cmovp",
+	"cmovpe",
+	"cmovpo",
+	"cmovs",
+	"cmovz",
+	"cmp",
+	"cmps",
+	"cmpsb",
+	"cmpsw",
+	"cmpsd",
+	"cmpsq",
+	"cmpxchg",
+	"cmpxchg8b",
+	"cmpxchg16b",
+	"cpuid",
+	"cqo",
+	"cwd",
+	"cwde",
+	"daa",
+	"das",
+	"dec",
+	"div",
+	"enter",
+	"esc",
+	"f2xm1",
+	"fabs",
+	"fadd",
+	"faddp",
+	"fbld",
+	"fbstp",
+	"fchs",
+	"fclex",
+	"fnclex",
+	"fcmovb",
+	"fcmovbe",
+	"fcmove",
+	"fcmovnb",
+	"fcmovnbe",
+	"fcmovne",
+	"fcmovnu",
+	"fcmovu",
+	"fcom",
+	"fcomi",
+	"fcomip",
+	"fcomp",
+	"fcompp",
+	"fcos",
+	"fdecstp",
+	"fdisi",
+	"fdiv",
+	"fdivp",
+	"fdivr",
+	"fdivrp",
+	"feni",
+	"ffree",
+	"ffreep",
+	"fiadd",
+	"ficom",
+	"ficomp",
+	"fidiv",
+	"fidivr",
+	"fild",
+	"fimul",
+	"fincstp",
+	"finit",
+	"fninit",
+	"fist",
+	"fistp",
+	"fisub",
+	"fisubr",
+	"fld",
+	"fld1",
+	"fldcw",
+	"fldenv",
+	"fldl2e",
+	"fldl2t",
+	"fldlg2",
+	"fldln2",
+	"fldpi",
+	"fldz",
+	"fmul",
+	"fmulp",
+	"fnop",
+	"fnsave",
+	"fpatan",
+	"fprem",
+	"fprem1",
+	"fptan",
+	"frndint",
+	"frstor",
+	"fsave",
+	"fscale",
+	"fsetpm",
+	"fsin",
+	"fsincos",
+	"fsqrt",
+	"fst",
+	"fstcw",
+	"fnstcw",
+	"fstenv",
+	"fnstenv",
+	"fstp",
+	"fstsw",
+	"fnstsw",
+	"fsub",
+	"fsubp",
+	"fsubr",
+	"fsubrp",
+	"ftst",
+	"fucom",
+	"fucomi",
+	"fucomip",
+	"fucomp",
+	"fucompp",
+	"fwait",
+	"fxam",
+	"fxch",
+	"fxch4",
+	"fxch7",
+	"fxrstor",
+	"fxsave",
+	"fxtract",
+	"fyl2x",
+	"fyl2xp1",
+	"hlt",
+	"icebp",
+	"idiv",
+	"imul",
+	"in",
+	"ins",
+	"insb",
+	"insw",
+	"insd",
+	"inc",
+	"int",
+	"int1",
+	"int3",
+	"into",
+	"invd",
+	"invlpg",
+	"iret",
+	"iretw",
+	"iretd",
+	"iretq",
+	"ja",
+	"jae",
+	"jb",
+	"jbe",
+	"jc",
+	"jcxz",
+	"jecxz",
+	"je",
+	"jg",
+	"jge",
+	"jl",
+	"jle",
+	"jmp",
+	"jna",
+	"jnae",
+	"jnb",
+	"jnbe",
+	"jnc",
+	"jne",
+	"jng",
+	"jnge",
+	"jnl",
+	"jnle",
+	"jno",
+	"jnp",
+	"jns",
+	"jnz",
+	"jo",
+	"jp",
+	"jpe",
+	"jpo",
+	"js",
+	"jz",
+	"lahf",
+	"lar",
+	"lds",
+	"lea",
+	"leave",
+	"les",
+	"lfence",
+	"lfs",
+	"lgdt",
+	"lgs",
+	"lidt",
+	"lldt",
+	"lmsw",
+	"lods",
+	"lodsb",
+	"lodsw",
+	"lodsd",
+	"lodsq",
+	"loop",
+	"loope",
+	"loopne",
+	"loopnz",
+	"loopz",
+	"lsl",
+	"lss",
+	"ltr",
+	"mov",
+	"movs",
+	"movbe",
+	"movsb",
+	"movsw",
+	"movsd",
+	"movsq",
+	"movsx",
+	"movzx",
+	"movsxd",
+	"mul",
+	"neg",
+	"nop",
+	"not",
+	"or",
+	"out",
+	"outs",
+	"outsb",
+	"outsw",
+	"outsd",
+	"pop",
+	"popa",
+	"popaw",
+	"popad",
+	"popcnt",
+	"popf",
+	"popfw",
+	"popfd",
+	"popfq",
+	"prefetchnta",
+	"prefetcht0",
+	"prefetcht1",
+	"prefetcht2",
+	"push",
+	"pusha",
+	"pushaw",
+	"pushad",
+	"pushf",
+	"pushfw",
+	"pushfd",
+	"pushfq",
+	"rcl",
+	"rcr",
+	"rdmsr",
+	"rdpmc",
+	"rdtsc",
+	"ret",
+	"retf",
+	"rol",
+	"ror",
+	"rsm",
+	"sahf",
+	"sal",
+	"sar",
+	"sbb",
+	"scas",
+	"scasb",
+	"scasw",
+	"scasd",
+	"scasq",
+	"seta",
+	"setae",
+	"setb",
+	"setbe",
+	"setc",
+	"sete",
+	"setg",
+	"setge",
+	"setl",
+	"setle",
+	"setna",
+	"setnae",
+	"setnb",
+	"setnbe",
+	"setnc",
+	"setne",
+	"setng",
+	"setnge",
+	"setnl",
+	"setnle",
+	"setno",
+	"setnp",
+	"setns",
+	"setnz",
+	"seto",
+	"setp",
+	"setpe",
+	"setpo",
+	"sets",
+	"setz",
+	"sfence",
+	"sgdt",
+	"shl",
+	"shld",
+	"shr",
+	"shrd",
+	"sidt",
+	"sldt",
+	"smsw",
+	"stc",
+	"std",
+	"sti",
+	"stos",
+	"stosb",
+	"stosw",
+	"stosd",
+	"stosq",
+	"str",
+	"sub",
+	"syscall",
+	"sysenter",
+	"sysexit",
+	"sysret",
+	"test",
+	"ud2",
+	"verr",
+	"verw",
+	"wait",
+	"wbinvd",
+	"wrmsr",
+	"xadd",
+	"xchg",
+	"xlat",
+	"xlatb",
+	"xor",
+	"xrstor",
+	"xrstor64",
+	"xsave",
+	"xsave64",
+	"xsetbv",
+	"addpd",
+	"addps",
+	"addsd",
+	"addss",
+	"addsubpd",
+	"addsubps",
+	"andnpd",
+	"andnps",
+	"andpd",
+	"andps",
+	"blendpd",
+	"blendps",
+	"cmppd",
+	"cmpps",
+	"comisd",
+	"comiss",
+	"cvtdq2pd",
+	"cvtdq2ps",
+	"cvtpd2dq",
+	"cvtpd2pi",
+	"cvtpd2ps",
+	"cvtpi2pd",
+	"cvtpi2ps",
+	"cvtps2dq",
+	"cvtps2pd",
+	"cvtps2pi",
+	"cvtsd2si",
+	"cvtsd2ss",
+	"cvtsi2sd",
+	"cvtsi2ss",
+	"cvtss2sd",
+	"cvtss2si",
+	"cvttpd2dq",
+	"cvttpd2pi",
+	"cvttps2dq",
+	"cvttps2pi",
+	"cvttsd2si",
+	"cvttss2si",
+	"divpd",
+	"divps",
+	"divsd",
+	"divss",
+	"dppd",
+	"dpps",
+	"hsubpd",
+	"hsubps",
+	"insertps",
+	"lddqu",
+	"maskmovdqu",
+	"maskmovq",
+	"maxpd",
+	"maxps",
+	"maxsd",
+	"maxss",
+	"mfence",
+	"pause",
+	"minpd",
+	"minps",
+	"minsd",
+	"minss",
+	"monitor",
+	"movapd",
+	"movaps",
+	"movd",
+	"movq",
+	"movddup",
+	"movdq2q",
+	"movdqa",
+	"movdqu",
+	"movhlps",
+	"movhpd",
+	"movhps",
+	"movlhps",
+	"movlpd",
+	"movlps",
+	"movmskpd",
+	"movmskps",
+	"movntdq",
+	"movnti",
+	"movntpd",
+	"movntd",
+	"movntq",
+	"movq2dq",
+	"movshdup",
+	"movsldup",
+	"movss",
+	"movupd",
+	"movups",
+	"mpsadbw",
+	"mulpd",
+	"mulps",
+	"mulsd",
+	"mulss",
+	"orpd",
+	"orps",
+	"packssdw",
+	"packsswb",
+	"packusdw",
+	"paddb",
+	"paddd",
+	"paddq",
+	"paddsw",
+	"paddusb",
+	"paddusw",
+	"paddw",
+	"palignr",
+	"pand",
+	"pandn",
+	"pavgb",
+	"pavgw",
+	"pblendw",
+	"pcmpeqb",
+	"pcmpeqd",
+	"pcmpeqw",
+	"pcmpestri",
+	"pcmpestrm",
+	"pcmpgtb",
+	"pcmpgtd",
+	"pcmpgtw",
+	"pextrb",
+	"pextrd",
+	"pextrq",
+	"pextrw",
+	"pinsrb",
+	"pinsrd",
+	"pinsrq",
+	"pinsrw",
+	"pmaddwd",
+	"pmaxsw",
+	"pmaxub",
+	"pminsw",
+	"pminub",
+	"pmovmskb",
+	"pmulhuw",
+	"pmulhw",
+	"pmullw",
+	"pmuludq",
+	"psadbw",
+	"pshufd",
+	"pshufhw",
+	"pshuflw",
+	"pshufw",
+	"pslld",
+	"pslldq",
+	"psllq",
+	"psllw",
+	"psrad",
+	"psraw",
+	"psrld",
+	"psrldq",
+	"psrlq",
+	"psrlw",
+	"psubb",
+	"psubd",
+	"psubq",
+	"psubsb",
+	"psubsw",
+	"psubusb",
+	"psubusw",
+	"punpckhbw",
+	"punpckhdq",
+	"punpckhqdq",
+	"punpckhwd",
+	"punpcklbw",
+	"punpckldq",
+	"punpcklqdq",
+	"punpcklwd",
+	"pxor",
+	"rcpps",
+	"rcpss",
+	"roundpd",
+	"roundps",
+	"roundsd",
+	"roundss",
+	"rsqrtps",
+	"rsqrtss",
+	"shufpd",
+	"shufps",
+	"sqrtpd",
+	"sqrtps",
+	"sqrtsd",
+	"sqrtss",
+	"subpd",
+	"subps",
+	"subsd",
+	"subss",
+	"ucomisd",
+	"ucomiss",
+	"unpckhpd",
+	"unpckhps",
+	"unpcklpd",
+	"unpcklps",
+	"xorpd",
+	"xorps",
+	"invept",
+	"invvpid",
+	"vmcall",
+	"vmclear",
+	"vmlaunch",
+	"vmptrld",
+	"vmptrst",
+	"vmread",
+	"vmresume",
+	"vmwrite",
+	"vmxoff",
+	"vmxon",
+	"a16",
+	"a32",
+	"lock",
+	"o16",
+	"o32",
+	"rep",
+	"repe",
+	"repne",
+	"repnz",
+	"repz",
 };
 
-std::unordered_map<enum e_tk, const char*> tokenNames = {
-    {tk_star, "*"},      {tk_plus, "+"},      {tk_comma, ","},   {tk_colon, ":"},   {tk_openbr, "["},    {tk_closebr, "]"},
-    {tk_byte, "byte"},   {tk_dword, "dword"}, {tk_far, "far"},   {tk_near, "near"}, {tk_qword, "qword"}, {tk_short, "short"},
-    {tk_tword, "tword"}, {tk_word, "word"},   {tk_al, "al"},     {tk_ah, "ah"},     {tk_ax, "ax"},       {tk_eax, "eax"},
-    {tk_rax, "rax"},     {tk_r8b, "r8b"},     {tk_r8w, "r8w"},   {tk_r8d, "r8d"},   {tk_r8, "r8"},       {tk_cl, "cl"},
-    {tk_ch, "ch"},       {tk_cx, "cx"},       {tk_ecx, "ecx"},   {tk_rcx, "rcx"},   {tk_r9b, "r9b"},     {tk_r9w, "r9w"},
-    {tk_r9d, "r9d"},     {tk_r9, "r9"},       {tk_dl, "dl"},     {tk_dh, "dh"},     {tk_dx, "dx"},       {tk_edx, "edx"},
-    {tk_rdx, "rdx"},     {tk_r10b, "r10b"},   {tk_r10w, "r10w"}, {tk_r10d, "r10d"}, {tk_r10, "r10"},     {tk_bl, "bl"},
-    {tk_bh, "bh"},       {tk_bx, "bx"},       {tk_ebx, "ebx"},   {tk_rbx, "rbx"},   {tk_r11b, "r11b"},   {tk_r11w, "r11w"},
-    {tk_r11d, "r11d"},   {tk_r11, "r11"},     {tk_spl, "spl"},   {tk_sp, "sp"},     {tk_esp, "esp"},     {tk_rsp, "rsp"},
-    {tk_r12b, "r12b"},   {tk_r12w, "r12w"},   {tk_r12d, "r12d"}, {tk_r12, "r12"},   {tk_bpl, "bpl"},     {tk_bp, "bp"},
-    {tk_ebp, "ebp"},     {tk_rbp, "rbp"},     {tk_r13b, "r13b"}, {tk_r13w, "r13w"}, {tk_r13d, "r13d"},   {tk_r13, "r13"},
-    {tk_sil, "sil"},     {tk_si, "si"},       {tk_esi, "esi"},   {tk_rsi, "rsi"},   {tk_r14b, "r14b"},   {tk_r14w, "r14w"},
-    {tk_r14d, "r14d"},   {tk_r14, "r14"},     {tk_dil, "dil"},   {tk_di, "di"},     {tk_edi, "edi"},     {tk_rdi, "rdi"},
-    {tk_r15b, "r15b"},   {tk_r15w, "r15w"},   {tk_r15d, "r15d"}, {tk_r15, "r15"},   {tk_rip, "rip"},     {tk_mm0, "mm0"},
-    {tk_xmm0, "xmm0"},   {tk_xmm8, "xmm8"},   {tk_mm1, "mm1"},   {tk_xmm1, "xmm1"}, {tk_xmm9, "xmm9"},   {tk_mm2, "mm2"},
-    {tk_xmm2, "xmm2"},   {tk_xmm10, "xmm10"}, {tk_mm3, "mm3"},   {tk_xmm3, "xmm3"}, {tk_xmm11, "xmm11"}, {tk_mm4, "mm4"},
-    {tk_xmm4, "xmm4"},   {tk_xmm12, "xmm12"}, {tk_mm5, "mm5"},   {tk_xmm5, "xmm5"}, {tk_xmm13, "xmm13"}, {tk_mm6, "mm6"},
-    {tk_xmm6, "xmm6"},   {tk_xmm14, "xmm14"}, {tk_mm7, "mm7"},   {tk_xmm7, "xmm7"}, {tk_xmm15, "xmm15"}, {tk_es, "es"},
-    {tk_cs, "cs"},       {tk_ss, "ss"},       {tk_ds, "ds"},     {tk_fs, "fs"},     {tk_gs, "gs"},       {tk_st0, "st0"},
-    {tk_st1, "st1"},     {tk_st2, "st2"},     {tk_st3, "st3"},   {tk_st4, "st4"},   {tk_st5, "st5"},     {tk_st6, "st6"},
-    {tk_st7, "st7"},     {tk_cr0, "cr0"},     {tk_cr1, "cr1"},   {tk_cr2, "cr2"},   {tk_cr3, "cr3"},     {tk_cr4, "cr4"},
-    {tk_cr5, "cr5"},     {tk_cr6, "cr6"},     {tk_cr7, "cr7"},   {tk_dr0, "dr0"},   {tk_dr1, "dr1"},     {tk_dr2, "dr2"},
-    {tk_dr3, "dr3"},     {tk_dr4, "dr4"},     {tk_dr5, "dr5"},   {tk_dr6, "dr6"},   {tk_dr7, "dr7"},     {tk_tr0, "tr0"},
-    {tk_tr1, "tr1"},     {tk_tr2, "tr2"},     {tk_tr3, "tr3"},   {tk_tr4, "tr4"},   {tk_tr5, "tr5"},     {tk_tr6, "tr6"},
-    {tk_tr7, "tr7"},
+std::unordered_map<enum e_tk, const char *> tokenNames = {
+	{ tk_star, "*" },
+	{ tk_plus, "+" },
+	{ tk_comma, "," },
+	{ tk_colon, ":" },
+	{ tk_openbr, "[" },
+	{ tk_closebr, "]" },
+	{ tk_byte, "byte" },
+	{ tk_dword, "dword" },
+	{ tk_far, "far" },
+	{ tk_near, "near" },
+	{ tk_qword, "qword" },
+	{ tk_short, "short" },
+	{ tk_tword, "tword" },
+	{ tk_word, "word" },
+	{ tk_al, "al" },
+	{ tk_ah, "ah" },
+	{ tk_ax, "ax" },
+	{ tk_eax, "eax" },
+	{ tk_rax, "rax" },
+	{ tk_r8b, "r8b" },
+	{ tk_r8w, "r8w" },
+	{ tk_r8d, "r8d" },
+	{ tk_r8, "r8" },
+	{ tk_cl, "cl" },
+	{ tk_ch, "ch" },
+	{ tk_cx, "cx" },
+	{ tk_ecx, "ecx" },
+	{ tk_rcx, "rcx" },
+	{ tk_r9b, "r9b" },
+	{ tk_r9w, "r9w" },
+	{ tk_r9d, "r9d" },
+	{ tk_r9, "r9" },
+	{ tk_dl, "dl" },
+	{ tk_dh, "dh" },
+	{ tk_dx, "dx" },
+	{ tk_edx, "edx" },
+	{ tk_rdx, "rdx" },
+	{ tk_r10b, "r10b" },
+	{ tk_r10w, "r10w" },
+	{ tk_r10d, "r10d" },
+	{ tk_r10, "r10" },
+	{ tk_bl, "bl" },
+	{ tk_bh, "bh" },
+	{ tk_bx, "bx" },
+	{ tk_ebx, "ebx" },
+	{ tk_rbx, "rbx" },
+	{ tk_r11b, "r11b" },
+	{ tk_r11w, "r11w" },
+	{ tk_r11d, "r11d" },
+	{ tk_r11, "r11" },
+	{ tk_spl, "spl" },
+	{ tk_sp, "sp" },
+	{ tk_esp, "esp" },
+	{ tk_rsp, "rsp" },
+	{ tk_r12b, "r12b" },
+	{ tk_r12w, "r12w" },
+	{ tk_r12d, "r12d" },
+	{ tk_r12, "r12" },
+	{ tk_bpl, "bpl" },
+	{ tk_bp, "bp" },
+	{ tk_ebp, "ebp" },
+	{ tk_rbp, "rbp" },
+	{ tk_r13b, "r13b" },
+	{ tk_r13w, "r13w" },
+	{ tk_r13d, "r13d" },
+	{ tk_r13, "r13" },
+	{ tk_sil, "sil" },
+	{ tk_si, "si" },
+	{ tk_esi, "esi" },
+	{ tk_rsi, "rsi" },
+	{ tk_r14b, "r14b" },
+	{ tk_r14w, "r14w" },
+	{ tk_r14d, "r14d" },
+	{ tk_r14, "r14" },
+	{ tk_dil, "dil" },
+	{ tk_di, "di" },
+	{ tk_edi, "edi" },
+	{ tk_rdi, "rdi" },
+	{ tk_r15b, "r15b" },
+	{ tk_r15w, "r15w" },
+	{ tk_r15d, "r15d" },
+	{ tk_r15, "r15" },
+	{ tk_rip, "rip" },
+	{ tk_mm0, "mm0" },
+	{ tk_xmm0, "xmm0" },
+	{ tk_xmm8, "xmm8" },
+	{ tk_mm1, "mm1" },
+	{ tk_xmm1, "xmm1" },
+	{ tk_xmm9, "xmm9" },
+	{ tk_mm2, "mm2" },
+	{ tk_xmm2, "xmm2" },
+	{ tk_xmm10, "xmm10" },
+	{ tk_mm3, "mm3" },
+	{ tk_xmm3, "xmm3" },
+	{ tk_xmm11, "xmm11" },
+	{ tk_mm4, "mm4" },
+	{ tk_xmm4, "xmm4" },
+	{ tk_xmm12, "xmm12" },
+	{ tk_mm5, "mm5" },
+	{ tk_xmm5, "xmm5" },
+	{ tk_xmm13, "xmm13" },
+	{ tk_mm6, "mm6" },
+	{ tk_xmm6, "xmm6" },
+	{ tk_xmm14, "xmm14" },
+	{ tk_mm7, "mm7" },
+	{ tk_xmm7, "xmm7" },
+	{ tk_xmm15, "xmm15" },
+	{ tk_es, "es" },
+	{ tk_cs, "cs" },
+	{ tk_ss, "ss" },
+	{ tk_ds, "ds" },
+	{ tk_fs, "fs" },
+	{ tk_gs, "gs" },
+	{ tk_st0, "st0" },
+	{ tk_st1, "st1" },
+	{ tk_st2, "st2" },
+	{ tk_st3, "st3" },
+	{ tk_st4, "st4" },
+	{ tk_st5, "st5" },
+	{ tk_st6, "st6" },
+	{ tk_st7, "st7" },
+	{ tk_cr0, "cr0" },
+	{ tk_cr1, "cr1" },
+	{ tk_cr2, "cr2" },
+	{ tk_cr3, "cr3" },
+	{ tk_cr4, "cr4" },
+	{ tk_cr5, "cr5" },
+	{ tk_cr6, "cr6" },
+	{ tk_cr7, "cr7" },
+	{ tk_dr0, "dr0" },
+	{ tk_dr1, "dr1" },
+	{ tk_dr2, "dr2" },
+	{ tk_dr3, "dr3" },
+	{ tk_dr4, "dr4" },
+	{ tk_dr5, "dr5" },
+	{ tk_dr6, "dr6" },
+	{ tk_dr7, "dr7" },
+	{ tk_tr0, "tr0" },
+	{ tk_tr1, "tr1" },
+	{ tk_tr2, "tr2" },
+	{ tk_tr3, "tr3" },
+	{ tk_tr4, "tr4" },
+	{ tk_tr5, "tr5" },
+	{ tk_tr6, "tr6" },
+	{ tk_tr7, "tr7" },
 };
 
-InputToken Tokenstar{InputToken::TOKEN, new AdlExprNode(tk_star)};
-InputToken Tokenplus{InputToken::TOKEN, new AdlExprNode(tk_plus)};
-InputToken Tokencomma{InputToken::TOKEN, new AdlExprNode(tk_comma)};
-InputToken Tokencolon{InputToken::TOKEN, new AdlExprNode(tk_colon)};
-InputToken Tokenopenbr{InputToken::TOKEN, new AdlExprNode(tk_openbr)};
-InputToken Tokenclosebr{InputToken::TOKEN, new AdlExprNode(tk_closebr)};
-InputToken Tokenbyte{InputToken::TOKEN, new AdlExprNode(tk_byte)};
-InputToken Tokendword{InputToken::TOKEN, new AdlExprNode(tk_dword)};
-InputToken Tokenfar{InputToken::TOKEN, new AdlExprNode(tk_far)};
-InputToken Tokennear{InputToken::TOKEN, new AdlExprNode(tk_near)};
-InputToken Tokenqword{InputToken::TOKEN, new AdlExprNode(tk_qword)};
-InputToken Tokenshort{InputToken::TOKEN, new AdlExprNode(tk_short)};
-InputToken Tokentword{InputToken::TOKEN, new AdlExprNode(tk_tword)};
-InputToken Tokenword{InputToken::TOKEN, new AdlExprNode(tk_word)};
-InputToken Tokenal{InputToken::REGISTER, new AdlExprNode(tk_al - 1000)};
-InputToken Tokenah{InputToken::REGISTER, new AdlExprNode(tk_ah - 1000)};
-InputToken Tokenax{InputToken::REGISTER, new AdlExprNode(tk_ax - 1000)};
-InputToken Tokeneax{InputToken::REGISTER, new AdlExprNode(tk_eax - 1000)};
-InputToken Tokenrax{InputToken::REGISTER, new AdlExprNode(tk_rax - 1000)};
-InputToken Tokenr8b{InputToken::REGISTER, new AdlExprNode(tk_r8b - 1000)};
-InputToken Tokenr8w{InputToken::REGISTER, new AdlExprNode(tk_r8w - 1000)};
-InputToken Tokenr8d{InputToken::REGISTER, new AdlExprNode(tk_r8d - 1000)};
-InputToken Tokenr8{InputToken::REGISTER, new AdlExprNode(tk_r8 - 1000)};
-InputToken Tokencl{InputToken::REGISTER, new AdlExprNode(tk_cl - 1000)};
-InputToken Tokench{InputToken::REGISTER, new AdlExprNode(tk_ch - 1000)};
-InputToken Tokencx{InputToken::REGISTER, new AdlExprNode(tk_cx - 1000)};
-InputToken Tokenecx{InputToken::REGISTER, new AdlExprNode(tk_ecx - 1000)};
-InputToken Tokenrcx{InputToken::REGISTER, new AdlExprNode(tk_rcx - 1000)};
-InputToken Tokenr9b{InputToken::REGISTER, new AdlExprNode(tk_r9b - 1000)};
-InputToken Tokenr9w{InputToken::REGISTER, new AdlExprNode(tk_r9w - 1000)};
-InputToken Tokenr9d{InputToken::REGISTER, new AdlExprNode(tk_r9d - 1000)};
-InputToken Tokenr9{InputToken::REGISTER, new AdlExprNode(tk_r9 - 1000)};
-InputToken Tokendl{InputToken::REGISTER, new AdlExprNode(tk_dl - 1000)};
-InputToken Tokendh{InputToken::REGISTER, new AdlExprNode(tk_dh - 1000)};
-InputToken Tokendx{InputToken::REGISTER, new AdlExprNode(tk_dx - 1000)};
-InputToken Tokenedx{InputToken::REGISTER, new AdlExprNode(tk_edx - 1000)};
-InputToken Tokenrdx{InputToken::REGISTER, new AdlExprNode(tk_rdx - 1000)};
-InputToken Tokenr10b{InputToken::REGISTER, new AdlExprNode(tk_r10b - 1000)};
-InputToken Tokenr10w{InputToken::REGISTER, new AdlExprNode(tk_r10w - 1000)};
-InputToken Tokenr10d{InputToken::REGISTER, new AdlExprNode(tk_r10d - 1000)};
-InputToken Tokenr10{InputToken::REGISTER, new AdlExprNode(tk_r10 - 1000)};
-InputToken Tokenbl{InputToken::REGISTER, new AdlExprNode(tk_bl - 1000)};
-InputToken Tokenbh{InputToken::REGISTER, new AdlExprNode(tk_bh - 1000)};
-InputToken Tokenbx{InputToken::REGISTER, new AdlExprNode(tk_bx - 1000)};
-InputToken Tokenebx{InputToken::REGISTER, new AdlExprNode(tk_ebx - 1000)};
-InputToken Tokenrbx{InputToken::REGISTER, new AdlExprNode(tk_rbx - 1000)};
-InputToken Tokenr11b{InputToken::REGISTER, new AdlExprNode(tk_r11b - 1000)};
-InputToken Tokenr11w{InputToken::REGISTER, new AdlExprNode(tk_r11w - 1000)};
-InputToken Tokenr11d{InputToken::REGISTER, new AdlExprNode(tk_r11d - 1000)};
-InputToken Tokenr11{InputToken::REGISTER, new AdlExprNode(tk_r11 - 1000)};
-InputToken Tokenspl{InputToken::REGISTER, new AdlExprNode(tk_spl - 1000)};
-InputToken Tokensp{InputToken::REGISTER, new AdlExprNode(tk_sp - 1000)};
-InputToken Tokenesp{InputToken::REGISTER, new AdlExprNode(tk_esp - 1000)};
-InputToken Tokenrsp{InputToken::REGISTER, new AdlExprNode(tk_rsp - 1000)};
-InputToken Tokenr12b{InputToken::REGISTER, new AdlExprNode(tk_r12b - 1000)};
-InputToken Tokenr12w{InputToken::REGISTER, new AdlExprNode(tk_r12w - 1000)};
-InputToken Tokenr12d{InputToken::REGISTER, new AdlExprNode(tk_r12d - 1000)};
-InputToken Tokenr12{InputToken::REGISTER, new AdlExprNode(tk_r12 - 1000)};
-InputToken Tokenbpl{InputToken::REGISTER, new AdlExprNode(tk_bpl - 1000)};
-InputToken Tokenbp{InputToken::REGISTER, new AdlExprNode(tk_bp - 1000)};
-InputToken Tokenebp{InputToken::REGISTER, new AdlExprNode(tk_ebp - 1000)};
-InputToken Tokenrbp{InputToken::REGISTER, new AdlExprNode(tk_rbp - 1000)};
-InputToken Tokenr13b{InputToken::REGISTER, new AdlExprNode(tk_r13b - 1000)};
-InputToken Tokenr13w{InputToken::REGISTER, new AdlExprNode(tk_r13w - 1000)};
-InputToken Tokenr13d{InputToken::REGISTER, new AdlExprNode(tk_r13d - 1000)};
-InputToken Tokenr13{InputToken::REGISTER, new AdlExprNode(tk_r13 - 1000)};
-InputToken Tokensil{InputToken::REGISTER, new AdlExprNode(tk_sil - 1000)};
-InputToken Tokensi{InputToken::REGISTER, new AdlExprNode(tk_si - 1000)};
-InputToken Tokenesi{InputToken::REGISTER, new AdlExprNode(tk_esi - 1000)};
-InputToken Tokenrsi{InputToken::REGISTER, new AdlExprNode(tk_rsi - 1000)};
-InputToken Tokenr14b{InputToken::REGISTER, new AdlExprNode(tk_r14b - 1000)};
-InputToken Tokenr14w{InputToken::REGISTER, new AdlExprNode(tk_r14w - 1000)};
-InputToken Tokenr14d{InputToken::REGISTER, new AdlExprNode(tk_r14d - 1000)};
-InputToken Tokenr14{InputToken::REGISTER, new AdlExprNode(tk_r14 - 1000)};
-InputToken Tokendil{InputToken::REGISTER, new AdlExprNode(tk_dil - 1000)};
-InputToken Tokendi{InputToken::REGISTER, new AdlExprNode(tk_di - 1000)};
-InputToken Tokenedi{InputToken::REGISTER, new AdlExprNode(tk_edi - 1000)};
-InputToken Tokenrdi{InputToken::REGISTER, new AdlExprNode(tk_rdi - 1000)};
-InputToken Tokenr15b{InputToken::REGISTER, new AdlExprNode(tk_r15b - 1000)};
-InputToken Tokenr15w{InputToken::REGISTER, new AdlExprNode(tk_r15w - 1000)};
-InputToken Tokenr15d{InputToken::REGISTER, new AdlExprNode(tk_r15d - 1000)};
-InputToken Tokenr15{InputToken::REGISTER, new AdlExprNode(tk_r15 - 1000)};
-InputToken Tokenrip{InputToken::REGISTER, new AdlExprNode(tk_rip - 1000)};
-InputToken Tokenmm0{InputToken::REGISTER, new AdlExprNode(tk_mm0 - 1000)};
-InputToken Tokenxmm0{InputToken::REGISTER, new AdlExprNode(tk_xmm0 - 1000)};
-InputToken Tokenxmm8{InputToken::REGISTER, new AdlExprNode(tk_xmm8 - 1000)};
-InputToken Tokenmm1{InputToken::REGISTER, new AdlExprNode(tk_mm1 - 1000)};
-InputToken Tokenxmm1{InputToken::REGISTER, new AdlExprNode(tk_xmm1 - 1000)};
-InputToken Tokenxmm9{InputToken::REGISTER, new AdlExprNode(tk_xmm9 - 1000)};
-InputToken Tokenmm2{InputToken::REGISTER, new AdlExprNode(tk_mm2 - 1000)};
-InputToken Tokenxmm2{InputToken::REGISTER, new AdlExprNode(tk_xmm2 - 1000)};
-InputToken Tokenxmm10{InputToken::REGISTER, new AdlExprNode(tk_xmm10 - 1000)};
-InputToken Tokenmm3{InputToken::REGISTER, new AdlExprNode(tk_mm3 - 1000)};
-InputToken Tokenxmm3{InputToken::REGISTER, new AdlExprNode(tk_xmm3 - 1000)};
-InputToken Tokenxmm11{InputToken::REGISTER, new AdlExprNode(tk_xmm11 - 1000)};
-InputToken Tokenmm4{InputToken::REGISTER, new AdlExprNode(tk_mm4 - 1000)};
-InputToken Tokenxmm4{InputToken::REGISTER, new AdlExprNode(tk_xmm4 - 1000)};
-InputToken Tokenxmm12{InputToken::REGISTER, new AdlExprNode(tk_xmm12 - 1000)};
-InputToken Tokenmm5{InputToken::REGISTER, new AdlExprNode(tk_mm5 - 1000)};
-InputToken Tokenxmm5{InputToken::REGISTER, new AdlExprNode(tk_xmm5 - 1000)};
-InputToken Tokenxmm13{InputToken::REGISTER, new AdlExprNode(tk_xmm13 - 1000)};
-InputToken Tokenmm6{InputToken::REGISTER, new AdlExprNode(tk_mm6 - 1000)};
-InputToken Tokenxmm6{InputToken::REGISTER, new AdlExprNode(tk_xmm6 - 1000)};
-InputToken Tokenxmm14{InputToken::REGISTER, new AdlExprNode(tk_xmm14 - 1000)};
-InputToken Tokenmm7{InputToken::REGISTER, new AdlExprNode(tk_mm7 - 1000)};
-InputToken Tokenxmm7{InputToken::REGISTER, new AdlExprNode(tk_xmm7 - 1000)};
-InputToken Tokenxmm15{InputToken::REGISTER, new AdlExprNode(tk_xmm15 - 1000)};
-InputToken Tokenes{InputToken::REGISTER, new AdlExprNode(tk_es - 1000)};
-InputToken Tokencs{InputToken::REGISTER, new AdlExprNode(tk_cs - 1000)};
-InputToken Tokenss{InputToken::REGISTER, new AdlExprNode(tk_ss - 1000)};
-InputToken Tokends{InputToken::REGISTER, new AdlExprNode(tk_ds - 1000)};
-InputToken Tokenfs{InputToken::REGISTER, new AdlExprNode(tk_fs - 1000)};
-InputToken Tokengs{InputToken::REGISTER, new AdlExprNode(tk_gs - 1000)};
-InputToken Tokenst0{InputToken::REGISTER, new AdlExprNode(tk_st0 - 1000)};
-InputToken Tokenst1{InputToken::REGISTER, new AdlExprNode(tk_st1 - 1000)};
-InputToken Tokenst2{InputToken::REGISTER, new AdlExprNode(tk_st2 - 1000)};
-InputToken Tokenst3{InputToken::REGISTER, new AdlExprNode(tk_st3 - 1000)};
-InputToken Tokenst4{InputToken::REGISTER, new AdlExprNode(tk_st4 - 1000)};
-InputToken Tokenst5{InputToken::REGISTER, new AdlExprNode(tk_st5 - 1000)};
-InputToken Tokenst6{InputToken::REGISTER, new AdlExprNode(tk_st6 - 1000)};
-InputToken Tokenst7{InputToken::REGISTER, new AdlExprNode(tk_st7 - 1000)};
-InputToken Tokencr0{InputToken::REGISTER, new AdlExprNode(tk_cr0 - 1000)};
-InputToken Tokencr1{InputToken::REGISTER, new AdlExprNode(tk_cr1 - 1000)};
-InputToken Tokencr2{InputToken::REGISTER, new AdlExprNode(tk_cr2 - 1000)};
-InputToken Tokencr3{InputToken::REGISTER, new AdlExprNode(tk_cr3 - 1000)};
-InputToken Tokencr4{InputToken::REGISTER, new AdlExprNode(tk_cr4 - 1000)};
-InputToken Tokencr5{InputToken::REGISTER, new AdlExprNode(tk_cr5 - 1000)};
-InputToken Tokencr6{InputToken::REGISTER, new AdlExprNode(tk_cr6 - 1000)};
-InputToken Tokencr7{InputToken::REGISTER, new AdlExprNode(tk_cr7 - 1000)};
-InputToken Tokendr0{InputToken::REGISTER, new AdlExprNode(tk_dr0 - 1000)};
-InputToken Tokendr1{InputToken::REGISTER, new AdlExprNode(tk_dr1 - 1000)};
-InputToken Tokendr2{InputToken::REGISTER, new AdlExprNode(tk_dr2 - 1000)};
-InputToken Tokendr3{InputToken::REGISTER, new AdlExprNode(tk_dr3 - 1000)};
-InputToken Tokendr4{InputToken::REGISTER, new AdlExprNode(tk_dr4 - 1000)};
-InputToken Tokendr5{InputToken::REGISTER, new AdlExprNode(tk_dr5 - 1000)};
-InputToken Tokendr6{InputToken::REGISTER, new AdlExprNode(tk_dr6 - 1000)};
-InputToken Tokendr7{InputToken::REGISTER, new AdlExprNode(tk_dr7 - 1000)};
-InputToken Tokentr0{InputToken::REGISTER, new AdlExprNode(tk_tr0 - 1000)};
-InputToken Tokentr1{InputToken::REGISTER, new AdlExprNode(tk_tr1 - 1000)};
-InputToken Tokentr2{InputToken::REGISTER, new AdlExprNode(tk_tr2 - 1000)};
-InputToken Tokentr3{InputToken::REGISTER, new AdlExprNode(tk_tr3 - 1000)};
-InputToken Tokentr4{InputToken::REGISTER, new AdlExprNode(tk_tr4 - 1000)};
-InputToken Tokentr5{InputToken::REGISTER, new AdlExprNode(tk_tr5 - 1000)};
-InputToken Tokentr6{InputToken::REGISTER, new AdlExprNode(tk_tr6 - 1000)};
-InputToken Tokentr7{InputToken::REGISTER, new AdlExprNode(tk_tr7 - 1000)};
+InputToken Tokenstar{ InputToken::TOKEN, new AdlExprNode(tk_star) };
+InputToken Tokenplus{ InputToken::TOKEN, new AdlExprNode(tk_plus) };
+InputToken Tokencomma{ InputToken::TOKEN, new AdlExprNode(tk_comma) };
+InputToken Tokencolon{ InputToken::TOKEN, new AdlExprNode(tk_colon) };
+InputToken Tokenopenbr{ InputToken::TOKEN, new AdlExprNode(tk_openbr) };
+InputToken Tokenclosebr{ InputToken::TOKEN, new AdlExprNode(tk_closebr) };
+InputToken Tokenbyte{ InputToken::TOKEN, new AdlExprNode(tk_byte) };
+InputToken Tokendword{ InputToken::TOKEN, new AdlExprNode(tk_dword) };
+InputToken Tokenfar{ InputToken::TOKEN, new AdlExprNode(tk_far) };
+InputToken Tokennear{ InputToken::TOKEN, new AdlExprNode(tk_near) };
+InputToken Tokenqword{ InputToken::TOKEN, new AdlExprNode(tk_qword) };
+InputToken Tokenshort{ InputToken::TOKEN, new AdlExprNode(tk_short) };
+InputToken Tokentword{ InputToken::TOKEN, new AdlExprNode(tk_tword) };
+InputToken Tokenword{ InputToken::TOKEN, new AdlExprNode(tk_word) };
+InputToken Tokenal{ InputToken::REGISTER, new AdlExprNode(tk_al - 1000) };
+InputToken Tokenah{ InputToken::REGISTER, new AdlExprNode(tk_ah - 1000) };
+InputToken Tokenax{ InputToken::REGISTER, new AdlExprNode(tk_ax - 1000) };
+InputToken Tokeneax{ InputToken::REGISTER, new AdlExprNode(tk_eax - 1000) };
+InputToken Tokenrax{ InputToken::REGISTER, new AdlExprNode(tk_rax - 1000) };
+InputToken Tokenr8b{ InputToken::REGISTER, new AdlExprNode(tk_r8b - 1000) };
+InputToken Tokenr8w{ InputToken::REGISTER, new AdlExprNode(tk_r8w - 1000) };
+InputToken Tokenr8d{ InputToken::REGISTER, new AdlExprNode(tk_r8d - 1000) };
+InputToken Tokenr8{ InputToken::REGISTER, new AdlExprNode(tk_r8 - 1000) };
+InputToken Tokencl{ InputToken::REGISTER, new AdlExprNode(tk_cl - 1000) };
+InputToken Tokench{ InputToken::REGISTER, new AdlExprNode(tk_ch - 1000) };
+InputToken Tokencx{ InputToken::REGISTER, new AdlExprNode(tk_cx - 1000) };
+InputToken Tokenecx{ InputToken::REGISTER, new AdlExprNode(tk_ecx - 1000) };
+InputToken Tokenrcx{ InputToken::REGISTER, new AdlExprNode(tk_rcx - 1000) };
+InputToken Tokenr9b{ InputToken::REGISTER, new AdlExprNode(tk_r9b - 1000) };
+InputToken Tokenr9w{ InputToken::REGISTER, new AdlExprNode(tk_r9w - 1000) };
+InputToken Tokenr9d{ InputToken::REGISTER, new AdlExprNode(tk_r9d - 1000) };
+InputToken Tokenr9{ InputToken::REGISTER, new AdlExprNode(tk_r9 - 1000) };
+InputToken Tokendl{ InputToken::REGISTER, new AdlExprNode(tk_dl - 1000) };
+InputToken Tokendh{ InputToken::REGISTER, new AdlExprNode(tk_dh - 1000) };
+InputToken Tokendx{ InputToken::REGISTER, new AdlExprNode(tk_dx - 1000) };
+InputToken Tokenedx{ InputToken::REGISTER, new AdlExprNode(tk_edx - 1000) };
+InputToken Tokenrdx{ InputToken::REGISTER, new AdlExprNode(tk_rdx - 1000) };
+InputToken Tokenr10b{ InputToken::REGISTER, new AdlExprNode(tk_r10b - 1000) };
+InputToken Tokenr10w{ InputToken::REGISTER, new AdlExprNode(tk_r10w - 1000) };
+InputToken Tokenr10d{ InputToken::REGISTER, new AdlExprNode(tk_r10d - 1000) };
+InputToken Tokenr10{ InputToken::REGISTER, new AdlExprNode(tk_r10 - 1000) };
+InputToken Tokenbl{ InputToken::REGISTER, new AdlExprNode(tk_bl - 1000) };
+InputToken Tokenbh{ InputToken::REGISTER, new AdlExprNode(tk_bh - 1000) };
+InputToken Tokenbx{ InputToken::REGISTER, new AdlExprNode(tk_bx - 1000) };
+InputToken Tokenebx{ InputToken::REGISTER, new AdlExprNode(tk_ebx - 1000) };
+InputToken Tokenrbx{ InputToken::REGISTER, new AdlExprNode(tk_rbx - 1000) };
+InputToken Tokenr11b{ InputToken::REGISTER, new AdlExprNode(tk_r11b - 1000) };
+InputToken Tokenr11w{ InputToken::REGISTER, new AdlExprNode(tk_r11w - 1000) };
+InputToken Tokenr11d{ InputToken::REGISTER, new AdlExprNode(tk_r11d - 1000) };
+InputToken Tokenr11{ InputToken::REGISTER, new AdlExprNode(tk_r11 - 1000) };
+InputToken Tokenspl{ InputToken::REGISTER, new AdlExprNode(tk_spl - 1000) };
+InputToken Tokensp{ InputToken::REGISTER, new AdlExprNode(tk_sp - 1000) };
+InputToken Tokenesp{ InputToken::REGISTER, new AdlExprNode(tk_esp - 1000) };
+InputToken Tokenrsp{ InputToken::REGISTER, new AdlExprNode(tk_rsp - 1000) };
+InputToken Tokenr12b{ InputToken::REGISTER, new AdlExprNode(tk_r12b - 1000) };
+InputToken Tokenr12w{ InputToken::REGISTER, new AdlExprNode(tk_r12w - 1000) };
+InputToken Tokenr12d{ InputToken::REGISTER, new AdlExprNode(tk_r12d - 1000) };
+InputToken Tokenr12{ InputToken::REGISTER, new AdlExprNode(tk_r12 - 1000) };
+InputToken Tokenbpl{ InputToken::REGISTER, new AdlExprNode(tk_bpl - 1000) };
+InputToken Tokenbp{ InputToken::REGISTER, new AdlExprNode(tk_bp - 1000) };
+InputToken Tokenebp{ InputToken::REGISTER, new AdlExprNode(tk_ebp - 1000) };
+InputToken Tokenrbp{ InputToken::REGISTER, new AdlExprNode(tk_rbp - 1000) };
+InputToken Tokenr13b{ InputToken::REGISTER, new AdlExprNode(tk_r13b - 1000) };
+InputToken Tokenr13w{ InputToken::REGISTER, new AdlExprNode(tk_r13w - 1000) };
+InputToken Tokenr13d{ InputToken::REGISTER, new AdlExprNode(tk_r13d - 1000) };
+InputToken Tokenr13{ InputToken::REGISTER, new AdlExprNode(tk_r13 - 1000) };
+InputToken Tokensil{ InputToken::REGISTER, new AdlExprNode(tk_sil - 1000) };
+InputToken Tokensi{ InputToken::REGISTER, new AdlExprNode(tk_si - 1000) };
+InputToken Tokenesi{ InputToken::REGISTER, new AdlExprNode(tk_esi - 1000) };
+InputToken Tokenrsi{ InputToken::REGISTER, new AdlExprNode(tk_rsi - 1000) };
+InputToken Tokenr14b{ InputToken::REGISTER, new AdlExprNode(tk_r14b - 1000) };
+InputToken Tokenr14w{ InputToken::REGISTER, new AdlExprNode(tk_r14w - 1000) };
+InputToken Tokenr14d{ InputToken::REGISTER, new AdlExprNode(tk_r14d - 1000) };
+InputToken Tokenr14{ InputToken::REGISTER, new AdlExprNode(tk_r14 - 1000) };
+InputToken Tokendil{ InputToken::REGISTER, new AdlExprNode(tk_dil - 1000) };
+InputToken Tokendi{ InputToken::REGISTER, new AdlExprNode(tk_di - 1000) };
+InputToken Tokenedi{ InputToken::REGISTER, new AdlExprNode(tk_edi - 1000) };
+InputToken Tokenrdi{ InputToken::REGISTER, new AdlExprNode(tk_rdi - 1000) };
+InputToken Tokenr15b{ InputToken::REGISTER, new AdlExprNode(tk_r15b - 1000) };
+InputToken Tokenr15w{ InputToken::REGISTER, new AdlExprNode(tk_r15w - 1000) };
+InputToken Tokenr15d{ InputToken::REGISTER, new AdlExprNode(tk_r15d - 1000) };
+InputToken Tokenr15{ InputToken::REGISTER, new AdlExprNode(tk_r15 - 1000) };
+InputToken Tokenrip{ InputToken::REGISTER, new AdlExprNode(tk_rip - 1000) };
+InputToken Tokenmm0{ InputToken::REGISTER, new AdlExprNode(tk_mm0 - 1000) };
+InputToken Tokenxmm0{ InputToken::REGISTER, new AdlExprNode(tk_xmm0 - 1000) };
+InputToken Tokenxmm8{ InputToken::REGISTER, new AdlExprNode(tk_xmm8 - 1000) };
+InputToken Tokenmm1{ InputToken::REGISTER, new AdlExprNode(tk_mm1 - 1000) };
+InputToken Tokenxmm1{ InputToken::REGISTER, new AdlExprNode(tk_xmm1 - 1000) };
+InputToken Tokenxmm9{ InputToken::REGISTER, new AdlExprNode(tk_xmm9 - 1000) };
+InputToken Tokenmm2{ InputToken::REGISTER, new AdlExprNode(tk_mm2 - 1000) };
+InputToken Tokenxmm2{ InputToken::REGISTER, new AdlExprNode(tk_xmm2 - 1000) };
+InputToken Tokenxmm10{ InputToken::REGISTER, new AdlExprNode(tk_xmm10 - 1000) };
+InputToken Tokenmm3{ InputToken::REGISTER, new AdlExprNode(tk_mm3 - 1000) };
+InputToken Tokenxmm3{ InputToken::REGISTER, new AdlExprNode(tk_xmm3 - 1000) };
+InputToken Tokenxmm11{ InputToken::REGISTER, new AdlExprNode(tk_xmm11 - 1000) };
+InputToken Tokenmm4{ InputToken::REGISTER, new AdlExprNode(tk_mm4 - 1000) };
+InputToken Tokenxmm4{ InputToken::REGISTER, new AdlExprNode(tk_xmm4 - 1000) };
+InputToken Tokenxmm12{ InputToken::REGISTER, new AdlExprNode(tk_xmm12 - 1000) };
+InputToken Tokenmm5{ InputToken::REGISTER, new AdlExprNode(tk_mm5 - 1000) };
+InputToken Tokenxmm5{ InputToken::REGISTER, new AdlExprNode(tk_xmm5 - 1000) };
+InputToken Tokenxmm13{ InputToken::REGISTER, new AdlExprNode(tk_xmm13 - 1000) };
+InputToken Tokenmm6{ InputToken::REGISTER, new AdlExprNode(tk_mm6 - 1000) };
+InputToken Tokenxmm6{ InputToken::REGISTER, new AdlExprNode(tk_xmm6 - 1000) };
+InputToken Tokenxmm14{ InputToken::REGISTER, new AdlExprNode(tk_xmm14 - 1000) };
+InputToken Tokenmm7{ InputToken::REGISTER, new AdlExprNode(tk_mm7 - 1000) };
+InputToken Tokenxmm7{ InputToken::REGISTER, new AdlExprNode(tk_xmm7 - 1000) };
+InputToken Tokenxmm15{ InputToken::REGISTER, new AdlExprNode(tk_xmm15 - 1000) };
+InputToken Tokenes{ InputToken::REGISTER, new AdlExprNode(tk_es - 1000) };
+InputToken Tokencs{ InputToken::REGISTER, new AdlExprNode(tk_cs - 1000) };
+InputToken Tokenss{ InputToken::REGISTER, new AdlExprNode(tk_ss - 1000) };
+InputToken Tokends{ InputToken::REGISTER, new AdlExprNode(tk_ds - 1000) };
+InputToken Tokenfs{ InputToken::REGISTER, new AdlExprNode(tk_fs - 1000) };
+InputToken Tokengs{ InputToken::REGISTER, new AdlExprNode(tk_gs - 1000) };
+InputToken Tokenst0{ InputToken::REGISTER, new AdlExprNode(tk_st0 - 1000) };
+InputToken Tokenst1{ InputToken::REGISTER, new AdlExprNode(tk_st1 - 1000) };
+InputToken Tokenst2{ InputToken::REGISTER, new AdlExprNode(tk_st2 - 1000) };
+InputToken Tokenst3{ InputToken::REGISTER, new AdlExprNode(tk_st3 - 1000) };
+InputToken Tokenst4{ InputToken::REGISTER, new AdlExprNode(tk_st4 - 1000) };
+InputToken Tokenst5{ InputToken::REGISTER, new AdlExprNode(tk_st5 - 1000) };
+InputToken Tokenst6{ InputToken::REGISTER, new AdlExprNode(tk_st6 - 1000) };
+InputToken Tokenst7{ InputToken::REGISTER, new AdlExprNode(tk_st7 - 1000) };
+InputToken Tokencr0{ InputToken::REGISTER, new AdlExprNode(tk_cr0 - 1000) };
+InputToken Tokencr1{ InputToken::REGISTER, new AdlExprNode(tk_cr1 - 1000) };
+InputToken Tokencr2{ InputToken::REGISTER, new AdlExprNode(tk_cr2 - 1000) };
+InputToken Tokencr3{ InputToken::REGISTER, new AdlExprNode(tk_cr3 - 1000) };
+InputToken Tokencr4{ InputToken::REGISTER, new AdlExprNode(tk_cr4 - 1000) };
+InputToken Tokencr5{ InputToken::REGISTER, new AdlExprNode(tk_cr5 - 1000) };
+InputToken Tokencr6{ InputToken::REGISTER, new AdlExprNode(tk_cr6 - 1000) };
+InputToken Tokencr7{ InputToken::REGISTER, new AdlExprNode(tk_cr7 - 1000) };
+InputToken Tokendr0{ InputToken::REGISTER, new AdlExprNode(tk_dr0 - 1000) };
+InputToken Tokendr1{ InputToken::REGISTER, new AdlExprNode(tk_dr1 - 1000) };
+InputToken Tokendr2{ InputToken::REGISTER, new AdlExprNode(tk_dr2 - 1000) };
+InputToken Tokendr3{ InputToken::REGISTER, new AdlExprNode(tk_dr3 - 1000) };
+InputToken Tokendr4{ InputToken::REGISTER, new AdlExprNode(tk_dr4 - 1000) };
+InputToken Tokendr5{ InputToken::REGISTER, new AdlExprNode(tk_dr5 - 1000) };
+InputToken Tokendr6{ InputToken::REGISTER, new AdlExprNode(tk_dr6 - 1000) };
+InputToken Tokendr7{ InputToken::REGISTER, new AdlExprNode(tk_dr7 - 1000) };
+InputToken Tokentr0{ InputToken::REGISTER, new AdlExprNode(tk_tr0 - 1000) };
+InputToken Tokentr1{ InputToken::REGISTER, new AdlExprNode(tk_tr1 - 1000) };
+InputToken Tokentr2{ InputToken::REGISTER, new AdlExprNode(tk_tr2 - 1000) };
+InputToken Tokentr3{ InputToken::REGISTER, new AdlExprNode(tk_tr3 - 1000) };
+InputToken Tokentr4{ InputToken::REGISTER, new AdlExprNode(tk_tr4 - 1000) };
+InputToken Tokentr5{ InputToken::REGISTER, new AdlExprNode(tk_tr5 - 1000) };
+InputToken Tokentr6{ InputToken::REGISTER, new AdlExprNode(tk_tr6 - 1000) };
+InputToken Tokentr7{ InputToken::REGISTER, new AdlExprNode(tk_tr7 - 1000) };

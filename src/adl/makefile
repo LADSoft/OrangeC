@@ -2,7 +2,7 @@
 #
 
 CC=cl.exe
-CCFLAGS = /O2 /EHs /c /nologo /I../util
+CCFLAGS = /O2 /EHs /c /nologo /I../util /DTARGET_OS_WINDOWS
 
 LINK=link.exe
 LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
@@ -21,7 +21,8 @@ EXE_dependencies = \
 		GenParser.obj \
 		Loader.obj \
 		Tokenizer.obj \
-		ADLMain.obj
+		ADLMain.obj \
+		ToolChain.obj
 
 adl.exe: $(EXE_dependencies)
 	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@  $(EXE_dependencies) 

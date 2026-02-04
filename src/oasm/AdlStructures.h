@@ -7,7 +7,7 @@
 class AdlExprNode
 {
   public:
-    AdlExprNode(long long int i) : ival(i) {}
+    AdlExprNode(long long int i) : ival(i) { }
     AdlExprNode(const AdlExprNode& old) { ival = old.ival; }
     long long int ival;
 };
@@ -16,6 +16,7 @@ class BitStream
 {
   public:
     BitStream(bool BigEndian = false) : bigEndian(BigEndian) { Reset(); }
+
 
     void SetBigEndian(bool BigEndian) { bigEndian = BigEndian; }
     bool GetBigEndian() { return bigEndian; }
@@ -43,6 +44,7 @@ enum asmError
     AERR_UNKNOWNOPCODE,
     AERR_INVALIDINSTRUCTIONUSE
 };
+
 
 class Coding
 {

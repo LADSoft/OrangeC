@@ -2528,8 +2528,8 @@
 
     <Opcode Name="pmovmskb" op="0x0f:8 0xd7:8" >
       <Operands Name="'modreg:reg32', 'rm:mmrm'" mand="" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
-      <Operands Name="'modreg:reg64', 'rm:mmrm'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
-      <Operands Name="'modreg:reg32', 'rm:sserm'" mand="" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg64', 'rm:mmrm'" mand="" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg32', 'rm:sserm'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg64', 'rm:sserm'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
     </Opcode>
     <Opcode Name="pmulhuw" op="0x0f:8 0xe4:8" Class="ssepack"/>

@@ -705,7 +705,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
 {
     *op = op_mov;
     *aph = 0;
-    if (im->mode ==  Optimizer::i_direct && im->offset->type == Optimizer::se_threadlocal)
+    if (im->mode == Optimizer::i_direct && im->offset->type == Optimizer::se_threadlocal)
     {
         AMODE* temp = setSymbol("__TLSINITSTART");
         temp->mode = am_immed;
@@ -789,7 +789,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
             *aph = beLocalAllocate<AMODE>();
             **aph = **apl;
             (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
-                Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
+                                                             Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
             if ((*apl)->preg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->preg;
             if ((*apl)->sreg >= 0)
@@ -1003,7 +1003,7 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
                 gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
             }
             dest->liveRegs = l;
-            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits))  - 1)) << startbit));
+            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits)) - 1)) << startbit));
         }
     }
     else
@@ -4588,7 +4588,9 @@ void asm_swbranch(Optimizer::QUAD* q) /* case characteristics */
     }
 }
 void asm_dc(Optimizer::QUAD* q) /* unused */ { (void)q; }
-void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
+/// @brief Assign one block of memory to another, typically used with an assignment operator, but not for more generaly copying
+/// @param q Quad representing the assignment of a block of memory in IR
+void asm_assnblock(Optimizer::QUAD* q)
 {
     int n = q->ans->offset->i;
     AMODE *apl = nullptr, *aph = nullptr, *apal = nullptr, *apah = nullptr;
@@ -4727,6 +4729,10 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
             pushlevel -= 4;
         }
     }
+    // TODO: add an extra parameter to call out to _memcpy at this and larger sizes
+    // Allows memcpy to be expensive per-platform
+    // Maybe arch-specific callouts too to prevent needing as much platform checking and allowing even better opts at the cost of
+    // more lib maintenance?
     else
     {
         AMODE* cx = makedreg(ECX);
@@ -4758,14 +4764,10 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
             gen_codes(opa, ISZ_UINT, di, apal);
             gen_codes(op, ISZ_UINT, si, apl);
         }
-        gen_codes(op_mov, ISZ_UINT, cx, aimmed(n / 4));
+        gen_codes(op_mov, ISZ_UINT, cx, aimmed(n));
         gen_code(op_cld, 0, 0);
         gen_code(op_rep, 0, 0);
-        gen_code(op_movsd, 0, 0);
-        if (n & 2)
-            gen_code(op_movsw, 0, 0);
-        if (n & 1)
-            gen_code(op_movsb, 0, 0);
+        gen_code(op_movsb, 0, 0);
         gen_codes(op_pop, ISZ_UINT, cx, 0);
         gen_codes(op_pop, ISZ_UINT, si, 0);
         gen_codes(op_pop, ISZ_UINT, di, 0);
@@ -5075,14 +5077,14 @@ void asm_jg(Optimizer::QUAD* q) /* branch if a S> b */ { gen_goto(q, op_jg, op_j
 void asm_jle(Optimizer::QUAD* q) /* branch if a S<= b */ { gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jae, op_jbe); }
 void asm_jge(Optimizer::QUAD* q) /* branch if a S>= b */ { gen_goto(q, op_jge, op_jle, op_jg, op_jl, op_jae, op_jbe, op_jae); }
 void asm_cppini(Optimizer::QUAD* q) /* cplusplus initialization (historic)*/ { (void)q; }
-/*
+/**
  * function prologue.  left has a constant which is a bit mask
  * of registers to push.  It also has a flag indicating whether frames
  * are absolutely necessary
  *
  * right has the number of bytes to allocate on the stack
  */
-void asm_prologue(Optimizer::QUAD* q) /* function prologue */
+void asm_prologue(Optimizer::QUAD* q)
 {
     inframe =
         !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) || Optimizer::cparams.prm_debug || Optimizer::cparams.prm_stackalign;
@@ -5115,15 +5117,9 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
         pushlevel = 0;
         if (n)
         {
-            if (n < 16)
+            if (n <= 4092)
             {
-                int i;
-                for (i = 0; i < n; i += 4)
-                    gen_codes(op_push, ISZ_UINT, makedreg(ECX), 0);
-            }
-            else if (n <= 4092)
-            {
-                gen_code(op_add, makedreg(ESP), aimmed(-n));
+                gen_code(op_sub, makedreg(ESP), aimmed(n));
             }
             else
             {
@@ -5194,16 +5190,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
     {
         if (usingEsp)
         {
-            if (funcstackheight <= 16)
-            {
-                int i;
-                for (i = 0; i < funcstackheight; i += 4)
-                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
-            }
-            else
-            {
-                gen_code(op_add, makedreg(ESP), aimmed(funcstackheight));
-            }
+            gen_code(op_add, makedreg(ESP), aimmed(funcstackheight));
         }
         else
         {

@@ -12,43 +12,41 @@
 %define nop8 db 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00       ;    NOP DWORD ptr [EAX + EAX*1 + 00000000H]
 %define nop9 db 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 ; 66 NOP DWORD ptr [EAX + EAX*1 + 00000000H]
 %ifdef __BUILDING_LSCRTL_DLL
-[export _strlen]
+[export _strlen2]
 %endif
-[global _strlen]
+[global _strlen2]
 SECTION code CLASS=CODE USE32
-_strlen:
-        mov     eax, [esp+4]
-        xor     edx, edx
-        test    al, 15
+_strlen2:
+        mov     edx, [esp+4]
+        xor     eax, eax
+        test    dl, 15
         je      SHORT hot_loop_prep
         nop6
 alignment_loop:
-        mov     cl, [eax]
-        inc     eax
+        mov     cl, [edx]
+        inc     edx
         test    cl, cl
         je      easy_exit
-        inc     edx
+        inc     eax
         test    al, 15
         jne     alignment_loop
 hot_loop_prep:
-        movaps  xmm0, [eax]
+        movaps  xmm0, [edx]
         xorps   xmm1, xmm1
         pcmpeqb xmm0, xmm1
         pmovmskb ecx, xmm0
         test    ecx, ecx
         jne     sse_exit
-        sub     eax, edx
+        sub     edx, eax
 hot_loop:
         movaps  xmm0, [eax+edx+16]
-        add     edx, 16
+        add     eax, 16
         pcmpeqb xmm0, xmm1
         pmovmskb ecx, xmm0
         test    ecx, ecx
         je      SHORT hot_loop
 sse_exit:
-        bsf     eax, ecx
+        bsf     edx, ecx
         add     eax, edx
-        ret
 easy_exit:
-        mov     eax, edx
         ret

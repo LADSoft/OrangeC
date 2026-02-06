@@ -432,6 +432,25 @@ std::string OS::AbsPath(const std::string& str)
     return outstr;
 #endif
 }
+std::string OS::SelfPath()
+{
+#ifdef _WIN32
+    char path[MAX_PATH];
+    DWORD chars_written = GetModuleFileNameA(NULL, path, MAX_PATH);
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+    {
+        return std::string(path);
+    }
+#else
+    char path[PATH_MAX];
+    ssize_t num_chars = readlink("/proc/self/exe", path, PATH_MAX);
+    if (num_chars == PATH_MAX)
+    {
+        throw std::runtime_error("path is too deep to access what executable we are at this time");
+    }
+    return std::string(path);
+#endif
+}
 int OS::GetCurrentJobs() { return localJobServer->GetCurrentJobs(); }
 #ifdef TARGET_OS_WINDOWS
 void spin_and_report_single_process(HANDLE handle, DWORD ms_wait, const std::string& command_to_print, DWORD procid)

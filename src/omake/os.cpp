@@ -437,10 +437,12 @@ std::string OS::SelfPath()
 #ifdef _WIN32
     char path[MAX_PATH];
     DWORD chars_written = GetModuleFileNameA(NULL, path, MAX_PATH);
-    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+    DWORD last_error = GetLastError();
+    if (chars_written && last_error != ERROR_INSUFFICIENT_BUFFER))
     {
         return std::string(path);
     }
+    throw std::system_error(last_error);
 #else
     char path[PATH_MAX];
     ssize_t num_chars = readlink("/proc/self/exe", path, PATH_MAX);

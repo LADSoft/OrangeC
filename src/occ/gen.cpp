@@ -2168,6 +2168,7 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
         {
             int regflags = makeregflags(apll);
             regflags |= makeregflags(apal);
+            regflags |= makeregflags(aprl);
             if (q->ans->size < 0)
             {
                 if (-q->ans->size < ISZ_USHORT)

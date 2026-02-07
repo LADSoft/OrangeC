@@ -748,6 +748,7 @@ bool eval_binary_pm( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** re
                 Dereference(&stdpointer, &funcparams->fcall);
                 funcparams->thisptr = *resultexp;
                 funcparams->thistp = Type::MakeType(BasicType::pointer_, *resulttp);
+                funcparams->memberCall = true;
                 *resultexp = MakeExpression(funcparams);
                 *resulttp = righttp->BaseType();
             }

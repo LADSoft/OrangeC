@@ -438,17 +438,39 @@ std::string OS::SelfPath()
     char path[MAX_PATH];
     DWORD chars_written = GetModuleFileNameA(NULL, path, MAX_PATH);
     DWORD last_error = GetLastError();
-    if (chars_written && last_error != ERROR_INSUFFICIENT_BUFFER))
+    if (chars_written && last_error != ERROR_INSUFFICIENT_BUFFER)
     {
         return std::string(path);
     }
-    throw std::system_error(last_error);
+    throw std::system_error(last_error, std::system_category());
 #else
     char path[PATH_MAX];
-    ssize_t num_chars = readlink("/proc/self/exe", path, PATH_MAX);
+    char* readpath;
+    if (!access("/proc/self/exe", R_OK))
+    {
+        readpath = "/proc/self/exe";
+    }
+    else if (!access("/proc/curproc/file", R_OK))
+    {
+        readpath = "/proc/curproc/file";
+    }
+    else if (!access("/proc/self/path/a.out", R_OK))
+    {
+        readpath = "/proc/self/path/a.out";
+    }
+    else
+    {
+        throw std::runtime_error("No acceptable path to find the path of self discovered, exiting");
+    }
+    ssize_t num_chars = readlink(readpath, path, PATH_MAX);
     if (num_chars == PATH_MAX)
     {
-        throw std::runtime_error("path is too deep to access what executable we are at this time");
+        if (path[PATH_MAX - 1] != '\0')
+            throw std::runtime_error("path is too deep to access what executable we are at this time");
+    }
+    else if (num_chars == -1)
+    {
+        throw std::system_error(errno, std::system_category());
     }
     return std::string(path);
 #endif

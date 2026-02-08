@@ -496,6 +496,8 @@ static int peep_parm(Block* b, QUAD* head)
                     {
                         doit = true;
                     }
+                    if (head->back->runtimeData)
+                        doit = false;
                     if (doit)
                     {
                         if (!(head->liveRegs & (1 << head->leftColor)))

@@ -43,7 +43,8 @@
 #define OPT_ARGSTRUCTREF 0x80000
 #define OPT_EXPANDSWITCH 0x100000
 #define OPT_THUNKRETVAL 0x200000
-
+#define OPT_PUSHADDR 0x400000
+#define OPT_PUSHIMM 0x800000
 #define OPTMODULES_DESCRIPTION                                                          \
     "  -fopt-{no}constant             turn on or off constant optimizations\n"          \
     "  -fopt-{no}loop-strength        turn on or off loop strength optimization\n"      \

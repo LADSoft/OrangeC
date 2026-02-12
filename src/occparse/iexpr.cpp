@@ -2914,6 +2914,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             gen_xcexp_expression(f->callLab);
         }
         gosub = Optimizer::gen_igosub(type, ap);
+        Optimizer::intermed_tail->memberCall = f->memberCall;
     }
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
     {

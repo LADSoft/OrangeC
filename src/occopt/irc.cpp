@@ -688,7 +688,7 @@ static void CalculateFunctionFlags(void)
                         }
             while (tail != blk->head)
             {
-                if (tail->dc.opcode == i_gosub)
+                if (tail->dc.opcode == i_gosub || tail->dc.opcode == i_cmpxchgweak || tail->dc.opcode == i_cmpxchgstrong)
                 {
                     for (j = 0; j < exposed->top; j++)
                         tempInfo[exposed->data[j]]->liveAcrossFunctionCall = true;

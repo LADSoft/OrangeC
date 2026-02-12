@@ -11,6 +11,7 @@
  *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  *
@@ -2167,6 +2168,7 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
         {
             int regflags = makeregflags(apll);
             regflags |= makeregflags(apal);
+            regflags |= makeregflags(aprl);
             if (q->ans->size < 0)
             {
                 if (-q->ans->size < ISZ_USHORT)
@@ -5115,13 +5117,7 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
         pushlevel = 0;
         if (n)
         {
-            if (n < 16)
-            {
-                int i;
-                for (i = 0; i < n; i += 4)
-                    gen_codes(op_push, ISZ_UINT, makedreg(ECX), 0);
-            }
-            else if (n <= 4092)
+            if (n <= 4092)
             {
                 gen_code(op_add, makedreg(ESP), aimmed(-n));
             }
@@ -5194,16 +5190,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
     {
         if (usingEsp)
         {
-            if (funcstackheight <= 16)
-            {
-                int i;
-                for (i = 0; i < funcstackheight; i += 4)
-                    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), 0);
-            }
-            else
-            {
-                gen_code(op_add, makedreg(ESP), aimmed(funcstackheight));
-            }
+            gen_code(op_add, makedreg(ESP), aimmed(funcstackheight));
         }
         else
         {

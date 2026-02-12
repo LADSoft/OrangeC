@@ -1013,6 +1013,7 @@ struct CallSite
     int asaddress : 1;
     int vararg : 1;
     int resolvedCall : 1;
+    int memberCall : 1;
 };
 
 #define MAX_STRLEN 16384

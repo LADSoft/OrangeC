@@ -291,6 +291,20 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
             tempInfo[tr]->enode->sp->regmode = 2;
         }
     }
+    else if (head->dc.opcode == i_gosub && head->memberCall)
+    {
+        // this is here to allow member pointer thunks to base classes to work....   they start with a load from ecx...
+      auto b = head->back;
+      while (b->dc.opcode != i_parm)
+          b = b->back;
+      if (b->temps& TEMP_LEFT)
+      {
+          int tr = b->dc.left->offset->sp->i;
+          tempInfo[tr]->precolored = true;
+          b->precolored |= TEMP_LEFT;
+          tempInfo[tr]->color = R_ECX;          
+      }
+    }  
     if (head->dc.opcode != i_passthrough)
     {
         if (head->ans && head->ans->retval)

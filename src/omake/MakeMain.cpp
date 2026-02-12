@@ -571,8 +571,7 @@ int MakeMain::Run(int argc, char** argv)
 
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());
-    std::string make_command_path = files[0];
-    std::string proper_make = OS::AbsPath(make_command_path);
+    std::string proper_make = OS::SelfPath();
     while (!done && !Eval::GetErrCount())
     {
         VariableContainer::Instance()->Clear();

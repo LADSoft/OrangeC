@@ -20,6 +20,7 @@
 #      contact information:
 #          email: TouchStone222@runbox.com <David Lindauer>
 #  
+include ../pathext2.mak
 
 CC=occ
 CCFLAGS = /! $(C_FLAGS) $(DEFINES)

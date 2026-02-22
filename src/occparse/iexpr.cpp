@@ -90,8 +90,7 @@ Optimizer::IMODE* structret_imode;
 static std::unordered_map<Optimizer::QUAD*, Optimizer::IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>,
                           OrangeC::Utils::bin_eql<DAGCOMPARE>>
     name_value_hash;
-static Optimizer::LIST* incdecList;
-static Optimizer::LIST* incdecListLast;
+static std::deque<EXPRESSION*> incdecList;
 static int push_nesting;
 static EXPRESSION* this_bound;
 static int inline_level;
@@ -121,19 +120,16 @@ void iexpr_func_init(void)
     name_value_hash.clear();
     Optimizer::loadHash.clear();
     Optimizer::castHash.clear();
-    incdecList = nullptr;
+    incdecList.clear();
 }
 
-bool HasIncDec() { return incdecList; }
+bool HasIncDec() { return incdecList.size(); }
 void DumpIncDec(SYMBOL* funcsp)
 {
-    Optimizer::LIST* l = incdecList;
-    incdecList = nullptr;
-    incdecListLast = incdecList;
-    while (l)
-    {
-        gen_void_((EXPRESSION*)l->data, funcsp);
-        l = l->next;
+    auto toProcess = std::move(incdecList);
+    for (auto exp : toProcess)
+    { 
+        gen_void_(exp, funcsp);
     }
 }
 Optimizer::IMODE* LookupExpression(Optimizer::i_ops op, int size, Optimizer::IMODE* left, Optimizer::IMODE* right)
@@ -1859,7 +1855,6 @@ Optimizer::IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
     Optimizer::IMODE *ap1 = nullptr, *ap2, *ap3 = nullptr, *ap4, *ap5, *ap6, *ap7 = nullptr;
     int siz1;
     EXPRESSION* ncnode;
-    Optimizer::LIST* l;
     int n, m;
     (void)size;
     siz1 = natural_size(node->left);
@@ -1977,12 +1972,7 @@ Optimizer::IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
         ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
         if (ap5 != ap1)
             Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
-        l = Allocate<Optimizer::LIST>();
-        l->data = (void*)node;
-        if (!incdecList)
-            incdecList = incdecListLast = l;
-        else
-            incdecListLast = incdecListLast->next = l;
+        incdecList.push_back(node);
         return ap5;
     }
 }
@@ -4778,7 +4768,7 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
         Optimizer::gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
         ap1 = ap3;
     }
-    if (incdecList)
+    if (incdecList.size())
     {
         // this is needed for the optimizer...  the incdec confuses it
         if (ap1->mode != Optimizer::i_immed)

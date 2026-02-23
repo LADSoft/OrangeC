@@ -603,6 +603,7 @@ typedef struct quad
             int runtimeIsStore : 1;
             int moveBarrier : 1; /* can't move instructions past this point, e.g. for computed goto/label */
             int blockInit : 1;
+            int memberCall : 1;
         };
         unsigned flags;
     };

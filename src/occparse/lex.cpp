@@ -226,11 +226,11 @@ KeywordData keywords[] = {
     {"__atomic_and_fetch", 18, Keyword::atomic_andftch_, 0, TT_VAR},
     {"__atomic_xor_fetch", 18, Keyword::atomic_xorftch_, 0, TT_VAR},
     {"__atomic_or_fetch", 17, Keyword::atomic_orftch_, 0, TT_VAR},
-    {"__atomic_fetch_add", 22, Keyword::c11_atomic_ftchadd_, 0, TT_VAR},  // c11 keywords were added first so we use em'
-    {"__atomic_fetch_sub", 22, Keyword::c11_atomic_ftchsub_, 0, TT_VAR},
-    {"__atomic_fetch_and", 22, Keyword::c11_atomic_ftchand_, 0, TT_VAR},
-    {"__atomic_fetch_xor", 22, Keyword::c11_atomic_ftchxor_, 0, TT_VAR},
-    {"__atomic_fetch_or", 21, Keyword::c11_atomic_ftchor_, 0, TT_VAR},
+    {"__atomic_fetch_add", 18, Keyword::c11_atomic_ftchadd_, 0, TT_VAR},  // c11 keywords were added first so we use em'
+    {"__atomic_fetch_sub", 18, Keyword::c11_atomic_ftchsub_, 0, TT_VAR},
+    {"__atomic_fetch_and", 18, Keyword::c11_atomic_ftchand_, 0, TT_VAR},
+    {"__atomic_fetch_xor", 18, Keyword::c11_atomic_ftchxor_, 0, TT_VAR},
+    {"__atomic_fetch_or", 17, Keyword::c11_atomic_ftchor_, 0, TT_VAR},
     {"__attribute__", 13, Keyword::attribute_, 0, TT_VAR},
     {"__catch", 7, Keyword::seh_catch_, KW_MSIL, TT_CONTROL},
     {"__cdecl", 7, Keyword::cdecl_, 0, TT_LINKAGE},

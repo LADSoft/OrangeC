@@ -11,6 +11,7 @@
  *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  *
@@ -2167,6 +2168,7 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
         {
             int regflags = makeregflags(apll);
             regflags |= makeregflags(apal);
+            regflags |= makeregflags(aprl);
             if (q->ans->size < 0)
             {
                 if (-q->ans->size < ISZ_USHORT)

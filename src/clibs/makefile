@@ -21,6 +21,8 @@
 #          email: TouchStone222@runbox.com <David Lindauer>
 #  
 
+include ../pathext2.mak
+
 ifeq "$(COMPILER)" "gcc-linux"
 MKDIR := mkdir -p
 DEL := rm
@@ -29,6 +31,15 @@ else
 MKDIR := mkdir
 DEL := del /Q
 COPY := copy
+endif
+
+ifeq "$(NULLDEV)" ""
+ifeq "$(COMPILER)" "gcc-linux"
+NULLDEV := /dev/null
+else
+NULLDEV := NUL
+endif
+export NULLDEV
 endif
 
 export MKDIR

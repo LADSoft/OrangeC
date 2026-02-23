@@ -40,6 +40,8 @@
 #include "ioptutil.h"
 #include "memory.h"
 #include "ilive.h"
+#include "optmodules.h"
+#include "optmain.h"
 
 namespace Optimizer
 {
@@ -418,6 +420,103 @@ static int peep_assn(Block* b, QUAD* head)
     }
     return 0;
 }
+bool matchesTempRef(SimpleExpression* e, QUAD* q)
+{
+    if (q->ans)
+    {
+        if ((q->ans->offset && equalnode(e, q->ans->offset)) || (q->ans->offset2 && equalnode(e, q->ans->offset2)))
+            return true;
+    }
+    if (q->dc.left)
+    {
+        if ((q->dc.left->offset && equalnode(e, q->dc.left->offset)) || (q->dc.left->offset2 && equalnode(e, q->dc.left->offset2)))
+            return true;
+    }
+    if (q->dc.right)
+    {
+        if ((q->dc.right->offset && equalnode(e, q->dc.right->offset)) || (q->dc.right->offset2 && equalnode(e, q->dc.right->offset2)))
+                return true;
+    }
+    return false;
+       
+}
+static int peep_parm(Block* b, QUAD* head)
+{
+    if ((head->temps & TEMP_LEFT) && head->dc.left->size < ISZ_FLOAT && sizeFromISZ(head->dc.left->size) == chosenAssembler->arch->parmwidth)
+    {
+        if (head->back->dc.opcode == i_assn)
+        {
+            if (equalimode(head->back->ans, head->dc.left) && head->dc.left->size == head->back->dc.left->size && !head->back->fastcall)
+            {
+                bool doit = true;
+                auto quad = head->fwd;
+                int parmcount = 0;
+                do
+                {
+                    if (quad == b->tail->fwd)
+                    {
+                        return 0;
+                    }
+                    if (!quad->ignoreMe)
+                    {
+                        if (matchesTempRef(head->dc.left->offset, quad))
+                        {
+                            doit = false;
+                        }
+                        if (quad->dc.opcode == i_parm)
+                            ++parmcount;
+                    }
+                    quad = quad->fwd;
+                } while (doit && quad->dc.opcode != i_gosub);
+
+                if (doit && (parmcount || !head->memberCall))
+                {
+                    doit = false;
+                    if (head->back->dc.left->mode == i_immed)
+                    {
+                        if (chosenAssembler->arch->preferopts & OPT_PUSHIMM)
+                        {
+                            doit = isintconst(head->back->dc.left->offset);
+                        }
+                        if (!doit && (chosenAssembler->arch->preferopts & OPT_PUSHADDR))
+                        {
+                            switch (head->back->dc.left->offset->type)
+                            {
+                            case se_absolute:
+                            case se_auto:
+                            case se_global:
+                            case se_pc:
+                            case se_labcon:
+                                doit = true;
+                                break;
+                            }
+                        }
+                    }
+                    else if (head->back->dc.left->mode == i_ind || head->back->dc.left->mode == i_direct)
+                    {
+                        doit = true;
+                    }
+                    if (head->back->runtimeData)
+                        doit = false;
+                    if (doit)
+                    {
+                        if (!(head->liveRegs & (1 << head->leftColor)))
+                        {
+                            head->dc.left = head->back->dc.left;
+                            head->scaleColor = head->back->scaleColor;
+                            head->leftColor = head->back->leftColor;
+                            if ((!head->dc.left->offset ||  head->dc.left->offset->type != se_tempref) && (!head->dc.left->offset2 || head->dc.left->offset2->type != se_tempref))
+                                head->temps &= ~TEMP_LEFT;
+                            RemoveInstruction(head->back);
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
 /*-------------------------------------------------------------------------*/
 static void merge_setxx(Block* b, QUAD* head)
 {
@@ -610,6 +709,12 @@ static bool peep(Block* b, bool branches)
                 break;
             case i_assn:
                 rv = peep_assn(b, head);
+                break;
+            case i_parm:
+                if (branches && architecture != ARCHITECTURE_MSIL)
+                {
+                    rv = peep_parm(b, head);
+                }
                 break;
             default:
                 break;

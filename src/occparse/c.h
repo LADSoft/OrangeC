@@ -1014,6 +1014,7 @@ struct CallSite
     int vararg : 1;
     int resolvedCall : 1;
     int memberCall : 1;
+    int noinline : 1;
 };
 
 #define MAX_STRLEN 16384

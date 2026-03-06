@@ -1292,12 +1292,25 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                 params->arguments = argumentListFactory.CreateList();
                 AdjustParams(match, match->tp->BaseType()->syms->begin(), match->tp->BaseType()->syms->end(), &params->arguments,
                              false, true);
-                if (sp->sb->vbaseEntries)
+                bool hasvbase = false;
+                if (sp->sb->baseClasses)
+                    for (auto c : *sp->sb->baseClasses)
+                        if (c->cls->sb->vbaseEntries)
+                            hasvbase = true;
+                if (hasvbase)
                 {
+                    auto sym= makeID(StorageClass::parameter_, &stdint, nullptr, AnonymousName());
+                    EXPRESSION* val = MakeExpression(ExpressionNode::auto_, sym);
+                    sym->sb->constop = true;
+                    sym->sb->decoratedName = sp->name;
+                    sym->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + getSize(BasicType::pointer_);
+
+                    Dereference(&stdunsigned, &val);
                     Argument *x = Allocate<Argument>(), **p;
                     x->tp = Type::MakeType(BasicType::int_);
-                    x->exp = MakeIntExpression(ExpressionNode::c_i_, 1);
+                    x->exp = val;
                     params->arguments->push_back(x);
+                    params->noinline = true;
                 }
                 e1 = MakeExpression(params);
                 e1 = MakeExpression(ExpressionNode::thisref_, e1);

@@ -35,5 +35,6 @@ static struct reflist
 }* refs;
 
 void ScanForInvariants(Block* b);
+void MoveLoopVariables(void);
 void MoveLoopInvariants(void);
 }  // namespace Optimizer

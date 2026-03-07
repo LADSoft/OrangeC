@@ -514,8 +514,28 @@ static IMODE* make_ioffset(SimpleExpression* exp)
 static void GetSpillVar(int i)
 {
     SPILL* spill;
-    SimpleExpression* exp;
+    SimpleExpression* exp = nullptr;
     SimpleType* tp = tempInfo[i]->enode->sp->tp;
+    if (tempInfo[i]->enode->sp->invartemp)
+    {
+        auto i1 = tempInfo[i]->enode->sp->i;
+        if (tempInfo[i1]->instructionDefines)
+        {
+            auto im0 = tempInfo[i1]->instructionDefines->dc.left;
+            if (im0->mode == i_direct && im0->offset->type == se_tempref && im0->offset->sp->loadTemp)
+            {
+                auto sp1 = im0->offset->sp;
+                if (tempInfo[sp1->i]->instructionDefines)
+                {
+                    auto im1 = tempInfo[sp1->i]->instructionDefines->dc.left;
+                    if (im1->mode == i_direct && (im1->offset->type == se_global || im1->offset->type == se_auto || im1->offset->type == se_absolute))
+                    {
+                        exp = im1->offset;
+                    }
+                }
+            }
+        }
+    }
     if (tp->type == st_pointer && tp->isarray)
     {
         // if we get here with an array type, it is a pointer to an array which was in an argument
@@ -524,7 +544,8 @@ static void GetSpillVar(int i)
         tp->sizeFromType = ISZ_ADDR;
         tp->size = sizeFromISZ(ISZ_ADDR);
     }
-    exp = spillVar(scc_auto, tp);
+    if (!exp)
+        exp = spillVar(scc_auto, tp);
     spill = tAllocate<SPILL>();
     tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
     spill->imode->offset->sp->spillVar = true;
@@ -769,6 +790,7 @@ static void CountInstructions(bool first)
     instructionCount = 0;
     while (head)
     {
+        head->index = 0;
         switch (head->dc.opcode)
         {
             case i_block:

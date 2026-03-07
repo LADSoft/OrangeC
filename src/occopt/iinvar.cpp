@@ -372,7 +372,7 @@ static int CalculateLoop(Block*  block,  std::unordered_map<int, int>& blockToLo
     }
     return ln;
 }
-static IMODE* loadVarInd(IMODE* loadVar, int size)
+IMODE* loadVarInd(IMODE* loadVar, int size)
 {
     IMODELIST* iml = loadVar->offset->sp->imind;
     while (iml)

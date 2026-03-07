@@ -260,6 +260,7 @@ static void renameToPhi(Block* b)
             tempInfo[n]->instructionDefines = head;
             tempInfo[n]->blockDefines = b;
             tempInfo[n]->enode->sp->pushedtotemp = tempInfo[pd->T0]->enode->sp->pushedtotemp;
+            tempInfo[n]->enode->sp->invartemp = tempInfo[pd->T0]->enode->sp->invartemp;
             tempInfo[n]->enode->sp->storeTemp = tempInfo[pd->T0]->enode->sp->storeTemp;
             tempInfo[n]->enode->sp->loadTemp = tempInfo[pd->T0]->enode->sp->loadTemp;
             tempInfo[n]->preSSATemp = pd->T0;
@@ -335,6 +336,7 @@ static void renameToPhi(Block* b)
                 tempInfo[n]->blockDefines = b;
                 tempInfo[n]->preSSATemp = tnum;
                 tempInfo[n]->enode->sp->pushedtotemp = tempInfo[tnum]->enode->sp->pushedtotemp;
+                tempInfo[n]->enode->sp->invartemp = tempInfo[tnum]->enode->sp->invartemp;
                 tempInfo[n]->enode->sp->loadTemp = tempInfo[tnum]->enode->sp->loadTemp;
                 tempInfo[n]->enode->sp->storeTemp = tempInfo[tnum]->enode->sp->storeTemp;
                 if (tempInfo[tnum]->enode->sp->tp)
@@ -611,10 +613,10 @@ static void CheckCoalesce(int T0, int Ti)
 /* walks the loop tree to hit inner loops first */
 static void CoalesceTemps(Loop* l, bool all)
 {
-    LIST* p = l->contains;
+    LOOPLIST* p = l->contains;
     while (p)
     {
-        Loop* t = (Loop*)p->data;
+        Loop* t = p->loop;
         if (t->type != LT_BLOCK)
             CoalesceTemps(t, all);
         p = p->next;
@@ -622,7 +624,7 @@ static void CoalesceTemps(Loop* l, bool all)
     p = l->contains;
     while (p)
     {
-        Loop* t = (Loop*)p->data;
+        Loop* t = p->loop;
         if (t->type == LT_BLOCK)
         {
             if (!all || (t->entry->blocknum && !t->entry->critical))
@@ -949,6 +951,7 @@ static void CreateCopy(BriggsSet* visited, Block* pred, int T, bool all)
         IMODE* rv = InitTempOpt(tempInfo[T]->enode->sp->imvalue->size, tempInfo[T]->size);
         int u = rv->offset->sp->i;
         tempInfo[u]->enode->sp->pushedtotemp = tempInfo[T]->enode->sp->pushedtotemp;
+        tempInfo[u]->enode->sp->invartemp = tempInfo[T]->enode->sp->invartemp;
         tempInfo[u]->enode->sp->storeTemp = tempInfo[T]->enode->sp->storeTemp;
         tempInfo[u]->enode->sp->loadTemp = tempInfo[T]->enode->sp->loadTemp;
         copyInstruction(pred, u, T, all);

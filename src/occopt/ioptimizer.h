@@ -242,6 +242,7 @@ struct SimpleSymbol
     unsigned loadTemp : 1;         /* is a loadtemp */
     unsigned visited : 1;          /* temproary which means it is visited */
     unsigned pushedtotemp : 1;     /* if a local variable has been transformed to a temp */
+    unsigned invartemp : 1; /* a memory address was pushed to temp*/
     unsigned noCoalesceImmed : 1;  // set to true if temp or memory address which references an immediate is used
                                    // other than as the immediate reference
     unsigned regmode : 2;          /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/

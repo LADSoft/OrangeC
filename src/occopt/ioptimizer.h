@@ -249,6 +249,7 @@ struct SimpleSymbol
     unsigned retemp : 1;           // retemp has already been performed on this SP
     unsigned inAllocTable : 1;     /* auto temp var is in the allocation table already */
     unsigned importThunk : 1;
+    unsigned forceAllocate : 1;
     struct _imode_* imaddress;
     struct _imode_* imvalue;
     struct _im_list* imind;

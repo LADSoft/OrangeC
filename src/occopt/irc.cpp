@@ -347,6 +347,19 @@ static void ScanForAnonymousVars(void)
         head = head->fwd;
     }
 }
+static void ScanAutos(SimpleExpression* e)
+{
+    if (e)
+    {
+        if (e->type == se_auto)
+            e->sp->allocate = true;
+        else if (e->type == se_add || e->type == se_sub)
+        {
+            ScanAutos(e->left);
+            ScanAutos(e->right);
+        }
+    }
+}
 void AllocateStackSpace(int begin)
 /*
  * This allocates space for local variables
@@ -373,6 +386,7 @@ void AllocateStackSpace(int begin)
     std::map<SimpleSymbol*, int> modes;
     for (auto sym : functionVariables)
     {
+        sym->allocate = sym->forceAllocate;
         if (sym->storage_class != scc_constant)
         {
             int lvl = sym->i;
@@ -382,11 +396,37 @@ void AllocateStackSpace(int begin)
     }
     for (auto sym : temporarySymbols)
     {
+        sym->allocate = sym->forceAllocate;
         if (sym->storage_class != scc_constant)
         {
             int lvl = sym->i;
             queue[lvl].push_back(sym);
             modes[sym] = 2;
+        }
+    }
+    // get rid of any variables we don't care about in the output file...
+    for (auto head = intermed_head; head; head = head->fwd)
+    {
+        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        {
+            if (head->ans)
+            {
+                ScanAutos(head->ans->offset);
+                ScanAutos(head->ans->offset2);
+                ScanAutos(head->ans->offset3);
+            }
+            if (head->dc.left)
+            {
+                ScanAutos(head->dc.left->offset);
+                ScanAutos(head->dc.left->offset2);
+                ScanAutos(head->dc.left->offset3);
+            }
+            if (head->dc.right)
+            {
+                ScanAutos(head->dc.right->offset);
+                ScanAutos(head->dc.right->offset2);
+                ScanAutos(head->dc.right->offset3);
+            }
         }
     }
     bool show = false;
@@ -416,7 +456,7 @@ void AllocateStackSpace(int begin)
                 doit = !sym->regmode && sym->storage_class != scc_constant &&
                        (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate && !sym->anonymous;
             }
-            if (doit && sym->offset == 0 && sym->tp->size)
+            if (sym->allocate && sym->offset == 0 && sym->tp->size)
             {
                 int val;
                 lc_maxauto += sym->tp->size;

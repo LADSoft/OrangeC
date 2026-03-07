@@ -2320,7 +2320,7 @@ int x86_examine_icode(QUAD* head)
     if (fltret)
     {
         fltexp = anonymousVar(scc_auto, fltret);
-        cacheTempSymbol(fltexp->sp);
+        fltexp->sp->forceAllocate = true;
     }
     else
     {

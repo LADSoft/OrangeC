@@ -268,7 +268,8 @@ enum e_am
     am_segoffs,
     /* these MUST be in this order, and last!!! */
     am_stackedtemp,
-    am_stackedtempaddr
+    am_stackedtempaddr,
+    am_ebpebp
 };
 enum e_op
 {
@@ -316,7 +317,7 @@ struct amode
 #define e_fs 4
 #define e_gs 5
 #define e_ss 6
-    Optimizer::SimpleExpression* offset;
+    Optimizer::SimpleExpression* offset,*offset2;
     int liveRegs;
     int keepesp : 1;
 };

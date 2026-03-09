@@ -120,7 +120,7 @@ extern "C"
     {
 #    endif
         int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist);
-        void __ll_thrdexit(unsigned retval);
+        _NORETURN void __ll_thrdexit(unsigned retval);
         void __ll_thrdsleep(unsigned ms);
         void _RTL_FUNC _IMPORT __thrdRegisterModule(void* module, void* tlsStart, void* tlsEnd);
         void _RTL_FUNC _IMPORT __thrdUnregisterModule(void* module);

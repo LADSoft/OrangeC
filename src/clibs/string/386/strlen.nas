@@ -12,11 +12,11 @@
 %define nop8 db 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00       ;    NOP DWORD ptr [EAX + EAX*1 + 00000000H]
 %define nop9 db 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 ; 66 NOP DWORD ptr [EAX + EAX*1 + 00000000H]
 %ifdef __BUILDING_LSCRTL_DLL
-[export _strlen2]
+[export _strlen]
 %endif
-[global _strlen2]
+[global _strlen]
 SECTION code CLASS=CODE USE32
-_strlen2:
+_strlen:
         mov     edx, [esp+4]
         xor     eax, eax
         test    dl, 15
@@ -28,7 +28,7 @@ alignment_loop:
         test    cl, cl
         je      easy_exit
         inc     eax
-        test    al, 15
+        test    edx, 15
         jne     alignment_loop
 hot_loop_prep:
         movaps  xmm0, [edx]

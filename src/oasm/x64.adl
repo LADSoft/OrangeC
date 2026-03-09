@@ -1319,7 +1319,7 @@
     <Opcode Class="ssepack">
       <Operands Name="'modreg:regmm', 'rm:mmrm'" mand="" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:regsse', 'rm:sserm'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
-    </Opcode>"
+    </Opcode>
     <Opcode Class="ssepshu">
       <Operands Name="'modreg:regsse', 'rm:sserm', 'imm:mem8'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8" />
     </Opcode>
@@ -1465,6 +1465,12 @@
       <Operands Name="'rm:rm'" mod="1" op="0x0f:8 0xc7:8" R="0" W="8"/>
     </Opcode>
     <Opcode Name="cpuid" op="0xA2:8" Class="twobyte"/>
+    <Opcode Name="clflush">
+          <Operands Name="{byte} 'rm:rm8'" op="0x0F:8 0xAE:8" mod="7" Coding="native" R="0" W="0"/>
+    </Opcode>
+    <Opcode Name="clflushopt">
+          <Operands Name="{byte} 'rm:rm8'" op="0x66:8 0x0F:8 0xAE:8" mod="7" Coding="native" R="0" W="0"/>
+    </Opcode>
     <Opcode Name="cqo">
       <Operands Name="empty" Coding="0x48:8 'data64' 0x99:8"/>
     </Opcode>

@@ -241,7 +241,7 @@ bool handleVAARG()
     gen_code(op_mov, ap, makedreg(EDX));
     return true;
 }
-// for __fastcall, first arg is in ECX, second arg is in EDX and third arg is in EAX
+// for __fastcall, first arg is in ECX, second arg is in EDX
 // more args will be pushed on the stack, but if you do that you have to leave them there so they can get cleaned up properly.
 //
 // as always return a value in EAX

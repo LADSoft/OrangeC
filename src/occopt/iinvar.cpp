@@ -31,6 +31,9 @@
 #include "ioptutil.h"
 #include "memory.h"
 #include "ilive.h"
+#include "ilocal.h"
+#include "iloop.h"
+#include "optmain.h"
 
 static int current;
 /* this moving of loop invariant expressions is pretty straightforward.
@@ -139,12 +142,53 @@ static bool Blocked(Block* one, Block* two)
     }
     return false;
 }
-static void MoveTo(Block* dest, Block* src, QUAD* head)
+static void InsertAssign(Block* dest, QUAD* head, IMODE* ans, IMODE* left)
 {
     QUAD* insert = beforeJmp(dest->tail, true);
+    while (left != insert->ans && insert->dc.opcode != i_block && insert->dc.opcode != i_label)
+        insert = insert->back;
+    do
+    {
+        QUAD* assn = Allocate<QUAD>();
+        *assn = *head;
+        assn->temps = TEMP_LEFT | TEMP_ANS;
+        assn->dc.left = left;
+        assn->ans = ans;
+        assn->fwd = insert->fwd;
+        assn->back = insert;
+        assn->block = dest;
+        insert->fwd->back = assn;
+        insert->fwd = assn;
+        if (insert == dest->tail)
+            dest->tail = assn;
+        if (left == insert->ans)
+            insert = insert->back;
+        while (left != insert->ans && insert->dc.opcode != i_block && insert->dc.opcode != i_label)
+            insert = insert->back;
+    } while (insert->dc.opcode != i_block && insert->dc.opcode != i_label);
+}
+static int MoveTo(Block* dest, Block* src, QUAD* head, IMODE* first = nullptr, IMODE* last = nullptr)
+{
+    int rv = 0;
+    QUAD* insert;
+    if (last)
+    {
+        insert = dest->head;
+        while (insert->ignoreMe || insert->dc.opcode == i_block || insert->dc.opcode == i_label || insert->dc.opcode == i_phi)
+            insert = insert->fwd;
+        insert = insert->back;
+    }
+    else
+    {
+        insert = beforeJmp(dest->tail, true);
+    }
+    rv = insert->index;
     QUAD* head2 = Allocate<QUAD>();
     *head2 = *head;
-    EnterRef(head, head2);
+    if (!first && !last)
+        EnterRef(head, head2);
+    if (last)
+        head2->dc.left = last;
     head = head2;
     if (insert == dest->tail)
         dest->tail = head;
@@ -155,12 +199,13 @@ static void MoveTo(Block* dest, Block* src, QUAD* head)
     tempInfo[head->ans->offset->sp->i]->instructionDefines = head;
     head->block = dest;
     head->invarInserted = true;
-    if (head->dc.opcode != i_assn || head->dc.left->mode == i_immed)
+    if (!first && !last && (head->dc.opcode != i_assn || head->dc.left->mode == i_immed || (!(head->temps & TEMP_LEFT) && head->ans->offset->sp->loadTemp)))
     {
         keep(head->dc.left);
         keep(head->dc.right);
         head->invarKeep = true;
     }
+    return rv;
 }
 static void MoveExpression(Block* b, QUAD* head, Block* pbl, Block* pbr)
 {
@@ -230,7 +275,6 @@ void ScanForInvariants(Block* b)
         {
             if (head->dc.opcode == i_phi)
             {
-
                 Loop* parent = head->block->inclusiveLoopParent;
                 struct _phiblock* pb;
                 if (!parent->invariantPhiList)
@@ -293,10 +337,407 @@ void ScanForInvariants(Block* b)
         bl = bl->next;
     }
 }
+static int CommonLoop(int n1, int n2)
+{
+    if (n1 < n2)
+    {
+        auto parent = loopArray[n1];
+        while (parent && parent->loopnum != n2)
+            parent = parent->parent;
+        if (parent)
+            return n2;
+    }
+    else
+    {
+        auto parent = loopArray[n2];
+        while (parent && parent->loopnum != n1)
+            parent = parent->parent;
+        if (parent)
+            return n1;
+
+    }
+    return -1;
+}
+static int CalculateLoop(Block*  block,  std::unordered_map<int, int>& blockToLoop)
+{
+    int ln;
+    auto it = blockToLoop.find(block->blocknum);
+    if (it != blockToLoop.end())
+    {
+        ln = it->second;
+    }
+    else
+    {
+        ln = block->loopParent->loopnum;
+    }
+    return ln;
+}
+IMODE* loadVarInd(IMODE* loadVar, int size)
+{
+    IMODELIST* iml = loadVar->offset->sp->imind;
+    while (iml)
+    {
+        if (iml->im->size == size)
+            return iml->im;
+        iml = iml->next;
+    }
+    auto rv = Allocate<IMODE>();
+    *rv = *loadVar;
+    rv->mode = i_ind;
+    rv->ptrsize = rv->size;
+    rv->size = size;
+    iml = Allocate<IMODELIST>();
+    iml->im = rv;
+    iml->next = loadVar->offset->sp->imind;
+    loadVar->offset->sp->imind = iml;
+    return rv;
+}
+// this part is done outside the SSA process
+void ScanForVariableMotion(void)
+{
+    // this first one is a map because we iterated over it, and this resulted in variances in code generation
+    // when compiled with one compiler verses another
+    // which we can't have for purposes of the testing
+    std::map<IMODE*, std::list<QUAD*>> uses;
+    std::unordered_map<IMODE*, std::list<QUAD*>> defines;
+    std::unordered_map<int, std::list<QUAD*>> loads;
+    std::unordered_map<int, int> loopDoms;
+    std::unordered_map<int, int> blockToLoop;
+    std::set<int> gosubBlocks;
+    QUAD* head = intermed_head;
+    bool changed = true;
+    // find all the uses for in-memory variables
+    int index = 0;
+    while (head)
+    {
+        head->index = ++index;
+
+        if (head->back && head->back->block != head->block)
+            changed = true;
+        if (!head->ignoreMe && head->dc.opcode != i_assnblock)
+        {
+            if ((head->temps & TEMP_ANS) && !(head->temps & TEMP_LEFT) && head->ans->offset->sp->loadTemp &&
+                head->dc.left->offset->type >= se_absolute && head->dc.left->offset->type <= se_global &&
+                head->dc.left->size < ISZ_FLOAT && 
+                !head->dc.left->offset->sp->addressTaken && !head->dc.left->offset->sp->tp->isvolatile)
+            {
+                uses[head->dc.left].push_back(head);
+                loads[head->ans->offset->sp->i] = {};
+                defines[head->dc.left] = {};
+            }
+        }
+        if (head->dc.opcode == i_gosub || head->dc.opcode == i_cmpxchgstrong || head->dc.opcode == i_cmpxchgweak)
+        {
+            if (changed)
+            {
+                changed = false;
+                gosubBlocks.insert(head->block->blocknum);
+            }
+        }
+        head = head->fwd;
+    }
+    head = intermed_head;
+    // find all the definitions for in-memory variables
+    while (head)
+    {
+        if (!head->ignoreMe && head->dc.opcode != i_assnblock)
+        {
+            if (head->dc.opcode == i_assn && head->ans->offset->type != se_tempref && head->ans->size < ISZ_FLOAT)
+            {
+                auto it = defines.find(head->ans);
+                if (it != defines.end())
+                {
+                    defines[head->ans].push_back(head);
+                }
+            }
+            if ((head->temps & TEMP_ANS) && (head->ans->size < ISZ_FLOAT || head->ans->mode == i_ind))
+            {
+                auto&& load = loads.find(head->ans->offset->sp->i);
+                if (load != loads.end())
+                    load->second.push_back(head);
+            }
+            if ((head->temps & TEMP_LEFT) && (head->dc.left->size < ISZ_FLOAT || head->dc.left->mode == i_ind))
+            {
+                auto&& load = loads.find(head->dc.left->offset->sp->i);
+                if (load != loads.end())
+                    load->second.push_back(head);
+            }
+            if ((head->temps & TEMP_RIGHT) && (head->dc.right->size < ISZ_FLOAT || head->dc.right->mode == i_ind))
+            {
+                auto&& load = loads.find(head->dc.right->offset->sp->i);
+                if (load != loads.end())
+                    load->second.push_back(head);
+            }
+        }
+        head = head->fwd;
+    }
+    // calculate the loop number for each definition and use
+    for (auto loop = 0; loop < loopCount; loop++)
+    {
+        auto lp = loopArray[loop];
+        if (lp->type != LT_BLOCK && lp->type != LT_ROOT)
+        {
+            loopDoms[blockArray[lp->entry->idom]->idom] = lp->loopnum;
+        }
+    }
+    for (auto&& u : uses)
+    {
+        for (auto&& u1 : u.second)
+        {
+            int b = u1->block->blocknum;
+            auto it = loopDoms.find(b);
+            if (it  != loopDoms.end())
+            {
+                int n = blockArray[b]->loopParent->loopnum;
+                for (; b < blockCount && blockArray[b]->loopParent->loopnum == n; b++)
+                {
+                    blockToLoop[b] = it->second;
+                }
+            }
+        }
+    }
+    for (auto&& d : defines)
+    {
+        for (auto&& d1 : d.second)
+        {
+            int b = d1->block->blocknum;
+            auto it = loopDoms.find(b);
+            if (it != loopDoms.end())
+            {
+                int n = blockArray[b]->loopParent->loopnum;
+                for (; b < blockCount && blockArray[b]->loopParent->loopnum == n; b++)
+                {
+                    blockToLoop[b] = it->second;
+                }
+            }
+        }
+    }
+
+    for (auto&& u : uses)
+    {
+        if (u.second.size())
+        {
+            // calculate list of loops for this variable
+            // uses in the entryway are translated
+            // to the next lower loop, through use of the Dom propery
+            std::list<int> loopList;
+            for (auto t : u.second)
+            {
+                loopList.push_back(CalculateLoop(t->block, blockToLoop));
+            }
+            // now get rid of duplicates and find the outermost loops
+            bool changed = true;
+            while (changed)
+            {
+                changed = false;
+                loopList.sort();
+                // get rid of duplicates
+                for (auto it = loopList.begin(); it != loopList.end(); )
+                {
+                    int n = *it;
+                    ++it;
+                    while (it != loopList.end() && *it == n)
+                    {
+                        it = loopList.erase(it);
+                    }
+                }
+                // find outermost loops
+                for (auto it = loopList.begin(); it != loopList.end(); ++it)
+                {
+                    auto it1 = it;
+                    ++it1;
+                    for (; it1 != loopList.end(); ++it1)
+                    {
+                        if (*it != *it1)
+                        {
+                            int n = CommonLoop(*it, *it1);
+                            if (n >= 0)
+                            {
+                                *it = *it1 = n;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+            // add definitions to each successor
+            // rename the memory location and make it a pushedtotemp...
+            auto sz = u.second.front()->ans->size;
+            IMODE* tempVar = nullptr;
+            IMODE* loadVar = nullptr;
+
+            // now we have a list of outermost loops...
+            for (auto loop : loopList)
+            {
+                Loop* parent = loopArray[loop];
+                Block* dom = blockArray[blockArray[parent->entry->idom]->idom];
+                int firstUseInDominator = 0;
+                std::list<QUAD*> loopUses, loopDefines, loopLoads;
+                // figure out if there are any uses this loop
+                for (auto t : u.second)
+                {
+                    auto ln = CalculateLoop(t->block, blockToLoop);
+                    int n = CommonLoop(loop, ln);
+                    if (n == loop)
+                    {
+                        if (!firstUseInDominator && t->block == dom)
+                            firstUseInDominator = t->index;
+                        loopUses.push_back(t);
+                    }
+                }
+                if ((firstUseInDominator && loopUses.size() > 1) || (!firstUseInDominator && loopUses.size()))
+                {
+                    head = loopUses.front();
+                    QUAD* definedInDominator = nullptr;
+                    // yes get a list of definitions this loop
+                    for (auto t : defines[head->dc.left])
+                    {
+                        auto ln = CalculateLoop(t->block, blockToLoop);
+                        int n = CommonLoop(loop, ln);
+                        if (n == loop)
+                        {
+                            if (t->block == dom)
+                                definedInDominator = t;
+                            loopDefines.push_back(t);
+                        }
+                    }
+                    for (auto t : loads[head->ans->offset->sp->i])
+                    {
+                        auto ln = CalculateLoop(t->block, blockToLoop);
+                        int n = CommonLoop(loop, ln);
+                        if (n == loop)
+                            loopLoads.push_back(t);
+                    }
+                    if (parent->type != LT_ROOT || !loopDefines.size())
+                    {
+                        bool defineAtEnd = (definedInDominator && loopDefines.size() > 1) || (!definedInDominator && loopDefines.size());
+                        bool doit = false;
+                        if (head->dc.left->offset->sp->storage_class == scc_parameter)
+                        {
+                            // if it is a parameter we can do this optimization
+                            doit = true;
+                        }
+                        else
+                        {
+                            // else we can only do this optimization if nothing external would modify the variable
+                            for (int i = 0; i < parent->blocks->top; i++)
+                            {
+                                doit = true;
+                                if (gosubBlocks.find(parent->blocks->data[i]) != gosubBlocks.end())
+                                {
+                                    doit = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (doit)
+                        {
+                            if (!tempVar)   
+                            {
+                                tempVar = InitTempOpt(sz, sz);
+                                tempVar->offset->sp->pushedtotemp = true;
+                                tempVar->offset->sp->invartemp = true;
+                                tempVar->offset->sp->imvalue = tempVar;
+                                loadVar = InitTempOpt(sz, sz);
+                                loadVar->offset->sp->imvalue = loadVar;
+                                loadVar->offset->sp->loadTemp = true;
+                            }
+                            // add a definition to the dominator
+                            // this will be a duplicate of anything previously there as we need to rename the answer temp....
+                            if (!firstUseInDominator)
+                            {
+                                firstUseInDominator = MoveTo(dom, head->block, head, tempVar);
+                            }
+                            InsertAssign(dom, head, tempVar, head->ans);
+                            InsertAssign(dom, head, loadVar, tempVar);
+                            if (defineAtEnd)
+                            {
+                                for (auto succ = parent->successors; succ; succ = succ->next)
+                                {
+                                    MoveTo(succ->block, loopDefines.front()->block, loopDefines.front(), nullptr, tempVar);
+                                }
+                            }
+                            // now rename all uses within the loop
+                            for (auto u : loopUses)
+                            {
+                                if (dom != u->block || (!definedInDominator && firstUseInDominator && u->index > firstUseInDominator))
+                                {
+                                    u->dc.left = tempVar;
+                                    u->temps |= TEMP_LEFT;
+                                }
+                            }
+                            if (defineAtEnd)
+                            {
+                                for (auto d : loopDefines)
+                                {
+                                    if (dom != d->block || (firstUseInDominator && d->index > firstUseInDominator))
+                                    {
+                                        d->ans = tempVar;
+                                        d->temps |= TEMP_ANS;
+                                    }
+                                }
+                            }
+
+                            int loadVarNum = head->ans->offset->sp->i;
+                            for (auto load : loopLoads)
+                            {
+                                if ((load->temps & TEMP_ANS) && load->ans->offset->sp->i == loadVarNum)
+                                {
+                                    if (load->ans->mode == i_ind)
+                                    {
+                                        load->ans = loadVarInd(loadVar, load->ans->size);
+                                    }
+                                    else if (load->temps & TEMP_LEFT)
+                                    {
+                                        load->ans = loadVar;
+                                    }
+                                }
+                                if ((load->temps & TEMP_LEFT) && load->dc.left->offset->sp->i == loadVarNum)
+                                {
+                                    if (load->dc.left->mode == i_ind)
+                                    {
+                                        load->dc.left = loadVarInd(loadVar, load->dc.left->size);
+                                    }
+                                    else
+                                    {
+                                        load->dc.left = loadVar;
+                                    }
+                                }
+                                if ((load->temps & TEMP_RIGHT) && load->dc.right->offset->sp->i == loadVarNum)
+                                {
+                                    if (load->dc.right->mode == i_ind)
+                                    {
+                                        load->dc.right = loadVarInd(loadVar, load->dc.right->size);
+                                    }
+                                    else
+                                    {
+                                        load->dc.right = loadVar;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+// Before going into SSA
+void MoveLoopVariables(void)
+{
+    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    {
+        refs = nullptr;
+        ScanForVariableMotion();
+        // not weeding because we want to keep everything...
+    }
+}
+// while in SSA
 void MoveLoopInvariants(void)
 {
     int i;
     refs = nullptr;
+    return;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;

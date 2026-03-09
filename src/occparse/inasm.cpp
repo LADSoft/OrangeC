@@ -102,6 +102,14 @@ static Optimizer::ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", a
                                      {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
                                      {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
                                      {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
+                                     {"mm0", am_mmreg, 0, ISZ_DOUBLE},     {"mm1", am_mmreg, 1, ISZ_DOUBLE},
+                                     {"mm2", am_mmreg, 2, ISZ_DOUBLE},     {"mm3", am_mmreg, 3, ISZ_DOUBLE},
+                                     {"mm4", am_mmreg, 4, ISZ_DOUBLE},     {"mm5", am_mmreg, 5, ISZ_DOUBLE},
+                                     {"mm6", am_mmreg, 6, ISZ_DOUBLE},     {"mm7", am_mmreg, 7, ISZ_DOUBLE},
+                                     {"xmm0", am_xmmreg, 0, ISZ_DOUBLE},     {"xmm1", am_xmmreg, 1, ISZ_DOUBLE},
+                                     {"xmm2", am_xmmreg, 2, ISZ_DOUBLE},     {"xmm3", am_xmmreg, 3, ISZ_DOUBLE},
+                                     {"xmm4", am_xmmreg, 4, ISZ_DOUBLE},     {"xmm5", am_xmmreg, 5, ISZ_DOUBLE},
+                                     {"xmm6", am_xmmreg, 6, ISZ_DOUBLE},     {"xmm7", am_xmmreg, 7, 0},
                                      {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
                                      {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
                                      {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
@@ -588,9 +596,9 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
 {
     int reg1 = -1, reg2 = -1, scale = 0, seg = 0;
     bool subtract = false;
-    EXPRESSION* node = 0;
+    EXPRESSION* node = 0, *node2 = 0;
     AMODE* rv;
-    int gotident = false; /*, autonode = false;*/
+    int gotident = 0;
     inasm_getsym();
     while (true)
     {
@@ -695,13 +703,24 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
                     inasm_err(ERR_INVALID_INDEX_MODE);
                     return 0;
                 case LexType::l_id_:
-                    if (gotident || subtract)
+                    if (gotident > 1 || subtract || (gotident && node->type != ExpressionNode::auto_))
                     {
                         inasm_err(ERR_INVALID_INDEX_MODE);
                         return 0;
                     }
-                    node = inasm_ident();
-                    gotident = true;
+                    if (gotident++)
+                    {
+                        node2 = inasm_ident();
+                        if (node2->type != ExpressionNode::auto_)
+                        {
+                            inasm_err(ERR_INVALID_INDEX_MODE);
+                            return 0;
+                        }
+                    }
+                    else
+                    {
+                        node = inasm_ident();
+                    }
                     switch (inasm_enterauto(node, &reg1, &reg2))
                     {
                         case 0:
@@ -742,7 +761,12 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
     {
         rv->offset = Optimizer::SymbolManager::Get(node);
     }
-    if (reg1 >= 0)
+    if (node2)
+    {
+        rv->offset2 = Optimizer::SymbolManager::Get(node2);
+        rv->mode = am_ebpebp;
+    }
+    else if (reg1 >= 0)
     {
         rv->preg = reg1;
         if (reg2 >= 0)
@@ -1156,6 +1180,76 @@ static void AssembleInstruction(OCODE* ins)
         }
     }
 }
+static void LoadPreludeInstruction(std::list<FunctionBlock*>& parent, Optimizer::SimpleExpression* exp, int reg)
+{
+    Statement* rv = Statement::MakeStatement(parent, StatementNode::passthrough_);
+    OCODE* ins = Allocate<OCODE>();
+    rv->select = (EXPRESSION*)ins;
+    ins->opcode = op_mov;
+    ins->oper1 = Allocate<AMODE>();
+    ins->oper2 = Allocate<AMODE>();
+    ins->oper1->mode = am_dreg;
+    ins->oper1->preg = reg;
+    ins->oper1->length = ISZ_UINT;
+    ins->oper2->mode = am_indisp;
+    ins->oper2->preg = EBP;
+    ins->oper2->offset = exp;
+
+    AssembleInstruction(ins);
+    unsigned char* regs = Allocate<unsigned char>(3);
+    regs[ASM_DEST_REG] = reg + 1;
+    regs[ASM_SRC_REG_START] = EBP + 1;
+    rv->assemblyRegs = regs;
+}
+Statement* AssembleInstruction(OCODE* ins, std::list<FunctionBlock*>& parent, std::vector<int>& srcRegs, std::vector<int>& destRegs)
+{
+    auto oper = ins->oper1;
+    if (!oper || oper->mode != am_ebpebp)
+        oper = ins->oper2;
+    if (oper && oper->mode != am_ebpebp)
+        oper = nullptr;
+    if (oper)
+    {
+        // fudge for the ebpebp prelude instructions && rewrite the operands...
+        LoadPreludeInstruction(parent, oper->offset, ECX);
+        LoadPreludeInstruction(parent, oper->offset2, EDX);
+        oper->offset = oper->offset2 = 0;
+        oper->preg = ECX;
+        oper->sreg = EDX;
+        oper->scale = 0;
+        oper->mode = am_indispscale;
+        srcRegs.push_back(ECX);
+        srcRegs.push_back(EDX);
+    }
+
+    Statement* rv = Statement::MakeStatement(parent, StatementNode::passthrough_);
+    rv->select = (EXPRESSION*)ins;
+    switch (ins->opcode)
+    {
+    case op_div:
+    case op_idiv:
+    case op_mul:
+        if (destRegs.size())
+            destRegs[0] = R_EAXEDX;
+        break;
+    case op_imul:
+        if (!ins->oper2 && destRegs.size())
+            destRegs[0] = R_EAXEDX;
+        break;
+    default:
+        break;
+    }
+    unsigned char* regs = Allocate<unsigned char>(srcRegs.size() + 2);
+    if (destRegs.size())
+        regs[ASM_DEST_REG] = destRegs[0] + 1;
+    else
+        regs[ASM_DEST_REG] = 255;
+    for (int i = 0; i < srcRegs.size(); i++)
+        regs[i + ASM_SRC_REG_START] = srcRegs[i] + 1;
+
+    rv->assemblyRegs = regs;
+    return rv;
+}
 void inlineAsm(std::list<FunctionBlock*>& parent)
 {
     Statement* snp;
@@ -1167,7 +1261,6 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
     std::vector<int> destRegs;
     do
     {
-        snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
         if (!currentLex)
         {
             return;
@@ -1189,12 +1282,14 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             if (MATCHKW(Keyword::semicolon_))
                 inasm_getsym();
 
+            snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
             snp->type = StatementNode::label_;
             snp->label = node->v.i;
             return;
         }
         if (insdata->atype == op_reserved)
         {
+            snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
             getData(snp);
             return;
         }
@@ -1249,31 +1344,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
         rv->noopt = true;
         rv->opcode = op;
         rv->fwd = rv->back = 0;
-        AssembleInstruction(rv);
-        snp->select = (EXPRESSION*)rv;
-        switch (op)
-        {
-        case op_div:
-        case op_idiv:
-        case op_mul:
-            if (destRegs.size())
-                destRegs[0] = R_EAXEDX;
-            break;
-        case op_imul:
-            if (!rv->oper2 && destRegs.size())
-                destRegs[0] = R_EAXEDX;
-            break;
-        default:
-            break;
-        }
-        unsigned char* regs = Allocate<unsigned char>(srcRegs.size() + 2);
-        if (destRegs.size())
-            regs[ASM_DEST_REG] = destRegs[0] + 1;
-        else
-            regs[ASM_DEST_REG] = 255;
-        for (int i = 0; i < srcRegs.size(); i++)
-            regs[i+ ASM_SRC_REG_START] = srcRegs[i] + 1;
-        snp->assemblyRegs = regs;
+        snp = AssembleInstruction(rv, parent, srcRegs, destRegs);
         if (theCurrentFunc)
         {
             theCurrentFunc->sb->noinline = true;

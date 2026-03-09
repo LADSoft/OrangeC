@@ -305,6 +305,14 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
           tempInfo[tr]->color = R_ECX;          
       }
     }  
+    else if (head->dc.opcode == i_assn && head->atomic && (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))
+    {
+        int ta = head->ans->offset->sp->i;
+        tempInfo[ta]->precolored = true;
+        tempInfo[ta]->enode->sp->regmode = 2;
+        tempInfo[ta]->color = R_EAXEDX;
+        head->precolored |= TEMP_ANS;
+    }
     if (head->dc.opcode != i_passthrough)
     {
         if (head->ans && head->ans->retval)
@@ -2320,7 +2328,7 @@ int x86_examine_icode(QUAD* head)
     if (fltret)
     {
         fltexp = anonymousVar(scc_auto, fltret);
-        cacheTempSymbol(fltexp->sp);
+        fltexp->sp->forceAllocate = true;
     }
     else
     {

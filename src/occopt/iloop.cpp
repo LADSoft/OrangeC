@@ -39,8 +39,9 @@
 #include "ilocal.h"
 #include "ireshape.h"
 #include "ioptutil.h"
+#include "optmain.h"
 
-/* Basic loop identity and data gathering
+/* Basic loop identity and loop gathering
  * note: some optimizations depend on the fact that the loop numbers
  * are assigned in reverse postorder
  */
@@ -70,11 +71,11 @@ static void dump_loops(void)
         Loop* lp = loopArray[i];
         if (lp && lp->type != LT_BLOCK)
         {
-            LIST* lt = lp->contains;
+            LOOPLIST* lt = lp->contains;
             fprintf(icdFile, "; %d/%s/B(%d)/", i + 1, lptype(lp), lp->entry->blocknum + 1);
             while (lt)
             {
-                lp = (Loop*)lt->data;
+                lp = lt->loop;
                 if (lp->type == LT_BLOCK)
                     fprintf(icdFile, "B(%d) ", lp->entry->blocknum + 1);
                 else
@@ -220,7 +221,7 @@ static Loop* LoopAncestor(Block* b)
 }
 static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
 {
-    LIST *queue = nullptr, **qx;
+    LOOPLIST *queue = nullptr, **qx;
     Loop *lp, **lpp;
     int i;
     if (!gen)
@@ -231,8 +232,8 @@ static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
         Loop* l = LoopAncestor(gen->block);
         if (l && !briggsTest(loopItems, l->loopnum))
         {
-            LIST* bl = oAllocate<LIST>();
-            bl->data = l;
+            LOOPLIST* bl = oAllocate<LOOPLIST>();
+            bl->loop = l;
             bl->next = queue;
             queue = bl;
             briggsSet(loopItems, l->loopnum);
@@ -241,9 +242,9 @@ static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
     }
     while (queue)
     {
-        if (((Loop*)queue->data)->entry)
+        if ((queue->loop)->entry)
         {
-            BLOCKLIST* p = ((Loop*)queue->data)->entry->pred;
+            BLOCKLIST* p = (queue->loop)->entry->pred;
             queue = queue->next;
             while (p)
             {
@@ -252,8 +253,8 @@ static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
                     Loop* l = LoopAncestor(p->block);
                     if (l && !briggsTest(loopItems, l->loopnum))
                     {
-                        LIST* bl = oAllocate<LIST>();
-                        bl->data = l;
+                        LOOPLIST* bl = oAllocate<LOOPLIST>();
+                        bl->loop = l;
                         bl->next = queue;
                         queue = bl;
                         briggsSet(loopItems, l->loopnum);
@@ -275,14 +276,14 @@ static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
     lp->parent = nullptr;
     head->loopParent = lp;
     qx = &lp->contains;
-    *qx = oAllocate<LIST>();
-    (*qx)->data = head->loopName;
+    *qx = oAllocate<LOOPLIST>();
+    (*qx)->loop = head->loopName;
     qx = &(*qx)->next;
     for (i = 0; i < loopItems->top; i++)
     {
-        LIST* l = oAllocate<LIST>();
+        LOOPLIST* l = oAllocate<LOOPLIST>();
         int n = loopItems->data[i];
-        l->data = loopArray[n];
+        l->loop = loopArray[n];
         *qx = l;
         qx = &(*qx)->next;
         if (loopArray[n]->type == LT_BLOCK)
@@ -363,17 +364,17 @@ static void CalculateLoopedBlocks(Loop* l)
 {
     if (l->type != LT_BLOCK)
     {
-        LIST* l1 = l->contains;
+        LOOPLIST* l1 = l->contains;
         while (l1)
         {
-            CalculateLoopedBlocks((Loop*)l1->data);
+            CalculateLoopedBlocks(l1->loop);
             l1 = l1->next;
         }
         l1 = l->contains;
         l->blocks = briggsAlloc(blockCount);
         while (l1)
         {
-            Loop* lm = (Loop*)l1->data;
+            Loop* lm = l1->loop;
             if (lm->type == LT_BLOCK)
                 briggsSet(l->blocks, lm->entry->blocknum);
             else
@@ -389,50 +390,47 @@ static void CalculateLoopedBlocks(Loop* l)
 /* finds all the successors to the loop */
 static void CalculateSuccessors(Loop* lp)
 {
-    LIST* contains;
-    contains = lp->contains;
-    while (contains)
+    LOOPLIST* contains;
+    for (contains = lp->contains; contains; contains = contains->next)
     {
-        Loop* current = (Loop*)contains->data;
-        if (lp->type != LT_BLOCK)
+        Loop* current = contains->loop;
+        if (lp->type != LT_BLOCK || current->loopnum == lp->loopnum)
             CalculateSuccessors(current);
-        contains = contains->next;
     }
-    contains = lp->contains;
-    while (contains)
+
+    if (lp->type == LT_BLOCK)
     {
-        Loop* inner = (Loop*)contains->data;
-        if (inner->type == LT_BLOCK)
+        auto succ = lp->entry->succ;
+        for (; succ; succ = succ->next)
         {
-            BLOCKLIST* bl = inner->entry->succ;
-            while (bl)
+            if (succ->block->loopName->loopnum != lp->loopnum)
             {
                 BLOCKLIST* newExit = oAllocate<BLOCKLIST>();
                 newExit->next = lp->successors;
                 lp->successors = newExit;
-                newExit->block = bl->block;
-                bl = bl->next;
+                newExit->block = succ->block;
             }
         }
-        else
+    }
+    else
+    {
+        for (contains = lp->contains; contains; contains = contains->next)
         {
-            /* only have to add blocks that exited an inner loop
-             * and only if they also exit this loop
-             */
-            BLOCKLIST* prevSuccessors = inner->successors;
-            while (prevSuccessors)
+            Loop* inner = contains->loop;
+            /* only have to add blocks that could have exited an inner loop
+                * and only if they also exit this loop
+                */
+            for (BLOCKLIST* prevSuccessors = inner->successors; prevSuccessors; prevSuccessors = prevSuccessors->next)
             {
-                if (!briggsTest(inner->blocks, prevSuccessors->block->blocknum))
+                if (!briggsTest(lp->blocks, prevSuccessors->block->blocknum))
                 {
                     BLOCKLIST* newExit = oAllocate<BLOCKLIST>();
                     newExit->next = lp->successors;
                     lp->successors = newExit;
                     newExit->block = prevSuccessors->block;
                 }
-                prevSuccessors = prevSuccessors->next;
             }
         }
-        contains = contains->next;
     }
 }
 void BuildLoopTree(void)
@@ -461,12 +459,13 @@ void BuildLoopTree(void)
         }
     }
     FindLoopOuter(blockArray[0]);
-    //	CalculateSuccessors(loopArray[loopCount-1]);
 
     memset(&bl, 0, sizeof(bl));
     bl.block = blockArray[exitBlock];
     FindBody(&bl, blockArray[0], LT_ROOT);
     CalculateLoopedBlocks(loopArray[loopCount - 1]);
+
+    CalculateSuccessors(loopArray[loopCount - 1]);
     //   if (cparams.prm_icdfile)
     //   {
     //       fprintf(icdFile, "; loop dump\n");
@@ -658,7 +657,7 @@ static void PruneInductionCandidate(int tnum, Loop* l)
  */
 static void CalculateInductionCandidates(Loop* l)
 {
-    LIST *blocks, *p;
+    LOOPLIST *blocks, *p;
     int i;
     briggsClear(candidates);
     while (!inductionCandidateStack.empty())

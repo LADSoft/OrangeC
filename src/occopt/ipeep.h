@@ -29,7 +29,7 @@ namespace Optimizer
 {
 void peepini(void);
 void weed_goto(void);
-void kill_labeledgoto(Block* b, QUAD* head);
-void kill_jumpover(Block* b, QUAD* head);
+void KillLabeledGoto(Block* b, QUAD* head);
+void KillJumpover(Block* b, QUAD* head);
 void peep_icode(bool branches);
 }  // namespace Optimizer

@@ -1093,11 +1093,11 @@ static void GatherAliases(Loop* lp)
     bool xchanged = changed;
     do
     {
-        LIST* lt = lp->contains;
+        LOOPLIST* lt = lp->contains;
         changed = false;
         while (lt)
         {
-            lp = (Loop*)lt->data;
+            lp = lt->loop;
             if (lp->type == LT_BLOCK)
                 AliasesOneBlock(lp->entry);
             else

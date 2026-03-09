@@ -3452,7 +3452,7 @@ static void getInitListConversion(Type* tp, std::list<Argument*>* list, Type* tp
         if (tp->IsRef())
             tp = tp->BaseType()->btp;
         tp = tp->BaseType();
-        if (tp->sp->sb->trivialCons)
+        if (!tp->sp->sb->hasUserCons)
         {
             if (list)
             {
@@ -3476,7 +3476,14 @@ static void getInitListConversion(Type* tp, std::list<Argument*>* list, Type* tp
                                     break;
                                 if (ismemberdata(member))
                                 {
-                                    getSingleConversion(member->tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
+                                    if ((*it)->nested && member->tp->IsStructured())
+                                    {
+                                        getInitListConversion(member->tp, (*it)->nested, nullptr, n, seq, candidate, userFunc);
+                                    }
+                                    else
+                                    {
+                                        getSingleConversion(member->tp, (*it)->tp, (*it)->exp, n, seq, candidate, userFunc, true);
+                                    }
                                     if (*n > 10)
                                         break;
                                     ++it;
@@ -4701,7 +4708,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
                     if (args->thistp->IsVolatile())
                         thstp = Type::MakeType(BasicType::volatile_, thstp);
                     args->thistp = thstp;
-                    if (!sp->sb->trivialCons)
+                    if (sp->sb->hasUserCons)
                     {
                         auto overloads = search(deduced->tp->syms, overloadNameTab[CI_CONSTRUCTOR]);
                         if (overloads)

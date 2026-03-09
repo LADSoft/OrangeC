@@ -567,6 +567,10 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         return nullptr;
     }
+    if (f->noinline)
+    {
+        return nullptr;
+    }
     if (f->thisptr)
     {
         if (f->thisptr->type == ExpressionNode::auto_ && f->thisptr->v.sp->sb->stackblock)

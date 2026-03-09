@@ -134,6 +134,12 @@ enum e_lptype
     LT_ROOT,
     LT_BLOCK
 };
+struct LOOPLIST
+{
+    struct LOOPLIST* next;
+    struct Loop* loop;
+};
+
 struct Loop
 {
     struct Loop* next;
@@ -141,12 +147,9 @@ struct Loop
     int loopnum;
     struct Block* entry; /* will be the block for blocks */
     struct Loop* parent;
-    LIST* contains;
+    LOOPLIST* contains;
     BITINT* invariantPhiList;
     struct _blocklist* successors;
-    PRESSURE pressure;
-    LIST* occurs;
-    BriggsSet* through;
     BriggsSet* blocks;
     INDUCTION_LIST* inductionSets;
 };

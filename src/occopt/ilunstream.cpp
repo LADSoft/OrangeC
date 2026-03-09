@@ -1303,7 +1303,7 @@ void ReadMappingFile(SharedMemory* mem, FILE* fil)
         int n = mem->ViewWindowSize();
         if (n > end)
             n = end;
-        if (fread(p + pos, n, 1, fil) != n)
+        if (fread(p + pos, 1, n, fil) != n)
             Utils::Fatal("Internal Error");
         pos += n;
         end -= n;

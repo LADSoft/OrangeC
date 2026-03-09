@@ -3230,6 +3230,138 @@ EXPRESSION* convertArgToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
 
     return exp;
 }
+EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destructors, std::list<Argument*>* nested, EXPRESSION* ptr, EXPRESSION* consexp, EXPRESSION* final, int offset = 0)
+{
+    EXPRESSION* rv = nullptr, ** last = &rv;
+    *last = MakeExpression(ExpressionNode::assign_, ptr, consexp);
+    auto it = ctype->syms->begin();
+    int count = 0;
+    if (nested)
+    {
+        for (auto init : *nested)
+        {
+            while (it != ctype->syms->end() && !ismemberdata(*it))
+                ++it;
+            if (it == ctype->syms->end())
+                break;
+            count++;
+            auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
+                MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
+            if ((*it)->tp->IsStructured())
+            {
+                if (!(*it)->tp->BaseType()->sp->sb->trivialCons)
+                {
+                    auto ctype1 = (*it)->tp->BaseType();
+                    auto dexp = exp2;
+                    CallSite* params = Allocate<CallSite>();
+                    params->ascall = true;
+                    if (init->nested)
+                    {
+                        params->arguments = (*init).nested;
+                    }
+                    else
+                    {
+                        params->arguments = argumentListFactory.CreateList();
+                        params->arguments->push_back(init);
+                    }
+                    CallConstructor(&ctype1, &exp2, params, false, nullptr, true, false, false, false, 0, false, true);
+                    *last = MakeExpression(ExpressionNode::comma_, *last, exp2);
+                    CallDestructor(ctype1->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                    if (dexp)
+                    {
+                        if (!destructors)
+                            destructors = exprListFactory.CreateList();
+                        destructors->push_front(dexp);
+                    }
+                }
+                else
+                {
+                    Type* ilType = nullptr;
+                    for (auto t : *(*it)->tp->BaseType()->syms)
+                    {
+                        if (ismemberdata(t))
+                        {
+                            ilType = t->tp;
+                            break;
+                        }
+                    }
+                    *last = AdjustNestedConversion((*it)->tp->BaseType(), destructors, init->nested, ptr, consexp, nullptr, offset);
+                    while ((*last)->right->type == ExpressionNode::comma_) last = &(*last)->right;
+                }
+            }
+            else
+            {
+                Dereference((*it)->tp, &exp2);
+                auto exp1 = MakeExpression(ExpressionNode::assign_, exp2, init->exp);
+                *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
+            }
+            last = &(*last)->right;
+            ++it;
+        }
+    }
+    if (nested && count < nested->size())
+    {
+        error(ERR_TOO_MANY_InitializerS);
+    }
+    else if (it != ctype->syms->end())
+    {
+        while (it != ctype->syms->end())
+        {
+            while (it != ctype->syms->end() && !ismemberdata(*it))
+                ++it;
+            if (it != ctype->syms->end())
+            {
+                auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
+                    MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
+                if ((*it)->tp->IsStructured())
+                {
+                    if ((*it)->tp->BaseType()->sp->sb->hasUserCons)
+                    {
+                        auto dexp = exp2;
+                        auto ctype1 = (*it)->tp->BaseType();
+                        CallSite* params = Allocate<CallSite>();
+                        params->ascall = true;
+                        CallConstructor(&ctype1, &exp2, params, false, nullptr, true, false, false, false, 0, false, true);
+                        *last = MakeExpression(ExpressionNode::comma_, *last, exp2);
+                        CallDestructor(ctype1->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                        if (dexp)
+                        {
+                            if (!destructors)
+                                destructors = exprListFactory.CreateList();
+                            destructors->push_front(dexp);
+                        }
+                    }
+                    else
+                    {
+                        Type* ilType = nullptr;
+                        for (auto t : *(*it)->tp->BaseType()->syms)
+                        {
+                            if (ismemberdata(t))
+                            {
+                                ilType = t->tp;
+                                break;
+                            }
+                        }
+                        *last = AdjustNestedConversion((*it)->tp->BaseType(), destructors, nullptr, ptr, consexp, nullptr, offset);
+                        while ((*last)->right->type == ExpressionNode::comma_) last = &(*last)->right;
+                    }
+                }
+                else
+                {
+                    Dereference((*it)->tp, &exp2);
+                    auto exp1 = MakeExpression(ExpressionNode::assign_, exp2,
+                        MakeIntExpression(ExpressionNode::c_i_, 0));
+                    *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
+                }
+                last = &(*last)->right;
+                ++it;
+            }
+        }
+    }
+    if (final)
+        *last = MakeExpression(ExpressionNode::comma_, *last, final);
+    return rv;
+}
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr,
                   bool operands, bool implicit)
 {
@@ -3525,7 +3657,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                         p->exp = consexp;
                         esp->sb->stackblock = true;
                         esp->sb->constexpression = true;
-                        if (sym->tp->BaseType()->sp->sb->trivialCons)
+                        if (!sym->tp->BaseType()->sp->sb->hasUserCons)
                         {
                             auto initListType = p->nested->front()->tp->BaseType();
                             EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
@@ -3536,49 +3668,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                 insertInitSym(ptr->v.sp);
                             }
                             Dereference(&stdpointer, &ptr);
-                            EXPRESSION** last = &p->exp;
-                            *last = MakeExpression(ExpressionNode::assign_, ptr, consexp);
-                            auto it = ctype->syms->begin();
-                            int count = 0;
-                            for (auto init : *p->nested)
-                            {
-                                while (it != ctype->syms->end() && !ismemberdata(*it))
-                                    ++it;
-                                if (it == ctype->syms->end())
-                                    break;
-                                count++;
-                                auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
-                                                           MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset));
-                                Dereference(initListType, &exp2);
-                                auto exp1 = MakeExpression(ExpressionNode::assign_, exp2, init->exp);
-                                *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
-                                last = &(*last)->right;
-                                ++it;
-                            }
-                            if (count < p->nested->size())
-                            {
-                                error(ERR_TOO_MANY_InitializerS);
-                            }
-                            else if (it != ctype->syms->end())
-                            {
-                                while (it != ctype->syms->end())
-                                {
-                                    while (it != ctype->syms->end() && !ismemberdata(*it))
-                                        ++it;
-                                    if (it != ctype->syms->end())
-                                    {
-                                        auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
-                                                                   MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset));
-                                        Dereference(initListType, &exp2);
-                                        auto exp1 = MakeExpression(ExpressionNode::assign_, exp2,
-                                                                   MakeIntExpression(ExpressionNode::c_i_, 0));
-                                        *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
-                                        last = &(*last)->right;
-                                        ++it;
-                                    }
-                                }
-                            }
-                            *last = MakeExpression(ExpressionNode::comma_, *last, ptr);
+                            p->exp = AdjustNestedConversion(ctype, p->destructors, p->nested, ptr, consexp, ptr);
                         }
                         else
                         {
@@ -3701,42 +3791,56 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             if (!tpx)
                                 tpx = sym->tp->BaseType()->btp;
                         }
-                        if (p->exp)
-                        {
-                            int offset = 0;
-                            auto exp4 = relptr(p->exp, offset);
-                        }
                         if (p->nested)
                         {
                             nested = true;
-                            CallSite* params = Allocate<CallSite>();
-                            params->ascall = true;
-                            if (p->nested)
+                            Type* ctype = sym->tp->BaseType()->btp->BaseType();
+                            if (!ctype->sp->sb->hasUserCons)
                             {
-                                params->arguments = p->nested;
+
+                                EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                    sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                                SYMBOL* esp = consexp->v.sp;
+                                EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
+                                ptr->v.sp->sb->constexpression = true;
+                                if (!theCurrentFunc)
+                                {
+                                    ptr->v.sp->sb->label = Optimizer::nextLabel++;
+                                    insertInitSym(ptr->v.sp);
+                                }
+                                Dereference(&stdpointer, &ptr);
+                                p->exp = AdjustNestedConversion(ctype, p->destructors, p->nested, ptr, consexp, consexp);
                             }
                             else
                             {
-                                params->arguments = argumentListFactory.CreateList();
-                                params->arguments->push_back(p);
-                            }
-                            Type* ctype = sym->tp->BaseType()->btp;
-                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
-                                                               sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
-                            SYMBOL* esp = consexp->v.sp;
-                            p->exp = consexp;
-                            CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
-                            if (p->exp->type == ExpressionNode::thisref_)
-                            {
-                                Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
-                                if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
+                                CallSite* params = Allocate<CallSite>();
+                                params->ascall = true;
+                                if (p->nested)
                                 {
-                                    p->tp = tpx->btp;
+                                    params->arguments = p->nested;
                                 }
+                                else
+                                {
+                                    params->arguments = argumentListFactory.CreateList();
+                                    params->arguments->push_back(p);
+                                }
+                                EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                    sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                                SYMBOL* esp = consexp->v.sp;
+                                p->exp = consexp;
+                                CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
+                                if (p->exp->type == ExpressionNode::thisref_)
+                                {
+                                    Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
+                                    if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
+                                    {
+                                        p->tp = tpx->btp;
+                                    }
+                                }
+                                EXPRESSION* dexp = consexp;
+                                CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                                InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
                             }
-                            EXPRESSION* dexp = consexp;
-                            CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
-                            InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
                         }
                         else if ((!sym->tp->BaseType()->btp->IsConst() && !sym->tp->IsConst() &&
                                   (sym->tp->type != BasicType::rref_ &&

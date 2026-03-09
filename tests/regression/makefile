@@ -20,7 +20,7 @@ mpfr.exe: mpfrdll.l mpfr.c
 	occ /! /ompfr.exe mpfr.c -l mpfrdll.l
 
 fastcall1.exe: fastcall.c
-	occ /! /ofastcall1.exe /O- fastcall.c
+	occ /! /ofastcall1.exe fastcall.c
 
 canary.exe: canary.c
 	occ -fstack-protector canary.c

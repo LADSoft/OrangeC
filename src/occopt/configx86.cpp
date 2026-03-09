@@ -337,7 +337,7 @@ static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
 static ARCH_FLOAT aldbl = {-1022, 1022, 1024, 53};
 // static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
-static char fastcallRegs[3] = {R_ECX, R_EDX, R_EAX};
+static char fastcallRegs[2] = {R_ECX, R_EDX };
 static ARCH_CHARACTERISTICS architecture_characteristics = {
     &alignments, /* alignments */
     0,           /* custom alignment routine */

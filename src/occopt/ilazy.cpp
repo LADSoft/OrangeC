@@ -1412,17 +1412,24 @@ static void HandleRO(QUAD* after, int tn)
                 }
                 else
                 {
-
+                    // the loadTemp checks are to prevent making new temporaries for something simple
+                    // like a loadtemp, this hels for example with induction variables in loops...
                     if ((after->temps & TEMP_LEFT) && after->dc.left->offset->sp->i == tn)
                     {
-                        after->dc.left =
-                            GetROVar(after->dc.left, tempInfo[after->dc.left->offset->sp->i]->copy, after->dc.opcode == i_assn);
-                        if (after->dc.left->offset->type != se_tempref)
-                            after->temps &= ~TEMP_LEFT;
+                        if (!after->dc.left->offset->sp->loadTemp)
+                        {
+                            after->dc.left =
+                                GetROVar(after->dc.left, tempInfo[after->dc.left->offset->sp->i]->copy, after->dc.opcode == i_assn);
+                            if (after->dc.left->offset->type != se_tempref)
+                                after->temps &= ~TEMP_LEFT;
+                        }
                     }
                     if ((after->temps & TEMP_RIGHT) && after->dc.right->offset->sp->i == tn)
                     {
-                        after->dc.right = GetROVar(after->dc.right, tempInfo[after->dc.right->offset->sp->i]->copy, false);
+                        if (!after->dc.right->offset->sp->loadTemp)
+                        {
+                            after->dc.right = GetROVar(after->dc.right, tempInfo[after->dc.right->offset->sp->i]->copy, false);
+                        }
                     }
                 }
             }

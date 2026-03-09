@@ -42,6 +42,7 @@
 #include "ilive.h"
 #include "optmodules.h"
 #include "optmain.h"
+#include "iinvar.h"
 
 namespace Optimizer
 {
@@ -139,7 +140,7 @@ static void scan_gotos(QUAD* head)
 
 /*-------------------------------------------------------------------------*/
 
-static void kill_brtonext(Block* b, QUAD* head)
+static void KillBranchToNext(Block* b, QUAD* head)
 /*
  * branches to the next statement get wiped
  */
@@ -181,7 +182,7 @@ static void kill_brtonext(Block* b, QUAD* head)
     }
 }
 
-static void kill_dupgoto(Block* b, QUAD* head)
+static void KillDupGoto(Block* b, QUAD* head)
 {
     (void)b;
     head = head->fwd;
@@ -219,7 +220,7 @@ void weed_goto(void)
 }
 /*-------------------------------------------------------------------------*/
 
-void kill_labeledgoto(Block* b, QUAD* head)
+void KillLabeledGoto(Block* b, QUAD* head)
 /*
  * if any goto goes to a label which is immediately followed by a goto,
  * replaces the original goto label with the new label annd possibly
@@ -249,7 +250,7 @@ void kill_labeledgoto(Block* b, QUAD* head)
                 if (tail->dc.v.label == oldlabel)
                 {
                     tail->dc.v.label = newhead->dc.v.label;
-                    kill_brtonext(tail->block, tail);
+                    KillBranchToNext(tail->block, tail);
                 }
                 break;
             case i_jc:
@@ -266,7 +267,7 @@ void kill_labeledgoto(Block* b, QUAD* head)
                 if (tail->dc.v.label == oldlabel)
                 {
                     tail->dc.v.label = newhead->dc.v.label;
-                    kill_brtonext(tail->block, tail);
+                    KillBranchToNext(tail->block, tail);
                 }
                 break;
             case i_coswitch:
@@ -276,7 +277,7 @@ void kill_labeledgoto(Block* b, QUAD* head)
                                     if (tail->dc.v.label == oldlabel)
                                     {
                                         tail->dc.v.label = newhead->dc.v.label;
-                                        kill_brtonext(tail->block, tail);
+                                        KillBranchToNext(tail->block, tail);
                                     }
                                     tail = tail->fwd;
                                 } while (tail->dc.opcode == i_swbranch);
@@ -291,7 +292,7 @@ void kill_labeledgoto(Block* b, QUAD* head)
 
 /*-------------------------------------------------------------------------*/
 
-void kill_jumpover(Block* b, QUAD* head)
+void KillJumpover(Block* b, QUAD* head)
 /*
  * Conditional jumps over gotos get squashed here
  */
@@ -380,7 +381,7 @@ void kill_jumpover(Block* b, QUAD* head)
         }
     }
 }
-static int peep_assn(Block* b, QUAD* head)
+static int PeepAssn(Block* b, QUAD* head, bool branches)
 {
     (void)b;
     if (head->temps == (TEMP_LEFT | TEMP_ANS) && !(head->dc.right) && head->dc.left->size == head->ans->size &&
@@ -394,6 +395,30 @@ static int peep_assn(Block* b, QUAD* head)
             {
                 RemoveInstruction(head);
                 return -1;
+            }
+        }
+    }
+
+    if (0)
+    {
+        if (head->ans->mode == i_ind && head->ans->offset && !head->ans->offset2 && !head->ans->offset3)
+        {
+            int temp = head->ans->offset->sp->i;
+            auto ins = tempInfo[temp]->instructionDefines;
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            {
+                if (ins->ans->size ==  ins->dc.left->size)
+                    head->ans = loadVarInd(ins->dc.left, head->ans->size);
+            }
+        }
+        if (head->dc.left->mode == i_ind && head->dc.left->offset && !head->dc.left->offset2 && !head->dc.left->offset3)
+        {
+            int temp = head->ans->offset->sp->i;
+            auto ins = tempInfo[temp]->instructionDefines;
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            {
+                if (ins->ans->size ==  ins->dc.left->size)
+                    head->dc.left = loadVarInd(ins->dc.left, head->dc.left->size);
             }
         }
     }
@@ -440,7 +465,7 @@ bool matchesTempRef(SimpleExpression* e, QUAD* q)
     return false;
        
 }
-static int peep_parm(Block* b, QUAD* head)
+static int PeepParm(Block* b, QUAD* head)
 {
     if ((head->temps & TEMP_LEFT) && head->dc.left->size < ISZ_FLOAT && sizeFromISZ(head->dc.left->size) == chosenAssembler->arch->parmwidth)
     {
@@ -518,7 +543,7 @@ static int peep_parm(Block* b, QUAD* head)
     return 0;
 }
 /*-------------------------------------------------------------------------*/
-static void merge_setxx(Block* b, QUAD* head)
+static void MergeSetxx(Block* b, QUAD* head)
 {
     if (head->dc.opcode == i_je || head->dc.opcode == i_jne)
     {
@@ -655,7 +680,35 @@ static void merge_setxx(Block* b, QUAD* head)
         }
     }
 }
-
+static void PeepCompare(Block* b, QUAD* head)
+{
+    if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
+    {
+        int temp = head->dc.left->offset->sp->i;
+        if (!isset(b->liveOut, temp))
+        {
+            auto ins = tempInfo[temp]->instructionDefines;
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            {
+                if (ins->ans->size ==  ins->dc.left->size)
+                    head->dc.left = ins->dc.left;
+            }
+        }
+    }
+    if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
+    {
+        int temp = head->dc.right->offset->sp->i;
+        if (!isset(b->liveOut, temp))
+        {
+            auto ins = tempInfo[temp]->instructionDefines;
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            {
+                if (ins->ans->size == ins->dc.left->size)
+                    head->dc.right = ins->dc.left;
+            }
+        }
+    }
+}
 static bool peep(Block* b, bool branches)
 /*
  * ICODE peep main routine
@@ -675,8 +728,8 @@ static bool peep(Block* b, bool branches)
             case i_goto:
                 if (branches && !dontOptimizeFunction)
                 {
-                    kill_dupgoto(b, head);
-                    kill_brtonext(b, head);
+                    KillDupGoto(b, head);
+                    KillBranchToNext(b, head);
                 }
                 break;
             case i_jc:
@@ -690,17 +743,21 @@ static bool peep(Block* b, bool branches)
             case i_jle:
             case i_jl:
                 if (architecture != ARCHITECTURE_MSIL)
-                    merge_setxx(b, head);
+                {
+                    MergeSetxx(b, head);
+                    PeepCompare(b, head);
+                }
+
                 if (branches && !dontOptimizeFunction)
                 {
-                    kill_jumpover(b, head);
-                    kill_brtonext(b, head);
+                    KillJumpover(b, head);
+                    KillBranchToNext(b, head);
                 }
                 break;
             case i_label:
                 if (branches && !(chosenAssembler->arch->denyopts & DO_NOBRANCHTOBRANCH))
                 {
-                    kill_labeledgoto(b, head);
+                    KillLabeledGoto(b, head);
                 }
                 break;
             case i_nop: /* just kill it */
@@ -708,12 +765,12 @@ static bool peep(Block* b, bool branches)
                     RemoveInstruction(head);
                 break;
             case i_assn:
-                rv = peep_assn(b, head);
+                rv = PeepAssn(b, head, branches);
                 break;
             case i_parm:
                 if (branches && architecture != ARCHITECTURE_MSIL)
                 {
-                    rv = peep_parm(b, head);
+                    rv = PeepParm(b, head);
                 }
                 break;
             default:

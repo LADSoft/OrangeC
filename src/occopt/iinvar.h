@@ -34,6 +34,8 @@ static struct reflist
     QUAD* newVal;
 }* refs;
 
+IMODE* loadVarInd(IMODE* loadVar, int size);
 void ScanForInvariants(Block* b);
+void MoveLoopVariables(void);
 void MoveLoopInvariants(void);
 }  // namespace Optimizer

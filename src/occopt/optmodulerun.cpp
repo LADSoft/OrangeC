@@ -109,6 +109,7 @@ void RedoDoms() { doms_only(false); }
 OptimizerModule Modules[]{
     {OptimizePrecolor, nullptr, ~0, 0, false, false},  // Precolor(true);
     {RearrangePrecolors, nullptr, ~0, 0, false, false},
+    {MoveLoopVariables, "Move Loop Invariants", OPT_INVARIANT, DO_NOGCSE, true, false},
     {SSAIn, nullptr, ~0, 0, false, false},
     {ConstantFlow, "Constant Optimization", OPT_CONSTANT, DO_NOCONST, false, false},
     {RemoveInfiniteThunks, nullptr, OPT_CONSTANT, 0, false, false},
@@ -116,7 +117,7 @@ OptimizerModule Modules[]{
     {RedoDoms, nullptr, OPT_CONSTANT, 0, false, false},
     ////    { Reshape, "Loop reshaping", OPT_RESHAPE, 0, false, false },
     {ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGCSE, true, false},
-    {MoveLoopInvariants, "Move Loop Invariants", OPT_INVARIANT, DO_NOGCSE, true, false},
+    {MoveLoopInvariants, "Move Loop Invariants Pass 2", OPT_INVARIANT, DO_NOGCSE, true, false},
     {AliasPass1, nullptr, ~0, DO_NOALIAS, false, false},
     {SSAOut, nullptr, ~0, 0, false, false},
     {RemoveDead, nullptr, ~0, 0, false, false},

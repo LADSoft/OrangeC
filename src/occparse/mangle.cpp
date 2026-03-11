@@ -1062,12 +1062,23 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                         if (!tp->array)
                         {
                             PUTCH(in,  'p');
+                            PUTZERO(in);
                         }
                         else
                         {
                             PUTCH(in,  'A');
+                            PUTZERO(in);
+                            auto tp1 = tp;
+                            while (tp1->array)
+                               tp1 = tp1->btp;
+                            in = mangleType(orig, in, tp1, false);
+                            while (tp->array && tp->BaseType()->btp->size)
+                            {
+                                sprintf(in, "?%d?", tp->size/tp->BaseType()->btp->size);
+                                while (*in) in++;
+                                tp = tp->BaseType()->btp;
+                            }
                         }
-                        PUTZERO(in);
                     }
                     break;
                 case BasicType::far_:

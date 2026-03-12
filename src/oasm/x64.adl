@@ -2582,6 +2582,14 @@
     <Opcode Name="rsqrtps" mand="" op="0x0f:8 0x52:8" Class="ssemmxrm"/>
     <Opcode Name="rsqrtss" mand="0xf3:8" op="0x0f:8 0x52:8" Class="ssemmxrm"/>
 
+    <Opcode Name="sha1msg1" mand="" op="0x0f:8 0x38:8 0xc9" Class="ssemmxrm"/>
+    <Opcode Name="sha1msg2" mand="" op="0x0f:8 0x38:8 0xca" Class="ssemmxrm"/>
+    <Opcode Name="sha1nexte" mand="" op="0x0f:8 0x38:8 0xc8" Class="ssemmxrm"/>
+    <Opcode Name="sha1rnds4" mand="" op="0x0f:8 0x3a:8 0xcc" Class="ssepshu"/>
+    <Opcode Name="sha256msg1" mand="" op="0x0f:8 0x38:8 0xcc" Class="ssemmxrm"/>
+    <Opcode Name="sha256msg2" mand="" op="0x0f:8 0x38:8 0xcd" Class="ssemmxrm"/>
+    <Opcode Name="sha256rnds2" mand="" op="0x0f:8 0x38:8 0xcb" Class="ssemmxrm"/>
+
     <Opcode Name="shufpd" mand="0x66" op="0x0f:8 0xc6:8" Class="sseimm"/>
     <Opcode Name="shufps" mand="" op="0x0f:8 0xc6:8" Class="sseimm"/>
     <Opcode Name="sqrtpd" mand="0x66:8" op="0x0f:8 0x51:8" Class="ssemmxrm"/>

@@ -1078,6 +1078,8 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                                 while (*in) in++;
                                 tp = tp->BaseType()->btp;
                             }
+                            while (tp->btp)
+                                tp = tp->btp;
                         }
                     }
                     break;

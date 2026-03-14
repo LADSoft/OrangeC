@@ -106,6 +106,8 @@ void add_intermed(Optimizer::QUAD* newQuad)
         case i_func:
             newQuad->ignoreMe = true;
             break;
+        case i_passthrough:
+            break;
         default:
             if (newQuad->dc.left && newQuad->dc.left->runtimeData)
             {

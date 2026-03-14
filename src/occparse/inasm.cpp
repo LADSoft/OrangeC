@@ -229,6 +229,28 @@ static void inasm_txsym(void)
             }
         }
     }
+    else if (currentLex)
+    {
+        const char *name = nullptr;
+        if (MATCHKW(Keyword::land_))
+            name = "and";
+        else if (MATCHKW(Keyword::lor_))
+            name = "or";
+        else if (MATCHKW(Keyword::not_))
+            name = "not";
+        else if (MATCHKW(Keyword::uparrow_))
+            name = "xor";
+        if (name)
+        {
+            printf("%s\n", name);
+            ASM_HASH_ENTRY* e = search(asmHash, name);
+            if (e)
+            {
+                currentLex->type = LexType::l_asmInstruction_;
+                insdata = (Optimizer::ASMNAME*)e->data;
+            }
+         }
+    }
 }
 static void inasm_getsym(void)
 {
@@ -1055,19 +1077,6 @@ e_opcode inasm_op(void)
     return (e_opcode)op;
 }
 
-/*-------------------------------------------------------------------------*/
-
-static OCODE* make_ocode(AMODE* ap1, AMODE* ap2, AMODE* ap3)
-{
-    OCODE* o = beLocalAllocate<OCODE>();
-    if (ap1 && (ap1->length == ISZ_UCHAR || ap1->length == -ISZ_UCHAR))
-        if (ap2 && ap2->mode == am_immed)
-            ap2->length = ap1->length;
-    o->oper1 = ap1;
-    o->oper2 = ap2;
-    o->oper3 = ap3;
-    return o;//////////
-}
 static int getData(Statement* snp)
 {
     int size = insdata->amode;

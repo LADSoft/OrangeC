@@ -386,7 +386,7 @@ void AllocateStackSpace(int begin)
     std::map<SimpleSymbol*, int> modes;
     for (auto sym : functionVariables)
     {
-        sym->allocate = sym->forceAllocate;
+        sym->allocate = sym->forceAllocate | sym->inasm;
         if (sym->storage_class != scc_constant)
         {
             int lvl = sym->i;
@@ -396,7 +396,7 @@ void AllocateStackSpace(int begin)
     }
     for (auto sym : temporarySymbols)
     {
-        sym->allocate = sym->forceAllocate;
+        sym->allocate = sym->forceAllocate | sym->inasm;
         if (sym->storage_class != scc_constant)
         {
             int lvl = sym->i;

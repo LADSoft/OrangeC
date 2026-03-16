@@ -26,3 +26,10 @@ void ee()
 {
 	printf("hi\n");
 }
+int ff()
+{
+	aa();
+	bb();
+	cc();
+	dd();
+}

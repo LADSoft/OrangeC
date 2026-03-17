@@ -66,10 +66,11 @@
 #    endif
 
 #    if !defined(__STDC__) || defined(__STDC_VERSION__)
-#        define _RTL_INTRINS _RTL_FUNC _intrins
+#        define _RTL_INTRINS _RTL_FUNC _intrinsic
 #        define _RTL_FASTCALL __fastcall
 #    else
 #        define _RTL_INTRINS
+#        define _RTL_FASTCALL
 #    endif
 
 #    if defined(__CC386__) && !defined(_WIN32)

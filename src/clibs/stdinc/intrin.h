@@ -23,7 +23,7 @@
  */
 
 #pragma once
-#indef _INTRINS_H
+#ifndef _INTRINS_H
 #define _INTRINS_H 
 
 #    include <_defs.h>

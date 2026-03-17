@@ -304,7 +304,7 @@ static ARCH_SIZING alignments = {
     0,  /*char a_rcomplexpad;*/
     0,  /*char a_lrcomplexpad;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
-    8,  /* char a_maxalign; */
+    16,  /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */

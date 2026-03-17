@@ -2433,10 +2433,6 @@ void asm_passthrough(Optimizer::QUAD* q) /* reserved */
             val->oper2->length = len;
         }
     }
-    if (val->oper1 && val->oper1->mode <= am_seg && val->oper2 && (val->oper2->mode == am_indisp || val->oper2->mode == am_indispscale || val->oper2->mode == am_direct))
-        val->oper2->length = 0;
-    if (val->oper2 && val->oper2->mode <= am_seg && (val->oper1->mode == am_indisp || val->oper1->mode == am_indispscale || val->oper1->mode == am_direct))
-        val->oper1->length = 0;
     if (val->oper3)
        val = gen_code3(val->opcode, val->oper1, val->oper2, val->oper3);
     else

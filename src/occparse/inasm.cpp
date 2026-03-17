@@ -493,7 +493,7 @@ static int inasm_getsize(void)
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
     }
-    return sz;
+    return sz << 8;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -980,7 +980,7 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
             if (sz)
                 rv->length = sz;
             else if (lastsym)
-                rv->length = inasm_structsize();
+                rv->length |= inasm_structsize();
         }
         if (rv->length < 0)
             rv->length = -rv->length;
@@ -1353,6 +1353,52 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
         rv->noopt = true;
         rv->opcode = op;
         rv->fwd = rv->back = 0;
+        if (rv->oper1)
+        {
+            if (rv->oper1->length & 0xff00)
+            {
+                rv->oper1->length >>= 8;
+            }
+            else if (!rv->oper2 || rv->oper2->mode == am_immed || rv->oper1->mode <= am_seg)
+            {
+                rv->oper1->length &= 0xff;
+            }
+            else
+            {
+                rv->oper1->length = 0;
+            }
+        }
+        if (rv->oper2)
+        {
+            if (rv->oper2->length & 0xff00)
+            {
+                rv->oper2->length >>= 8;
+            }
+            else if (rv->oper2->mode <= am_seg)
+            {
+                rv->oper2->length &= 0xff;
+            }
+            else
+            {
+                rv->oper2->length = 0;
+            }
+        }
+        if(rv->oper3)
+        {
+            if (rv->oper3->length & 0xff00)
+            {
+                rv->oper3->length >>= 8;
+            }
+            else if (rv->oper3->mode <= am_seg)
+            {
+                rv->oper3->length &= 0xff;
+            }
+            else
+            {
+                rv->oper3->length &= 0xff;            
+            }
+        }
+
         snp = AssembleInstruction(rv, parent, srcRegs, destRegs);
         if (theCurrentFunc)
         {

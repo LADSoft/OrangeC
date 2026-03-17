@@ -2,7 +2,7 @@
 
 #include "x64Instructions.h"
 
-const char * const opcodeTable[638] = {
+const char * const opcodeTable[639] = {
 	"",
 	"",
 	"",
@@ -507,6 +507,7 @@ const char * const opcodeTable[638] = {
 	"movupd",
 	"movups",
 	"mpsadbw",
+	"pshufb",
 	"mulpd",
 	"mulps",
 	"mulsd",

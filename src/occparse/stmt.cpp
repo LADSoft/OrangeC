@@ -4786,7 +4786,8 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
                 ++templateInstantiationLevel;
                 std::list<LAMBDA*> oldLambdas;
                 // function body
-                if (!funcsp->sb->inlineFunc.stmt && (!funcsp->sb->templateLevel || !funcsp->templateParams || funcsp->sb->instantiated))
+                if (!funcsp->sb->inlineFunc.stmt &&
+                    (!funcsp->sb->templateLevel || !funcsp->templateParams || funcsp->sb->instantiated))
                 {
                     TemplateNamespaceScope namespaceScope(funcsp->sb->parentClass ? funcsp->sb->parentClass : funcsp);
                     auto linesOld = lines;

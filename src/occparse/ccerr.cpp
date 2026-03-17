@@ -2043,7 +2043,7 @@ void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
         {
             if (sym->sb->constexpression)
             {
-                std::unordered_set<std::string, StringHash> initialized;
+                std::unordered_set<const char*, StringHash, StringEqual> initialized;
                 if (sym->sb->constructorInitializers && *sym->sb->constructorInitializers)
                     for (auto m : **sym->sb->constructorInitializers)
                         initialized.insert(m->name);

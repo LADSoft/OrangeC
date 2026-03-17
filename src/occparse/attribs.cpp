@@ -96,7 +96,7 @@ namespace Parser
         }
         return tp;
     }
-    static const std::unordered_map<std::string, int, StringHash> gccStyleAttribNames = {
+    static const std::unordered_map<const char *, int, StringHash, StringEqual> gccStyleAttribNames = {
         {"alias", 1},    // 1 arg, alias name
         {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
         {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
@@ -154,7 +154,7 @@ namespace Parser
                         if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
                             name = name.substr(2, name.size() - 4);
                         getsym();
-                        auto attrib = gccStyleAttribNames.find(name);
+                        auto attrib = gccStyleAttribNames.find(name.c_str());
                         if (attrib == gccStyleAttribNames.end())
                         {
                             errorstr(ERR_ATTRIBUTE_DOES_NOT_EXIST, name.c_str());
@@ -457,14 +457,14 @@ namespace Parser
             }
         }
     }
-    static const std::unordered_map<std::string, int, StringHash> occCPPStyleAttribNames = {
+    static const std::unordered_map<const char *, int, StringHash, StringEqual> occCPPStyleAttribNames = {
         {"zstring", 23},  // non-gcc, added to support nonstring
     };
-    static const std::unordered_map<std::string, int, StringHash> clangCPPStyleAttribNames = {
+    static const std::unordered_map<const char*, int, StringHash, StringEqual> clangCPPStyleAttribNames = {
         {"internal_linkage", 28},
         {"exclude_from_explicit_instantiation", 29},
     };
-    static const std::unordered_map<std::string, int, StringHash> gccCPPStyleAttribNames = {
+    static const std::unordered_map<const char *, int, StringHash, StringEqual> gccCPPStyleAttribNames = {
         {"alloc_size", 4},  // implement by ignoring one or two args
         //                    { "common", 6 }, // no args, decide whether to support
         //                    { "nocommon", 7 }, // no args, decide whether to support
@@ -656,7 +656,7 @@ namespace Parser
                                         {
                                             std::string name = currentLex->value.s.a;
                                             name = StripUnderscores(name);
-                                            auto searchedName = occCPPStyleAttribNames.find(name);
+                                            auto searchedName = occCPPStyleAttribNames.find(name.c_str());
                                             if (searchedName != occCPPStyleAttribNames.end())
                                             {
                                                 switch (searchedName->second)
@@ -694,7 +694,7 @@ namespace Parser
                                         {
                                             std::string name = currentLex->value.s.a;
                                             name = StripUnderscores(name);
-                                            auto searchedName = clangCPPStyleAttribNames.find(name);
+                                            auto searchedName = clangCPPStyleAttribNames.find(name.c_str());
                                             if (searchedName != clangCPPStyleAttribNames.end())
                                             {
                                                 switch (searchedName->second)
@@ -738,7 +738,7 @@ namespace Parser
                                             // consistency reasons.
                                             std::string name = currentLex->value.s.a;
                                             name = StripUnderscores(name);
-                                            auto searchedName = gccCPPStyleAttribNames.find(name);
+                                            auto searchedName = gccCPPStyleAttribNames.find(name.c_str());
                                             if (searchedName != gccCPPStyleAttribNames.end())
                                             {
                                                 switch (searchedName->second)

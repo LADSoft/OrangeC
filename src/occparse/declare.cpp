@@ -4567,6 +4567,13 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                             sg.CompileFunctionFromStream();
                                         }
                                     }
+                                    else if (Optimizer::cparams.prm_cplusplus && sp->sb->attribs.inheritable.linkage == Linkage::inline_)
+                                    {
+                                        auto stream = GetTokenStream(true);
+                                        bodyTokenStreams.set(sp, stream);
+                                        bodyArgs.set(sp, sp->tp->BaseType()->syms);
+                                        Optimizer::SymbolManager::Get(sp);
+                                    }
                                     else
                                     {
                                         StatementGenerator sg(sp);

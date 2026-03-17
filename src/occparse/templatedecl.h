@@ -45,7 +45,7 @@ extern int processingTemplateArgs;
 extern bool isFullySpecialized;
 
 extern int templateNameTag;
-extern std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
+extern std::unordered_map<const char*, SYMBOL*, StringHash, StringEqual> classInstantiationMap;
 
 extern struct templateListData* currents;
 

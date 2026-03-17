@@ -106,7 +106,7 @@ static void expression_pm( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** ex
 void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 static void expression_msilfunc( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
 
-std::unordered_map<std::string, unsigned, StringHash> cattributes = {
+std::unordered_map<const char*, unsigned, StringHash, StringEqual> cattributes = {
     {"deprecated", 202311}, {"fallthrough", 202311}, {"nodiscard", 202311}, {"noreturn", 202311}, {"maybe_unused", 202311}};
 
 void expr_init(void)
@@ -4812,10 +4812,14 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
         }
     }
     {
+
+            
         SymbolTable<SYMBOL>* temp = (*tp)->BaseType()->syms;
         if (temp)
         {
             auto it = temp->begin();
+            if (funcparams->sp->tp->IsFunction())
+                funcparams->sp->tp->BaseType()->btp->InstantiateDeferred();
 
             if (funcparams->sp && !ismember(funcparams->sp) && !memberPtr)
             {

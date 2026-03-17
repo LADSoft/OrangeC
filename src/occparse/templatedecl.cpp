@@ -85,7 +85,7 @@ int processingTemplateArgs;
 bool isFullySpecialized;
 
 int templateNameTag;
-std::unordered_map<std::string, SYMBOL*, StringHash> classInstantiationMap;
+std::unordered_map<const char*, SYMBOL*, StringHash, StringEqual> classInstantiationMap;
 
 struct templateListData* currents;
 

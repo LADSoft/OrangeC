@@ -92,7 +92,7 @@ typename SymbolTable<T>::iterator SymbolTable<T>::insert(typename SymbolTable<T>
     return inOrder_.insert(it, sym);
 }
 template <class T>
-T* SymbolTable<T>::Lookup(const std::string& name) const
+T* SymbolTable<T>::Lookup(const char * name) const
 {
     auto it = lookupTable_.find(name);
     if (it == lookupTable_.end())
@@ -100,7 +100,7 @@ T* SymbolTable<T>::Lookup(const std::string& name) const
     return (*it).second;
 }
 template <class T>
-T* search(const SymbolTable<T>* tbl, const std::string& name)
+T* search(const SymbolTable<T>* tbl, const char* name)
 {
     const SymbolTable<T>* p = tbl;
     while (p)

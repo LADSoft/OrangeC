@@ -181,7 +181,7 @@ void dumpInlines(void)
                         SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         SYMBOL* origsym;
                         std::string argumentName;
-                        DotNetPELib::SHA1Context generatedContext;
+                        TemplateHashContext generatedContext;
 
                         auto found2 = LookupGeneratedTemplateClass(generatedContext, sym->sb->parentClass);
                         if (found2)

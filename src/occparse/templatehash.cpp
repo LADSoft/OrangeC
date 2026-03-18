@@ -41,26 +41,36 @@
 #include "templatedecl.h"
 #include "templateinst.h"
 #include "templateutil.h"
-#include "sha1.h"
 #include "templatehash.h"
 #include "mangle.h"
 #include "constopt.h"
 #include "overload.h"
 
-#define PUTCH(ch) { unsigned char a = ch; SHA1Input(&context,&a, sizeof(a)); }
-#define PUTSTRING(str) SHA1Input(&context, (const unsigned char *)str, strlen(str));
-#define PUTTYPE(type) {unsigned a = (unsigned)type; SHA1Input(&context, (const unsigned char *)&a, sizeof(a)); }
+#define PUTCH(ch)                     \
+    {                                 \
+        unsigned char a = ch;         \
+        context.Input(&a, sizeof(a)); \
+    }
+#define PUTSTRING(str)                                         \
+    {                                                          \
+        context.Input((const unsigned char*)str, strlen(str)); \
+    }
+#define PUTINT(val)                                         \
+    {                                                       \
+        unsigned a = (unsigned)val;                         \
+        context.Input((const unsigned char*)&a, sizeof(a)); \
+    }
 
 namespace
 {
     using namespace Parser;
 
-    std::unordered_map<std::array<unsigned char, SHA1_DIGEST_SIZE>, SYMBOL*, OrangeC::Utils::fnv1a32_arr<SHA1_DIGEST_SIZE>,
-        OrangeC::Utils::arr_eql<SHA1_DIGEST_SIZE>> classHash, functionHash;
+    std::unordered_map<TemplateHashContext::DataType, SYMBOL*, OrangeC::Utils::fnv1a32_arr<TemplateHashContext::DataSize>,
+                       OrangeC::Utils::arr_eql<TemplateHashContext::DataSize>> classHash, functionHash;
 
-    void hashType(DotNetPELib::SHA1Context& context, Type* tp, EXPRESSION* exp, bool first);
+    void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool first);
     int uniqueId;
-    void hashNameSpaces(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+    void hashNameSpaces(TemplateHashContext& context, SYMBOL* sym)
     {
         if (!sym)
             return;
@@ -70,11 +80,11 @@ namespace
         PUTSTRING(sym->name);
     }
 
-    void hashTemplate(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool bydflt = true);
+    void hashTemplate(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool bydflt = true);
 
-    void getName(DotNetPELib::SHA1Context& context, SYMBOL* sym);
+    void getName(TemplateHashContext& context, SYMBOL* sym);
 
-    void hashParent(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+    void hashParent(TemplateHashContext& context, SYMBOL* sym)
     {
         PUTSTRING(sym->sb->parent->name);
         if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
@@ -83,7 +93,7 @@ namespace
         }
     }
 
-    void hashClasses(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+    void hashClasses(TemplateHashContext& context, SYMBOL* sym)
     {
         if (!sym)
             return;
@@ -108,7 +118,7 @@ namespace
         }
     }
 
-    void hashExpressionInternal(DotNetPELib::SHA1Context& context, EXPRESSION* exp)
+    void hashExpressionInternal(TemplateHashContext& context, EXPRESSION* exp)
     {
         while (IsCastValue(exp))
             exp = exp->left;
@@ -409,7 +419,7 @@ namespace
         }
     }
 
-    void hashExpression(DotNetPELib::SHA1Context& context, EXPRESSION* exp)
+    void hashExpression(TemplateHashContext& context, EXPRESSION* exp)
     {
         if (exp)
         {
@@ -418,7 +428,7 @@ namespace
         }
     }
 
-    void hashTemplate(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool byDflt)
+    void hashTemplate(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool byDflt)
     {
         bool bySpecial = false;
         if (params && params->size() && params->front().second->type == TplType::new_ &&
@@ -579,7 +589,7 @@ namespace
             PUTCH('~');
     }
 
-    void getName(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+    void getName(TemplateHashContext& context, SYMBOL* sym)
     {
         if (!sym)
         {
@@ -609,7 +619,7 @@ namespace
         }
     }
 
-    void hashType(DotNetPELib::SHA1Context& context, Type* tp, EXPRESSION* exp, bool first)
+    void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool first)
     {
         int i;
         if (!tp)
@@ -700,9 +710,9 @@ namespace
                         break;
                     case BasicType::func_:
                     case BasicType::ifunc_:
-                        PUTTYPE(BasicType::func_);
+                        PUTINT(BasicType::func_);
                     default:
-                        PUTTYPE(tp->type);
+                        PUTINT(tp->type);
                         break;
                 }
                 switch (tp->type)
@@ -866,7 +876,7 @@ namespace
             }
         }
     }
-    void hashCandidates(DotNetPELib::SHA1Context& context,  SymbolTable<SYMBOL>* syms)
+    void hashCandidates(TemplateHashContext& context,  SymbolTable<SYMBOL>* syms)
     { 
         struct HashIndex
         {
@@ -907,12 +917,12 @@ namespace
             }
             for (auto&& s : hashSet)
             {
-                DotNetPELib::SHA1Input(&context, (const unsigned char*)&s.declline, sizeof(s.declline));
-                DotNetPELib::SHA1Input(&context, (const unsigned char*)s.name.c_str(), s.name.size());
+                context.Input((const unsigned char*)&s.declline, sizeof(s.declline));
+                context.Input((const unsigned char*)s.name.c_str(), s.name.size());
             }
         }
     }
-    void hashCandidates(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+    void hashCandidates(TemplateHashContext& context, SYMBOL* sym)
     {
         SymbolTable<SYMBOL> syms;
         syms.Add(sym);
@@ -925,7 +935,7 @@ namespace
         }
         hashCandidates(context, &syms);
     }
-     void hashTemplateParents(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+     void hashTemplateParents(TemplateHashContext& context, SYMBOL* sym)
     {
         SYMBOL* lastParent = sym->sb->parent ? sym->sb->parent : sym;
         while (lastParent->sb->parentClass)
@@ -937,7 +947,7 @@ namespace
             hashParent(context, sym);
         }
     }
-    void hashFunctionArgs(DotNetPELib::SHA1Context& context, std::list<Argument*>* args)
+    void hashFunctionArgs(TemplateHashContext& context, std::list<Argument*>* args)
     {
         if (!args)
             return;
@@ -1136,21 +1146,21 @@ namespace
 } // anonymous namespace
 namespace Parser
 {
-SYMBOL* LookupTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
+SYMBOL* LookupTemplateClass(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
 {
     context.Computed = false;
     if (hasAllArgs(sym, params))
     {
-        DotNetPELib::SHA1Reset(&context);
+        context.Reset();
         PUTCH('@');
         PUTSTRING(sym->name);
         hashTemplate(context, sym, params, true);
         hashCandidates(context, sym);
         hashTemplateParents(context, sym);
-        DotNetPELib::SHA1Result(&context);
-        std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-        std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-        auto it = classHash.find(array);
+        context.Result();
+        TemplateHashContext::DataType result;
+        context.Result(result);
+        auto it = classHash.find(result);
         if (it != classHash.end())
         {
             return it->second;
@@ -1158,35 +1168,35 @@ SYMBOL* LookupTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym, std:
     }
     return nullptr;
 }
-SYMBOL* LookupGeneratedTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* sym)
+SYMBOL* LookupGeneratedTemplateClass(TemplateHashContext& context, SYMBOL* sym)
 {
-    DotNetPELib::SHA1Reset(&context);
+    context.Reset();
     PUTSTRING(sym->sb->decoratedName);
-    DotNetPELib::SHA1Result(&context);
-    std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-    std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-    auto it = classHash.find(array);
+    context.Result();
+    TemplateHashContext::DataType result;
+    context.Result(result);
+    auto it = classHash.find(result);
     if (it != classHash.end())
     {
         return it->second;
     }
     return nullptr;
 }
-void RegisterTemplateClass(DotNetPELib::SHA1Context& context, SYMBOL* cls)
+void RegisterTemplateClass(TemplateHashContext& context, SYMBOL* cls)
 {
     if (context.Computed)
     {
-        std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-        std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-        classHash[array] = cls;
+        TemplateHashContext::DataType result;
+        context.Result(result);
+        classHash[result] = cls;
     }
 }
-SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, std::list<SYMBOL*>* gather, CallSite* callSite)
+SYMBOL* LookupTemplateFunction(TemplateHashContext& context, SYMBOL* sym, std::list<SYMBOL*>* gather, CallSite* callSite)
 {
     context.Computed = false;
     if (!IsDefiningTemplate())
     {
-        DotNetPELib::SHA1Reset(&context);
+        context.Reset();
         PUTCH('@');
         PUTSTRING(sym->name);
         if (callSite->templateParams)
@@ -1216,10 +1226,10 @@ SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, s
                 }
             }
         }
-        DotNetPELib::SHA1Result(&context);
-        std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-        std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-        auto it = functionHash.find(array);
+        context.Result();
+        TemplateHashContext::DataType result;
+        context.Result(result);
+        auto it = functionHash.find(result);
         if (it != functionHash.end())
         {
             return it->second;
@@ -1227,13 +1237,13 @@ SYMBOL* LookupTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* sym, s
     }
     return nullptr;
 }
-void RegisterTemplateFunction(DotNetPELib::SHA1Context& context, SYMBOL* func)
+void RegisterTemplateFunction(TemplateHashContext& context, SYMBOL* func)
 {
     if (context.Computed)
     {
-        std::array<unsigned char, SHA1_DIGEST_SIZE> array;
-        std::copy(context.Message_Digest_Bytes, context.Message_Digest_Bytes + SHA1_DIGEST_SIZE, array.begin());
-        functionHash[array] = func;
+        TemplateHashContext::DataType result;
+        context.Result(result);
+        functionHash[result] = func;
     }
 }
 void templateHashInit()

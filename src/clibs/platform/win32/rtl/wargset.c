@@ -25,32 +25,33 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <string.h>
+#include <wchar.h>
 
 extern HINSTANCE* __hInstance;
 
 static char* empty_array[1] = { NULL };
 
-int _RTL_DATA _argc, _RTL_DATA __argc;
-char _RTL_DATA **_argv = &empty_array[0], _RTL_DATA **__argv = &empty_array[0];
-char* _passed_name;
+int _RTL_DATA _wargc, _RTL_DATA __wargc;
+WCHAR _RTL_DATA **_wargv = &empty_array[0], _RTL_DATA **__wargv = &empty_array[0];
+WCHAR* _wpassed_name;
 
-void __main_argset(void)
+extern int __argc, _argc;
+
+void __wmain_argset(void)
 {
-    char* _cmdline = GetCommandLineA();
-
-    char *buf = calloc(sizeof(char), strlen(_cmdline) + 1);
-    char *bufp[10000], *ocl;
+    WCHAR* _cmdline = GetCommandLineW();
+    WCHAR *buf = calloc(sizeof(WCHAR), wcslen(_cmdline) + 1);
+    WCHAR *bufp[10000], *ocl;
     int inquote = 0;
-    _argc = 0;
+    _wargc = 0;
     while (*_cmdline)
     {
-        while (isspace(*_cmdline))
+        while (iswspace(*_cmdline))
             _cmdline++;
         if (*_cmdline)
         {
             int i = 0;
-            while ((inquote || !isspace(*_cmdline)) && *_cmdline)
+            while ((inquote || !iswspace(*_cmdline)) && *_cmdline)
             {
                 if (*_cmdline == '"')
                 {
@@ -63,16 +64,16 @@ void __main_argset(void)
                 buf[i++] = *_cmdline++;
             }
             buf[i++] = 0;
-            bufp[_argc++] = strdup(buf);
+            bufp[_wargc++] = wcsdup(buf);
         }
     }
-    _argv = calloc((_argc + 1), sizeof(char*));
-    memcpy(_argv, bufp, _argc * sizeof(char*));
-    _passed_name = _argv[0];
-    char modname[260];
-    GetModuleFileNameA(__hInstance, modname, 200);
-    _argv[0] = strdup(modname);
-    __argv = _argv;
-    __argc = _argc;
+    _wargv = calloc((_wargc + 1), sizeof(WCHAR*));
+    memcpy(_wargv, bufp, _wargc * sizeof(WCHAR*));
+    _wpassed_name = _wargv[0];
+    WCHAR modname[260];
+    GetModuleFileNameW(__hInstance, modname, 200);
+    _wargv[0] = wcsdup(modname);
+    __wargv = _wargv;
+    __wargc = _argc = __argc = _wargc;
     free(buf);
 }

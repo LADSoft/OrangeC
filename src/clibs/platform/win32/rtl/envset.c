@@ -30,11 +30,11 @@
 #include <locale.h>
 #include "libp.h"
 
-char _RTL_DATA** _environ;
+static char* empty_array[1] = { NULL };
 
-#pragma startup envset 31
+char _RTL_DATA** _environ = &empty_array[0];
 
-static void envset(void)
+void __main_envset(void)
 {
     int count = __ll_getenv(0, 0), i, j;
     _environ = calloc(sizeof(char*) * (count + 1), 1);

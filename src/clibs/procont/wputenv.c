@@ -31,12 +31,12 @@
 #include "libp.h"
 #include "errno.h"
 
-extern wchar_t _RTL_DATA** __wenviron;
+extern wchar_t _RTL_DATA** _wenviron;
 int _RTL_FUNC _wputenv(const wchar_t* name)
 {
-    if (!__wenviron)
+    if (!_wenviron)
         __wenvset();
-    wchar_t **q = __wenviron, **p;
+    wchar_t **q = _wenviron, **p;
     int len = 0, count = 0;
     wchar_t* z = wcschr(name, '=');
     if (!z)
@@ -54,7 +54,7 @@ int _RTL_FUNC _wputenv(const wchar_t* name)
         }
         q++;
     }
-    p = (wchar_t**)realloc(__wenviron, (count + 2) * sizeof(wchar_t**));
+    p = (wchar_t**)realloc(_wenviron, (count + 2) * sizeof(wchar_t**));
     if (!p)
     {
         __ll_exit_critical();
@@ -63,7 +63,7 @@ int _RTL_FUNC _wputenv(const wchar_t* name)
     }
     p[count + 2 - 1] = NULL;
     p[count + 2 - 2] = name;
-    __wenviron = p;
+    _wenviron = p;
     __ll_exit_critical();
     return 0;
 }
@@ -95,9 +95,9 @@ int _RTL_FUNC _wsetenv(const wchar_t* name, const wchar_t* value, int overwrite)
 }
 int _RTL_FUNC _wunsetenv(const wchar_t* name)
 {
-    if (!__wenviron)
+    if (!_wenviron)
         __wenvset();
-    wchar_t** q = __wenviron;
+    wchar_t** q = _wenviron;
     int len = 0;
     len = wcslen(name);
     __ll_enter_critical();

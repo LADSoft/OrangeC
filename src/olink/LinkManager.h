@@ -232,6 +232,7 @@ class LinkManager
     bool debugPassThrough;
     bool delayLoadLoaded = false;
     bool exportAllSymbols;
+    bool userDefinedStartAddress = false;
     static int errors;
     static int warnings;
 };

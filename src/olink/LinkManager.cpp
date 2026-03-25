@@ -531,7 +531,10 @@ void LinkManager::LoadFiles()
                 if (internalBase.GetMAUS() > ioBase->GetMAUS())
                     ioBase->SetMAUS(internalBase.GetMAUS());
                 if (internalBase.GetStartAddress())
+                {
+                    userDefinedStartAddress = true;
                     ioBase->SetStartAddress(internalBase.GetStartFile(), internalBase.GetStartAddress());
+                }
                 fileData.push_back(file);
                 MergePublics(file, false, true);
             }
@@ -545,27 +548,30 @@ void LinkManager::LoadFiles()
 }
 void LinkManager::LoadPreEntry()
 {
-    bool found = false;
-    for (auto& p : preEntries)
+    if (!userDefinedStartAddress)
     {
-        ObjSymbol s(p.first, ObjSymbol::ePublic, 0);
-        LinkSymbolData ld(&s);
-        auto ip = publics.find(&ld);
-        if (ip != publics.end())
+        bool found = false;
+        for (auto& p : preEntries)
         {
-            ObjSymbol* translate = new ObjSymbol(p.second, ObjSymbol::eExternal, 0);
+            ObjSymbol s(p.first, ObjSymbol::ePublic, 0);
+            LinkSymbolData ld(&s);
+            auto ip = publics.find(&ld);
+            if (ip != publics.end())
+            {
+                ObjSymbol* translate = new ObjSymbol(p.second, ObjSymbol::eExternal, 0);
+                LinkSymbolData* newSymbol = new LinkSymbolData((ObjFile*)nullptr, translate);
+                externals.insert(newSymbol);
+                found = true;
+                break;
+            }
+        }
+        if (!found && preEntries.size())
+        {
+            // nothing found, make it complain about not having main...
+            ObjSymbol* translate = new ObjSymbol(preEntries.front().second, ObjSymbol::eExternal, 0);
             LinkSymbolData* newSymbol = new LinkSymbolData((ObjFile*)nullptr, translate);
             externals.insert(newSymbol);
-            found = true;
-            break;
         }
-    }
-    if (!found && preEntries.size())
-    {
-        // nothing found, make it complain about not having main...
-        ObjSymbol* translate = new ObjSymbol(preEntries.front().second, ObjSymbol::eExternal, 0);
-        LinkSymbolData* newSymbol = new LinkSymbolData((ObjFile*)nullptr, translate);
-        externals.insert(newSymbol);
     }
 }
 std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)

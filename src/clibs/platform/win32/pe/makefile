@@ -20,35 +20,30 @@
 #      contact information:
 #          email: TouchStone222@runbox.com <David Lindauer>
 #  
-
 SHELL=cmd.exe
 
-H_FILES = $(wildcard *.h)
-C_DEPENDENCIES = $(wildcard *.c)
-ASM_DEPENDENCIES = $(wildcard c0*.nas)
+EXCLUDE := $(EXCLUDE) clwin.l
 
-all: $(DEPENDENCIES) dfstb32.exe
+H_FILES = $(wildcard *.h)
+
+
+all: $(DEPENDENCIES) .\clwin.l ./dfstb32.exe
+
 $(eval $(FORMATTER))
 
-c0.o: c0.c
-	$(CC) $(STDINCLUDE) /c $(CFLAGS) /s16 -o$(WINOBJECT)\$@ $^
+include ..\c0\c0.mak
 
-c0pe.o: c0pe.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
-c0xpe.o: c0xpe.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
-c0dpe.o: c0dpe.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
-
-wildargsw.o: wildargsw.c
+./wildargsw.o: wildargsw.c
 	$(CC) /c $(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@ $^
-
 .\dfstb32.o: dfstb32.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
+.\clwin.l: c0Objects
+	-$(DEL) $@
+	$(LIB) $(LIBFLAGS) $@ +- $(C0OBJECTS) $(WINOBJECT)\*.o $(CLIBOBJECT)\*.o
+	move $@ $(SYSOBJECT)
+
 dfstb32.exe: .\dfstb32.o
 	$(LINK) $(LINKFLAGS) /T:REAL -odfstb32 $^
-
+	
 DISTRIBUTE:
-	copy *.nas $(DISTSTARTUPWIN)
-	copy *.c $(DISTSTARTUPWIN)

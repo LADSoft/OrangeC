@@ -27,23 +27,17 @@ EXCLUDE = $(EXCLUDE) crtdll.l
 H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 
-all: crtdll.l
+all: crtdll.l c0Objects
+
+include ..\c0\c0.mak
+
 $(eval $(FORMATTER))
 
-.\crtdmain.o: crtdmain.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
-
-.PHONY: .\c0.o
-.\c0.o: ..\pe\c0.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -Wcc -o$@ $^
-
-crtdll.l: .\crtdmain.o .\c0.o
+crtdll.l: c0Objects
 	-del $@
-	$(LIB) $(LIBFLAGS) $@ +- .\c0.o .\crtdmain.o
+	$(LIB) $(LIBFLAGS) $@ +- $(C0OBJECTS) $(WINOBJECT)\wargset.o $(WINOBJECT)\wenvset.o $(WINOBJECT)\llwgenv.o $(C0OBJECTS)
 	$(LIB) $(LIBFLAGS) $@ +- $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(CLIBOBJECT)\__fconvto.o $(CLIBOBJECT)\__fconvfrom.o $(CLIBOBJECT)\__fconst.o $(OBJECT)\vsconio.o $(OBJECT)\dllmain.o $(CLIBOBJECT)\fexcpt.o 
 	$(IMPLIB) $@ .\crtdll.def
-	move crtdll.l $(LSCRTLOBJECT)
+	move $@ $(SYSOBJECT)
 
 DISTRIBUTE:
-	copy *.c $(DISTSTARTUPWIN)
-

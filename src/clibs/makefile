@@ -82,11 +82,8 @@ CILOBJECT:=$(THISPATH)object\cil
 export CILOBJECT
 
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
-#DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
-#DOSOBJS = $(DOSOBJS1:.OBJ=.o)
 WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
 CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
-
 $(MKDIR):
 	-$(MKDIR) object 2> NUL
 #	-$(MKDIR) object\dos 2> NUL
@@ -124,13 +121,6 @@ platform: $(C_CLIBS)
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)"
 
 mklibs: platform
-ifneq "$(ORANGEC_ONLY)" "YES"
-#	-$(DEL) $(SYSOBJECT)\cldos.l
-#	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
-endif
-	-$(DEL) $(SYSOBJECT)\clwin.l
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir))
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
 mkapps:
 	$(MAKE) copyfiles

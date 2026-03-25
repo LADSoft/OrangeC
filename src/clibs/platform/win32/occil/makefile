@@ -37,6 +37,8 @@ release_lsmsilcrtl:
 	copy lsmsilcrtl6.dll $(SYSOBJECT)
 	copy lsmsilcrtl7.dll $(SYSOBJECT)
 	copy lsmsilcrtl8.dll $(SYSOBJECT)
+	copy lsmsilcrtl9.dll $(SYSOBJECT)
+	copy lsmsilcrtl10.dll $(SYSOBJECT)
 
 build_lsmsilcrtl:
 	csc /unsafe /langversion:7.3 /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
@@ -46,5 +48,9 @@ build_lsmsilcrtl:
 	copy lsmsilcrtl\bin\x86\Release\net7.0\*.dll
 	dotnet build lsmsilcrtl\lsmsilcrtl8.csproj --configuration Release
 	copy lsmsilcrtl\bin\x86\Release\net8.0\*.dll
+	dotnet build lsmsilcrtl\lsmsilcrtl9.csproj --configuration Release
+	copy lsmsilcrtl\bin\x86\Release\net9.0\*.dll
+	dotnet build lsmsilcrtl\lsmsilcrtl10.csproj --configuration Release
+	copy lsmsilcrtl\bin\x86\Release\net10.0\*.dll
 
 DISTRIBUTE:

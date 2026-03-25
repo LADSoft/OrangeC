@@ -27,7 +27,7 @@ EXCLUDE := $(EXCLUDE) clwin.l
 H_FILES = $(wildcard *.h)
 
 
-all: $(DEPENDENCIES) .\clwin.l ./dfstb32.exe
+all: $(DEPENDENCIES) .\clwin.l .\dfstb32.exe
 
 $(eval $(FORMATTER))
 
@@ -35,7 +35,7 @@ include ..\c0\c0.mak
 
 ./wildargsw.o: wildargsw.c
 	$(CC) /c $(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@ $^
-.\dfstb32.o: dfstb32.nas
+.\dfstb32.o: .\dfstb32.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 .\clwin.l: c0Objects
@@ -43,7 +43,7 @@ include ..\c0\c0.mak
 	$(LIB) $(LIBFLAGS) $@ +- $(C0OBJECTS) $(WINOBJECT)\*.o $(CLIBOBJECT)\*.o
 	move $@ $(SYSOBJECT)
 
-dfstb32.exe: .\dfstb32.o
+.\dfstb32.exe: .\dfstb32.o
 	$(LINK) $(LINKFLAGS) /T:REAL -odfstb32 $^
 	
 DISTRIBUTE:

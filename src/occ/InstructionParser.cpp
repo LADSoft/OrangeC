@@ -172,6 +172,9 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
         default: {
             switch (ins->opcode)
             {
+                case op_call:
+                    if (ins->oper1->mode == am_immed)
+                        ins->oper1->length = 0;
                 case op_ret:
                     if (ins->oper1)
                         ins->oper1->length = 0;

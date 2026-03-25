@@ -536,6 +536,30 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
 
             i.SetTranslatorName(ObjString("occ"));
             i.SetDebugInfoFlag(Optimizer::cparams.prm_debug && outputFile == Optimizer::outputFile);
+            if (Optimizer::bePragma.find("ENTRYPOINT") != Optimizer::bePragma.end())
+            {
+                auto entryPointName = Optimizer::bePragma["ENTRYPOINT"];
+                if (entryPointName.size())
+                {
+                    Optimizer::SimpleSymbol s = {};
+                    auto name = entryPointName;
+                    name.erase(std::remove_if(name.begin(), name.end(), std::isspace), name.end());
+                    name = "_" + name;
+                    s.outputName = name.c_str();
+                    Optimizer::SimpleSymbol* entryPoint = nullptr;
+                    auto it = globals.find(&s);
+                    ObjSymbol* entrySymbol = nullptr;
+                    if (it != globals.end())
+                    {
+                        entryPoint = *it;
+                        entrySymbol = objGlobals[entryPoint];
+                    }
+                    if (entrySymbol)
+                    {
+                        i.SetStartAddress(fi, f.MakeExpression(entrySymbol));
+                    }
+                }
+            }
 
             i.Write(outputFile, fi, &f);
         }

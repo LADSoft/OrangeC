@@ -42,12 +42,12 @@ extern char* _import _tzname;
 static int* _xceptblkptr;
 
 extern int __rtl_wargc;
-extern char** __rtl_wargv;
-extern char** __rtl_wenviron;
+extern WCHAR** __rtl_wargv;
+extern WCHAR** __rtl_wenviron;
 
 extern int _wargc;
-extern char** _wargv;
-extern char** _wenviron;
+extern WCHAR** _wargv;
+extern WCHAR** _wenviron;
 
 FILE _RTL_DATA* __stdin;
 FILE _RTL_DATA* __stdout;

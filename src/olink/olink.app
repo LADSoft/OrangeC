@@ -58,6 +58,8 @@
 <Switch Application="dlpe.exe" Flags="/mCON /f" Name="CON32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
+        <Preentry Name="_main" Translation="___C0Main"/>
+        <Preentry Name="_wmain" Translation="___C0wMain"/>
 	<Define Name="IMAGEBASE" Value="0x400000" />
 	<Define Name="FILEALIGN" Value="0x200" />
 	<Define Name="OBJECTALIGN" Value="0x1000" />
@@ -74,6 +76,8 @@
 <Switch Application="dlpe.exe" Flags="/mGUI /f" Name="GUI32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
+        <Preentry Name="WinMain" Translation="___C0WinMain"/>
+        <Preentry Name="wWinMain" Translation="___C0wWinMain"/>
 	<Define Name="IMAGEBASE" Value="0x400000" />
 	<Define Name="FILEALIGN" Value="0x200" />
 	<Define Name="OBJECTALIGN" Value="0x1000" />
@@ -90,6 +94,7 @@
 <Switch Application="dlpe.exe" Flags="/mDLL /f" Name="DLL32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
+        <Preentry Name="DllMain" Translation="___C0DllMain"/>
 	<Define Name="IMAGEBASE" Value="0x10000000" />
 	<Define Name="FILEALIGN" Value="0x200" />
 	<Define Name="OBJECTALIGN" Value="0x1000" />

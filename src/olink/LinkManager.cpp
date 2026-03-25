@@ -98,6 +98,10 @@ void LinkManager::SetDelayLoad(const ObjString& list)
         delayLoadNames.insert(n);
     }
 }
+void LinkManager::SetPreEntryData(const std::string& function, const std::string& startupObject)
+{
+    preEntries.push_back(PreEntryData(function, startupObject));
+}
 void LinkManager::AddObject(const ObjString& name)
 {
     if (!objectFiles.Add(name))
@@ -508,7 +512,7 @@ void LinkManager::LoadFiles()
     }
     for (const auto& name : objectFiles)
     {
-        std::string path;
+        std::string path = name;
         FILE* infile = GetLibraryPath(name, path);
         if (infile)
         {
@@ -537,6 +541,31 @@ void LinkManager::LoadFiles()
         {
             LinkError("Input file '" + name + "' does not exist.");
         }
+    }
+}
+void LinkManager::LoadPreEntry()
+{
+    bool found = false;
+    for (auto& p : preEntries)
+    {
+        ObjSymbol s(p.first, ObjSymbol::ePublic, 0);
+        LinkSymbolData ld(&s);
+        auto ip = publics.find(&ld);
+        if (ip != publics.end())
+        {
+            ObjSymbol* translate = new ObjSymbol(p.second, ObjSymbol::eExternal, 0);
+            LinkSymbolData* newSymbol = new LinkSymbolData((ObjFile*)nullptr, translate);
+            externals.insert(newSymbol);
+            found = true;
+            break;
+        }
+    }
+    if (!found && preEntries.size())
+    {
+        // nothing found, make it complain about not having main...
+        ObjSymbol* translate = new ObjSymbol(preEntries.front().second, ObjSymbol::eExternal, 0);
+        LinkSymbolData* newSymbol = new LinkSymbolData((ObjFile*)nullptr, translate);
+        externals.insert(newSymbol);
     }
 }
 std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
@@ -609,7 +638,7 @@ void LinkManager::LoadLibraries()
         }
     }
 }
-bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name)
+bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name, ObjFile** startupfile, ObjExpression** startupexp)
 {
     bool found = false;
     auto objNum = lib->GetSymbol(name);
@@ -619,7 +648,7 @@ bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name)
         {
             if (!lib->HasModule(objNum[i]))
             {
-                ObjFile* file = lib->LoadSymbol(objNum[i], factory);
+                ObjFile* file = lib->LoadSymbol(objNum[i], factory, startupfile, startupexp);
                 if (!file)
                 {
                     LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + lib->GetName());
@@ -651,10 +680,14 @@ void LinkManager::ScanLibraries()
                 {
                     if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
                     {
-                        bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
+                        ObjFile* startupfile = nullptr;
+                        ObjExpression* startupexp = nullptr;
+                        bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName(), &startupfile, &startupexp);
                         // not resolved?
                         if (found)
                         {
+                            if (startupfile && startupexp)
+                                ioBase->SetStartAddress(startupfile, startupexp);
                             changed = true;
                             changed1 = true;
                             break;
@@ -883,7 +916,14 @@ bool LinkManager::ExternalErrors()
         bool found = imports.find(ext) != imports.end();
         if (!found)
         {
-            LinkError("Undefined External '" + ext->GetSymbol()->GetDisplayName() + "' in module " + ext->GetFile()->GetName());
+            if (ext->GetFile())
+            {
+                LinkError("Undefined External '" + ext->GetSymbol()->GetDisplayName() + "' in module " + ext->GetFile()->GetName());
+            }
+            else
+            {
+                LinkError("Undefined External '" + ext->GetSymbol()->GetDisplayName() + "' in module <builtin> ");
+            }
             rv = true;
         }
     }
@@ -1027,6 +1067,7 @@ void LinkManager::Link()
     LoadFiles();
     if (completeLink)
     {
+        LoadPreEntry();
         if (!externals.empty())
         {
             for (auto file : fileData)

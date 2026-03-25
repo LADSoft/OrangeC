@@ -107,6 +107,7 @@ class LinkManager
     typedef std::vector<std::unique_ptr<LinkPartitionSpecifier>> PartitionData;
     typedef std::set<LinkSymbolData*, linkltcompare> SymbolData;
     typedef std::vector<ObjFile*> FileData;
+    typedef std::pair<std::string, std::string> PreEntryData;
 
   public:
     LinkManager(ObjString Specification, bool CaseSensitive, ObjString OutputFile = "", bool CompleteLink = false,
@@ -124,6 +125,7 @@ class LinkManager
     void SetOutputFile(const ObjString& name) { outputFile = name; }
     ObjString GetOutputFile() const { return outputFile; }
     void SetDelayLoad(const ObjString& list);
+    void SetPreEntryData(const std::string&, const std::string&);
     void Link();
 
     typedef PartitionData::iterator PartitionIterator;
@@ -187,7 +189,7 @@ class LinkManager
     void LoadFiles();
     std::unique_ptr<LinkLibrary> OpenLibrary(const ObjString& name);
     void LoadLibraries();
-    bool LoadLibrarySymbol(LinkLibrary* lib, const std::string& name);
+    bool LoadLibrarySymbol(LinkLibrary* lib, const std::string& name, ObjFile** startupfile = nullptr, ObjExpression** startupexp = nullptr);
     void ScanLibraries();
     void CloseLibraries();
     bool ParseAssignment(LinkTokenizer& spec);
@@ -200,6 +202,7 @@ class LinkManager
     void AddGlobalsForVirtuals(ObjFile* file);
     void CreateOutputFile();
     void SetDelayParams();
+    void LoadPreEntry();
 
     ObjString outputFile;
     LinkTokenizer specification;
@@ -223,6 +226,7 @@ class LinkManager
     ObjString specName;
     ObjString debugFile;
     std::set<std::string> delayLoadNames;
+    std::vector<PreEntryData> preEntries;
     bool completeLink;
     bool caseSensitive;
     bool debugPassThrough;

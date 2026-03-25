@@ -47,6 +47,7 @@ class ConfigData : public xmlVisitor
     void parse(const xmlNode* node);
     static void AddDefine(LinkManager& linker, const std::string& name, const std::string& value);
     void SetDefines(LinkManager& linker);
+    void SetPreEntries(LinkManager& linker);
     virtual bool VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData);
     virtual bool VisitNode(xmlNode& node, xmlNode* child, void* userData);
     std::string name;
@@ -55,7 +56,9 @@ class ConfigData : public xmlVisitor
     std::string specFile;
     std::deque<std::string> extensions;
     std::vector<std::unique_ptr<CmdSwitchDefine::define>> defines;
+    std::vector<std::unique_ptr<std::pair<std::string, std::string>>> preEntries;
     CmdSwitchDefine::define* currentDefine;
+    std::pair<std::string, std::string>* currentPreEntry;
     bool selected;
     bool relFile;
     bool debugPassThrough;
@@ -75,6 +78,7 @@ class SwitchConfig : public xmlVisitor, public CmdSwitchString
     }
     virtual int Parse(const char* data);
     void SetDefines(LinkManager& linker);
+    void SetPreEntries(LinkManager& linker);
     bool GetRelFile();
     bool GetDebugPassThrough();
     int GetMapMode();

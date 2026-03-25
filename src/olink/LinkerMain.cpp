@@ -393,6 +393,7 @@ int LinkerMain::Run(int argc, char** argv)
     // enter files and link
     AddFiles(linker, files);
     SetDefines(linker);
+    TargetConfig.SetPreEntries(linker);
     linker.Link();
     if (!linker.ErrCount())
     {

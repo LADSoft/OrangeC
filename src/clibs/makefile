@@ -64,8 +64,6 @@ endif
 
 THISPATH:=$(subst /,\,$(CURDIR)\)
 
-#DOSOBJECT:=$(THISPATH)object\dos
-#export DOSOBJECT
 WINOBJECT:=$(THISPATH)object\windows
 export WINOBJECT
 
@@ -86,7 +84,6 @@ WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
 CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
 $(MKDIR):
 	-$(MKDIR) object 2> NUL
-#	-$(MKDIR) object\dos 2> NUL
 	-$(MKDIR) object\windows 2> NUL
 	-$(MKDIR) object\startup 2> NUL
 	-$(MKDIR) object\cil 2> NUL
@@ -150,16 +147,12 @@ DISTRIBUTE:
 	$(COPYDIR) platform\win32\inc\%.h $(DISTINC)\c\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
-ifneq "$(ORANGEC_ONLY)" "YES"
-#	$(COPYDIR) object\startup\%.exe $(DISTLIB)
-endif
 	$(COPYDIR) object\startup\%.dll $(DISTBIN)
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif
 
 clean:
-#	-$(DEL) $(DOSOBJECT) 2> NUL
 	-$(DEL) $(WINOBJECT) 2> NUL
 	-$(DEL) $(SYSOBJECT) 2> NUL
 	-$(DEL) $(CILOBJECT) 2> NUL
@@ -176,11 +169,6 @@ clean:
 	-$(DEL) platform\win32\pels\*.o 2>NUL
 	-$(DEL) platform\win32\pe\*.dll 2>NUL
 	-$(DEL) platform\win32\rtl\*.o 2>NUL
-#	-$(DEL) platform\dos32\debug\*.o 2>NUL
-#	-$(DEL) platform\dos32\le\*.o 2>NUL
-#	-$(DEL) platform\dos32\pm\*.o 2>NUL
-#	-$(DEL) platform\dos32\rtl\*.o 2>NUL
-#	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL
 	-rmdir $(CILOBJECT) 2> NUL

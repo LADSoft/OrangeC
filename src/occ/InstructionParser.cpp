@@ -172,9 +172,11 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
         default: {
             switch (ins->opcode)
             {
+                case op_jmp:
                 case op_call:
                     if (ins->oper1->mode == am_immed)
                         ins->oper1->length = 0;
+                    break;
                 case op_ret:
                     if (ins->oper1)
                         ins->oper1->length = 0;
@@ -255,11 +257,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
                     break;
                 default:
                     if (ins->opcode >= op_ja && ins->opcode <= op_jz)
-                        if (ins->opcode != op_jmp || ins->oper1->mode == am_immed)
-                            ins->oper1->length = 0;
-                    if (ins->opcode == op_ret && ins->oper1)
                         ins->oper1->length = 0;
-
                     break;
             }
             SetTokens(ins);

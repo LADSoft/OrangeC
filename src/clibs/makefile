@@ -165,15 +165,17 @@ clean:
 	-$(DEL) $(SYSOBJECT) 2> NUL
 	-$(DEL) $(CILOBJECT) 2> NUL
 	-$(DEL) $(CLIBOBJECT) 2> NUL
-	-$(DEL) platform\win32\crtdmain\*.o 2>NUL
+	-$(DEL) platform\win32\pecrt\*.o 2>NUL
 	-$(DEL) platform\win32\lscrtl\*.o 2>NUL
 	-$(DEL) platform\win32\lscrtl\*.dll 2>NUL
 	-$(DEL) platform\win32\lsdbghelper\*.o 2>NUL
-	-$(DEL) platform\win32\msvcrdm\*.o 2>NUL
+	-$(DEL) platform\win32\pecrt\*.o 2>NUL
 	-$(DEL) platform\win32\occil\*.o 2>NUL
 	-$(DEL) platform\win32\occil\occmsil.dll 2>NUL
 	-$(DEL) platform\win32\pe\*.o 2>NUL
+	-$(DEL) platform\win32\pe\*.exe 2>NUL
 	-$(DEL) platform\win32\pels\*.o 2>NUL
+	-$(DEL) platform\win32\pe\*.dll 2>NUL
 	-$(DEL) platform\win32\rtl\*.o 2>NUL
 #	-$(DEL) platform\dos32\debug\*.o 2>NUL
 #	-$(DEL) platform\dos32\le\*.o 2>NUL

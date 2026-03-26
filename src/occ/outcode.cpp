@@ -543,8 +543,19 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
                 {
                     Optimizer::SimpleSymbol s = {};
                     auto name = entryPointName;
-                    name.erase(std::remove_if(name.begin(), name.end(), std::isspace), name.end());
+
+                    // trim the spaces out of the string...
+                    size_t start = name.find_first_not_of(" \t\n");
+                    size_t end = name.find_last_not_of(" \t\n");
+    
+                    if (end > start)
+                    {
+                        name = name.substr(start, end - start + 1);
+                    }
+
+                    // c name mangling
                     name = "_" + name;
+
                     s.outputName = name.c_str();
                     Optimizer::SimpleSymbol* entryPoint = nullptr;
                     auto it = globals.find(&s);

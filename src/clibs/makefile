@@ -150,7 +150,6 @@ DISTRIBUTE:
 	$(COPYDIR) platform\win32\inc\%.h $(DISTINC)\c\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
-	$(COPYDIR) object\startup\%.o $(DISTLIB)
 ifneq "$(ORANGEC_ONLY)" "YES"
 #	$(COPYDIR) object\startup\%.exe $(DISTLIB)
 endif

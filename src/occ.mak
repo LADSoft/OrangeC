@@ -88,22 +88,18 @@ LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file)
 
 ifeq "$(TARGET)" "GUI"
 ifeq "$(LSCRTL)" ""
-STARTUP=C0pe.o
 TYPE=/T:GUI32
 COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
 else
-STARTUP=C0ls.o
 TYPE=/T:GUI32
 COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
 CCFLAGS:=$(CCFLAGS) /Wgl
 endif
 else
 ifeq "$(LSCRTL)" ""
-STARTUP=C0Xpe.o
 TYPE=/T:CON32
 COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
 else
-STARTUP=C0xls.o
 TYPE=/T:CON32
 COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
 CCFLAGS:=$(CCFLAGS) /Wcl
@@ -162,7 +158,7 @@ endif
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
 ifeq "$(OCCPR)" ""
-	$(LINK) /o$(NAME).exe $(TYPE) $(LFLAGS) $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) $(DEF_DEPENDENCIES) $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
+	$(LINK) /o$(NAME).exe $(TYPE) $(LFLAGS) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) $(DEF_DEPENDENCIES) $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
 endif
 
 ifeq "$(OCCPR)" ""

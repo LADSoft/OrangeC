@@ -113,7 +113,7 @@ T* search(const SymbolTable<T>* tbl, const char* name)
     return nullptr;
 }
 template <class T>
-inline void SymbolTable<T>::AddName(T* sym)
+void SymbolTable<T>::AddName(T* sym)
 {
     inOrder_.push_back(sym);
     lookupTable_[sym->name] = sym;

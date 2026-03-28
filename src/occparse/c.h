@@ -130,7 +130,7 @@ class SymbolTable
     inline void insertOverload(T* in);
     inline void baseInsert(T* sym);
 
-    inline void AddName(T* sym);
+    void AddName(T* sym);
 
   private:
     std::list<T*> inOrder_;

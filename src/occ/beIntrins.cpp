@@ -37,7 +37,7 @@
 #include "config.h"
 #include "beinterfdefs.h"
 #include "ioptimizer.h"
-#include "optutils.h"
+#include "OptUtils.h"
 
 namespace occx86
 {

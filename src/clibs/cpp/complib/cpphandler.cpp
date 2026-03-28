@@ -333,10 +333,6 @@ __export extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void* record,
     }
     else if (p->ExceptionCode == OUR_CPP_EXC_CODE)
     {
-        if (((XCTAB*)record)->sig != XC_SIG)
-        {
-            return 1; // continue search
-        }
         if (matchBlock((XCTAB*)record, p, context))
         {
             return 0;  // continue execution

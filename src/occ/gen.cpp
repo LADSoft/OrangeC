@@ -5270,7 +5270,6 @@ static const int XCTAB_INDEX_OFS = 5 * 4;
     {
         gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCHANDLER_OFS), handler);
     }
-    gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_SIG_OFS), aimmed(XC_SIG));
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_ESP_OFS), makedreg(ESP));
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_EBP_OFS), makedreg(EBP));
     gen_codes(op_mov, ISZ_ADDR, base(apll, Parser::XCTAB_XCFUNC_OFS), aprl);

@@ -105,12 +105,13 @@ typedef struct _xcept
     int endOffs;    // offset from function item leaves scope
 } XCEPT;
 
+#    define XC_SIG 0x4c41445a
+
 // on stack for func
 typedef struct _xctab
 {
     struct _xctab* next;   /* link to next exception higher function */
     void* _xceptfunc;      /* windows exception handler */
-    unsigned sig;          /* signature */
     int esp;               /* esp at start of try block; code gen generates for this, don't move*/
     int ebp;               /* ebp of this function */
     XCEPTHEAD* xceptBlock; /* pointer to the function's xception block */
@@ -141,16 +142,13 @@ SYMBOL* RTTIDumpType(Type* tp, bool symonly = false);
 void XTDumpTab(SYMBOL* funcsp);
 #endif
 
-#    define XC_SIG 0x4c41445a
-
-static const int XCTAB_SIZE = 10 * 4;
+static const int XCTAB_SIZE = 9 * 4;
 static const int XCTAB_NEXT_PTR_OFS = 0 * 4;
 static const int XCTAB_XCHANDLER_OFS = 1 * 4;
-static const int XCTAB_SIG_OFS = 2 * 4;
-static const int XCTAB_ESP_OFS = 3 * 4;
-static const int XCTAB_EBP_OFS = 4 * 4;
-static const int XCTAB_XCFUNC_OFS = 5 * 4;
-static const int XCTAB_INDEX_OFS = 6 * 4;
-static const int XCTAB_INSTANCE_OFS = 7 * 4;
+static const int XCTAB_ESP_OFS = 2 * 4;
+static const int XCTAB_EBP_OFS = 3 * 4;
+static const int XCTAB_XCFUNC_OFS = 4 * 4;
+static const int XCTAB_INDEX_OFS = 5 * 4;
+static const int XCTAB_INSTANCE_OFS = 6 * 4;
 
 }  // namespace Parser

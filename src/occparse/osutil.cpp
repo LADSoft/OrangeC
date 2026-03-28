@@ -54,6 +54,8 @@
 #include "optmodules.h"
 #include "beinterf.h"
 
+#define EXIT_WITHOUT_RUNNING_OPTIMIZER 255
+
 namespace Optimizer
 {
 extern bool doBackendInit;
@@ -466,7 +468,7 @@ static void ParamTransfer(const char* name)
     }
     Optimizer::cparams.optimizer_modules = ~0;
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
-        ToolChain::Usage(getUsageText());
+        ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
     // booleans
     if (prm_c23.GetValue())
         Optimizer::cparams.c_dialect = Dialect::c23;
@@ -1188,7 +1190,7 @@ int ccinit(int argc, char* argv[])
             ToolChain::ShowBanner();
             printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
         }
-        exit(255);
+        exit(EXIT_WITHOUT_RUNNING_OPTIMIZER);
     }
     if (!architecture.empty())
     {
@@ -1265,12 +1267,12 @@ int ccinit(int argc, char* argv[])
     {
         const char* env = getenv(Optimizer::chosenAssembler->envname);
         if (env && !SwitchParser.Parse(std::string(env), &ecnt, eargs))
-            ToolChain::Usage(getUsageText());
+            ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
     }
 
     ParamTransfer(files[0].c_str());
     if (files.size() < 2)
-        ToolChain::Usage(getUsageText());
+        ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
 
     /* tack the environment includes in */
     addinclude();

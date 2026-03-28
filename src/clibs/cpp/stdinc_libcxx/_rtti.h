@@ -104,6 +104,7 @@ typedef struct _xctab
 {
     struct _xctab* next;   /* link to next exception higher function */
     void* _xceptfunc;      /* windows exception handler */
+    unsigned sig;          /* signature */
     int esp;               /* esp at start of try block; code gen generates for this, don't move*/
     int ebp;               /* ebp of this function; code gen generates this */
     XCEPTHEAD* xceptBlock; /* pointer to the function's xception block, code gen generates this */

@@ -59,7 +59,7 @@ test: x264.exe
 
 x264.exe: $(FILES)
 	olink /! /T:CON32 /c /mx /o$@ @&&|
-c0xpe.o $(FILES) clwin.l climp.l
+$(FILES) clwin.l climp.l
 |
 
 clean:

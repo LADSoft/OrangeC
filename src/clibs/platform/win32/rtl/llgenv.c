@@ -28,25 +28,30 @@
 #include <signal.h>
 #include <time.h>
 
-extern int _RTL_DATA _osenv;
-
+static char *strings;
 int __ll_getenvsize(int id)
 {
-    char* env = _osenv;
+    if (!strings)
+    	strings = GetEnvironmentStringsA();
+    char *env = strings;
     while (id--)
     {
         while (*env)
             env++;
         if (*++env == 0)
+        {
             return 0;
+        }
     }
     return strlen(env);
 }
 int __ll_getenv(char* buf, int id)
 {
+    if (!strings)
+    	strings = GetEnvironmentStringsA();
+    char *env = strings;
     int count = 0;
     int rv;
-    char* env = _osenv;
     if (buf)
     {
         while (id--)
@@ -54,7 +59,9 @@ int __ll_getenv(char* buf, int id)
             while (*env)
                 env++;
             if (*++env == 0)
+            {
                 return 0;
+            }
         }
         strcpy(buf, env);
         return (int)env;
@@ -62,7 +69,7 @@ int __ll_getenv(char* buf, int id)
     else
     {
         if (!*env)
-            return 0;
+             return 0;
         do
         {
             count++;

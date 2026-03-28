@@ -536,6 +536,41 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
 
             i.SetTranslatorName(ObjString("occ"));
             i.SetDebugInfoFlag(Optimizer::cparams.prm_debug && outputFile == Optimizer::outputFile);
+            if (Optimizer::bePragma.find("ENTRYPOINT") != Optimizer::bePragma.end())
+            {
+                auto entryPointName = Optimizer::bePragma["ENTRYPOINT"];
+                if (entryPointName.size())
+                {
+                    Optimizer::SimpleSymbol s = {};
+                    auto name = entryPointName;
+
+                    // trim the spaces out of the string...
+                    size_t start = name.find_first_not_of(" \t\n");
+                    size_t end = name.find_last_not_of(" \t\n");
+    
+                    if (end > start)
+                    {
+                        name = name.substr(start, end - start + 1);
+                    }
+
+                    // c name mangling
+                    name = "_" + name;
+
+                    s.outputName = name.c_str();
+                    Optimizer::SimpleSymbol* entryPoint = nullptr;
+                    auto it = globals.find(&s);
+                    ObjSymbol* entrySymbol = nullptr;
+                    if (it != globals.end())
+                    {
+                        entryPoint = *it;
+                        entrySymbol = objGlobals[entryPoint];
+                    }
+                    if (entrySymbol)
+                    {
+                        i.SetStartAddress(fi, f.MakeExpression(entrySymbol));
+                    }
+                }
+            }
 
             i.Write(outputFile, fi, &f);
         }

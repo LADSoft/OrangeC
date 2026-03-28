@@ -34,13 +34,11 @@
 
 #define MAXFILES 10000
 
-extern char* _oscmd;
 extern HINSTANCE* __hInstance;
 
 int _RTL_DATA _argc, _RTL_DATA __argc;
 char _RTL_DATA **_argv, _RTL_DATA **__argv;
 char* _passed_name;
-#pragma startup argset 31
 
 static char oldcwd[256];
 static int oldDrive = 0;
@@ -154,11 +152,11 @@ static int qualify(char* name)
             return FALSE;
     return TRUE;
 }
-static void argset(void)
+static void __main_argset(void)
 {
     char buf[256];
     char *bufp[10000], *ocl;
-    char* _cmdline = _oscmd;
+    char* _cmdline = GetCommandLineA();
     int inquote = 0;
     char* dir;
     char* file;

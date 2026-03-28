@@ -24,6 +24,7 @@
 
 #define GUI 1
 #define DLL 2
+#define WIDE 4
 
 #include <windows.h>
 #include <setjmp.h>
@@ -48,12 +49,13 @@ extern char** _environ;
 HMODULE __mainHInst;
 char __export* _oscmd;
 char __export* _osenv;
-HINSTANCE __export __hInstance;
+HINSTANCE __hInstance;
 unsigned _win32 = 0;
 jmp_buf __exitbranch, __abortbranch;
 static unsigned dllexists = 0;
 static int msvcrt_compat = 0;
 static int initted = 0;
+static int Flags;
 unsigned _isDLL = 1;
 void (*userRundown)();
 void PASCAL __xceptinit(int* block);
@@ -61,24 +63,50 @@ void PASCAL __xceptrundown(void);
 
 #pragma startup init 3
 #pragma rundown destroy 3
+#pragma startup do_args 31
+
+
+DWORD __unaligned_stacktop;
 
 static void init(void)
 {
     HANDLE handle;
     int eip;
-    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
+    __asm call label1;
+label1:
+    __asm pop [eip]
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
     __thrdRegisterModule(handle, _TLSINITSTART, _TLSINITEND);
 }
 static void destroy(void)
 {
     HANDLE handle;
     int eip;
-    __asm mov eax, [ebp + 4] __asm mov[eip], eax GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
+    __asm call label1;
+label1:
+    __asm pop [eip]
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)eip, &handle);
     __thrdUnregisterModule(handle);
 }
 
+static void do_args()
+{
+    if (!(Flags & WIDE))
+    {
+        if (!(Flags & (GUI | DLL)))
+            __main_argset();
+        __main_envset(); 
+    }
+    else
+    {
+        if (!(Flags & (GUI | DLL)))
+            __wmain_argset();
+        __wmain_envset(); 
+    }
+}
 // in the follow, the args are ONLY valid for DLLs
-int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
+#pragma entrypoint __C0DllMain
+int _stdcall ___C0DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     __hInstance = hInst;
     switch (fdwReason)
@@ -95,7 +123,6 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 }
 void __export __stdcall ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(), int* exceptBlock, HMODULE mainInst)
 {
-    static int Flags;
     static int rv;
     if (mainInst)
         __mainHInst = mainInst;

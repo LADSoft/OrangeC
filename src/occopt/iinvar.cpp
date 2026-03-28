@@ -727,7 +727,7 @@ void ScanForVariableMotion(void)
 // Before going into SSA
 void MoveLoopVariables(void)
 {
-    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && !currentFunction->anyTry)
     {
         refs = nullptr;
         ScanForVariableMotion();

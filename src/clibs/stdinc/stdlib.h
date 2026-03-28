@@ -179,21 +179,13 @@ extern "C"
 #endif
 
 #if defined(__LSCRTL_DLL)
-    extern char _IMPORT** _environ;
-#    ifndef _FMODE_EXT
-#        define _FMODE_EXT
     extern int _IMPORT _fmode;
-#    endif
     extern unsigned char _IMPORT _osmajor;
     extern unsigned char _IMPORT _osminor;
 #else
-extern char _RTL_DATA** _environ;
-#    ifndef _FMODE_EXT
-#        define _FMODE_EXT
-extern int _RTL_DATA _fmode;
-#    endif
-extern unsigned char _RTL_DATA _osmajor;
-extern unsigned char _RTL_DATA _osminor;
+    extern int _RTL_DATA _fmode;
+    extern unsigned char _RTL_DATA _osmajor;
+    extern unsigned char _RTL_DATA _osminor;
 #endif
 #endif
 
@@ -327,11 +319,34 @@ extern char _RTL_DATA* _sys_errlist[];
 #endif
 
 #if defined(__LSCRTL_DLL)
+
     extern int _IMPORT __argc;
     extern char _IMPORT** __argv;
+    extern char _IMPORT** _environ;
+    extern int _IMPORT __wargc;
+    extern wchar_t _IMPORT** __wargv;
+    extern wchar_t _IMPORT** _wenviron;
+#elif defined(__MSVCRT_DLL)
+    extern int _IMPORT __argc;
+    extern char _IMPORT** __argv;
+    extern char** _environ;
+    extern int __wargc;
+    extern wchar_t _IMPORT** __wargv;
+    extern wchar_t** _IMPORT** _wenviron;
+#elif defined(__CRTDLL_DLL)
+    extern int __argc;
+    extern char** __argv;
+    extern char** _environ;
+    extern int __wargc;
+    extern wchar_t** __wargv;
+    extern wchar_t** _wenviron;
 #else
-extern int _RTL_DATA __argc;
-extern char _RTL_DATA** __argv;
+    extern int _RTL_DATA __argc;
+    extern char _RTL_DATA** __argv;
+    extern char _RTL_DATA** _environ;
+    extern int _RTL_DATA __wargc;
+    extern wchar_t _RTL_DATA** __wargv;
+    extern wchar_t _RTL_DATA** _wenviron;
 #endif
 
     void _RTL_FUNC _IMPORT perror(const char* ZSTR __s);

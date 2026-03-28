@@ -41,8 +41,8 @@ endif
 alldirs: rtl_objs
 	$(MAKE) -Cpe
 	$(MAKE) -Cdef
-	$(MAKE) -Cmsvcrdm
-	$(MAKE) -Ccrtdmain
+	$(MAKE) -Cpemsvc
+	$(MAKE) -Cpecrt
 	$(MAKE) -Cdelayimp
 	$(MAKE) -Clscrtl
 	$(MAKE) -Cpels
@@ -51,8 +51,8 @@ format:
 	$(MAKE) -Clsdbghelper format
 	$(MAKE) -Coccil format
 	$(MAKE) -Cpe format
-	$(MAKE) -Cmsvcrdm format
-	$(MAKE) -Ccrtdmain format
+	$(MAKE) -Cpemsvc format
+	$(MAKE) -Cpecrt format
 	$(MAKE) -Clscrtl format
 	$(MAKE) -Cpels format
 	$(MAKE) -Cwininc format
@@ -62,7 +62,8 @@ format:
 DISTRIBUTE:
 	$(MAKE) -Cpe DISTRIBUTE
 	$(MAKE) -Cpels DISTRIBUTE
-	$(MAKE) -Cmsvcrdm DISTRIBUTE
-	$(MAKE) -Ccrtdmain DISTRIBUTE
+	$(MAKE) -Cpemsvc DISTRIBUTE
+	$(MAKE) -Cpecrt DISTRIBUTE
+	$(MAKE) -Cc0 DISTRIBUTE
 	$(COPYDIR) inc\%.h $(DISTINC)\c\win32
-#	$(MAKE) -Clscrtl DISTRIBUTE
+	$(MAKE) -Clscrtl DISTRIBUTE

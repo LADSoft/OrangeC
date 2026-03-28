@@ -22,32 +22,26 @@
 #  
 
 H_FILES = $(wildcard *.h)
-C_DEPENDENCIES = $(wildcard *.c)
 
 SHELL=cmd.exe
 
+EXCLUDE := $(EXCLUDE) .]lscrtl.dll
+
 RCFILE=lscrtl
 
-all: .\c0dll.o .\lscrtl.dll
+all: $(DEPENDENCIES) .\c0dll.o .\lscrtl.dll
+
 $(eval $(FORMATTER))
 
 ifneq ($(shell type makefile),)
 B = /b
 endif
 
-WINOBJS = $(shell dir $(B) $(WINOBJECT)\\*.o)
-
-.\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
+.\lscrtl.dll: .\c0dll.o $(RCFILE).res
 	-del $@
-	$(LINK) $(LINKFLAGS) /mx /T:DLL32 /DIMAGEBASE=0x10800000 -o.\lscrtl .\lscrtl.o .\c0dll.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(WINOBJS)), $(WINOBJECT)\$(dir)) $(CLIBOBJECT)\* $(SYSOBJECT)\climp.l $(RCFILE).res
-	del lscrtl.l
-	oimplib -C1 lscrtl.l lscrtl.dll
-	move lscrtl.dll $(LSCRTLOBJECT)
-	olib lscrtl.l + $(WINOBJECT)\shlguid.o + $(WINOBJECT)\xmluuid.o
-	move lscrtl.l $(LSCRTLOBJECT)
-
-.\lscrtl.o: lscrtl.nas
-	$(ASM) $(ASMFLAGS) -o$@ $^
+	-del .\lscrtl.l
+	$(LINK) $(LINKFLAGS) /mx /T:DLL32 /DIMAGEBASE=0x10800000 -o$@ .\c0dll.o $(WINOBJECT)\* $(CLIBOBJECT)\*.o $(SYSOBJECT)\climp.l $(RCFILE).res
+	move $@ $(LSCRTLOBJECT)
 
 .\c0dll.o: c0dll.c
 	$(CC) /c /C-E $(CFLAGS) $(STDINCLUDE) -o$@ $^
@@ -56,5 +50,4 @@ $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
 	echo $(CURDIR)
 	orc -i..\inc $(RCFILE).rc
 
-#DISTRIBUTE:
-#	$(ZIP) -porangec a $(DISTADDON)\lscrtl $(LSCRTLOBJECT)\*.*
+DISTRIBUTE:

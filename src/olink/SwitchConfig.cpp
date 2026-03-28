@@ -86,6 +86,17 @@ bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
             extensions.push_back(attrib->GetValue());
         }
     }
+    else if (node == "Preentry")
+    {
+        if (*attrib == "Name")
+        {
+            currentPreEntry->first = attrib->GetValue();
+        }
+        else if (*attrib == "Translation")
+        {
+            currentPreEntry->second = attrib->GetValue();
+        }
+    }
     return true;
 }
 bool ConfigData::VisitNode(xmlNode& node, xmlNode* child, void* userData)
@@ -101,6 +112,12 @@ bool ConfigData::VisitNode(xmlNode& node, xmlNode* child, void* userData)
     {
         child->Visit(*this);
     }
+    else if (*child == "Preentry")
+    {
+        preEntries.push_back(std::make_unique<std::pair<std::string, std::string>>());
+        currentPreEntry = preEntries.back().get();
+        child->Visit(*this);
+    }
     return true;
 }
 void ConfigData::AddDefine(LinkManager& linker, const std::string& name, const std::string& value)
@@ -114,6 +131,11 @@ void ConfigData::SetDefines(LinkManager& linker)
 {
     for (auto& define : defines)
         AddDefine(linker, define->name, define->value);
+}
+void  ConfigData::SetPreEntries(LinkManager& linker)
+{
+    for (auto& preEntry : preEntries)
+        linker.SetPreEntryData(preEntry->first, preEntry->second);
 }
 SwitchConfig::~SwitchConfig() {}
 int SwitchConfig::Parse(const char* data)
@@ -255,6 +277,16 @@ void SwitchConfig::SetDefines(LinkManager& linker)
         if (data->selected)
         {
             data->SetDefines(linker);
+        }
+    }
+}
+void SwitchConfig::SetPreEntries(LinkManager& linker)
+{
+    for (auto& data : configData)
+    {
+        if (data->selected)
+        {
+            data->SetPreEntries(linker);
         }
     }
 }

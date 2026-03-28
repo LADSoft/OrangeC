@@ -64,8 +64,6 @@ endif
 
 THISPATH:=$(subst /,\,$(CURDIR)\)
 
-#DOSOBJECT:=$(THISPATH)object\dos
-#export DOSOBJECT
 WINOBJECT:=$(THISPATH)object\windows
 export WINOBJECT
 
@@ -82,14 +80,10 @@ CILOBJECT:=$(THISPATH)object\cil
 export CILOBJECT
 
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
-#DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
-#DOSOBJS = $(DOSOBJS1:.OBJ=.o)
 WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
 CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
-
 $(MKDIR):
 	-$(MKDIR) object 2> NUL
-#	-$(MKDIR) object\dos 2> NUL
 	-$(MKDIR) object\windows 2> NUL
 	-$(MKDIR) object\startup 2> NUL
 	-$(MKDIR) object\cil 2> NUL
@@ -124,13 +118,6 @@ platform: $(C_CLIBS)
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)"
 
 mklibs: platform
-ifneq "$(ORANGEC_ONLY)" "YES"
-#	-$(DEL) $(SYSOBJECT)\cldos.l
-#	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
-endif
-	-$(DEL) $(SYSOBJECT)\clwin.l
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir))
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
 mkapps:
 	$(MAKE) copyfiles
@@ -160,36 +147,28 @@ DISTRIBUTE:
 	$(COPYDIR) platform\win32\inc\%.h $(DISTINC)\c\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
-	$(COPYDIR) object\startup\%.o $(DISTLIB)
-ifneq "$(ORANGEC_ONLY)" "YES"
-#	$(COPYDIR) object\startup\%.exe $(DISTLIB)
-endif
 	$(COPYDIR) object\startup\%.dll $(DISTBIN)
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif
 
 clean:
-#	-$(DEL) $(DOSOBJECT) 2> NUL
 	-$(DEL) $(WINOBJECT) 2> NUL
 	-$(DEL) $(SYSOBJECT) 2> NUL
 	-$(DEL) $(CILOBJECT) 2> NUL
 	-$(DEL) $(CLIBOBJECT) 2> NUL
-	-$(DEL) platform\win32\crtdmain\*.o 2>NUL
+	-$(DEL) platform\win32\pecrt\*.o 2>NUL
 	-$(DEL) platform\win32\lscrtl\*.o 2>NUL
 	-$(DEL) platform\win32\lscrtl\*.dll 2>NUL
 	-$(DEL) platform\win32\lsdbghelper\*.o 2>NUL
-	-$(DEL) platform\win32\msvcrdm\*.o 2>NUL
+	-$(DEL) platform\win32\pecrt\*.o 2>NUL
 	-$(DEL) platform\win32\occil\*.o 2>NUL
 	-$(DEL) platform\win32\occil\occmsil.dll 2>NUL
 	-$(DEL) platform\win32\pe\*.o 2>NUL
+	-$(DEL) platform\win32\pe\*.exe 2>NUL
 	-$(DEL) platform\win32\pels\*.o 2>NUL
+	-$(DEL) platform\win32\pe\*.dll 2>NUL
 	-$(DEL) platform\win32\rtl\*.o 2>NUL
-#	-$(DEL) platform\dos32\debug\*.o 2>NUL
-#	-$(DEL) platform\dos32\le\*.o 2>NUL
-#	-$(DEL) platform\dos32\pm\*.o 2>NUL
-#	-$(DEL) platform\dos32\rtl\*.o 2>NUL
-#	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL
 	-rmdir $(CILOBJECT) 2> NUL

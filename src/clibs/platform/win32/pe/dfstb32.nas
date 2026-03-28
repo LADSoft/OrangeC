@@ -21,7 +21,7 @@
 ;          email: TouchStone222@runbox.com <David Lindauer>
 ;  
 
-section _code use16
+section code use16
 ..start:
     push cs
     pop ds
@@ -31,4 +31,4 @@ section _code use16
     mov ax,4c00h
     int 21h
 msg	db	'This program requires Win32',13,10,'$'
-    section _stack stack
+    section stack stack

@@ -30,7 +30,7 @@ all: $(DEPENDENCIES)
 $(eval $(FORMATTER))
 
 srproc.o: srproc.c
-	$(CC) /c $(STDINCLUDE) $(CFLAGS) /s16 -o$(CLIBOBJECT)\$@ $^
+	$(CC) /c $(STDINCLUDE) $(CFLAGS) -o$(CLIBOBJECT)\$@ $^
 
 DISTRIBUTE:
 	copy srproc.c $(DISTSTARTUP)

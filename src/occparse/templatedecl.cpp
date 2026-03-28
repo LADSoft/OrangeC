@@ -2749,7 +2749,7 @@ bool TemplateFullySpecialized(SYMBOL* sp)
         if (sp->templateParams && sp->templateParams->front().second->bySpecialization.types)
         {
             for (auto&& tpx : *sp->templateParams->front().second->bySpecialization.types)
-                if (!IsFullySpecialized(&tpx))
+                if (tpx.second->packed || !IsFullySpecialized(&tpx))
                     return false;
             return true;
         }
@@ -3017,7 +3017,7 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
         {
             templateDefinitionLevel++;
             inTemplateType = count != 0;  // checks for full specialization...
-            isFullySpecialized = count == 0;
+            bool fullySpecialized = isFullySpecialized = count == 0;
             declare(funcsp, &tp, storage_class, Linkage::none_, emptyBlockdata, true, false, true, access);
             isFullySpecialized = false;
             inTemplateType = false;
@@ -3035,28 +3035,37 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
                     {
                         errorat(ERR_TYPEDEFS_CANNOT_BE_TEMPLATES, "", l.sp->sb->declfile, l.sp->sb->declline);
                     }
-                    if (l.sp && l.sp->tp->IsFunction() && l.sp->sb->parentClass && !bodyTokenStreams.get(l.sp))
+                    if (l.sp && l.sp->tp->IsFunction() && l.sp->sb->parentClass)
                     {
-                        SYMBOL* srch = l.sp->sb->parentClass;
-                        while (srch)
+                        if (!bodyTokenStreams.get(l.sp))
                         {
-                            if (bodyTokenStreams.get(srch))
-                                break;
-                            srch = srch->sb->parentClass;
-                        }
-                        if (srch)
-                        {
-                            std::list<TEMPLATEPARAMPAIR>** srch1 = currents->plast;
-                            while (srch1 && srch1 != currents->ptail)
+                            SYMBOL* srch = l.sp->sb->parentClass;
+                            while (srch)
                             {
-                                if ((*srch1)->size() > 1)
+                                if (bodyTokenStreams.get(srch))
                                     break;
-                                srch1 = &(*srch1)->front().second->bySpecialization.next;
+                                srch = srch->sb->parentClass;
                             }
-                            if (srch1 == currents->ptail)
+                            if (srch)
                             {
-                                DoInstantiate(l.sp->sb->parentClass, l.sp, l.sp->tp, l.sp->sb->nameSpaceValues, false);
+                                std::list<TEMPLATEPARAMPAIR>** srch1 = currents->plast;
+                                while (srch1 && srch1 != currents->ptail)
+                                {
+                                    if ((*srch1)->size() > 1)
+                                        break;
+                                    srch1 = &(*srch1)->front().second->bySpecialization.next;
+                                }
+                                if (srch1 == currents->ptail)
+                                {
+                                    DoInstantiate(l.sp->sb->parentClass, l.sp, l.sp->tp, l.sp->sb->nameSpaceValues, false);
+                                }
                             }
+                        }
+                        else if (fullySpecialized)
+                        {
+                            StatementGenerator sg(l.sp);
+                            l.sp->sb->dontinstantiate = false;
+                            sg.CompileFunctionFromStream();
                         }
                     }
                 }
@@ -3167,7 +3176,7 @@ void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass stora
             {
                 if (sym->sb->attribs.inheritable.linkage2 == Linkage::none_)
                     sym->sb->attribs.inheritable.linkage2 = linkage2;
-                DoInstantiate(strSym, sym, tp, nsv, false);
+                DoInstantiate(strSym, sym, tp, nsv, isExtern);
             }
         }
     }

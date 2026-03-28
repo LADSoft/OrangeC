@@ -4679,8 +4679,10 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
             {
                 if (!(flags & (_F_SIZEOF | _F_INDECLTYPE | _F_NOEVAL)))
                 {
+//	printf("exprfuncin: %s\n", sym->sb->decoratedName);
                     StatementGenerator sg(sym);
                     sg.CompileFunctionFromStream();
+//	printf("exprfuncout: %s\n", sym->sb->decoratedName);
                 }
                 sym->sb->attribs.inheritable.used = true;
                 if (sym->sb->decoratedName[0] == '@' && currentLex)

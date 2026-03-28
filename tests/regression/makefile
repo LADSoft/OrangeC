@@ -54,6 +54,11 @@ heap.tst: heap.exe
 	-$< 2> heap.out
 	fc /b heap.cmpx heap.out
 
+simplexcept.tst: simplexcept.exe
+	-$< > simplexcept.out
+	type simplexcept.out
+	fc /b simplexcept.cmpx simplexcept.out
+
 cppexterninline.o: cppexterninline.cpp
 	occ /c /g $<
 

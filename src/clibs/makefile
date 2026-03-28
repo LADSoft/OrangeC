@@ -128,6 +128,7 @@ platform: $(C_CLIBS)
 
 mkapps:
 	$(MAKE) copyfiles
+	$(MAKE) platform
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" final
 
 test:

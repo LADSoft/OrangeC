@@ -72,8 +72,6 @@ endif
 
 THISPATH:=$(subst /,$(PATHEXT2),$(CURDIR)\)
 
-#DOSOBJECT:=$(THISPATH)object\dos
-#export DOSOBJECT
 WINOBJECT:=$(THISPATH)object$(PATHEXT2)windows
 export WINOBJECT
 
@@ -90,14 +88,11 @@ CILOBJECT:=$(THISPATH)object$(PATHEXT2)cil
 export CILOBJECT
 
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)$(PATHEXT2)*.o))
-#DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
-#DOSOBJS = $(DOSOBJS1:.OBJ=.o)
 WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)$(PATHEXT2)*.o))
 CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)$(PATHEXT2)*.ilo))
 
 $(MKDIR):
 	-$(MKDIR) object 2> $(NULLDEV)
-#	-$(MKDIR) object$(PATHEXT2)dos 2> $(NULLDEV)
 	-$(MKDIR) object$(PATHEXT2)windows 2> $(NULLDEV)
 	-$(MKDIR) object$(PATHEXT2)startup 2> $(NULLDEV)
 	-$(MKDIR) object$(PATHEXT2)cil 2> $(NULLDEV)
@@ -131,18 +126,8 @@ $(C_FORMAT) : %.formats :
 platform: $(C_CLIBS)
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)"
 
-mklibs: platform
-ifneq "$(ORANGEC_ONLY)" "YES"
-#	-$(DEL) $(SYSOBJECT)\cldos.l
-#	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
-endif
-	-$(DEL) $(SYSOBJECT)$(PATHEXT2)clwin.l
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)$(PATHEXT2)clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)$(PATHEXT2)$(dir))
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)$(PATHEXT2)clwin.l $(foreach dir, $(WINOBJS), $(WINOBJECT)$(PATHEXT2)$(dir))
-
 mkapps:
 	$(MAKE) copyfiles
-	$(MAKE) mklibs
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)" final
 
 test:
@@ -166,36 +151,27 @@ DISTRIBUTE:
 	$(COPYDIR) platform$(PATHEXT2)win32$(PATHEXT2)inc$(PATHEXT2)%.h $(DISTINC)$(PATHEXT2)c$(PATHEXT2)win32
 ifndef BUILDENV
 	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.l $(DISTLIB)
-	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.o $(DISTLIB)
-ifneq "$(ORANGEC_ONLY)" "YES"
-#	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.exe $(DISTLIB)
-endif
 	$(COPYDIR) object$(PATHEXT2)startup$(PATHEXT2)%.dll $(DISTBIN)
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif
 
 clean:
-#	-$(DEL) $(DOSOBJECT) 2> $(NULLDEV)
 	-$(DEL) $(WINOBJECT) 2> $(NULLDEV)
 	-$(DEL) $(SYSOBJECT) 2> $(NULLDEV)
 	-$(DEL) $(CILOBJECT) 2> $(NULLDEV)
 	-$(DEL) $(CLIBOBJECT) 2> $(NULLDEV)
-	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)crtdmain$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pecrt$(PATHEXT2)*.o 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)lscrtl$(PATHEXT2)*.o 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)lscrtl$(PATHEXT2)*.dll 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)lsdbghelper$(PATHEXT2)*.o 2>$(NULLDEV)
-	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)msvcrdm$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pemsvc$(PATHEXT2)*.o 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)occil$(PATHEXT2)*.o 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)occil$(PATHEXT2)occmsil.dll 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pe$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pe$(PATHEXT2)*.exe 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pels$(PATHEXT2)*.o 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)rtl$(PATHEXT2)*.o 2>$(NULLDEV)
-#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)debug$(PATHEXT2)*.o 2>$(NULLDEV)
-#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)le$(PATHEXT2)*.o 2>$(NULLDEV)
-#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)pm$(PATHEXT2)*.o 2>$(NULLDEV)
-#	-$(DEL) platform$(PATHEXT2)dos32$(PATHEXT2)rtl$(PATHEXT2)*.o 2>$(NULLDEV)
-#	-rmdir $(DOSOBJECT) 2> $(NULLDEV)
 	-rmdir $(WINOBJECT) 2> $(NULLDEV)
 	-rmdir $(SYSOBJECT) 2> $(NULLDEV)
 	-rmdir $(CILOBJECT) 2> $(NULLDEV)

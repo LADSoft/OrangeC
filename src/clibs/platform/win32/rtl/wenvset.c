@@ -32,20 +32,27 @@
 
 int __ll_wgetenv(wchar_t* buf, int id);
 
-wchar_t _RTL_DATA** __wenviron;
+static char* empty_array[1] = { NULL };
+
+wchar_t _RTL_DATA** _wenviron = empty_array;
 
 void __wenvset(void)
 {
     int count = __ll_wgetenv(0, 0), i, j;
-    __wenviron = calloc(sizeof(wchar_t*) * (count + 1), sizeof(wchar_t));
+    _wenviron = calloc(count + 1, sizeof(wchar_t*));
     for (i = 1, j = 0; i <= count; i++)
     {
         int n = __ll_wgetenvsize(i - 1);
         wchar_t* p = (wchar_t*)malloc((n + 1) * sizeof(wchar_t));
         __ll_wgetenv(p, i - 1);
         if (p[0] != '=')
-            __wenviron[j++] = p;
+            _wenviron[j++] = p;
         else
             free(p);
     }
+}
+
+void __wmain_envset(void)
+{
+    __wenvset();
 }

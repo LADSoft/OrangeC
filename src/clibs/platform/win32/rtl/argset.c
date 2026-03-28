@@ -27,19 +27,20 @@
 #include <ctype.h>
 #include <string.h>
 
-extern char* _oscmd;
 extern HINSTANCE* __hInstance;
 
-int _RTL_DATA _argc, _RTL_DATA __argc;
-char _RTL_DATA **_argv, _RTL_DATA **__argv;
-char* _passed_name;
-#pragma startup argset 31
+static char* empty_array[1] = { NULL };
 
-static void argset(void)
+int _RTL_DATA _argc, _RTL_DATA __argc;
+char _RTL_DATA **_argv = &empty_array[0], _RTL_DATA **__argv = &empty_array[0];
+char* _passed_name;
+
+void __main_argset(void)
 {
-    char *buf = calloc(sizeof(char), strlen(_oscmd) + 1);
+    char* _cmdline = GetCommandLineA();
+
+    char *buf = calloc(sizeof(char), strlen(_cmdline) + 1);
     char *bufp[10000], *ocl;
-    char* _cmdline = _oscmd;
     int inquote = 0;
     _argc = 0;
     while (*_cmdline)
@@ -69,7 +70,7 @@ static void argset(void)
     memcpy(_argv, bufp, _argc * sizeof(char*));
     _passed_name = _argv[0];
     char modname[260];
-    GetModuleFileName(__hInstance, modname, 200);
+    GetModuleFileNameA(__hInstance, modname, 200);
     _argv[0] = strdup(modname);
     __argv = _argv;
     __argc = _argc;

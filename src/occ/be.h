@@ -307,7 +307,7 @@ struct amode
     char sreg;
     char tempflag;
     char scale;
-    char length;
+    short length;
     char addrlen;
     char seg;
 #define e_default 0

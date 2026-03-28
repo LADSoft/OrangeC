@@ -27,7 +27,7 @@
 
 namespace Parser
 {
-/*      compiler header file    */
+    /*      compiler header file    */
 #define CopySymbol(x) (CopySymbol)(x, true)
 #define CopySymbolfalse(x) (CopySymbol)(x, false)
 #define CI_CONSTRUCTOR 0
@@ -58,27 +58,38 @@ namespace Parser
         return isalpha(x) || (x) == '_' || (x) == '$';
     }
 
-bool IsCompiler();
+    bool IsCompiler();
 
-struct Type;
-struct Statement;
-struct FunctionBlock;
-struct LexemeStream;
-struct Lexeme;
-struct KeywordData;
-struct CallSite;
-struct Argument;
-struct StringData;
+    struct Type;
+    struct Statement;
+    struct FunctionBlock;
+    struct LexemeStream;
+    struct Lexeme;
+    struct KeywordData;
+    struct CallSite;
+    struct Argument;
+    struct StringData;
 
-class StringHash
-{
-  public:
-    unsigned operator()(const std::string& aa) const
+    class StringEqual
     {
-        unsigned rv = 0;
-        const unsigned char* x = (const unsigned char*)aa.c_str();
+      public:
+        unsigned operator()(const std::string& left, const std::string& right) const { return operator()(left.c_str(), right.c_str()); }
+        unsigned operator()(const char* left, const char* right) const {return strcmp(left, right) == 0; } 
+    };
+    class StringHash
+    {
+    public:
+    unsigned operator() (const std::string& aa) const
+    {
+        return operator()(aa.c_str());
+    }
+
+    unsigned operator()(const char* aa) const
+    {
+        unsigned rv = 5381;
+        const unsigned char* x = (const unsigned char*)aa;
         for (; *x; ++x)
-            rv = (rv << 8) + (rv << 1) + rv + *x;
+            rv = (rv << 5) + rv + *x;
         return rv;
     }
 };
@@ -99,7 +110,7 @@ class SymbolTable
     inline void remove(iterator it);
     inline void remove(T* sym);
     inline iterator insert(iterator it, struct sym* sym);
-    inline T* Lookup(const std::string& name) const;
+    inline T* Lookup(const char * name) const;
     void Next(SymbolTable<T>* next) { next_ = next; }
     SymbolTable<T>* Next() const { return next_; }
     void Chain(SymbolTable<T>* chain) { chain_ = chain; }
@@ -123,7 +134,7 @@ class SymbolTable
 
   private:
     std::list<T*> inOrder_;
-    std::unordered_map<std::string, T*, StringHash> lookupTable_;
+    std::unordered_map<const char*, T*, StringHash, StringEqual> lookupTable_;
     int blockLevel_;
     SymbolTable<T>* next_ = nullptr;
     SymbolTable<T>* chain_ = nullptr;

@@ -51,8 +51,6 @@ namespace occx86
 static const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
 };
-static const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
-                              "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
 
 static Optimizer::LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char *asm_params, *rc_params, *link_params;
@@ -175,7 +173,6 @@ int InsertExternalFile(const char* name, bool primary)
 int RunExternalFiles()
 {
     char args[40000];
-    const char* c0;
     char outName[260], *p;
     int rv;
     char temp[260];
@@ -273,17 +270,11 @@ int RunExternalFiles()
 
             Utils::StrCpy(args, winflags[Optimizer::cparams.prm_targettype]);
 
-            c0 = winc0[Optimizer::cparams.prm_targettype + Optimizer::cparams.prm_lscrtdll * 8];
             if (Optimizer::cparams.prm_debug)
             {
-                if (Optimizer::cparams.prm_targettype == DOS)
-                    c0 = "c0pmd.o";
-                else if (Optimizer::cparams.prm_targettype == DOS32A)
-                    c0 = "c0watd.o";
                 if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
                     Utils::StrCat(args, " /g");
             }
-            fprintf(fil, "  %s", c0);
             while (objlist)
             {
                 fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
@@ -305,13 +296,6 @@ int RunExternalFiles()
                 fprintf(fil, " climp.l lscrtl.l ");
             else if (Optimizer::cparams.prm_crtdll)
                 fprintf(fil, " climp.l crtdll.l ");
-            else if (Optimizer::cparams.prm_targettype == DOS || Optimizer::cparams.prm_targettype == DOS32A ||
-                     Optimizer::cparams.prm_targettype == RAW || Optimizer::cparams.prm_targettype == WHXDOS)
-            {
-                if (Optimizer::cparams.prm_farkeyword)
-                    fprintf(fil, " farmem");
-                fprintf(fil, " cldos.l ");
-            }
             else
                 fprintf(fil, " climp.l clwin.l ");
             while (reslist)

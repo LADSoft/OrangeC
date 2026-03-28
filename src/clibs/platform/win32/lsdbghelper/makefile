@@ -34,6 +34,6 @@ vpath %.c $(ORANGEC)\src\sqlite3
 
 .\lsdbghelper.dll: dllxcptdump.o sqlite3.o unmangle.o
 	-del $@
-	occ /Wd -olsdbghelper.dll .\dllxcptdump.o .\sqlite3.o .\unmangle.o -L$(LSCRTLOBJECT)
-	move lsdbghelper.dll $(LSCRTLOBJECT)
-	move lsdbghelper.l $(LSCRTLOBJECT)
+	occ /Wd -olsdbghelper.dll .\dllxcptdump.o .\sqlite3.o .\unmangle.o -L$(SYSOBJECT)
+	move lsdbghelper.dll $(SYSOBJECT)
+	move lsdbghelper.l $(SYSOBJECT)

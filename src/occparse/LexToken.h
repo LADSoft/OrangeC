@@ -131,7 +131,7 @@ private:
     int currentBase = 0;
     int reloadIndex = -1;
     std::vector<Lexeme*> data;
-    std::set<LexemeStreamPosition*> positions;
+    std::vector<LexemeStreamPosition*> positions;
 };
 struct LexemeStreamFactory
 {

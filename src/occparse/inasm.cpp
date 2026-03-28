@@ -229,6 +229,28 @@ static void inasm_txsym(void)
             }
         }
     }
+    else if (currentLex)
+    {
+        const char *name = nullptr;
+        if (MATCHKW(Keyword::land_))
+            name = "and";
+        else if (MATCHKW(Keyword::lor_))
+            name = "or";
+        else if (MATCHKW(Keyword::not_))
+            name = "not";
+        else if (MATCHKW(Keyword::uparrow_))
+            name = "xor";
+        if (name)
+        {
+            printf("%s\n", name);
+            ASM_HASH_ENTRY* e = search(asmHash, name);
+            if (e)
+            {
+                currentLex->type = LexType::l_asmInstruction_;
+                insdata = (Optimizer::ASMNAME*)e->data;
+            }
+         }
+    }
 }
 static void inasm_getsym(void)
 {
@@ -471,7 +493,7 @@ static int inasm_getsize(void)
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
     }
-    return sz;
+    return sz << 8;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -958,7 +980,7 @@ static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<i
             if (sz)
                 rv->length = sz;
             else if (lastsym)
-                rv->length = inasm_structsize();
+                rv->length |= inasm_structsize();
         }
         if (rv->length < 0)
             rv->length = -rv->length;
@@ -1055,19 +1077,6 @@ e_opcode inasm_op(void)
     return (e_opcode)op;
 }
 
-/*-------------------------------------------------------------------------*/
-
-static OCODE* make_ocode(AMODE* ap1, AMODE* ap2, AMODE* ap3)
-{
-    OCODE* o = beLocalAllocate<OCODE>();
-    if (ap1 && (ap1->length == ISZ_UCHAR || ap1->length == -ISZ_UCHAR))
-        if (ap2 && ap2->mode == am_immed)
-            ap2->length = ap1->length;
-    o->oper1 = ap1;
-    o->oper2 = ap2;
-    o->oper3 = ap3;
-    return o;//////////
-}
 static int getData(Statement* snp)
 {
     int size = insdata->amode;
@@ -1344,6 +1353,52 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
         rv->noopt = true;
         rv->opcode = op;
         rv->fwd = rv->back = 0;
+        if (rv->oper1)
+        {
+            if (rv->oper1->length & 0xff00)
+            {
+                rv->oper1->length >>= 8;
+            }
+            else if (!rv->oper2 || rv->oper2->mode == am_immed || rv->oper1->mode <= am_seg)
+            {
+                rv->oper1->length &= 0xff;
+            }
+            else
+            {
+                rv->oper1->length = 0;
+            }
+        }
+        if (rv->oper2)
+        {
+            if (rv->oper2->length & 0xff00)
+            {
+                rv->oper2->length >>= 8;
+            }
+            else if (rv->oper2->mode <= am_seg)
+            {
+                rv->oper2->length &= 0xff;
+            }
+            else
+            {
+                rv->oper2->length = 0;
+            }
+        }
+        if(rv->oper3)
+        {
+            if (rv->oper3->length & 0xff00)
+            {
+                rv->oper3->length >>= 8;
+            }
+            else if (rv->oper3->mode <= am_seg)
+            {
+                rv->oper3->length &= 0xff;
+            }
+            else
+            {
+                rv->oper3->length &= 0xff;            
+            }
+        }
+
         snp = AssembleInstruction(rv, parent, srcRegs, destRegs);
         if (theCurrentFunc)
         {

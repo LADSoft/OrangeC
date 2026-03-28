@@ -4947,7 +4947,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 GetMemberCasts(gather, args->arguments->front()->tp->BaseType()->sp);
         }
         // pass 3 - the actual argument-based resolution
-        DotNetPELib::SHA1Context context;
+        TemplateHashContext context;
         context.Computed = false;
         std::list<SYMBOL*> viableCandidates;
         if (gather.size())

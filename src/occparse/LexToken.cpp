@@ -166,7 +166,7 @@ bool LexemeStream::ValidPrune(unsigned pruneSize)
         return false;
     for (auto i : positions)
     {
-        if (i->CheckMin(currentBase + pruneSize))
+        if (i && i->CheckMin(currentBase + pruneSize))
             return false;
     }
     return true;
@@ -175,11 +175,22 @@ void LexemeStream::Register(LexemeStreamPosition* position, bool enable)
 {
     if (enable)
     {
-        positions.insert(position);
+        for (auto itr = positions.rbegin(); itr != positions.rend(); ++itr)
+           if ((*itr) == nullptr)
+           {
+               *itr = position;
+               return;
+           }
+        positions.push_back(position);
     }
     else
     {
-        positions.erase(position);
+        for (auto itr = positions.rbegin(); itr != positions.rend(); ++itr)
+           if ((*itr) == position)
+           {
+               *itr = nullptr;
+               break;
+           }
     }
 }
 void LexemeStreamFactory::Initialize()

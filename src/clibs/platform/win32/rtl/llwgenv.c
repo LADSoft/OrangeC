@@ -29,24 +29,30 @@
 #include <signal.h>
 #include <time.h>
 
-
+static wchar_t *strings;
 int __ll_wgetenvsize(int id)
 {
-    wchar_t* env = GetEnvironmentStringsW();
+    if (!strings)
+    	strings = GetEnvironmentStringsW();
+    wchar_t *env = strings;
     while (id--)
     {
         while (*env)
             env++;
         if (*++env == 0)
+        {
             return 0;
+        }
     }
     return wcslen(env);
 }
 int __ll_wgetenv(wchar_t* buf, int id)
 {
+    if (!strings)
+    	strings = GetEnvironmentStringsW();
+    wchar_t *env = strings;
     int count = 0;
     int rv;
-    wchar_t* env = GetEnvironmentStringsW();
     if (buf)
     {
         while (id--)
@@ -54,7 +60,9 @@ int __ll_wgetenv(wchar_t* buf, int id)
             while (*env)
                 env++;
             if (*++env == 0)
+            {
                 return 0;
+            }
         }
         wcscpy(buf, env);
         return (int)env;

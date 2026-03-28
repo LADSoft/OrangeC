@@ -221,18 +221,42 @@ static const char* unmangptr(char (&orig)[n], char *buf, const char* name, const
         }
         if (*name == 'A')
         {
-            while (*name == 'A')
+            char basetp[4096];
+            int l;
+            basetp[0] = 0;
+            ++name;
+            name = unmang1(orig, basetp, name, last, false);
+            l = strlen(basetp);
+            memmove(buf + l, buf, strlen(buf) + 1);
+            memcpy(buf, basetp, l);
+            buf += l;
+            if (*name == '?')
             {
-                name++;
-                Utils::StrCat(buf, UNMANGLE_SIZE(buf), "[]");
+                while (*name == '?')
+                {
+                    name++;
+                    PUTCH(buf, '[');
+                    while (isdigit(*name))
+                    {
+                        *buf++ = *name++;
+                    }
+                    name++; // past ending '?'
+                    PUTCH(buf, ']');
+                }
             }
-            name = unmangptr(orig, buf, name, last);
+            else
+            {
+                PUTCH(buf, '[');
+                PUTCH(buf, ']');
+            }
+            PUTZERO(buf);
         }
     }
     else if (*name != 'A')
     {
         char basetp[4096];
         int l;
+        basetp[0] = 0;
         if (cconst)
         {
             Utils::StrCat(buf, UNMANGLE_SIZE(buf), tn_const);
@@ -1147,8 +1171,25 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     name = unmang1(orig, buf, name, last, false);
                 }
                 buf = buf + strlen(buf);
-                PUTCH(buf,  '[');
-                PUTCH(buf,  ']');
+                if (*name == '?')
+                {
+                    while (*name == '?')
+                    {
+                        name++;
+                        PUTCH(buf,  '[');
+                        while (isdigit(*name))
+                        {
+                            *buf++ = *name++;
+                        }
+                        name++; // past ending '?'
+                        PUTCH(buf,  ']');
+                    }
+                }
+                else
+                {
+                   PUTCH(buf,  '[');
+                   PUTCH(buf,  ']');
+                }
                 PUTZERO(buf);
                 break;
             case 'p':

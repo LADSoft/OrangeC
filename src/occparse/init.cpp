@@ -1194,9 +1194,9 @@ static void dumpStaticInitializers(void)
 {
     if (IsCompiler())
     {
-        int abss = 0;
-        int adata = 0;
-        int aconst = 0;
+        int abss = Optimizer::bssAlign;
+        int adata = Optimizer::dataAlign;
+        int aconst = Optimizer::constAlign;
         int anull = 0;
         int sconst = 0;
         int bss = 0;

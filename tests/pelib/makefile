@@ -17,5 +17,5 @@ clean:
 
 inc.exe: $(FILES)
 	olink /c /! /T:CON32 /mx /o$@ @&&|
-c0xpe.o $(FILES) clwin.l climp.l
+ $(FILES) clwin.l climp.l
 |

@@ -94,13 +94,15 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
     {
         if (file->name == internalName)
         {
-            ObjFile* p = LoadModule(stream, count, &fact1);
+            ObjFile* startupfile = nullptr;
+            ObjExpression* startupexp = nullptr;
+            ObjFile* p = LoadModule(stream, count, &fact1, &startupfile, &startupexp);
             if (p)
             {
                 FILE* ostr = fopen(Name.c_str(), "wb");
                 if (ostr != nullptr)
                 {
-                    if (!WriteData(ostr, p, file->name))
+                    if (!WriteData(ostr, p, file->name, startupfile, startupexp))
                     {
 
                         std::cout << "Warning: Module '" << Name << "' not extracted, could not write output file" << std::endl;
@@ -171,11 +173,13 @@ void LibFiles::Replace(const ObjString& Name)
     }
     Add(Name);
 }
-bool LibFiles::WriteData(FILE* stream, ObjFile* file, const ObjString& name)
+bool LibFiles::WriteData(FILE* stream, ObjFile* file, const ObjString& name, ObjFile* startupfile, ObjExpression* startupexp)
 {
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
     ObjIeee ieee(name.c_str());
+    if (startupfile && startupexp)
+        ieee.SetStartAddress(startupfile, startupexp);
     return ieee.Write(stream, file, &fact1);
 }
 bool LibFiles::WriteNames(FILE* stream)
@@ -235,7 +239,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                 {
                     if (fseek(stream, (*itn)->offset, SEEK_SET))
                         return false;
-                    (*itn)->data = ReadData(stream, (*itn)->name, factory);
+                    (*itn)->data = ReadData(stream, (*itn)->name, factory, &(*itn)->startupfile, &(*itn)->startupexp);
                     if (!(*itn)->data)
                     {
                         std::cout << "Error: Syntax error in module '" << (*itn)->name << "'" << std::endl;
@@ -251,7 +255,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                     FILE* istr = fopen((*itn)->name.c_str(), "rb");
                     if (istr != nullptr)
                     {
-                        (*itn)->data = ReadData(istr, (*itn)->name, factory);
+                        (*itn)->data = ReadData(istr, (*itn)->name, factory, &(*itn)->startupfile, &(*itn)->startupexp);
                         fclose(istr);
                         if (!(*itn)->data)
                         {
@@ -288,7 +292,7 @@ bool LibFiles::WriteFiles(FILE* stream, ObjInt align)
         if (!Align(stream, align))
             return false;
         file->offset = ftell(stream);
-        if (!WriteData(stream, file->data, file->name))
+        if (!WriteData(stream, file->data, file->name, file->startupfile, file->startupexp))
             return false;
     }
     return true;

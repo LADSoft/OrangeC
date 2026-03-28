@@ -41,10 +41,10 @@ class LinkLibrary
     ~LinkLibrary() { Close(); }
     ObjString GetName() { return name; }
     const std::vector<unsigned>& GetSymbol(const ObjString& name) { return manager.Lookup(name); }
-    ObjFile* LoadSymbol(ObjInt objNum, ObjFactory* factory)
+    ObjFile* LoadSymbol(ObjInt objNum, ObjFactory* factory, ObjFile** startupfile, ObjExpression** startupexp)
     {
         loadedModules.insert(objNum);
-        return manager.LoadModule(objNum, factory);
+        return manager.LoadModule(objNum, factory, startupfile, startupexp);
     }
     void Close() { manager.Close(); }
     bool IsOpen() { return manager.IsOpen(); }

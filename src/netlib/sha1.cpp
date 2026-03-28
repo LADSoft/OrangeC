@@ -43,8 +43,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(_WIN32)
 #if !defined(__ORANGEC__)
 #include  <immintrin.h>
+#endif
 #endif
 
 /*
@@ -199,6 +201,8 @@ void SHA1Input(SHA1Context* context, const unsigned char* message_array, unsigne
         message_array++;
     }
 }
+
+#if defined(_WIN32)
 
 #if defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
 #include <cpuid.h>
@@ -746,6 +750,7 @@ void sha1_process_sha_ni(unsigned state[5], const unsigned char data[])
     __asm movups       xmm6, [r6]
 }
 #endif
+#endif
 /*
  *  SHA1ProcessMessage_Block
  *
@@ -768,6 +773,7 @@ void sha1_process_sha_ni(unsigned state[5], const unsigned char data[])
  */
 void SHA1ProcessMessage_Block(SHA1Context* context)
 {
+#if defined(_WIN32)
 #if defined(_MSC_VER) || defined(__ORANGEC__) || defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
 if (has_sha_ni)
 {
@@ -778,6 +784,7 @@ if (has_sha_ni)
     context->Message_Block_Index = 0;
     return;
 }
+#endif
 #endif
     const unsigned K[] = /* Constants defined in SHA-1   */
         {0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6};

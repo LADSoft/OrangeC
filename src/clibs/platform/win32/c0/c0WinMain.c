@@ -58,7 +58,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 void __C0WinMain()
 {
 static int rv;
-static int exceptBlock[2];
+static int *exceptBlock;
 static int jumped = 0;
 static char quote;
 static char *cmd;
@@ -68,8 +68,10 @@ static char *cmd;
     __asm push 0
     __asm push ebp
     __asm mov ebp, esp
+    __asm sub esp,8
+    __asm mov [exceptBlock],esp
     _win32 = TRUE;
-    __rtlinit(&exceptBlock);
+    __rtlinit(exceptBlock);
     __srproc(INITSTART, INITEND, 1);
     if (!(rv = setjmp(__abortbranch)))
     {

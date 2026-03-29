@@ -58,7 +58,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int);
 void __C0wWinMain()
 {
 static int rv;
-static int exceptBlock[2];
+static int *exceptBlock;
 static int jumped = 0;
 static WCHAR wquote;
 static WCHAR *wcmd;
@@ -68,8 +68,10 @@ static WCHAR *wcmd;
     __asm push 0
     __asm push ebp
     __asm mov ebp, esp
+    __asm sub esp,8
+    __asm mov [exceptBlock],esp
     _win32 = TRUE;
-    __wrtlinit(&exceptBlock);
+    __wrtlinit(exceptBlock);
     __srproc(INITSTART, INITEND, 1);
     if (!(rv = setjmp(__abortbranch)))
     {

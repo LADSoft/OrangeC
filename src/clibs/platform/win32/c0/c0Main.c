@@ -61,7 +61,7 @@ int main(int argc, char* argv[], char* environ[]);
 void __C0Main()
 {
 static int rv;
-static int exceptBlock[2];
+static int *exceptBlock;
 static int jumped = 0;
 
     __asm mov [__unaligned_stacktop],esp
@@ -69,7 +69,9 @@ static int jumped = 0;
     __asm push 0
     __asm push ebp
     __asm mov ebp, esp
-    __rtlinit(&exceptBlock);
+    __asm sub esp,8
+    __asm mov [exceptBlock],esp
+    __rtlinit(exceptBlock);
     __srproc(INITSTART, INITEND, 1);
 
     if (!(rv = setjmp(__abortbranch)))

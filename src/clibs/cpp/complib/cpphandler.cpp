@@ -380,8 +380,8 @@ void _RTL_FUNC _ThrowException(void* irecord, void* instance, int arraySize, voi
     cls->thrownxt = xceptBlock;
     cls->cons = cons;
     void *temp;
-    asm mov eax,[gs:0]
-    asm mov [temp],eax
+    __asm mov eax,[gs:0]
+    __asm mov [temp],eax
     cls->thrd = temp;
     cls->baseinstance = malloc(cls->thrownxt->size * cls->elems);
     if (!cls->baseinstance)

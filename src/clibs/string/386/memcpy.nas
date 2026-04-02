@@ -66,7 +66,7 @@ lp2:
     mov [edx],al
     loop	lp2
 x2:
-    mov eax,[esp+8]
+    mov eax,[ebp+8]
     pop	ebx
 	pop ebp
     ret

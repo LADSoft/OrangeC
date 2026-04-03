@@ -51,19 +51,14 @@ void Prealloc(int pass)
             if (blockArray[i])
             {
                 QUAD* tail = blockArray[i]->tail;
-                BITINT* p = blockArray[i]->liveOut;
                 int j, k;
                 briggsClear(globalVars);
                 briggsClear(eobGlobals);
-                for (j = 0; j < (tempCountIn + BITINTBITS - 1) / BITINTBITS; j++, p++)
-                    if (*p)
-                        for (k = 0; k < BITINTBITS; k++)
-                            if (*p & (1 << k))
-                            {
-                                int n = j * BITINTBITS + k;
-                                briggsSet(globalVars, n);
-                                briggsSet(eobGlobals, n);
-                            }
+                for (auto i : *blockArray[i]->liveOut)
+                {
+                    briggsSet(globalVars, i);
+                    briggsSet(eobGlobals, i);
+                }
                 while (tail != blockArray[i]->head)
                 {
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_direct))
@@ -109,19 +104,15 @@ void CalculateBackendLives(void)
             QUAD* tail = blockArray[i]->tail;
             QUAD* head = blockArray[i]->head;
             unsigned long long liveRegs = 0;
-            BITINT* p = blockArray[i]->liveOut;
             int j, k;
             int gosubcolor = -1;
-            for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
-                if (*p)
-                    for (k = 0; k < BITINTBITS; k++)
-                        if (*p & (1 << k))
-                        {
-                            int n = j * BITINTBITS + k;
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[n]->color].reg1live;
-                            if (chosenAssembler->arch->regNames[tempInfo[n]->color].reg2live >= 0)
-                                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[n]->color].reg2live;
-                        }
+            for (auto i : *blockArray[i]->liveOut)
+            {
+                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[i]->color].reg1live;
+                if (chosenAssembler->arch->regNames[tempInfo[i]->color].reg2live >= 0)
+                    liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[i]->color].reg2live;
+
+            }
             while (tail != head)
             {
                 if (tail->dc.opcode == i_gosub)

@@ -93,19 +93,15 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
 
         if (blockArray[i])
         {
-            BITINT* p = blockArray[i]->liveOut;
             QUAD* tail = blockArray[i]->tail;
             QUAD* head = blockArray[i]->head;
             int j, k;
             briggsClear(live);
-            for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
-                if (*p)
-                    for (k = 0; k < BITINTBITS; k++)
-                        if (*p & (1 << k))
-                        {
-                            if (!nodes || briggsTest(nodes, j * BITINTBITS + k))
-                                briggsSet(live, j * BITINTBITS + k);
-                        }
+            for (auto i : *blockArray[i]->liveOut)
+            {
+                if (!nodes || briggsTest(nodes, i))
+                    briggsSet(live, i);
+            }
             do
             {
                 InternalConflict(tail);

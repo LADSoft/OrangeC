@@ -29,7 +29,6 @@
  * icode optimization structures
  */
 #include <set>
-
 #define DUMP_GCSE_INFO
 
 /* the int types can be negative, which means 'signed' vs 'unsigned' */
@@ -369,10 +368,10 @@ struct Block
     Loop* loopName;
 
     /*		struct _blocklist *defines; */
-    BITINT* liveGen;
-    BITINT* liveKills;
-    BITINT* liveIn;
-    BITINT* liveOut;
+    std::set<unsigned>* liveGen;
+    std::set<unsigned>* liveKills;
+    std::set<unsigned>* liveIn;
+    std::set<unsigned>* liveOut;
     QUAD *head, *tail;
     struct _blocklist* edgereached;
     LIST* occurs;

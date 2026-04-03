@@ -155,7 +155,7 @@ static void insertPhiNodes(void)
                 Block* b = blockArray[bset->data[j]];
                 if (b)
                 {
-                    if (isset(b->liveIn, i))
+                    if (b->liveIn->find(i) != b->liveIn->end())
                     {
                         /* avoid phi ops which are essentially assigns */
                         if (b->pred && b->pred->next)

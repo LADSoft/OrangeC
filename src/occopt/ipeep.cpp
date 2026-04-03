@@ -685,7 +685,7 @@ static void PeepCompare(Block* b, QUAD* head)
     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
     {
         int temp = head->dc.left->offset->sp->i;
-        if (!isset(b->liveOut, temp))
+        if (b->liveOut->find(temp) == b->liveOut->end())
         {
             auto ins = tempInfo[temp]->instructionDefines;
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
@@ -698,7 +698,7 @@ static void PeepCompare(Block* b, QUAD* head)
     if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
     {
         int temp = head->dc.right->offset->sp->i;
-        if (!isset(b->liveOut, temp))
+        if (b->liveOut->find(temp) == b->liveOut->end())
         {
             auto ins = tempInfo[temp]->instructionDefines;
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)

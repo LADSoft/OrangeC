@@ -737,16 +737,10 @@ static void CalculateFunctionFlags(void)
         if (blk && blk->head)
         {
             QUAD* tail = blk->tail;
-            BITINT* p = blk->liveOut;
             int j, k;
             briggsClear(exposed);
-            for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
-                if (*p)
-                    for (k = 0; k < BITINTBITS; k++)
-                        if (*p & (1 << k))
-                        {
-                            briggsSet(exposed, j * BITINTBITS + k);
-                        }
+            for (auto i : *blk->liveOut)
+                briggsSet(exposed, i);
             while (tail != blk->head)
             {
                 if (tail->dc.opcode == i_gosub || tail->dc.opcode == i_cmpxchgweak || tail->dc.opcode == i_cmpxchgstrong)

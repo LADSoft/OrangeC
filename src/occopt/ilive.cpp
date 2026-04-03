@@ -27,6 +27,8 @@
  * any variable that does not have its address taken is also made a temp
  * variable
  */
+#include <algorithm>
+#include <iterator>
 #include <cstdio>
 #include <malloc.h>
 #include <cstring>
@@ -110,12 +112,12 @@ static void liveSetup(void)
                     struct _phiblock* pb = pd->temps;
                     hasPhi = true;
                     briggsReset(exposed, pd->T0);
-                    clearbit(blk->liveGen, pd->T0);
-                    setbit(blk->liveKills, pd->T0);
+                    blk->liveGen->erase(pd->T0);
+                    blk->liveKills->insert(pd->T0);
                     while (pb)
                     {
                         briggsSet(exposed, pb->Tn);
-                        setbit(blk->liveGen, pb->Tn);
+                        blk->liveGen->insert(pb->Tn);
                         pb = pb->next;
                     }
                 }
@@ -123,12 +125,12 @@ static void liveSetup(void)
                 {
                     int tnum = tail->assemblyTempRegStart;
                     briggsReset(exposed, tnum);
-                    clearbit(blk->liveGen, tnum);
-                    setbit(blk->liveKills, tnum);
+                    blk->liveGen->erase(tnum);
+                    blk->liveKills->insert(tnum);
                     for (int i=1; i < tail->assemblyRegCount; i++)
                     {
                         briggsSet(exposed, tnum+i);
-                        setbit(blk->liveGen, tnum+i);
+                        blk->liveGen->insert(tnum+i);
                     }
                 }
                 else
@@ -139,20 +141,20 @@ static void liveSetup(void)
                         {
                             int tnum = tail->ans->offset->sp->i;
                             briggsReset(exposed, tnum);
-                            clearbit(blk->liveGen, tnum);
-                            setbit(blk->liveKills, tnum);
+                            blk->liveGen->erase(tnum);
+                            blk->liveKills->insert(tnum);
                         }
                         else if (tail->ans->mode == i_ind)
                         {
                             if (tail->ans->offset)
                             {
                                 briggsSet(exposed, tail->ans->offset->sp->i);
-                                setbit(blk->liveGen, tail->ans->offset->sp->i);
+                                blk->liveGen->insert(tail->ans->offset->sp->i);
                             }
                             if (tail->ans->offset2)
                             {
                                 briggsSet(exposed, tail->ans->offset2->sp->i);
-                                setbit(blk->liveGen, tail->ans->offset2->sp->i);
+                                blk->liveGen->insert(tail->ans->offset2->sp->i);
                             }
                         }
                     }
@@ -164,12 +166,12 @@ static void liveSetup(void)
                                 if (tail->dc.left->offset)
                                 {
                                     briggsSet(exposed, tail->dc.left->offset->sp->i);
-                                    setbit(blk->liveGen, tail->dc.left->offset->sp->i);
+                                    blk->liveGen->insert(tail->dc.left->offset->sp->i);
                                 }
                                 if (tail->dc.left->offset2)
                                 {
                                     briggsSet(exposed, tail->dc.left->offset2->sp->i);
-                                    setbit(blk->liveGen, tail->dc.left->offset2->sp->i);
+                                    blk->liveGen->insert(tail->dc.left->offset2->sp->i);
                                 }
                             }
                         }
@@ -179,12 +181,12 @@ static void liveSetup(void)
                             if (tail->dc.right->offset)
                             {
                                 briggsSet(exposed, tail->dc.right->offset->sp->i);
-                                setbit(blk->liveGen, tail->dc.right->offset->sp->i);
+                                blk->liveGen->insert(tail->dc.right->offset->sp->i);
                             }
                             if (tail->dc.right->offset2)
                             {
                                 briggsSet(exposed, tail->dc.right->offset2->sp->i);
-                                setbit(blk->liveGen, tail->dc.right->offset2->sp->i);
+                                blk->liveGen->insert(tail->dc.right->offset2->sp->i);
                             }
                         }
                 }
@@ -202,89 +204,94 @@ static void liveSetup(void)
 }
 static void liveOut()
 {
-    BITINT temp[8192], *inWorkList = temp;
-    *inWorkList++ = 65536;
-    unsigned short* workList = sAllocate<unsigned short>(blockCount + 1);
+    std::list<unsigned> workList;
+    std::list<unsigned> reverseOrder;
     int i;
-    int head = 0, tail = 0;
-    int tempDWords = (tempCount + BITINTBITS - 1) / BITINTBITS;
-    memset(inWorkList, 0, (blockCount + BITINTBITS - 1) / BITINTBITS * sizeof(BITINT));
-    workList[head++] = exitBlock;
-    setbit(inWorkList, exitBlock);
-    while (tail != head)
+    // reset the visited flags for every block
+    for (i = 0; i < blockCount; i++)
+        if (blockArray[i])
+            blockArray[i]->visiteddfst = false;
+
+    // start at the end, with the exit block
+
+    // this one is completely consumed while making the reverse order list
+    workList.push_back(exitBlock);
+    // this one is consumed later, when we are evaluating the livouts
+    reverseOrder.push_back(exitBlock);
+    // last block has been visited
+    blockArray[exitBlock]->visiteddfst = true;
+    // calculate a reverse order to traverse the blocks, where each block is evaluated sometime after all its successors are evaluated.
+    while (!workList.empty())
     {
-        unsigned n = workList[tail++];
+        // get a block off the worklist
+        unsigned n = workList.front();
+        workList.pop_front();
+
+        // process all predecessors
         BLOCKLIST* bl = blockArray[n]->pred;
         while (bl)
         {
-            BITINT* b;
-            BITINT r;
-            n = bl->block->blocknum;
-            b = inWorkList + (n / BITINTBITS);
-            r = 1 << (n % BITINTBITS);
-            if (!(*b & r))
+            // if a a predecessor has not been visited
+            if (!bl->block->visiteddfst)
             {
-                *b |= r;
-                workList[head++] = n;
+                // mark it as visited
+                bl->block->visiteddfst = true;
+                // the the block to the work list to visit it
+                workList.push_back(bl->block->blocknum);
+                // we add it to the reverse order list here
+                reverseOrder.push_back(bl->block->blocknum);
             }
             bl = bl->next;
         }
     }
-    tail = 0;
-    while (head != tail)
+    // go thrugh the reverse order list finding the livout for each block
+    while (!reverseOrder.empty())
     {
-        bool changed = false;
-        unsigned n = workList[tail];
+        // get a block off the traversal list
+        unsigned n = reverseOrder.front();
+        reverseOrder.pop_front();
         Block* b = blockArray[n];
+        b->visiteddfst = false; // visited this pass (flag has taken on negative logic
+        b->liveOut->clear();
+        std::set<unsigned> temp, temp1;
+        // for each successor
         BLOCKLIST* bl = b->succ;
-        int j;
-        BITINT *gen, *kills, *live, *outb;
-        if (++tail == blockCount + 1)
-            tail = 0;
-        clearbit(inWorkList, n);
-        memset(b->liveOut, 0, tempDWords * sizeof(BITINT));
         while (bl)
         {
-            live = bl->block->liveIn;
-            outb = b->liveOut;
-            for (j = 0; j < tempDWords; j++)
-            {
-                if (live[j])
-                    outb[j] |= live[j];
-            }
+            // add the successor's livein nodes to our liveout nodes
+            std::set_union(b->liveOut->begin(), b->liveOut->end(), bl->block->liveIn->begin(), bl->block->liveIn->end(), std::inserter(temp, temp.begin()));
+            *b->liveOut = std::move(temp);
             bl = bl->next;
         }
-        live = b->liveIn;
-        gen = b->liveGen;
-        kills = b->liveKills;
-        outb = b->liveOut;
-        for (j = 0; j < tempDWords; j++)
+
+        // this next bit recalculates the liveIn for this block
+        // the next bit calculates gen | (liveout & ~kills)
+        for (auto i : *b->liveOut)
         {
-            BITINT c = gen[j] | (outb[j] & ~kills[j]);
-            if (changed)
-                live[j] = c;
-            else if (c != live[j])
-            {
-                live[j] = c;
-                changed = true;
-            }
+            // livout & ~kills
+            if (b->liveKills->find(i) == b->liveKills->end())
+                temp1.insert(i);
         }
-        if (changed)
+        // add in gen
+        std::set_union(temp1.begin(), temp1.end(), b->liveGen->begin(), b->liveGen->end(), std::inserter(temp, temp.begin()));
+
+        // if liveIn has changed
+        if (*b->liveIn != temp)
         {
+            // assign the new liveIn
+            *b->liveIn = std::move(temp);
+
+            // for each predecessor
             bl = b->pred;
             while (bl)
             {
-                BITINT* b;
-                BITINT r;
-                n = bl->block->blocknum;
-                b = inWorkList + (n / BITINTBITS);
-                r = 1 << (n % BITINTBITS);
-                if (!(*b & r))
+                // any predecessor block that was already visited this pass has to be visited again;
+                // we've changed liveIn so that means we have to recalcuate the liveouts for predecessors
+                // unless they are already queued for a future evaluation....
+                if (!bl->block->visiteddfst)
                 {
-                    *b |= r;
-                    workList[head] = n;
-                    if (++head == blockCount + 1)
-                        head = 0;
+                    bl->block->visiteddfst = true;
+                    reverseOrder.push_back(bl->block->blocknum);
                 }
                 bl = bl->next;
             }
@@ -352,7 +359,7 @@ static void killPhiPaths1(void)
                         {
                             if (pb->Tn != pb2->Tn)
                             {
-                                setbit(bl->block->liveKills, pb2->Tn);
+                                bl->block->liveKills->insert(pb2->Tn);
                             }
                             pb2 = pb2->next;
                         }
@@ -391,7 +398,7 @@ static void killPhiPaths2(void)
                         struct _phiblock* pb2 = pd->temps;
                         while (pb2)
                         {
-                            clearbit(bl->block->liveOut, pb2->Tn);
+                            bl->block->liveOut->erase(pb2->Tn);
                             pb2 = pb2->next;
                         }
                         pb = pb->next;
@@ -552,14 +559,11 @@ void removeDead(Block* b)
     }
     b->visiteddfst = true;
     briggsClear(live);
-    p = b->liveOut;
-    for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
-        if (*p)
-            for (k = 0; k < BITINTBITS; k++)
-                if (*p & (1 << k))
-                {
-                    briggsSet(live, j * BITINTBITS + k);
-                }
+    for (auto l : *b->liveOut)
+    {
+        briggsSet(live, l);
+
+    }
     tail = b->tail;
     while (tail != b->head->back)
     {
@@ -578,14 +582,6 @@ void removeDead(Block* b)
         QUAD* head = intermed_head;
         bool changed = false;
         int i;
-        /*
-        for (i=0; i < blockCount; i++)
-        {
-            if (blockArray[i])
-                if (blockArray[i]->alwayslive && !blockArray[i]->visiteddfst)
-                    removeDead(blockArray[i]);
-        }
-        */
         for (i = 0; i < blockCount; i++)
         {
             Block* b1 = blockArray[i];
@@ -642,10 +638,21 @@ void liveVariables(void)
     {
         if (blockArray[i])
         {
-            blockArray[i]->liveGen = sallocbit(tempCount);
-            blockArray[i]->liveKills = sallocbit(tempCount);
-            blockArray[i]->liveIn = sallocbit(tempCount);
-            blockArray[i]->liveOut = sallocbit(tempCount);
+            if (!blockArray[i]->liveGen)
+            {
+                blockArray[i]->liveGen = new std::set<unsigned>();
+                blockArray[i]->liveKills = new std::set<unsigned>();
+                blockArray[i]->liveIn = new std::set<unsigned>();
+                blockArray[i]->liveOut = new std::set<unsigned>();
+            }
+            else
+            {
+                // at the end of the function processing these will be dangling...
+                blockArray[i]->liveGen->clear();
+                blockArray[i]->liveKills->clear();
+                blockArray[i]->liveIn->clear();
+                blockArray[i]->liveOut->clear();
+            }
         }
     }
     for (i = 0; i < tempCount; i++)

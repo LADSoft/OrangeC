@@ -94,10 +94,31 @@ typename SymbolTable<T>::iterator SymbolTable<T>::insert(typename SymbolTable<T>
 template <class T>
 T* SymbolTable<T>::Lookup(const char * name) const
 {
-    auto it = lookupTable_.find(name);
-    if (it == lookupTable_.end())
-        return nullptr;
-    return (*it).second;
+    switch(lookupTable_.size())
+    {
+        case 0:
+            break;
+        case 1:
+            if (!strcmp(name, (*lookupTable_.begin()).second->name))
+                return (*lookupTable_.begin()).second;
+            break;
+        case 2:
+        case 3:
+            for (auto&& sym : lookupTable_)
+            {
+            if (!strcmp(name, sym.second->name))
+                return sym.second;
+            }
+            break;
+        default:
+        {
+            auto it = lookupTable_.find(name);
+            if (it != lookupTable_.end())
+                return (*it).second;
+        }
+            break;
+    }
+    return nullptr;
 }
 template <class T>
 T* search(const SymbolTable<T>* tbl, const char* name)

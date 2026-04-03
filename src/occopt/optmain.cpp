@@ -60,76 +60,7 @@
 #include "iloop.h"
 #include "localprotect.h"
 
-// #define x64_compiler
-#if 0
-#ifndef __SANITIZE_ADDRESS__
-#ifndef x64_compiler
-// this overloading of operator new/delete is a speed optimization
-// it basically caches small allocations for reuse
-// there are a lot of temporary containers created and maintained
-// and this keeps from having the full impact of new/delete any
-// time they are used
-// resulted in about a 20% speedup of the compiler on the worst files
-#    define HASHBLKSIZE 128
-
-struct __preheader
-{
-    int size;
-    __preheader* link;
-};
-__preheader* dictionary[HASHBLKSIZE];
-void* operator new(size_t aa)
-{
-    if (!aa)
-        aa++;
-    int bb = (aa + 7) / 8;
-    if (bb < HASHBLKSIZE)
-    {
-        __preheader** x = dictionary + bb;
-        if (*x)
-        {
-            __preheader* rv = *x;
-            *x = rv->link;
-            return (void*)(rv + 1);
-        }
-    }
-    __preheader* rv;
-    while ((rv = (__preheader*)::malloc(bb * 8 + sizeof(__preheader))) == 0)
-    {
-        // If malloc fails and there is a new_handler,
-        // call it to try free up memory.
-#    if __GNUC__ > 4
-        std::new_handler nh = std::get_new_handler();
-        if (nh)
-            nh();
-        else
-#    endif
-            throw std::bad_alloc();
-    }
-    rv->size = bb;
-    rv->link = nullptr;
-    return (void*)(rv + 1);
-}
-void operator delete(void* p) noexcept
-{
-    if (!p)
-        return;
-    __preheader* item = ((__preheader*)p) - 1;
-    if (item->size < HASHBLKSIZE)
-    {
-        __preheader** x = dictionary + item->size;
-        item->link = *x;
-        *x = item;
-    }
-    else
-    {
-        free(item);
-    }
-}
-
-#endif
-#endif
-#endif
+#include "newoperator.h"
 
 int usingEsp;
 

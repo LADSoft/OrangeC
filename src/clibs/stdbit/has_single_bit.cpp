@@ -26,11 +26,9 @@
 #include <limits.h>
 
 template <class T>
-static inline unsigned int has_single_bit(T arg)
+static inline bool has_single_bit(T arg)
 {
-    int rv = 0;
-    for (T val = ((T)1) << sizeof(arg) * CHAR_BIT - 1; val; rv += (arg & val) != 0, val >>= 1);
-    return rv == 1;
+    return arg && !(arg & (arg - 1));
 }
 
 extern "C"

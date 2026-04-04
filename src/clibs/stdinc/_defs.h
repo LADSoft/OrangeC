@@ -85,10 +85,12 @@
 #        define __STD_NS_QUALIFIER
 #    endif
 
-#    if __STDC_VERSION__ < 201112L || defined(__cplusplus)
+#    if __STDC_VERSION__ < 201112L && !defined(__cplusplus)
 #        define _NORETURN
-#    else
+#    elif __STDC_VERSION__ < 202311L && !defined(__cplusplus)
 #        define _NORETURN _Noreturn
+#else
+#        define _NORETURN [[noreturn]]
 #    endif
 
 /* the headers use the restrict keyword, which is not valid prior to

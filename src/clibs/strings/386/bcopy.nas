@@ -25,31 +25,21 @@
 [export _bcopy]
 %endif
 [global _bcopy]
-
-[extern memcpy_x]
-
-SECTION code CLASS=CODE USE32
+[extern _memmove]
 _bcopy:
-	push	ebp
-	mov		ebp, esp
-    push	ebx
-    mov	ecx,[ebp+16]
-    jecxz	x1
-    mov	edx,[ebp+12]
-    mov	ebx,[ebp+8]
-join:
-    cmp	edx,ebx	
-    jbe	memcpy_x
-    add	ebx,ecx
-    add	edx,ecx
-lp2:
-    dec	ebx
-    dec	edx
-    mov	al,[ebx]
-    mov	[edx],al
-    loop	lp2
-x1:
-    mov	eax,edx
-    pop	ebx
-	pop ebp
-    ret
+; void bcopy(const void* src, void* dest, size_t n) { memmove(dest, src, n); } 
+;       We want to order it so that we grab the 2nd param, then the first param, then the last param
+;       Remember, order is from RTL
+;       3 pushes == 4 bytes on stack
+;       Current location of src is esp+04
+;       Current location of dest is esp+08
+;       Current location of n is esp+12
+;       Grab n and push it onto the stack
+        push    dword [esp+0ch+00h]
+;       Grab src and put it onto the stack, remember, we just pushed to the stack, so add 4
+        push    dword [esp+04h+04h]
+;       Grab dest and push it to the stack 
+        push    dword [esp+08h+08h]
+        call    _memmove ; memmove
+        add     esp,byte 0ch
+        ret

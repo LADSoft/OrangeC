@@ -43,10 +43,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(_WIN32)
-#if !defined(__ORANGEC__)
+#if defined(_MSC_VER) && !defined(__clang__)
 #include  <immintrin.h>
-#endif
 #endif
 
 /*
@@ -202,7 +200,7 @@ void SHA1Input(SHA1Context* context, const unsigned char* message_array, unsigne
     }
 }
 
-#if defined(_WIN32)
+#if defined(_MSC_VER) && !defined(__clang__) || defined(__ORANGEC__)
 
 #if defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
 #include <cpuid.h>
@@ -773,7 +771,7 @@ void sha1_process_sha_ni(unsigned state[5], const unsigned char data[])
  */
 void SHA1ProcessMessage_Block(SHA1Context* context)
 {
-#if defined(_WIN32)
+#if defined(_MSC_VER) && !defined(__clang__) || defined(__ORANGEC__)
 #if defined(_MSC_VER) || defined(__ORANGEC__) || defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
 if (has_sha_ni)
 {

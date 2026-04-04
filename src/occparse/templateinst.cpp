@@ -4386,7 +4386,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     if (sp->sb->parentTemplate)
         sp = sp->sb->parentTemplate;
 
-    DotNetPELib::SHA1Context context;
+    TemplateHashContext context;
     found1 = LookupTemplateClass(context, sp, args);
     if (found1)
     {
@@ -4568,7 +4568,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, Linkage::cdecl_);
-            DotNetPELib::SHA1Context generatedContext;
+            TemplateHashContext generatedContext;
             auto found2 = LookupGeneratedTemplateClass(generatedContext, found1);
             if (found2 && (found2->sb->specialized || !found1->sb->specialized) &&
                 allTemplateArgsSpecified(found2, found2->templateParams))
@@ -4770,7 +4770,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, Linkage::cdecl_);
-            DotNetPELib::SHA1Context generatedContext;
+            TemplateHashContext generatedContext;
             auto found2 = LookupGeneratedTemplateClass(generatedContext, found1);
             if (found2)
             {
@@ -6230,7 +6230,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
     sp->tp->InstantiateDeferred();
     TemplateArgInstantiateDeferred(args);
     SYMBOL* rv;
-    DotNetPELib::SHA1Context context;
+    TemplateHashContext context;
     rv = LookupTemplateClass(context, sp, args);
     if (rv)
     {

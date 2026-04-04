@@ -6,7 +6,7 @@
 	occ /9 /DWIN32_LEAN_AND_MEAN /! $^
 
 %.exe: %.o
-	olink /c /! /T:CON32 /o$@ c0xpe.o $^ clwin.l climp.l
+	olink /c /! /T:CON32 /o$@ $^ clwin.l climp.l
 
 test: bzip2.exe parsecsv.exe label.exe delegate.exe world.exe jarjar.exe
 	bzip2 bzip2.test

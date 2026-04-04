@@ -395,6 +395,8 @@ IMODE* loadVarInd(IMODE* loadVar, int size)
 // this part is done outside the SSA process
 void ScanForVariableMotion(void)
 {
+    if (loopCount < 2 || loopArray[loopCount - 2]->type == LT_BLOCK)
+        return;
     // this first one is a map because we iterated over it, and this resulted in variances in code generation
     // when compiled with one compiler verses another
     // which we can't have for purposes of the testing
@@ -725,7 +727,7 @@ void ScanForVariableMotion(void)
 // Before going into SSA
 void MoveLoopVariables(void)
 {
-    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && !currentFunction->anyTry)
     {
         refs = nullptr;
         ScanForVariableMotion();

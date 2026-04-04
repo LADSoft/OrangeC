@@ -61,7 +61,7 @@ bool WINDOWSJobServer::TakeNewJob()
     while (!taken && current_jobs >= 1)
     {
         using namespace std::chrono_literals;
-        taken = semaphore.WaitFor(1s);
+        taken = semaphore.WaitFor(50ms);
     }
     current_jobs++;
     return true;

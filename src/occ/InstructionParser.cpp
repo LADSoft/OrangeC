@@ -172,6 +172,11 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
         default: {
             switch (ins->opcode)
             {
+                case op_jmp:
+                case op_call:
+                    if (ins->oper1->mode == am_immed)
+                        ins->oper1->length = 0;
+                    break;
                 case op_ret:
                     if (ins->oper1)
                         ins->oper1->length = 0;
@@ -240,6 +245,17 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
                 case op_rcl:
                 case op_rcr:
                 case op_test:
+                case op_pslld:
+                case op_pslldq:
+                case op_psllq:
+                case op_psllw:
+                case op_psraw:
+                case op_psrld:
+                case op_psrldq:
+                case op_psrlq:
+                case op_psrlw:
+
+
                     if (ins->oper2 && ins->oper2->mode == am_immed)
                         ins->oper2->length = 0;
                     break;
@@ -247,16 +263,43 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
                 case op_shld:
                 case op_shufpd:
                 case op_shufps:
+                case op_cmppd:
+                case op_cmpps:
+                case op_pshufd:
+                case op_pshufw:
+                case op_pshufhw:
+                case op_pshuflw:
+                case op_blendpd:
+                case op_blendps:
+                case op_dppd:
+                case op_dpps:
+                case op_insertps:
+                case op_mpsadbw:
+                case op_pblendw:
+                case op_pcmpestri:
+                case op_pcmpestrm:
+                case op_roundpd:
+                case op_roundps:
+                case op_roundsd:
+                case op_roundss:
+                case op_sha1rnds4:
+                case op_sha256rnds2:
+                case op_palignr:
+                case op_pextrb:
+                case op_pextrd:
+                case op_pextrq:
+                case op_pextrw:
+                case op_pinsrb:
+                case op_pinsrd:
+                case op_pinsrq:
+                case op_pinsrw:
+
                     if (ins->oper3 && ins->oper3->mode == am_immed)
                         ins->oper3->length = 0;
                     break;
                 default:
                     if (ins->opcode >= op_ja && ins->opcode <= op_jz)
-                        if (ins->opcode != op_jmp || ins->oper1->mode == am_immed)
-                            ins->oper1->length = 0;
-                    if (ins->opcode == op_ret && ins->oper1)
                         ins->oper1->length = 0;
-
                     break;
             }
             SetTokens(ins);

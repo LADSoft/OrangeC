@@ -1194,9 +1194,9 @@ static void dumpStaticInitializers(void)
 {
     if (IsCompiler())
     {
-        int abss = 0;
-        int adata = 0;
-        int aconst = 0;
+        int abss = Optimizer::bssAlign;
+        int adata = Optimizer::dataAlign;
+        int aconst = Optimizer::constAlign;
         int anull = 0;
         int sconst = 0;
         int bss = 0;
@@ -1569,10 +1569,10 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
                         case BasicType::float_:
                             max = LLONG_MAX;
                             min = LLONG_MIN;
-                            err = aa < FLT_MIN || aa > FLT_MAX;
+                            err = aa < -FLT_MAX || aa > FLT_MAX;
                             break;
                         case BasicType::double_:
-                            err = aa < DBL_MIN || aa > DBL_MAX;
+                            err = aa < -DBL_MAX || aa > DBL_MAX;
                             break;
                         default:
                             if (dest->IsUnsigned())

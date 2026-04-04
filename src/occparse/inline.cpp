@@ -75,7 +75,7 @@ static std::list<std::tuple<int, Optimizer::SimpleSymbol*, int, int>> inlineMemb
 static std::list<std::pair<SYMBOL*, EXPRESSION*>> inlineLocalUninitializers;
 static int inlinesp_count;
 static SymbolTable<SYMBOL>* vc1Thunks;
-static std::unordered_set<std::string, StringHash> didInlines;
+static std::unordered_set<const char*, StringHash, StringEqual> didInlines;
 static int inInlineFunctionContext;
 static CallSite* function_list[MAX_INLINE_NESTING];
 static int function_listcount;
@@ -181,7 +181,7 @@ void dumpInlines(void)
                         SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         SYMBOL* origsym;
                         std::string argumentName;
-                        DotNetPELib::SHA1Context generatedContext;
+                        TemplateHashContext generatedContext;
 
                         auto found2 = LookupGeneratedTemplateClass(generatedContext, sym->sb->parentClass);
                         if (found2)

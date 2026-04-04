@@ -15,4 +15,4 @@ clean:
 	$(CLEAN)
 
 ellf.exe: $(O_DEPENDENCIES)
-	olink -oellf.exe /T:CON32 /m /c c0xpe.o $(O_DEPENDENCIES) clwin.l climp.l	
+	olink -oellf.exe /T:CON32 /m /c $(O_DEPENDENCIES) clwin.l climp.l	

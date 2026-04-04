@@ -1,5 +1,6 @@
 #ifndef PROTO
 #    define PROTO(PROT, NAME, FUNC) PROT
+#    define INHEADER
 #endif
 PROTO("unsigned __fastcall__ __builtin_clz(unsigned val);", __builtin_clz, handleCLZ)
 PROTO("unsigned __fastcall__ __builtin_clzl(unsigned long val);", __builtin_clzl, handleCLZ)
@@ -25,4 +26,10 @@ PROTO("unsigned __int64__  __fastcall__ __builtin_bswap64(unsigned __int64__ val
 PROTO("void _mm_pause();", _mm_pause, handlePAUSE)
 PROTO("void *__fastcall__ __va_start__(void **list);", __va_start__, handleVASTART)
 PROTO("void *__fastcall__ __va_arg__(void **list, unsigned val);", __va_arg__, handleVAARG)
+#ifndef INHEADER
+PROTO("void __fastcall __cpuid(int cpuInfo[4], int function_id);", __cpuid, handleCPUID)
+PROTO("void __fastcall __cpuidex(int cpuInfo[4], int function_id, int subfunction_id);", __cpuidex, handleCPUIDEX)
+#endif
+
 #undef PROTO
+#undef INHEADER

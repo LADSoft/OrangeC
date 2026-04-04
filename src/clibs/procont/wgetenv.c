@@ -30,13 +30,13 @@
 #include <locale.h>
 #include "libp.h"
 
-extern wchar_t _RTL_DATA** __wenviron;
+extern wchar_t _RTL_DATA** _wenviron;
 
 wchar_t* _RTL_FUNC _wgetenv(const wchar_t* varname)
 {
-    if (!__wenviron)
+    if (!_wenviron)
         __wenvset();
-    wchar_t** q = __wenviron;
+    wchar_t** q = _wenviron;
     int len = wcslen(varname);
     __ll_enter_critical();
     while (*q)

@@ -4533,14 +4533,15 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                             }
                                         }
                                     }
-                                    if (!directCompile && (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
-                                        templateDefinitionLevel == 1 || (asFriend && templateDefinitionLevel == 2)))
+                                    if (!directCompile &&
+                                        (storage_class_in == StorageClass::member_ || storage_class_in == StorageClass::mutable_ ||
+                                         templateDefinitionLevel == 1 || (asFriend && templateDefinitionLevel == 2)))
                                     {
                                         auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                         if (startStmt)
                                             sp->sb->linedata = startStmt->front()->lineData;
-                                        if (sp->templateParams && sp->templateParams->size() == 1 &&
-                                            (IsDefiningTemplate()) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                                        if (sp->templateParams && sp->templateParams->size() == 1 && (IsDefiningTemplate()) &&
+                                            sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
                                         {
                                             sp->sb->origdeclfile = currentLex->sourceFileName;
                                             sp->sb->origdeclline = currentLex->sourceLineNumber;
@@ -4552,26 +4553,37 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         Optimizer::SymbolManager::Get(sp);
                                         if (asFriend)
                                             sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                        if (sp->sb->parentClass && sp->templateParams &&
-                                            (!IsDefiningTemplate()))
+                                        if (sp->sb->parentClass && sp->templateParams && (!IsDefiningTemplate()))
                                         {
                                             sp->sb->templateLevel = 0;
                                             sp->tp = SynthesizeType(sp->tp, sp->sb->parentClass->templateParams, false);
                                             sp = TemplateFunctionInstantiate(sp, false);
                                             sp->sb->specialized2 = true;
                                         }
-                                        if (sp->templateParams && sp->templateParams->size() == 1 &&
-                                            (!IsDefiningTemplate()) && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                                        if (sp->templateParams && sp->templateParams->size() == 1)
                                         {
-                                            StatementGenerator sg(sp);
-                                            sg.CompileFunctionFromStream();
+                                            if (!IsDefiningTemplate() && 
+                                                sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                                            {
+                                                StatementGenerator sg(sp);
+                                                sg.CompileFunctionFromStream();
+                                            }
                                         }
+                                    }
+                                    else if (Optimizer::cparams.prm_cplusplus && (sp->sb->attribs.inheritable.linkage == Linkage::inline_ || sp->sb->constexpression))
+                                    {
+                                        auto stream = GetTokenStream(true);
+                                        bodyTokenStreams.set(sp, stream);
+                                        bodyArgs.set(sp, sp->tp->BaseType()->syms);
+                                        Optimizer::SymbolManager::Get(sp);
                                     }
                                     else
                                     {
+//	printf("declfuncin: %s\n", sp->sb->decoratedName);
                                         StatementGenerator sg(sp);
                                         sg.FunctionBody();
                                         sg.BodyGen();
+//	printf("declfuncout: %s\n", sp->sb->decoratedName);
                                     }
                                 }
                                 if (sp->sb->constexpression && !sp->sb->builtin_constexpression)

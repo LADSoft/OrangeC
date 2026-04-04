@@ -46,12 +46,16 @@ uninitvar.tst: uninitvar.exe
 heap.exe: heap.c
 	occ -fruntime-heap-check heap.c
 
+wmain.tst: wmain.exe
+	-$< a b cc ddd eeee > wmain.out
+	fc /b wmain.cmpx wmain.out
+
 heap.tst: heap.exe
 	-$< 2> heap.out
 	fc /b heap.cmpx heap.out
 
 cppexterninline.o: cppexterninline.cpp
-	occ /c $<
+	occ /c /g $<
 
 cppexterninline.tst: cppexterninline.o
 	-onm --nologo cppexterninline.o > cppexterninline.out

@@ -179,14 +179,23 @@ bool matchOverload(Type* tnew, Type* told)
                     matchOverloadLevel--;
                     return false;
                 }
-                if (tpn->IsArray() && tps->IsArray())
+                auto tpn1 = tpn;
+                auto tps1 = tps;
+                if ((tps1->IsArray() && tps1->size == 0 && tpn1->IsPtr()) || (tpn1->IsArray() && tpn1->size == 0 && tps1->IsPtr())) // empty array matches ptr (this is as an argument)
                 {
-                    if (!!tpn->BaseType()->esize != !!tps->BaseType()->esize ||
-                        (tpn->BaseType()->esize && isintconst(tpn->BaseType()->esize) != isintconst(tps->BaseType()->esize)))
+                    tps1 = tps1->BaseType()->btp;
+                    tpn1 = tpn1->BaseType()->btp;
+                }
+                while (tpn1->IsPtr() && tps1->IsPtr())
+                {
+                    if (tpn1->IsArray() != tps1->IsArray() || (!tpn1->IsArray() && tpn1->size != tps1->size) ||
+                            (tpn1->IsArray() && (tpn1->BaseType()->esize && isintconst(tpn1->BaseType()->esize) != isintconst(tps1->BaseType()->esize))))
                     {
                         matchOverloadLevel--;
                         return false;
                     }
+                    tpn1 = tpn1->BaseType()->btp;
+                    tps1 = tps1->BaseType()->btp;
                 }
                 if (tpn->type != BasicType::typedef_ && tps->type != BasicType::typedef_ && (tpn->IsPtr() || tps->IsPtr()))
                 {
@@ -2611,6 +2620,32 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
         {
             Type* t1 = tpp;
             Type* t2 = tpa;
+            if (t1->IsArray() && t1->size == 0 && t2->IsPtr()) // empty array (this is as an argument)
+            {
+                t1 = t1->BaseType()->btp;
+                t2 = t2->BaseType()->btp;
+            }
+            if (t1->IsPtr() && !t1->IsArray() && t2->IsArray())
+            {
+                if (t2->IsPtr())
+                {
+                    t1 = t1->btp->BaseType();
+                    t2 = t2->btp->BaseType();
+                }
+            }
+            while (t1->IsPtr() && t2->IsPtr())
+            {
+                if (t1->IsArray() != t2->IsArray() ||
+                    (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) != isintconst(t2->BaseType()->esize)) ||
+                    (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) && t1->BaseType()->esize->v.i != t2->BaseType()->esize->v.i))
+                {
+                    seq[(*n)++] = CV_NONE;
+                }
+                t1 = t1->btp;
+                t2 = t2->btp;
+            }
+            t1 = tpp;
+            t2 = tpa;
             if (t2->IsArray() && t1->IsPtr())
             {
                 while (t2->IsArray())
@@ -4947,7 +4982,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 GetMemberCasts(gather, args->arguments->front()->tp->BaseType()->sp);
         }
         // pass 3 - the actual argument-based resolution
-        DotNetPELib::SHA1Context context;
+        TemplateHashContext context;
         context.Computed = false;
         std::list<SYMBOL*> viableCandidates;
         if (gather.size())

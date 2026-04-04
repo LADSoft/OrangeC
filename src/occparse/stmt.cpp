@@ -4561,6 +4561,9 @@ void StatementGenerator::SetFunctionDefine(std::string name, bool set)
 }
 void StatementGenerator::FunctionBody(bool enter)
 {
+ //   printf("FunctionBody in: %s\n", funcsp->sb->decoratedName);
+    static int aa;
+//    printf(":%d\n", ++aa);
     if (enter && !(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDCODE))
     {
         deferredCompilesIndex[funcsp->sb->decoratedName] |= ENTEREDCODE;
@@ -4760,97 +4763,106 @@ void StatementGenerator::FunctionBody(bool enter)
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
     LeaveInstantiation();
+//    printf("FunctionBody Out: %s\n", funcsp->sb->decoratedName);
 }
 bool StatementGenerator::CompileFunctionFromStreamInternal()
 {
     if (!funcsp->sb->inlineFunc.stmt)
     {
-        if (!(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDBODY))
+        if (!funcsp->sb->dontinstantiate && !IsDefiningTemplate() && !funcsp->sb->declaring)
         {
-            if (bodyTokenStreams.get(funcsp))
+//            printf("compilefuncin: %s\n", funcsp->sb->decoratedName);
+            if (!(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDBODY))
             {
-                EnterPackedContext();
-                int oldArgumentNestingLevel = argumentNestingLevel;
-                int oldExpandingParams = isExpandingParams;
-                int oldconst = inConstantExpression;
-                int oldanon = anonymousNotAlloc;
-                int oldInsertingFunctons = currentlyInsertingFunctions;
-                currentlyInsertingFunctions = 0;
-                anonymousNotAlloc = 0;
-                inConstantExpression = 0;
-                argumentNestingLevel = 0;
-                isExpandingParams = 0;
-                if (funcsp->sb->specialized && funcsp->templateParams->size() == 1)
-                    funcsp->sb->instantiated = true;
-                int n1 = 0;
-                ++templateInstantiationLevel;
-                std::list<LAMBDA*> oldLambdas;
-                // function body
-                if (!funcsp->sb->inlineFunc.stmt && (!funcsp->sb->templateLevel || !funcsp->templateParams || funcsp->sb->instantiated))
+                if (bodyTokenStreams.get(funcsp))
                 {
-                    TemplateNamespaceScope namespaceScope(funcsp->sb->parentClass ? funcsp->sb->parentClass : funcsp);
-                    auto linesOld = lines;
-                    lines = nullptr;
+                    EnterPackedContext();
+                    int oldArgumentNestingLevel = argumentNestingLevel;
+                    int oldExpandingParams = isExpandingParams;
+                    int oldconst = inConstantExpression;
+                    int oldanon = anonymousNotAlloc;
+                    int oldInsertingFunctons = currentlyInsertingFunctions;
+                    currentlyInsertingFunctions = 0;
+                    anonymousNotAlloc = 0;
+                    inConstantExpression = 0;
+                    argumentNestingLevel = 0;
+                    isExpandingParams = 0;
+                    if (funcsp->sb->specialized && funcsp->templateParams->size() == 1)
+                        funcsp->sb->instantiated = true;
+                    int n1 = 0;
+                    ++templateInstantiationLevel;
+                    std::list<LAMBDA*> oldLambdas;
+                    // function body
+                    if (!funcsp->sb->inlineFunc.stmt &&
+                        (!funcsp->sb->templateLevel || !funcsp->templateParams || funcsp->sb->instantiated))
+                    {
+                        TemplateNamespaceScope namespaceScope(funcsp->sb->parentClass ? funcsp->sb->parentClass : funcsp);
+                        auto linesOld = lines;
+                        lines = nullptr;
 
-                    funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                    DeclarationScope scope;
-                    if (funcsp->templateParams && funcsp->sb->templateLevel)
-                    {
-                        enclosingDeclarations.Add(funcsp->templateParams);
-                    }
-                    if (funcsp->sb->parentClass)
-                    {
-                        enclosingDeclarations.Add(funcsp->sb->parentClass);
-                        if (funcsp->sb->parentClass->templateParams)
+                        funcsp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
+                        DeclarationScope scope;
+                        if (funcsp->templateParams && funcsp->sb->templateLevel)
                         {
-                            enclosingDeclarations.Add(funcsp->sb->parentClass->templateParams);
+                            enclosingDeclarations.Add(funcsp->templateParams);
                         }
-                    }
-                    dontRegisterTemplate++;
-                    oldLambdas = lambdas;
-                    lambdas.clear();
-                    int oldStructLevel = structLevel;
-                    structLevel = 0;
-                    auto oldOpen = openStructs;
-                    openStructs = nullptr;
-                    if (funcsp->sb->mainsym)
-                    {
-                        auto source = bodyArgs.get(funcsp);
-                        if (source)
+                        if (funcsp->sb->parentClass)
                         {
-                            auto itd = funcsp->tp->BaseType()->syms->begin();
-                            auto itde = funcsp->tp->BaseType()->syms->end();
-                            auto its = source->begin();
-                            auto itse = source->end();
-                            for (; itd != itde && its != itse; ++itd, ++its)
+                            enclosingDeclarations.Add(funcsp->sb->parentClass);
+                            if (funcsp->sb->parentClass->templateParams)
                             {
-                                (*itd)->name = (*its)->name;
+                                enclosingDeclarations.Add(funcsp->sb->parentClass->templateParams);
                             }
                         }
-                    }
-                    ParseOnStream(bodyTokenStreams.get(funcsp), [=]() {
-                        if (funcsp->sb->isConstructor && MATCHKW(Keyword::colon_))
+                        dontRegisterTemplate++;
+                        oldLambdas = lambdas;
+                        lambdas.clear();
+                        int oldStructLevel = structLevel;
+                        structLevel = 0;
+                        auto oldOpen = openStructs;
+                        openStructs = nullptr;
+                        if (funcsp->sb->mainsym)
                         {
-                            getsym();
-                            *funcsp->sb->constructorInitializers = GetConstructorInitializers(nullptr, funcsp);
+                            auto source = bodyArgs.get(funcsp);
+                            if (source)
+                            {
+                                auto itd = funcsp->tp->BaseType()->syms->begin();
+                                auto itde = funcsp->tp->BaseType()->syms->end();
+                                auto its = source->begin();
+                                auto itse = source->end();
+                                for (; itd != itde && its != itse; ++itd, ++its)
+                                {
+                                    (*itd)->name = (*its)->name;
+                                }
+                            }
                         }
-                        StatementGenerator sg(funcsp);
-                        sg.FunctionBody();
+//                        printf("CompileFromStream in: %s\n", funcsp->sb->decoratedName);
+                        ParseOnStream(bodyTokenStreams.get(funcsp), [=]() {
+                            if (funcsp->sb->isConstructor && MATCHKW(Keyword::colon_))
+                            {
+                                getsym();
+                                *funcsp->sb->constructorInitializers = GetConstructorInitializers(nullptr, funcsp);
+                            }
+                            StatementGenerator sg(funcsp);
+                            sg.FunctionBody();
                         });
-                    dontRegisterTemplate--;
-                    lambdas = std::move(oldLambdas);
-                    openStructs = oldOpen;
-                    structLevel = oldStructLevel;
-                    lines = linesOld;
+//                        printf("CompileFromStream out: %s\n", funcsp->sb->decoratedName);
+                        dontRegisterTemplate--;
+                        lambdas = std::move(oldLambdas);
+                        openStructs = oldOpen;
+                        structLevel = oldStructLevel;
+                        lines = linesOld;
+                    }
+                    --templateInstantiationLevel;
+                    currentlyInsertingFunctions = oldInsertingFunctons;
+                    anonymousNotAlloc = oldanon;
+                    inConstantExpression = oldconst;
+                    isExpandingParams = oldExpandingParams;
+                    argumentNestingLevel = oldArgumentNestingLevel;
+                    LeavePackedContext();
                 }
-                --templateInstantiationLevel;
-                currentlyInsertingFunctions = oldInsertingFunctons;
-                anonymousNotAlloc = oldanon;
-                inConstantExpression = oldconst;
-                isExpandingParams = oldExpandingParams;
-                argumentNestingLevel = oldArgumentNestingLevel;
-                LeavePackedContext();
             }
+  //          printf("compilefuncout: %s\n", funcsp->sb->decoratedName);
         }
     }
     return funcsp->sb->inlineFunc.stmt;

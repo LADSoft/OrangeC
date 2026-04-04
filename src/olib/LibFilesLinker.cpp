@@ -30,11 +30,17 @@
 #include "ObjFactory.h"
 #include <cassert>
 
-ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* factory)
+ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* factory, ObjFile** startupfile, ObjExpression** startupexp)
 {
     ObjIeeeIndexManager im1;
     ObjIeee ieee(name.c_str(), caseSensitive);
-    return ieee.Read(stream, ObjIeee::eAll, factory);
+    auto rv = ieee.Read(stream, ObjIeee::eAll, factory);
+    if (startupfile && startupexp && ieee.GetStartAddress())
+    {
+        *startupfile = ieee.GetStartFile();
+        *startupexp = ieee.GetStartAddress();
+    } 
+    return rv;
 }
 bool LibFiles::ReadNames(FILE* stream, int count)
 {
@@ -69,7 +75,7 @@ bool LibFiles::ReadOffsets(FILE* stream, int count)
     }
     return true;
 }
-ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory)
+ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory, ObjFile** startupfile, ObjExpression** startupexp)
 {
     if (FileIndex >= files.size())
         return nullptr;
@@ -78,5 +84,5 @@ ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factor
         return nullptr;
     if (fseek(stream, a->offset, SEEK_SET))
         return nullptr;
-    return ReadData(stream, a->name, factory);
+    return ReadData(stream, a->name, factory, startupfile, startupexp);
 }

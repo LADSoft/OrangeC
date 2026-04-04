@@ -37,6 +37,7 @@
 #include "config.h"
 #include "beinterfdefs.h"
 #include "ioptimizer.h"
+#include "OptUtils.h"
 
 namespace occx86
 {
@@ -240,6 +241,57 @@ bool handleVAARG()
     gen_code(op_add, makedreg(EDX), makedreg(EAX));
     gen_code(op_mov, ap, makedreg(EDX));
     return true;
+}
+bool handleCPUID(AMODE* cx_init)
+{
+    AMODE* ax = makedreg(EAX);
+    AMODE* bx = makedreg(EBX);
+    AMODE* cx = makedreg(ECX);   
+    AMODE* dx = makedreg(EDX);
+    AMODE* si = makedreg(ESI);
+    AMODE* siind = makedreg(ESI);
+    siind->mode = am_indisp;
+
+    gen_code(op_push, bx, nullptr);
+    gen_code(op_push, si, nullptr);
+    gen_code(op_mov, ax, dx);
+    gen_code(op_mov, si, cx);
+    gen_code(op_mov, cx, cx_init);
+    gen_code(op_cpuid, nullptr, nullptr);
+    gen_code(op_mov, siind, ax);
+    siind = makedreg(ESI);
+    siind->mode = am_indisp;
+    siind->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
+    gen_code(op_mov, siind, bx);
+    siind = makedreg(ESI);
+    siind->mode = am_indisp;
+    siind->offset = Optimizer::simpleIntNode(Optimizer::se_i, 8);
+    gen_code(op_mov, siind, cx);
+    siind = makedreg(ESI);
+    siind->mode = am_indisp;
+    siind->offset = Optimizer::simpleIntNode(Optimizer::se_i, 12);
+    gen_code(op_mov, siind, dx);
+    
+    gen_code(op_pop, si, nullptr);
+    gen_code(op_pop, bx, nullptr);
+    return true;
+}
+bool handleCPUID()
+{
+   return handleCPUID(aimmed(0));
+}
+bool handleCPUIDEX()
+{
+   auto ebp = makedreg(EBP);
+   auto subfunction = makedreg(EBP);
+   subfunction->mode = am_indisp;
+   subfunction->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
+   gen_code(op_push, ebp, nullptr);
+   gen_code(op_mov, ebp, makedreg(ESP));
+   auto rv = handleCPUID(subfunction);
+   gen_code(op_pop, ebp, nullptr);
+   return rv;
+
 }
 // for __fastcall, first arg is in ECX, second arg is in EDX
 // more args will be pushed on the stack, but if you do that you have to leave them there so they can get cleaned up properly.

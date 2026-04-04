@@ -8,7 +8,7 @@
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -40,9 +40,14 @@ extern int _import _timezone_dll;
 extern char* _import _tzname;
 
 static int* _xceptblkptr;
-int _RTL_DATA _argc, _RTL_DATA __argc;
-char _RTL_DATA **_argv, _RTL_DATA **__argv;
-char _RTL_DATA** _environ;
+
+extern int __rtl_wargc;
+extern WCHAR** __rtl_wargv;
+extern WCHAR** __rtl_wenviron;
+
+extern int _wargc;
+extern WCHAR** _wargv;
+extern WCHAR** _wenviron;
 
 FILE _RTL_DATA* __stdin;
 FILE _RTL_DATA* __stdout;
@@ -108,15 +113,9 @@ static int PASCAL _xceptionhandle(PEXCEPTION_RECORD er, void* frame, PCONTEXT co
     else
         return EXCEPTION_CONTINUABLE;
 }
-void PASCAL __xceptinit(int* block)
+void __wrtlinit(int* block)
 {
     extern void __GetMainArgs(void*, void*, void*, int);
-    _xceptblkptr = block;
-    __asm mov eax, [block];
-    __asm mov[eax + 4], offset _xceptionhandle;
-    __asm mov ecx, fs : [0];
-    __asm mov[eax], ecx;
-    __asm mov fs : [0], eax;
 
     // crt startup
     __stdin = __getStream(0);
@@ -124,23 +123,38 @@ void PASCAL __xceptinit(int* block)
     __stderr = __getStream(2);
     __stdaux = __getStream(3);
     __stdprn = __getStream(4);
-    __GetMainArgs(&_argc, &_argv, &_environ, 0);
-    __argc = _argc;
-    __argv = _argv;
+    __GetMainArgs(&_wargc, &_wargv, &_wenviron, 0);
+    __wmain_argset();
+    __wmain_envset();
+    __rtl_wargc = _wargc;
+    __rtl_wargv = _wargv;
+    __rtl_wenviron = _wenviron;
+
     _pctype = &_ctype[1];
 }
-void PASCAL __xceptrundown(void)
+void __wrtlshutdown(int jumped, int rv)
 {
-    __asm mov eax, [_xceptblkptr];
-    __asm cmp eax, fs : [0];
-    __asm jnz nounset;
-    __asm mov eax, [eax];
-    __asm mov fs : [0], eax;
-nounset:
-    return;
+    __crtexit(rv);
 }
-void PASCAL __llfpinit(void) {}
+static int wcslen2(wchar_t *s)
+{
+   // don't need this to be fast it is only used in a situation that wasn't possible with microft compilers at that time anyway
+   int count = 0;
+   while (*s++) count++;
+   return count;
+}
+wchar_t* wcsdup(const wchar_t* s)
+{
+    int len = (wcslen2(s) + 1) * sizeof(wchar_t);
+    void* buf = malloc(len);
 
+    if (buf == NULL)
+        return buf;
+
+    memcpy(buf, (void*)s, len);
+
+    return (wchar_t*)buf;
+}
 void _RTL_FUNC __assertfail(const char* __who, const char* __file, int __line, const char* __func, const char* __msg)
 {
     _assert(__who, __file, __line);
@@ -153,7 +167,6 @@ FILE* _RTL_FUNC __getStream(int stream)
     return 0;
 }
 
-void __threadinit(void) {}
 int* _RTL_FUNC __GetErrno(void) { return _errno(); }
 int* _RTL_FUNC __GetDosErrno(void) { return __doserrno(); }
 int* _RTL_FUNC __getDaylight(void) { return &_daylight_dll; }

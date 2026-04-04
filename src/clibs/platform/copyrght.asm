@@ -1,1 +1,1 @@
-                db      "Copyright (c) 1997-2019 LADsoft"
+                db      "Copyright (c) 1997-2026 LADsoft\n"

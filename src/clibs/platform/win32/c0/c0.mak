@@ -21,29 +21,22 @@
 #          email: TouchStone222@runbox.com <David Lindauer>
 #  
 
-SHELL=cmd.exe
+C0OBJECTS = .\c0Main.o .\c0wMain.o .\c0WinMain.o .\c0wWinMain.o .\c0DllMain.o .\c0static.o .\c0wstatic.o .\c0vars.o
+c0Objects: $(C0OBJECTS)
 
-EXCLUDE = $(EXCLUDE) crtdll.l
-H_FILES = $(wildcard *.h)
-C_DEPENDENCIES = $(wildcard *.c)
-
-all: crtdll.l
-$(eval $(FORMATTER))
-
-.\crtdmain.o: crtdmain.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
-
-.PHONY: .\c0.o
-.\c0.o: ..\pe\c0.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -Wcc -o$@ $^
-
-crtdll.l: .\crtdmain.o .\c0.o
-	-del $@
-	$(LIB) $(LIBFLAGS) $@ +- .\c0.o .\crtdmain.o
-	$(LIB) $(LIBFLAGS) $@ +- $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(CLIBOBJECT)\__fconvto.o $(CLIBOBJECT)\__fconvfrom.o $(CLIBOBJECT)\__fconst.o $(OBJECT)\vsconio.o $(OBJECT)\dllmain.o $(CLIBOBJECT)\fexcpt.o 
-	$(IMPLIB) $@ .\crtdll.def
-	move crtdll.l $(LSCRTLOBJECT)
-
-DISTRIBUTE:
-	copy *.c $(DISTSTARTUPWIN)
-
+.\c0Main.o: ..\c0\c0Main.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0wMain.o: ..\c0\c0wMain.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0WinMain.o: ..\c0\c0WinMain.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0wWinMain.o: ..\c0\c0wWinMain.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0DllMain.o: ..\c0\c0DllMain.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0static.o: .\c0static.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0wstatic.o: .\c0wstatic.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^
+.\c0vars.o: ..\c0\c0vars.c
+	$(CC) $(STDINCLUDE) /c $(CFLAGS) -o$@ $^

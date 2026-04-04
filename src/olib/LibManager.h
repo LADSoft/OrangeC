@@ -36,6 +36,7 @@
 class ObjSymbol;
 class ObjFile;
 class ObjFactory;
+class ObjExpression;
 
 class LibManager
 {
@@ -63,7 +64,7 @@ class LibManager
     void ReplaceFile(const ObjString& name) { files.Replace(name); }
     void ReplaceFile(ObjFile& obj) { files.Replace(obj); }
     const std::vector<unsigned>& Lookup(const ObjString& name);
-    ObjFile* LoadModule(ObjInt index, ObjFactory* factory) { return files.LoadModule(stream, index, factory); }
+    ObjFile* LoadModule(ObjInt index, ObjFactory* factory, ObjFile** startupfile = nullptr, ObjExpression** startupexp = nullptr) { return files.LoadModule(stream, index, factory, startupfile, startupexp); }
     bool LoadLibrary();
     int SaveLibrary();
     bool fail() const { return false; }  // stream.fail(); }

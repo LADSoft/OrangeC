@@ -2511,13 +2511,13 @@ static int MarkFastcall(SYMBOL* sym, Type* functp, bool thisptr)
                     // change it to a move
                     SYMBOL* sp = *it;
                     Type* tp = sp->tp->BaseType();
-                    if (thisptr ||
+                    if ( i < Optimizer::chosenAssembler->arch->fastcallRegCount && (thisptr ||
                         ((tp->type < BasicType::float_ ||
                           (tp->type == BasicType::pointer_ && tp->BaseType()->btp->BaseType()->type != BasicType::func_) ||
                           tp->IsRef()) &&
                          sp->sb->offset - (Optimizer::chosenAssembler->arch->fastcallRegCount + structret) *
                                               Optimizer::chosenAssembler->arch->parmwidth <
-                             Optimizer::chosenAssembler->arch->retblocksize))
+                             Optimizer::chosenAssembler->arch->retblocksize)))
                     {
                         Optimizer::IMODE* temp = Optimizer::tempreg(tail->dc.left->size, 0);
                         Optimizer::QUAD* q = Allocate<Optimizer::QUAD>();

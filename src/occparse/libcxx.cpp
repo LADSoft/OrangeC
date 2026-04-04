@@ -114,7 +114,7 @@ static std::unordered_map<std::string, INTRINS_FUNC*> intrinsicHash{
     {"__is_trivially_copyable", is_trivially_copyable},
     {"__is_union", is_union},
 };
-static std::unordered_map<std::string, std::unordered_map<unsigned, SYMBOL*>, StringHash> integerSequences;
+static std::unordered_map<const char*, std::unordered_map<unsigned, SYMBOL*>, StringHash, StringEqual> integerSequences;
 
 void libcxx_init(void)
 {

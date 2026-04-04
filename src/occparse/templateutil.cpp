@@ -213,8 +213,12 @@ bool SameTemplate(Type* P, Type* A, bool quals)
     }
     if (PL != PLE && PA != PAE)
     {
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pls;
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pas;
+        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pls;
+        while (pls.size())
+            pls.pop();
+        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> pas;
+        while (pas.size())
+            pas.pop();
         while (PL != PLE && PA != PAE)
         {
             if (PL->second->packed != PA->second->packed)
@@ -332,7 +336,9 @@ bool SameTemplate(Type* P, Type* A, bool quals)
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
     EXPRESSION* rv = nullptr;
-    std::stack<EXPRESSION*> st;
+    static std::stack<EXPRESSION*> st;
+    while (st.size())
+        st.pop();
     st.push(n);
     while (!st.empty())
     {
@@ -857,7 +863,9 @@ static bool structHasTemplateArg(std::list<TEMPLATEPARAMPAIR>* tplx)
 {
     if (tplx)
     {
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
+        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tps;
+        while (tps.size())
+            tps.pop();
         auto itl = tplx->begin();
         auto itle = tplx->end();
         for (; itl != itle;)
@@ -1012,7 +1020,9 @@ void restoreParams(SYMBOL** table, int count)
 void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push);
 static void PushPopDefaults(std::deque<Type*>& defaults, EXPRESSION* exp, bool dflt, bool push)
 {
-    std::stack<EXPRESSION*> stk;
+    static std::stack<EXPRESSION*> stk;
+    while (stk.size())
+        stk.pop();
     stk.push(exp);
     while (!stk.empty())
     {
@@ -1036,7 +1046,9 @@ static void PushPopDefaults(std::deque<Type*>& defaults, EXPRESSION* exp, bool d
 }
 void PushPopDefaults(std::deque<Type*>& defaults, std::list<TEMPLATEPARAMPAIR>* tpx, bool dflt, bool push)
 {
-    std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
+    static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> stk;
+    while (stk.size())
+        stk.pop();
     if (tpx)
     {
         for (auto&& item : *tpx)
@@ -2051,7 +2063,9 @@ void ScopeTemplateParams(SYMBOL* sym)
     if (sym->sb->parentClass)
     {
         auto sym1 = sym;
-        std::stack<SYMBOL* > stk;
+        static std::stack<SYMBOL* > stk;
+        while (stk.size())
+            stk.pop();
         while (sym1)
         {
             stk.push(sym1);
@@ -2617,7 +2631,9 @@ void TemplateArgInstantiateDeferred(std::list<TEMPLATEPARAMPAIR>* args, bool ini
         }
         auto t = args->begin();
         auto te = args->end();
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+        while (tas.size())
+            tas.pop();
         while (t != te)
         {
             if (t->second->packed)
@@ -2692,7 +2708,9 @@ void TemplateArgInstantiateDeferred(std::list<TEMPLATEPARAMPAIR>* args, bool ini
 }
 std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelectors(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool byVal)
 {
-    std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+    static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+    while (tas.size())
+        tas.pop();
     int k = 0;
     TEMPLATEPARAMPAIR* hold[200];
     if (args)
@@ -2776,7 +2794,9 @@ std::list<TEMPLATEPARAMPAIR>* ResolveDeclTypes(SYMBOL* sp, std::list<TEMPLATEPAR
 {
     if (!templateDefinitionLevel)
     {
-        std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+        static std::stack<std::list<TEMPLATEPARAMPAIR>::iterator> tas;
+        while (tas.size())
+            tas.pop();
         DeclarationScope scope(args);
         int k = 0;
         TEMPLATEPARAMPAIR* hold[200];

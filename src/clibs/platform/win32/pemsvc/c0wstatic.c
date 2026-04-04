@@ -19,7 +19,7 @@
  *  
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 extern void _import exit(int);
@@ -29,7 +29,7 @@ extern int _import raise(int);
 #include <stdlib.h>
 #include <stdio.h>
 
-extern void _import __getmainargs(void*, void*, void*, int, int*);
+extern void _import __wgetmainargs(void*, void*, void*, int, int*);
 extern void _import _assert(const char*, const char*, int);
 extern char _import _iob;
 extern int _import* _errno();
@@ -42,15 +42,18 @@ extern int _import _timezone;
 extern char* _import _tzname;
 
 static int* _xceptblkptr;
-int _RTL_DATA _argc;
-char _RTL_DATA** _argv;
-char _RTL_DATA** _environ;
+
+extern int __rtl_wargc;
+extern char** __rtl_wargv;
+extern char** __rtl_wenviron;
 
 FILE* __stdin;
 FILE* __stdout;
 FILE* __stderr;
 FILE* __stdaux;
 FILE* __stdprn;
+
+int __wargc;
 
 void __thrdRegisterModule(HANDLE module, void* tlsStart, void* tlsEnd) {}
 void __thrdUnregisterModule(HANDLE module) {}
@@ -108,33 +111,28 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD er, void* frame, PCONTEXT context, void
     }
     return EXCEPTION_CONTINUABLE;
 }
-void PASCAL __xceptinit(int* block)
+void __wrtlinit(int* block)
 {
+    int _wargc2;
+    WCHAR** _wargv2;
+    WCHAR** _wenviron2;
     int newmode = 0;
-    _xceptblkptr = block;
-    __asm mov eax, [block];
-    __asm mov[eax + 4], offset ___xceptionhandle;
-    __asm mov ecx, fs : [0];
-    __asm mov[eax], ecx;
-    __asm mov fs : [0], eax;
-
+ 
     // msvcrdm startup
     __stdin = __getStream(0);
     __stdout = __getStream(1);
     __stderr = __getStream(2);
     __stdaux = __getStream(3);
     __stdprn = __getStream(4);
-    __getmainargs(&_argc, &_argv, &_environ, 0, &newmode);
+    __wgetmainargs(&_wargc2, &_wargv2, &_wenviron2, 0, &newmode);
+    __rtl_wargc = __wargc = _wargc2;
+    __rtl_wargv = _wargv2;
+    __rtl_wenviron = _wenviron2;
+
 }
-void PASCAL __xceptrundown(void)
+void __wrtlshutdown(int jumped, int rv)
 {
-    __asm mov eax, [_xceptblkptr];
-    __asm cmp eax, fs : [0];
-    __asm jnz nounset;
-    __asm mov eax, [eax];
-    __asm mov fs : [0], eax;
-nounset:
-    return;
+    __crtexit(rv);
 }
 void PASCAL __llfpinit(void) {}
 

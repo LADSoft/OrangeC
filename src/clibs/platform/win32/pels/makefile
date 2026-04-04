@@ -24,25 +24,16 @@
 SHELL=cmd.exe
 
 H_FILES = $(wildcard *.h)
-C_DEPENDENCIES = $(wildcard *.c)
-ASM_DEPENDENCIES = $(wildcard c0*.nas)
 
-all: $(DEPENDENCIES) mklib
+all: $(DEPENDENCIES) lscrtl.l
 $(eval $(FORMATTER))
 
-mklib: c0lsstartup.o
-	$(LIB) $(LIBFLAGS) $(LSCRTLOBJECT)\lscrtl.l +- .\c0lsstartup.o $(CLIBOBJECT)\srproc.o $(WINOBJECT)\dllmain.o
-
-c0lsstartup.o: c0lsstartup.c
-	$(CC) /c /C-E $(CFLAGS) $(STDINCLUDE) /s16 /o$* $^
-
-c0ls.o: c0ls.nas
-	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^
-c0xls.o: c0xls.nas
-	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^
-c0dls.o: c0dls.nas
-	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^
+include ..\c0\c0.mak
+lscrtl.l: c0Objects
+	-del $@
+	oimplib -C1  $@ $(LSCRTLOBJECT)\lscrtl.dll
+	olib  $@ + $(C0OBJECTS) $(WINOBJECT)\dllmain.o + $(WINOBJECT)\shlguid.o + $(WINOBJECT)\xmluuid.o
+	$(LIB) $(LIBFLAGS) $@ +- $(COOBJECTS) $(CLIBOBJECT)\srproc.o
+	move $@ $(LSCRTLOBJECT)
 
 DISTRIBUTE:
-	copy *.nas $(LSCRTLOBJECT)
-	copy *.c $(LSCRTLOBJECT)

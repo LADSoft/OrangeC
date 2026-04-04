@@ -22,4 +22,34 @@
  *  
  */
 
-void __crtexit(int n) {}
+#include <windows.h>
+#include <setjmp.h>
+#include <string.h>
+#include <errno.h>
+#include <windows.h>
+#include <process.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
+
+
+HINSTANCE __hInstance;
+HMODULE __mainHInst;
+
+unsigned _win32;
+unsigned _isDLL;
+
+jmp_buf __exitbranch, __abortbranch;
+
+int __rtl_argc;
+int __rtl_wargc;
+char** __rtl_argv;
+char** __rtl_wargv;
+char** __rtl_environ;
+char** __rtl_wenviron;
+
+DWORD __unaligned_stacktop;
+

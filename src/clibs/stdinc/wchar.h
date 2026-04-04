@@ -193,7 +193,7 @@ extern "C"
     int _RTL_FUNC fwscanf(FILE* restrict __stream, const wchar_t* restrict __format, ...);
 #if defined(__MSIL__) && defined(__MANAGED__)
     int _RTL_FUNC swprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict __format, ...);
-#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSIL__)
+#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSVCRT_DLL) || defined(__MSIL__)
 int _RTL_FUNC swprintf(wchar_t* restrict s, const wchar_t* restrict __format, ...);
 #else
 int _RTL_FUNC swprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict __format, ...);
@@ -205,7 +205,7 @@ int _RTL_FUNC swprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict __
     int _RTL_FUNC vfwscanf(FILE* restrict __stream, const wchar_t* restrict __format, va_list __arg);
 #if defined(__MSIL__) && defined(__MANAGED__)
     int _RTL_FUNC vswprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict __format, va_list __arg);
-#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSIL__) && !defined(__MANAGED__)
+#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSVCRT_DLL) || defined(__MSIL__) && !defined(__MANAGED__)
 int _RTL_FUNC vswprintf(wchar_t* restrict s, const wchar_t* restrict __format, va_list __arg);
 #else
 int _RTL_FUNC vswprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict __format, va_list __arg);

@@ -596,6 +596,8 @@ void output_obj_file(void)
     ObjIeeeIndexManager im;
     ObjFactory f(&im);
     std::string name = infile;
+    int index = name.find_last_of("#");
+    name = name.substr(0, index);
     ObjFile* fi = MakeFile(f, name);
     DumpFile(f, fi, Optimizer::outputFile);
 

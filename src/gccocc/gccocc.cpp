@@ -431,7 +431,7 @@ int gccocc::Run(int argc, char** argv)
     if (prm_libpath.GetExists())
         PutMultiple(fil, "L", prm_libpath.GetValue());
     for (int i = 1; i < files.size(); i++)
-        fprintf(fil, " \"%s\"", files[i].c_str());
+        fprintf(fil, " \"%s\"", files[i].Name.c_str());
     auto libs = Utils::split(prm_libs.GetValue(), ';');
     for (int i = 0; i < libs.size(); i++)
     {

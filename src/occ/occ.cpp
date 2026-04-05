@@ -90,29 +90,37 @@ static Optimizer::FunctionData* lastFunc;
 static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
 /*-------------------------------------------------------------------------*/
-
-void outputfile(char* buf,  int len, const char* name, const char* ext, bool obj)
+void outputfile(char* buf,  int len, const char* namein, const char* ext, bool obj)
 {
+    std::string name = namein;
+    int index = name.find_last_of('#');
+    std::string fileToCompile = name.substr(0, index);
+    std::string as = name.substr(index + 1);
+    std::string stem = fileToCompile;
+    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) ||
+                        (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str()))))
+    {
+        index = stem.find_last_of('.');
+        stem = stem.substr(0, index);
+    }
     Utils::StrCpy(buf, len, Optimizer::outputFileName.c_str());
     if (buf[0] && buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
         // just add our name and ext
-        Utils::StrCat(buf, len, name);
-        Utils::StripExt(buf);
+        Utils::StrCat(buf, len, stem.c_str());
         Utils::AddExt(buf, ext);
     }
     else if (buf[0] == 0 || (obj && !Optimizer::cparams.prm_compileonly &&
                              !Optimizer::assembling))  // no output file specified, put the output wherever the input was...
     {
-        Utils::StrCpy(buf, len, name);
+        Utils::StrCpy(buf, len, stem.c_str());
         char* p = (char*)strrchr(buf, '\\');
         char* q = (char*)strrchr(buf, '/');
         if (q > p)
             p = q;
         if (p)
             Utils::StrCpy(buf, len, p + 1);
-        Utils::StripExt(buf);
         Utils::StrCat(buf, len, ext);
     }
     else
@@ -269,7 +277,7 @@ bool ProcessData(const char* name)
     {
         char buf[260];
         outputfile(buf, sizeof(buf), name, Optimizer::assemblerFileExtension.c_str(), true);
-        InsertExternalFile(buf, false);
+        InsertExternalFile(buf);
         Optimizer::outputFile = fopen(buf, "w");
         if (!Optimizer::outputFile)
             return false;
@@ -346,7 +354,7 @@ bool SaveFile(const char* name)
     {
         Utils::StrCpy(infile, name);
         outputfile(Parser::outFile, sizeof(Parser::outFile), name, Optimizer::chosenAssembler->objext, true);
-        InsertExternalFile(Parser::outFile, false);
+        InsertExternalFile(Parser::outFile);
         Optimizer::outputFile = fopen(Parser::outFile, "wb");
         if (!Optimizer::outputFile)
             return false;
@@ -493,11 +501,11 @@ MAINTRY
             }
             for (const auto& v : Optimizer::toolArgs)
             {
-                InsertOption(v.c_str());
+                InsertOption(v);
             }
             for (const auto& f : Optimizer::backendFiles)
             {
-                InsertExternalFile(f.c_str(), false);
+                InsertExternalFile(f);
             }
             std::list<std::string> files = Optimizer::inputFiles;
             if (files.size())

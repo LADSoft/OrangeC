@@ -111,7 +111,20 @@ int rcMain::Run(int argc, char* argv[])
     }
     for (int i = 1; i < files.size(); i++)
     {
-        std::string inName = Utils::QualifiedFile(files[i].c_str(), ".rc");
+        std::string fileName = files[i].Name;
+        std::string inName = files[i].Name;
+        int npos = fileName.find_last_of(".");
+        if (npos != std::string::npos)
+        {
+            // qualifiedfile is going to strip an extension off arbitrarily, so give it one
+            if (!Utils::HasExt(fileName.c_str(), ".rc"))
+                fileName += ".aaaaaaaa";
+        }
+        if (npos == std::string::npos || (npos && inName[npos - 1] == '.') ||
+            (npos != inName.size() - 1 && inName[npos + 1] == CmdFiles::DIR_SEP[0]))
+        {
+            inName = Utils::QualifiedFile(fileName.c_str(), ".rc");
+        }
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, Dialect::orc, true, false, "");
 
         // for libcxx 10
@@ -132,7 +145,7 @@ int rcMain::Run(int argc, char* argv[])
         if (!OutputFile.GetValue().empty())
             outName = OutputFile.GetValue();
         else
-            outName = Utils::QualifiedFile(files[i].c_str(), ".res");
+            outName = Utils::QualifiedFile(fileName.c_str(), ".res");
         ResFile resFile;
         RCFile rcFile(pp, resFile, srchPth, language);
         if (rcFile.Read())

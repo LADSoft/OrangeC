@@ -104,7 +104,7 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
     CmdSwitchBool ShowHelp(SwitchParser, '?', false, {"help"});
     CmdSwitchFile File(SwitchParser, '@');
     CmdSwitchFile internalConfig(SwitchParser);
-
+    CmdFiles rv;
     Utils::SetEnvironmentToPathParent("ORANGEC");
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     if (access(configName.c_str(), 0) != 0)
@@ -118,7 +118,7 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
         if (!internalConfig.Parse(configName.c_str()))
             Utils::Fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) && !ShowHelp.GetExists())
+    if (!SwitchParser.Parse(&argc, argv, &rv) && !ShowHelp.GetExists())
     {
         if (!noBanner || !noBanner())
             ToolChain::ShowBanner();
@@ -132,7 +132,6 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
         ToolChain::ShowVersion();
     if (ShowHelp.GetExists())
         ToolChain::Usage(helpText);
-    auto rv = CmdFiles(argv);
     rv.Add(File);
     return rv;
 }

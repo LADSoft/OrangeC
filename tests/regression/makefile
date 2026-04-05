@@ -64,6 +64,16 @@ cppexterninline.tst: cppexterninline.o
 boolc2x.exe:
 	occ /2 boolc2x.c -o boolc2x.exe
 
+hello.world.exe:
+	occ /x c hello.world
+
+hello.world.assembly.exe:
+	occ /x asm hello.world.assembly
+
+hello.world.resource.tst:
+	occ /x rc hello.world.resource
+	fc /b hello.world.resource.cmpx hello.world.resource.res
+
 %.tst: %.exe
 	$< > $*.out
 	fc /b $*.cmpx $*.out

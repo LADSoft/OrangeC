@@ -55,6 +55,14 @@ bool CmdFiles::Add(char** array, bool recurseDirs)
     }
     return true;
 }
+bool CmdFiles::Add(std::string& name, std::map<int, std::shared_ptr<CmdSwitchBase>>& switches)
+{ 
+    int index = names.size();
+    Add(name, false);
+    for (; index <names.size(); ++index)
+        names[index].activeSwitches = switches;
+    return true;
+}
 bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, bool recurseDirs)
 {
     bool rv = false;
@@ -136,7 +144,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
                 if (strcmp(find.name, ".") != 0 && strcmp(find.name, "..") != 0)
                 {
                     std::string file(path + std::string(find.name));
-                    names.push_back(std::move(file));
+                    names.push_back(std::move(FileEntry(std::move(file))));
                     rv = true;
                 }
             }
@@ -154,7 +162,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
         std::string possible = std::string(glob_fils.gl_pathv[i]);
         if (possible[possible.size() - 1] != '/')
         {
-            names.push_back(possible);
+            names.push_back(std::move(FileEntry(possible)));
             rv = true;
         }
     }
@@ -169,7 +177,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs, bool subdirs)
     {
         if (name.find_first_of('*') == std::string::npos && name.find_first_of('?') == std::string::npos)
         {
-            names.push_back(name);
+            names.push_back(std::move(FileEntry(name)));
             rv = true;
         }
     }
@@ -214,29 +222,34 @@ bool CmdFiles::AddFromPath(const std::string& name, const std::string& path)
         curpath += internalName;
         if (_access(curpath.c_str(), 0) == 0)
         {
-            names.push_back(std::move(curpath));
+            names.push_back(std::move(FileEntry(std::move(curpath))));
             rv = true;
             break;
         }
     }
     if (!rv)
     {
-        names.push_back(name);
+        names.push_back(std::move(FileEntry(name)));
         rv = true;
     }
     return rv;
 }
 bool CmdFiles::Add(CmdSwitchFile& switchFile)
 {
-    if (switchFile.argv)
-        Add(switchFile.argv.get() + 1);
+    if (switchFile.files)
+    {
+        for (auto&& fileEntry : *switchFile.files)
+        {
+            names.push_back(std::move(fileEntry));
+        }
+    }
     return true;
 }
 void CmdFiles::Remove(const std::string& name)
 {
     for (int i = 0; i < names.size(); i++)
     {
-        if (names[i] == name)
+        if (names[i].Name == name)
         {
             for (; i < names.size() - 1; i++)
                 names[i] = names[i + 1];

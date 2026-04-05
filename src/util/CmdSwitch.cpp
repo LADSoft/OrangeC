@@ -27,6 +27,7 @@
 #    define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "CmdSwitch.h"
+#include "CmdFiles.h"
 #include "Utils.h"
 #include <cctype>
 #include <fstream>
@@ -234,13 +235,14 @@ void CmdSwitchFile::Dispatch(char* data)
         if (argc == max)
         {
             max += 10;
-            std::unique_ptr<char*[]> p = std::move(argv);
+            std::shared_ptr<char*[]> p = std::move(argv);
             argv.reset(new char*[max]);
             memcpy(argv.get(), p.get(), argc * sizeof(char*));
         }
     }
     argv[argc] = 0;
-    Parser->Parse(&argc, argv.get());
+    files = std::make_shared<CmdFiles>();
+    Parser->Parse(&argc, argv.get(), files.get());
 }
 char* CmdSwitchFile::GetStr(char* data)
 {
@@ -350,7 +352,7 @@ CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool to
     }
     return nullptr;
 }
-bool CmdSwitchParser::Parse(int* argc, char* argv[])
+bool CmdSwitchParser::Parse(int* argc, char* argv[], CmdFiles* files)
 {
     for (int i = 0, count = 0; *argv;)
     {
@@ -444,6 +446,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                         n = 0;
                     }
                 }
+                AddCurrent(b);
                 if (n < 0)
                     return false;
                 data += n;
@@ -454,6 +457,11 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
         }
         else
         {
+            if (files && argv[0][0] != '\0')
+            {
+                std::string aa = argv[0];
+                files->Add(aa, GetCurrent());
+            }
             ++argv;
             ++i;
         }
@@ -487,7 +495,7 @@ void CmdSwitchParser::ScanEnv(char* output, size_t len, const char* string)
     *output = 0;
 }
 
-bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[])
+bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[], CmdFiles* files)
 {
     char output[1024], *string = output;
     if (val.size() == 0)
@@ -514,5 +522,5 @@ bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[])
         string++;
     }
     argv[*argc] = nullptr;
-    return Parse(argc, argv);
+    return Parse(argc, argv, files);
 }

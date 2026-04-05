@@ -39,81 +39,95 @@
 #define TEMPFILE "$$$OCC.TMP"
 namespace occmsil
 {
-static Optimizer::LIST *objlist, *reslist, *rclist;
+static std::list<std::string> objlist, reslist, rclist;
 static char outFileName[260];
 
-static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext)
-{
 
-    char buf[256], *newbuffer;
-    Optimizer::LIST* lst;
-    Utils::StrCpy(buf, name);
+bool IsCompilerSource(const char* buffer)
+{
+    bool found = false;
+    static std::list<std::string> acceptedExtensions = {".c", ".cc", ".cpp", ".cxx"};
+    for (auto& str : acceptedExtensions)
+    {
+        if (Utils::HasExt(buffer, str.c_str()) || Utils::iequal(buffer, str.c_str()))
+        {
+            found = true;
+            break;
+        }
+    }
+    return found;
+}
+static void InsertFile(std::list<std::string>& target, const std::string& name)
+{
+    int index = name.find_last_of("#");
+    if (index >= 0)
+        return;
     if (!outFileName[0])
     {
-        Utils::StrCpy(outFileName, name);
+        Utils::StrCpy(outFileName, name.c_str());
         Utils::StripExt(outFileName);
         Utils::StrCat(outFileName, Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe");
     }
-    if (ext)
+    for (auto&& i : target)
     {
-        Utils::StripExt(buf);
-        Utils::StrCat(buf, ext);
-    }
-    lst = *r;
-    while (lst)
-    {
-        if (Utils::iequal((char*)lst->data, buf))
-            return;
-        lst = lst->next;
-    }
-    newbuffer = (char*)malloc(strlen(buf) + 1);
-    if (!newbuffer)
-        return;
-    Utils::StrCpy(newbuffer, strlen(buf) + 1, buf);
 
-    /* Insert file */
-    while (*r)
-        r = &(*r)->next;
-    *r = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
-    if (!*r)
-    {
-        free(newbuffer);
-        return;
+        if (Utils::iequal(i, name))
+            return;
     }
-    (*r)->next = 0;
-    (*r)->data = newbuffer;
+    target.push_back(name);
 }
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(const char* name, bool)
+int InsertExternalFile(const std::string&name)
 {
+    int index = name.find_last_of('#');
+    if (index < 0)
+        return 1;  // shouldn't process, this is a safety net.
+    std::string fileToCompile = name.substr(0, index);
+    std::string as = name.substr(index + 1);
+    std::string stem = fileToCompile;
+    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) ||
+                        (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str()))))
+    {
+        index = stem.find_last_of('.');
+        stem = stem.substr(0, index);
+    }
+
     char buf[260];
     const char* p;
 
-    if (Utils::HasExt(name, ".rc"))
+    if (!as.empty())
     {
-        InsertFile(&reslist, name, ".res");
-        InsertFile(&rclist, name, nullptr);
-        return 1;
+        if (Utils::iequal(as, ".c"))
+        {
+            InsertFile(objlist, stem + ".ilo");
+            return 1;
+        }
+        else if (Utils::iequal(as, ".rc"))
+        {
+            InsertFile(reslist, stem + ".res");
+            InsertFile(rclist, fileToCompile);
+            return 1;
+        }
+        else if (Utils::iequal(as, ".res"))
+        {
+            InsertFile(reslist, fileToCompile);
+            return 1;
+        }
+        else if (Utils::iequal(as, ".ilo"))
+        {
+            InsertFile(objlist, fileToCompile);
+            return 1;
+        }
     }
-    else if (Utils::HasExt(name, ".res"))
-    {
-        InsertFile(&reslist, name, nullptr);
-        return 1;
-    }
-    else if (Utils::HasExt(name, ".ilo"))
-    {
-        InsertFile(&objlist, name, nullptr);
-        return 1;
-    }
-    p = strrchr(name, '\\');
-    if (!p)
-        p = name;
-    else
-        p++;
-    Utils::StrCpy(buf, p);
-    InsertFile(&objlist, buf, ".ilo");
+    // no extenstion or an unknown one, just use the name intact (sans directory specification)
+    index = fileToCompile.find_last_of("\\");
+    if (index < 0)
+        index = fileToCompile.find_last_of("/");
+    if (index > 0)
+        fileToCompile = fileToCompile.substr(index + 1);
+    InsertFile(objlist, fileToCompile);
 
     return 0; /* compiler should process it*/
 }
@@ -123,15 +137,15 @@ int InsertExternalFile(const char* name, bool)
 void InsertOutputFileName(const char* name) { Utils::StrCpy(outFileName, name); }
 
 /*-------------------------------------------------------------------------*/
-static Optimizer::LIST* objPosition;
+static std::list<std::string> objPosition;
 void GetOutputFileName(char* name, int len, char* path, int len2, bool obj)
 {
     if (obj)
     {
         char* p;
-        if (!objPosition)
+        if (objPosition.empty())
             objPosition = objlist;
-        if (!objPosition)
+        if (objPosition.empty())
             Utils::Fatal("Cannot get object file name");
         Utils::StrCpy(name, len, outFileName);
         p = (char*)strrchr(name, '\\');
@@ -139,16 +153,16 @@ void GetOutputFileName(char* name, int len, char* path, int len2, bool obj)
             p = name;
         else
             p++;
-        Utils::StrCpy(p, len - (p - name), (char*)objPosition->data);
+        Utils::StrCpy(p, len - (p - name), (char*)objPosition.front().c_str());
         Utils::StrCpy(path, len2, name);
     }
     else
     {
         path[0] = 0;
         Utils::StrCpy(name, len, outFileName);
-        if (objlist && name[0] && name[strlen(name) - 1] == '\\')
+        if (!objlist.empty() && name[0] && name[strlen(name) - 1] == '\\')
         {
-            Utils::StrCat(name, len, (char*)objlist->data);
+            Utils::StrCat(name, len, objlist.front().c_str());
             Utils::StripExt(name);
             Utils::StrCat(name, len, ".exe");
             Utils::StrCpy(path, len2, outFileName);
@@ -157,8 +171,8 @@ void GetOutputFileName(char* name, int len, char* path, int len2, bool obj)
 }
 void NextOutputFileName()
 {
-    if (objPosition)
-        objPosition = objPosition->next;
+    if (!objPosition.empty())
+        objPosition.pop_front();
 }
 int RunExternalFiles()
 {

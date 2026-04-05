@@ -92,7 +92,7 @@ const std::string& NetLinkMain::GetAssemblyName(CmdFiles& files)
         assemblyName = AssemblyName.GetValue();
     else if (files.size())
     {
-        assemblyName = files[1].c_str();
+        assemblyName = files[1].Name.c_str();
     }
     else
     {
@@ -122,7 +122,7 @@ const std::string& NetLinkMain::GetOutputFile(CmdFiles& files)
         outputFile = AssemblyName.GetValue();
     else if (files.size())
     {
-        outputFile = files[1].c_str();
+        outputFile = files[1].Name.c_str();
     }
     else
     {
@@ -139,21 +139,21 @@ bool NetLinkMain::LoadImage(CmdFiles& files)
     bool rv = true;
     for (auto name : files)
     {
-        int n = name.find_last_of('.');
+        int n = name.Name.find_last_of('.');
         if (n == std::string::npos)
         {
-            name += ".ilo";
+            name.Name += ".ilo";
         }
         else if (n > 0)
         {
-            if (name[n - 1] == '.')
+            if (name.Name[n - 1] == '.')
             {
-                name += ".ilo";
+                name.Name += ".ilo";
             }
         }
-        if (!peLib->LoadObject(name))
+        if (!peLib->LoadObject(name.Name))
         {
-            std::cout << "Error loading object file: " << name.c_str() << std::endl;
+            std::cout << "Error loading object file: " << name.Name.c_str() << std::endl;
             rv = false;
         }
     }

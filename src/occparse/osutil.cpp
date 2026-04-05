@@ -39,7 +39,6 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
-#include "Utils.h"
 #include "ccerr.h"
 #include "config.h"
 #include "occparse.h"
@@ -62,7 +61,6 @@ extern bool doBackendInit;
 }
 namespace Parser
 {
-
 #include "../version.h"
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
@@ -84,7 +82,7 @@ extern "C"
 }
 #endif
 
-Optimizer::LIST* clist = 0;
+std::list<std::string> clist;
 int showVersion = false;
 std::string bePostFile;
 
@@ -495,8 +493,8 @@ static void ParamTransfer(const char* name)
         Optimizer::cparams.prm_icdfile = prm_icdfile.GetValue();
     if (prm_viaassembly.GetExists())
     {
-        Optimizer::cparams.prm_assemble = true;
-        Optimizer::cparams.prm_asmfile = false;
+        Optimizer::cparams.prm_viaassembly = true;
+        Optimizer::cparams.prm_asmfile = true;
     }
     if (prm_prmCharIsUnsigned.GetValue())
     {
@@ -952,7 +950,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-int insert_noncompile_file(const char* buf)
+int insert_noncompile_file(const char* buf, std::string& currentExt)
 {
     const char* ext = Optimizer::chosenAssembler->beext;
     if (ext)
@@ -960,9 +958,14 @@ int insert_noncompile_file(const char* buf)
         auto splt = Utils::split(ext);
         for (auto&& str : splt)
         {
-            if (Utils::HasExt(buf, str.c_str()))
+            if (currentExt.empty() && Utils::HasExt(buf, str.c_str()))
             {
-                Optimizer::backendFiles.push_back(buf);
+                Optimizer::backendFiles.push_back(std::string(buf) + "#" + str);
+                return 1;
+            }
+            if (!currentExt.empty() && Utils::iequal(currentExt, str))
+            {
+                Optimizer::backendFiles.push_back(std::string(buf) + "#" + currentExt);
                 return 1;
             }
         }
@@ -970,8 +973,22 @@ int insert_noncompile_file(const char* buf)
     return 0;
 }
 
-void InsertOneFile(const char* filename, char* path, int drive)
-/*
+bool IsCompilerSource(const char *buffer) 
+{
+    bool found = false;
+    static std::list<std::string> acceptedExtensions = {".c", ".cc", ".cpp", ".cxx"};
+    for (auto& str : acceptedExtensions)
+    {
+        if (Utils::HasExt(buffer, str.c_str()) || Utils::iequal(buffer, str.c_str()))
+        {
+            found = true;
+            break;
+        }
+    }
+    return found;
+}
+void InsertOneFile(const char* filename, char* path, int drive, std::string& currentExt)
+    /*
  * Insert a file name onto the list of files to process
  */
 
@@ -979,7 +996,6 @@ void InsertOneFile(const char* filename, char* path, int drive)
     char a = 0;
     char *newbuffer, buffer[260], *p = buffer;
     bool inserted;
-    Optimizer::LIST **r = &clist, *s;
 
     if (drive != -1)
     {
@@ -998,73 +1014,80 @@ void InsertOneFile(const char* filename, char* path, int drive)
         a = buffer[0];
         buffer[0] = 'a';
     }
-    bool found = false;
 
-    // im gonna let them compile header files directly
-    static std::list<std::string> acceptedExtensions = {".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"};
-    for (auto& str : acceptedExtensions)
+    if (currentExt.empty() && IsCompilerSource(buffer) || !currentExt.empty() && IsCompilerSource(("a" + currentExt).c_str()))
     {
-        if (Utils::HasExt(buffer, str.c_str()))
+        std::string file = buffer;
+        if (currentExt.empty())
         {
-            found = true;
-            break;
+            auto ext = strrchr(buffer, '.');
+            file += "#";
+            if (ext)
+                file += ext;
         }
-    }
-    if (found)
-    {
-        newbuffer = (char*)malloc(strlen(buffer) + 1);
-        if (!newbuffer)
-            return;
-        Utils::StrCpy(newbuffer, strlen(buffer)+1, buffer);
-
-        while ((*r))
-            r = &(*r)->next;
-        (*r) = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
-        s = (*r);
-        if (!s)
+        else
         {
-            free(newbuffer);
-            return;
+            file += "#" + currentExt;
         }
-        s->next = 0;
-        s->data = newbuffer;
+        clist.push_back(file);
+        Optimizer::backendFiles.push_back(file);
+        Optimizer::inputFiles.push_back(file);
     }
     else
     {
-        inserted = insert_noncompile_file(buffer);
+        inserted = insert_noncompile_file(buffer, currentExt);
         if (!inserted)
         {
             // if we really don't know the extension let the linker deal with it
-            Optimizer::backendFiles.push_back(buffer);
+            Optimizer::backendFiles.push_back(std::string(buffer) + "#");
         }
     }
 }
-void InsertAnyFile(const char* filename, char* path, int drive)
+void InsertAnyFile(const FileEntry& filename, char* path, int drive, std::string& currentExt)
 {
+    auto it = filename.activeSwitches.find('x'); // language selection
+    if (it != filename.activeSwitches.end())
+    {
+        CmdSwitchCombineString* setting = static_cast<CmdSwitchCombineString*>(it->second.get());
+        std::string value = setting->GetValue();
+        if (setting->GetConcat())
+        {
+            int index = value.find_last_of(setting->GetConcat());
+            if (index >= 0 && index != value.size() - 1)
+                currentExt = value.substr(index);
+        }
+        else
+        {
+            currentExt = value;
+        }
+        if (Utils::iequal(currentExt, "C++"))
+            currentExt = "cpp";
+        currentExt = "." + currentExt;
+    }
     char drv[256], dir[256], name[256], ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
     struct _finddata_t findbuf;
     size_t n;
-    _splitpath(filename, drv, dir, name, ext);
+    _splitpath(filename.Name.c_str(), drv, dir, name, ext);
 #    ifdef BORLAND
-    n = _findfirst(const_cast<char*>(filename), &findbuf);
+    n = _findfirst(const_cast<char*>(filename.Name.c_str()), &findbuf);
 #    else
-    n = _findfirst(filename, &findbuf);
+    n = _findfirst(filename.Name.c_str(), &findbuf);
 #    endif
     if (n != -1)
     {
         do
         {
-            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0]) - 'a' : -1);
+            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0]) - 'a' : -1, currentExt);
         } while (_findnext(n, &findbuf) != -1);
         _findclose(n);
     }
     else
     {
-        InsertOneFile(filename, path, drive);
+        InsertOneFile(filename.Name.c_str(), path, drive, currentExt);
     }
 #else
-    InsertOneFile(filename, path, drive);
+    InsertOneFile(filename.Name.c_str(), path, drive, currentExt);
 #endif
 }
 /*-------------------------------------------------------------------------*/
@@ -1270,14 +1293,16 @@ int ccinit(int argc, char* argv[])
     if (DisplayerParams())
         return true;
 
+    CmdFiles envFiles;
     if (Optimizer::chosenAssembler->envname)
     {
+        SwitchParser.ResetCurrent();
         const char* env = getenv(Optimizer::chosenAssembler->envname);
-        if (env && !SwitchParser.Parse(std::string(env), &ecnt, eargs))
+        if (env && !SwitchParser.Parse(std::string(env), &ecnt, eargs, &envFiles))
             ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
     }
 
-    ParamTransfer(files[0].c_str());
+    ParamTransfer(files[0].Name.c_str());
     if (files.size() < 2)
         ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
 
@@ -1287,10 +1312,12 @@ int ccinit(int argc, char* argv[])
     /* Scan the command line for file names or response files */
     {
         int i;
+        std::string currentExt;
         for (i = 1; i < files.size(); i++)
-            InsertAnyFile(files[i].c_str(), 0, -1);
-        for (i = 1; i < ecnt; i++)
-            InsertAnyFile(eargs[i], 0, -1);
+            InsertAnyFile(files[i], 0, -1, currentExt);
+        currentExt.clear();
+        for (i = 1; i < envFiles.size(); i++)
+            InsertAnyFile(envFiles[i], 0, -1, currentExt);
     }
 
     if (IsCompiler())
@@ -1304,20 +1331,18 @@ int ccinit(int argc, char* argv[])
             }
             else
             {
-                if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
+                if (clist.size() > 1 && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
                     Utils::Fatal("Cannot specify output file for multiple input files\n");
             }
         }
     }
     else
     {
+        for (auto&& item : clist)
         {
-            Optimizer::LIST* t = clist;
-            while (t)
-            {
-                t->data = _strdup(Utils::FullQualify((char*)t->data));
-                t = t->next;
-            }
+            char buf[260];
+            strcpy(buf, item.c_str());
+            item = Utils::FullQualify(buf);
         }
     }
 

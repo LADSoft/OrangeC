@@ -186,48 +186,46 @@ InstructionParser* instructionParser;
 static int stoponerr = 0;
 
 Optimizer::COMPILER_PARAMS cparams_default = {
-    25, /* int  prm_maxerr;*/
-    0,  /* prm_stackalign */
-    ~0, /* optimizer modules */
-    0,  /* icd flags */
-    0,  /* verbosity */
-    Dialect::c11,
-    Dialect::cpp17,
-    true,  /* optimize_for_speed */
-    false, /* optimize_for_size */
-    false, /* optimize_for_float_access */
-    false, /* char prm_quieterrors;*/
-    true,  /* char prm_warning;*/
-    false, /* char prm_extwarning;*/
-    false, /* char prm_diag;*/
-    false, /* char prm_ansi;*/
-    true,  /* char prm_cmangle;*/
-    false, /* char prm_cplusplus;*/
-    true,  /* char prm_xcept;*/
-    false, /* char prm_icdfile;*/
-    false, /* char prm_asmfile;*/
-    false, /* char prm_compileonly;*/
-    false, /* char prm_debug;*/
-    false, /* char prm_listfile;*/
-    false, /* char prm_cppfile;*/
-    false, /* char prm_errfile;*/
-    false, /* char prm_browse;*/
-    false, /* char prm_trigraph;*/
-    false, /* char prm_oldfor;*/
-    false, /* char prm_stackcheck;*/
-    true,  /* char prm_allowinline;*/
-    false, /* char prm_profiler;*/
-    true,  /* char prm_mergstrings;*/
-    false, /* char prm_revbits;*/
-    true,  /* char prm_lines;*/
-    true,  /* char prm_bss;*/
-    false, /* char prm_intrinsic;*/
-    false, /* char prm_smartframes;*/
-    false, /* char prm_farkeyword;*/
-    false, /* char prm_linkreg;*/
-    false, /* char prm_charisunsigned;*/
-    false, /* bool prm_assemble;*/
-    false, /* bool prm_makestubs;*/
+    25,                                 /* int  prm_maxerr;*/
+    0,                                  /* prm_stackalign */
+    ~0,                                 /* optimizer modules */
+    0,                                  /* icd flags */
+    0,                                  /* verbosity */
+    Dialect::c11, Dialect::cpp17, true, /* optimize_for_speed */
+    false,                              /* optimize_for_size */
+    false,                              /* optimize_for_float_access */
+    false,                              /* char prm_quieterrors;*/
+    true,                               /* char prm_warning;*/
+    false,                              /* char prm_extwarning;*/
+    false,                              /* char prm_diag;*/
+    false,                              /* char prm_ansi;*/
+    true,                               /* char prm_cmangle;*/
+    false,                              /* char prm_cplusplus;*/
+    true,                               /* char prm_xcept;*/
+    false,                              /* char prm_icdfile;*/
+    false,                              /* char prm_asmfile;*/
+    false,                              /* char prm_compileonly;*/
+    false,                              /* char prm_debug;*/
+    false,                              /* char prm_listfile;*/
+    false,                              /* char prm_cppfile;*/
+    false,                              /* char prm_errfile;*/
+    false,                              /* char prm_browse;*/
+    false,                              /* char prm_trigraph;*/
+    false,                              /* char prm_oldfor;*/
+    false,                              /* char prm_stackcheck;*/
+    true,                               /* char prm_allowinline;*/
+    false,                              /* char prm_profiler;*/
+    true,                               /* char prm_mergstrings;*/
+    false,                              /* char prm_revbits;*/
+    true,                               /* char prm_lines;*/
+    true,                               /* char prm_bss;*/
+    false,                              /* char prm_intrinsic;*/
+    false,                              /* char prm_smartframes;*/
+    false,                              /* char prm_farkeyword;*/
+    false,                              /* char prm_linkreg;*/
+    false,                              /* char prm_charisunsigned;*/
+    false,                              /* bool prm_assemble;*/
+    false,                              /* bool prm_makestubs;*/
 #ifndef WIN32
     DOS32A, /* char prm_targettype;*/
 #else
@@ -248,7 +246,10 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     true,        /* char msilAllowExtensions;*/
     false,       /* char makelib; */
     0,           /* int prm_stackprotect */
-};
+    0,           /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
+    false,       /* export all symbols */
+    false          /* compile via assembly */
+};  // namespace Parser
 
 int usingEsp;
 
@@ -332,7 +333,7 @@ void compile(bool global)
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
             if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
             {
-                occmsil::msil_compile_start((char*)clist->data);
+                occmsil::msil_compile_start((char*)clist.front().c_str());
             }
 #endif
         first = false;
@@ -402,7 +403,6 @@ void compile(bool global)
 }
 /*-------------------------------------------------------------------------*/
 
-void enter_filename(const char* name) { Optimizer::inputFiles.push_back(name); }
 }  // namespace Parser
 int main(int argc, char* argv[])
 MAINTRY
@@ -410,7 +410,6 @@ MAINTRY
     using namespace Parser;
     Optimizer::cparams = cparams_default;
     Optimizer::compilerName = std::string("occ v") + STRING_VERSION + " " + __DATE__;
-    char buffer[256];
     char* p;
     bool multipleFiles = false;
     int rv;
@@ -440,13 +439,14 @@ MAINTRY
         startTime = clock();
     }
     /* loop through and preprocess all the fles on the file list */
-    if (clist && clist->next)
+    if (clist.size() > 1)
         multipleFiles = true;
-    const char* firstFile = clist ? (const char*)clist->data : "temp";
+    std::string firstFile = clist.size() ? clist.front() : "temp";
     SharedMemory* parserMem = nullptr;
     if (!IsCompiler())
     {
-        Utils::StrCpy(buffer, clist ? (const char*)clist->data : "temp");
+        char buffer[260];
+        Utils::StrCpy(buffer, firstFile.c_str());
         Utils::StrCpy(realOutFile, prm_output.GetValue().c_str());
         outputfile(realOutFile, sizeof(realOutFile), buffer, ".ods");
         if (!CompletionCompiler::ccDBOpen(realOutFile))
@@ -462,7 +462,7 @@ MAINTRY
             parserMem = new SharedMemory(0, bePostFile.c_str());
             if (!parserMem->Open() || !parserMem->GetMapping())
                 Utils::Fatal("internal error: invalid shared memory region");
-            if (!clist)
+            if (clist.empty())
             {
                 Optimizer::OutputIntermediate(parserMem);
             }
@@ -474,42 +474,46 @@ MAINTRY
             compileToFile = true;
         }
     }
-    for (auto c = clist; c; c = c->next)
-    {
-        enter_filename((const char*)c->data);
-    }
 
     bool first = true;
-    while (clist)
+    while (!clist.empty())
     {
-        identityValue = Utils::CRC32((const unsigned char*)clist->data, strlen((char*)clist->data));
+        int index = clist.front().find_last_of('#');
+        std::string as = clist.front().substr(index + 1);
+        std::string fileToCompile = clist.front().substr(0, index);
+        std::string stem = fileToCompile;
+        if (IsCompilerSource(stem.c_str()))
+        {
+            index = stem.find_last_of('.');
+            stem = stem.substr(0, index);
+        }
+        identityValue = Utils::CRC32((const unsigned char*)fileToCompile.c_str(), fileToCompile.size());
         if (IsCompiler())
         {
 #ifndef ORANGE_NO_MSIL
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
                 if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
-                    occmsil::msil_main_preprocess((char*)clist->data);
+                    occmsil::msil_main_preprocess((char *)fileToCompile.c_str());
             }
 #endif
         }
         first = false;
         Errors::Reset();
         Optimizer::cparams.prm_cplusplus = false;
-        Utils::StrCpy(buffer, (char*)clist->data);
         if (IsCompiler())
         {
-            if (buffer[0] == '-')
-                Utils::StrCpy(buffer, "a.c");
+            if (fileToCompile == "-")
+                fileToCompile = "a.c";
             if (!MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
                 Utils::StrCpy(realOutFile, prm_output.GetValue().c_str());
             else
                 Utils::StrCpy(realOutFile, "");
-            outputfile(realOutFile, sizeof(realOutFile), buffer, ".icf");
+            outputfile(realOutFile, sizeof(realOutFile), fileToCompile.c_str(), ".icf");
         }
         else
         {
-            CompletionCompiler::ccNewFile(buffer, true);
+            CompletionCompiler::ccNewFile((char*)fileToCompile.c_str(), true);
         }
         if (prm_std.GetExists())
         {
@@ -552,35 +556,39 @@ MAINTRY
                 Utils::Fatal("value given for 'std' argument unknown: %s", prm_std.GetValue().c_str());
             }
         }
-        else if (prm_language.GetExists())
+        else if (prm_c23.GetExists())
         {
-            if (prm_language.GetValue() == "c++")
-            {
-                Optimizer::cparams.prm_cplusplus = true;
-                Optimizer::cparams.c_dialect = Dialect::c89;
-            }
-            else if (prm_language.GetValue() != "c")
-            {
-                Utils::Fatal("Unknown language specifier: %s\n", prm_language.GetValue().c_str());
-            }
+            Optimizer::cparams.c_dialect = Dialect::c23;
+        }
+        else if (prm_c11.GetExists())
+        {
+            Optimizer::cparams.c_dialect = Dialect::c11;
+        }
+        else if (prm_c99.GetExists())
+        {
+            Optimizer::cparams.c_dialect = Dialect::c99;
+        }
+        else if (prm_c89.GetExists())
+        {
+            Optimizer::cparams.c_dialect = Dialect::c89;
         }
         else
         {
-            static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
-            for (auto& str : cppExtensions)
-            {
-                if (Utils::HasExt(buffer, str.c_str()))
-                {
-                    Optimizer::cparams.prm_cplusplus = true;
-                    Optimizer::cparams.c_dialect = Dialect::c89;
-                    break;
-                }
-            }
+            Optimizer::cparams.c_dialect = Dialect::c11;
+        }
+        if (Utils::iequal(as, ".c"))
+        {
+            Optimizer::cparams.prm_cplusplus = false;         
+        }
+        else
+        {
+            Optimizer::cparams.prm_cplusplus = true;
+            Optimizer::cparams.c_dialect = Dialect::c89;
         }
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))
             Utils::Fatal("MSIL compiler does not compile C++ files at this time");
         preProcessor = new PreProcessor(
-            buffer, prm_cinclude.GetValue(),
+            fileToCompile.c_str(), prm_cinclude.GetValue(),
             Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
             Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
             Optimizer::cparams.prm_cplusplus ? Dialect::c23 : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
@@ -592,7 +600,7 @@ MAINTRY
         preProcessor->SetExpressionHandler(ParseExpression);
         preProcessor->SetPragmaCatchall([](const std::string& kw, const std::string& tag) { Optimizer::bePragma[kw] = tag; });
 
-        Utils::StrCpy(infile, buffer);
+        Utils::StrCpy(infile, fileToCompile.c_str());
         if (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
                                                      (!prm_error.GetExists() || !prm_error.GetValue().empty()))
         {
@@ -600,51 +608,47 @@ MAINTRY
             {
                 if (prm_output.GetExists())
                 {
-                    Utils::StrCpy(buffer, prm_output.GetValue().c_str());
+                    Utils::StrCpy(cppfile, prm_output.GetValue().c_str());
                 }
                 else
                 {
-                    Utils::StripExt(buffer);
-                    Utils::AddExt(buffer, ".i");
+                    Utils::StrCpy(cppfile, (stem + ".i").c_str());
                 }
-                Utils::StrCpy(cppfile, buffer);
 
-                cppFile = fopen(buffer, "w");
+                cppFile = fopen(cppfile, "w");
                 if (!cppFile)
                 {
                     delete preProcessor;
-                    Utils::Fatal("Cannot open preprocessor output file %s", buffer);
+                    Utils::Fatal("Cannot open preprocessor output file %s", cppfile);
                 }
             }
             if (Optimizer::cparams.prm_errfile)
             {
-                Utils::StripExt(buffer);
-                Utils::AddExt(buffer, ".err");
-                errFile = fopen(buffer, "w");
+                std::string fileName = (stem + ".err");
+                errFile = fopen(fileName.c_str(), "w");
                 if (!errFile)
                 {
                     delete preProcessor;
                     fclose(cppFile);
-                    Utils::Fatal("Cannot open error file %s", buffer);
+                    Utils::Fatal("Cannot open error file %s", fileName.c_str());
                 }
             }
             if (Optimizer::cparams.prm_icdfile)
             {
-                Utils::StripExt(buffer);
-                Utils::AddExt(buffer, ".icd");
-                Optimizer::icdFile = fopen(buffer, "w");
+                std::string fileName = (stem + ".icd");
+                Optimizer::icdFile = fopen(fileName.c_str(), "w");
                 if (!Optimizer::icdFile)
                 {
                     fclose(errFile);
                     delete preProcessor;
                     fclose(cppFile);
-                    Utils::Fatal("Cannot open icd file %s", buffer);
+                    Utils::Fatal("Cannot open icd file %s", fileName.c_str());
                 }
                 setvbuf(Optimizer::icdFile, 0, _IOFBF, 32768);
             }
 
             if (multipleFiles && !Optimizer::cparams.prm_quiet)
-                printf("%s\n", (char*)clist->data);
+                printf("%s\n", fileToCompile.c_str());
 
             compile(false);
             if (IsCompiler())
@@ -661,13 +665,12 @@ MAINTRY
 #ifdef ORANGE_COMPILE_SINGLE_ICF_FILE
                 if (compileToFile)
                 {
+                    std::string fileName = (stem + ".icf");
                     // compile to file
-                    Utils::StripExt(buffer);
-                    Utils::AddExt(buffer, ".icf");
                     int size = Optimizer::GetOutputSize();
-                    FILE* fil = fopen(buffer, "wb");
+                    FILE* fil = fopen(fileName.c_str(), "wb");
                     if (!fil)
-                        Utils::Fatal("Cannot open '%s' for write", buffer);
+                        Utils::Fatal("Cannot open '%s' for write", fileName.c_str());
                     Optimizer::WriteMappingFile(parserMem, fil);
                     fclose(fil);
                 }
@@ -676,7 +679,6 @@ MAINTRY
         }
         else
         {
-            enter_filename((char*)clist->data);
             errorinit();
             syminit();
             namespaceinit();
@@ -691,7 +693,8 @@ MAINTRY
         if (Optimizer::cparams.prm_makestubs)
         {
             std::string inFile;
-            inFile = (char*)clist->data;
+            inFile = fileToCompile;
+            ;
             int end = inFile.find_last_of('/');
             if (end == std::string::npos)
                 end = -1;
@@ -762,7 +765,7 @@ MAINTRY
                     occmsil::msil_end_generation(nullptr);
 #endif
         }
-        clist = clist->next;
+        clist.pop_front();
     }
 
     if (IsCompiler())
@@ -779,12 +782,23 @@ MAINTRY
 #ifndef ORANGE_COMPILE_SINGLE_ICF_FILE
     if (compileToFile)
     {
+        int index = firstFile.find_last_of('#');
+        std::string as = firstFile.substr(index + 1);
+        std::string fileToCompile = firstFile.substr(0, index);
+        std::string stem = fileToCompile;
+        if (IsCompilerSource(stem.c_str()))
+        {
+            index = stem.find_last_of('.');
+            stem = stem.substr(0, index);
+        }
         // compile to file
         if (Optimizer::outputFileName.empty())
-            Utils::StrCpy(realOutFile, firstFile);
+            Utils::StrCpy(realOutFile, stem.c_str());
         else
+        {
             Utils::StrCpy(realOutFile, Optimizer::outputFileName.c_str());
-        Utils::StripExt(realOutFile);
+            Utils::StripExt(realOutFile);
+        }
         Utils::AddExt(realOutFile, ".icf");
         int size = Optimizer::GetOutputSize();
         FILE* fil = fopen(realOutFile, "wb");

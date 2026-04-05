@@ -52,119 +52,126 @@ static const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
 };
 
-static Optimizer::LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
-static char *asm_params, *rc_params, *link_params;
+static std::list<std::string> objlist, asmlist, liblist, reslist, rclist;
+static std::string asm_params, rc_params, link_params;
 
-bool InsertOption(const char* name)
+bool InsertOption(const std::string& name)
 {
-    char** p;
     switch (name[0])
     {
         case 'a':
-            p = &asm_params;
+            asm_params += " " + name.substr(1);
             break;
         case 'r':
-            p = &rc_params;
+            rc_params += " " + name.substr(1);
             break;
         case 'l':
-            p = &link_params;
+            link_params += " " + name.substr(1);
             break;
         default:
             return false;
     }
-    int len = 0;
-    if (*p)
-        len = strlen(*p);
-    *p = (char*)realloc(*p, 2 + len + strlen(name) + 1);
-    (*p)[len] = 0;
-    Utils::StrCat(*p, strlen(name) + 1, " ");
-    Utils::StrCat(*p, strlen(name) + 1, name + 1);
     return true;
 }
-static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext, bool primary)
+bool IsCompilerSource(const char* buffer)
 {
-    Optimizer::LIST* lst;
-    char buf[256], *newbuffer;
-    Utils::StrCpy(buf, name);
-    if (ext)
+    bool found = false;
+    static std::list<std::string> acceptedExtensions = {".c", ".cc", ".cpp", ".cxx"};
+    for (auto& str : acceptedExtensions)
     {
-        Utils::StripExt(buf);
-        Utils::StrCat(buf, ext);
+        if (Utils::HasExt(buffer, str.c_str()) || Utils::iequal(buffer, str.c_str()))
+        {
+            found = true;
+            break;
+        }
     }
-    lst = *r;
-    while (lst)
-    {
-        if (Utils::iequal((char*)lst->data, buf))
-            return;
-        lst = lst->next;
-    }
-    newbuffer = (char*)malloc(strlen(buf) + 1);
-    if (!newbuffer)
+    return found;
+}
+static void InsertFile(std::list<std::string>& target, const std::string& name)
+{
+    int index = name.find_last_of("#");
+    if (index >= 0)
         return;
-    Utils::StrCpy(newbuffer, strlen(buf) + 1, buf);
+    for (auto&& i : target)
+    {
 
-    /* Insert file */
-    while (*r)
-        r = &(*r)->next;
-    *r = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
-    if (!*r)
-    {
-        free(newbuffer);
-        return;
+        if (Utils::iequal(i, name))
+            return;
     }
-    (*r)->next = 0;
-    (*r)->data = newbuffer;
+    target.push_back(name);
 }
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(const char* name, bool primary)
+int InsertExternalFile(const std::string& name)
 {
-    char buf[260];
-    const char* p;
-    if (Utils::HasExt(name, ".asm") || Utils::HasExt(name, ".nas") || Utils::HasExt(name, ".s"))
+    int index = name.find_last_of('#');
+    if (index < 0)
+        return 1; // shouldn't process, this is a safety net.
+    std::string fileToCompile = name.substr(0, index);
+    std::string as = name.substr(index + 1);
+    std::string stem = fileToCompile;
+    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) || (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str()))))
     {
-        InsertFile(&objlist, name, ".o", primary);
-        InsertFile(&asmlist, name, 0, primary);
-        return 1; /* compiler shouldn't process it*/
+        index = stem.find_last_of('.');
+        stem = stem.substr(0, index);
     }
-    else if (Utils::HasExt(name, ".l") || Utils::HasExt(name, ".a") || Utils::HasExt(name, ".lib") || Utils::HasExt(name, ".dll"))
+    if (!as.empty())
     {
-        InsertFile(&liblist, name, 0, primary);
-        return 1;
+        if (IsCompilerSource(("a" + as).c_str()))
+        {
+            index = stem.find_last_of("\\");
+            if (index < 0)
+                 index = stem .find_last_of("/");
+            if (index > 0)
+                 stem = stem.substr(index+1);
+            // compiling via assembly
+            if (Optimizer::cparams.prm_viaassembly && !Optimizer::cparams.prm_compileonly)
+            {
+                // if compiling via assembly we also have to assemble it
+                InsertFile(asmlist, stem + ".s");
+            }
+            InsertFile(objlist, stem + ".o");
+            return 1; /* compiler shouldn't process it*/
+        }
+        else if (Utils::iequal(as, ".asm") || Utils::iequal(as, ".nas") || Utils::iequal(as, ".s"))
+        {
+            InsertFile(objlist, stem + ".o");
+            InsertFile(asmlist, fileToCompile);
+            return 1; /* compiler shouldn't process it*/
+        }
+        else if (Utils::iequal(as, ".l") || Utils::iequal(as, ".a") || Utils::iequal(as, ".lib") ||
+                 Utils::iequal(as, ".dll"))
+        {
+            InsertFile(liblist, fileToCompile);
+            return 1;
+        }
+        else if (Utils::iequal(as, ".rc"))
+        {
+            // if compiling an RC file we also have to link its res file
+            InsertFile(reslist, stem + ".res");
+            InsertFile(rclist, fileToCompile);
+            return 1;
+        }
+        else if (Utils::iequal(as, ".res"))
+        {
+            InsertFile(reslist, fileToCompile);
+            return 1;
+        }
+        else if (Utils::iequal(as, ".o"))
+        {
+            InsertFile(objlist, fileToCompile);
+            return 1;
+        }
     }
-    else if (Utils::HasExt(name, ".rc"))
-    {
-        InsertFile(&reslist, name, ".res", primary);
-        InsertFile(&rclist, name, 0, primary);
-        return 1;
-    }
-    else if (Utils::HasExt(name, ".res"))
-    {
-        InsertFile(&reslist, name, 0, primary);
-        return 1;
-    }
-    else if (Utils::HasExt(name, ".o"))
-    {
-        InsertFile(&objlist, name, 0, primary);
-        return 1;
-    }
-    p = strrchr(name, '\\');
-    if (!p)
-        p = strrchr(name, '/');
-    if (!p)
-        p = name;
-    else
-        p++;
-    Utils::StrCpy(buf, p);
-    InsertFile(&objlist, buf, 0,
-               primary);  // don't add an extension if we don't know what it is, let the linker deal with the file as it will
-
-    // compiling via assembly
-    if (Optimizer::cparams.prm_asmfile && !Optimizer::cparams.prm_compileonly)
-    {
-        InsertFile(&asmlist, buf, ".asm", primary);
-    }
+    // no extenstion or an unknown one, just use the name intact (sans directory specification)
+    index = fileToCompile.find_last_of("\\");
+    if (index < 0)
+        index = fileToCompile .find_last_of("/");
+    if (index > 0)
+        fileToCompile = fileToCompile.substr(index+1);
+    InsertFile(objlist, fileToCompile);
+    
     return 0; /* compiler should process it*/
 }
 
@@ -187,50 +194,57 @@ int RunExternalFiles()
                Optimizer::cparams.verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2
                                                                           : Optimizer::cparams.verbosity);
     }
-    temp[0] = 0;
     if (Optimizer::inputFiles.size())
+    {
         outputfile(outName, sizeof(outName), Optimizer::inputFiles.front().c_str(), ".exe", false);
-    else if (objlist)
-        outputfile(outName, sizeof(outName), (const char*)objlist->data, ".exe", false);
+    }
+    else if (objlist.size())
+    {
+        Utils::StrCpy(temp, objlist.front().c_str());
+        Utils::StripExt(temp);
+        outputfile(outName, sizeof(outName), temp, ".exe", false);
+    }
     else
         Utils::StrCpy(outName, "");
+    temp[0] = 0;
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;
     bool first = false;
-    while (asmlist && !Optimizer::cparams.prm_asmfile)
+    if (!Optimizer::cparams.prm_asmfile || Optimizer::cparams.prm_viaassembly)
     {
-        if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
-            rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" %s %s \"%s\"",
-                                       Optimizer::outputFileName.c_str(), asm_params ? asm_params : "",
-                                       !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
-        else
-            rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"",
-                                       asm_params ? asm_params : "", !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
-        first = true;
-        if (rv)
-            return rv;
-        asmlist = asmlist->next;
+        for (auto&& a : asmlist)
+        {
+            if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
+                rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" %s %s \"%s\"",
+                                           Optimizer::outputFileName.c_str(), asm_params.c_str(),
+                                           !Optimizer::showBanner ? "-!" : "", a.c_str());
+            else
+                rv = ToolChain::ToolInvoke("oasm.exe", Optimizer::cparams.verbosity ? "" : nullptr, "%s %s \"%s\"",
+                                           asm_params.c_str(), !Optimizer::showBanner ? "-!" : "", a.c_str());
+            first = true;
+            if (rv)
+                return rv;
+        }
     }
     if (!Optimizer::prm_include.empty())
         sprintf(args, "\"-i%s\"", Optimizer::prm_include.c_str());
     else
         args[0] = 0;
-    while (rclist)
+    for (auto&& r : rclist)
     {
         if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
             rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"",
-                                       Optimizer::outputFileName.c_str(), rc_params ? rc_params : "",
-                                       !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
+                                       Optimizer::outputFileName.c_str(), rc_params.c_str(),
+                                       !Optimizer::showBanner ? "-!" : "", args, r.c_str());
         else
             rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"",
-                                       rc_params ? rc_params : "", !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
+                                       rc_params.c_str(), !Optimizer::showBanner ? "-!" : "", args, r.c_str());
         first = true;
         if (rv)
             return rv;
-        rclist = rclist->next;
     }
-    if (!Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile && objlist)
+    if (!Optimizer::cparams.prm_compileonly && (!Optimizer::cparams.prm_asmfile || Optimizer::cparams.prm_viaassembly) && objlist.size())
     {
         char with[50000];
         with[0] = 0;
@@ -238,10 +252,9 @@ int RunExternalFiles()
         FILE* fil = Utils::TempName(tempName);
         if (Optimizer::cparams.prm_makelib)
         {
-            while (objlist)
+            for (auto &&o : objlist)
             {
-                fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
-                objlist = objlist->next;
+                fprintf(fil, " \"%s%s\"", temp, o.c_str());
             }
             fclose(fil);
             if (Optimizer::cparams.verbosity)
@@ -275,16 +288,14 @@ int RunExternalFiles()
                 if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
                     Utils::StrCat(args, " /g");
             }
-            while (objlist)
+            for (auto&& o : objlist)
             {
-                fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
-                objlist = objlist->next;
+                fprintf(fil, " \"%s%s\"", temp, o.c_str());
             }
             //        fprintf(fil, "  \"/o%s\" ", outName);
-            while (liblist)
+            for (auto&& lib : liblist)
             {
-                fprintf(fil, " \"%s\"", (char*)liblist->data);
-                liblist = liblist->next;
+                fprintf(fil, " \"%s\"", lib.c_str());
             }
             for (auto&& s : Utils::split(Optimizer::specifiedLibs))
             {
@@ -298,10 +309,9 @@ int RunExternalFiles()
                 fprintf(fil, " climp.l crtdll.l ");
             else
                 fprintf(fil, " climp.l clwin.l ");
-            while (reslist)
+            for (auto && r : reslist)
             {
-                fprintf(fil, " \"%s\"", (char*)reslist->data);
-                reslist = reslist->next;
+                fprintf(fil, " \"%s\"", r.c_str());
             }
             fclose(fil);
             if (Optimizer::cparams.verbosity)
@@ -318,7 +328,7 @@ int RunExternalFiles()
             }
             rv = ToolChain::ToolInvoke(
                 "olink.exe", Optimizer::cparams.verbosity ? with : nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s %s %s %s @%s",
-                link_params ? link_params : "", Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
+                link_params.c_str(), Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "",
                 !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
                 !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "",
                 !Optimizer::prm_OutputImportLibraryFile.empty()

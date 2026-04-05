@@ -292,10 +292,10 @@ int dlHexMain::Run(int argc, char** argv)
     auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, usageText, helpText);
     if (files.size() != 2 || !GetOutputMode())
         ToolChain::Usage(usageText);
-    if (!ReadSections(files[1]))
+    if (!ReadSections(files[1].Name))
         Utils::Fatal("Invalid .rel file failed to read sections");
 
-    std::string outputName = GetOutputName(files[1].c_str());
+    std::string outputName = GetOutputName(files[1].Name.c_str());
     OutputObject* o = nullptr;
     switch (outputMode)
     {

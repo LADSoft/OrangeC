@@ -145,9 +145,9 @@ int dlMzMain::Run(int argc, char** argv)
     if (files.size() != 2 || !GetMode())
         ToolChain::Usage(usageText);
 
-    if (!ReadSections(files[1]))
+    if (!ReadSections(files[1].Name))
         Utils::Fatal("Invalid .rel file failed to read sections");
-    std::string outputName = GetOutputName(files[1].c_str());
+    std::string outputName = GetOutputName(files[1].Name.c_str());
     std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {

@@ -28,7 +28,8 @@
 #include "CmdSwitch.h"
 
 #include <deque>
-
+#include <list>
+#include <string>
 /* Mode values for ARGLIST */
 #define ARG_CONCATSTRING 1
 #define ARG_NOCONCATSTRING 2
@@ -72,7 +73,7 @@ enum class Linkage : int;
 
 Linkage getDefaultLinkage();
 
-extern Optimizer::LIST* clist;
+extern std::list<std::string> clist;
 extern int showVersion;
 extern std::string bePostFile;
 
@@ -149,9 +150,7 @@ void codegen_setup(char select, const char* string);
 void warning_setup(char select, const char* string);
 void ParamTransfer(void);
 void setglbdefs(void);
-int insert_noncompile_file(const char* buf);
-void InsertOneFile(const char* filename, char* path, int drive);
-void InsertAnyFile(const char* filename, char* path, int drive);
+bool IsCompilerSource(const char* buffer);
 void setfile(char* buf, int len, const char* orgbuf, const char* ext);
 void outputfile(char* buf, int len, const char* orgbuf, const char* ext);
 void addinclude(void);

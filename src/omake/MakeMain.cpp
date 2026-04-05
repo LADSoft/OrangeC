@@ -491,10 +491,10 @@ void MakeMain::LoadEquates(CmdFiles& files)
     std::deque<std::string> toRemove;
     for (auto&& name : files)
     {
-        if (name[0] != '-' && name[0] != '/' && name.find_first_of('=') != std::string::npos)
+        if (name.Name[0] != '-' && name.Name[0] != '/' && name.Name.find_first_of('=') != std::string::npos)
         {
-            equates.push_back(name);
-            toRemove.push_back(name);
+            equates.push_back(name.Name);
+            toRemove.push_back(name.Name);
         }
     }
     for (auto&& name : toRemove)
@@ -601,7 +601,7 @@ int MakeMain::Run(int argc, char** argv)
         {
             if (!goals.empty())
                 goals += " ";
-            goals += files[i];
+            goals += files[i].Name;
         }
         SetVariable("MAKECMDGOALS", goals, Variable::o_command_line, false);
         SetMakeFlags();
@@ -731,7 +731,7 @@ int MakeMain::Run(int argc, char** argv)
         {
             for (int i = 1; i < files.size(); i++)
             {
-                maker.AddGoal(files[i]);
+                maker.AddGoal(files[i].Name);
             }
         }
         if (maker.CreateDependencyTree())

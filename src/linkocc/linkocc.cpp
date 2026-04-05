@@ -145,7 +145,7 @@ int linkocc::Run(int argc, char** argv)
     }
     else
     {
-        args += " -o" + Utils::QualifiedFile(files[1].c_str(), ".exe");
+        args += " -o" + Utils::QualifiedFile(files[1].Name.c_str(), ".exe");
     }
     if (prm_debug.GetExists())
     {
@@ -232,7 +232,7 @@ int linkocc::Run(int argc, char** argv)
     }
     for (int i = 1; i < files.size(); i++)
     {
-        args += " \"" + SanitizeExtension(files[i], "") + "\"";
+        args += " \"" + SanitizeExtension(files[i].Name, "") + "\"";
     }
     if (!prm_nodefaultlib.GetExists())
     {

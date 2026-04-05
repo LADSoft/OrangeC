@@ -27,7 +27,8 @@
 
 namespace occx86
 {
-bool InsertOption(const char* name);
-int InsertExternalFile(const char* name, bool primary);
+extern bool IsCompilerSource(const char* name);
+bool InsertOption(const std::string& name);
+int InsertExternalFile(const std::string& name);
 int RunExternalFiles(void);
 }  // namespace occx86

@@ -1323,7 +1323,7 @@ std::string Eval::wildcardinternal(std::string& names)
     {
         if (!rv.empty())
             rv += " ";
-        rv += name;
+        rv += name.Name;
     }
     OrangeC::Utils::BasicLogger::log((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG + 3,"Returning from Eval::wildcardinternal: ", rv);
     return rv;

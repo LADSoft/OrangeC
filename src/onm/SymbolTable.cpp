@@ -148,19 +148,19 @@ void SymbolTable::Load(CmdFiles& files)
     {
         if (!first)
         {
-            LibManager librarian(name, false, true);
+            LibManager librarian(name.Name, false, true);
             if (librarian.IsOpen())
             {
                 if (!librarian.LoadLibrary())
                 {
-                    FILE* stream = fopen(name.c_str(), "rb");
+                    FILE* stream = fopen(name.Name.c_str(), "rb");
                     ObjIeeeIndexManager im1;
                     ObjFactory factory(&im1);
-                    ObjIeee ieee(name.c_str(), true);
+                    ObjIeee ieee(name.Name.c_str(), true);
                     ObjFile* f = ieee.Read(stream, ObjIeee::eAll, &factory);
                     if (!f)
                     {
-                        std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
+                        std::cout << "'" << name.Name << "' is not an object file or library, not loading" << std::endl;
                     }
                     else
                     {
@@ -179,7 +179,7 @@ void SymbolTable::Load(CmdFiles& files)
             }
             else
             {
-                std::cout << "'" << name << "' is not an object file or library, not loading" << std::endl;
+                std::cout << "'" << name.Name << "' is not an object file or library, not loading" << std::endl;
             }
         }
         first = false;

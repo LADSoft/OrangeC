@@ -214,6 +214,7 @@
     <ClInclude Include="BasicLogging.h" />
     <ClInclude Include="CmdFiles.h" />
     <ClInclude Include="CmdSwitch.h" />
+    <ClInclude Include="newoperator.h" />
     <ClInclude Include="SharedMemory.h" />
     <ClInclude Include="ToolChain.h" />
     <ClInclude Include="UTF8.h" />

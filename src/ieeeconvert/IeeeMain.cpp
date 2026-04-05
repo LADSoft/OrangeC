@@ -69,12 +69,12 @@ int IeeeMain::Run(int argc, char** argv)
         ToolChain::Usage(usageText, 2);
     for (int i = 1; i < files.size(); i++)
     {
-        if (files[i].find(".oa") != std::string::npos)
+        if (files[i].Name.find(".oa") != std::string::npos)
         {
-            FILE* fil = fopen(files[i].c_str(), "r");
+            FILE* fil = fopen(files[i].Name.c_str(), "r");
             if (fil)
             {
-                std::string othername = files[i].substr(0, files[i].size() - 1);
+                std::string othername = files[i].Name.substr(0, files[i].Name.size() - 1);
                 ObjIeeeIndexManager index_manager;
                 ObjFactory factory(&index_manager);
                 FILE* outfile = fopen(othername.c_str(), "wb");
@@ -94,7 +94,7 @@ int IeeeMain::Run(int argc, char** argv)
                     }
                     else
                     {
-                        Utils::Fatal("Cannot read %s", files[i].c_str());
+                        Utils::Fatal("Cannot read %s", files[i].Name.c_str());
                     }
                     fclose(outfile);
                 }
@@ -106,23 +106,23 @@ int IeeeMain::Run(int argc, char** argv)
             }
             else
             {
-                std::cout << "Cannot open " << files[i] << std::endl;
+                std::cout << "Cannot open " << files[i].Name << std::endl;
                 rv = 1;
             }
         }
-        else if (files[i].find(".o") != std::string::npos)
+        else if (files[i].Name.find(".o") != std::string::npos)
         {
-            FILE* fil = fopen(files[i].c_str(), "rb");
+            FILE* fil = fopen(files[i].Name.c_str(), "rb");
             if (fil)
             {
-                std::string othername = files[i] + "a";
+                std::string othername = files[i].Name + "a";
                 ObjIeeeIndexManager index_manager;
                 ObjFactory factory(&index_manager);
                 FILE* outfile = fopen(othername.c_str(), "w");
                 if (outfile)
                 {
-                    ObjIeeeBinary input_obj(files[i].c_str());
-                    ObjIeeeAscii output_obj(files[i].c_str());
+                    ObjIeeeBinary input_obj(files[i].Name.c_str());
+                    ObjIeeeAscii output_obj(files[i].Name.c_str());
                     ObjFile* finput_obj = input_obj.Read(fil, ObjIeee::eAll, &factory);
                     if (finput_obj)
                     {
@@ -135,7 +135,7 @@ int IeeeMain::Run(int argc, char** argv)
                     }
                     else
                     {
-                        Utils::Fatal("Cannot read %s", files[i].c_str());
+                        Utils::Fatal("Cannot read %s", files[i].Name.c_str());
                     }
                     fclose(outfile);
                 }
@@ -147,13 +147,13 @@ int IeeeMain::Run(int argc, char** argv)
             }
             else
             {
-                std::cout << "Cannot open " << files[i] << std::endl;
+                std::cout << "Cannot open " << files[i].Name << std::endl;
                 rv = 1;
             }
         }
         else
         {
-            std::cout << "Cannot process " << files[i] << std::endl;
+            std::cout << "Cannot process " << files[i].Name << std::endl;
             rv = 1;
         }
     }

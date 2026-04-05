@@ -259,16 +259,16 @@ int clocc::Run(int argc, char** argv)
     if (prm_compileonly.GetValue())
     {
         compileType = 'c';
-        outputFile = Utils::QualifiedFile(files[1].c_str(), ".o");
+        outputFile = Utils::QualifiedFile(files[1].Name.c_str(), ".o");
     }
     if (prmPreprocessToFile.GetValue())
     {
         compileType = 'i';
-        outputFile = Utils::QualifiedFile(files[1].c_str(), ".i");
+        outputFile = Utils::QualifiedFile(files[1].Name.c_str(), ".i");
     }
     if (!compileType)
     {
-        outputFile = Utils::QualifiedFile(files[1].c_str(), ".exe");
+        outputFile = Utils::QualifiedFile(files[1].Name.c_str(), ".exe");
     }
     if (prmOutputFile.GetExists())
     {
@@ -331,7 +331,7 @@ int clocc::Run(int argc, char** argv)
         }
         else
         {
-            val = files[1].c_str();
+            val = files[1].Name.c_str();
             int n = val.find_last_of('.');
             if (n != std::string::npos)
             {
@@ -643,7 +643,7 @@ int clocc::Run(int argc, char** argv)
             }
     }
     for (int i = 1; i < files.size(); i++)
-        args += std::string(" \"") + files[i] + "\"";
+        args += std::string(" \"") + files[i].Name + "\"";
     std::string tempName;
     FILE* fil = Utils::TempName(tempName);
     fputs(args.c_str(), fil);

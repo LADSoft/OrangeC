@@ -183,7 +183,7 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
     }
     for (auto it = cmdFiles.begin(); rv && it != cmdFiles.end(); ++it)
     {
-        auto name = *it;
+        auto name = (*it).Name;
         Utils::ReplaceAll(name, SpaceThunk, " ");
         Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
         if (!v)

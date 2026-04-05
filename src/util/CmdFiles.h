@@ -28,11 +28,36 @@
 
 #include <vector>
 #include <string>
-
+#include <map>
+#include <memory>
 class CmdSwitchFile;
+class CmdSwitchBase;
+
+class FileEntry
+{
+public:
+    FileEntry(const std::string&name): Name(name) { }
+    FileEntry(FileEntry&& old)
+    {
+        Name = std::move(old.Name);
+    }
+    FileEntry(const FileEntry& old)
+    {
+        Name = old.Name;
+        activeSwitches = old.activeSwitches;
+    }
+    FileEntry &operator=(const FileEntry& old)
+    {
+        Name = old.Name;
+        return *this;
+    }
+
+    std::string Name;
+    std::map<int, std::shared_ptr<CmdSwitchBase>> activeSwitches;
+};
 class CmdFiles
 {
-    typedef std::vector<std::string> FileName;
+    typedef std::vector<FileEntry> FileName;
 
   public:
     CmdFiles() {}
@@ -43,22 +68,24 @@ class CmdFiles
     bool Add(const std::string& name, bool recurseSubdirs = false, bool subdirs = false);
     bool AddFromPath(const std::string& name, const std::string& path);
     bool Add(char** fileList, bool recurseSubdirs = false);
+    bool Add(std::string& name, std::map<int, std::shared_ptr<CmdSwitchBase>>& switches);
     bool Add(CmdFiles& other)
     {
         for (auto a : other.names)
         {
-            Add(a);
+            Add(a.Name, a.activeSwitches);
         }
         return true;
     }
     bool Add(CmdSwitchFile& switchFile);
     void Remove(const std::string& name);
+
     typedef FileName::iterator iterator;
 
     iterator begin() { return names.begin(); }
     iterator end() { return names.end(); }
     size_t size() const { return names.size(); }
-    inline std::string operator[](int index) const { return names[index]; }
+    inline const FileEntry& operator[](int index) const { return names[index]; }
     static const char* DIR_SEP;
     static const char* PATH_SEP;
 

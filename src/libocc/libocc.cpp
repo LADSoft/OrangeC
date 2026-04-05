@@ -145,7 +145,7 @@ int libocc::Run(int argc, char** argv)
         {
             if (argc == 1)
                 Utils::Fatal("Cannot automatically derive library name when not adding or replacing files");
-            outputFile = Utils::QualifiedFile(files[1].c_str(), ".l");
+            outputFile = Utils::QualifiedFile(files[1].Name.c_str(), ".l");
         }
     }
     std::string args;
@@ -161,7 +161,7 @@ int libocc::Run(int argc, char** argv)
         for (int i = 1; i < files.size(); i++)
         {
             args += "\"";
-            args += SanitizeExtension(files[i], "");
+            args += SanitizeExtension(files[i].Name, "");
             args += "\"";
         }
     }

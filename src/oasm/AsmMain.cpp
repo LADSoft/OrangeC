@@ -207,12 +207,19 @@ int AsmMain::Run(int argc, char* argv[])
     }
     for (int i = 1; i < files.size(); i++)
     {
-        std::string inName = files[i];
+        std::string inName = files[i].Name;
+        std::string fileName = files[i].Name;
         int npos = inName.find_last_of(".");
+        if (npos != std::string::npos)
+        {
+            // qualifiedfile is going to strip an extension off arbitrarily, so give it one
+            if (!Utils::HasExt(fileName.c_str(), ".asm") &&!Utils::HasExt(fileName.c_str(), ".s") && !Utils::HasExt(fileName.c_str(), ".bas"))
+                fileName += ".aaaaaaaa";
+        }
         if (npos == std::string::npos || (npos && inName[npos - 1] == '.') ||
             (npos != inName.size() - 1 && inName[npos + 1] == CmdFiles::DIR_SEP[0]))
         {
-            inName = Utils::QualifiedFile(files[i].c_str(), ".asm");
+            inName = Utils::QualifiedFile(fileName.c_str(), ".asm");
         }
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '%', false, Dialect::oasm, true, false, "");
         int n = Defines.GetCount();
@@ -225,10 +232,10 @@ int AsmMain::Run(int argc, char* argv[])
         if (OutputFile.GetValue().size() != 0)
             outName = OutputFile.GetValue();
         else
-            outName = Utils::QualifiedFile(files[i].c_str(), ".o");
+            outName = Utils::QualifiedFile(fileName.c_str(), ".o");
         if (PreprocessOnly.GetValue())
         {
-            std::string working = Utils::QualifiedFile(files[i].c_str(), ".i");
+            std::string working = Utils::QualifiedFile(fileName.c_str(), ".i");
             std::fstream out(working.c_str(), std::ios::out);
             if (!out.is_open())
             {
@@ -257,7 +264,7 @@ int AsmMain::Run(int argc, char* argv[])
                 }
                 else if (CreateListFile.GetValue())
                 {
-                    std::string listingName = Utils::QualifiedFile(files[i].c_str(), ".lst");
+                    std::string listingName = Utils::QualifiedFile(fileName.c_str(), ".lst");
                     if (!listing.Write(listingName, inName, CreateListFile.GetValue('m')))
                     {
                         rv = 1;

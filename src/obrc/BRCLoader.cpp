@@ -263,7 +263,7 @@ bool BRCLoader::load()
     bool rv = true;
     for (int i = 2; i < files.size(); ++i)
     {
-        std::string name = files[i];
+        std::string name = files[i].Name;
         ObjIeeeIndexManager im1;
         ObjFactory fact1(&im1);
         FILE* b = fopen(name.c_str(), "rb");

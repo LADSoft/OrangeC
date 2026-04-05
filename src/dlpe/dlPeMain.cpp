@@ -133,13 +133,13 @@ void dlPeMain::ParseOutResourceFiles(CmdFiles& files)
     std::deque<std::string> toRemove;
     for (const auto& name : files)
     {
-        int npos = std::string(name).find_last_of(".");
+        int npos = std::string(name.Name).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (Utils::iequal(name.substr(npos), ".res"))
+            if (Utils::iequal(name.Name.substr(npos), ".res"))
             {
-                resources.AddFile(name);
-                toRemove.push_back(name);
+                resources.AddFile(name.Name);
+                toRemove.push_back(name.Name);
             }
         }
     }
@@ -153,12 +153,12 @@ bool dlPeMain::ParseOutDefFile(CmdFiles& files)
     std::deque<std::string> toRemove;
     for (const auto& name : files)
     {
-        int npos = std::string(name).find_last_of(".");
+        int npos = std::string(name.Name).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (Utils::iequal(name.substr(npos), ".def"))
+            if (Utils::iequal(name.Name.substr(npos), ".def"))
             {
-                defFile = name;
+                defFile = name.Name;
                 break;
             }
         }
@@ -584,12 +584,12 @@ int dlPeMain::Run(int argc, char** argv)
         timeStamp = (time_t)strtoul(sde, nullptr, 10);
     else
         timeStamp = time(0);
-    if (!LoadStub(files[0]))
+    if (!LoadStub(files[0].Name))
         Utils::Fatal("Missing or invalid stub file");
 
     ObjInt endPhys = 0, endVa = 0, headerSize = 0;
-    outputName = GetOutputName(files[1].c_str());
-    if (!LoadSections(files[1], endVa, endPhys, headerSize))
+    outputName = GetOutputName(files[1].Name.c_str());
+    if (!LoadSections(files[1].Name, endVa, endPhys, headerSize))
         Utils::Fatal("Invalid .rel file failed to read sections");
 
     InitHeader(headerSize, endVa);

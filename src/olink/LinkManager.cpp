@@ -512,20 +512,20 @@ void LinkManager::LoadFiles()
     }
     for (const auto& name : objectFiles)
     {
-        std::string path = name;
-        FILE* infile = GetLibraryPath(name, path);
+        std::string path = name.Name;
+        FILE* infile = GetLibraryPath(name.Name, path);
         if (infile)
         {
-            ObjIeee internalBase(name, ioBase->GetCaseSensitiveFlag());
+            ObjIeee internalBase(name.Name, ioBase->GetCaseSensitiveFlag());
             internalBase.SetDebugInfoFlag(ioBase->GetDebugInfoFlag());
             ObjFile* file = internalBase.Read(infile, ObjIOBase::eAll, factory);
             if (!file)
             {
-                LinkError("Invalid object file " + internalBase.GetErrorQualifier() + " in " + name);
+                LinkError("Invalid object file " + internalBase.GetErrorQualifier() + " in " + name.Name);
             }
             else
             {
-                file->SetInputName(std::move(name));
+                file->SetInputName(std::move(name.Name));
                 if (internalBase.GetBitsPerMAU() < ioBase->GetBitsPerMAU())
                     ioBase->SetBitsPerMAU(internalBase.GetBitsPerMAU());
                 if (internalBase.GetMAUS() > ioBase->GetMAUS())
@@ -542,7 +542,7 @@ void LinkManager::LoadFiles()
         }
         else
         {
-            LinkError("Input file '" + name + "' does not exist.");
+            LinkError("Input file '" + name.Name + "' does not exist.");
         }
     }
 }
@@ -602,7 +602,7 @@ void LinkManager::LoadLibraries()
 {
     for (const auto& name : libFiles)
     {
-        LinkDll checker(name, libPath, true);
+        LinkDll checker(name.Name, libPath, true);
         if (checker.IsDll())
         {
             if (checker.MatchesArchitecture())
@@ -610,26 +610,26 @@ void LinkManager::LoadLibraries()
                 // stdcall version preferred
                 auto temp = std::move(checker.LoadLibrary(true));
                 if (!temp)
-                    LinkError("Internal error while processing '" + name + "'");
+                    LinkError("Internal error while processing '" + name.Name + "'");
                 else
                 {
                     dictionaries.push_back(std::move(temp));
                     // will fall back to C version
                     temp = std::move(checker.LoadLibrary(false));
                     if (!temp)
-                        LinkError("Internal error while processing '" + name + "'");
+                        LinkError("Internal error while processing '" + name.Name + "'");
                     else
                         dictionaries.push_back(std::move(temp));
                 }
             }
             else
             {
-                LinkError("Dll Library '" + name + "' doesn't match architecture");
+                LinkError("Dll Library '" + name.Name + "' doesn't match architecture");
             }
         }
         else
         {
-            std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary(name));
+            std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary(name.Name));
             if (newLibrary)
             {
                 dictionaries.push_back(std::move(newLibrary));
@@ -639,7 +639,7 @@ void LinkManager::LoadLibraries()
                 std::string temp;
                 std::transform(temp.begin(), temp.begin(), temp.end(), tolower);
                 if (ignoreLibs.find(temp) != ignoreLibs.end())
-                    LinkError("Library '" + name + "' does not exist or is not a library");
+                    LinkError("Library '" + name.Name + "' does not exist or is not a library");
             }
         }
     }

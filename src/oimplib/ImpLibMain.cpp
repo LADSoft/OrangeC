@@ -201,7 +201,7 @@ std::string ImpLibMain::GetInputFile(CmdFiles& files, bool& def)
 {
     std::string name;
     def = false;
-    name = files[2];
+    name = files[2].Name;
     int npos = name.find_last_of(".");
     if (npos == std::string::npos)
     {
@@ -388,14 +388,14 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, CmdFiles& files)
         }
 
     for (int i = 2; i < files.size(); i++)
-        AddFile(librarian, files[i].c_str());
+        AddFile(librarian, files[i].Name.c_str());
     for (auto&& name : addFiles)
     {
-        librarian.AddFile(name);
+        librarian.AddFile(name.Name);
     }
     for (auto&& name : replaceFiles)
     {
-        librarian.ReplaceFile(name);
+        librarian.ReplaceFile(name.Name);
     }
     if (modified)
         switch (librarian.SaveLibrary())
@@ -427,7 +427,7 @@ int ImpLibMain::Run(int argc, char** argv)
     if (files.size() < 3)
         ToolChain::Usage(usageText);
     // setup
-    ObjString outputFile = files[1];
+    ObjString outputFile = files[1].Name;
     size_t n = outputFile.find_last_of('.');
     if (n == std::string::npos)
     {

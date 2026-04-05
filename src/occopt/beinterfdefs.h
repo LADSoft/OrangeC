@@ -118,6 +118,7 @@ typedef struct
     int prm_stackprotect;        /* stack protection mode */
     int prm_netcore_version;     /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
     bool prm_exportAll;              /* export all symbols */
+    bool prm_viaassembly;        /* compile via assembly */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */

@@ -174,7 +174,7 @@ int ppMain::Run(int argc, char* argv[])
         static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
         for (auto& str : cppExtensions)
         {
-            if (Utils::HasExt(files[i].c_str(), str.c_str()))
+            if (Utils::HasExt(files[i].Name.c_str(), str.c_str()))
             {
                 cplusplus = true;
                 break;
@@ -189,7 +189,8 @@ int ppMain::Run(int argc, char* argv[])
             dialect = Dialect::c99;
         else
             dialect = Dialect::c89;
-        PreProcessor pp(files[i], includePath.GetValue(), cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(),
+        PreProcessor pp(files[i].Name, includePath.GetValue(),
+                        cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(),
                         false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect, !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
         if (c23Mode.GetValue())
@@ -282,7 +283,7 @@ int ppMain::Run(int argc, char* argv[])
         if (!outputPath.GetValue().empty() && !MakeStubsContinue.GetValue() && !MakeStubsContinueUser.GetValue())
             working = outputPath.GetValue();
         else if (getenv("OCC_LEGACY_OPTIONS"))
-            working = Utils::QualifiedFile(files[i].c_str(), ".i");
+            working = Utils::QualifiedFile(files[i].Name.c_str(), ".i");
 
         std::ostream* outstream = nullptr;
         if (!working.empty())
@@ -377,7 +378,7 @@ int ppMain::Run(int argc, char* argv[])
         if (MakeStubs.GetValue() || MakeStubsUser.GetValue() || MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue())
         {
             std::string inFile;
-            inFile = files[i];
+            inFile = files[i].Name;
             int end = inFile.find_last_of('/');
             if (end == std::string::npos)
                 end = -1;

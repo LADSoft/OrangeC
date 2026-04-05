@@ -135,7 +135,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     }
     else if (files.size())
     {
-        outputFile = Utils::QualifiedFile(files[1].c_str(), ".rel");
+        outputFile = Utils::QualifiedFile(files[1].Name.c_str(), ".rel");
     }
     else if (!PrintFileName.GetExists())
     {
@@ -153,7 +153,7 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
     }
     else if (files.size())
     {
-        mapFile = Utils::QualifiedFile(files[0].c_str(), ".map");
+        mapFile = Utils::QualifiedFile(files[0].Name.c_str(), ".map");
     }
     else if (!PrintFileName.GetExists())
     {
@@ -184,7 +184,7 @@ void LinkerMain::AddFile(LinkManager& linker, const std::string& name)
 void LinkerMain::AddFiles(LinkManager& linker, CmdFiles& files)
 {
     for (int i = 1; i < files.size(); i++)
-        AddFile(linker, files[i]);
+        AddFile(linker, files[i].Name);
 }
 void LinkerMain::SetDefines(LinkManager& linker)
 {

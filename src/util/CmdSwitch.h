@@ -29,13 +29,14 @@
 #include <climits>
 #include <string>
 #include <set>
+#include <map>
 #include <vector>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <deque>
 class CmdSwitchParser;
-
+class CmdFiles;
 class CmdSwitchBase
 {
   public:
@@ -55,6 +56,7 @@ class CmdSwitchBase
 
     virtual bool RequiresArgument() { return true; }
 
+    virtual CmdSwitchBase* Clone() = 0;
   private:
     bool exists;
     char switchChar;
@@ -75,6 +77,10 @@ class CmdSwitchBool : public CmdSwitchBase
     {
         value = flag;
         SetExists();
+    }
+    CmdSwitchBase* Clone() override 
+    { 
+        return new CmdSwitchBool(*this);
     }
 
   private:
@@ -98,6 +104,7 @@ class CmdSwitchInt : public CmdSwitchBase
         SetExists();
     }
     bool RequiresArgument() override { return false; }
+    CmdSwitchBase* Clone() override { return new CmdSwitchInt(*this); }
 
   private:
     int value;
@@ -117,6 +124,8 @@ class CmdSwitchHex : public CmdSwitchBase
     virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
 
+    CmdSwitchBase* Clone() override { return new CmdSwitchHex(*this); }
+
   private:
     int value;
     int lowLimit;
@@ -133,6 +142,7 @@ class CmdSwitchString : public CmdSwitchBase
     CmdSwitchString() : value(""), concat(0) {}
     virtual int Parse(const char* data) override;
     const std::string& GetValue() const { return value; }
+    const char GetConcat() const { return concat; }
     void SetValue(std::string val)
     {
         value = std::move(val);
@@ -143,6 +153,7 @@ class CmdSwitchString : public CmdSwitchBase
         value += c;
         return value;
     }
+    CmdSwitchBase* Clone() override { return new CmdSwitchString(*this); }
 
   protected:
     std::string value;
@@ -158,7 +169,9 @@ class CmdSwitchCombineString : public CmdSwitchString
     {
     }
     CmdSwitchCombineString() {}
+    CmdSwitchCombineString(const CmdSwitchCombineString&) = default;
     virtual int Parse(const char* data) override;
+    CmdSwitchBase* Clone() override { return new CmdSwitchCombineString(*this); }
 };
 class CmdSwitchCombo : public CmdSwitchString
 {
@@ -172,6 +185,7 @@ class CmdSwitchCombo : public CmdSwitchString
     virtual int Parse(const char* data) override;
     bool GetValue() { return selected; }
     bool GetValue(char selector) { return value.find_first_of(selector) != std::string::npos; }
+    CmdSwitchBase* Clone() override { return new CmdSwitchCombo(*this); }
 
   private:
     bool selected;
@@ -187,6 +201,7 @@ class CmdSwitchOutput : public CmdSwitchCombineString
     }
     CmdSwitchOutput(const CmdSwitchOutput& orig) = default;
     virtual int Parse(const char* data) override;
+    CmdSwitchBase* Clone() override { return new CmdSwitchOutput(*this); }
 
   private:
     const char* extension;
@@ -214,9 +229,10 @@ class CmdSwitchDefine : public CmdSwitchBase
         if (defines.size())
             defines.back()->argnum = an;
     }
+    CmdSwitchBase* Clone() override { return new CmdSwitchDefine(*this); }
 
   private:
-    std::vector<std::unique_ptr<define>> defines;
+    std::vector<std::shared_ptr<define>> defines;
 };
 class CmdSwitchFile : public CmdSwitchString
 {
@@ -226,11 +242,13 @@ class CmdSwitchFile : public CmdSwitchString
     {
     }
     CmdSwitchFile(CmdSwitchParser& parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) {}
+    CmdSwitchFile(const CmdSwitchFile&) = default;
 
     virtual int Parse(const char* data) override;
 
     int GetCount() const { return argc; }
     char** const GetValue() { return argv.get(); }
+    CmdSwitchBase* Clone() override { return new CmdSwitchFile(*this); }
 
   protected:
     void Dispatch(char* data);
@@ -239,8 +257,9 @@ class CmdSwitchFile : public CmdSwitchString
   private:
     friend class CmdFiles;
     int argc;
-    std::unique_ptr<char*[]> argv;
+    std::shared_ptr<char*[]> argv;
     CmdSwitchParser* Parser;
+    std::shared_ptr<CmdFiles> files = nullptr;
 };
 class CmdSwitchParser
 {
@@ -248,9 +267,9 @@ class CmdSwitchParser
     CmdSwitchParser() {}
     ~CmdSwitchParser() {}
 
-    bool Parse(const std::string& v, int* argc, char* argv[]);
+    bool Parse(const std::string& v, int* argc, char* argv[], CmdFiles* fileCache = nullptr);
 
-    bool Parse(int* argc, char* argv[]);
+    bool Parse(int* argc, char* argv[], CmdFiles* fileCache = nullptr);
 
     CmdSwitchParser& operator+=(CmdSwitchBase* Switch)
     {
@@ -260,10 +279,26 @@ class CmdSwitchParser
 
     CmdSwitchBase* Find(const char* sw, bool useLongNames, bool toErr, bool longErr);
 
+    void AddCurrent(CmdSwitchBase* orig)
+    {
+        currentlySelected[orig] = std::shared_ptr<CmdSwitchBase>(orig->Clone());
+    }
+    std::map<int, std::shared_ptr<CmdSwitchBase>> GetCurrent()
+    { 
+        std::map<int, std::shared_ptr<CmdSwitchBase>> rv;
+        for (auto s : currentlySelected)
+        {
+            rv[s.second->GetSwitchChar()] = s.second;
+        }
+        return rv;
+    }
+    void ResetCurrent() { currentlySelected.clear();
+    }
   protected:
     void ScanEnv(char* output, size_t len, const char* string);
 
   private:
     std::set<CmdSwitchBase*> switches;
+    std::map<CmdSwitchBase*, std::shared_ptr<CmdSwitchBase>> currentlySelected;
 };
 #endif

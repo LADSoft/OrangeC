@@ -382,11 +382,16 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
     OutputIntermediate(optimizerMem);
     if (WriteIcdFile.GetValue() || (cparams.prm_icdfile && !name.empty()))
     {
-        char buf[260];
-        Utils::StrCpy(buf, name.c_str());
-        Utils::StripExt(buf);
-        Utils::AddExt(buf, ".icd2");
-        icdFile = fopen(buf, "w");
+        int index = name.find_last_of('#');
+        std::string fileToCompile = name.substr(0, index);
+        std::string as = name.substr(index + 1);
+        std::string stem = fileToCompile;
+        if (!as.empty() && Utils::HasExt(stem.c_str(), as.c_str()))
+        {
+            index = stem.find_last_of('.');
+            stem = stem.substr(0, index);
+        }
+        icdFile = fopen((stem + ".icd2").c_str(), "w");
         if (!icdFile)
             return;
         OutputIcdFile();
@@ -446,14 +451,9 @@ MAINTRY
         }
         else
         {
-            char buf[260];
-            Utils::StrCpy(buf, files[1].c_str());
-            Utils::StripExt(buf);
-            Utils::StrCat(buf, "_1");
-            Utils::AddExt(buf, ".icf");
-            outputFile = buf;
+            outputFile = files[1].Name + "2";
         }
-        FILE* fil = fopen(files[1].c_str(), "rb");
+        FILE* fil = fopen(files[1].Name.c_str(), "rb");
         if (fil)
         {
             parserMem = new SharedMemory(MAX_SHARED_REGION);
@@ -470,8 +470,8 @@ MAINTRY
     }
     else
     {
-        parserMem = new SharedMemory(0, files[1].c_str());
-        optimizerMem = new SharedMemory(0, files[2].c_str());
+        parserMem = new SharedMemory(0, files[1].Name.c_str());
+        optimizerMem = new SharedMemory(0, files[2].Name.c_str());
         if (!parserMem->Open() || !optimizerMem->Open())
         {
             Utils::Fatal("invalid shared memory specifiers");

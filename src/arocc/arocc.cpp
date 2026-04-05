@@ -103,9 +103,9 @@ int arocc::Run(int argc, char** argv)
     FILE* fil = Utils::TempName(tempName);
     fputs(select, fil);
     for (int i = 2; i < files.size(); i++)
-        fprintf(fil, " %s", files[i].c_str());
+        fprintf(fil, " %s", files[i].Name.c_str());
     fclose(fil);
-    auto rv = ToolChain::ToolInvoke("olib.exe", nullptr, " -! -c %s @%s", files[1].c_str(), tempName.c_str());
+    auto rv = ToolChain::ToolInvoke("olib.exe", nullptr, " -! -c %s @%s", files[1].Name.c_str(), tempName.c_str());
     unlink(tempName.c_str());
     return rv;
 }

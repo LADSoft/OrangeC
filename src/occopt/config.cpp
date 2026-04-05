@@ -70,7 +70,7 @@ void SelectBackendData()
     {
         const char* p = prm_assemblerSpecifier.c_str();
         char* q = assembler;
-        cparams.prm_compileonly = true;
+        cparams.prm_compileonly = !cparams.prm_viaassembly;
         while (*p && !isspace(*p) && *p != ';')
             *q++ = *p++;
         *q = 0;

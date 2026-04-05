@@ -148,15 +148,15 @@ int LibMain::Run(int argc, char** argv)
         ToolChain::Usage(usageText);
 
     // ar-like behavior for autoconf support
-    if (!strcmp(files[1].c_str(), "cru"))
+    if (!strcmp(files[1].Name.c_str(), "cru"))
     {
         mode = REPLACE;
-        files.Remove(files[1]);
+        files.Remove(files[1].Name);
     }
     ObjString outputFile = OutputFile.GetValue();
     if (outputFile.empty())
     {
-        outputFile = files[1];
+        outputFile = files[1].Name;
         files.Remove(outputFile);
     }
     // setup
@@ -180,14 +180,14 @@ int LibMain::Run(int argc, char** argv)
             return 1;
         }
     for (int i = 1; i < files.size(); i++)
-        AddFile(librarian, files[i].c_str());
+        AddFile(librarian, files[i].Name.c_str());
     for (const auto& name : addFiles)
     {
-        librarian.AddFile(name);
+        librarian.AddFile(name.Name);
     }
     for (auto&& name : replaceFiles)
     {
-        librarian.ReplaceFile(name);
+        librarian.ReplaceFile(name.Name);
     }
     if (modified)
         switch (librarian.SaveLibrary())

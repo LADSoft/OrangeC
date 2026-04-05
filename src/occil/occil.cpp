@@ -143,27 +143,35 @@ void ResolveMSILExterns()
             ++it;
     }
 }
-void outputfile(char* buf, int len, const char* name, const char* ext)
+void outputfile(char* buf, int len, const char* namein, const char* ext)
 {
-    Utils::StrCpy(buf, len, Optimizer::outputFileName.c_str());
+    std::string name = namein;
+    int index = name.find_last_of('#');
+    std::string fileToCompile = name.substr(0, index);
+    std::string as = name.substr(index + 1);
+    std::string stem = fileToCompile;
+    if (!as.empty() && Utils::HasExt(stem.c_str(), as.c_str()))
+    {
+        index = stem.find_last_of('.');
+        stem = stem.substr(0, index);
+    }
+    Utils::StrCpy(buf, len, stem.c_str());
     if (buf[0] && buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
         // just add our name and ext
-        Utils::StrCat(buf, len, name);
-        Utils::StripExt(buf);
+        Utils::StrCat(buf, len, stem.c_str());
         Utils::AddExt(buf, ext);
     }
     else if (buf[0] == 0)  // no output file specified, put the output wherever the input was...
     {
-        Utils::StrCpy(buf, len, name);
+        Utils::StrCpy(buf, len, stem.c_str());
         char* p = (char*)strrchr(buf, '\\');
         char* q = (char*)strrchr(buf, '/');
         if (q > p)
             p = q;
         if (p)
             Utils::StrCpy(buf, len, p + 1);
-        Utils::StripExt(buf);
         if (len - 1 - strlen(buf) >= strlen(ext))
             Utils::AddExt(buf, ext);
     }
@@ -347,12 +355,14 @@ bool LoadFile(SharedMemory* parserMem, std::string fileName)
                 outputfile(outFile, sizeof(outFile), Optimizer::outputFileName.c_str(), Optimizer::chosenAssembler->objext);
             else
                 outputfile(outFile, sizeof(outFile), Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
-            InsertExternalFile(outFile, false);
+            InsertExternalFile(outFile);
             fileName = outFile;
         }
         else
         {
             fileName = Optimizer::inputFiles.front();
+            int index = fileName.find('#');
+            fileName = fileName.substr(0, index);
         }
     }
     msil_main_preprocess((char*)fileName.c_str());
@@ -365,7 +375,7 @@ bool SaveFile(const char* name)
     {
         Utils::StrCpy(infile, name);
         outputfile(outFile, sizeof(outFile), name, Optimizer::chosenAssembler->objext);
-        InsertExternalFile(outFile, false);
+        InsertExternalFile(outFile);
         Optimizer::outputFile = fopen(outFile, "wb");
         if (!Optimizer::outputFile)
             return false;
@@ -484,7 +494,7 @@ MAINTRY
         }
         for (const auto& f : Optimizer::backendFiles)
         {
-            InsertExternalFile(f.c_str(), false);
+            InsertExternalFile(f);
         }
         std::list<std::string> files = Optimizer::inputFiles;
         if (files.size())

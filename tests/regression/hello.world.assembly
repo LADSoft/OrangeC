@@ -1,0 +1,35 @@
+;File hello.world.s
+;Compiler version OCC Version 7.0.1
+        section code align=2        use32
+        section data align=8        use32
+        section bss  align=8        use32
+        section const  align=8        use32
+        section string  align=2        use32
+        section tls  align=8 use32
+        section cstartup align=2 use32
+        section crundown align=2 use32
+        section tstartup align=2 use32
+        section trundown align=2 use32
+section code
+[global _main]
+; main
+_main:
+; Line 1: int main() 
+L_2:
+; Line 3: 	printf("hello, world"); 
+        push    dword L_1
+        call    _printf
+        add     esp,byte 04h
+; Line 4: } 
+        xor     eax,eax
+L_3:
+        ret
+section data
+section string
+L_1:
+        db "hello, world"
+        db      00h
+section data
+section const
+
+[extern _printf]

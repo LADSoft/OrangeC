@@ -178,7 +178,8 @@ char* Utils::FullQualify(char* string)
     }
     else if (string[1] != ':')
     {
-        char *p, *q = string;
+        char* p;
+        const char *q = string;
         getcwd(buf, 265);
         p = buf + strlen(buf);
         if (!strncmp(q, ".\\", 2))

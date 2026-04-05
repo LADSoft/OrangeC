@@ -43,6 +43,7 @@ CmdSwitchBool rcMain::Boolv(SwitchParser, 'v');
 CmdSwitchOutput rcMain::OutputFile(SwitchParser, 'o', ".res");
 CmdSwitchDefine rcMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString rcMain::includePath(SwitchParser, 'i', ';');
+CmdSwitchCombineString rcMain::includePath2(SwitchParser, 'I', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
 const char* rcMain::helpText =
@@ -51,7 +52,7 @@ R"help([options] file
 This program creates win32 resource files from resource file scripts.
 
   @filename  use response file
-  /Dxxx  Define something             /ixxx             Set include file path
+  /Dxxx  Define something             /ixxx, /I         Set include file path
   /Lxx   Set default language id      /oxxx             Set output file name
   /r     reserved for compatability   /t                reserved for compatability
   /v     reserved for compatability   /V, --version     Show version and date
@@ -85,17 +86,21 @@ int rcMain::Run(int argc, char* argv[])
         Utils::Fatal("Cannot specify output file for multiple input files");
     std::string sysSrchPth;
     std::string srchPth;
-    if (!includePath.GetValue().empty())
+
+    std::string ipath = includePath.GetValue();
+    if (includePath2.GetExists())
+        ipath = ipath + ";" + includePath2.GetValue();
+    if (!ipath.empty())
     {
-        size_t n = includePath.GetValue().find_first_of(';');
+        size_t n = ipath.find_first_of(';');
         if (n == std::string::npos)
         {
-            sysSrchPth = includePath.GetValue();
+            sysSrchPth = ipath;
         }
         else
         {
-            sysSrchPth = includePath.GetValue().substr(0, n);
-            srchPth = includePath.GetValue().substr(n + 1);
+            sysSrchPth = ipath.substr(0, n);
+            srchPth = ipath.substr(n + 1);
         }
     }
     char* cpath = getenv("CPATH");

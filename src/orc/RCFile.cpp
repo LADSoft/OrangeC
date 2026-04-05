@@ -447,6 +447,10 @@ Resource* RCFile::GetRes()
         rv = nullptr;
         switch (type)
         {
+            case kw::star:
+                SkimPrototype();
+                done = false;
+                continue;
             case (kw)-1:
                 for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);

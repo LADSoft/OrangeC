@@ -44,6 +44,7 @@ class rcMain
     static CmdSwitchOutput OutputFile;
     static CmdSwitchDefine Defines;
     static CmdSwitchCombineString includePath;
+    static CmdSwitchCombineString includePath2;
     static CmdSwitchString Language;
 
     static const char* usageText;

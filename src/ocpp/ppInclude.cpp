@@ -302,7 +302,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
     }
     // if not there get the file path of the last included file, and search there
     // #include_next cannot search in the same directory as the current file by definition, so skip the last included dir too
-    if (rv.empty() && !skipFirst && current)
+    if (rv.empty() && !skipFirst && dialect != Dialect::orc && current)
     {
         int throwaway = 0;
         rv = current->GetRealFile();

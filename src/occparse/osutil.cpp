@@ -1274,7 +1274,7 @@ int ccinit(int argc, char* argv[])
         return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
                prmPrintProgName.GetExists() || MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ||
                (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
-    });
+    }, EXIT_WITHOUT_RUNNING_OPTIMIZER);
 
     argv[0] = old;
     Optimizer::showBanner = prm_verbose.GetExists();

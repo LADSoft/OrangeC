@@ -97,7 +97,7 @@ void ToolChain::Usage(const char* text, int exitVal)
     exit(exitVal);
 }
 CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc, char** argv, const char* usageText,
-                                        const char* helpText, std::function<bool()> noBanner)
+                                        const char* helpText, std::function<bool()> noBanner, int exitVal)
 {
     CmdSwitchBool NoLogo(SwitchParser, '!', false, {"nologo"});
     CmdSwitchBool ShowVersion(SwitchParser, 'v', false, {"version"});
@@ -122,7 +122,7 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
     {
         if (!noBanner || !noBanner())
             ToolChain::ShowBanner();
-        ToolChain::Usage(usageText);
+        ToolChain::Usage(usageText, exitVal);
     }
     if (noBanner && noBanner())
         NoLogo.SetValue(true);
@@ -131,7 +131,7 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
     if (ShowVersion.GetValue())
         ToolChain::ShowVersion();
     if (ShowHelp.GetExists())
-        ToolChain::Usage(helpText);
+        ToolChain::Usage(helpText, exitVal);
     rv.Add(File);
     return rv;
 }

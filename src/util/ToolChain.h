@@ -49,7 +49,7 @@ class ToolChain
 {
   public:
     static CmdFiles StandardToolStartup(CmdSwitchParser& SwitchParser, int argc, char** argv, const char* usageText,
-                                        const char* helpText, std::function<bool()> noBanner = nullptr);
+                                        const char* helpText, std::function<bool()> noBanner = nullptr, int exitVal = 0);
     static void ShowBanner();
     static void ShowVersion();
     [[noreturn]] static void Usage(const char* text, int exitVal = 0);

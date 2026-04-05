@@ -581,19 +581,16 @@ std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
     {
         rv.reset();
         rv = std::make_unique<LinkLibrary>(Utils::FindOnPath(name, libPath), caseSensitive);
+        if (!rv || !rv->IsOpen())
+        {
+            rv.reset();
+        }
     }
     if (rv)
     {
-        if (rv->IsOpen())
+        if (!rv->Load())
         {
-            if (!rv->Load())
-            {
-                rv.reset(nullptr);
-            }
-        }
-        else
-        {
-            rv.reset(nullptr);
+            rv.reset();
         }
     }
     return rv;
@@ -636,9 +633,9 @@ void LinkManager::LoadLibraries()
             }
             else
             {
-                std::string temp;
+                std::string temp = name.Name;
                 std::transform(temp.begin(), temp.begin(), temp.end(), tolower);
-                if (ignoreLibs.find(temp) != ignoreLibs.end())
+                if (ignoreLibs.find(temp) == ignoreLibs.end())
                     LinkError("Library '" + name.Name + "' does not exist or is not a library");
             }
         }

@@ -227,22 +227,22 @@ void CmdSwitchFile::Dispatch(char* data)
 {
     int max = 10;
     argc = 1;
-    argv.reset(new char*[max]);
-    argv[0] = (char*)"";
+    argv = std::make_shared<char **>(new char*[max]);
+    (*argv)[0] = (char*)"";
     while (*data)
     {
         data = GetStr(data);
         if (argc == max)
         {
             max += 10;
-            std::shared_ptr<char*[]> p = std::move(argv);
-            argv.reset(new char*[max]);
-            memcpy(argv.get(), p.get(), argc * sizeof(char*));
+            std::shared_ptr<char **> p = argv;
+            argv = std::make_shared<char **>(new char*[max]);
+            memcpy(*argv, *p, argc * sizeof(char*));
         }
     }
-    argv[argc] = 0;
+    (*argv)[argc] = 0;
     files = std::make_shared<CmdFiles>();
-    Parser->Parse(&argc, argv.get(), files.get());
+    Parser->Parse(&argc, *argv, files.get());
 }
 char* CmdSwitchFile::GetStr(char* data)
 {
@@ -296,7 +296,7 @@ char* CmdSwitchFile::GetStr(char* data)
     int len = strlen(buf.get()) + 1;
     char* x = new char[len];
     Utils::StrCpy(x, len, buf.get());
-    argv[argc++] = x;
+    (*argv)[argc++] = x;
     return data;
 }
 CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName, bool toErr = true, bool longErr = false)

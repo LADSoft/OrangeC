@@ -247,7 +247,7 @@ class CmdSwitchFile : public CmdSwitchString
     virtual int Parse(const char* data) override;
 
     int GetCount() const { return argc; }
-    char** const GetValue() { return argv.get(); }
+    char** const GetValue() { return *argv; }
     CmdSwitchBase* Clone() override { return new CmdSwitchFile(*this); }
 
   protected:
@@ -257,7 +257,7 @@ class CmdSwitchFile : public CmdSwitchString
   private:
     friend class CmdFiles;
     int argc;
-    std::shared_ptr<char*[]> argv;
+    std::shared_ptr<char**> argv;
     CmdSwitchParser* Parser;
     std::shared_ptr<CmdFiles> files = nullptr;
 };

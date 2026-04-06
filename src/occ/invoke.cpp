@@ -87,6 +87,20 @@ bool IsCompilerSource(const char* buffer)
     }
     return found;
 }
+bool IsAssemblerSource(const char* buffer)
+{
+    bool found = false;
+    static std::list<std::string> acceptedExtensions = {".asm", ".s", ".nas"};
+    for (auto& str : acceptedExtensions)
+    {
+        if (Utils::HasExt(buffer, str.c_str()) || Utils::iequal(buffer, str.c_str()))
+        {
+            found = true;
+            break;
+        }
+    }
+    return found;
+}
 static void InsertFile(std::list<std::string>& target, const std::string& name)
 {
     int index = name.find_last_of("#");
@@ -111,7 +125,7 @@ int InsertExternalFile(const std::string& name)
     std::string fileToCompile = name.substr(0, index);
     std::string as = name.substr(index + 1);
     std::string stem = fileToCompile;
-    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) || (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str()))))
+    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) || (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str())) || (IsAssemblerSource(fileToCompile.c_str()) && IsAssemblerSource(("a" + as).c_str()))))
     {
         index = stem.find_last_of('.');
         stem = stem.substr(0, index);
@@ -134,7 +148,7 @@ int InsertExternalFile(const std::string& name)
             InsertFile(objlist, stem + ".o");
             return 1; /* compiler shouldn't process it*/
         }
-        else if (Utils::iequal(as, ".asm") || Utils::iequal(as, ".nas") || Utils::iequal(as, ".s"))
+        else if (IsAssemblerSource(("a" + as).c_str()))
         {
             InsertFile(objlist, stem + ".o");
             InsertFile(asmlist, fileToCompile);

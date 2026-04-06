@@ -213,7 +213,7 @@ int AsmMain::Run(int argc, char* argv[])
         if (npos != std::string::npos)
         {
             // qualifiedfile is going to strip an extension off arbitrarily, so give it one
-            if (!Utils::HasExt(fileName.c_str(), ".asm") &&!Utils::HasExt(fileName.c_str(), ".s") && !Utils::HasExt(fileName.c_str(), ".bas"))
+            if (!Utils::HasExt(fileName.c_str(), ".asm") &&!Utils::HasExt(fileName.c_str(), ".s") && !Utils::HasExt(fileName.c_str(), ".nas"))
                 fileName += ".aaaaaaaa";
         }
         if (npos == std::string::npos || (npos && inName[npos - 1] == '.') ||

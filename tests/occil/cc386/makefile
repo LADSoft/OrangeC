@@ -1,6 +1,4 @@
-ifneq "$(NETCORE)" ""
 NETCOREDLL := --netcore 0
-endif
 
 ifeq "$(COMPILER)" "gcc-linux"
 NULLDEV := /dev/null

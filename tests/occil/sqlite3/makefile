@@ -1,6 +1,5 @@
-ifneq "$(NETCORE)" ""
+NETCORE := 1
 NETCOREDLL := --netcore 0
-endif
 
 
 ifeq "$(COMPILER)" "gcc-linux"
@@ -28,8 +27,7 @@ else
 main: zzz.dll test.exe
 endif
 sqlite3.dll: sqlite3.c
-	occil $(NETCOREDLL) /9 /o$^ /Wd /Lkernel32 $< /Nsqlite3.sqlite
-
+	occil $(NETCOREDLL) /9 /o$* /Wd /Lkernel32 $< /Nsqlite3.sqlite
 zzz.dll:
 	occil $(NETCOREDLL) /Wd zzz.c /Nzzz.ar
 

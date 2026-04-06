@@ -155,7 +155,7 @@ void outputfile(char* buf, int len, const char* namein, const char* ext)
         index = stem.find_last_of('.');
         stem = stem.substr(0, index);
     }
-    Utils::StrCpy(buf, len, stem.c_str());
+    Utils::StrCpy(buf, len, Optimizer::outputFileName.c_str());
     if (buf[0] && buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name

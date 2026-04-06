@@ -1,7 +1,4 @@
-ifneq "$(NETCORE)" ""
-NETCORE := -DNETCORE
 NETCOREDLL := --netcore 0
-endif
 
 ifeq "$(COMPILER)" "gcc-linux"
 NULLDEV := /dev/null
@@ -18,13 +15,13 @@ lsmsilcrtl.dll:
 	-copy $(ORANGEC)\bin\lsmsilcrtl*.dll *.* > $(NULLDEV)
 
 cc386x:
-	$(MAKE) -Ccc386 $(NETCORE)
+	$(MAKE) -Ccc386
 
 sqlite3x:
-	$(MAKE) -Csqlite3 $(NETCORE)
+	$(MAKE) -Csqlite3
 
 szipx:
-	$(MAKE) -Cszip $(NETCORE)
+	$(MAKE) -Cszip
 
 local: lsmsilcrtl.dll $(CURFILES:.c=.exe)
 

@@ -68,7 +68,7 @@ class CmdFiles
     bool Add(const std::string& name, bool recurseSubdirs = false, bool subdirs = false);
     bool AddFromPath(const std::string& name, const std::string& path);
     bool Add(char** fileList, bool recurseSubdirs = false);
-    bool Add(std::string& name, std::map<int, std::shared_ptr<CmdSwitchBase>>& switches);
+    bool Add(std::string& name, const std::map<int, std::shared_ptr<CmdSwitchBase>>& switches);
     bool Add(CmdFiles& other)
     {
         for (auto a : other.names)

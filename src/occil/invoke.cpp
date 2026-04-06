@@ -57,23 +57,43 @@ bool IsCompilerSource(const char* buffer)
     }
     return found;
 }
-static void InsertFile(std::list<std::string>& target, const std::string& name)
+static void InsertFile(std::list<std::string>& target, const std::string& name, const std::string& as)
 {
     int index = name.find_last_of("#");
     if (index >= 0)
         return;
     if (!outFileName[0])
     {
-        Utils::StrCpy(outFileName, name.c_str());
-        Utils::StripExt(outFileName);
-        Utils::StrCat(outFileName, Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe");
+        const char *ext = Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe";        
+        Utils::StrCpy(outFileName, Optimizer::outputFileName.c_str());
+        if (outFileName[0] && outFileName[strlen(outFileName) - 1] == '\\')
+        {
+           // output file is a path specification rather than a file name
+           // just add our name and ext
+           Utils::StrCat(outFileName, name.c_str());
+           Utils::StripExt(outFileName);
+           Utils::AddExt(outFileName, ext);
+        }
+        else if (outFileName[0] == 0)  // no output file specified, put the output wherever the input was...
+        {
+            Utils::StrCpy(outFileName, name.c_str());
+            char* p = (char*)strrchr(outFileName, '\\');
+            char* q = (char*)strrchr(outFileName, '/');
+            if (q > p)
+                p = q;
+            if (p)
+                Utils::StrCpy(outFileName, p + 1);
+            Utils::StripExt(outFileName);
+            if (sizeof(outFileName) - 1 - strlen(outFileName) >= strlen(ext))
+                Utils::AddExt(outFileName, ext);
+        }
     }
     for (auto&& i : target)
     {
 
         if (Utils::iequal(i, name))
             return;
-    }
+    }	
     target.push_back(name);
 }
 
@@ -101,23 +121,23 @@ int InsertExternalFile(const std::string&name)
     {
         if (Utils::iequal(as, ".c"))
         {
-            InsertFile(objlist, stem + ".ilo");
+            InsertFile(objlist, stem + ".ilo", as);
             return 1;
         }
         else if (Utils::iequal(as, ".rc"))
         {
-            InsertFile(reslist, stem + ".res");
-            InsertFile(rclist, fileToCompile);
+            InsertFile(reslist, stem + ".res", as);
+            InsertFile(rclist, fileToCompile, as);
             return 1;
         }
         else if (Utils::iequal(as, ".res"))
         {
-            InsertFile(reslist, fileToCompile);
+            InsertFile(reslist, fileToCompile, as);
             return 1;
         }
         else if (Utils::iequal(as, ".ilo"))
         {
-            InsertFile(objlist, fileToCompile);
+            InsertFile(objlist, fileToCompile, as);
             return 1;
         }
     }
@@ -127,7 +147,7 @@ int InsertExternalFile(const std::string&name)
         index = fileToCompile.find_last_of("/");
     if (index > 0)
         fileToCompile = fileToCompile.substr(index + 1);
-    InsertFile(objlist, fileToCompile);
+    InsertFile(objlist, fileToCompile, as);
 
     return 0; /* compiler should process it*/
 }

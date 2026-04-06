@@ -3,7 +3,7 @@
      if "%TRAVIS_OS_NAME%" NEQ "" (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
-     if "%ORANGEC_HOME%" NEQ "" (
+     if "%APPVEYOR%" EQU "" (
          del /Q ..\bin\*.* 2> NUL
          del /Q ..\lib\*.* 2> NUL
          del /Q ..\include\*.* 2> NUL
@@ -21,7 +21,7 @@
               for /f %%i in ('cscript //nologo %temp%\time.js') do set SOURCE_DATE_EPOCH=%%i
               del %temp%\time.js
               copy omake.exe \orangec\temp
-     if "%ORANGEC_HOME%" EQU "" (
+     if "%APPVEYOR%" NEQ "" (
               call c:\orangec\appveyorversion.bat
      )
               IF "%BUILD_PROFILE%" EQU "OCCIL" goto occil

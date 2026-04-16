@@ -61,7 +61,7 @@ class Listing
     void ListLine(std::fstream& out, std::string& line, ListedLine* cur, bool macro);
 
   private:
-    std::deque<std::unique_ptr<ListedLine>> list;
+    std::deque<std::shared_ptr<ListedLine>> list;
     std::string blanks;
     std::string zeros;
     bool bigEndian;

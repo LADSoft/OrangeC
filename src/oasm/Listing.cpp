@@ -201,10 +201,10 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
     }
     std::vector<std::string> lines;
     int lineno = 1;
-    std::unique_ptr<ListedLine> cur;
+    std::shared_ptr<ListedLine> cur;
     if (list.size())
     {
-        cur.reset(list.front().release());
+        cur = list.front();
         list.pop_front();
     }
     while (!in.eof())
@@ -227,7 +227,7 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
             ListLine(out, bufs, cur.get(), false);
             if (list.size())
             {
-                cur.reset(list.front().release());
+                cur = list.front();
                 list.pop_front();
             }
             else
@@ -249,7 +249,7 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
                 ListLine(out, lines[cur->lineno - 1], cur.get(), true);
             if (list.size())
             {
-                cur.reset(list.front().release());
+                cur = list.front();
                 list.pop_front();
             }
             else

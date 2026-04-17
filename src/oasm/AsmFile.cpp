@@ -77,7 +77,7 @@ bool AsmFile::Read()
                 if (npos != std::string::npos && eol[npos] == ':')
                 {
                     // treat as label
-                    int lineno = preProcessor.GetMainLineNo();
+                    int lineno = preProcessor.GetErrLineNo();
                     std::string name = GetToken()->GetChars();
                     NextToken();
                     DoLabel(name, lineno);
@@ -88,7 +88,7 @@ bool AsmFile::Read()
                     NoAbsolute();
                     NeedSection();
                     inInstruction = true;
-                    int lineno = preProcessor.GetMainLineNo();
+                    int lineno = preProcessor.GetErrLineNo();
                     std::shared_ptr<Instruction> ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
                     if (lineno >= 0)
                         listing.Add(ins, lineno, preProcessor.InMacro());
@@ -99,7 +99,7 @@ bool AsmFile::Read()
             }
             else
             {
-                int lineno = preProcessor.GetMainLineNo();
+                int lineno = preProcessor.GetErrLineNo();
                 std::string name = GetId();
                 DoLabel(name, lineno);
             }
@@ -231,7 +231,7 @@ void AsmFile::DoDB()
     short val = 0;
     std::deque<std::shared_ptr<Fixup>> fixups;
     NeedSection();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     do
     {
         int errLine = Errors::GetErrorLine();
@@ -306,7 +306,7 @@ void AsmFile::DoDD()
     int size = 0;
     NeedSection();
     int val = 0;
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     std::deque<std::shared_ptr<Fixup>> fixups;
     do
     {
@@ -360,7 +360,7 @@ void AsmFile::DoDQ()
     int size = 0;
     NeedSection();
     int val = 0;
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     std::deque<std::shared_ptr<Fixup>> fixups;
     do
     {
@@ -394,14 +394,14 @@ void AsmFile::DoFloat()
     int size = 0;
     bool tbyte = GetKeyword() == kw::DT;
     NeedSection();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     std::deque<std::shared_ptr<Fixup>> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        int lineno = preProcessor.GetMainLineNo();
+        int lineno = preProcessor.GetErrLineNo();
         std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
@@ -429,7 +429,7 @@ void AsmFile::ReserveDirective(int n)
     NextToken();
     int errLine = Errors::GetErrorLine();
     std::string errFile = Errors::GetFileName();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     int num = GetValue();
     if (num <= 0)
         throw new std::runtime_error("Invalid reserve size");
@@ -465,7 +465,7 @@ void AsmFile::EquDirective()
 {
     if (!thisLabel)
         throw new std::runtime_error("Label needed");
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     NextToken();
     std::shared_ptr<AsmExprNode> num(GetNumber());
     int n = 0;
@@ -964,7 +964,7 @@ void AsmFile::StringDirective()
     int size = 0;
     short val = 0;
     NeedSection();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     NextToken();
     int width = GetValue();
     do
@@ -996,14 +996,14 @@ void AsmFile::SingleDirective()
     unsigned char buf[4000];
     int size = 0;
     NeedSection();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     std::deque<std::shared_ptr<Fixup>> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        int lineno = preProcessor.GetMainLineNo();
+        int lineno = preProcessor.GetErrLineNo();
         std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
@@ -1036,14 +1036,14 @@ void AsmFile::DoubleDirective()
     unsigned char buf[4000];
     int size = 0;
     NeedSection();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     std::deque<std::shared_ptr<Fixup>> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        int lineno = preProcessor.GetMainLineNo();
+        int lineno = preProcessor.GetErrLineNo();
         std::shared_ptr<AsmExprNode> num;
         NextToken();
         num = GetNumber();
@@ -1078,7 +1078,7 @@ void AsmFile::EqvDirective()
 void AsmFile::SetDirective()
 {
     NextToken();
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     std::string name = GetId();
     DoLabel(name, lineno);
     EquDirective();
@@ -1136,7 +1136,7 @@ void AsmFile::FillDirective()
     NextToken();
     if (!IsNumber())
         throw new std::runtime_error("Repeat expected");
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     NeedSection();
     int repeat = GetValue();
     int size = 1;
@@ -1196,7 +1196,7 @@ void AsmFile::SpaceDirective()
     NextToken();
     if (!IsNumber())
         throw new std::runtime_error("Repeat expected");
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     NeedSection();
     int repeat = GetValue();
     int value = 0;
@@ -1237,7 +1237,7 @@ void AsmFile::NopsDirective()
     NextToken();
     if (!IsNumber())
         throw new std::runtime_error("Repeat expected");
-    int lineno = preProcessor.GetMainLineNo();
+    int lineno = preProcessor.GetErrLineNo();
     NeedSection();
     int repeat = GetValue();
     int value = 0x90;  // processor specific

@@ -142,5 +142,6 @@ class dlPeMain
     static int subsysOverride;
     static int dllFlags;
     static time_t timeStamp;
+    static int fixed;
 };
 #endif

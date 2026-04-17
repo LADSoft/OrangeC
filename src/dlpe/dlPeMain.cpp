@@ -65,7 +65,9 @@ int dlPeMain::subsysMinor = 0;
 
 int dlPeMain::subsysOverride = 0;
 
-int dlPeMain::dllFlags = 0x8140;
+int dlPeMain::fixed = 0;
+static const int dll_moveable = 0x40;
+int dlPeMain::dllFlags = 0x8100;
 
 unsigned char dlPeMain::defaultStubData[] = {
     0x4D, 0x5A, 0x6C, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x11, 0x00, 0xFF, 0xFF, 0x03, 0x00,
@@ -253,6 +255,10 @@ void dlPeMain::ReadValues()
         {
             subsysMinor = p->GetValue();
         }
+        else if (p->GetName() == "FIXED")
+        {
+            fixed = p->GetValue();
+        }
     }
 }
 bool dlPeMain::LoadImports(ObjFile* file)
@@ -387,6 +393,8 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     {
         // if the exe with exports or dll gets relocated we need these flags to force fixups to be applied
         header.dll_flags = dllFlags;
+        if (!fixed)
+            header.dll_flags |= dll_moveable;
     }
     else
     {

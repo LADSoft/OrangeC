@@ -300,7 +300,7 @@ int RunExternalFiles()
             if (Optimizer::cparams.prm_debug)
             {
                 if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
-                    Utils::StrCat(args, " /g");
+                    Utils::StrCat(args, " /g /DFIXED=1");
             }
             for (auto&& o : objlist)
             {

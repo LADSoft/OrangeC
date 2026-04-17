@@ -40,7 +40,7 @@ endif
 .\lscrtl.dll: .\c0dll.o $(RCFILE).res
 	-del $@
 	-del .\lscrtl.l
-	$(LINK) $(LINKFLAGS) /mx /T:DLL32 /DIMAGEBASE=0x10800000 -o$@ .\c0dll.o $(WINOBJECT)\* $(CLIBOBJECT)\*.o $(SYSOBJECT)\climp.l $(RCFILE).res
+	$(LINK) $(LINKFLAGS) /mx /T:DLL32 /DIMAGEBASE=0x10800000 /DFIXED=1 -o$@ .\c0dll.o $(WINOBJECT)\* $(CLIBOBJECT)\*.o $(SYSOBJECT)\climp.l $(RCFILE).res
 	move $@ $(LSCRTLOBJECT)
 
 .\c0dll.o: c0dll.c

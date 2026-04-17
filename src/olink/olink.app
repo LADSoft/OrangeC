@@ -72,6 +72,7 @@
 	<Define Name="SUBSYSMAJOR" Value="0x4" />
         <Define Name="SUBSYSMINOR" Value="0x0" />
         <Define Name="SUBSYSTEM" Value="0x0" />
+        <Define Name="FIXED" Value="0x0" />
 </Switch>
 <Switch Application="dlpe.exe" Flags="/mGUI /f" Name="GUI32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
@@ -90,6 +91,7 @@
 	<Define Name="SUBSYSMAJOR" Value="0x4" />
         <Define Name="SUBSYSMINOR" Value="0x0" />
         <Define Name="SUBSYSTEM" Value="0x0" />
+        <Define Name="FIXED" Value="0x0" />
 </Switch>
 <Switch Application="dlpe.exe" Flags="/mDLL /f" Name="DLL32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
@@ -107,6 +109,7 @@
 	<Define Name="SUBSYSMAJOR" Value="0x4" />
         <Define Name="SUBSYSMINOR" Value="0x0" />
         <Define Name="SUBSYSTEM" Value="0x0" />
+        <Define Name="FIXED" Value="0x0" />
 </Switch>
 <Switch Application="dlpm.exe" Flags="" Name="PM" SpecFile="pm.spc" Rel="0" MapMode="0">
 	<Define Name="STACKSIZE" Value="0x100000" />

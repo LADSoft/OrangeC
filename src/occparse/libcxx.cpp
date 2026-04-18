@@ -115,11 +115,13 @@ static std::unordered_map<std::string, INTRINS_FUNC*> intrinsicHash{
     {"__is_union", is_union},
 };
 static std::unordered_map<const char*, std::unordered_map<unsigned, SYMBOL*>, StringHash, StringEqual> integerSequences;
+static EXPRESSION* underlying_type_exp;
 
 void libcxx_init(void)
 {
     int i;
     integerSequences.clear();
+    underlying_type_exp = MakeExpression(ExpressionNode::cppintrinsic_);
 }
 void libcxx_builtins(void)
 {
@@ -1867,15 +1869,14 @@ SYMBOL* RemoveReference(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
 }
 bool underlying_type( SYMBOL* funcsp, Type** tp)
 {
-    static EXPRESSION* exp = MakeExpression(ExpressionNode::cppintrinsic_);
     bool rv = false;
     std::list<Argument*>* arguments = nullptr;
 
     GetTypeList(funcsp, &arguments);
     if (arguments->size() == 1)
     {
-        exp->v.cppintrinsicArgs = arguments;
-        GetTypeList(exp, &arguments);
+        underlying_type_exp->v.cppintrinsicArgs = arguments;
+        GetTypeList(underlying_type_exp, &arguments);
         if (arguments->size())
         {
             *tp = first(arguments)->tp;

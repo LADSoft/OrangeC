@@ -53,6 +53,8 @@
                   goto done
 :msdebugbuild
                   REM  Build with Microsoft PDB files
+                  REM PARALLEL=1 is an attempt to fix failing builds
+                  set PARALLEL=1
                   c:\orangec\temp\omake -j:%PARALLEL% /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;

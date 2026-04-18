@@ -35,6 +35,7 @@ COPY := cp
 else
 MKDIR := mkdir
 DEL := del /Q
+DEL_KEEPDIR := del /Q
 COPY := copy
 endif
 all:

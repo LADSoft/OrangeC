@@ -8623,6 +8623,14 @@ static void expression_hook( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
                     tph = tpc;
                 else if (tpc->type == BasicType::void_)
                     tpc = tph;
+                if (!tpc->lref && !tpc->rref && epc->type == ExpressionNode::l_ref_)
+                {
+                    tpc->lref = true;
+                }
+                if (!tph->lref && !tph->rref && eph->type == ExpressionNode::l_ref_)
+                {
+                    tph->lref = true;
+                }
                 if (tpc->lref && tph->lref)
                 {
                     if (!tpc->CompatibleType(tph) && !SameTemplate(tpc, tph))

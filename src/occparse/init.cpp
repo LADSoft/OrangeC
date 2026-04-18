@@ -3942,16 +3942,46 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                     std::list<Initializer*>* it = nullptr;
                     if (!itype->size)
                         itype->size = tp1->size;
-                    InsertInitializer(&it, itype, exp1, offset, false);
-                    if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
-                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
-                        !base->sb->attribs.inheritable.isInline)
+                    if (exp1->type == ExpressionNode::labcon_ && exp1->string && itype->IsArray() &&
+                        !itype->BaseType()->btp->IsPtr())
                     {
-                        insertDynamicInitializer(base, it);
+
+                        int max = itype->size;
+                        auto string = exp1->string;
+                        int index = 0;
+                        for (int j = 0; j < string->size; j++)
+                        {
+                            int len = string->pointers[j]->count;
+                            if (len + index > max)
+                            {
+                                error(ERR_TOO_MANY_InitializerS);
+                            }
+                            else
+                            {
+                                for (int i = 0; i < len; i++)
+                                {
+                                    EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, string->pointers[j]->str[i]);
+                                    InsertInitializer(&it, itype->BaseType()->btp, exp, index,
+                                                      false); /* nullptr=no initializer */
+                                    index++;
+                                }
+                            }
+                        }
+                        *init = it;
                     }
                     else
                     {
-                        *init = it;
+                        InsertInitializer(&it, itype, exp1, offset, false);
+                        if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                            sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
+                            !base->sb->attribs.inheritable.isInline)
+                        {
+                            insertDynamicInitializer(base, it);
+                        }
+                        else
+                        {
+                            *init = it;
+                        }
                     }
                 }
             }

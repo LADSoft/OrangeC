@@ -173,6 +173,7 @@ clean:
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pe$(PATHEXT2)*.exe 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)pels$(PATHEXT2)*.o 2>$(NULLDEV)
 	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)rtl$(PATHEXT2)*.o 2>$(NULLDEV)
+	-$(DEL) platform$(PATHEXT2)win32$(PATHEXT2)delayimp$(PATHEXT2)*.o 2>$(NULLDEV)
 	-rmdir $(WINOBJECT) 2> $(NULLDEV)
 	-rmdir $(SYSOBJECT) 2> $(NULLDEV)
 	-rmdir $(CILOBJECT) 2> $(NULLDEV)

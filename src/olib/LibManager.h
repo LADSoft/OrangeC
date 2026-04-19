@@ -64,7 +64,10 @@ class LibManager
     void ReplaceFile(const ObjString& name) { files.Replace(name); }
     void ReplaceFile(ObjFile& obj) { files.Replace(obj); }
     const std::vector<unsigned>& Lookup(const ObjString& name);
-    ObjFile* LoadModule(ObjInt index, ObjFactory* factory, ObjFile** startupfile = nullptr, ObjExpression** startupexp = nullptr) { return files.LoadModule(stream, index, factory, startupfile, startupexp); }
+    ObjFile* LoadModule(ObjInt index, ObjFactory* factory, ObjFile** startupfile = nullptr, ObjExpression** startupexp = nullptr)
+    {
+        return files.LoadModule(stream, index, factory, startupfile, startupexp);
+    }
     bool LoadLibrary();
     int SaveLibrary();
     bool fail() const { return false; }  // stream.fail(); }

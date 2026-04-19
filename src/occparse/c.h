@@ -27,7 +27,7 @@
 
 namespace Parser
 {
-    /*      compiler header file    */
+/*      compiler header file    */
 #define CopySymbol(x) (CopySymbol)(x, true)
 #define CopySymbolfalse(x) (CopySymbol)(x, false)
 #define CI_CONSTRUCTOR 0
@@ -49,40 +49,31 @@ namespace Parser
 #    define imin(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
-    inline bool issymchar(unsigned char x)
-    {
-        return isalnum(x) || (x) == '_' || (x) == '$';
-    }
-    inline bool isstartchar(unsigned char x)
-    {
-        return isalpha(x) || (x) == '_' || (x) == '$';
-    }
+inline bool issymchar(unsigned char x) { return isalnum(x) || (x) == '_' || (x) == '$'; }
+inline bool isstartchar(unsigned char x) { return isalpha(x) || (x) == '_' || (x) == '$'; }
 
-    bool IsCompiler();
+bool IsCompiler();
 
-    struct Type;
-    struct Statement;
-    struct FunctionBlock;
-    struct LexemeStream;
-    struct Lexeme;
-    struct KeywordData;
-    struct CallSite;
-    struct Argument;
-    struct StringData;
+struct Type;
+struct Statement;
+struct FunctionBlock;
+struct LexemeStream;
+struct Lexeme;
+struct KeywordData;
+struct CallSite;
+struct Argument;
+struct StringData;
 
-    class StringEqual
-    {
-      public:
-        unsigned operator()(const std::string& left, const std::string& right) const { return operator()(left.c_str(), right.c_str()); }
-        unsigned operator()(const char* left, const char* right) const {return strcmp(left, right) == 0; } 
-    };
-    class StringHash
-    {
-    public:
-    unsigned operator() (const std::string& aa) const
-    {
-        return operator()(aa.c_str());
-    }
+class StringEqual
+{
+  public:
+    unsigned operator()(const std::string& left, const std::string& right) const { return operator()(left.c_str(), right.c_str()); }
+    unsigned operator()(const char* left, const char* right) const { return strcmp(left, right) == 0; }
+};
+class StringHash
+{
+  public:
+    unsigned operator()(const std::string& aa) const { return operator()(aa.c_str()); }
 
     unsigned operator()(const char* aa) const
     {
@@ -110,7 +101,7 @@ class SymbolTable
     inline void remove(iterator it);
     inline void remove(T* sym);
     inline iterator insert(iterator it, struct sym* sym);
-    inline T* Lookup(const char * name) const;
+    inline T* Lookup(const char* name) const;
     void Next(SymbolTable<T>* next) { next_ = next; }
     SymbolTable<T>* Next() const { return next_; }
     void Chain(SymbolTable<T>* chain) { chain_ = chain; }
@@ -653,7 +644,7 @@ typedef struct sym
         short declcharpos;                        /* character position symbol was declared at */
         short declfilenum;                        /* the file number */
         short realcharpos;
-        int sizeNoVirtual;                        /* size without virtual classes and thunks */
+        int sizeNoVirtual; /* size without virtual classes and thunks */
         struct sym* parent;
         struct sym* parentClass;
         struct sym* friendContext;
@@ -692,10 +683,10 @@ typedef struct sym
         unsigned inasm : 1;                                   /* a way to force the local optimizer to leave autos on the stack */
         unsigned assigned : 1;                                /* value has been assigned */
         unsigned altered : 1;
-        unsigned wasExternal : 1; /* was originally declared as external */
+        unsigned wasExternal : 1;      /* was originally declared as external */
         unsigned declaredAsExtern : 1; /* external keyword was specified, inline needs a body in C++ */
         unsigned declaredAsInline : 1; /* inline keyword was specified, inline needs a body in C++ */
-        unsigned gentemplate : 1; /* template instantiation or reference generated */
+        unsigned gentemplate : 1;      /* template instantiation or reference generated */
         unsigned allocaUsed : 1;
         unsigned oldstyle : 1;                /* pointer to a names list if an old style function arg */
         unsigned constexpression : 1;         /* declared with constexpression */
@@ -710,7 +701,7 @@ typedef struct sym
         unsigned castoperator : 1;            /* a cast operator */
         unsigned deleted : 1;                 /* function was deleted */
         unsigned defaulted : 1;               /* function was defaulted */
-        unsigned explicitDefault : 1;   /* function was explicitly defaulted by the program */
+        unsigned explicitDefault : 1;         /* function was explicitly defaulted by the program */
         unsigned defaultarg : 1;              /* function argument was defaulted */
         unsigned isfinal : 1;                 /* class or virtual function is final */
         unsigned isoverride : 1;              /* virtual function marked override */
@@ -727,7 +718,7 @@ typedef struct sym
         unsigned stackblock : 1;              // stacked structure in C++ mode
         unsigned islambda : 1;                // lambda closure struct
         unsigned noinline : 1;                // don't inline an inline qualified function
-        unsigned generateInline : 1;     // generate a body for this inline function
+        unsigned generateInline : 1;          // generate a body for this inline function
         unsigned didinline : 1;               // already genned an inline func for this symbol
         unsigned simpleFunc : 1;              // simple enough to override the max_nesting inline requirement
         unsigned anyTry : 1;                  // function has either external or internal try statement
@@ -748,41 +739,41 @@ typedef struct sym
         unsigned dontinstantiate : 1;         // don't instantiate this template (is extern)
         unsigned instantiating : 1;           // template is currently being instantiated
         unsigned copiedTemplateFunction : 1;
-        unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
-        unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
-        unsigned temp : 1;                       // temporary boolean...
-        unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
-        unsigned va_typeof : 1;                          // MSIL: a va_typeof symbol
-        unsigned has_property_setter : 1;                // a property has a setter
-        unsigned nonConstVariableUsed : 1;               // a non-const variable was used or assigned to in this function's body
-        unsigned importThunk : 1;                        // an import thunk
-        unsigned visited : 1;                            // symbol has been visited in a traversal
-        unsigned postExpansion : 1;                      // template was post-expanded
-        unsigned performedStructInitialization : 1;      // structure declaration was completed
-        unsigned delegated : 1;                          // construct is delegated to another constructor
-        unsigned hasBody : 1;                            // function has a body
-        unsigned forcedefault : 1;                       // defaulted internal function needs instantiation
-        unsigned noExcept : 1;                           // tagged as noexcept or default determined as noexcept
-        unsigned explicitlyInstantiated : 1;             // explicitly instantiated
-        unsigned retblk : 1;                             // is a return block address
-        unsigned initializer_list : 1;                   // struct is initializer_list
-        unsigned externShim : 1;                         // symbol is an automatically generated external
-        unsigned deleteCopyCons : 1;                     // check if copy constructor needs deletion
-        unsigned deleteCopyAssign : 1;                   // check if copy assignment operator needs deleteion
-        unsigned deleteMove : 1;                         // check if move constructor/assignment ops need deleteion
-        unsigned isxctab : 1;                                 // is xception table stack block
-        int __func__label;                               /* label number for the __func__ keyword */
-        int labelCount;                                  /* number of code labels within a function body */
-        int offset;                                      /* address offset of data in the given seg, or optimize register */
-        int vtaboffset;                                  /* vtab offset for virtual functions */
-        int label;                                       /* label number for statics */
-        unsigned uniqueId;                  /* unique id for variables and stuff */
-        int startLine, endLine;                          /* line numbers spanning the function */
-        short paramsize;                                 /* Size of parameter list for stdcall functions */
-        short accessibleTemplateArgument;                /* something used as a template argument was validated for
-                                                          * accessibility before instantiating the template */
-        short retcount;                                  /* number of return statements in a function */
-        struct sym* runtimeSym;                          /* Simple symbol for runtime assignment tracking */
+        unsigned instantiatedInlineInClass : 1;      // function instantiated inside a class body
+        unsigned promotedToInline : 1;               /* function wasn't declare inline but was promoted to it */
+        unsigned temp : 1;                           // temporary boolean...
+        unsigned destructed : 1;                     // the c++ class instance has had a destructor generated
+        unsigned va_typeof : 1;                      // MSIL: a va_typeof symbol
+        unsigned has_property_setter : 1;            // a property has a setter
+        unsigned nonConstVariableUsed : 1;           // a non-const variable was used or assigned to in this function's body
+        unsigned importThunk : 1;                    // an import thunk
+        unsigned visited : 1;                        // symbol has been visited in a traversal
+        unsigned postExpansion : 1;                  // template was post-expanded
+        unsigned performedStructInitialization : 1;  // structure declaration was completed
+        unsigned delegated : 1;                      // construct is delegated to another constructor
+        unsigned hasBody : 1;                        // function has a body
+        unsigned forcedefault : 1;                   // defaulted internal function needs instantiation
+        unsigned noExcept : 1;                       // tagged as noexcept or default determined as noexcept
+        unsigned explicitlyInstantiated : 1;         // explicitly instantiated
+        unsigned retblk : 1;                         // is a return block address
+        unsigned initializer_list : 1;               // struct is initializer_list
+        unsigned externShim : 1;                     // symbol is an automatically generated external
+        unsigned deleteCopyCons : 1;                 // check if copy constructor needs deletion
+        unsigned deleteCopyAssign : 1;               // check if copy assignment operator needs deleteion
+        unsigned deleteMove : 1;                     // check if move constructor/assignment ops need deleteion
+        unsigned isxctab : 1;                        // is xception table stack block
+        int __func__label;                           /* label number for the __func__ keyword */
+        int labelCount;                              /* number of code labels within a function body */
+        int offset;                                  /* address offset of data in the given seg, or optimize register */
+        int vtaboffset;                              /* vtab offset for virtual functions */
+        int label;                                   /* label number for statics */
+        unsigned uniqueId;                           /* unique id for variables and stuff */
+        int startLine, endLine;                      /* line numbers spanning the function */
+        short paramsize;                             /* Size of parameter list for stdcall functions */
+        short accessibleTemplateArgument;            /* something used as a template argument was validated for
+                                                      * accessibility before instantiating the template */
+        short retcount;                              /* number of return statements in a function */
+        struct sym* runtimeSym;                      /* Simple symbol for runtime assignment tracking */
         /* Also name for CPP overload lists */
         /* also default for template parameters, is a TYP */
         char* importfile;    /* import name */
@@ -790,10 +781,10 @@ typedef struct sym
         int uuidLabel;       /* Microsoft: Label for a GUID which has been instantiated */
         struct sym* overloadName;
         struct sym* typedefSym;
-        struct sym* mainsym;                                        /* pointer to the global version of a copied symbol */
-        struct sym* maintemplate;                                   /* pointer to the global version of a copied symbol */
+        struct sym* mainsym;      /* pointer to the global version of a copied symbol */
+        struct sym* maintemplate; /* pointer to the global version of a copied symbol */
         std::list<struct _constructorInitializers*>** constructorInitializers; /* initializers for constructor */
-        std::list<Statement*>* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        std::list<Statement*>* gotoTable; /* pointer to hashtable associated with goto or label */
         std::list<FunctionBlock*>* gotoBlockTable;
         /* these fields depend on storage_class */
         struct u_val value;
@@ -1035,8 +1026,8 @@ struct templateListData
 {
     std::list<TEMPLATEPARAMPAIR>* args;  // list of templateparam lists
     std::list<TEMPLATEPARAMPAIR>**ptail, **plast, **phold;
-    LexemeStream *head;
-    LexemeStream *bodyTokenStream;
+    LexemeStream* head;
+    LexemeStream* bodyTokenStream;
     SYMBOL* sp;
 };
 

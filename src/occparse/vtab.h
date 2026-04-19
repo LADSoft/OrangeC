@@ -26,15 +26,15 @@
 
 namespace Parser
 {
-    typedef struct
-    {
-        VTABENTRY* entry;
-        SYMBOL* func;
-        SYMBOL* name;
-    } THUNK;
+typedef struct
+{
+    VTABENTRY* entry;
+    SYMBOL* func;
+    SYMBOL* name;
+} THUNK;
 
-    bool usesVTab(SYMBOL* sym);
-    void dumpVTab(SYMBOL* sym);
-    void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset);
-    void calculateVirtualBaseOffsets(SYMBOL* sym);
+bool usesVTab(SYMBOL* sym);
+void dumpVTab(SYMBOL* sym);
+void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, std::list<VTABENTRY*>** pos, int offset);
+void calculateVirtualBaseOffsets(SYMBOL* sym);
 }  // namespace Parser

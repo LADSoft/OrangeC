@@ -41,7 +41,7 @@ CmdSwitchString dlMzMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlMzMain::DebugFile(SwitchParser, 'v');
 
 const char* dlMzMain::helpText =
-R"help([options] relfile
+    R"help([options] relfile
 
 This program takes a 16 bit x86 output file
 and converts it to the format used for MSDOS.
@@ -60,12 +60,11 @@ Available output file types:
     REAL (segmented, default)
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 
 const char* dlMzMain::usageText = "[options] relfile";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     dlMzMain downloader;
     try

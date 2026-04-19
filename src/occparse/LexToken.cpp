@@ -28,7 +28,7 @@
 #include "templatedecl.h"
 
 namespace Parser
-{ 
+{
 LexemeStreamFactory streamFactory;
 LexemeTokenFactory lexemeFactory;
 
@@ -54,20 +54,14 @@ LexemeStreamPosition::LexemeStreamPosition(LexemeStream* Context) : tokenContext
 {
     tokenContext->Register(this, true);
 }
-LexemeStreamPosition::~LexemeStreamPosition()
-{
-    tokenContext->Register(this, false);
-}
+LexemeStreamPosition::~LexemeStreamPosition() { tokenContext->Register(this, false); }
 void LexemeStreamPosition::Replay(std::function<void()> callback)
 {
     Backup();
     callback();
     Restore();
 }
-Lexeme* LexemeStreamPosition::get()
-{
-    return tokenContext->get(origPosition);
-}
+Lexeme* LexemeStreamPosition::get() { return tokenContext->get(origPosition); }
 void LexemeStreamPosition::Backup()
 {
     backupLex = currentLex;
@@ -83,10 +77,7 @@ void LexemeStreamPosition::Restore()
     else
         currentLex = tokenContext->get(tokenContext->Index());
 }
-void LexemeStreamPosition::Bump()
-{
-    origPosition = tokenContext->Index();
-}
+void LexemeStreamPosition::Bump() { origPosition = tokenContext->Index(); }
 Lexeme* LexemeTokenFactory::Create()
 {
     if (cache.size())
@@ -113,7 +104,6 @@ void LexemeTokenFactory::Destroy(Lexeme* lex, int pruneSize)
             delete lex;
         }
     }
-
 }
 void LexemeTokenFactory::clear()
 {
@@ -134,7 +124,8 @@ void LexemeStream::Add(Lexeme* lex)
     lex->refcount++;
     data.push_back(lex);
     ++current;
-    if (current > top) ++top;
+    if (current > top)
+        ++top;
 }
 LexemeStream& LexemeStream::operator--()
 {
@@ -176,21 +167,21 @@ void LexemeStream::Register(LexemeStreamPosition* position, bool enable)
     if (enable)
     {
         for (auto itr = positions.rbegin(); itr != positions.rend(); ++itr)
-           if ((*itr) == nullptr)
-           {
-               *itr = position;
-               return;
-           }
+            if ((*itr) == nullptr)
+            {
+                *itr = position;
+                return;
+            }
         positions.push_back(position);
     }
     else
     {
         for (auto itr = positions.rbegin(); itr != positions.rend(); ++itr)
-           if ((*itr) == position)
-           {
-               *itr = nullptr;
-               break;
-           }
+            if ((*itr) == position)
+            {
+                *itr = nullptr;
+                break;
+            }
     }
 }
 void LexemeStreamFactory::Initialize()
@@ -216,4 +207,4 @@ void ParseOnStream(LexemeStream* newStream, std::function<void()> callback)
     currentLex = lex;
 }
 
-} // namespace Parser
+}  // namespace Parser

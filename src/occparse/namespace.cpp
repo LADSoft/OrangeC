@@ -117,7 +117,7 @@ SYMBOL* tablesearchone(const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly)
     }
     return nullptr;
 }
-void tablesearchinline(std::list<SYMBOL*> & rv, const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing)
+void tablesearchinline(std::list<SYMBOL*>& rv, const char* name, NAMESPACEVALUEDATA* ns, bool tagsOnly, bool allowUsing)
 {
     // main namespace
     SYMBOL* find = tablesearchone(name, ns, tagsOnly);
@@ -164,7 +164,7 @@ void tablesearchinline(std::list<SYMBOL*> & rv, const char* name, NAMESPACEVALUE
     }
 }
 void namespacesearchInternal(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, std::list<SYMBOL*>& gather, bool qualified,
-                                                  bool tagsOnly, bool allowUsing)
+                             bool tagsOnly, bool allowUsing)
 {
     for (auto ns1 : *ns)
     {
@@ -215,7 +215,7 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
                 return sym;
             }
         }
-collission:
+    collission:
         for (auto it = lst.begin(); it != lst.end(); ++it)
         {
             // collision
@@ -254,7 +254,7 @@ SYMBOL* tsearch(const char* name)
         return sym;
     return search(globalNameSpace->front()->tags, name);
 }
-void insertNamespace( Linkage linkage, StorageClass storage_class, bool* linked)
+void insertNamespace(Linkage linkage, StorageClass storage_class, bool* linked)
 {
     bool anon = false;
     char buf[256], *p;
@@ -263,7 +263,7 @@ void insertNamespace( Linkage linkage, StorageClass storage_class, bool* linked)
     *linked = false;
     if (ISID())
     {
-        Utils::StrCpy (buf, currentLex->value.s.a);
+        Utils::StrCpy(buf, currentLex->value.s.a);
         getsym();
         if (MATCHKW(Keyword::assign_))
         {

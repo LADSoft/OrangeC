@@ -39,99 +39,97 @@
 
 namespace Parser
 {
-    int inStaticAssert;
-    std::map<SYMBOL*, std::list<LexemeStream*>> structureStaticAsserts;
+int inStaticAssert;
+std::map<SYMBOL*, std::list<LexemeStream*>> structureStaticAsserts;
 
-    void EnterStructureStaticAssert(SYMBOL* sym, LexemeStream* tokenStream) { structureStaticAsserts[sym].push_back(tokenStream); }
-    void ParseStructureStaticAssert(SYMBOL* sym)
+void EnterStructureStaticAssert(SYMBOL* sym, LexemeStream* tokenStream) { structureStaticAsserts[sym].push_back(tokenStream); }
+void ParseStructureStaticAssert(SYMBOL* sym)
+{
+    auto it = structureStaticAsserts.find(sym);
+    if (it != structureStaticAsserts.end())
     {
-        auto it = structureStaticAsserts.find(sym);
-        if (it != structureStaticAsserts.end())
+        TemplateNamespaceScope namespaceScope(sym);
+        DeclarationScope(sym);
+        auto hold = it->second;
+        for (auto deferred : hold)
         {
-            TemplateNamespaceScope namespaceScope(sym);
-            DeclarationScope(sym);
-            auto hold = it->second;
-            for (auto deferred : hold)
-            {
-                ParseOnStream(deferred, [=]() {
-                    handleStaticAssert();
-                });
-            }
+            ParseOnStream(deferred, [=]() { handleStaticAssert(); });
         }
     }
-    void handleStaticAssert()
+}
+void handleStaticAssert()
+{
+    RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
+    if (!MATCHKW(Keyword::openpa_))
     {
-        RequiresDialect::Keyword(Dialect::c11, "_Static_assert");
-        if (!MATCHKW(Keyword::openpa_))
+        errskim(skim_closepa);
+        skip(Keyword::closepa_);
+    }
+    else if (structLevel && enclosingDeclarations.GetFirst())
+    {
+        auto stream = GetTokenStream(false);
+        EnterStructureStaticAssert(enclosingDeclarations.GetFirst(), stream);
+    }
+    else
+    {
+        getsym();  // past '('
+        bool v = true;
+        char buf[5000];
+        Type* tp;
+        EXPRESSION *expr = nullptr, *expr2 = nullptr;
+        inConstantExpression++;
+        anonymousNotAlloc++;
+        inStaticAssert++;
+        expression_assign(nullptr, nullptr, &tp, &expr, nullptr, 0);
+        inStaticAssert--;
+        anonymousNotAlloc--;
+        expr2 = Allocate<EXPRESSION>();
+        expr2->type = ExpressionNode::x_bool_;
+        expr2->left = expr->type == ExpressionNode::select_ ? expr->left : expr;
+        optimize_for_constants(&expr2);
+        inConstantExpression--;
+        if (!isarithmeticconst(expr2) && !templateDefinitionLevel)
+            error(ERR_CONSTANT_VALUE_EXPECTED);
+        v = expr2->v.i;
+
+        if (MATCHKW(Keyword::comma_))
+        {
+            getsym();
+            if (currentLex->type != LexType::l_astr_)
+            {
+                error(ERR_NEEDSTRING);
+                buf[0] = 0;
+                v = true;  // don't generate the static assert
+            }
+            else
+            {
+                int i, pos = 0;
+                while (currentLex->type == LexType::l_astr_)
+                {
+                    Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)currentLex->value.s.w;
+                    getsym();
+                    for (i = 0; i < ch->count && i + pos < sizeof(buf) - 1; i++)
+                        buf[i + pos] = ch->str[i];
+                    pos += i;
+                }
+                buf[pos] = 0;
+            }
+        }
+        else
+        {
+            Utils::StrCpy(buf, "(unspecified)");
+        }
+        if (!needkw(Keyword::closepa_))
         {
             errskim(skim_closepa);
             skip(Keyword::closepa_);
         }
-        else if (structLevel && enclosingDeclarations.GetFirst())
+        else if (!v && (!templateDefinitionLevel))  // || templateInstantiationLevel))
         {
-            auto stream = GetTokenStream(false);
-            EnterStructureStaticAssert(enclosingDeclarations.GetFirst(), stream);
+            errorstr(ERR_STATIC_ASSERT, buf);
         }
-        else
-        {
-            getsym();  // past '('
-            bool v = true;
-            char buf[5000];
-            Type* tp;
-            EXPRESSION* expr = nullptr, * expr2 = nullptr;
-            inConstantExpression++;
-            anonymousNotAlloc++;
-            inStaticAssert++;
-            expression_assign(nullptr, nullptr, &tp, &expr, nullptr, 0);
-            inStaticAssert--;
-            anonymousNotAlloc--;
-             expr2 = Allocate<EXPRESSION>();
-            expr2->type = ExpressionNode::x_bool_;
-            expr2->left = expr->type == ExpressionNode::select_ ? expr->left : expr;
-            optimize_for_constants(&expr2);
-            inConstantExpression--;
-            if (!isarithmeticconst(expr2) && !templateDefinitionLevel)
-                error(ERR_CONSTANT_VALUE_EXPECTED);
-            v = expr2->v.i;
-
-            if (MATCHKW(Keyword::comma_))
-            {
-                getsym();
-                if (currentLex->type != LexType::l_astr_)
-                {
-                    error(ERR_NEEDSTRING);
-                    buf[0] = 0;
-                    v = true; // don't generate the static assert
-                }
-                else
-                {
-                    int i, pos = 0;
-                    while (currentLex->type == LexType::l_astr_)
-                    {
-                        Optimizer::SLCHAR* ch = (Optimizer::SLCHAR*)currentLex->value.s.w;
-                        getsym();
-                        for (i = 0; i < ch->count && i + pos < sizeof(buf) - 1; i++)
-                            buf[i + pos] = ch->str[i];
-                        pos += i;
-                    }
-                    buf[pos] = 0;
-                }
-            }
-            else
-            {
-                Utils::StrCpy(buf, "(unspecified)");
-            }
-            if (!needkw(Keyword::closepa_))
-            {
-                errskim(skim_closepa);
-                skip(Keyword::closepa_);
-            }
-            else if (!v && (!templateDefinitionLevel))  // || templateInstantiationLevel))
-            {
-                errorstr(ERR_STATIC_ASSERT, buf);
-            }
-        }
-        return;
     }
+    return;
+}
 
 }  // namespace Parser

@@ -317,7 +317,7 @@ struct amode
 #define e_fs 4
 #define e_gs 5
 #define e_ss 6
-    Optimizer::SimpleExpression* offset,*offset2;
+    Optimizer::SimpleExpression *offset, *offset2;
     int liveRegs;
     int keepesp : 1;
 };

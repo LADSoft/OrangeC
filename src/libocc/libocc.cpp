@@ -55,7 +55,7 @@ CmdSwitchString libocc::WarningsAsErrors(SwitchParser, 0, ';', {"wx"});
 ;
 
 const char* libocc::helpText =
-R"help([options] library files...
+    R"help([options] library files...
 
 This program is a wrapper that converts ms/lib style
 librarian command line options into olib options
@@ -76,11 +76,10 @@ librarian command line options into olib options
 /?, --help        This text
     
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* libocc::usageText = "[options] files...";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     libocc lib;
     return lib.Run(argc, argv);
@@ -196,7 +195,7 @@ int libocc::Run(int argc, char** argv)
     if (outputFile.size() > 2)
     {
         auto msvcLibFile = outputFile;
-        msvcLibFile = SanitizeExtension(outputFile.substr(0, outputFile.size()-2), ".lib");
+        msvcLibFile = SanitizeExtension(outputFile.substr(0, outputFile.size() - 2), ".lib");
         std::filesystem::copy_file(outputFile, msvcLibFile, std::filesystem::copy_options::overwrite_existing);
     }
     return rv;

@@ -105,7 +105,6 @@ extern ErrorNamesAndLevels errors[];
 extern int diagcount;
 extern int currentErrorLine;
 
-
 extern SYMBOL* theCurrentFunc;
 extern Keyword skim_end[];
 extern Keyword skim_closepa[];
@@ -152,9 +151,9 @@ void errortype(int err, Type* tp1, Type* tp2);
 void errorConversionOrCast(bool convert, Type* tp1, Type* tp2);
 void errorabstract(int error, SYMBOL* sp);
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp);
-void errskim( Keyword* skimlist, bool assumeTemplate = false);
-void skip( Keyword kw);
-bool needkw( Keyword kw);
+void errskim(Keyword* skimlist, bool assumeTemplate = false);
+void skip(Keyword kw);
+bool needkw(Keyword kw);
 void specerror(int err, const char* name, const char* file, int line);
 void unmarkGotos(VLASHIM* shim);
 void checkGotoPastVLA(std::list<Statement*>* stmt, bool first);
@@ -177,7 +176,7 @@ void EnterInstantiation(SymbolLocation location);
 void LeaveInstantiation();
 
 template <size_t n>
-void getns(char(&buf)[n], SYMBOL* nssym)
+void getns(char (&buf)[n], SYMBOL* nssym)
 {
     if (!nssym)
     {
@@ -194,7 +193,7 @@ void getns(char(&buf)[n], SYMBOL* nssym)
     }
 }
 template <size_t n>
-void getcls(char(&buf)[n], SYMBOL* clssym)
+void getcls(char (&buf)[n], SYMBOL* clssym)
 {
     if (clssym->sb->parentClass)
     {

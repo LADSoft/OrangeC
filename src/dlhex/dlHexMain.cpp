@@ -45,7 +45,7 @@ CmdSwitchString dlHexMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlHexMain::DebugFile(SwitchParser, 'v');
 
 const char* dlHexMain::helpText =
-R"help([options] relfile
+    R"help([options] relfile
 
 This program converts a linker output file into
 an intel or motorola hex file.  These are often used for
@@ -65,11 +65,10 @@ Available output file types:
    B  Binary file  (default)
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* dlHexMain::usageText = "[options] relfile";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     dlHexMain downloader;
     try

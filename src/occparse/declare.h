@@ -92,7 +92,13 @@ struct DeclarationScope
     inline DeclarationScope(SYMBOL* sym) { enclosingDeclarations.Add(sym); }
     inline DeclarationScope(std::list<TEMPLATEPARAMPAIR>* templ) { enclosingDeclarations.Add(templ); }
     inline DeclarationScope() : toRelease(true) { enclosingDeclarations.Mark(); }
-    inline ~DeclarationScope() { if (toRelease) enclosingDeclarations.Release(); else enclosingDeclarations.Drop(); }
+    inline ~DeclarationScope()
+    {
+        if (toRelease)
+            enclosingDeclarations.Release();
+        else
+            enclosingDeclarations.Drop();
+    }
 };
 extern int inDefaultParam;
 extern char deferralBuf[100000];
@@ -118,23 +124,23 @@ SYMBOL* SymAlloc(void);
 SYMBOL* makeID(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 SYMBOL* makeuniqueId(StorageClass storage_class, Type* tp, SYMBOL* spi, const char* name);
 void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool allowDups);
-void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
-                         bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable);
-void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
-                    Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression);
-void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);
+void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal, bool* defd, bool nobody,
+                     SymbolTable<SYMBOL>* anonymousTable);
+void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class, Linkage linkage2_in,
+                AccessLevel access, bool* defd, bool constexpression);
+void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);
 void sizeQualifiers(Type* tp);
-void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
-void getQualifiers( Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
+void parse_declspec(Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
+void getQualifiers(Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);
 void injectThisPtr(SYMBOL* sp, SymbolTable<SYMBOL>* syms);
 void checkIncompleteArray(Type* tp, const char* errorfile, int errorline);
 LexemeStream* GetTokenStream(bool braces);
-void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
-                           StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
-                           bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,
-                           Linkage* linkage2, Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest,
-                           bool* templateArg, bool* asFriend);
+void getStorageAndType(SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
+                       StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
+                       bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,
+                       Linkage* linkage2, Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest,
+                       bool* templateArg, bool* asFriend);
 
-bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage,
-                 std::list<FunctionBlock*>& block, bool needsemi, int asExpression, bool inTemplate, AccessLevel access);
+bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<FunctionBlock*>& block,
+             bool needsemi, int asExpression, bool inTemplate, AccessLevel access);
 }  // namespace Parser

@@ -61,17 +61,17 @@ class ppDefine
     class Definition : public Symbol
     {
       public:
-          Definition(const std::string& Name, std::string& Value, DefinitionArgList* List, std::string VaArgs, bool Permanent) :
-              Symbol(Name),
-              value(Value),
-              argList(List),
-              permanent(Permanent),
-              varargs(false),
-              caseInsensitive(false),
-              preprocessing(false),
-              undefined(false),
-              elipses(false),
-              vaArgs(VaArgs)
+        Definition(const std::string& Name, std::string& Value, DefinitionArgList* List, std::string VaArgs, bool Permanent) :
+            Symbol(Name),
+            value(Value),
+            argList(List),
+            permanent(Permanent),
+            varargs(false),
+            caseInsensitive(false),
+            preprocessing(false),
+            undefined(false),
+            elipses(false),
+            vaArgs(VaArgs)
         {
         }
         Definition& operator=(const Definition&);
@@ -123,8 +123,8 @@ class ppDefine
         macro = Macro;
     }
     bool Check(kw token, std::string& line);
-    Definition* Define(const std::string& name, std::string& value, DefinitionArgList* args, std::string vaArgsName, bool permanent, bool varargs,
-                       bool errors, bool caseInsensitive);
+    Definition* Define(const std::string& name, std::string& value, DefinitionArgList* args, std::string vaArgsName, bool permanent,
+                       bool varargs, bool errors, bool caseInsensitive);
     void Undefine(const std::string& name);
     Definition* Lookup(const std::string& name);
     int Process(std::string& line, bool leavePlaceholder = false);
@@ -149,7 +149,8 @@ class ppDefine
     bool NotSlashed(const std::string& macro, int pos);
     bool ppNumber(const std::string& macro, int begin, int pos);
     bool ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newArgs,
-                     const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, Definition* currentDefinition, const std::string varargs);
+                     const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, Definition* currentDefinition,
+                     const std::string varargs);
     void SetupAlreadyReplaced(std::string& macro);
     int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions,
                        std::deque<TokenPos>* positions);

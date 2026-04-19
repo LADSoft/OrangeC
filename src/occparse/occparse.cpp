@@ -186,46 +186,48 @@ InstructionParser* instructionParser;
 static int stoponerr = 0;
 
 Optimizer::COMPILER_PARAMS cparams_default = {
-    25,                                 /* int  prm_maxerr;*/
-    0,                                  /* prm_stackalign */
-    ~0,                                 /* optimizer modules */
-    0,                                  /* icd flags */
-    0,                                  /* verbosity */
-    Dialect::c11, Dialect::cpp17, true, /* optimize_for_speed */
-    false,                              /* optimize_for_size */
-    false,                              /* optimize_for_float_access */
-    false,                              /* char prm_quieterrors;*/
-    true,                               /* char prm_warning;*/
-    false,                              /* char prm_extwarning;*/
-    false,                              /* char prm_diag;*/
-    false,                              /* char prm_ansi;*/
-    true,                               /* char prm_cmangle;*/
-    false,                              /* char prm_cplusplus;*/
-    true,                               /* char prm_xcept;*/
-    false,                              /* char prm_icdfile;*/
-    false,                              /* char prm_asmfile;*/
-    false,                              /* char prm_compileonly;*/
-    false,                              /* char prm_debug;*/
-    false,                              /* char prm_listfile;*/
-    false,                              /* char prm_cppfile;*/
-    false,                              /* char prm_errfile;*/
-    false,                              /* char prm_browse;*/
-    false,                              /* char prm_trigraph;*/
-    false,                              /* char prm_oldfor;*/
-    false,                              /* char prm_stackcheck;*/
-    true,                               /* char prm_allowinline;*/
-    false,                              /* char prm_profiler;*/
-    true,                               /* char prm_mergstrings;*/
-    false,                              /* char prm_revbits;*/
-    true,                               /* char prm_lines;*/
-    true,                               /* char prm_bss;*/
-    false,                              /* char prm_intrinsic;*/
-    false,                              /* char prm_smartframes;*/
-    false,                              /* char prm_farkeyword;*/
-    false,                              /* char prm_linkreg;*/
-    false,                              /* char prm_charisunsigned;*/
-    false,                              /* bool prm_assemble;*/
-    false,                              /* bool prm_makestubs;*/
+    25, /* int  prm_maxerr;*/
+    0,  /* prm_stackalign */
+    ~0, /* optimizer modules */
+    0,  /* icd flags */
+    0,  /* verbosity */
+    Dialect::c11,
+    Dialect::cpp17,
+    true,  /* optimize_for_speed */
+    false, /* optimize_for_size */
+    false, /* optimize_for_float_access */
+    false, /* char prm_quieterrors;*/
+    true,  /* char prm_warning;*/
+    false, /* char prm_extwarning;*/
+    false, /* char prm_diag;*/
+    false, /* char prm_ansi;*/
+    true,  /* char prm_cmangle;*/
+    false, /* char prm_cplusplus;*/
+    true,  /* char prm_xcept;*/
+    false, /* char prm_icdfile;*/
+    false, /* char prm_asmfile;*/
+    false, /* char prm_compileonly;*/
+    false, /* char prm_debug;*/
+    false, /* char prm_listfile;*/
+    false, /* char prm_cppfile;*/
+    false, /* char prm_errfile;*/
+    false, /* char prm_browse;*/
+    false, /* char prm_trigraph;*/
+    false, /* char prm_oldfor;*/
+    false, /* char prm_stackcheck;*/
+    true,  /* char prm_allowinline;*/
+    false, /* char prm_profiler;*/
+    true,  /* char prm_mergstrings;*/
+    false, /* char prm_revbits;*/
+    true,  /* char prm_lines;*/
+    true,  /* char prm_bss;*/
+    false, /* char prm_intrinsic;*/
+    false, /* char prm_smartframes;*/
+    false, /* char prm_farkeyword;*/
+    false, /* char prm_linkreg;*/
+    false, /* char prm_charisunsigned;*/
+    false, /* bool prm_assemble;*/
+    false, /* bool prm_makestubs;*/
 #ifndef WIN32
     DOS32A, /* char prm_targettype;*/
 #else
@@ -248,7 +250,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     0,           /* int prm_stackprotect */
     0,           /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
     false,       /* export all symbols */
-    false          /* compile via assembly */
+    false        /* compile via assembly */
 };  // namespace Parser
 
 int usingEsp;
@@ -363,7 +365,7 @@ void compile(bool global)
         if (currentLex)
         {
             while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                  AccessLevel::public_))
+                           AccessLevel::public_))
             {
                 if (MATCHKW(Keyword::end_))
                 {
@@ -404,8 +406,7 @@ void compile(bool global)
 /*-------------------------------------------------------------------------*/
 
 }  // namespace Parser
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     using namespace Parser;
     Optimizer::cparams = cparams_default;
@@ -494,7 +495,7 @@ MAINTRY
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
                 if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
-                    occmsil::msil_main_preprocess((char *)fileToCompile.c_str());
+                    occmsil::msil_main_preprocess((char*)fileToCompile.c_str());
             }
 #endif
         }
@@ -578,7 +579,7 @@ MAINTRY
         }
         if (Utils::iequal(as, ".c"))
         {
-            Optimizer::cparams.prm_cplusplus = false;         
+            Optimizer::cparams.prm_cplusplus = false;
         }
         else
         {

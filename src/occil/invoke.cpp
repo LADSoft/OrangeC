@@ -42,7 +42,6 @@ namespace occmsil
 static std::list<std::string> objlist, reslist, rclist;
 static char outFileName[260];
 
-
 bool IsCompilerSource(const char* buffer)
 {
     bool found = false;
@@ -64,15 +63,15 @@ static void InsertFile(std::list<std::string>& target, const std::string& name, 
         return;
     if (!outFileName[0])
     {
-        const char *ext = Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe";        
+        const char* ext = Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe";
         Utils::StrCpy(outFileName, Optimizer::outputFileName.c_str());
         if (outFileName[0] && outFileName[strlen(outFileName) - 1] == '\\')
         {
-           // output file is a path specification rather than a file name
-           // just add our name and ext
-           Utils::StrCat(outFileName, name.c_str());
-           Utils::StripExt(outFileName);
-           Utils::AddExt(outFileName, ext);
+            // output file is a path specification rather than a file name
+            // just add our name and ext
+            Utils::StrCat(outFileName, name.c_str());
+            Utils::StripExt(outFileName);
+            Utils::AddExt(outFileName, ext);
         }
         else if (outFileName[0] == 0)  // no output file specified, put the output wherever the input was...
         {
@@ -93,13 +92,13 @@ static void InsertFile(std::list<std::string>& target, const std::string& name, 
 
         if (Utils::iequal(i, name))
             return;
-    }	
+    }
     target.push_back(name);
 }
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(const std::string&name)
+int InsertExternalFile(const std::string& name)
 {
     int index = name.find_last_of('#');
     if (index < 0)
@@ -194,8 +193,5 @@ void NextOutputFileName()
     if (!objPosition.empty())
         objPosition.pop_front();
 }
-int RunExternalFiles()
-{
-    return 0;
-}
+int RunExternalFiles() { return 0; }
 }  // namespace occmsil

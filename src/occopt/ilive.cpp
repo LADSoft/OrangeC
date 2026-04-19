@@ -127,10 +127,10 @@ static void liveSetup(void)
                     briggsReset(exposed, tnum);
                     blk->liveGen->erase(tnum);
                     blk->liveKills->insert(tnum);
-                    for (int i=1; i < tail->assemblyRegCount; i++)
+                    for (int i = 1; i < tail->assemblyRegCount; i++)
                     {
-                        briggsSet(exposed, tnum+i);
-                        blk->liveGen->insert(tnum+i);
+                        briggsSet(exposed, tnum + i);
+                        blk->liveGen->insert(tnum + i);
                     }
                 }
                 else
@@ -220,7 +220,8 @@ static void liveOut()
     reverseOrder.push_back(exitBlock);
     // last block has been visited
     blockArray[exitBlock]->visiteddfst = true;
-    // calculate a reverse order to traverse the blocks, where each block is evaluated sometime after all its successors are evaluated.
+    // calculate a reverse order to traverse the blocks, where each block is evaluated sometime after all its successors are
+    // evaluated.
     while (!workList.empty())
     {
         // get a block off the worklist
@@ -251,7 +252,7 @@ static void liveOut()
         unsigned n = reverseOrder.front();
         reverseOrder.pop_front();
         Block* b = blockArray[n];
-        b->visiteddfst = false; // visited this pass (flag has taken on negative logic
+        b->visiteddfst = false;  // visited this pass (flag has taken on negative logic
         b->liveOut->clear();
         std::set<unsigned> temp, temp1;
         // for each successor
@@ -259,7 +260,8 @@ static void liveOut()
         while (bl)
         {
             // add the successor's livein nodes to our liveout nodes
-            std::set_union(b->liveOut->begin(), b->liveOut->end(), bl->block->liveIn->begin(), bl->block->liveIn->end(), std::inserter(temp, temp.begin()));
+            std::set_union(b->liveOut->begin(), b->liveOut->end(), bl->block->liveIn->begin(), bl->block->liveIn->end(),
+                           std::inserter(temp, temp.begin()));
             *b->liveOut = std::move(temp);
             bl = bl->next;
         }
@@ -562,7 +564,6 @@ void removeDead(Block* b)
     for (auto l : *b->liveOut)
     {
         briggsSet(live, l);
-
     }
     tail = b->tail;
     while (tail != b->head->back)

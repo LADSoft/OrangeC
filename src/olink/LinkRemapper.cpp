@@ -242,7 +242,7 @@ ObjExpression* LinkRemapper::ScanExpression(ObjExpression* offset, LinkSymbolDat
                     if (ofs->GetOp() == ObjExpression::eSection)
                     {
                         int n = ofs->GetSection()->GetBase();
-                        return new ObjExpression(ObjExpression::eAdd, ofs, new ObjExpression(n));	
+                        return new ObjExpression(ObjExpression::eAdd, ofs, new ObjExpression(n));
                     }
                     else
                     {

@@ -650,9 +650,9 @@ static void write_int(char* dest, int len, unsigned val)
 }
 void my_sprintf(char* dest, int len, const char* fmt, ...)
 {
-const char *in = fmt;
+    const char* in = fmt;
     if (len <= 0)
-        return;	
+        return;
     dest[0] = '\0';
     va_list aa;
     va_start(aa, fmt);
@@ -664,7 +664,7 @@ const char *in = fmt;
         int l = strlen(dest);
         while (fmt < q && len - l > 1)
         {
-           dest[l++] = *fmt++;
+            dest[l++] = *fmt++;
         }
         dest[l] = '\0';
         if (*fmt)
@@ -689,11 +689,11 @@ const char *in = fmt;
                 case 'c':
                     val1 = va_arg(aa, unsigned);
                     l = strlen(dest);
-                    if (len-l >= 2)
+                    if (len - l >= 2)
                     {
-                     
-                       dest[l++] = val1;
-                       dest[l] = '\0';
+
+                        dest[l++] = val1;
+                        dest[l] = '\0';
                     }
                     break;
                 case 's':

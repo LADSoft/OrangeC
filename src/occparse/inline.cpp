@@ -168,7 +168,7 @@ void dumpInlines(void)
                     DumpInlineLocalUninitializer(local);
                 }
                 inlineLocalUninitializers.clear();
-           } while (!done);
+            } while (!done);
             std::stack<SYMBOL*> destructors;
             for (auto sym : inlineData)
             {
@@ -220,7 +220,7 @@ void dumpInlines(void)
                                 ParseOnStream(initTokenStreams.get(origsym), [=]() {
                                     sym->sb->init = nullptr;
                                     initialize(nullptr, sym, StorageClass::global_, true, false, false, _F_NOCONSTGEN);
-                                    });
+                                });
                             }
                             Optimizer::SymbolManager::Get(sym)->generated = true;
                             Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym),
@@ -245,7 +245,8 @@ void dumpInlines(void)
                             Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                             if (sym->sb->dest && !sym->sb->parent)
                                 destructors.push(sym);
-                            if (sym->sb->init && sym->sb->init->front()->exp && sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
+                            if (sym->sb->init && sym->sb->init->front()->exp &&
+                                sym->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                 if (!sym->sb->parent)
                                     CreateInlineConstructor(sym);
                         }

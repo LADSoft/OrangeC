@@ -384,7 +384,6 @@ void insertDynamicInitializer(SYMBOL* sym, std::list<Initializer*>* init, bool f
             else
                 dynamicInitializers.push_back(DynamicInitializer{sym, init});
         }
-
     }
 }
 static void insertTLSInitializer(SYMBOL* sym, std::list<Initializer*>* init)
@@ -1345,9 +1344,8 @@ Initializer* InsertInitializer(std::list<Initializer*>** pos, Type* tp, EXPRESSI
         *pos = initListFactory.CreateList();
     return InsertInitializer(pos, (**pos).end(), tp, exp, offset, noassign);
 }
-static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, Type* itype,
-                                bool commaallowed, std::function<EXPRESSION*(EXPRESSION*, Type*)> modify, bool arrayElem,
-                                SYMBOL* sym)
+static void init_expression(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, Type* itype, bool commaallowed,
+                            std::function<EXPRESSION*(EXPRESSION*, Type*)> modify, bool arrayElem, SYMBOL* sym)
 {
     LexemeStreamPosition start(currentStream);
     int noeval = 0;
@@ -1472,14 +1470,13 @@ static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
     LeavePackedSequence();
     return;
 }
-static void init_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, Type* itype,
-                                bool commaallowed, bool arrayElem, SYMBOL* sym)
+static void init_expression(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, Type* itype, bool commaallowed, bool arrayElem,
+                            SYMBOL* sym)
 {
-    init_expression(
-        funcsp, atp, tp, expr, itype, commaallowed, [](EXPRESSION* exp, Type* tp) { return exp; }, arrayElem, sym);
+    init_expression(funcsp, atp, tp, expr, itype, commaallowed, [](EXPRESSION* exp, Type* tp) { return exp; }, arrayElem, sym);
 }
-static void initialize_bool_type( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                                     std::list<Initializer*>** init, bool arrayElem, SYMBOL* sym)
+static void initialize_bool_type(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
+                                 bool arrayElem, SYMBOL* sym)
 {
     Type* tp;
     EXPRESSION* exp;
@@ -1640,8 +1637,8 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
             errortype(ERR_INIT_NARROWING, source, dest);
     }
 }
-static void initialize_arithmetic_type( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                                           std::list<Initializer*>** init, bool arrayElem, SYMBOL* sym)
+static void initialize_arithmetic_type(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
+                                       bool arrayElem, SYMBOL* sym)
 {
 
     Type* tp = nullptr;
@@ -1725,7 +1722,7 @@ static void initialize_arithmetic_type( SYMBOL* funcsp, int offset, StorageClass
     }
     return;
 }
-static void initialize_string( SYMBOL* funcsp, Type** rtype, EXPRESSION** exp)
+static void initialize_string(SYMBOL* funcsp, Type** rtype, EXPRESSION** exp)
 {
     LexType tp;
     (void)funcsp;
@@ -1754,8 +1751,8 @@ static void initialize_string( SYMBOL* funcsp, Type** rtype, EXPRESSION** exp)
     }
     return;
 }
-static void initialize_pointer_type( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                                        std::list<Initializer*>** init, bool arrayElem, SYMBOL* sym)
+static void initialize_pointer_type(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
+                                    bool arrayElem, SYMBOL* sym)
 {
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -1773,9 +1770,9 @@ static void initialize_pointer_type( SYMBOL* funcsp, int offset, StorageClass sc
     else
     {
         bool hasOpenPa = !needend && currentLex && MATCHKW(Keyword::openpa_);
-        if (!currentLex ||
-            (currentLex->type != LexType::l_astr_ && currentLex->type != LexType::l_wstr_ && currentLex->type != LexType::l_ustr_ &&
-             currentLex->type != LexType::l_Ustr_ && currentLex->type != LexType::l_msilstr_ && currentLex->type != LexType::l_u8str_))
+        if (!currentLex || (currentLex->type != LexType::l_astr_ && currentLex->type != LexType::l_wstr_ &&
+                            currentLex->type != LexType::l_ustr_ && currentLex->type != LexType::l_Ustr_ &&
+                            currentLex->type != LexType::l_msilstr_ && currentLex->type != LexType::l_u8str_))
         {
             init_expression(funcsp, itype, &tp, &exp, itype, false, arrayElem && !needend, sym);
             if (!tp)
@@ -1911,8 +1908,8 @@ static void initialize_pointer_type( SYMBOL* funcsp, int offset, StorageClass sc
     }
     return;
 }
-static void initialize_memberptr( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                                     std::list<Initializer*>** init, bool arrayElem, SYMBOL* sym)
+static void initialize_memberptr(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
+                                 bool arrayElem, SYMBOL* sym)
 {
     Type* tp = nullptr;
     EXPRESSION* exp = nullptr;
@@ -2155,7 +2152,8 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
             while (IsCastValue(exp2))
                 exp2 = exp2->left;
         }
-        if (!templateDefinitionLevel && (referenceTypeError(tp, exp2) != exp2->type || (tp->type == BasicType::rref_ && IsLValue(exp))) &&
+        if (!templateDefinitionLevel &&
+            (referenceTypeError(tp, exp2) != exp2->type || (tp->type == BasicType::rref_ && IsLValue(exp))) &&
             (!tp->BaseType()->btp->IsStructured() || exp->type != ExpressionNode::lvalue_) &&
             (!tp->BaseType()->btp->IsPtr() || exp->type != ExpressionNode::l_p_))
         {
@@ -2169,8 +2167,8 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
     }
     return exp;
 }
-static void initialize_reference_type( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                                          std::list<Initializer*>** init, int flags, SYMBOL* sym)
+static void initialize_reference_type(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
+                                      int flags, SYMBOL* sym)
 {
     Type* tp;
     EXPRESSION* exp;
@@ -2454,7 +2452,7 @@ static void allocate_desc(Type* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
         }
     }
 }
-static int str_candidate( Type* tp)
+static int str_candidate(Type* tp)
 {
     LexemeStreamPosition old(currentStream);
     if (MATCHKW(Keyword::openpa_))
@@ -2481,7 +2479,7 @@ static int str_candidate( Type* tp)
         }
     return false;
 }
-static bool designator( SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache, SYMBOL* sym)
+static bool designator(SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache, SYMBOL* sym)
 {
 
     if (MATCHKW(Keyword::openbr_) || MATCHKW(Keyword::dot_))
@@ -2546,8 +2544,7 @@ static bool designator( SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc, AGGREGATE_D
                             (*desc)->reloffset = sym->sb->offset;
                             (*desc)->it = it;
                             (*desc)->ite = (*desc)->tp->BaseType()->syms->end();
-                            if ((tp->IsArray() && MATCHKW(Keyword::openbr_)) ||
-                                (tp->IsStructured() && MATCHKW(Keyword::dot_)))
+                            if ((tp->IsArray() && MATCHKW(Keyword::openbr_)) || (tp->IsStructured() && MATCHKW(Keyword::dot_)))
                                 allocate_desc(tp, (*desc)->reloffset + (*desc)->offset, desc, cache);
                             else
                                 done = true;
@@ -2724,7 +2721,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR* cache)
         cache = cache->next;
     }
 }
-static void read_strings( std::list<Initializer*>** next, AGGREGATE_DESCRIPTOR** desc)
+static void read_strings(std::list<Initializer*>** next, AGGREGATE_DESCRIPTOR** desc)
 {
     bool nothingWritten = true;
     Type* tp = (*desc)->tp->BaseType();
@@ -2850,7 +2847,7 @@ static Type* nexttp(AGGREGATE_DESCRIPTOR* desc)
         rv = desc->tp->BaseType()->btp;
     return rv;
 }
-static void initialize___object( SYMBOL* funcsp, int offset, Type* itype, std::list<Initializer*>** init)
+static void initialize___object(SYMBOL* funcsp, int offset, Type* itype, std::list<Initializer*>** init)
 {
     EXPRESSION* expr = nullptr;
     Type* tp = nullptr;
@@ -2866,7 +2863,7 @@ static void initialize___object( SYMBOL* funcsp, int offset, Type* itype, std::l
     InsertInitializer(init, itype, expr, offset, false);
     return;
 }
-static void initialize___string( SYMBOL* funcsp, int offset, Type* itype, std::list<Initializer*>** init)
+static void initialize___string(SYMBOL* funcsp, int offset, Type* itype, std::list<Initializer*>** init)
 {
     EXPRESSION* expr = nullptr;
     Type* tp = nullptr;
@@ -2885,7 +2882,7 @@ static void initialize___string( SYMBOL* funcsp, int offset, Type* itype, std::l
     InsertInitializer(init, itype, expr, offset, false);
     return;
 }
-static void initialize_auto_struct( SYMBOL* funcsp, int offset, Type* itype, std::list<Initializer*>** init)
+static void initialize_auto_struct(SYMBOL* funcsp, int offset, Type* itype, std::list<Initializer*>** init)
 {
     EXPRESSION* expr = nullptr;
     Type* tp = nullptr;
@@ -3050,7 +3047,7 @@ auto InitializeSimpleAggregate(Type* itype, bool needend, int offset, SYMBOL* fu
             int size = data ? data->size() : 0;
             auto tp1 = nexttp(desc);
             initType(funcsp, desc->offset + desc->reloffset, sc, &data, dest, tp1, base, true, templateLevel,
-                           flags | _F_NESTEDINIT);
+                     flags | _F_NESTEDINIT);
             if (!data->empty() && data->back()->exp->packedArray)
             {
                 auto cm = data->back()->exp;
@@ -3115,8 +3112,8 @@ auto InitializeSimpleAggregate(Type* itype, bool needend, int offset, SYMBOL* fu
                             SYMBOL* fieldsp;
                             int size = data->size();
                             auto tp1 = nexttp(desc);
-                            initType(funcsp, desc->offset + desc->reloffset, sc, &data, dest, tp1, base,
-                                           itype->IsArray(), deduceTemplate, flags);
+                            initType(funcsp, desc->offset + desc->reloffset, sc, &data, dest, tp1, base, itype->IsArray(),
+                                     deduceTemplate, flags);
                             if (itype->IsArray() && !data->empty() && data->back()->exp->packedArray)
                             {
                                 auto cm = data->back()->exp;
@@ -3203,7 +3200,7 @@ auto InitializeSimpleAggregate(Type* itype, bool needend, int offset, SYMBOL* fu
     if (deduceTemplate)
     {
         EXPRESSION* throwaway = nullptr;
-        CallSite funcparams = { 0 };
+        CallSite funcparams = {0};
         funcparams.arguments = argumentListFactory.CreateList();
         for (auto d : *data)
         {
@@ -3242,7 +3239,7 @@ auto InitializeSimpleAggregate(Type* itype, bool needend, int offset, SYMBOL* fu
             std::list<Initializer*>* first = nullptr;
             CallDestructor(itype->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
             InsertInitializer(&first, itype, exp, 0, true);
-            insertDynamicDestructor(base, first);   
+            insertDynamicDestructor(base, first);
         }
         else if (dest)
         {
@@ -3272,9 +3269,9 @@ static void InsertStructureData(std::list<Initializer*>** init, Type* tp, EXPRES
         }
     }
 }
-static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset, StorageClass sc, Type* itype,
-                                          std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember,
-                                          bool deduceTemplate, int flags)
+static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, StorageClass sc, Type* itype,
+                                      std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayMember,
+                                      bool deduceTemplate, int flags)
 {
     std::list<Initializer*>* data = nullptr;
     AGGREGATE_DESCRIPTOR *desc = nullptr, *cache = nullptr;
@@ -3685,29 +3682,29 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                 {
                     switch (exp->type)
                     {
-                    case ExpressionNode::global_:
-                    case ExpressionNode::auto_:
-                    case ExpressionNode::threadlocal_:
-                    case ExpressionNode::absolute_:
-                        if (exp->v.sp->sb->init)
-                        {
-                            for (auto it2 : *exp->v.sp->sb->init)
+                        case ExpressionNode::global_:
+                        case ExpressionNode::auto_:
+                        case ExpressionNode::threadlocal_:
+                        case ExpressionNode::absolute_:
+                            if (exp->v.sp->sb->init)
                             {
-                                if (it2->exp)
+                                for (auto it2 : *exp->v.sp->sb->init)
                                 {
-                                    auto xx = it2->exp;
-                                    if (exp->type != ExpressionNode::auto_ || !exp->v.sp->sb->anonymous)
-                                        while (xx->type == ExpressionNode::comma_ && xx->left->type == ExpressionNode::assign_)
-                                            xx = xx->right;
-                                    InsertInitializer(&it, it2->basetp, xx, it2->offset + offset, it2->noassign);
+                                    if (it2->exp)
+                                    {
+                                        auto xx = it2->exp;
+                                        if (exp->type != ExpressionNode::auto_ || !exp->v.sp->sb->anonymous)
+                                            while (xx->type == ExpressionNode::comma_ && xx->left->type == ExpressionNode::assign_)
+                                                xx = xx->right;
+                                        InsertInitializer(&it, it2->basetp, xx, it2->offset + offset, it2->noassign);
+                                    }
                                 }
                             }
+                            break;
+                        default: {
+                            InsertInitializer(&it, itype, exp, offset, false);
+                            break;
                         }
-                        break;
-                    default: {
-                        InsertInitializer(&it, itype, exp, offset, false);
-                        break;
-                    }
                     }
                 }
                 if (it)
@@ -3787,8 +3784,7 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                 {
                     // construction of trivial structure via initializer-list...
                     needend = true;
-                    it = InitializeSimpleAggregate(itype, needend, offset, funcsp, sc, base, dest, false, deduceTemplate,
-                                                   flags);
+                    it = InitializeSimpleAggregate(itype, needend, offset, funcsp, sc, base, dest, false, deduceTemplate, flags);
                     if (!needkw(Keyword::closepa_))
                         errskim(skim_closepa);
                 }
@@ -3857,9 +3853,7 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                     for (int i = 0; i < n; i++)
                     {
                         SetPackIndex(i);
-                        start.Replay([&]() {
-                            expression_no_comma(funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE);
-                        });
+                        start.Replay([&]() { expression_no_comma(funcsp, nullptr, &tp1, &exp1, nullptr, flags & _F_PACKABLE); });
                         if (!baseType->CompatibleType(tp1) && !SameTemplate(baseType, tp1))
                             errorConversionOrCast(true, tp1, baseType);
                         if (exp1)
@@ -3961,8 +3955,7 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
                                 for (int i = 0; i < len; i++)
                                 {
                                     EXPRESSION* exp = MakeIntExpression(ExpressionNode::c_i_, string->pointers[j]->str[i]);
-                                    InsertInitializer(&it, itype->BaseType()->btp, exp, index,
-                                                      false); /* nullptr=no initializer */
+                                    InsertInitializer(&it, itype->BaseType()->btp, exp, index, false); /* nullptr=no initializer */
                                     index++;
                                 }
                             }
@@ -4101,8 +4094,7 @@ static void initialize_aggregate_type( SYMBOL* funcsp, SYMBOL* base, int offset,
     }
     return;
 }
-static void initialize_bit( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                               std::list<Initializer*>** init)
+static void initialize_bit(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init)
 {
     (void)funcsp;
     (void)offset;
@@ -4190,8 +4182,8 @@ static void ReplaceLambdaInit(Type** tp, EXPRESSION** exp, SYMBOL* newName)
         ReplaceVarRef(exp, name->v.sp, newName);
     }
 }
-static void initialize_auto( SYMBOL* funcsp, int offset, StorageClass sc, Type* itype,
-                                std::list<Initializer*>** init, std::list<Initializer*>** dest, bool arrayElem, SYMBOL* sym)
+static void initialize_auto(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
+                            std::list<Initializer*>** dest, bool arrayElem, SYMBOL* sym)
 {
     Type* tp;
     EXPRESSION* exp;
@@ -4271,8 +4263,8 @@ static void initialize_auto( SYMBOL* funcsp, int offset, StorageClass sc, Type* 
  * initialization...  for aggregate types it completely handles all initialization
  * for the aggregate and any sub-aggregates with a single call of the function
  */
-void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init,
-                  std::list<Initializer*>** dest, Type* itype, SYMBOL* sym, bool arrayMember, bool deduceTemplate, int flags)
+void initType(SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer*>** init, std::list<Initializer*>** dest,
+              Type* itype, SYMBOL* sym, bool arrayMember, bool deduceTemplate, int flags)
 {
     Type* tp;
     tp = itype->BaseType();
@@ -4472,8 +4464,7 @@ void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializ
                 }
                 else
                 {
-                    return initialize_aggregate_type(funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate,
-                                                     flags);
+                    return initialize_aggregate_type(funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate, flags);
                 }
             }
             else
@@ -4511,8 +4502,7 @@ void  initType( SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializ
                 }
                 else
                 {
-                    return initialize_aggregate_type(funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate,
-                                                     flags);
+                    return initialize_aggregate_type(funcsp, sym, offset, sc, tp, init, dest, arrayMember, deduceTemplate, flags);
                 }
             }
             /* fallthrough */
@@ -4628,8 +4618,8 @@ void RecalculateVariableTemplateInitializers(std::list<Initializer*>::iterator& 
         (*out)->push_back(init);
     }
 }
-void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate,
-                    bool deduceTemplate, int flags)
+void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, bool inTemplate, bool deduceTemplate,
+                int flags)
 {
     auto sp = sym->tp->BaseType()->sp;
     if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!IsDefiningTemplate()))
@@ -4833,8 +4823,8 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
                     else
                         assigned = true;
                 }
-                initType(funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false,
-                               deduceTemplate, flags | _F_EXPLICIT);
+                initType(funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, deduceTemplate,
+                         flags | _F_EXPLICIT);
                 /* set up an Keyword::end_ tag */
                 if (sym->sb->init || assigned)
                 {
@@ -4851,7 +4841,8 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
                         }
                     }
                     if (!found)
-                        InsertInitializer(&sym->sb->init, nullptr, nullptr, t->IsAutoType() || deduceTemplate ? sym->tp->size : t->size, false);
+                        InsertInitializer(&sym->sb->init, nullptr, nullptr,
+                                          t->IsAutoType() || deduceTemplate ? sym->tp->size : t->size, false);
                 }
             }
         }
@@ -4874,8 +4865,8 @@ void initialize( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, boo
             if (!tp->BaseType()->sp->sb->trivialCons)
             {
                 // default constructor without (), or array of structures without an initialization list
-                initType(funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false,
-                               deduceTemplate, flags | _F_EXPLICIT);
+                initType(funcsp, 0, sym->sb->storage_class, &sym->sb->init, &sym->sb->dest, t, sym, false, deduceTemplate,
+                         flags | _F_EXPLICIT);
                 /* set up an Keyword::end_ tag */
                 if (sym->sb->init)
                 {

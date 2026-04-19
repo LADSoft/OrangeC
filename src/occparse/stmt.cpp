@@ -159,12 +159,12 @@ bool msilManaged(SYMBOL* s)
     return false;
 }
 
-Statement* Statement::MakeStatement( std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme *lex)
+Statement* Statement::MakeStatement(std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme* lex)
 {
     Statement* st = Allocate<Statement>();
     if (!lex)
     {
-        lex = currentStream->get(currentStream->Index() ? currentStream->Index()-1 :  0);
+        lex = currentStream->get(currentStream->Index() ? currentStream->Index() - 1 : 0);
     }
     st->type = stype;
     st->charpos = 0;
@@ -194,7 +194,7 @@ Statement* Statement::MakeStatement( std::list<FunctionBlock*>& parent, Statemen
     }
     return st;
 }
-void FunctionBlock::AddThis( std::list<FunctionBlock*>& parent)
+void FunctionBlock::AddThis(std::list<FunctionBlock*>& parent)
 {
     Statement* st = Statement::MakeStatement(parent, StatementNode::block_);
     st->blockTail = this->blockTail;
@@ -1509,8 +1509,8 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                             iteratorType = iteratorType->BaseType();
                             Type* eqType = iteratorType;
                             compare = eBegin;
-                            if (!FindOperatorFunction(ovcl_binary_any, Keyword::eq_, funcsp, &eqType, &compare, iteratorType,
-                                                      eEnd, nullptr, 0))
+                            if (!FindOperatorFunction(ovcl_binary_any, Keyword::eq_, funcsp, &eqType, &compare, iteratorType, eEnd,
+                                                      nullptr, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_EQ_FORRANGE_ITERATOR);
                             }
@@ -1636,7 +1636,7 @@ void StatementGenerator::ParseFor(std::list<FunctionBlock*>& parent)
                                 }
                                 DeduceAuto(&declSP->tp, starType, declExp, false);
                                 declSP->tp->UpdateRootTypes();
-                                if ((!declSP->tp->IsArithmetic() || !starType->IsArithmetic()) && 
+                                if ((!declSP->tp->IsArithmetic() || !starType->IsArithmetic()) &&
                                     !declSP->tp->CompatibleType(starType) && !SameTemplate(declSP->tp, starType))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -2001,7 +2001,8 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
             {
                 lastLabelStmt = parent.front()->statements->back();
                 StatementWithoutNonconst(parent, true);
-            } while (currentLex && parent.front()->statements->back() != lastLabelStmt && parent.front()->statements->back()->purelabel);
+            } while (currentLex && parent.front()->statements->back() != lastLabelStmt &&
+                     parent.front()->statements->back()->purelabel);
             needlabelif = parent.front()->needlabel;
             if (MATCHKW(Keyword::else_))
             {
@@ -2122,7 +2123,7 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
     while (addedBlock--)
         FreeLocalContext(parent, funcsp, codeLabel++);
 }
-int StatementGenerator::GetLabelValue( std::list<FunctionBlock*>* parent, Statement* st)
+int StatementGenerator::GetLabelValue(std::list<FunctionBlock*>* parent, Statement* st)
 {
     SYMBOL* spx = search(labelSyms, currentLex->value.s.a);
     if (!spx)
@@ -2274,7 +2275,7 @@ void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
     }
     st->label = spx->sb->offset;
     st->purelabel = true;
-    getsym();       /* Keyword::colon_ */
+    getsym(); /* Keyword::colon_ */
     getsym(); /* next sym */
     before->needlabel = false;
 }
@@ -2437,8 +2438,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
         else
         {
             optimized_expression(funcsp, functionReturnType, &tp1, &exp1,
-                                       !functionReturnType->IsStructured() && !functionReturnType->IsBitInt() &&
-                                           functionReturnType->BaseType()->type != BasicType::memberptr_);
+                                 !functionReturnType->IsStructured() && !functionReturnType->IsBitInt() &&
+                                     functionReturnType->BaseType()->type != BasicType::memberptr_);
             if (!tp1)
             {
                 error(ERR_EXPRESSION_SYNTAX);
@@ -2572,33 +2573,33 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                             bool nonconst = funcsp->sb->nonConstVariableUsed;
                             bool toConstruct = true;
                             SYMBOL* sym;
-                            if (tp1->IsStructured() && (sym = lookupSpecificCast(tp1->BaseType()->sp,  ctype)))
+                            if (tp1->IsStructured() && (sym = lookupSpecificCast(tp1->BaseType()->sp, ctype)))
                             {
-                                 auto tp2 = sym->tp->BaseType()->btp;
-                                 CallSite* castBody = Allocate<CallSite>();
-                                 castBody->sp = sym;
-                                 castBody->thisptr = exp1;
-                                 castBody->thistp = Type::MakeType(BasicType::pointer_, tp1);
-                                 if (sym->tp->BaseType()->btp->IsStructured())
-                                 {
-                                     castBody->returnEXP = en;
-                                     castBody->returnSP = ctype->BaseType()->sp;
-                                 }
-                                 castBody->ascall = true;
-                                 castBody->functp = sym->tp;
-                                 castBody->fcall = MakeExpression(ExpressionNode::pc_, sym);
-                                 exp1 = MakeExpression(castBody);
-                                 if (sym->tp->BaseType()->btp->IsStructured())
-                                 {
-                                     toConstruct = false;
-                                     funcsp->sb->nonConstVariableUsed = nonconst;
-                                     returntype = sym->tp->BaseType()->btp;
-                                     returnexp = exp1;
-                                 }
-                                 else
-                                 {
-                                     tp1 = sym->tp->BaseType()->btp;
-                                 }
+                                auto tp2 = sym->tp->BaseType()->btp;
+                                CallSite* castBody = Allocate<CallSite>();
+                                castBody->sp = sym;
+                                castBody->thisptr = exp1;
+                                castBody->thistp = Type::MakeType(BasicType::pointer_, tp1);
+                                if (sym->tp->BaseType()->btp->IsStructured())
+                                {
+                                    castBody->returnEXP = en;
+                                    castBody->returnSP = ctype->BaseType()->sp;
+                                }
+                                castBody->ascall = true;
+                                castBody->functp = sym->tp;
+                                castBody->fcall = MakeExpression(ExpressionNode::pc_, sym);
+                                exp1 = MakeExpression(castBody);
+                                if (sym->tp->BaseType()->btp->IsStructured())
+                                {
+                                    toConstruct = false;
+                                    funcsp->sb->nonConstVariableUsed = nonconst;
+                                    returntype = sym->tp->BaseType()->btp;
+                                    returnexp = exp1;
+                                }
+                                else
+                                {
+                                    tp1 = sym->tp->BaseType()->btp;
+                                }
                             }
                             if (toConstruct)
                             {
@@ -2608,8 +2609,8 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 funcparams->arguments->front()->exp = exp1;
                                 oldrref = tp1->BaseType()->rref;
                                 oldlref = tp1->BaseType()->lref;
-                                tp1->BaseType()->rref =
-                                    exp1->type == ExpressionNode::auto_ && exp1->v.sp->sb->storage_class != StorageClass::parameter_;
+                                tp1->BaseType()->rref = exp1->type == ExpressionNode::auto_ &&
+                                                        exp1->v.sp->sb->storage_class != StorageClass::parameter_;
                                 if (exptemp->type == ExpressionNode::callsite_ && exptemp->v.func->sp->tp->IsFunction() &&
                                     exptemp->v.func->sp->tp->BaseType()->btp->BaseType()->type != BasicType::lref_)
                                     tp1->BaseType()->rref = true;
@@ -2618,19 +2619,19 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 returntype = functionReturnType;
                                 // try the rref constructor first
                                 if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
-                                    false, false, false))
+                                                    false, false, false))
                                 {
                                     if (funcparams->sp && matchesCopy(funcparams->sp, true))
                                     {
                                         switch (exp1->type)
                                         {
-                                        case ExpressionNode::global_:
-                                        case ExpressionNode::auto_:
-                                        case ExpressionNode::threadlocal_:
-                                            exp1->v.sp->sb->dest = nullptr;
-                                            break;
-                                        default:
-                                            break;
+                                            case ExpressionNode::global_:
+                                            case ExpressionNode::auto_:
+                                            case ExpressionNode::threadlocal_:
+                                                exp1->v.sp->sb->dest = nullptr;
+                                                break;
+                                            default:
+                                                break;
                                         }
                                     }
                                 }
@@ -2641,7 +2642,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                     tp1->BaseType()->rref = false;
                                     tp1->BaseType()->lref = true;
                                     CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
-                                        false, false, true);
+                                                    false, false, true);
                                 }
                                 tp1->BaseType()->rref = oldrref;
                                 tp1->BaseType()->lref = oldlref;
@@ -3407,8 +3408,7 @@ void StatementGenerator::ParseCatch(std::list<FunctionBlock*>& parent, int label
             }
             else
             {
-                declare(funcsp, &tp, StorageClass::catchvar_, Linkage::none_, parent, false, true, false,
-                              AccessLevel::public_);
+                declare(funcsp, &tp, StorageClass::catchvar_, Linkage::none_, parent, false, true, false, AccessLevel::public_);
             }
             if (tp && tp->IsStructured())
             {
@@ -3627,7 +3627,7 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
             errorint(ERR_NEEDY, '=');
     }
 }
-bool StatementGenerator::ResolvesToDeclaration( bool structured)
+bool StatementGenerator::ResolvesToDeclaration(bool structured)
 {
     LexemeStreamPosition placeHolder(currentStream);
     if (ISKW())
@@ -3901,8 +3901,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
                           StatementGenerator::ResolvesToDeclaration(structured)))) ||
                        MATCHKW(Keyword::namespace_) || MATCHKW(Keyword::using_) || MATCHKW(Keyword::decltype_) ||
-                       MATCHKW(Keyword::static_assert_) || MATCHKW(Keyword::constexpr_) ||
-                       MATCHKW(Keyword::template_))
+                       MATCHKW(Keyword::static_assert_) || MATCHKW(Keyword::constexpr_) || MATCHKW(Keyword::template_))
                 {
                     std::list<Statement*>* prev = before->statements;
                     before->statements = nullptr;
@@ -3913,7 +3912,7 @@ void StatementGenerator::SingleStatement(std::list<FunctionBlock*>& parent, bool
                     }
                     first = false;
                     declare(funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
-                                  AccessLevel::public_);
+                            AccessLevel::public_);
                     // this originally did the last existing statement as well
                     if (before->statements)
                     {
@@ -4078,8 +4077,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         {
             blockstmt->statements = nullptr;
             declareAndInitialize = false;
-            declare(funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false,
-                          AccessLevel::public_);
+            declare(funcsp, nullptr, StorageClass::auto_, Linkage::none_, parent, false, false, false, AccessLevel::public_);
             if (blockstmt->statements)
             {
                 MarkInitializersAsDeclarations(*blockstmt->statements);
@@ -4561,9 +4559,9 @@ void StatementGenerator::SetFunctionDefine(std::string name, bool set)
 }
 void StatementGenerator::FunctionBody(bool enter)
 {
- //   printf("FunctionBody in: %s\n", funcsp->sb->decoratedName);
+    //   printf("FunctionBody in: %s\n", funcsp->sb->decoratedName);
     static int aa;
-//    printf(":%d\n", ++aa);
+    //    printf(":%d\n", ++aa);
     if (enter && !(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDCODE))
     {
         deferredCompilesIndex[funcsp->sb->decoratedName] |= ENTEREDCODE;
@@ -4575,7 +4573,7 @@ void StatementGenerator::FunctionBody(bool enter)
         InsertInline(funcsp->sb->parentClass);
         Optimizer::SymbolManager::Get(funcsp->sb->parentClass->sb->vtabsp);
     }
-    EnterInstantiation({ funcsp, currentLex ? currentLex->sourceFileName : 0, currentLex ? currentLex->sourceLineNumber : 0 });
+    EnterInstantiation({funcsp, currentLex ? currentLex->sourceFileName : 0, currentLex ? currentLex->sourceLineNumber : 0});
     int oldNoexcept = funcsp->sb->noExcept;
     if (bodyIsDestructor)
         funcsp->sb->noExcept = true;
@@ -4593,7 +4591,7 @@ void StatementGenerator::FunctionBody(bool enter)
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
     Type* oldReturnType = functionReturnType;
     FunctionBlock* block = Allocate<FunctionBlock>();
-    std::list<FunctionBlock*> parent{ block };
+    std::list<FunctionBlock*> parent{block};
     std::list<Statement*>* startStmt;
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
@@ -4666,7 +4664,8 @@ void StatementGenerator::FunctionBody(bool enter)
             funcsp->tp->BaseType()->btp = &stdvoid;  // return value for auto function without return statements
         if (Optimizer::cparams.prm_cplusplus)
         {
-            if ((!oldNoexcept || funcsp->sb->isDestructor) && funcsp->sb->noExcept && !noExcept && !noExceptTokenStreams.get(funcsp))
+            if ((!oldNoexcept || funcsp->sb->isDestructor) && funcsp->sb->noExcept && !noExcept &&
+                !noExceptTokenStreams.get(funcsp))
             {
                 // destructor needs to be demoted
                 funcsp->sb->noExcept = false;
@@ -4763,7 +4762,7 @@ void StatementGenerator::FunctionBody(bool enter)
     if (funcsp->sb->isDestructor)
         bodyIsDestructor--;
     LeaveInstantiation();
-//    printf("FunctionBody Out: %s\n", funcsp->sb->decoratedName);
+    //    printf("FunctionBody Out: %s\n", funcsp->sb->decoratedName);
 }
 bool StatementGenerator::CompileFunctionFromStreamInternal()
 {
@@ -4771,7 +4770,7 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
     {
         if (!funcsp->sb->dontinstantiate && !IsDefiningTemplate() && !funcsp->sb->declaring)
         {
-//            printf("compilefuncin: %s\n", funcsp->sb->decoratedName);
+            //            printf("compilefuncin: %s\n", funcsp->sb->decoratedName);
             if (!(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDBODY))
             {
                 if (bodyTokenStreams.get(funcsp))
@@ -4836,7 +4835,7 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
                                 }
                             }
                         }
-//                        printf("CompileFromStream in: %s\n", funcsp->sb->decoratedName);
+                        //                        printf("CompileFromStream in: %s\n", funcsp->sb->decoratedName);
                         ParseOnStream(bodyTokenStreams.get(funcsp), [=]() {
                             if (funcsp->sb->isConstructor && MATCHKW(Keyword::colon_))
                             {
@@ -4846,7 +4845,7 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
                             StatementGenerator sg(funcsp);
                             sg.FunctionBody();
                         });
-//                        printf("CompileFromStream out: %s\n", funcsp->sb->decoratedName);
+                        //                        printf("CompileFromStream out: %s\n", funcsp->sb->decoratedName);
                         dontRegisterTemplate--;
                         lambdas = std::move(oldLambdas);
                         openStructs = oldOpen;
@@ -4862,14 +4861,15 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
                     LeavePackedContext();
                 }
             }
-  //          printf("compilefuncout: %s\n", funcsp->sb->decoratedName);
+            //          printf("compilefuncout: %s\n", funcsp->sb->decoratedName);
         }
     }
     return funcsp->sb->inlineFunc.stmt;
 }
 bool StatementGenerator::CompileFunctionFromStream(bool withC, bool now)
 {
-    if ((Optimizer::cparams.prm_cplusplus || withC) && !funcsp->sb->dontinstantiate && !IsDefiningTemplate() && !funcsp->sb->declaring)
+    if ((Optimizer::cparams.prm_cplusplus || withC) && !funcsp->sb->dontinstantiate && !IsDefiningTemplate() &&
+        !funcsp->sb->declaring)
     {
         if (funcsp->sb->storage_class == StorageClass::external_)
         {
@@ -4894,13 +4894,14 @@ bool StatementGenerator::CompileFunctionFromStream(bool withC, bool now)
                 }
             }
         }
-        else if ((funcsp->sb->defaulted || funcsp->sb->internallyGenned) && !(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDCODE))
+        else if ((funcsp->sb->defaulted || funcsp->sb->internallyGenned) &&
+                 !(deferredCompilesIndex[funcsp->sb->decoratedName] & ENTEREDCODE))
         {
             deferredCompilesIndex[funcsp->sb->decoratedName] |= ENTEREDCODE;
             generations.push_back(funcsp);
         }
     }
-     return funcsp->sb->inlineFunc.stmt;
+    return funcsp->sb->inlineFunc.stmt;
 }
 void StatementGenerator::GenerateFunctionIntermediateCode()
 {
@@ -4917,7 +4918,8 @@ void StatementGenerator::GenerateDeferredFunctions()
     for (auto func : dc)
     {
         funcsp = func;
-        if (Optimizer::SymbolManager::Get(funcsp)->functionUsed || funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_ || func->sb->generateInline)
+        if (Optimizer::SymbolManager::Get(funcsp)->functionUsed || funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_ ||
+            func->sb->generateInline)
         {
             CompileFunctionFromStreamInternal();
         }
@@ -4932,7 +4934,8 @@ void StatementGenerator::GenerateDeferredFunctions()
             funcsp = func;
             if (funcsp->sb->inlineFunc.stmt)
             {
-                if (Optimizer::SymbolManager::Get(funcsp)->functionUsed  ||  funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_ || func->sb->generateInline)
+                if (Optimizer::SymbolManager::Get(funcsp)->functionUsed ||
+                    funcsp->sb->attribs.inheritable.linkage2 == Linkage::export_ || func->sb->generateInline)
                 {
                     GenerateFunctionIntermediateCode();
                     done = false;
@@ -4949,7 +4952,8 @@ void StatementGenerator::BodyGen()
 {
     if (funcsp->sb->inlineFunc.stmt)
     {
-        if (Optimizer::cparams.prm_cplusplus && funcsp->sb->attribs.inheritable.isInline && !funcsp->sb->promotedToInline && !funcsp->sb->generateInline && !funcsp->sb->declaredAsExtern)
+        if (Optimizer::cparams.prm_cplusplus && funcsp->sb->attribs.inheritable.isInline && !funcsp->sb->promotedToInline &&
+            !funcsp->sb->generateInline && !funcsp->sb->declaredAsExtern)
         {
             if (funcsp->sb->attribs.inheritable.isInline)
                 funcsp->sb->attribs.inheritable.linkage2 = Linkage::none_;

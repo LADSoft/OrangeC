@@ -47,7 +47,7 @@ CmdSwitchCombineString rcMain::includePath2(SwitchParser, 'I', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
 const char* rcMain::helpText =
-R"help([options] file
+    R"help([options] file
 
 This program creates win32 resource files from resource file scripts.
 
@@ -60,11 +60,10 @@ This program creates win32 resource files from resource file scripts.
   /?, --help     This text
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* rcMain::usageText = "[options] file";
 
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     rcMain rc;
     return rc.Run(argc, argv);

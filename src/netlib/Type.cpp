@@ -173,8 +173,7 @@ bool Type::ILSrcDump(PELib& peLib, std::ostream& out) const
 void Type::ObjOut(PELib& peLib, std::ostream& out, int pass) const
 {
     out << std::endl
-                << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_ << "," << pinned_ << ","
-                << showType_;
+        << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_ << "," << pinned_ << "," << showType_;
     if (tp_ == cls)
     {
         typeRef_->ObjOut(peLib, out, -1);

@@ -70,7 +70,7 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
                        bool move, bool isconst);
 void createDestructor(SYMBOL* sp);
 
-void FindClass( SYMBOL* funcsp, SYMBOL** sym)
+void FindClass(SYMBOL* funcsp, SYMBOL** sym)
 {
     SYMBOL* encloser = nullptr;
     std::list<NAMESPACEVALUEDATA*>* ns = nullptr;
@@ -85,7 +85,7 @@ void FindClass( SYMBOL* funcsp, SYMBOL** sym)
     if (MATCHKW(Keyword::classsel_))
         namespaceOnly = true;
     nestedPath(&encloser, &ns, &throughClass, true, StorageClass::global_, false, 0);
-    getIdName(funcsp, buf, sizeof(buf), & ov, &castType);
+    getIdName(funcsp, buf, sizeof(buf), &ov, &castType);
     if (buf[0])
     {
         *sym = finishSearch(buf, encloser, ns, false, throughClass, namespaceOnly);  // undefined in local context
@@ -1218,7 +1218,7 @@ static void SetDestructorNoexcept(SYMBOL* sp)
     if (!IsDefiningTemplate())
     {
         auto stream = noExceptTokenStreams.get(sp);
-        if (stream && stream  != (LexemeStream*)-1)
+        if (stream && stream != (LexemeStream*)-1)
         {
             StatementGenerator::ParseNoExceptClause(sp);
         }
@@ -1299,7 +1299,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
                             hasvbase = true;
                 if (hasvbase)
                 {
-                    auto sym= makeID(StorageClass::parameter_, &stdint, nullptr, AnonymousName());
+                    auto sym = makeID(StorageClass::parameter_, &stdint, nullptr, AnonymousName());
                     EXPRESSION* val = MakeExpression(ExpressionNode::auto_, sym);
                     sym->sb->constop = true;
                     sym->sb->decoratedName = sp->name;
@@ -1516,8 +1516,8 @@ void ConditionallyDeleteClassMethods(SYMBOL* sp)
         conditionallyDeleteDestructor(dest->tp->syms->front());
     }
 }
-static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CONSTRUCTORINITIALIZER*>* mi, SYMBOL* member, int offset,
-                        EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool doCopy)
+static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CONSTRUCTORINITIALIZER*>* mi, SYMBOL* member,
+                        int offset, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool doCopy)
 {
     (void)cls;
     (void)mi;
@@ -1653,11 +1653,11 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                         mi2->sp->tp->InstantiateDeferred();
                         if (mi2->sp->tp->IsStructured() &&
                             (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate ||
-                                SameTemplate(mi2->sp->tp, member->tp)))
-                                {
-                                    mix = mi2;
-                                    break;
-                    }
+                             SameTemplate(mi2->sp->tp, member->tp)))
+                        {
+                            mix = mi2;
+                            break;
+                        }
                     }
                 }
             }
@@ -2028,7 +2028,8 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                 {
                                     getsym();
                                     init->init = nullptr;
-                                    InsertInitializer(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0, false);
+                                    InsertInitializer(&init->init, init->sp->tp, MakeIntExpression(ExpressionNode::c_i_, 0), 0,
+                                                      false);
                                     done = true;
                                 }
                                 else
@@ -2041,8 +2042,8 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                 needkw(bypa ? Keyword::openpa_ : Keyword::begin_);
                                 init->init = nullptr;
                                 argumentNestingLevel++;
-                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                    false, _F_MEMBERINITIALIZER | _F_PACKABLE);
+                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, false,
+                                         _F_MEMBERINITIALIZER | _F_PACKABLE);
                                 argumentNestingLevel--;
                                 done = true;
                                 needkw(bypa ? Keyword::closepa_ : Keyword::end_);
@@ -2062,8 +2063,8 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             {
                                 init->init = nullptr;
                                 argumentNestingLevel++;
-                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                    false, _F_MEMBERINITIALIZER);
+                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, false,
+                                         _F_MEMBERINITIALIZER);
                                 argumentNestingLevel--;
                                 done = true;
                                 if (init->packed || MATCHKW(Keyword::ellipse_))
@@ -2072,8 +2073,8 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             else
                             {
                                 init->init = nullptr;
-                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false,
-                                    false, _F_MEMBERINITIALIZER);
+                                initType(cons, 0, StorageClass::auto_, &init->init, nullptr, init->sp->tp, init->sp, false, false,
+                                         _F_MEMBERINITIALIZER);
                                 if (init->packed)
                                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                             }
@@ -2099,12 +2100,12 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             ParseOnStream(init->initData, [&]() {
                                 shim.arguments = nullptr;
                                 GetConstructorInitializers(cons, &shim,
-                                    MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
+                                                           MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
                                 if (!init->packed)
                                     error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                             });
                             ExpandPackedConstructorInitializers(cls, cons, sp->tp->templateParam->second->byPack.pack,
-                                                           cons->sb->constructorInitializers, init->initData, shim.arguments);
+                                                                cons->sb->constructorInitializers, init->initData, shim.arguments);
                             init->sp = cls;
                         }
                         else if (sp->tp->templateParam->second->byClass.val &&
@@ -2142,7 +2143,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                 ParseOnStream(init->initData, [&]() {
                                     shim.arguments = nullptr;
                                     GetConstructorInitializers(cons, &shim,
-                                        MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
+                                                               MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
                                     if (init->packed)
                                         error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                                 });
@@ -2221,7 +2222,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             init->sp = sp;
                             shim.arguments = nullptr;
                             GetConstructorInitializers(cons, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
-                                true);
+                                                       true);
                         });
                         if (init->packed)
                         {
@@ -2286,7 +2287,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                 init->sp = sp;
                                 shim.arguments = nullptr;
                                 GetConstructorInitializers(cons, &shim,
-                                    MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
+                                                           MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, true);
                                 if (init->packed)
                                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                             });
@@ -2389,8 +2390,8 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
     Dereference(&stdpointer, &otherptr);
     if (parseInitializers)
         allocInitializers(sym, cons, thisptr);
-    if (cons->sb->constructorInitializers && *cons->sb->constructorInitializers && 
-        (*cons->sb->constructorInitializers)->size() && (*cons->sb->constructorInitializers)->front()->delegating)
+    if (cons->sb->constructorInitializers && *cons->sb->constructorInitializers && (*cons->sb->constructorInitializers)->size() &&
+        (*cons->sb->constructorInitializers)->front()->delegating)
     {
         genConstructorCall(b, sym, *cons->sb->constructorInitializers, sym, 0, true, thisptr, otherptr, cons, true, doCopy,
                            !cons->sb->defaulted);
@@ -2401,7 +2402,9 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
         {
             StatementGenerator::AllocateLocalContext(emptyBlockdata, cons, codeLabel++);
             auto spMatch = cons->sb->constructorInitializers && *cons->sb->constructorInitializers &&
-                (*cons->sb->constructorInitializers)->size() == 1 ? (*cons->sb->constructorInitializers)->front()->sp : nullptr;
+                                   (*cons->sb->constructorInitializers)->size() == 1
+                               ? (*cons->sb->constructorInitializers)->front()->sp
+                               : nullptr;
             for (auto sp : *sym->tp->BaseType()->syms)
             {
                 if ((sp->sb->storage_class == StorageClass::member_ || sp->sb->storage_class == StorageClass::mutable_) &&
@@ -2411,12 +2414,13 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     {
                         if (sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->trivialCons)
                         {
-                            genConstructorCall(b, sp->tp->BaseType()->sp, *cons->sb->constructorInitializers, sp, sp->sb->offset, true,
-                                               thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
+                            genConstructorCall(b, sp->tp->BaseType()->sp, *cons->sb->constructorInitializers, sp, sp->sb->offset,
+                                               true, thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
                         }
                         else
                         {
-                            genConsData(b, sym, *cons->sb->constructorInitializers, sp, sp->sb->offset, thisptr, otherptr, cons, doCopy);
+                            genConsData(b, sym, *cons->sb->constructorInitializers, sp, sp->sb->offset, thisptr, otherptr, cons,
+                                        doCopy);
                         }
                     }
                 }
@@ -2452,8 +2456,10 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
             if (sym->sb->baseClasses)
                 for (auto bc : *sym->sb->baseClasses)
                     if (!bc->isvirtual)
-                        genConstructorCall(b, sym, cons->sb->constructorInitializers  ? *cons->sb->constructorInitializers : nullptr, bc->cls, bc->offset, false, thisptr, otherptr,
-                                           cons, true, doCopy || !cons->sb->constructorInitializers ||  !*cons->sb->constructorInitializers, !cons->sb->defaulted);
+                        genConstructorCall(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr,
+                                           bc->cls, bc->offset, false, thisptr, otherptr, cons, true,
+                                           doCopy || !cons->sb->constructorInitializers || !*cons->sb->constructorInitializers,
+                                           !cons->sb->defaulted);
             if (hasVTab(sym))
                 dovtabThunks(b, sym, thisptr, false);
             for (auto sp : *sym->tp->syms)
@@ -2464,12 +2470,14 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     sp->tp->InitializeDeferred();
                     if (sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->trivialCons)
                     {
-                        genConstructorCall(b, sp->tp->BaseType()->sp, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp, sp->sb->offset, true,
-                                           thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
+                        genConstructorCall(b, sp->tp->BaseType()->sp,
+                                           cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp,
+                                           sp->sb->offset, true, thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
                     }
                     else
                     {
-                        genConsData(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp, sp->sb->offset, thisptr, otherptr, cons, doCopy);
+                        genConsData(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp,
+                                    sp->sb->offset, thisptr, otherptr, cons, doCopy);
                     }
                 }
             }
@@ -2501,8 +2509,8 @@ static bool DefaultConstructorConstExpression(SYMBOL* sp)
                 if (!is_literal_type(sp1->tp))
                     return false;
                 // this looks buggy (sp1 isn't a constructor(
-                //if (!*sp1->sb->constructorInitializers)
-                    //return false;
+                // if (!*sp1->sb->constructorInitializers)
+                // return false;
             }
         }
     }
@@ -3155,10 +3163,10 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
     params->thisptr = *exp;
     params->thistp = Type::MakeType(BasicType::pointer_, sp->tp);
     params->ascall = true;
-    
+
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion,
                                   (usesInitList ? _F_INITLIST : 0) | _F_INCONSTRUCTOR | (inNothrowHandler ? _F_IS_NOTHROW : 0) |
-                                  (implicit ? _F_IMPLICIT : 0));
+                                      (implicit ? _F_IMPLICIT : 0));
 
     if (cons1 && cons1->tp->IsFunction())
     {

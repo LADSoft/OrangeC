@@ -48,24 +48,24 @@ EXPRESSION* ConvertToMSILString(EXPRESSION* val);
 void GetLogicalDestructors(std::list<EXPRESSION*>** lst, EXPRESSION* cur);
 void GetAssignDestructors(std::list<EXPRESSION*>** rv, EXPRESSION* exp);
 Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr = false);
-void getInitList( SYMBOL* funcsp, std::list<Argument*>** owner);
-void getArgs( SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack, int flags);
-void GetConstructorInitializers( SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack);
+void getInitList(SYMBOL* funcsp, std::list<Argument*>** owner);
+void getArgs(SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack, int flags);
+void GetConstructorInitializers(SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack);
 void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* initializerListType, std::list<Argument*>** lptr,
                            bool operands, bool asref);
 void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params);
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr,
                   bool operands, bool implicit);
-void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-void expression_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-void expression_no_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-void expression_no_check( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
-void expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
+void expression_assign(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void expression_comma(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void expression_no_comma(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void expression_no_check(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
+void expression(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags);
 #if 1
 // expressions
 EXPRESSION* DerivedToBase(Type* tpn, Type* tpo, EXPRESSION* exp, int flags);
-void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex = false);
-void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex = false);
+void expression_cast(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 #endif
 
 }  // namespace Parser

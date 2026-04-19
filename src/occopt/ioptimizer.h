@@ -242,7 +242,7 @@ struct SimpleSymbol
     unsigned loadTemp : 1;         /* is a loadtemp */
     unsigned visited : 1;          /* temproary which means it is visited */
     unsigned pushedtotemp : 1;     /* if a local variable has been transformed to a temp */
-    unsigned invartemp : 1; /* a memory address was pushed to temp*/
+    unsigned invartemp : 1;        /* a memory address was pushed to temp*/
     unsigned noCoalesceImmed : 1;  // set to true if temp or memory address which references an immediate is used
                                    // other than as the immediate reference
     unsigned regmode : 2;          /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/
@@ -290,7 +290,7 @@ struct SimpleString
 };
 struct SimpleExpression
 {
-    SimpleExpression()  {}  // don't care about init, we just want the memory functions to compile
+    SimpleExpression() {}  // don't care about init, we just want the memory functions to compile
     se_type type;
     union
     {
@@ -523,10 +523,10 @@ struct _basic_dag
         union
         {
             /* values for constant nodes */
-            unsigned i; // should be unsigned long long but that broke the builds for the 32 bit compiler...   will have to revist when working on 64 bit compilers.
-                        // as more on this story, later coverity pointed out that using dc.v.i in iconst.cpp was broken,
-                        // because all the conversions were from long long...  but just adding a new long long member
-                        // to this union so i could attempt to fix it, again broke the builds...
+            unsigned i;  // should be unsigned long long but that broke the builds for the 32 bit compiler...   will have to revist
+                         // when working on 64 bit compilers. as more on this story, later coverity pointed out that using dc.v.i in
+                         // iconst.cpp was broken, because all the conversions were from long long...  but just adding a new long
+                         // long member to this union so i could attempt to fix it, again broke the builds...
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
             long label;  // branches
@@ -560,7 +560,7 @@ typedef struct quad
     BITINT* isolated;
     BITINT* OCP;
     BITINT* RO;
-    unsigned char *assemblyRegs;
+    unsigned char* assemblyRegs;
     //	unsigned short *modifiesTnum;
     int index;
     int ansColor;

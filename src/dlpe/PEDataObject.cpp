@@ -142,7 +142,7 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
 }
 void PEDataObject::Patch()
 {
-    DWORD imageBaseOfs = name == ".text" ? imageBaseVA - virtual_addr - (DWORD)imageBase : (DWORD) - 1;
+    DWORD imageBaseOfs = name == ".text" ? imageBaseVA - virtual_addr - (DWORD)imageBase : (DWORD)-1;
     unsigned char* pdata = data.get();
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;

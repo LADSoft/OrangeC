@@ -37,8 +37,7 @@
 
 #define EXTRACT_CHAR '\xa0'
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     LibMain librarian;
     try
@@ -62,7 +61,7 @@ CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchBool LibMain::noExport(SwitchParser, 0, false, {"noexports"});
 const char* LibMain::helpText =
-R"help([options] libfile [+ files] [- files] [* files]
+    R"help([options] libfile [+ files] [- files] [* files]
 
 This program is a librarian.   It manages groups of object files.
 
@@ -76,7 +75,7 @@ This program is a librarian.   It manages groups of object files.
 --noexports    Remove export records
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* LibMain::usageText = "[options] libfile [+ files] [- files] [* files]";
 
 void LibMain::AddFile(LibManager& librarian, const char* arg)

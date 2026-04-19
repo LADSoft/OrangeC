@@ -823,7 +823,7 @@ bool UTF8::IsAlpha(const char* str)
 {
     if (str[0] < 0x7f)
     {
-       return isalpha(str[0]);
+        return isalpha(str[0]);
     }
     int n = Decode(str);
     return IsAlpha(n);
@@ -832,7 +832,7 @@ bool UTF8::IsAlnum(const char* str)
 {
     if (str[0] < 0x7f)
     {
-       return isalnum(str[0]);
+        return isalnum(str[0]);
     }
     int n = Decode(str);
     return IsAlnum(n);

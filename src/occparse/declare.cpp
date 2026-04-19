@@ -788,8 +788,8 @@ static bool usesClass(SYMBOL* cls, SYMBOL* internal)
 }
 static void GetStructAliasType(SYMBOL* sym)
 {
-return; // there are problems with this when compiling for debug mode.   I think we would have to have a separate version
-// of the library for debug mode and im not prepared to do that right now.
+    return;  // there are problems with this when compiling for debug mode.   I think we would have to have a separate version
+             // of the library for debug mode and im not prepared to do that right now.
     if (IsDefiningTemplate())
         return;
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -956,7 +956,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     }
     structureStaticAsserts.clear();
 }
-static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
+static void structbody(SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, SymbolTable<SYMBOL>* anonymousTable)
 {
     (void)funcsp;
     if (Optimizer::cparams.prm_cplusplus)
@@ -975,28 +975,28 @@ static void structbody( SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, S
             FlushLineData(currentLex->sourceFileName, currentLex->linedata->lineno);
             switch (KW())
             {
-            case Keyword::private_:
-                sp->sb->accessspecified = true;
-                currentAccess = AccessLevel::private_;
-                getsym();
-                needkw(Keyword::colon_);
-                break;
-            case Keyword::public_:
-                sp->sb->accessspecified = true;
-                currentAccess = AccessLevel::public_;
-                getsym();
-                needkw(Keyword::colon_);
-                break;
-            case Keyword::protected_:
-                sp->sb->accessspecified = true;
-                currentAccess = AccessLevel::protected_;
-                getsym();
-                needkw(Keyword::colon_);
-                break;
-            default:
-                declare(nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
-                    currentAccess);
-                break;
+                case Keyword::private_:
+                    sp->sb->accessspecified = true;
+                    currentAccess = AccessLevel::private_;
+                    getsym();
+                    needkw(Keyword::colon_);
+                    break;
+                case Keyword::public_:
+                    sp->sb->accessspecified = true;
+                    currentAccess = AccessLevel::public_;
+                    getsym();
+                    needkw(Keyword::colon_);
+                    break;
+                case Keyword::protected_:
+                    sp->sb->accessspecified = true;
+                    currentAccess = AccessLevel::protected_;
+                    getsym();
+                    needkw(Keyword::colon_);
+                    break;
+                default:
+                    declare(nullptr, nullptr, StorageClass::member_, Linkage::none_, emptyBlockdata, true, false, false,
+                            currentAccess);
+                    break;
             }
         }
         sp->sb->declaring = false;
@@ -1130,8 +1130,8 @@ static bool compareStructSyms(SymbolTable<SYMBOL>* left, SymbolTable<SYMBOL>* ri
     }
     return itl == left->end() && itr == right->end();
 }
-void innerDeclStruct( SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal,
-                         bool* defd, bool nobody, SymbolTable<SYMBOL>* anonymousTable)
+void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel defaultAccess, bool isfinal, bool* defd, bool nobody,
+                     SymbolTable<SYMBOL>* anonymousTable)
 {
     auto oldParsingContext = defaultParsingContext;
     int oldExpressionParsing;
@@ -1243,8 +1243,8 @@ static unsigned char* ParseUUID()
     }
     return nullptr;
 }
-void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class,
-                    Linkage linkage2_in, AccessLevel access, bool* defd, bool constexpression)
+void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class, Linkage linkage2_in,
+                AccessLevel access, bool* defd, bool constexpression)
 {
     bool isfinal = false;
     SymbolTable<SYMBOL>* table = nullptr;
@@ -1325,7 +1325,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
         if (inTemplate)
             inTemplateSpecialization++;
 
-        tagsearch(newName, sizeof(newName), & sp, &table, &strSym, &nsv, storage_class);
+        tagsearch(newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
 
         if (inTemplate)
             inTemplateSpecialization--;
@@ -1406,8 +1406,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
         sp->sb->attribs = basisAttribs;
         if ((storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ ||
              storage_class == StorageClass::auto_) &&
-            (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_) || MATCHKW(Keyword::try_) ||
-             MATCHKW(Keyword::semicolon_)))
+            (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_) || MATCHKW(Keyword::try_) || MATCHKW(Keyword::semicolon_)))
         {
             if (storage_class == StorageClass::auto_)
                 sp->sb->parentClass = theCurrentFunc->sb->parentClass;
@@ -1439,8 +1438,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
                     errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                 sp->templateParams = TemplateGetParams(sp);
                 sp->sb->templateLevel = templateDefinitionLevel;
-                TemplateMatching(nullptr, sp->templateParams, sp,
-                                 MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
+                TemplateMatching(nullptr, sp->templateParams, sp, MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
             browse_variable(sp);
@@ -1511,14 +1509,14 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
                     if (sp != sp1)
                     {
                         sp->sb->declline = sp->sb->origdeclline = sp->sb->realdeclline = currentLex->sourceLineNumber;
-                        sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;	
+                        sp->sb->declfile = sp->sb->origdeclfile = currentLex->sourceFileName;
                         sp->sb->declcharpos = currentLex->charindex;
                         sp->sb->realcharpos = currentLex->realcharindex;
                     }
                     if (linkage2 != Linkage::none_)
                         sp->sb->attribs.inheritable.linkage2 = linkage2;
-                    sp->templateParams = TemplateMatching(origParams, templateParams, sp,
-                                                          MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
+                    sp->templateParams =
+                        TemplateMatching(origParams, templateParams, sp, MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
                     if (sp->templateParams->front().second->bySpecialization.types)
                         for (auto&& t : *templateParams->front().second->bySpecialization.types)
                         {
@@ -1621,8 +1619,7 @@ void declstruct( SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stor
     basisAttribs = oldAttribs;
     return;
 }
-static void enumbody( SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, AccessLevel access, Type* fixedType,
-                         bool scoped)
+static void enumbody(SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, AccessLevel access, Type* fixedType, bool scoped)
 {
     long long enumval = 0;
     Type* unfixedType;
@@ -1795,7 +1792,7 @@ static void enumbody( SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, A
     spi->sb->declaring = false;
     return;
 }
-void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd)
+void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd)
 {
     SymbolTable<SYMBOL>* table;
     const char* tagname;
@@ -1962,8 +1959,8 @@ void declenum( SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLeve
     basisAttribs = oldAttribs;
     return;
 }
-static void getStorageClass( SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage,
-                                Optimizer::ADDRESS* address, bool* blocked, bool* isExplicit, AccessLevel access)
+static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage, Optimizer::ADDRESS* address,
+                            bool* blocked, bool* isExplicit, AccessLevel access)
 {
     (void)access;
     bool found = false;
@@ -2015,8 +2012,8 @@ static void getStorageClass( SYMBOL* funcsp, StorageClass* storage_class, Linkag
                                 getsym();
                                 while (currentLex && !MATCHKW(Keyword::end_))
                                 {
-                                    declare(nullptr, nullptr, StorageClass::global_, *linkage, emptyBlockdata, true,
-                                                  false, false, AccessLevel::public_);
+                                    declare(nullptr, nullptr, StorageClass::global_, *linkage, emptyBlockdata, true, false, false,
+                                            AccessLevel::public_);
                                 }
                                 needkw(Keyword::end_);
                                 return;
@@ -2130,7 +2127,7 @@ static void getStorageClass( SYMBOL* funcsp, StorageClass* storage_class, Linkag
     }
     return;
 }
-void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
+void parse_declspec(Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
 {
     (void)linkage;
     if (needkw(Keyword::openpa_))
@@ -2219,7 +2216,7 @@ void parse_declspec( Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
     }
     return;
 }
-static void getLinkageQualifiers( Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
+static void getLinkageQualifiers(Linkage* linkage, Linkage* linkage2, Linkage* linkage3)
 {
     while (KWTYPE(TT_LINKAGE))
     {
@@ -2325,7 +2322,7 @@ static void getLinkageQualifiers( Linkage* linkage, Linkage* linkage2, Linkage* 
     }
     return;
 }
-void getQualifiers( Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend)
+void getQualifiers(Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend)
 {
     while (KWTYPE((TT_TYPEQUAL | TT_LINKAGE)))
     {
@@ -2345,7 +2342,7 @@ void getQualifiers( Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* lin
     ParseAttributeSpecifiers(theCurrentFunc, true);
     return;
 }
-static void nestedTypeSearch( SYMBOL** sym)
+static void nestedTypeSearch(SYMBOL** sym)
 {
     *sym = nullptr;
     nestedSearch(sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, true);
@@ -2371,7 +2368,7 @@ static bool isPointer(LexemeStream& lex)
         }
     return false;
 }
-static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
+static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, bool asFriend)
 {
     /* two oldstyle declarations aren't compared */
     if ((spo && !spo->sb->oldstyle && spo->sb->hasproto) || !sp->sb->oldstyle)
@@ -2431,7 +2428,7 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                             SYMBOL* s = *it1;
                             auto io = initTokenStreams.get(so);
                             auto i = initTokenStreams.get(s);
-                            if (so != s && ((so->sb->init && s->sb->init) ||  (io && i && i != io)))
+                            if (so != s && ((so->sb->init && s->sb->init) || (io && i && i != io)))
                                 errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
                             if (!err && last && last->sb->init &&
                                 !(so->sb->init || s->sb->init || initTokenStreams.get(s) || initTokenStreams.get(so)))
@@ -2455,13 +2452,13 @@ static void matchFunctionDeclaration( SYMBOL* sp, SYMBOL* spo, bool checkReturn,
                             else if (i)
                             {
                                 initTokenStreams.set(so, i);
-
                             }
                             ++ito1;
                             ++it1;
                         }
                         // this is kind of iffy the hr->p values were copied one by one
-                        if (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::try_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
+                        if (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::try_) || MATCHKW(Keyword::begin_) ||
+                            MATCHKW(Keyword::try_))
                             spo->tp->BaseType()->syms = sp->tp->BaseType()->syms;
                         else
                             sp->tp->BaseType()->syms = spo->tp->BaseType()->syms;
@@ -2539,7 +2536,7 @@ LexemeStream* GetTokenStream(bool braces)
     int brack = 0;
     int ltgt = 0;
     bool viaTry = false;
-    if (braces) // theoretically we can only have a try at this point for function bodies...
+    if (braces)  // theoretically we can only have a try at this point for function bodies...
         viaTry = MATCHKW(Keyword::try_);
     while (currentLex)
     {
@@ -2712,7 +2709,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, Type* bt
     *index += sou;
     return mul;
 }
-static void allocateVLA( SYMBOL* sp, SYMBOL* funcsp, std::list<FunctionBlock*>& block, Type* btp, bool bypointer)
+static void allocateVLA(SYMBOL* sp, SYMBOL* funcsp, std::list<FunctionBlock*>& block, Type* btp, bool bypointer)
 {
     EXPRESSION *result = nullptr, **rptr = &result;
     Type* tp1 = btp;
@@ -2856,7 +2853,8 @@ static bool CopyFunctionArguments(SYMBOL* spi, SYMBOL* sp)
         while (src != srce && dest != deste)
         {
             bool ischanged = strcmp((*dest)->name, (*src)->name) != 0;
-            changed = changed || !ischanged;;
+            changed = changed || !ischanged;
+            ;
             if ((*src)->sb->anonymous)
             {
                 (*src)->name = (*dest)->name;
@@ -2875,8 +2873,7 @@ static bool CopyFunctionArguments(SYMBOL* spi, SYMBOL* sp)
     {
         auto itsrc = sp->templateParams->begin();
         auto itdest = spi->templateParams->begin();
-        for (; itsrc != sp->templateParams->end() && itdest != spi->templateParams->end();
-            ++itsrc, ++itdest)
+        for (; itsrc != sp->templateParams->end() && itdest != spi->templateParams->end(); ++itsrc, ++itdest)
             if (itsrc->first && itdest->first)
             {
                 changed = changed || !strcmp(itdest->first->name, itsrc->first->name);
@@ -2885,11 +2882,11 @@ static bool CopyFunctionArguments(SYMBOL* spi, SYMBOL* sp)
     }
     return changed;
 }
-void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
-                           StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
-                           bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,
-                           Linkage* linkage2, Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest,
-                           bool* templateArg, bool* asFriend)
+void getStorageAndType(SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType, bool* deduceTemplate,
+                       StorageClass* storage_class, StorageClass* storage_class_in, Optimizer::ADDRESS* address, bool* blocked,
+                       bool* isExplicit, bool* constexpression, bool* builtin_constexpr, Type** tp, Linkage* linkage,
+                       Linkage* linkage2, Linkage* linkage3, AccessLevel access, bool* notype, bool* defd, int* consdest,
+                       bool* templateArg, bool* asFriend)
 {
     bool foundType = false;
     bool first = true;
@@ -2935,8 +2932,8 @@ void getStorageAndType( SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool a
             {
                 foundType = true;
                 *tp = TypeGenerator::UnadornedType(
-                    funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd,
-                    consdest, templateArg, Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? deduceTemplate : nullptr,
+                    funcsp, *tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest,
+                    templateArg, Optimizer::cparams.cpp_dialect >= Dialect::cpp17 ? deduceTemplate : nullptr,
                     *storage_class == StorageClass::typedef_, true, false, asFriend, *constexpression);
             }
             if (*linkage3 == Linkage::threadlocal_ && *storage_class == StorageClass::member_)
@@ -3035,8 +3032,8 @@ static bool sameNameSpace(SYMBOL* left, SYMBOL* right)
     }
     return false;
 }
-bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage,
-                 std::list<FunctionBlock*>& block, bool needsemi, int asExpression, bool inTemplate, AccessLevel access)
+bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage defaultLinkage, std::list<FunctionBlock*>& block,
+             bool needsemi, int asExpression, bool inTemplate, AccessLevel access)
 {
     bool isExtern = false;
     bool isInline = false;
@@ -3132,8 +3129,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                 {
                     while (currentLex && !MATCHKW(Keyword::end_))
                     {
-                        declare(nullptr, nullptr, storage_class, defaultLinkage, emptyBlockdata, true, false, false,
-                                      access);
+                        declare(nullptr, nullptr, storage_class, defaultLinkage, emptyBlockdata, true, false, false, access);
                     }
                     if (!IsCompiler() && currentLex)
                         nsData.endline = currentLex->sourceLineNumber;
@@ -3185,9 +3181,9 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
             bool deduceTemplate = false;
             int consdest = CT_NONE;
             declaringInitialType++;
-            getStorageAndType(funcsp, &strSym, inTemplate, false, &deduceTemplate, &storage_class, &storage_class_in,
-                                    &address, &blocked, &isExplicit, &constexpression, &builtin_constexpression, &tp, &linkage,
-                                    &linkage2, &linkage3, access, &notype, &defd, &consdest, &templateArg, &asFriend);
+            getStorageAndType(funcsp, &strSym, inTemplate, false, &deduceTemplate, &storage_class, &storage_class_in, &address,
+                              &blocked, &isExplicit, &constexpression, &builtin_constexpression, &tp, &linkage, &linkage2,
+                              &linkage3, access, &notype, &defd, &consdest, &templateArg, &asFriend);
             declaringInitialType--;
             bool bindingcandidate = !blocked && Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::openbr_);
             if (bindingcandidate)
@@ -3261,8 +3257,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         }
                     }
                     getQualifiers(&tp, &linkage, &linkage2, &linkage3, &asFriend);
-                    tp1 = TypeGenerator::BeforeName(funcsp, tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage,
-                                                    &linkage2, &linkage3, &notype, asFriend, consdest, false, false);
+                    tp1 = TypeGenerator::BeforeName(funcsp, tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage, &linkage2,
+                                                    &linkage3, &notype, asFriend, consdest, false, false);
                     if (linkage2 == Linkage::import_)
                         if (storage_class == StorageClass::global_)
                             storage_class = StorageClass::external_;
@@ -3332,7 +3328,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                             sp->sb->attribs.inheritable.isInline = true;
                         }
                     }
-                    else if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_profiler && Optimizer::cparams.prm_optimize_for_speed && tp1->IsFunction() &&
+                    else if (Optimizer::cparams.prm_cplusplus && !Optimizer::cparams.prm_profiler &&
+                             Optimizer::cparams.prm_optimize_for_speed && tp1->IsFunction() &&
                              storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
                     {
                         if (!strSym)
@@ -3545,8 +3542,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                         sp->sb->access = access;
                         sp->sb->isExplicit = isExplicit;
                         sp->sb->storage_class = storage_class;
-                        if (inTemplate && (!sp->templateParams || MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_) ||
-                                           MATCHKW(Keyword::try_)))
+                        if (inTemplate &&
+                            (!sp->templateParams || MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
                             sp->templateParams = TemplateGetParams(sp);
                         if (sp->sb->isDestructor && sp->sb->xcMode == xc_unspecified && !noExceptTokenStreams.get(sp))
                         {
@@ -3717,7 +3714,9 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         templateInstantiationLevel++;
                                     InitializeFunctionArguments(sp);
                                     sym = searchOverloads(sp, spi->tp->syms);
-                                    if (isFullySpecialized && sym && ((!sym->sb->templateLevel && !sym->sb->parentClass) || (sym->templateParams  && sym->templateParams->size() > 1)))
+                                    if (isFullySpecialized && sym &&
+                                        ((!sym->sb->templateLevel && !sym->sb->parentClass) ||
+                                         (sym->templateParams && sym->templateParams->size() > 1)))
                                         sym = nullptr;
                                     if (templateDefinitionLevel == 1 && sp->templateParams && sp->templateParams->size() == 1 &&
                                         !sp->templateParams->front().second->bySpecialization.types)
@@ -3933,9 +3932,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     {
                                         if (!asFriend || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_))
                                         {
-                                            auto temp =
-                                                TemplateMatching(spi->templateParams, templateParams, spi,
-                                                                 MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_));
+                                            auto temp = TemplateMatching(spi->templateParams, templateParams, spi,
+                                                                         MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_));
                                             spi->templateParams = temp;
                                         }
                                         else
@@ -4170,8 +4168,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         }
                                     }
                                 }
-                                if (Optimizer::cparams.prm_cplusplus &&
-                                    (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
+                                if (Optimizer::cparams.prm_cplusplus && (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
                                 {
                                     spi->templateParams = sp->templateParams;
                                 }
@@ -4504,7 +4501,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                     if (startStmt)
                                         sp->sb->linedata = startStmt->front()->lineData;
-                                    auto stream = GetTokenStream( true);
+                                    auto stream = GetTokenStream(true);
                                     bodyTokenStreams.set(sp, stream);
                                     bodyArgs.set(sp, sp->tp->BaseType()->syms);
                                     Optimizer::SymbolManager::Get(sp);
@@ -4518,8 +4515,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         sp->sb->attribs.inheritable.linkage4 != Linkage::virtual_ &&
                                         sp->sb->attribs.inheritable.linkage != Linkage::c_)
                                     {
-                                        if ((!sp->sb->parentClass || !sp->sb->parentClass->templateParams || !templateDefinitionLevel ||
-                                             (sp->templateParams && sp->templateParams->size() == 1)) &&
+                                        if ((!sp->sb->parentClass || !sp->sb->parentClass->templateParams ||
+                                             !templateDefinitionLevel || (sp->templateParams && sp->templateParams->size() == 1)) &&
                                             strcmp(sp->name, "main") != 0 && strcmp(sp->name, "WinMain") != 0)
                                         {
                                             if (!sp->sb->parentNameSpace ||
@@ -4562,15 +4559,15 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         }
                                         if (sp->templateParams && sp->templateParams->size() == 1)
                                         {
-                                            if (!IsDefiningTemplate() && 
-                                                sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                                            if (!IsDefiningTemplate() && sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
                                             {
                                                 StatementGenerator sg(sp);
                                                 sg.CompileFunctionFromStream();
                                             }
                                         }
                                     }
-                                    else if (Optimizer::cparams.prm_cplusplus && (sp->sb->attribs.inheritable.linkage == Linkage::inline_ || sp->sb->constexpression))
+                                    else if (Optimizer::cparams.prm_cplusplus &&
+                                             (sp->sb->attribs.inheritable.linkage == Linkage::inline_ || sp->sb->constexpression))
                                     {
                                         auto stream = GetTokenStream(true);
                                         bodyTokenStreams.set(sp, stream);
@@ -4579,11 +4576,11 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     }
                                     else
                                     {
-//	printf("declfuncin: %s\n", sp->sb->decoratedName);
+                                        //	printf("declfuncin: %s\n", sp->sb->decoratedName);
                                         StatementGenerator sg(sp);
                                         sg.FunctionBody();
                                         sg.BodyGen();
-//	printf("declfuncout: %s\n", sp->sb->decoratedName);
+                                        //	printf("declfuncout: %s\n", sp->sb->decoratedName);
                                     }
                                 }
                                 if (sp->sb->constexpression && !sp->sb->builtin_constexpression)
@@ -4725,7 +4722,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                         errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }
                                 }
-                                auto stream = GetTokenStream( false);
+                                auto stream = GetTokenStream(false);
                                 initTokenStreams.set(sp, stream);
                             }
                             else
@@ -4743,7 +4740,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                     }
                                 }
                                 initialize(funcsp, sp, storage_class_in, asExpression, inTemplate, deduceTemplate,
-                                                 0); /* also reserves space */
+                                           0); /* also reserves space */
                                 if (sp->sb->parentClass && sp->sb->storage_class == StorageClass::global_)
                                 {
 
@@ -4779,7 +4776,7 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                 {
                                                     found = true;
                                                     break;
-                                                } 
+                                                }
                                             }
                                             doit = found;
                                         }
@@ -4840,7 +4837,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                     // be accesed in the switch body
                                                     ++it;
                                                     int n = (*it)->statements->size();
-                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, placeHolder.get());
+                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_,
+                                                                                  placeHolder.get());
                                                     auto itb = (*it)->statements->begin();
                                                     for (int i = 0; i < n; i++, ++itb)
                                                         ;
@@ -4848,7 +4846,8 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
                                                 }
                                                 else
                                                 {
-                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_, placeHolder.get());
+                                                    st = Statement::MakeStatement(emptyBlockdata, StatementNode::expr_,
+                                                                                  placeHolder.get());
                                                     block.front()->statements->push_front(st);
                                                 }
                                                 st->select = MakeExpression(ExpressionNode::initobj_,
@@ -4927,6 +4926,6 @@ bool declare( SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage d
             errskim(skim_semi_declare);
             skip(Keyword::semicolon_);
         }
-        return currentLex;
-    }
+    return currentLex;
+}
 }  // namespace Parser

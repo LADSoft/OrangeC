@@ -26,14 +26,14 @@
 
 namespace Parser
 {
-    bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
-    bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
-    bool doConstCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
-    bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
-    bool castToArithmeticInternal(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
-    void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
-    bool castToPointer(Type** tp, EXPRESSION** exp, Keyword kw, Type* other);
-    bool cppCast(Type* src, Type** tp, EXPRESSION** exp);
-    void GetCastInfo(SYMBOL* funcsp, Type** newType, Type** oldType, EXPRESSION** oldExp, bool packed);
+bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
+bool doStaticCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
+bool doConstCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp);
+bool doReinterpretCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* funcsp, bool checkconst);
+bool castToArithmeticInternal(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
+void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Type* other, bool implicit);
+bool castToPointer(Type** tp, EXPRESSION** exp, Keyword kw, Type* other);
+bool cppCast(Type* src, Type** tp, EXPRESSION** exp);
+void GetCastInfo(SYMBOL* funcsp, Type** newType, Type** oldType, EXPRESSION** oldExp, bool packed);
 
 }  // namespace Parser

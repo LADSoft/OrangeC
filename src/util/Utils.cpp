@@ -179,7 +179,7 @@ char* Utils::FullQualify(char* string)
     else if (string[1] != ':')
     {
         char* p;
-        const char *q = string;
+        const char* q = string;
         getcwd(buf, 265);
         p = buf + strlen(buf);
         if (!strncmp(q, ".\\", 2))
@@ -315,7 +315,7 @@ FILE* Utils::TempName(std::string& name)
         // well p can never be null based on the previos definitions but...
         if (p)
         {
-            StrCpy(tempFile + 2,strlen(tempFile)-2, p);
+            StrCpy(tempFile + 2, strlen(tempFile) - 2, p);
         }
 
         fil = fopen(tempFile, "w");

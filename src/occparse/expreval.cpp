@@ -84,8 +84,8 @@
 
 namespace Parser
 {
-typedef bool (*EvalFunc)( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                         EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
+typedef bool (*EvalFunc)(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                         Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags);
 
 static std::unordered_map<Keyword, EvalFunc, EnumClassHash> dispatcher = {
     {Keyword::dotstar_, eval_binary_pm},         {Keyword::pointstar_, eval_binary_pm},
@@ -185,7 +185,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
     return exp;
 }
 
-static void left_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
+static void left_fold(SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
                       EXPRESSION* seedexp, Type* foldtp, EXPRESSION* foldexp)
 {
     auto it = dispatcher.find(currentLex->kw->key);
@@ -252,7 +252,7 @@ static void left_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, 
         }
     }
 }
-static void right_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
+static void right_fold(SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start, Type* seedtp,
                        EXPRESSION* seedexp, Type* foldtp, EXPRESSION* foldexp)
 {
     auto it = dispatcher.find(currentLex->kw->key);
@@ -321,7 +321,7 @@ static void right_fold( SYMBOL* funcsp, Type** resulttp, EXPRESSION** resultexp,
     }
 }
 
-void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
+void eval_unary_left_fold(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                           Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -335,7 +335,7 @@ void eval_unary_left_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSIO
         left_fold(funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
+void eval_unary_right_fold(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& start,
                            Type* lefttp, EXPRESSION* leftexp, bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
@@ -349,9 +349,9 @@ void eval_unary_right_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
         right_fold(funcsp, resulttp, resultexp, start, nullptr, nullptr, lefttp, leftexp);
     }
 }
-void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& leftstart,
-                      Type* lefttp, EXPRESSION* leftexp, LexemeStreamPosition& rightstart, Type* righttp, EXPRESSION* rightexp, bool ismutable,
-                      int flags)
+void eval_binary_fold(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, LexemeStreamPosition& leftstart,
+                      Type* lefttp, EXPRESSION* leftexp, LexemeStreamPosition& rightstart, Type* righttp, EXPRESSION* rightexp,
+                      bool ismutable, int flags)
 {
     if (!hasPackedExpression(leftexp, true))
     {
@@ -382,8 +382,8 @@ void eval_binary_fold( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** 
     }
 }
 
-void eval_unary_plus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                     EXPRESSION* leftexp, bool ismutable, int flags)
+void eval_unary_plus(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                     bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -422,8 +422,8 @@ void eval_unary_plus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** r
         *resulttp = &stdint;
     }
 }
-void eval_unary_minus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                      EXPRESSION* leftexp, bool ismutable, int flags)
+void eval_unary_minus(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                      bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -468,8 +468,8 @@ void eval_unary_minus( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** 
         *resultexp = MakeExpression(ExpressionNode::uminus_, *resultexp);
     }
 }
-void eval_unary_not( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                    EXPRESSION* leftexp, bool ismutable, int flags)
+void eval_unary_not(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                    bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -508,8 +508,8 @@ void eval_unary_not( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** re
     else
         *resulttp = &stdint;
 }
-void eval_unary_complement( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                           EXPRESSION* leftexp, bool ismutable, int flags)
+void eval_unary_complement(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                           bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -559,8 +559,8 @@ void eval_unary_complement( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
             cast((*resulttp)->BaseType(), resultexp);
     }
 }
-void eval_unary_autoincdec( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                           EXPRESSION* leftexp, bool ismutable, int flags)
+void eval_unary_autoincdec(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                           bool ismutable, int flags)
 {
     *resulttp = lefttp;
     *resultexp = leftexp;
@@ -652,8 +652,8 @@ void eval_unary_autoincdec( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
             *resultexp = MakeExpression(ExpressionNode::comma_, exp3, *resultexp);
     }
 }
-bool eval_binary_pm( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                    EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_pm(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                    Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -693,7 +693,7 @@ bool eval_binary_pm( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** re
         if (IsDefiningTemplate() && righttp->BaseType()->type == BasicType::templateparam_)
         {
             *resultexp = MakeExpression(kw == Keyword::pointstar_ ? ExpressionNode::pointstar_ : ExpressionNode::dotstar_,
-                *resultexp, rightexp);
+                                        *resultexp, rightexp);
             *resulttp = Type::MakeType(BasicType::templatedecltype_);
             (*resulttp)->templateDeclType = *resultexp;
         }
@@ -779,8 +779,8 @@ bool eval_binary_pm( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** re
     return false;
 }
 
-bool eval_binary_times( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                       EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_times(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                       Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -908,8 +908,8 @@ bool eval_binary_times( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION**
     }
     return false;
 }
-bool eval_binary_add( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                     EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_add(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                     Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -1116,8 +1116,8 @@ bool eval_binary_add( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** r
     }
     return false;
 }
-bool eval_binary_shift( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                       EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_shift(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                       Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -1180,8 +1180,8 @@ bool eval_binary_shift( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION**
     }
     return false;
 }
-bool eval_binary_inequality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                            EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_inequality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                            Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -1304,8 +1304,8 @@ bool eval_binary_inequality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESS
         *resulttp = &stdint;
     return false;
 }
-bool eval_binary_equality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                          EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_equality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                          Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -1474,8 +1474,8 @@ bool eval_binary_equality( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSIO
         *resulttp = &stdint;
     return false;
 }
-bool eval_binary_logical( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                         EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_logical(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                         Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     auto type = ExpressionNode::or_;
@@ -1563,8 +1563,8 @@ bool eval_binary_logical( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION
     *resultexp = MakeExpression(type, *resultexp, rightexp);
     return false;
 }
-bool eval_binary_assign( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                        EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_assign(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                        Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;
@@ -2264,8 +2264,8 @@ bool eval_binary_assign( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION*
         thunkForImportTable(resultexp);
     return false;
 }
-bool eval_binary_comma( SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp,
-                       EXPRESSION* leftexp, Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
+bool eval_binary_comma(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** resultexp, Type* lefttp, EXPRESSION* leftexp,
+                       Type* righttp, EXPRESSION* rightexp, bool ismutable, int flags)
 {
     auto kw = KW();
     *resulttp = lefttp;

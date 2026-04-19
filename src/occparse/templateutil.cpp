@@ -160,10 +160,12 @@ bool SameTemplate(Type* P, Type* A, bool quals)
         return false;
     P = P->BaseType();
     A = A->BaseType();
-    if (!P->sp->sb || !A->sp->sb ||  strcmp(P->sp->name, A->sp->name) != 0)
+    if (!P->sp->sb || !A->sp->sb || strcmp(P->sp->name, A->sp->name) != 0)
         return false;
-    if (P->sp->sb->parentClass != A->sp->sb->parentClass && (!!P->sp->sb->parentClass != !!A->sp->sb->parentClass ||
-        (!P->sp->sb->parentClass->tp->CompatibleType(A->sp->sb->parentClass->tp) && !SameTemplate(P->sp->sb->parentClass->tp, A->sp->sb->parentClass->tp))))
+    if (P->sp->sb->parentClass != A->sp->sb->parentClass &&
+        (!!P->sp->sb->parentClass != !!A->sp->sb->parentClass ||
+         (!P->sp->sb->parentClass->tp->CompatibleType(A->sp->sb->parentClass->tp) &&
+          !SameTemplate(P->sp->sb->parentClass->tp, A->sp->sb->parentClass->tp))))
         return false;
     if (P->sp->sb->templateLevel != A->sp->sb->templateLevel)
         return false;
@@ -269,7 +271,8 @@ bool SameTemplate(Type* P, Type* A, bool quals)
                     {
                         if (!pl || !pa)
                             break;
-                        if ((PAd || PA->second->byClass.val) && (PLd || PL->second->byClass.val) && !templateCompareTypes(pa, pl, true))
+                        if ((PAd || PA->second->byClass.val) && (PLd || PL->second->byClass.val) &&
+                            !templateCompareTypes(pa, pl, true))
                         {
                             break;
                         }
@@ -801,8 +804,8 @@ static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym)
         }
     }
 }
-std::list<TEMPLATEPARAMPAIR>* TemplateMatching( std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
-                                               SYMBOL* sp, bool definition)
+std::list<TEMPLATEPARAMPAIR>* TemplateMatching(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym, SYMBOL* sp,
+                                               bool definition)
 {
     std::list<TEMPLATEPARAMPAIR>* rv = nullptr;
     currents->sp = sp;
@@ -1275,7 +1278,8 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
                     Dereference(tp, &thisptr);
                 }
                 auto tpx = tp;
-                while (tpx->btp) tpx = tpx->btp;
+                while (tpx->btp)
+                    tpx = tpx->btp;
                 if (!tpx->IsStructured())
                     return nullptr;
                 auto oldsp = exp->right->v.func->sp;
@@ -1571,7 +1575,8 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
         case ExpressionNode::callsite_: {
             Type* rv;
             EXPRESSION* exp1 = nullptr;
-            if (exp->v.func->functp->BaseType()->type != BasicType::templateparam_ && exp->v.func->functp->BaseType()->type != BasicType::aggregate_ && !exp->v.func->functp->IsStructured() &&
+            if (exp->v.func->functp->BaseType()->type != BasicType::templateparam_ &&
+                exp->v.func->functp->BaseType()->type != BasicType::aggregate_ && !exp->v.func->functp->IsStructured() &&
                 !exp->v.func->functp->BaseType()->sp->sb->externShim)
             {
                 if (exp->v.func->asaddress)
@@ -1827,8 +1832,8 @@ Type* LookupTypeFromExpression(EXPRESSION* exp, std::list<TEMPLATEPARAMPAIR>* en
             EXPRESSION exp2;
             if (sel)
             {
-                funcparams = { };
-                exp2 = { };
+                funcparams = {};
+                exp2 = {};
                 old = sel->arguments;
                 oldp = sel->templateParams;
                 funcparams.arguments = sel->arguments;
@@ -1991,47 +1996,47 @@ void clearoutDeduction(Type* tp)
     {
         switch (tp->type)
         {
-        case BasicType::pointer_:
-            if (tp->IsArray() && tp->etype)
-            {
-                clearoutDeduction(tp->etype);
+            case BasicType::pointer_:
+                if (tp->IsArray() && tp->etype)
+                {
+                    clearoutDeduction(tp->etype);
+                }
+                tp = tp->btp;
+                break;
+            case BasicType::templateselector_:
+                clearoutDeduction((*tp->sp->sb->templateSelector)[1].sp->tp);
+                return;
+            case BasicType::const_:
+            case BasicType::volatile_:
+            case BasicType::lref_:
+            case BasicType::rref_:
+            case BasicType::restrict_:
+            case BasicType::far_:
+            case BasicType::near_:
+            case BasicType::seg_:
+            case BasicType::lrqual_:
+            case BasicType::rrqual_:
+            case BasicType::derivedfromtemplate_:
+                tp = tp->btp;
+                break;
+            case BasicType::memberptr_:
+                clearoutDeduction(tp->sp->tp);
+                tp = tp->btp;
+                break;
+            case BasicType::func_:
+            case BasicType::ifunc_: {
+                for (auto sym : *tp->syms)
+                {
+                    clearoutDeduction(sym->tp);
+                }
+                tp = tp->btp;
+                break;
             }
-            tp = tp->btp;
-            break;
-        case BasicType::templateselector_:
-            clearoutDeduction((*tp->sp->sb->templateSelector)[1].sp->tp);
-            return;
-        case BasicType::const_:
-        case BasicType::volatile_:
-        case BasicType::lref_:
-        case BasicType::rref_:
-        case BasicType::restrict_:
-        case BasicType::far_:
-        case BasicType::near_:
-        case BasicType::seg_:
-        case BasicType::lrqual_:
-        case BasicType::rrqual_:
-        case BasicType::derivedfromtemplate_:
-            tp = tp->btp;
-            break;
-        case BasicType::memberptr_:
-            clearoutDeduction(tp->sp->tp);
-            tp = tp->btp;
-            break;
-        case BasicType::func_:
-        case BasicType::ifunc_: {
-            for (auto sym : *tp->syms)
-            {
-                clearoutDeduction(sym->tp);
-            }
-            tp = tp->btp;
-            break;
-        }
-        case BasicType::templateparam_:
-            tp->templateParam->second->byClass.temp = nullptr;
-            return;
-        default:
-            return;
+            case BasicType::templateparam_:
+                tp->templateParam->second->byClass.temp = nullptr;
+                return;
+            default:
+                return;
         }
     }
 }
@@ -2063,7 +2068,7 @@ void ScopeTemplateParams(SYMBOL* sym)
     if (sym->sb->parentClass)
     {
         auto sym1 = sym;
-        static std::stack<SYMBOL* > stk;
+        static std::stack<SYMBOL*> stk;
         while (stk.size())
             stk.pop();
         while (sym1)
@@ -2236,8 +2241,8 @@ static SYMBOL* FindTemplateSelector(std::vector<TEMPLATESELECTOR>* tso)
         {
             sp->tp->InstantiateDeferred();
             sp = sp->tp->BaseType()->sp;
-            if ((sp->sb->templateLevel == 0 || sp->sb->instantiated))// &&
-//                (!sp->templateParams || allTemplateArgsSpecified(sp, sp->templateParams)))
+            if ((sp->sb->templateLevel == 0 || sp->sb->instantiated))  // &&
+            //                (!sp->templateParams || allTemplateArgsSpecified(sp, sp->templateParams)))
             {
                 auto find = tso->begin();
                 ++find;
@@ -2470,9 +2475,9 @@ static std::list<TEMPLATEPARAMPAIR>* ResolveTemplateSelector(SYMBOL* sp, TEMPLAT
                                 if (newx->type == BasicType::templateselector_)
                                 {
                                     toContinue = false;
-                                        newx = sp->tp;
-                                 }
-                             });
+                                    newx = sp->tp;
+                                }
+                            });
 
                             (byVal ? rv->back().second->byClass.val : rv->back().second->byClass.dflt)->UpdateRootTypes();
 

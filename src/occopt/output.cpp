@@ -54,9 +54,10 @@ void oputc(int ch, FILE* file)
         fputc(ch, file);
 }
 
-void beputc(int ch) { 
+void beputc(int ch)
+{
     if (fputc(ch, outputFile) == -1)
-	Utils::Fatal("beputc: internal error"); 
+        Utils::Fatal("beputc: internal error");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -65,10 +66,10 @@ void owrite(const char* buf, size_t size, int n, FILE* fil)
     if (fil)
         fwrite(buf, size, n, fil);
 }
-void beWrite(const char* buf, size_t size) 
-{ 
+void beWrite(const char* buf, size_t size)
+{
     if (fwrite(buf, size, 1, outputFile) != size)
-	Utils::Fatal("bewrite: internal error"); 
+        Utils::Fatal("bewrite: internal error");
 }
 /*-------------------------------------------------------------------------*/
 void oprintf(FILE* file, const char* format, ...)
@@ -86,13 +87,13 @@ void bePrintf(const char* format, ...)
     va_list arg;
     va_start(arg, format);
     if (vfprintf(outputFile, format, arg) <= 0)
-    	Utils::Fatal("bePrintf: internal error"); 
+        Utils::Fatal("bePrintf: internal error");
 
     va_end(arg);
 }
-void beRewind(void) 
-{ 
+void beRewind(void)
+{
     if (fseek(outputFile, 0, SEEK_SET) < 0)
-	Utils::Fatal("beRewind: internal error"); 
+        Utils::Fatal("beRewind: internal error");
 }
 }  // namespace Optimizer

@@ -418,8 +418,8 @@ static void CalculateSuccessors(Loop* lp)
         {
             Loop* inner = contains->loop;
             /* only have to add blocks that could have exited an inner loop
-                * and only if they also exit this loop
-                */
+             * and only if they also exit this loop
+             */
             for (BLOCKLIST* prevSuccessors = inner->successors; prevSuccessors; prevSuccessors = prevSuccessors->next)
             {
                 if (!briggsTest(lp->blocks, prevSuccessors->block->blocknum))

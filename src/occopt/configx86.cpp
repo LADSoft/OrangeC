@@ -48,7 +48,7 @@ static char BackendIntrinsicPrototypes[] =
 #include "../occ/beIntrinsicProtos.h"
     ;
 static char help_text[] =
-R"help([options] [@response file] files
+    R"help([options] [@response file] files
  
 This program is the Orange C compiler for x86   
 
@@ -158,7 +158,7 @@ Dependency generation:
 Command line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 static char usage_text[] = "[options] [@response file] files";
 
 void WinmodeSetup(const char* string);
@@ -304,7 +304,7 @@ static ARCH_SIZING alignments = {
     0,  /*char a_rcomplexpad;*/
     0,  /*char a_lrcomplexpad;*/
     8,  // char a_alignedstruct; // __attribute((__aligned__))
-    16,  /* char a_maxalign; */
+    16, /* char a_maxalign; */
 };
 static ARCH_SIZING locks = {
     0, /*char a_bool; */
@@ -337,7 +337,7 @@ static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
 static ARCH_FLOAT aldbl = {-1022, 1022, 1024, 53};
 // static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
-static char fastcallRegs[2] = {R_ECX, R_EDX };
+static char fastcallRegs[2] = {R_ECX, R_EDX};
 static ARCH_CHARACTERISTICS architecture_characteristics = {
     &alignments, /* alignments */
     0,           /* custom alignment routine */

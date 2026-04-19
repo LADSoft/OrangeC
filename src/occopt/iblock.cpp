@@ -173,7 +173,7 @@ int ToQuadConst(Optimizer::IMODE** im)
 {
     if (*im && (*im)->mode == i_immed)
     {
-        Optimizer::QUAD *rv, temp {};
+        Optimizer::QUAD *rv, temp{};
         if (isintconst((*im)->offset))
         {
             temp.dc.opcode = i_icon;
@@ -373,7 +373,8 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
                  (!newQuad->dc.right || !(newQuad->livein & IM_LIVERIGHT) ||
                   (!newQuad->dc.right->vol &&
                    (newQuad->dc.right->size < ISZ_FLOAT || Optimizer::chosenAssembler->arch->hasFloatRegs)))))
-                if (newQuad->dc.opcode != i_add || (!(newQuad->livein & IM_LIVELEFT) || (newQuad->dc.left && newQuad->dc.left->mode != i_immed)) ||
+                if (newQuad->dc.opcode != i_add ||
+                    (!(newQuad->livein & IM_LIVELEFT) || (newQuad->dc.left && newQuad->dc.left->mode != i_immed)) ||
                     (!(newQuad->livein & IM_LIVERIGHT) || (newQuad->dc.right && newQuad->dc.right->mode != i_immed)))
                 {
                     if (newQuad->dc.opcode != i_parmstack)

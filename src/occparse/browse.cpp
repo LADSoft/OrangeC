@@ -90,7 +90,7 @@ void abspath(char (&name)[n])
     {
         projname[0] = _getdrive() + 'A' - 1;
         projname[1] = ':';
-        Utils::StrCpy(projname + 2, sizeof(projname)-2, name);
+        Utils::StrCpy(projname + 2, sizeof(projname) - 2, name);
         Utils::StrCpy(name, projname);
     }
 #endif

@@ -49,7 +49,7 @@ extern std::unordered_map<const char*, SYMBOL*, StringHash, StringEqual> classIn
 
 extern struct templateListData* currents;
 
-inline bool IsDefiningTemplate() { return !(!templateDefinitionLevel | templateInstantiationLevel);  }
+inline bool IsDefiningTemplate() { return !(!templateDefinitionLevel | templateInstantiationLevel); }
 
 void templateInit(void);
 void TemplateGetDeferredTokenStream(SYMBOL* sym);
@@ -63,19 +63,18 @@ static std::list<TEMPLATEPARAMPAIR>* nextExpand(std::list<TEMPLATEPARAMPAIR>* in
 std::list<TEMPLATEPARAMPAIR>** expandTemplateSelector(std::list<TEMPLATEPARAMPAIR>** lst, std::list<TEMPLATEPARAMPAIR>* orig,
                                                       Type* tp);
 
-bool constructedInt( SYMBOL* funcsp);
-void GetTemplateArguments( SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst);
+bool constructedInt(SYMBOL* funcsp);
+void GetTemplateArguments(SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst);
 static bool SameTemplateSpecialization(Type* P, Type* A);
 bool exactMatchOnTemplateSpecialization(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym);
 SYMBOL* FindSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templateParams);
 SYMBOL* LookupSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* templateParams);
 static bool matchTemplatedType(Type* old, Type* sym, bool strict);
 SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp);
-LexemeStream* TemplateArgGetDefault( bool isExpression);
+LexemeStream* TemplateArgGetDefault(bool isExpression);
 static SYMBOL* templateParamId(Type* tp, const char* name, int tag);
-static void TemplateHeader( SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args);
-static void TemplateArg( SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst,
-                            bool templateParam);
+static void TemplateHeader(SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args);
+static void TemplateArg(SYMBOL* funcsp, TEMPLATEPARAMPAIR& arg, std::list<TEMPLATEPARAMPAIR>** lst, bool templateParam);
 static bool matchArg(TEMPLATEPARAMPAIR& param, TEMPLATEPARAMPAIR& arg);
 bool TemplateIntroduceArgs(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATEPARAMPAIR>* args);
 bool FunctionTemplateCandidate(std::list<TEMPLATEPARAMPAIR>* sym, std::list<TEMPLATEPARAMPAIR>* args);
@@ -83,7 +82,7 @@ static bool comparePointerTypes(Type* tpo, Type* tps);
 static bool TemplateInstantiationMatchInternal(std::list<TEMPLATEPARAMPAIR>* porig, std::list<TEMPLATEPARAMPAIR>* psym, bool dflt,
                                                bool bySpecialization);
 bool TemplateInstantiationMatch(SYMBOL* orig, SYMBOL* sym, bool bySpecialization);
-void GetDeductionGuide( SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, Type** tp);
+void GetDeductionGuide(SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, Type** tp);
 static bool ValidSpecialization(std::list<TEMPLATEPARAMPAIR>* special, std::list<TEMPLATEPARAMPAIR>* args, bool templateMatch);
 SYMBOL* MatchSpecialization(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args);
 void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVALUEDATA*>* nsv, SYMBOL* strSym,
@@ -96,5 +95,5 @@ static void MarkDllLinkage(SYMBOL* sp, Linkage linkage);
 static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMESPACEVALUEDATA*>* nsv, bool isExtern);
 bool inCurrentTemplate(const char* name);
 bool definedInTemplate(const char* name);
-void TemplateDeclaration( SYMBOL* funcsp, AccessLevel access, StorageClass storage_class, bool isExtern);
+void TemplateDeclaration(SYMBOL* funcsp, AccessLevel access, StorageClass storage_class, bool isExtern);
 }  // namespace Parser

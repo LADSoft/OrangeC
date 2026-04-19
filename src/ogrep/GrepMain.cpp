@@ -59,7 +59,7 @@ CmdSwitchBool GrepMain::quiet(SwitchParser, 'q');
 
 const char* GrepMain::usageText = "[options] searchstring file[s]";
 const char* GrepMain::helpText =
-R"help([options] searchstring file[s]
+    R"help([options] searchstring file[s]
     
 This program is a standalone grep program
 grep programs perform a search for words or phrases
@@ -89,10 +89,9 @@ Use \\{ and \\} to set an interval:
     a\\{2,4\\} matches from two to four 'a' characters
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     GrepMain grepMain;
     return grepMain.Run(argc, argv);
@@ -301,7 +300,8 @@ int GrepMain::Run(int argc, char** argv)
             ToolChain::Usage(usageText, 2);
     }
     SetModes();
-    RegExpContext regexp(files[1].Name.c_str(), regularExpressions.GetValue(), !caseInSensitive.GetValue(), completeWords.GetValue());
+    RegExpContext regexp(files[1].Name.c_str(), regularExpressions.GetValue(), !caseInSensitive.GetValue(),
+                         completeWords.GetValue());
 
     if (!regexp.IsValid())
     {

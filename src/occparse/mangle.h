@@ -32,7 +32,6 @@
 
 #define MAX_MANGLE_NAME_COUNT 36
 
-
 namespace Parser
 {
 extern char hashdNames[MAX_MANGLE_NAME_COUNT][256];

@@ -65,7 +65,7 @@ CmdSwitchString linkocc::prm_version(SwitchParser, 0, ';', {"version"});
 CmdSwitchString linkocc::prm_wx(SwitchParser, 0, ';', {"wx"});
 
 const char* linkocc::helpText =
-R"help([options] files...
+    R"help([options] files...
   
 This program is a wrapper that converts MS/LINK style
 linker command line options to olink options
@@ -98,12 +98,11 @@ linker command line options to olink options
 --nologo                      no logo
 /?, --help                    this text
 
-)help"    
-"Time: " __TIME__ "  Date: " __DATE__;
+)help"
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* linkocc::usageText = "[options] files...";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     linkocc link;
     return link.Run(argc, argv);

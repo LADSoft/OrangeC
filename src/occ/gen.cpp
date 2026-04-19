@@ -706,7 +706,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
 {
     *op = op_mov;
     *aph = 0;
-    if (im->mode ==  Optimizer::i_direct && im->offset->type == Optimizer::se_threadlocal)
+    if (im->mode == Optimizer::i_direct && im->offset->type == Optimizer::se_threadlocal)
     {
         AMODE* temp = setSymbol("__TLSINITSTART");
         temp->mode = am_immed;
@@ -790,7 +790,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
             *aph = beLocalAllocate<AMODE>();
             **aph = **apl;
             (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
-                Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
+                                                             Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
             if ((*apl)->preg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->preg;
             if ((*apl)->sreg >= 0)
@@ -1004,7 +1004,7 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
                 gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
             }
             dest->liveRegs = l;
-            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits))  - 1)) << startbit));
+            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits)) - 1)) << startbit));
         }
     }
     else
@@ -2434,9 +2434,9 @@ void asm_passthrough(Optimizer::QUAD* q) /* reserved */
         }
     }
     if (val->oper3)
-       val = gen_code3(val->opcode, val->oper1, val->oper2, val->oper3);
+        val = gen_code3(val->opcode, val->oper1, val->oper2, val->oper3);
     else
-       val = gen_code(val->opcode, val->oper1, val->oper2);
+        val = gen_code(val->opcode, val->oper1, val->oper2);
     val->noopt = true;
 }
 void asm_datapassthrough(Optimizer::QUAD* q) /* reserved */ { (void)q; }

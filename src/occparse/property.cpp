@@ -164,7 +164,7 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
-void initialize_property( SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
+void initialize_property(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool asExpression, int flags)
 {
     if (sym->tp->IsStructured())
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);

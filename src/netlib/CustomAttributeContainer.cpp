@@ -198,7 +198,7 @@ void CustomAttributeContainer::Load(PELib& peLib, AssemblyDef& assembly, PEReade
                     if (ita == attributes.end())
                     {
                         CustomAttribute* newAttribute = new CustomAttribute(attribute.tag_, attribute.index_);
-                        std::vector<CustomAttributeDescriptor*> desc = { *it };
+                        std::vector<CustomAttributeDescriptor*> desc = {*it};
                         attributes[newAttribute] = std::move(desc);
                     }
                     else

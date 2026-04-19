@@ -198,9 +198,9 @@ static void ScanVarStrength(InstructionList* l, IMODE* multiplier, int tnum, int
             if (tempInfo[ans->offset->sp->i]->strengthRename != s->strengthName)
             {
                 tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
-            
+
                 auto key = tempInfo[ans->offset->sp->i]->preSSATemp;
-                for (int i=0; i < tempCount; i++)
+                for (int i = 0; i < tempCount; i++)
                     if (tempInfo[i] && tempInfo[i]->inUse && key == tempInfo[i]->preSSATemp)
                     {
                         int b = tempInfo[i]->blockDefines->blocknum;
@@ -227,7 +227,8 @@ static void ScanStrength(void)
             if (head->block)
             {
                 auto loop = head->block->loopParent;
-                while (head && head->block && head->block->loopParent == loop && !head->blockInit) head = head->back;
+                while (head && head->block && head->block->loopParent == loop && !head->blockInit)
+                    head = head->back;
                 if (head && head->block && head->block->loopParent == loop && head->blockInit)
                     first = head->block->blocknum;
             }
@@ -238,7 +239,8 @@ static void ScanStrength(void)
                 vars = sets->vars;
                 while (vars)
                 {
-                    ScanVarStrength(tempInfo[vars->data]->instructionUses, nullptr, vars->data, vars->data, sets->vars, first, last);
+                    ScanVarStrength(tempInfo[vars->data]->instructionUses, nullptr, vars->data, vars->data, sets->vars, first,
+                                    last);
                     vars = vars->next;
                 }
                 sets = sets->next;
@@ -394,14 +396,14 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     if (q1.dc.left->offset->type == se_tempref && q1.dc.left->mode == i_direct)
     {
         int n = q1.dc.left->offset->sp->i;
-//        if (tempInfo[n]->preSSATemp >= 0)
-//            q1.dc.left = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
+        //        if (tempInfo[n]->preSSATemp >= 0)
+        //            q1.dc.left = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
     }
     if (q1.dc.right && q1.dc.right->offset->type == se_tempref && q1.dc.right->mode == i_direct)
     {
         int n = q1.dc.right->offset->sp->i;
- //       if (tempInfo[n]->preSSATemp >= 0)
-  //          q1.dc.right = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
+        //       if (tempInfo[n]->preSSATemp >= 0)
+        //          q1.dc.right = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
     }
     if (ins->dc.opcode != i_assn)
     {

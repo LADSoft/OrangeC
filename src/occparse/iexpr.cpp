@@ -66,8 +66,8 @@
 #include "iexpr.h"
 #include "ioptimizer.h"
 #ifndef ORANGE_NO_MSIL
-#include "msilusing.h"
-#include "msilusing.h"
+#    include "msilusing.h"
+#    include "msilusing.h"
 #endif
 #include "templatedecl.h"
 #include "templateutil.h"
@@ -128,7 +128,7 @@ void DumpIncDec(SYMBOL* funcsp)
 {
     auto toProcess = std::move(incdecList);
     for (auto exp : toProcess)
-    { 
+    {
         gen_void_(exp, funcsp);
     }
 }
@@ -893,7 +893,8 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         {
                             return gen_expr(funcsp, exp->left->left, 0, ISZ_ADDR);
                         }
-                        if (exp->type != ExpressionNode::l_p_ || exp->left->type != ExpressionNode::auto_ || exp->left->v.sp != node->left->v.sp)
+                        if (exp->type != ExpressionNode::l_p_ || exp->left->type != ExpressionNode::auto_ ||
+                            exp->left->v.sp != node->left->v.sp)
                         {
                             return gen_expr(funcsp, inlineSymStructPtr.back(), 0, ISZ_ADDR);
                         }
@@ -2511,13 +2512,14 @@ static int MarkFastcall(SYMBOL* sym, Type* functp, bool thisptr)
                     // change it to a move
                     SYMBOL* sp = *it;
                     Type* tp = sp->tp->BaseType();
-                    if ( i < Optimizer::chosenAssembler->arch->fastcallRegCount && (thisptr ||
-                        ((tp->type < BasicType::float_ ||
-                          (tp->type == BasicType::pointer_ && tp->BaseType()->btp->BaseType()->type != BasicType::func_) ||
-                          tp->IsRef()) &&
-                         sp->sb->offset - (Optimizer::chosenAssembler->arch->fastcallRegCount + structret) *
-                                              Optimizer::chosenAssembler->arch->parmwidth <
-                             Optimizer::chosenAssembler->arch->retblocksize)))
+                    if (i < Optimizer::chosenAssembler->arch->fastcallRegCount &&
+                        (thisptr ||
+                         ((tp->type < BasicType::float_ ||
+                           (tp->type == BasicType::pointer_ && tp->BaseType()->btp->BaseType()->type != BasicType::func_) ||
+                           tp->IsRef()) &&
+                          sp->sb->offset - (Optimizer::chosenAssembler->arch->fastcallRegCount + structret) *
+                                               Optimizer::chosenAssembler->arch->parmwidth <
+                              Optimizer::chosenAssembler->arch->retblocksize)))
                     {
                         Optimizer::IMODE* temp = Optimizer::tempreg(tail->dc.left->size, 0);
                         Optimizer::QUAD* q = Allocate<Optimizer::QUAD>();
@@ -3816,7 +3818,8 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 Optimizer::EnterExternal(sym);
                 if (sym->vtabSym)
                 {
-                    if (Optimizer::cparams.prm_cplusplus && (sym->vtabSym->sb->inlineFunc.stmt || bodyTokenStreams.get(sym->vtabSym)))
+                    if (Optimizer::cparams.prm_cplusplus &&
+                        (sym->vtabSym->sb->inlineFunc.stmt || bodyTokenStreams.get(sym->vtabSym)))
                     {
                         sym->vtabSym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                     }

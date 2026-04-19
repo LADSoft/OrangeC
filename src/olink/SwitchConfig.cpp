@@ -132,7 +132,7 @@ void ConfigData::SetDefines(LinkManager& linker)
     for (auto& define : defines)
         AddDefine(linker, define->name, define->value);
 }
-void  ConfigData::SetPreEntries(LinkManager& linker)
+void ConfigData::SetPreEntries(LinkManager& linker)
 {
     for (auto& preEntry : preEntries)
         linker.SetPreEntryData(preEntry->first, preEntry->second);

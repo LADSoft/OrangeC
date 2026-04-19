@@ -91,8 +91,17 @@ struct DllImports
   public:
     DllImports(std::map<std::string, Module*>& Modules, const std::vector<std::string>& delayLoadModules, ObjInt Offset,
                bool bind = false, bool unload = false) :
-        modules(Modules), offset(Offset), bindTable(bind), unloadTable(unload), directory(0),
-        directoryNames(0), iatAddr(0), names(0), nameAddr(0), bindAddr(0), unloadAddr(0)
+        modules(Modules),
+        offset(Offset),
+        bindTable(bind),
+        unloadTable(unload),
+        directory(0),
+        directoryNames(0),
+        iatAddr(0),
+        names(0),
+        nameAddr(0),
+        bindAddr(0),
+        unloadAddr(0)
     {
         TrimModules(delayLoadModules);
     }

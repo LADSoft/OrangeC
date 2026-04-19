@@ -227,7 +227,7 @@ void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)
     {
         ObjDefinitionSymbol* dsym = static_cast<ObjDefinitionSymbol*>(Symbol);
         ObjString data = ToString(dsym->GetName()) + "," + ObjUtil::ToDecimal(dsym->GetValue());
-        RenderComment(eDefinition,std::move(data));
+        RenderComment(eDefinition, std::move(data));
     }
     else if (Symbol->GetType() == ObjSymbol::eImport)
     {
@@ -588,7 +588,7 @@ bool ObjIeeeAscii::HandleWrite()
     WriteStartAddress();
     RenderCS();
     ResetCS();
-    RenderComment(eLinkPass,std::move( ObjString("Link Pass Separator")));
+    RenderComment(eLinkPass, std::move(ObjString("Link Pass Separator")));
     WriteSections();
     RenderCS();
     ResetCS();
@@ -616,7 +616,7 @@ void ObjIeeeAscii::WriteHeader()
     }
     if (absolute)
     {
-        RenderComment(eAbsolute,std::move(ObjString("Absolute file")));
+        RenderComment(eAbsolute, std::move(ObjString("Absolute file")));
     }
 }
 void ObjIeeeAscii::WriteFiles()

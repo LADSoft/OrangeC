@@ -441,7 +441,7 @@ std::string GetArrayName(Optimizer::SimpleType* tp, bool byRef, bool pinned)
         else if (tp->size == 0)
             Utils::StrCat(end, "_empty");
         else
-            Optimizer::my_sprintf(end + strlen(end), sizeof(end)- strlen(end), "_array_%d", (int)tp->size);
+            Optimizer::my_sprintf(end + strlen(end), sizeof(end) - strlen(end), "_array_%d", (int)tp->size);
         tp = tp->btp;
     }
     if (byRef)
@@ -847,7 +847,7 @@ static Optimizer::SimpleSymbol* clone(Optimizer::SimpleSymbol* sp, bool ctype)
     rv->name = (char*)peLib->AllocateBytes(l + 1);
     if (ctype)
         rv->tp = cloneType(rv->tp);
-    Utils::StrCpy((char*)rv->name, l+1, sp->name);
+    Utils::StrCpy((char*)rv->name, l + 1, sp->name);
     return rv;
 }
 void CacheExtern(Optimizer::SimpleSymbol* sp)

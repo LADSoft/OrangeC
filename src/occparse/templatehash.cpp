@@ -63,89 +63,90 @@
 
 namespace
 {
-    using namespace Parser;
+using namespace Parser;
 
-    std::unordered_map<TemplateHashContext::DataType, SYMBOL*, OrangeC::Utils::fnv1a32_arr<TemplateHashContext::DataSize>,
-                       OrangeC::Utils::arr_eql<TemplateHashContext::DataSize>> classHash, functionHash;
+std::unordered_map<TemplateHashContext::DataType, SYMBOL*, OrangeC::Utils::fnv1a32_arr<TemplateHashContext::DataSize>,
+                   OrangeC::Utils::arr_eql<TemplateHashContext::DataSize>>
+    classHash, functionHash;
 
-    void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool first);
-    int uniqueId;
-    void hashNameSpaces(TemplateHashContext& context, SYMBOL* sym)
+void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool first);
+int uniqueId;
+void hashNameSpaces(TemplateHashContext& context, SYMBOL* sym)
+{
+    if (!sym)
+        return;
+    hashNameSpaces(context, sym->sb->parentNameSpace);
+    if (sym->sb->parentNameSpace && !strcmp(sym->name, "__1") && !strcmp(sym->sb->parentNameSpace->name, "std"))
+        return;
+    PUTSTRING(sym->name);
+}
+
+void hashTemplate(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool bydflt = true);
+
+void getName(TemplateHashContext& context, SYMBOL* sym);
+
+void hashParent(TemplateHashContext& context, SYMBOL* sym)
+{
+    PUTSTRING(sym->sb->parent->name);
+    if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
     {
-        if (!sym)
-            return;
-        hashNameSpaces(context, sym->sb->parentNameSpace);
-        if (sym->sb->parentNameSpace && !strcmp(sym->name, "__1") && !strcmp(sym->sb->parentNameSpace->name, "std"))
-            return;
+        hashTemplate(context, sym->sb->parent, sym->sb->parent->templateParams);
+    }
+}
+
+void hashClasses(TemplateHashContext& context, SYMBOL* sym)
+{
+    if (!sym)
+        return;
+    if (sym->sb->parentClass)
+        hashClasses(context, sym->sb->parentClass);
+    if (sym->sb->parent)
+    {
+        hashParent(context, sym);
+    }
+    if (sym->sb->castoperator)
+    {
+        PUTCH('@');
+    }
+    else if (sym->sb->templateLevel && sym->templateParams)
+    {
+        PUTCH('@');
+        hashTemplate(context, sym, sym->templateParams);
+    }
+    else
+    {
         PUTSTRING(sym->name);
     }
+}
 
-    void hashTemplate(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool bydflt = true);
-
-    void getName(TemplateHashContext& context, SYMBOL* sym);
-
-    void hashParent(TemplateHashContext& context, SYMBOL* sym)
+void hashExpressionInternal(TemplateHashContext& context, EXPRESSION* exp)
+{
+    while (IsCastValue(exp))
+        exp = exp->left;
+    if (isintconst(exp))
     {
-        PUTSTRING(sym->sb->parent->name);
-        if (sym->sb->parent->sb->templateLevel && sym->sb->parent->templateParams)
+        char buf[64];
+        buf[0] = 0;
+        if (exp->type == ExpressionNode::const_)
         {
-            hashTemplate(context, sym->sb->parent, sym->sb->parent->templateParams);
-        }
-    }
-
-    void hashClasses(TemplateHashContext& context, SYMBOL* sym)
-    {
-        if (!sym)
-            return;
-        if (sym->sb->parentClass)
-            hashClasses(context, sym->sb->parentClass);
-        if (sym->sb->parent)
-        {
-            hashParent(context, sym);
-        }
-        if (sym->sb->castoperator)
-        {
-            PUTCH('@');
-        }
-        else if (sym->sb->templateLevel && sym->templateParams)
-        {
-            PUTCH('@');
-            hashTemplate(context, sym, sym->templateParams);
+            Optimizer::my_sprintf(buf, sizeof(buf), "%lld?", exp->v.sp->sb->value.i);
         }
         else
         {
-            PUTSTRING(sym->name);
+            Optimizer::my_sprintf(buf, sizeof(buf), "%lld?", exp->v.i);
         }
+        PUTSTRING(buf);
     }
-
-    void hashExpressionInternal(TemplateHashContext& context, EXPRESSION* exp)
+    else
     {
-        while (IsCastValue(exp))
+        bool nonpointer = false;
+        while (IsLValue(exp))
+        {
+            nonpointer = true;
             exp = exp->left;
-        if (isintconst(exp))
-        {
-            char buf[64];
-            buf[0] = 0;
-            if (exp->type == ExpressionNode::const_)
-            {
-                Optimizer::my_sprintf(buf, sizeof(buf), "%lld?", exp->v.sp->sb->value.i);
-            }
-            else
-            {
-                Optimizer::my_sprintf(buf, sizeof(buf), "%lld?", exp->v.i);
-            }
-            PUTSTRING(buf);
         }
-        else
+        switch (exp->type)
         {
-            bool nonpointer = false;
-            while (IsLValue(exp))
-            {
-                nonpointer = true;
-                exp = exp->left;
-            }
-            switch (exp->type)
-            {
             case ExpressionNode::nullptr_:
                 PUTCH('n');
                 break;
@@ -359,8 +360,7 @@ namespace
             case ExpressionNode::constexprconstructor_:
                 hashExpressionInternal(context, exp->left);
                 break;
-            case ExpressionNode::callsite_: 
-            {
+            case ExpressionNode::callsite_: {
                 if (exp->v.func->ascall)
                 {
                     PUTCH('f');
@@ -415,68 +415,70 @@ namespace
                 break;
             default:
                 break;
-            }
         }
     }
+}
 
-    void hashExpression(TemplateHashContext& context, EXPRESSION* exp)
+void hashExpression(TemplateHashContext& context, EXPRESSION* exp)
+{
+    if (exp)
     {
-        if (exp)
-        {
-            PUTCH('?');
-            hashExpressionInternal(context, exp);
-        }
+        PUTCH('?');
+        hashExpressionInternal(context, exp);
     }
+}
 
-    void hashTemplate(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool byDflt)
+void hashTemplate(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params, bool byDflt)
+{
+    bool bySpecial = false;
+    if (params && params->size() && params->front().second->type == TplType::new_ &&
+        ((sym->sb && (sym->sb->instantiated && !sym->sb->templateLevel)) ||
+         (params && params->front().second->bySpecialization.types)))
     {
-        bool bySpecial = false;
-        if (params && params->size() && params->front().second->type == TplType::new_ &&
-            ((sym->sb && (sym->sb->instantiated && !sym->sb->templateLevel)) || (params && params->front().second->bySpecialization.types)))
-        {
-            params = params->front().second->bySpecialization.types;
-            bySpecial = true;
-        }
-        if (sym->tp->type == BasicType::templateparam_ && sym->tp->templateParam->second->type == TplType::template_)
-        {
-            auto sp = sym->tp->templateParam->second->byTemplate.val;
-            if (sp)
-                sym = sp;
-        }
-        if (byDflt)
-        {
-            PUTSTRING(sym->name);
-        }
-        else if (sym->sb && (sym->sb->isConstructor || sym->sb->isDestructor) &&
-            sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
-        {
-            PUTSTRING(sym->name);
-            PUTCH('.');
-        }
-        else
-        {
-            PUTCH('#');
-            PUTSTRING(sym->name);
-            PUTCH('.');
-        }
-        static StackList<std::list<TEMPLATEPARAMPAIR>::iterator> nestedStack;
-        NestedStack<std::list<TEMPLATEPARAMPAIR>::iterator> tps(nestedStack);
+        params = params->front().second->bySpecialization.types;
+        bySpecial = true;
+    }
+    if (sym->tp->type == BasicType::templateparam_ && sym->tp->templateParam->second->type == TplType::template_)
+    {
+        auto sp = sym->tp->templateParam->second->byTemplate.val;
+        if (sp)
+            sym = sp;
+    }
+    if (byDflt)
+    {
+        PUTSTRING(sym->name);
+    }
+    else if (sym->sb && (sym->sb->isConstructor || sym->sb->isDestructor) &&
+             sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
+    {
+        PUTSTRING(sym->name);
+        PUTCH('.');
+    }
+    else
+    {
+        PUTCH('#');
+        PUTSTRING(sym->name);
+        PUTCH('.');
+    }
+    static StackList<std::list<TEMPLATEPARAMPAIR>::iterator> nestedStack;
+    NestedStack<std::list<TEMPLATEPARAMPAIR>::iterator> tps(nestedStack);
 
-        if (params)
+    if (params)
+    {
+        auto it = params->begin();
+        auto ite = params->end();
+        for (; it != ite;)
         {
-            auto it = params->begin();
-            auto ite = params->end();
-            for (; it != ite;)
+            switch (it->second->type)
             {
-                switch (it->second->type)
-                {
                 case TplType::typename_:
                     if (it->second->packed)
                     {
                         if (it->second->byPack.pack)
                         {
                             for (auto pack : *it->second->byPack.pack)
-                                hashType(context, pack.second->byClass.val ? pack.second->byClass.val : pack.second->byClass.dflt, nullptr, true);
+                                hashType(context, pack.second->byClass.val ? pack.second->byClass.val : pack.second->byClass.dflt,
+                                         nullptr, true);
                         }
                         else
                         {
@@ -573,109 +575,81 @@ namespace
                     break;
                 default:
                     break;
-                }
+            }
+            ++it;
+            if (it == ite && !tps.empty())
+            {
+                ite = tps.top();
+                tps.pop();
+                it = tps.top();
+                tps.pop();
                 ++it;
-                if (it == ite && !tps.empty())
-                {
-                    ite = tps.top();
-                    tps.pop();
-                    it = tps.top();
-                    tps.pop();
-                    ++it;
-                }
             }
         }
-        if (!byDflt)
-            PUTCH('~');
     }
+    if (!byDflt)
+        PUTCH('~');
+}
 
-    void getName(TemplateHashContext& context, SYMBOL* sym)
+void getName(TemplateHashContext& context, SYMBOL* sym)
+{
+    if (!sym)
     {
-        if (!sym)
+        PUTSTRING("????");
+    }
+    else if (!sym->sb)
+    {
+        PUTSTRING(sym->name);
+    }
+    else
+    {
+        hashNameSpaces(context, sym->sb->parentNameSpace);
+        hashClasses(context, sym->sb->parentClass);
+        if (sym->sb->parent)
         {
-            PUTSTRING("????");
+            hashParent(context, sym);
         }
-        else if (!sym->sb)
+        PUTCH('@');
+        if (sym->sb->templateLevel && sym->templateParams)
         {
-            PUTSTRING(sym->name);
+            hashTemplate(context, sym, sym->templateParams);
         }
         else
         {
-            hashNameSpaces(context, sym->sb->parentNameSpace);
-            hashClasses(context, sym->sb->parentClass);
-            if (sym->sb->parent)
-            {
-                hashParent(context, sym);
-            }
-            PUTCH('@');
-            if (sym->sb->templateLevel && sym->templateParams)
-            {
-                hashTemplate(context, sym, sym->templateParams);
-            }
-            else
-            {
-                PUTSTRING(sym->name);
-            }
+            PUTSTRING(sym->name);
         }
     }
+}
 
-    void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool first)
+void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool first)
+{
+    int i;
+    if (!tp)
     {
-        int i;
-        if (!tp)
+        PUTSTRING("initializer-list");
+        return;
+    }
+    while (tp)
+    {
+        while (tp->type == BasicType::typedef_ && !tp->sp->templateParams)
+            tp = tp->btp;
+        if (tp->type == BasicType::typedef_)
         {
-            PUTSTRING("initializer-list");
+            {
+                if (tp->IsConst())
+                    PUTCH('x');
+                if (tp->IsVolatile())
+                    PUTCH('y');
+                if (tp->IsLRefQual())
+                    PUTCH('r');
+                if (tp->IsRRefQual())
+                    PUTCH('R');
+            }
+            hashTemplate(context, tp->sp, tp->sp->templateParams);
             return;
         }
-        while (tp)
+        if (tp->IsStructured() && tp->BaseType()->sp->sb && tp->BaseType()->sp->sb->templateLevel)
         {
-            while (tp->type == BasicType::typedef_ && !tp->sp->templateParams)
-                tp = tp->btp;
-            if (tp->type == BasicType::typedef_)
-            {
-                {
-                    if (tp->IsConst())
-                        PUTCH('x');
-                    if (tp->IsVolatile())
-                        PUTCH('y');
-                    if (tp->IsLRefQual())
-                        PUTCH('r');
-                    if (tp->IsRRefQual())
-                        PUTCH('R');
-                }
-                hashTemplate(context, tp->sp, tp->sp->templateParams);
-                return;
-            }
-            if (tp->IsStructured() && tp->BaseType()->sp->sb && tp->BaseType()->sp->sb->templateLevel)
-            {
-                {
-                    if (tp->IsConst())
-                        PUTCH('x');
-                    if (tp->IsVolatile())
-                        PUTCH('y');
-                    if (tp->IsLRefQual())
-                        PUTCH('r');
-                    if (tp->IsRRefQual())
-                        PUTCH('R');
-                    if (exp)
-                    {
-                        bool lref = false, rref = false;
-                        GetRefs(nullptr, tp, exp, lref, rref);
-                        if (lref)
-                            PUTCH('s');
-                        if (rref)
-                            PUTCH('S');
-                    }
-                }
-                hashClasses(context, tp->BaseType()->sp->sb->parentClass);
-                if (tp->BaseType()->sp->sb->parent)
-                {
-                    hashParent(context, tp->BaseType()->sp);
-                }
-                hashTemplate(context, tp->BaseType()->sp, tp->BaseType()->sp->templateParams);
-                return;
-            }
-            else
             {
                 if (tp->IsConst())
                     PUTCH('x');
@@ -687,36 +661,64 @@ namespace
                     PUTCH('R');
                 if (exp)
                 {
-                    if (tp->lref)
+                    bool lref = false, rref = false;
+                    GetRefs(nullptr, tp, exp, lref, rref);
+                    if (lref)
                         PUTCH('s');
-                    if (tp->rref)
+                    if (rref)
                         PUTCH('S');
                 }
-                tp = tp->BaseType();
-                if (exp)
-                {
-                    if (tp->lref)
-                        PUTCH('s');
-                    if (tp->rref)
-                        PUTCH('S');
-                }
-                if (tp->IsInt() && tp->btp && tp->btp->type == BasicType::enum_)
-                    tp = tp->btp;
-                switch (tp->type)
-                {
-                    case BasicType::derivedfromtemplate_:
-                    case BasicType::typedef_:
-                    case BasicType::templateparam_:
-                        break;
-                    case BasicType::func_:
-                    case BasicType::ifunc_:
-                        PUTINT(BasicType::func_);
-                    default:
-                        PUTINT(tp->type);
-                        break;
-                }
-                switch (tp->type)
-                {
+            }
+            hashClasses(context, tp->BaseType()->sp->sb->parentClass);
+            if (tp->BaseType()->sp->sb->parent)
+            {
+                hashParent(context, tp->BaseType()->sp);
+            }
+            hashTemplate(context, tp->BaseType()->sp, tp->BaseType()->sp->templateParams);
+            return;
+        }
+        else
+        {
+            if (tp->IsConst())
+                PUTCH('x');
+            if (tp->IsVolatile())
+                PUTCH('y');
+            if (tp->IsLRefQual())
+                PUTCH('r');
+            if (tp->IsRRefQual())
+                PUTCH('R');
+            if (exp)
+            {
+                if (tp->lref)
+                    PUTCH('s');
+                if (tp->rref)
+                    PUTCH('S');
+            }
+            tp = tp->BaseType();
+            if (exp)
+            {
+                if (tp->lref)
+                    PUTCH('s');
+                if (tp->rref)
+                    PUTCH('S');
+            }
+            if (tp->IsInt() && tp->btp && tp->btp->type == BasicType::enum_)
+                tp = tp->btp;
+            switch (tp->type)
+            {
+                case BasicType::derivedfromtemplate_:
+                case BasicType::typedef_:
+                case BasicType::templateparam_:
+                    break;
+                case BasicType::func_:
+                case BasicType::ifunc_:
+                    PUTINT(BasicType::func_);
+                default:
+                    PUTINT(tp->type);
+                    break;
+            }
+            switch (tp->type)
+            {
                 case BasicType::func_:
                 case BasicType::ifunc_:
                     if (tp->BaseType()->sp && ismember(tp->BaseType()->sp) && !first)
@@ -759,290 +761,289 @@ namespace
                     getName(context, tp->sp);
                     return;
                 case BasicType::unsigned_bitint_:
-                case BasicType::bitint_:
-                {
+                case BasicType::bitint_: {
                     char buf[64];
                     Optimizer::my_sprintf(buf, sizeof(buf), "%d?", tp->bitintbits);
                     PUTSTRING(buf);
                     break;
-                case BasicType::pointer_:
-                    if (tp->nullptrType)
-                    {
-                        PUTSTRING("nullptr_t");
-                        return;
-                    }
-                    else
-                    {
-                        if (!tp->array)
+                    case BasicType::pointer_:
+                        if (tp->nullptrType)
                         {
-                            PUTCH('p');
+                            PUTSTRING("nullptr_t");
+                            return;
                         }
                         else
                         {
-                            PUTCH('A');
-                        }
-                    }
-                    break;
-                case BasicType::templateparam_:
-                    if (tp->templateParam->second->type == TplType::typename_)
-                    {
-                        if (tp->templateParam->second->packed)
-                        {
-                            if (tp->templateParam->second->byPack.pack)
+                            if (!tp->array)
                             {
-                                for (auto&& tpl : *tp->templateParam->second->byPack.pack)
+                                PUTCH('p');
+                            }
+                            else
+                            {
+                                PUTCH('A');
+                            }
+                        }
+                        break;
+                    case BasicType::templateparam_:
+                        if (tp->templateParam->second->type == TplType::typename_)
+                        {
+                            if (tp->templateParam->second->packed)
+                            {
+                                if (tp->templateParam->second->byPack.pack)
                                 {
-                                    auto dflt = tpl.second->byClass.dflt;
-                                    if (!dflt)
-                                        dflt = tpl.second->byClass.val;
-                                    auto tp1 = dflt;
-                                    while (tp1->IsRef() || tp1->IsPtr())
-                                        tp1 = tp1->BaseType()->btp;
-                                    if (tp1 && tp1->BaseType()->type != BasicType::templateparam_)
+                                    for (auto&& tpl : *tp->templateParam->second->byPack.pack)
                                     {
-                                        hashType(context, dflt, exp, false);
+                                        auto dflt = tpl.second->byClass.dflt;
+                                        if (!dflt)
+                                            dflt = tpl.second->byClass.val;
+                                        auto tp1 = dflt;
+                                        while (tp1->IsRef() || tp1->IsPtr())
+                                            tp1 = tp1->BaseType()->btp;
+                                        if (tp1 && tp1->BaseType()->type != BasicType::templateparam_)
+                                        {
+                                            hashType(context, dflt, exp, false);
+                                        }
+                                        else
+                                        {
+                                            getName(context, tpl.first);
+                                        }
                                     }
-                                    else
-                                    {
-                                        getName(context, tpl.first);
-                                    }
-
+                                }
+                            }
+                            else
+                            {
+                                auto dflt = tp->templateParam->second->byClass.dflt;
+                                if (!dflt)
+                                    dflt = tp->templateParam->second->byClass.val;
+                                if (dflt && dflt->BaseType()->type != BasicType::templateparam_)
+                                {
+                                    hashType(context, dflt, exp, false);
+                                }
+                                else
+                                {
+                                    getName(context, tp->templateParam->first);
                                 }
                             }
                         }
                         else
                         {
-                            auto dflt = tp->templateParam->second->byClass.dflt;
-                            if (!dflt)
-                                dflt = tp->templateParam->second->byClass.val;
-                            if (dflt && dflt->BaseType()->type != BasicType::templateparam_)
+                            getName(context, tp->templateParam->first);
+                        }
+                        break;
+                    case BasicType::templateselector_: {
+                        auto s = (*tp->sp->sb->templateSelector).begin();
+                        auto se = (*tp->sp->sb->templateSelector).end();
+                        ++s;
+                        if (s->isTemplate)
+                            hashTemplate(context, s->sp,
+                                         s->sp->sb && s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
+                        else
+                            getName(context, s->sp);
+                        for (++s; s != se; ++s)
+                        {
+                            PUTCH('@');
+                            if (s->isTemplate && s->templateParams)
                             {
-                                hashType(context, dflt, exp, false);
+                                SYMBOL s2 = {};
+                                s2.name = s->name;
+                                s2.tp = &stdint;
+                                hashTemplate(context, &s2, s->templateParams);
                             }
                             else
                             {
-                                getName(context, tp->templateParam->first);
+                                PUTSTRING(s->name);
                             }
                         }
-                    }
-                    else
-                    {
-                        getName(context, tp->templateParam->first);
+                        return;
                     }
                     break;
-                case BasicType::templateselector_: {
-                    auto s = (*tp->sp->sb->templateSelector).begin();
-                    auto se = (*tp->sp->sb->templateSelector).end();
-                    ++s;
-                    if (s->isTemplate)
-                        hashTemplate(context, s->sp, s->sp->sb && s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
-                    else
-                        getName(context, s->sp);
-                    for (++s; s != se; ++s)
-                    {
-                        PUTCH('@');
-                        if (s->isTemplate && s->templateParams)
-                        {
-                            SYMBOL s2 = {};
-                            s2.name = s->name;
-                            s2.tp = &stdint;
-                            hashTemplate(context, &s2, s->templateParams);
-                        }
-                        else
-                        {
-                            PUTSTRING(s->name);
-                        }
-                    }
-                    return;
+                    case BasicType::templatedecltype_:
+                        PUTCH('E');
+                        hashExpression(context, tp->templateDeclType);
+                        break;
+                    case BasicType::aggregate_:
+                        getName(context, tp->sp);
+                        break;
+                    case BasicType::templatedeferredtype_:
+                        // we want something the linkerwill treat as an error,
+                        // so we can detect problems with these not being properly replaced
+                        PUTCH(MANGLE_DEFERRED_TYPE_CHAR);
+                        break;
+                    default:
+                        break;
                 }
-                                                 break;
-                case BasicType::templatedecltype_:
-                    PUTCH('E');
-                    hashExpression(context, tp->templateDeclType);
-                    break;
-                case BasicType::aggregate_:
-                    getName(context, tp->sp);
-                    break;
-                case BasicType::templatedeferredtype_:
-                    // we want something the linkerwill treat as an error,
-                    // so we can detect problems with these not being properly replaced
-                    PUTCH(MANGLE_DEFERRED_TYPE_CHAR);
-                    break;
-                default:
-                    break;
-                }
-                }
-                tp = tp->btp;
             }
+            tp = tp->btp;
         }
     }
-    void hashCandidates(TemplateHashContext& context,  SymbolTable<SYMBOL>* syms)
-    { 
-        struct HashIndex
-        {
-            std::string name;
-            int declline;
-            const char* declfile;
-        };
-        struct HashCompare
-        {
-            bool operator()(const HashIndex& left, const HashIndex& right) const
-            {
-                if (left.declline < right.declline)
-                {
-                    return true;
-                }
-                else if (left.declline == right.declline)
-                {
-                    int n = strcmp(left.declfile, right.declfile);
-                    if (n < 0)
-                        return left.name < right.name;
-                }
-                return false;
-            }
-        };
-        if (syms->size())
-        {
-            std::set<HashIndex, HashCompare> hashSet;
-            for (auto s : *syms)
-            {
-                if (s->sb)
-                {
-                    hashSet.insert(HashIndex{ s->name, s->sb->declline, s->sb->declfile });
-                }
-                else
-                {
-                    hashSet.insert(HashIndex{ s->name, -1, ""});
-                }
-            }
-            for (auto&& s : hashSet)
-            {
-                context.Input((const unsigned char*)&s.declline, sizeof(s.declline));
-                context.Input((const unsigned char*)s.name.c_str(), s.name.size());
-            }
-        }
-    }
-    void hashCandidates(TemplateHashContext& context, SYMBOL* sym)
+}
+void hashCandidates(TemplateHashContext& context, SymbolTable<SYMBOL>* syms)
+{
+    struct HashIndex
     {
-        SymbolTable<SYMBOL> syms;
-        syms.Add(sym);
-        if (sym->sb->specializations)
+        std::string name;
+        int declline;
+        const char* declfile;
+    };
+    struct HashCompare
+    {
+        bool operator()(const HashIndex& left, const HashIndex& right) const
         {
-            for (auto elem : *sym->sb->specializations)
+            if (left.declline < right.declline)
             {
-                syms.AddName(elem);
+                return true;
             }
-        }
-        hashCandidates(context, &syms);
-    }
-     void hashTemplateParents(TemplateHashContext& context, SYMBOL* sym)
-    {
-        SYMBOL* lastParent = sym->sb->parent ? sym->sb->parent : sym;
-        while (lastParent->sb->parentClass)
-            lastParent = lastParent->sb->parentClass;
-        hashNameSpaces(context, lastParent->sb->parentNameSpace);
-        hashClasses(context, (sym->sb->parent ? sym->sb->parent : sym)->sb->parentClass);
-        if (sym->sb->parent)
-        {
-            hashParent(context, sym);
-        }
-    }
-    void hashFunctionArgs(TemplateHashContext& context, std::list<Argument*>* args)
-    {
-        if (!args)
-            return;
-        for (auto arg : *args)
-        {
-            if (!arg->tp)
+            else if (left.declline == right.declline)
             {
-                hashFunctionArgs(context, arg->nested);
+                int n = strcmp(left.declfile, right.declfile);
+                if (n < 0)
+                    return left.name < right.name;
+            }
+            return false;
+        }
+    };
+    if (syms->size())
+    {
+        std::set<HashIndex, HashCompare> hashSet;
+        for (auto s : *syms)
+        {
+            if (s->sb)
+            {
+                hashSet.insert(HashIndex{s->name, s->sb->declline, s->sb->declfile});
             }
             else
             {
-                hashType(context, arg->tp, arg->exp, true);
+                hashSet.insert(HashIndex{s->name, -1, ""});
+            }
+        }
+        for (auto&& s : hashSet)
+        {
+            context.Input((const unsigned char*)&s.declline, sizeof(s.declline));
+            context.Input((const unsigned char*)s.name.c_str(), s.name.size());
+        }
+    }
+}
+void hashCandidates(TemplateHashContext& context, SYMBOL* sym)
+{
+    SymbolTable<SYMBOL> syms;
+    syms.Add(sym);
+    if (sym->sb->specializations)
+    {
+        for (auto elem : *sym->sb->specializations)
+        {
+            syms.AddName(elem);
+        }
+    }
+    hashCandidates(context, &syms);
+}
+void hashTemplateParents(TemplateHashContext& context, SYMBOL* sym)
+{
+    SYMBOL* lastParent = sym->sb->parent ? sym->sb->parent : sym;
+    while (lastParent->sb->parentClass)
+        lastParent = lastParent->sb->parentClass;
+    hashNameSpaces(context, lastParent->sb->parentNameSpace);
+    hashClasses(context, (sym->sb->parent ? sym->sb->parent : sym)->sb->parentClass);
+    if (sym->sb->parent)
+    {
+        hashParent(context, sym);
+    }
+}
+void hashFunctionArgs(TemplateHashContext& context, std::list<Argument*>* args)
+{
+    if (!args)
+        return;
+    for (auto arg : *args)
+    {
+        if (!arg->tp)
+        {
+            hashFunctionArgs(context, arg->nested);
+        }
+        else
+        {
+            hashType(context, arg->tp, arg->exp, true);
+        }
+    }
+}
+bool hasAllArgs(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
+bool checkDfltType(Type* tp)
+{
+    while (tp->IsPtr() || tp->IsRef())
+        tp = tp->BaseType()->btp;
+    if (tp->IsFunction())
+    {
+        SYMBOL* sym = tp->BaseType()->sp;
+        if (!checkDfltType(tp->BaseType()->btp))
+            return false;
+        if (sym->tp->syms)
+        {
+            for (auto sp1 : *sym->tp->syms)
+            {
+                if (!checkDfltType(sp1->tp))
+                    return false;
             }
         }
     }
-    bool hasAllArgs(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
-    bool checkDfltType(Type* tp)
+    else if (tp->IsStructured())
     {
-        while (tp->IsPtr() || tp->IsRef())
-            tp = tp->BaseType()->btp;
-        if (tp->IsFunction())
+        if (tp->BaseType()->sp->sb)
         {
-            SYMBOL* sym = tp->BaseType()->sp;
-            if (!checkDfltType(tp->BaseType()->btp))
-                return false;
-            if (sym->tp->syms)
+            if (tp->BaseType()->sp->sb->instantiated && tp->BaseType()->sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
+                return true;
+            if (tp->BaseType()->sp->sb->templateLevel)
             {
-                for (auto sp1 : *sym->tp->syms)
+                return hasAllArgs(nullptr, tp->BaseType()->sp->templateParams);
+            }
+        }
+    }
+    else if (tp->BaseType()->type == BasicType::templateparam_)
+    {
+        if (tp->BaseType()->templateParam->second->packed)
+        {
+            auto pack = tp->BaseType()->templateParam->second->byPack.pack;
+            if (pack)
+            {
+                for (auto&& tpl : *pack)
                 {
-                    if (!checkDfltType(sp1->tp))
+                    if (!tp->BaseType()->templateParam->second->byClass.val)
+                        return false;
+                    if (tp->BaseType()->templateParam->second->byClass.val->type == BasicType::templateparam_)
                         return false;
                 }
             }
         }
-        else if (tp->IsStructured())
+        else
         {
-            if (tp->BaseType()->sp->sb)
-            {
-                if (tp->BaseType()->sp->sb->instantiated && tp->BaseType()->sp->sb->attribs.inheritable.linkage4 == Linkage::virtual_)
-                    return true;
-                if (tp->BaseType()->sp->sb->templateLevel)
-                {
-                    return hasAllArgs(nullptr, tp->BaseType()->sp->templateParams);
-                }
-            }
-        }
-        else if (tp->BaseType()->type == BasicType::templateparam_)
-        {
-            if (tp->BaseType()->templateParam->second->packed)
-            {
-                auto pack = tp->BaseType()->templateParam->second->byPack.pack;
-                if (pack)
-                {
-                    for (auto&& tpl : *pack)
-                    {
-                        if (!tp->BaseType()->templateParam->second->byClass.val)
-                            return false;
-                        if (tp->BaseType()->templateParam->second->byClass.val->type == BasicType::templateparam_)
-                            return false;
-                    }
-                }
-            }
-            else
-            {
-                if (!tp->BaseType()->templateParam->second->byClass.val)
-                    return false;
-                if (tp->BaseType()->templateParam->second->byClass.val->type == BasicType::templateparam_)
-                    return false;
-            }
-        }
-        else if (tp->BaseType()->type == BasicType::templatedecltype_)
-            return false;
-        else if (tp->BaseType()->type == BasicType::templateselector_)
-        {
-            return false;
-        }
-        else if (tp->BaseType()->type == BasicType::memberptr_)
-        {
-            if (!checkDfltType(tp->BaseType()->sp->tp))
+            if (!tp->BaseType()->templateParam->second->byClass.val)
                 return false;
-            if (!checkDfltType(tp->BaseType()->btp))
+            if (tp->BaseType()->templateParam->second->byClass.val->type == BasicType::templateparam_)
                 return false;
         }
-        else if (tp->type == BasicType::typedef_ && tp->sp->templateParams)
-        {
-            return hasAllArgs(nullptr, tp->sp->templateParams);
-        }
-        return true;
     }
-    bool checkDfltSpecified(TEMPLATEPARAMPAIR* arg)
+    else if (tp->BaseType()->type == BasicType::templatedecltype_)
+        return false;
+    else if (tp->BaseType()->type == BasicType::templateselector_)
     {
-        if (!arg->second->byClass.dflt)
+        return false;
+    }
+    else if (tp->BaseType()->type == BasicType::memberptr_)
+    {
+        if (!checkDfltType(tp->BaseType()->sp->tp))
             return false;
-        switch (arg->second->type)
-        {
+        if (!checkDfltType(tp->BaseType()->btp))
+            return false;
+    }
+    else if (tp->type == BasicType::typedef_ && tp->sp->templateParams)
+    {
+        return hasAllArgs(nullptr, tp->sp->templateParams);
+    }
+    return true;
+}
+bool checkDfltSpecified(TEMPLATEPARAMPAIR* arg)
+{
+    if (!arg->second->byClass.dflt)
+        return false;
+    switch (arg->second->type)
+    {
         case TplType::int_:
             if (arg->second->byNonType.dflt && !isarithmeticconst(arg->second->byNonType.dflt))
             {
@@ -1063,12 +1064,12 @@ namespace
                     {
                         switch (exp->type)
                         {
-                        case ExpressionNode::pc_:
-                        case ExpressionNode::global_:
-                            break;
-                        default:
-                            return false;
-                            break;
+                            case ExpressionNode::pc_:
+                            case ExpressionNode::global_:
+                                break;
+                            default:
+                                return false;
+                                break;
                         }
                     }
                     if (!working.empty())
@@ -1093,57 +1094,56 @@ namespace
         }
         default:
             break;
-        }
-        return true;
     }
-    bool hasAllArgs(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
+    return true;
+}
+bool hasAllArgs(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)
+{
+    if (params)
     {
-        if (params)
+        for (auto it = params->begin(); it != params->end(); ++it)
         {
-            for (auto it = params->begin(); it != params->end(); ++it)
+            if (it->second->type != TplType::new_)
             {
-                if (it->second->type != TplType::new_)
+                if (it->second->packed)
                 {
-                    if (it->second->packed)
+                    if ((IsDefiningTemplate() && (!it->second->byPack.pack || !it->second->byPack.pack->size())) ||
+                        !hasAllArgs(nullptr, it->second->byPack.pack))
+                        return false;
+                }
+                else
+                {
+                    if (sym)
                     {
-                        if ((IsDefiningTemplate() &&
-                            (!it->second->byPack.pack || !it->second->byPack.pack->size())) ||
-                            !hasAllArgs(nullptr, it->second->byPack.pack))
-                            return false;
+                        if (it->second->type == TplType::typename_)
+                        {
+                            Type* tp = it->second->byClass.dflt;
+                            if (tp && tp->BaseType()->type == BasicType::any_)
+                                return false;
+                            if (SameTemplate(tp, sym->tp))
+                                return false;
+                        }
                     }
-                    else
+                    if (!checkDfltSpecified(&*it))
                     {
-                        if (sym)
-                        {
-                            if (it->second->type == TplType::typename_)
-                            {
-                                Type* tp = it->second->byClass.dflt;
-                                if (tp && tp->BaseType()->type == BasicType::any_)
-                                    return false;
-                                if (SameTemplate(tp, sym->tp))
-                                    return false;
-                            }
-                        }
-                        if (!checkDfltSpecified(&*it))
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
             }
         }
-        if (sym)
-        {
-            for (sym = sym->sb->parentClass; sym; sym = sym->sb->parentClass)
-            {
-                if (sym->templateParams)
-                    if (!allTemplateArgsSpecified(sym, sym->templateParams))
-                        return false;
-            }
-        }
-        return true;
     }
-} // anonymous namespace
+    if (sym)
+    {
+        for (sym = sym->sb->parentClass; sym; sym = sym->sb->parentClass)
+        {
+            if (sym->templateParams)
+                if (!allTemplateArgsSpecified(sym, sym->templateParams))
+                    return false;
+        }
+    }
+    return true;
+}
+}  // anonymous namespace
 namespace Parser
 {
 SYMBOL* LookupTemplateClass(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params)

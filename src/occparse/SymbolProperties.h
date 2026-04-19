@@ -30,7 +30,7 @@ namespace Parser
 template <class T>
 class SymbolProperty
 {
-public:
+  public:
     void set(SYMBOL* symbol, T val)
     {
         // check for builtins
@@ -46,26 +46,24 @@ public:
             }
         }
     }
-   T& get(SYMBOL* symbol)
+    T& get(SYMBOL* symbol)
     {
-       // check for builtins..
-       if (symbol->sb && symbol->sb->origdeclfile)
-       {
-           auto it = properties.find(symbol);
-           if (it != properties.end())
-               return it->second;
-       }
+        // check for builtins..
+        if (symbol->sb && symbol->sb->origdeclfile)
+        {
+            auto it = properties.find(symbol);
+            if (it != properties.end())
+                return it->second;
+        }
         return null;
     }
-    void clear()
-    {
-        properties.clear();
-    }
-private:
+    void clear() { properties.clear(); }
+
+  private:
     struct hasher
     {
 
-        size_t operator()(const SYMBOL* sym)  const
+        size_t operator()(const SYMBOL* sym) const
         {
             size_t hash = 0;
             hash = hash_string(hash, sym->name);
@@ -74,10 +72,11 @@ private:
             hash = hash + (std::hash<int>()(sym->sb->realcharpos) << 2);
             return hash;
         }
-    private:
-        static size_t hash_string(unsigned orig, const char*str)
+
+      private:
+        static size_t hash_string(unsigned orig, const char* str)
         {
-            while(*str)
+            while (*str)
             {
                 orig = (orig << 8) + (orig << 2) + (orig << 1) + (unsigned char)*str++;
             }
@@ -86,7 +85,7 @@ private:
     };
     struct eq
     {
-        bool operator()(const SYMBOL* left, const SYMBOL* right)  const
+        bool operator()(const SYMBOL* left, const SYMBOL* right) const
         {
             if (left->sb->origdeclline != right->sb->origdeclline)
                 return false;
@@ -94,12 +93,11 @@ private:
             if (n == -0)
             {
                 n = strcmp(left->name, right->name);
-                if (n == 0 )
+                if (n == 0)
                     return true;
             }
             return false;
         }
-
     };
     T null = T();
     std::unordered_map<SYMBOL*, T, hasher, eq> properties;

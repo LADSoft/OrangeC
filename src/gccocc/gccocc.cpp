@@ -103,7 +103,7 @@ CmdSwitchBool gccocc::StackProtectorStrong(SwitchParser, 0, 0, {"fstack-protecto
 CmdSwitchBool gccocc::StackProtectorExplicit(SwitchParser, 0, 0, {"fstack-protector-explicit"});
 
 const char* gccocc::helpText =
-R"help([options] files...
+    R"help([options] files...
 
 This program is a wrapper that converts gcc-style
 compiler command line options into OCC compiler options.
@@ -181,11 +181,10 @@ Other options
    other -Wl,xxx=yyy switches are ignored
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* gccocc::usageText = "[options] files...";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     gccocc gcc;
     return gcc.Run(argc, argv);
@@ -383,7 +382,7 @@ int gccocc::Run(int argc, char** argv)
     if (MakeStubsQuotedTargets.GetExists())
     {
         auto strings = Utils::split(MakeStubsQuotedTargets.GetValue());
-        for (const auto & a : strings)
+        for (const auto& a : strings)
             fprintf(fil, " -MQ %s", a.c_str());
     }
     if (MakeStubsContinue.GetValue())

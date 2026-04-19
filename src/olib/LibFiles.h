@@ -44,7 +44,7 @@ class LibFiles
         ObjInt offset;
         ObjFile* data;
         ObjFile* startupfile = nullptr;
-        ObjExpression *startupexp = nullptr;
+        ObjExpression* startupexp = nullptr;
     };
     LibFiles(bool CaseSensitive = true, bool noexport = false) : caseSensitive(CaseSensitive), noExport(noexport) {}
     virtual ~LibFiles() {}
@@ -64,14 +64,16 @@ class LibFiles
     bool ReadFiles(FILE* stream, ObjFactory* factory);
     bool WriteFiles(FILE* stream, ObjInt align);
 
-    ObjFile* LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory, ObjFile** startupfile = nullptr, ObjExpression** startupexp = nullptr);
+    ObjFile* LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory, ObjFile** startupfile = nullptr,
+                        ObjExpression** startupexp = nullptr);
 
     typedef std::deque<std::unique_ptr<FileDescriptor>>::iterator iterator;
     iterator begin() { return files.begin(); }
     iterator end() { return files.end(); }
 
   protected:
-    ObjFile* ReadData(FILE* stream, const ObjString& name, ObjFactory* factory, ObjFile** startupFile = nullptr, ObjExpression** startup = nullptr);
+    ObjFile* ReadData(FILE* stream, const ObjString& name, ObjFactory* factory, ObjFile** startupFile = nullptr,
+                      ObjExpression** startup = nullptr);
     bool WriteData(FILE* stream, ObjFile* file, const ObjString& name, ObjFile* startupfile, ObjExpression* startupexp);
     bool Align(FILE* stream, ObjInt align);
 

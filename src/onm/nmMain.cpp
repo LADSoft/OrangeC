@@ -54,7 +54,7 @@ CmdSwitchBool nmMain::reservedS(SwitchParser, 'S');
 CmdSwitchBool nmMain::reservedX(SwitchParser, 'X');
 
 const char* nmMain::helpText =
-R"help([options] inputfile
+    R"help([options] inputfile
     
 This program shows information about object files,
 such as defined symbols/externals
@@ -79,12 +79,11 @@ such as defined symbols/externals
 /?, --help     This text
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 
 const char* nmMain::usageText = "[options] inputfile";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     nmMain downloader;
     try

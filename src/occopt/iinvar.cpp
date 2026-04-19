@@ -199,7 +199,9 @@ static int MoveTo(Block* dest, Block* src, QUAD* head, IMODE* first = nullptr, I
     tempInfo[head->ans->offset->sp->i]->instructionDefines = head;
     head->block = dest;
     head->invarInserted = true;
-    if (!first && !last && (head->dc.opcode != i_assn || head->dc.left->mode == i_immed || (!(head->temps & TEMP_LEFT) && head->ans->offset->sp->loadTemp)))
+    if (!first && !last &&
+        (head->dc.opcode != i_assn || head->dc.left->mode == i_immed ||
+         (!(head->temps & TEMP_LEFT) && head->ans->offset->sp->loadTemp)))
     {
         keep(head->dc.left);
         keep(head->dc.right);
@@ -354,11 +356,10 @@ static int CommonLoop(int n1, int n2)
             parent = parent->parent;
         if (parent)
             return n1;
-
     }
     return -1;
 }
-static int CalculateLoop(Block*  block,  std::unordered_map<int, int>& blockToLoop)
+static int CalculateLoop(Block* block, std::unordered_map<int, int>& blockToLoop)
 {
     int ln;
     auto it = blockToLoop.find(block->blocknum);
@@ -420,8 +421,8 @@ void ScanForVariableMotion(void)
         {
             if ((head->temps & TEMP_ANS) && !(head->temps & TEMP_LEFT) && head->ans->offset->sp->loadTemp &&
                 head->dc.left->offset->type >= se_absolute && head->dc.left->offset->type <= se_global &&
-                head->dc.left->size < ISZ_FLOAT && 
-                !head->dc.left->offset->sp->addressTaken && !head->dc.left->offset->sp->tp->isvolatile)
+                head->dc.left->size < ISZ_FLOAT && !head->dc.left->offset->sp->addressTaken &&
+                !head->dc.left->offset->sp->tp->isvolatile)
             {
                 uses[head->dc.left].push_back(head);
                 loads[head->ans->offset->sp->i] = {};
@@ -488,7 +489,7 @@ void ScanForVariableMotion(void)
         {
             int b = u1->block->blocknum;
             auto it = loopDoms.find(b);
-            if (it  != loopDoms.end())
+            if (it != loopDoms.end())
             {
                 int n = blockArray[b]->loopParent->loopnum;
                 for (; b < blockCount && blockArray[b]->loopParent->loopnum == n; b++)
@@ -534,7 +535,7 @@ void ScanForVariableMotion(void)
                 changed = false;
                 loopList.sort();
                 // get rid of duplicates
-                for (auto it = loopList.begin(); it != loopList.end(); )
+                for (auto it = loopList.begin(); it != loopList.end();)
                 {
                     int n = *it;
                     ++it;
@@ -612,7 +613,8 @@ void ScanForVariableMotion(void)
                     }
                     if (parent->type != LT_ROOT || !loopDefines.size())
                     {
-                        bool defineAtEnd = (definedInDominator && loopDefines.size() > 1) || (!definedInDominator && loopDefines.size());
+                        bool defineAtEnd =
+                            (definedInDominator && loopDefines.size() > 1) || (!definedInDominator && loopDefines.size());
                         bool doit = false;
                         if (head->dc.left->offset->sp->storage_class == scc_parameter)
                         {
@@ -634,7 +636,7 @@ void ScanForVariableMotion(void)
                         }
                         if (doit)
                         {
-                            if (!tempVar)   
+                            if (!tempVar)
                             {
                                 tempVar = InitTempOpt(sz, sz);
                                 tempVar->offset->sp->pushedtotemp = true;
@@ -662,7 +664,8 @@ void ScanForVariableMotion(void)
                             // now rename all uses within the loop
                             for (auto u : loopUses)
                             {
-                                if (dom != u->block || (!definedInDominator && firstUseInDominator && u->index > firstUseInDominator))
+                                if (dom != u->block ||
+                                    (!definedInDominator && firstUseInDominator && u->index > firstUseInDominator))
                                 {
                                     u->dc.left = tempVar;
                                     u->temps |= TEMP_LEFT;

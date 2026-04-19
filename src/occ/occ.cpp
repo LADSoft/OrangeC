@@ -90,7 +90,7 @@ static Optimizer::FunctionData* lastFunc;
 static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
 /*-------------------------------------------------------------------------*/
-void outputfile(char* buf,  int len, const char* namein, const char* ext, bool obj)
+void outputfile(char* buf, int len, const char* namein, const char* ext, bool obj)
 {
     std::string name = namein;
     int index = name.find_last_of('#');
@@ -408,8 +408,7 @@ int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
     return ToolChain::ToolInvoke("occopt", occ_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 }  // namespace occx86
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     using namespace occx86;
     bool showBanner = true;

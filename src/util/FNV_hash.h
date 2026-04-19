@@ -35,14 +35,14 @@ class str_eql
 template <typename T, int N, T FNV_prime, T FNV_offset>
 class fnv1a_arr
 {
-public:
-    T operator()(const std::array<unsigned char,N>& arr) const
+  public:
+    T operator()(const std::array<unsigned char, N>& arr) const
     {
         // Follows the Fowler-Noll-Vol hash function as described by wikipedia in the following article:
         // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
         T hash = FNV_offset;
         for (size_t i = 0; i < N;
-            i++)  // This optimizes away a call to strlen since our optimizer isn't smart enough to perform this IIRC
+             i++)  // This optimizes away a call to strlen since our optimizer isn't smart enough to perform this IIRC
         {
             hash = T((hash * FNV_prime) ^ arr[i]);
         }
@@ -53,7 +53,7 @@ public:
 template <int N>
 class arr_eql
 {
-public:
+  public:
     bool operator()(const std::array<unsigned char, N>& a, const std::array<unsigned char, N>& b) const { return a == b; }
 };
 template <typename T, T FNV_prime, T FNV_offset, int N>

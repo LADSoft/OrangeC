@@ -72,7 +72,7 @@ CmdSwitchBool ppMain::MakeStubsContinue(SwitchParser, 0, 0, {"MD"});
 CmdSwitchBool ppMain::MakeStubsContinueUser(SwitchParser, 0, 0, {"MMD"});
 
 const char* ppMain::helpText =
-R"help([options] files
+    R"help([options] files
     
 This program is a standalone preprocessor for the C/C++ languages
 
@@ -96,11 +96,10 @@ Dependency generation:
     /MMD           - basic generation and continue, user files only
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* ppMain::usageText = "[options] files";
 
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     ppMain preproc;
     try
@@ -190,8 +189,8 @@ int ppMain::Run(int argc, char* argv[])
         else
             dialect = Dialect::c89;
         PreProcessor pp(files[i].Name, includePath.GetValue(),
-                        cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(),
-                        false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false, dialect, !disableExtensions.GetValue(),
+                        cplusplus ? CPPsysIncludePath.GetValue() : CsysIncludePath.GetValue(), false, trigraphs.GetValue(),
+                        assembly.GetValue() ? '%' : '#', false, dialect, !disableExtensions.GetValue(),
                         (MakeStubs.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(), "");
         if (c23Mode.GetValue())
         {

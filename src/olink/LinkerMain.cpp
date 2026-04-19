@@ -49,8 +49,7 @@
 #    include <io.h>
 #endif
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     LinkerMain linker;
     try
@@ -92,7 +91,7 @@ CmdSwitchBool LinkerMain::ExportAllSymbols(SwitchParser, 0, 0, {"export-all-symb
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::helpText =
-R"help([options] inputfiles
+    R"help([options] inputfiles
 
 This program is a linker, it combines compiler outputs (object files)
 and libraries, to create a program image.
@@ -119,7 +118,7 @@ the os-specific executable.
 
 @xxx      Read commands from file
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* LinkerMain::usageText = "[options] inputfiles";
 
 const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
@@ -378,7 +377,8 @@ int LinkerMain::Run(int argc, char** argv)
         LibPath += lpath;
     }
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile,
-                       !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile, ExportAllSymbols.GetValue());
+                       !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile,
+                       ExportAllSymbols.GetValue());
     linker.SetLibPath(LibPath.GetValue());
     linker.SetDelayLoad(DelayLoadDll.GetValue());
     ParseSpecifiedLibFiles(files, linker);

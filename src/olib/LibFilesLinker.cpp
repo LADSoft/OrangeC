@@ -30,7 +30,8 @@
 #include "ObjFactory.h"
 #include <cassert>
 
-ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* factory, ObjFile** startupfile, ObjExpression** startupexp)
+ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* factory, ObjFile** startupfile,
+                            ObjExpression** startupexp)
 {
     ObjIeeeIndexManager im1;
     ObjIeee ieee(name.c_str(), caseSensitive);
@@ -39,7 +40,7 @@ ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* fac
     {
         *startupfile = ieee.GetStartFile();
         *startupexp = ieee.GetStartAddress();
-    } 
+    }
     return rv;
 }
 bool LibFiles::ReadNames(FILE* stream, int count)
@@ -75,7 +76,8 @@ bool LibFiles::ReadOffsets(FILE* stream, int count)
     }
     return true;
 }
-ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory, ObjFile** startupfile, ObjExpression** startupexp)
+ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory, ObjFile** startupfile,
+                              ObjExpression** startupexp)
 {
     if (FileIndex >= files.size())
         return nullptr;

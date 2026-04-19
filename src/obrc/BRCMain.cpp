@@ -36,8 +36,7 @@
 #include "BRCDictionary.h"
 #include "BRCWriter.h"
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     BRCMain librarian;
     try
@@ -53,7 +52,7 @@ MAINCATCH
 
 CmdSwitchParser BRCMain::SwitchParser;
 const char* BRCMain::helpText =
-R"help([options] outputfile filelist
+    R"help([options] outputfile filelist
     
 This program compiles browse information
 It isn't used right now but will become important
@@ -65,7 +64,7 @@ When we try to support a debugger again.
 @xxx           Read commands from file
     
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* BRCMain::usageText = "[options] outputfile filelist";
 
 int BRCMain::Run(int argc, char** argv)

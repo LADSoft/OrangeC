@@ -40,8 +40,16 @@
 #include "Utils.h"
 
 #define MANGLE_SIZE(buf) (n - (buf - orig))
-#define PUTCH(buf, ch) { if (n - (buf - orig) > 0) *buf++ = ch; }
-#define PUTZERO(buf) { if (n - (buf - orig) > 0) *buf = '\0'; }
+#define PUTCH(buf, ch)            \
+    {                             \
+        if (n - (buf - orig) > 0) \
+            *buf++ = ch;          \
+    }
+#define PUTZERO(buf)              \
+    {                             \
+        if (n - (buf - orig) > 0) \
+            *buf = '\0';          \
+    }
 namespace Parser
 {
 
@@ -117,7 +125,7 @@ int mangledNamesCount;
 template <int n>
 static char* lookupName(char (&orig)[n], char* in, const char* name);
 template <int n>
-char* mangleType(char(&orig)[n], char* in, Type* tp, bool first);
+char* mangleType(char (&orig)[n], char* in, Type* tp, bool first);
 static int uniqueId;
 void mangleInit()
 {
@@ -129,7 +137,7 @@ void mangleInit()
     }
 }
 template <int n>
-char* mangleNameSpaces(char(&orig)[n], char* in, SYMBOL* sym)
+char* mangleNameSpaces(char (&orig)[n], char* in, SYMBOL* sym)
 {
     if (!sym)
         return in;
@@ -146,9 +154,9 @@ char* mangleNameSpaces(char* in, SYMBOL* sym)
 }
 
 template <int n>
-static char* mangleTemplate(char (&orig)[n], char *buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
+static char* mangleTemplate(char (&orig)[n], char* buf, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
 template <int n>
-static char* getName(char (&orig)[n], char *in, SYMBOL* sym);
+static char* getName(char (&orig)[n], char* in, SYMBOL* sym);
 
 template <int n>
 static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
@@ -158,7 +166,7 @@ static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
     {
         PUTCH(in, '@');
         in = mangleTemplate(orig, in, sym->sb->parent, sym->sb->parent->templateParams);
-   }
+    }
     else
     {
         Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%s", sym->sb->parent->name);
@@ -166,7 +174,7 @@ static char* mangleParent(char (&orig)[n], char* in, SYMBOL* sym)
     if (sym->tp->IsStructured())
     {
         if (!sym->sb->uniqueId)
-           sym->sb->uniqueId = uniqueId++;
+            sym->sb->uniqueId = uniqueId++;
         in += strlen(in);
         Optimizer::my_sprintf(in, MANGLE_SIZE(in), "@%d", sym->sb->uniqueId);
     }
@@ -190,7 +198,7 @@ static char* mangleClasses(char (&orig)[n], char* in, SYMBOL* sym)
     }
     else if (sym->sb->templateLevel && sym->templateParams)
     {
-        PUTCH(in,  '@');
+        PUTCH(in, '@');
         PUTZERO(in);
         mangleTemplate(orig, in, sym, sym->templateParams);
     }
@@ -229,7 +237,7 @@ static char* mangleExpressionInternal(char (&orig)[n], char* buf, EXPRESSION* ex
         switch (exp->type)
         {
             case ExpressionNode::nullptr_:
-                PUTCH(buf,  'n');
+                PUTCH(buf, 'n');
                 PUTZERO(buf);
                 *buf = 0;
                 break;
@@ -474,7 +482,7 @@ static char* mangleExpressionInternal(char (&orig)[n], char* buf, EXPRESSION* ex
                     PUTZERO(buf);
                     if (find->isTemplate && find->templateParams)
                     {
-                        char temp[5000], * p = temp;
+                        char temp[5000], *p = temp;
                         SYMBOL s = {};
                         s.name = find->name;
                         s.tp = &stdint;
@@ -585,7 +593,7 @@ static char* mangleExpression(char (&orig)[n], char* buf, EXPRESSION* exp)
 {
     if (exp)
     {
-        PUTCH(buf ,'?');
+        PUTCH(buf, '?');
         PUTZERO(buf);
         buf = mangleExpressionInternal(orig, buf, exp);
     }
@@ -596,7 +604,8 @@ static char* mangleTemplate(char (&orig)[n], char* buf, SYMBOL* sym, std::list<T
 {
     bool bySpecial = false;
     if (params && params->size() && params->front().second->type == TplType::new_ &&
-        ((sym->sb && (sym->sb->instantiated && !sym->sb->templateLevel)) || (params && params->front().second->bySpecialization.types)))
+        ((sym->sb && (sym->sb->instantiated && !sym->sb->templateLevel)) ||
+         (params && params->front().second->bySpecialization.types)))
     {
         params = params->front().second->bySpecialization.types;
         bySpecial = true;
@@ -828,13 +837,13 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
         {
             {
                 if (tp->IsConst())
-                    PUTCH(in,  'x');
+                    PUTCH(in, 'x');
                 if (tp->IsVolatile())
-                    PUTCH(in,  'y');
+                    PUTCH(in, 'y');
                 if (tp->IsLRefQual())
-                    PUTCH(in,  'r');
+                    PUTCH(in, 'r');
                 if (tp->IsRRefQual())
-                    PUTCH(in,  'R');
+                    PUTCH(in, 'R');
                 PUTZERO(in);
             }
             in = mangleTemplate(orig, in, tp->sp, tp->sp->templateParams);
@@ -844,13 +853,13 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
         {
             {
                 if (tp->IsConst())
-                    PUTCH(in,  'x');
+                    PUTCH(in, 'x');
                 if (tp->IsVolatile())
-                    PUTCH(in,  'y');
+                    PUTCH(in, 'y');
                 if (tp->IsLRefQual())
-                    PUTCH(in,  'r');
+                    PUTCH(in, 'r');
                 if (tp->IsRRefQual())
-                    PUTCH(in,  'R');
+                    PUTCH(in, 'R');
                 PUTZERO(in);
             }
             in = mangleClasses(orig, in, tp->BaseType()->sp->sb->parentClass);
@@ -864,13 +873,13 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
         else
         {
             if (tp->IsConst())
-                PUTCH(in,  'x');
+                PUTCH(in, 'x');
             if (tp->IsVolatile())
-                PUTCH(in,  'y');
+                PUTCH(in, 'y');
             if (tp->IsLRefQual())
-                PUTCH(in,  'r');
+                PUTCH(in, 'r');
             if (tp->IsRRefQual())
-                PUTCH(in,  'R');
+                PUTCH(in, 'R');
             PUTZERO(in);
             tp = tp->BaseType();
             if (tp->IsInt() && tp->btp && tp->btp->type == BasicType::enum_)
@@ -881,43 +890,43 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                 case BasicType::ifunc_:
                     if (tp->BaseType()->sp && ismember(tp->BaseType()->sp) && !first)
                     {
-                        PUTCH(in,  'M');
+                        PUTCH(in, 'M');
                         PUTZERO(in);
                         in = getName(orig, in, tp->sp->sb->parentClass);
                         while (*in)
                             in++;
                     }
-                    PUTCH(in,  'q');
+                    PUTCH(in, 'q');
                     PUTZERO(in);
                     for (auto sym : *tp->syms)
                     {
                         if (!sym->sb->thisPtr)
                             in = mangleType(orig, in, sym->tp, true);
                     }
-                    PUTCH(in,  '.');
+                    PUTCH(in, '.');
                     PUTZERO(in);
                     // return value comes next
                     break;
                 case BasicType::memberptr_:
-                    PUTCH(in,  'M');
+                    PUTCH(in, 'M');
                     PUTZERO(in);
                     in = getName(orig, in, tp->sp);
                     if (tp->btp->IsFunction())
                     {
-                        PUTCH(in,  'q');
+                        PUTCH(in, 'q');
                         PUTZERO(in);
                         for (auto sym : *tp->btp->BaseType()->syms)
                         {
                             if (!sym->sb->thisPtr)
                                 in = mangleType(orig, in, sym->tp, true);
                         }
-                        PUTCH(in,  '.');
+                        PUTCH(in, '.');
                         PUTZERO(in);
                         tp = tp->btp;  // so we can get to tp->btp->btp
                     }
                     else
                     {
-                        PUTCH(in,  '.');
+                        PUTCH(in, '.');
                         PUTZERO(in);
                     }
                     break;
@@ -943,110 +952,110 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                         in++;
                     break;
                 case BasicType::unsigned_short_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 's');
                     PUTZERO(in);
                     break;
                 case BasicType::short_:
-                    PUTCH(in,  's');
+                    PUTCH(in, 's');
                     PUTZERO(in);
                     break;
                 case BasicType::unsigned_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 'i');
                     PUTZERO(in);
                     break;
                 case BasicType::int_:
-                    PUTCH(in,  'i');
+                    PUTCH(in, 'i');
                     PUTZERO(in);
                     break;
                 case BasicType::unsigned_bitint_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 'B');
                     Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d?", tp->bitintbits);
                     in += strlen(in);
                     break;
                 case BasicType::bitint_:
-                    PUTCH(in,  'B');
+                    PUTCH(in, 'B');
                     Optimizer::my_sprintf(in, MANGLE_SIZE(in), "%d?", tp->bitintbits);
                     in += strlen(in);
                     break;
                 case BasicType::unative_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 'N');
                     PUTZERO(in);
                     break;
                 case BasicType::inative_:
-                    PUTCH(in,  'N');
+                    PUTCH(in, 'N');
                     PUTZERO(in);
                     break;
                 case BasicType::char16_t_:
-                    PUTCH(in,  'h');
+                    PUTCH(in, 'h');
                     PUTZERO(in);
                     break;
                 case BasicType::char32_t_:
-                    PUTCH(in,  'H');
+                    PUTCH(in, 'H');
                     PUTZERO(in);
                     break;
                 case BasicType::unsigned_long_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 'l');
                     PUTZERO(in);
                     break;
                 case BasicType::long_:
-                    PUTCH(in,  'l');
+                    PUTCH(in, 'l');
                     PUTZERO(in);
                     break;
                 case BasicType::unsigned_long_long_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 'L');
                     PUTZERO(in);
                     break;
                 case BasicType::long_long_:
-                    PUTCH(in,  'L');
+                    PUTCH(in, 'L');
                     PUTZERO(in);
                     break;
                 case BasicType::char8_t_:
                 case BasicType::unsigned_char_:
-                    PUTCH(in,  'u');
+                    PUTCH(in, 'u');
                     PUTCH(in, 'c');
                     PUTZERO(in);
                     break;
                 case BasicType::char_:
-                    PUTCH(in,  'c');
+                    PUTCH(in, 'c');
                     PUTZERO(in);
                     break;
                 case BasicType::signed_char_:
-                    PUTCH(in,  'S');
-                    PUTCH(in,  'c');
+                    PUTCH(in, 'S');
+                    PUTCH(in, 'c');
                     PUTZERO(in);
                     break;
                 case BasicType::wchar_t_:
-                    PUTCH(in,  'C');
+                    PUTCH(in, 'C');
                     PUTZERO(in);
                     break;
                 case BasicType::float__complex_:
-                    PUTCH(in,  'F');
+                    PUTCH(in, 'F');
                     PUTZERO(in);
                     break;
                 case BasicType::double__complex_:
-                    PUTCH(in,  'D');
+                    PUTCH(in, 'D');
                     PUTZERO(in);
                     break;
                 case BasicType::long_double_complex_:
-                    PUTCH(in,  'G');
+                    PUTCH(in, 'G');
                     PUTZERO(in);
                     break;
                 case BasicType::float_:
-                    PUTCH(in,  'f');
+                    PUTCH(in, 'f');
                     PUTZERO(in);
                     break;
                 case BasicType::double_:
-                    PUTCH(in,  'd');
+                    PUTCH(in, 'd');
                     PUTZERO(in);
                     break;
                 case BasicType::long_double_:
-                    PUTCH(in,  'g');
+                    PUTCH(in, 'g');
                     PUTZERO(in);
                     break;
                 case BasicType::pointer_:
@@ -1061,21 +1070,22 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     {
                         if (!tp->array)
                         {
-                            PUTCH(in,  'p');
+                            PUTCH(in, 'p');
                             PUTZERO(in);
                         }
                         else
                         {
-                            PUTCH(in,  'A');
+                            PUTCH(in, 'A');
                             PUTZERO(in);
                             auto tp1 = tp;
                             while (tp1->array)
-                               tp1 = tp1->btp;
+                                tp1 = tp1->btp;
                             in = mangleType(orig, in, tp1, false);
                             while (tp->array && tp->BaseType()->btp->size)
                             {
-                                sprintf(in, "?%d?", tp->size/tp->BaseType()->btp->size);
-                                while (*in) in++;
+                                sprintf(in, "?%d?", tp->size / tp->BaseType()->btp->size);
+                                while (*in)
+                                    in++;
                                 tp = tp->BaseType()->btp;
                             }
                             while (tp->btp)
@@ -1084,27 +1094,27 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     }
                     break;
                 case BasicType::far_:
-                    PUTCH(in,  'P');
+                    PUTCH(in, 'P');
                     PUTZERO(in);
                     break;
                 case BasicType::lref_:
-                    PUTCH(in,  'r');
+                    PUTCH(in, 'r');
                     PUTZERO(in);
                     break;
                 case BasicType::rref_:
-                    PUTCH(in,  'R');
+                    PUTCH(in, 'R');
                     PUTZERO(in);
                     break;
                 case BasicType::ellipse_:
-                    PUTCH(in,  'e');
+                    PUTCH(in, 'e');
                     PUTZERO(in);
                     break;
                 case BasicType::void_:
-                    PUTCH(in,  'v');
+                    PUTCH(in, 'v');
                     PUTZERO(in);
                     break;
                 case BasicType::any_:
-                    PUTCH(in,  'V');  // this needs to be distinct from void for internal matching....
+                    PUTCH(in, 'V');  // this needs to be distinct from void for internal matching....
                     PUTZERO(in);
                     break;
                 case BasicType::templateparam_:
@@ -1120,7 +1130,8 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     char* p;
                     ++s;
                     if (s->isTemplate)
-                        p = mangleTemplate(nm, nm, s->sp, s->sp->sb && s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
+                        p = mangleTemplate(nm, nm, s->sp,
+                                           s->sp->sb && s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
                     else
                         p = getName(nm, nm, s->sp);
                     PUTZERO(p);
@@ -1152,7 +1163,7 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                 }
                 break;
                 case BasicType::templatedecltype_:
-                    PUTCH(in,  'E');
+                    PUTCH(in, 'E');
                     PUTZERO(in);
                     in = mangleExpression(orig, in, tp->templateDeclType);
                     break;
@@ -1160,13 +1171,13 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                     in = getName(orig, in, tp->sp);
                     break;
                 case BasicType::auto_:
-                    PUTCH(in,  'a');
+                    PUTCH(in, 'a');
                     PUTZERO(in);
                     break;
                 case BasicType::templatedeferredtype_:
                     // we want something the linkerwill treat as an error,
                     // so we can detect problems with these not being properly replaced
-                    PUTCH(in,  MANGLE_DEFERRED_TYPE_CHAR);
+                    PUTCH(in, MANGLE_DEFERRED_TYPE_CHAR);
                     PUTZERO(in);
                     break;
                 default:
@@ -1273,7 +1284,6 @@ void GetClassKey(char* buf, int len, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* 
             lastParent = lastParent->sb->parentClass;
         p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
         p = mangleClasses(orig, p, sym->sb->parentClass);
-
     }
     PUTCH(p, '@');
     PUTZERO(p);
@@ -1373,7 +1383,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             else
             {
                 orig[0] = '_';
-                Utils::StrCpy(orig + 1, sizeof(orig)-1, sym->name);
+                Utils::StrCpy(orig + 1, sizeof(orig) - 1, sym->name);
             }
             break;
         case Linkage::cpp_:
@@ -1396,7 +1406,6 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                     lastParent = lastParent->sb->parentClass;
                 p = mangleNameSpaces(orig, p, lastParent->sb->parentNameSpace);
                 p = mangleClasses(orig, p, sym->sb->parentClass);
-
             }
             PUTCH(p, '@');
             PUTZERO(p);
@@ -1406,7 +1415,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
             }
             else
             {
-                Utils::StrCpy(p, sizeof(orig)- (p - orig), sym->name);
+                Utils::StrCpy(p, sizeof(orig) - (p - orig), sym->name);
                 p += strlen(p);
             }
             if (sym->tp->IsFunction())
@@ -1432,7 +1441,7 @@ void SetLinkerNames(SYMBOL* sym, Linkage linkage, bool isTemplateDefinition)
                 else
                 {
                     p = mangleType(orig, p, sym->tp, true);  // otherwise functions get their parameter list in the name
-                                                       //                    if (!sym->sb->templateLevel)
+                                                             //                    if (!sym->sb->templateLevel)
                     {
                         int tmplCount = 0;
                         while (p > orig && (*--p != '.' || tmplCount))

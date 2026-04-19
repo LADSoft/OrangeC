@@ -310,7 +310,7 @@ void KillJumpover(Block* b, QUAD* head)
     {
         QUAD* fwd = newhead->fwd;
         while (fwd->dc.opcode == i_block || fwd->dc.opcode == i_blockend || newhead->dc.opcode == i_dbgblock ||
-            newhead->dc.opcode == i_dbgblockend || fwd->dc.opcode == i_label || fwd->ignoreMe)
+               newhead->dc.opcode == i_dbgblockend || fwd->dc.opcode == i_label || fwd->ignoreMe)
         {
             if (fwd->dc.opcode == i_label && head->dc.v.label == fwd->dc.v.label)
                 break;
@@ -328,39 +328,39 @@ void KillJumpover(Block* b, QUAD* head)
         bool dontProcess = false;
         switch (head->dc.opcode)
         {
-        case i_jc:
-            newtype = i_jnc;
-            break;
-        case i_jnc:
-            newtype = i_jc;
-            break;
-        case i_jbe:
-            newtype = i_ja;
-            break;
-        case i_ja:
-            newtype = i_jbe;
-            break;
-        case i_je:
-            newtype = i_jne;
-            break;
-        case i_jne:
-            newtype = i_je;
-            break;
-        case i_jge:
-            newtype = i_jl;
-            break;
-        case i_jg:
-            newtype = i_jle;
-            break;
-        case i_jle:
-            newtype = i_jg;
-            break;
-        case i_jl:
-            newtype = i_jge;
-            break;
-        default:
-            dontProcess = true;
-            break;
+            case i_jc:
+                newtype = i_jnc;
+                break;
+            case i_jnc:
+                newtype = i_jc;
+                break;
+            case i_jbe:
+                newtype = i_ja;
+                break;
+            case i_ja:
+                newtype = i_jbe;
+                break;
+            case i_je:
+                newtype = i_jne;
+                break;
+            case i_jne:
+                newtype = i_je;
+                break;
+            case i_jge:
+                newtype = i_jl;
+                break;
+            case i_jg:
+                newtype = i_jle;
+                break;
+            case i_jle:
+                newtype = i_jg;
+                break;
+            case i_jl:
+                newtype = i_jge;
+                break;
+            default:
+                dontProcess = true;
+                break;
         }
         if (!dontProcess)
         {
@@ -369,7 +369,7 @@ void KillJumpover(Block* b, QUAD* head)
             while (1)
             {
                 while (newhead && (newhead->dc.opcode == i_block || newhead->ignoreMe || newhead->dc.opcode == i_dbgblock ||
-                    newhead->dc.opcode == i_dbgblockend || newhead->dc.opcode == i_blockend))
+                                   newhead->dc.opcode == i_dbgblockend || newhead->dc.opcode == i_blockend))
                 {
                     newhead = newhead->fwd;
                 }
@@ -405,9 +405,10 @@ static int PeepAssn(Block* b, QUAD* head, bool branches)
         {
             int temp = head->ans->offset->sp->i;
             auto ins = tempInfo[temp]->instructionDefines;
-            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
+                ins->dc.left->mode == i_direct)
             {
-                if (ins->ans->size ==  ins->dc.left->size)
+                if (ins->ans->size == ins->dc.left->size)
                     head->ans = loadVarInd(ins->dc.left, head->ans->size);
             }
         }
@@ -415,9 +416,10 @@ static int PeepAssn(Block* b, QUAD* head, bool branches)
         {
             int temp = head->ans->offset->sp->i;
             auto ins = tempInfo[temp]->instructionDefines;
-            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
+                ins->dc.left->mode == i_direct)
             {
-                if (ins->ans->size ==  ins->dc.left->size)
+                if (ins->ans->size == ins->dc.left->size)
                     head->dc.left = loadVarInd(ins->dc.left, head->dc.left->size);
             }
         }
@@ -459,19 +461,21 @@ bool matchesTempRef(SimpleExpression* e, QUAD* q)
     }
     if (q->dc.right)
     {
-        if ((q->dc.right->offset && equalnode(e, q->dc.right->offset)) || (q->dc.right->offset2 && equalnode(e, q->dc.right->offset2)))
-                return true;
+        if ((q->dc.right->offset && equalnode(e, q->dc.right->offset)) ||
+            (q->dc.right->offset2 && equalnode(e, q->dc.right->offset2)))
+            return true;
     }
     return false;
-       
 }
 static int PeepParm(Block* b, QUAD* head)
 {
-    if ((head->temps & TEMP_LEFT) && head->dc.left->size < ISZ_FLOAT && sizeFromISZ(head->dc.left->size) == chosenAssembler->arch->parmwidth)
+    if ((head->temps & TEMP_LEFT) && head->dc.left->size < ISZ_FLOAT &&
+        sizeFromISZ(head->dc.left->size) == chosenAssembler->arch->parmwidth)
     {
         if (head->back->dc.opcode == i_assn)
         {
-            if (equalimode(head->back->ans, head->dc.left) && head->dc.left->size == head->back->dc.left->size && !head->back->fastcall)
+            if (equalimode(head->back->ans, head->dc.left) && head->dc.left->size == head->back->dc.left->size &&
+                !head->back->fastcall)
             {
                 bool doit = true;
                 auto quad = head->fwd;
@@ -507,13 +511,13 @@ static int PeepParm(Block* b, QUAD* head)
                         {
                             switch (head->back->dc.left->offset->type)
                             {
-                            case se_absolute:
-                            case se_auto:
-                            case se_global:
-                            case se_pc:
-                            case se_labcon:
-                                doit = true;
-                                break;
+                                case se_absolute:
+                                case se_auto:
+                                case se_global:
+                                case se_pc:
+                                case se_labcon:
+                                    doit = true;
+                                    break;
                             }
                         }
                     }
@@ -532,7 +536,8 @@ static int PeepParm(Block* b, QUAD* head)
                             head->dc.left = head->back->dc.left;
                             head->scaleColor = head->back->scaleColor;
                             head->leftColor = head->back->leftColor;
-                            if ((!head->dc.left->offset ||  head->dc.left->offset->type != se_tempref) && (!head->dc.left->offset2 || head->dc.left->offset2->type != se_tempref))
+                            if ((!head->dc.left->offset || head->dc.left->offset->type != se_tempref) &&
+                                (!head->dc.left->offset2 || head->dc.left->offset2->type != se_tempref))
                                 head->temps &= ~TEMP_LEFT;
                             RemoveInstruction(head->back);
                             return -1;
@@ -690,9 +695,10 @@ static void PeepCompare(Block* b, QUAD* head)
         if (b->liveOut->find(temp) == b->liveOut->end())
         {
             auto ins = tempInfo[temp]->instructionDefines;
-            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
+                ins->dc.left->mode == i_direct)
             {
-                if (ins->ans->size ==  ins->dc.left->size)
+                if (ins->ans->size == ins->dc.left->size)
                     head->dc.left = ins->dc.left;
             }
         }
@@ -703,7 +709,8 @@ static void PeepCompare(Block* b, QUAD* head)
         if (b->liveOut->find(temp) == b->liveOut->end())
         {
             auto ins = tempInfo[temp]->instructionDefines;
-            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) && ins->dc.left->mode == i_direct)
+            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
+                ins->dc.left->mode == i_direct)
             {
                 if (ins->ans->size == ins->dc.left->size)
                     head->dc.right = ins->dc.left;
@@ -803,7 +810,7 @@ static void scan_abnormal(void)
                 while (pb && pb->block != blockArray[i])
                     pb = pb->next;
                 setbit(occursInAbnormal, pd->T0);
-                if (pb) // should never be null...
+                if (pb)  // should never be null...
                 {
                     setbit(occursInAbnormal, pb->Tn);
                 }

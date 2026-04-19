@@ -29,8 +29,16 @@
 #include "unmangle.h"
 #include "namespace.h"
 #define UNMANGLE_SIZE(buf) (n - (buf - orig))
-#define PUTCH(buf, ch) { if (n - (buf - orig) > 0) *buf++ = ch; }
-#define PUTZERO(buf) { if (n - (buf - orig) > 0) *buf = '\0'; }
+#define PUTCH(buf, ch)            \
+    {                             \
+        if (n - (buf - orig) > 0) \
+            *buf++ = ch;          \
+    }
+#define PUTZERO(buf)              \
+    {                             \
+        if (n - (buf - orig) > 0) \
+            *buf = '\0';          \
+    }
 
 namespace Parser
 {
@@ -82,9 +90,9 @@ const char* xlate_tab[] = {
 template <int n>
 static const char* unmangcpptype(char (&orig)[n], char* buf, const char* name, const char* last);
 template <int n>
-static const char* unmang1(char (&orig)[n], char *buf, const char* name, const char* last, bool tof);
+static const char* unmang1(char (&orig)[n], char* buf, const char* name, const char* last, bool tof);
 template <int n>
-static char* unmang2(char(&orig)[n], char* val, const char* name);
+static char* unmang2(char (&orig)[n], char* val, const char* name);
 template <int n>
 static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, const char* last);
 
@@ -102,14 +110,14 @@ const char* LookupIntrinsicName(const char* mangled)
     {
         switch (i)
         {
-        case 0:
-            return "constructor";
-        case 1:
-            return "destructor";
-        case 2:
-            return "cast operator";
-        default:
-            return "????";
+            case 0:
+                return "constructor";
+            case 1:
+                return "destructor";
+            case 2:
+                return "cast operator";
+            default:
+                return "????";
         }
     }
     else if (i < IT_SIZE)
@@ -121,9 +129,8 @@ const char* LookupIntrinsicName(const char* mangled)
     return nullptr;
 }
 
-
 template <int n>
-static const char* unmang_intrins(char (&orig)[n], char *buf, const char* name, const char* last)
+static const char* unmang_intrins(char (&orig)[n], char* buf, const char* name, const char* last)
 {
     char cur[4096], *p = cur;
     int i;
@@ -195,7 +202,7 @@ const char* unmang_intrins(char* val, const char* name, const char* last)
 
 /* Argument unmangling for C++ */
 template <int n>
-static const char* unmangptr(char (&orig)[n], char *buf, const char* name, const char* last)
+static const char* unmangptr(char (&orig)[n], char* buf, const char* name, const char* last)
 {
     int cvol = 0;
     int cconst = 0;
@@ -240,7 +247,7 @@ static const char* unmangptr(char (&orig)[n], char *buf, const char* name, const
                     {
                         *buf++ = *name++;
                     }
-                    name++; // past ending '?'
+                    name++;  // past ending '?'
                     PUTCH(buf, ']');
                 }
             }
@@ -300,7 +307,7 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
         {
             (*name)++;
             if (minus)
-                PUTCH(dest,  '-');
+                PUTCH(dest, '-');
             Optimizer::my_sprintf(dest, UNMANGLE_SIZE(dest), "%d", n1);
         }
         else
@@ -322,20 +329,20 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                 break;
             case 'p':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '+');
+                PUTCH(dest, '+');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
                 break;
             case 's':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '-');
+                PUTCH(dest, '-');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
                 break;
             case 'u':
-                PUTCH(dest,  '-');
+                PUTCH(dest, '-');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
@@ -345,49 +352,49 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                 dest = unmangleExpression(orig, dest, name);
                 if (next == 'p')
                 {
-                    PUTCH(dest,  '+');
-                    PUTCH(dest,  '+');
+                    PUTCH(dest, '+');
+                    PUTCH(dest, '+');
                 }
                 else
                 {
-                    PUTCH(dest,  '-');
-                    PUTCH(dest,  '-');
+                    PUTCH(dest, '-');
+                    PUTCH(dest, '-');
                 }
                 PUTZERO(dest);
                 break;
             }
             case 'm':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '*');
+                PUTCH(dest, '*');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
                 break;
             case 'o':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '%');
+                PUTCH(dest, '%');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
                 break;
             case 'd':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '/');
+                PUTCH(dest, '/');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
                 break;
             case 'D':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '.');
+                PUTCH(dest, '.');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 PUTZERO(dest);
                 break;
             case 'P':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '-');
-                PUTCH(dest,  '>');
+                PUTCH(dest, '-');
+                PUTCH(dest, '>');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 break;
@@ -396,13 +403,13 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                 dest = unmangleExpression(orig, dest, name);
                 if (next == 'l')
                 {
-                    PUTCH(dest,  '<');
-                    PUTCH(dest,  '<');
+                    PUTCH(dest, '<');
+                    PUTCH(dest, '<');
                 }
                 else
                 {
-                    PUTCH(dest,  '>');
-                    PUTCH(dest,  '>');
+                    PUTCH(dest, '>');
+                    PUTCH(dest, '>');
                 }
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
@@ -410,10 +417,10 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
             }
             case 'C':
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  '?');
+                PUTCH(dest, '?');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
-                PUTCH(dest,  ':');
+                PUTCH(dest, ':');
                 PUTZERO(dest);
                 dest = unmangleExpression(orig, dest, name);
                 break;
@@ -427,25 +434,25 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                 switch (next)
                 {
                     case 'e':
-                        PUTCH(dest,  '=');
-                        PUTCH(dest,  '=');
+                        PUTCH(dest, '=');
+                        PUTCH(dest, '=');
                         PUTZERO(dest);
                         break;
                     case 'n':
-                        PUTCH(dest,  '!');
-                        PUTCH(dest,  '=');
+                        PUTCH(dest, '!');
+                        PUTCH(dest, '=');
                         PUTZERO(dest);
                         break;
                     case 'g':
-                        PUTCH(dest,  '>');
+                        PUTCH(dest, '>');
                         if (next1 == 'e')
-                            PUTCH(dest,  '=');
+                            PUTCH(dest, '=');
                         PUTZERO(dest);
                         break;
                     case 'l':
-                        PUTCH(dest,  '<');
+                        PUTCH(dest, '<');
                         if (next1 == 'e')
-                            PUTCH(dest,  '=');
+                            PUTCH(dest, '=');
                         PUTZERO(dest);
                         break;
                 }
@@ -456,7 +463,7 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                 char next = *(*name)++;
                 if (next == 'n')
                 {
-                    PUTCH(dest,  '~');
+                    PUTCH(dest, '~');
                     PUTZERO(dest);
                     dest = unmangleExpression(orig, dest, name);
                 }
@@ -466,13 +473,13 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                     switch (next)
                     {
                         case 'a':
-                            PUTCH(dest,  '&');
+                            PUTCH(dest, '&');
                             break;
                         case 'o':
-                            PUTCH(dest,  '|');
+                            PUTCH(dest, '|');
                             break;
                         case 'x':
-                            PUTCH(dest,  '^');
+                            PUTCH(dest, '^');
                             break;
                     }
                     PUTZERO(dest);
@@ -484,7 +491,7 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                 char next = *(*name)++;
                 if (next == 'n')
                 {
-                    PUTCH(dest,  '!');
+                    PUTCH(dest, '!');
                     PUTZERO(dest);
                     dest = unmangleExpression(orig, dest, name);
                 }
@@ -494,12 +501,12 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                     switch (next)
                     {
                         case 'a':
-                            PUTCH(dest,  '&');
-                            PUTCH(dest,  '&');
+                            PUTCH(dest, '&');
+                            PUTCH(dest, '&');
                             break;
                         case 'o':
-                            PUTCH(dest,  '|');
-                            PUTCH(dest,  '|');
+                            PUTCH(dest, '|');
+                            PUTCH(dest, '|');
                             break;
                     }
                     PUTZERO(dest);
@@ -539,8 +546,8 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                     while (*(*name) == 't')
                     {
                         (*name)++;
-                        PUTCH(dest,  ':');
-                        PUTCH(dest,  ':');
+                        PUTCH(dest, ':');
+                        PUTCH(dest, ':');
                         if (isdigit(*(*name)))
                         {
                             v = *(*name)++ - '0';
@@ -609,24 +616,24 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                     Utils::StrCpy(dest, UNMANGLE_SIZE(dest), manglenames[v]);
                     dest += strlen(dest);
                 }
-                PUTCH(dest,  '(');
+                PUTCH(dest, '(');
                 while (*(*name) == 'F')
                 {
                     (*name)++;
                     dest = unmangleExpression(orig, dest, name);
                 }
-                PUTCH(dest,  ')');
+                PUTCH(dest, ')');
                 PUTZERO(dest);
                 break;
             }
             case 'e':
                 if (*(*name) == '?')
                 {
-                    PUTCH(dest,  '*');
+                    PUTCH(dest, '*');
                     (*name)++;
                 }
                 while (*(*name) && *(*name) != '.')
-                    PUTCH(dest,  *(*name)++);
+                    PUTCH(dest, *(*name)++);
                 PUTZERO(dest);
                 if (*(*name))
                 {
@@ -638,11 +645,11 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
             case 'g':
                 if (*(*name) == '?')
                 {
-                    PUTCH(dest,  '*');
+                    PUTCH(dest, '*');
                     (*name)++;
                 }
                 while (*(*name) && *(*name) != '.')
-                    PUTCH(dest,  *(*name)++);
+                    PUTCH(dest, *(*name)++);
                 PUTZERO(dest);
                 if (*(*name))
                 {
@@ -675,7 +682,7 @@ char* unmangleExpression(char (&orig)[n], char* dest, const char** name)
                     Utils::StrCpy(dest, UNMANGLE_SIZE(dest), manglenames[v]);
                     dest += strlen(dest);
                 }
-                PUTCH(dest,  ')');
+                PUTCH(dest, ')');
                 PUTZERO(dest);
             }
         }
@@ -698,17 +705,17 @@ static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, 
         else
         {
             while (*name && *name != '.')
-                PUTCH(buf,  *name++);
+                PUTCH(buf, *name++);
         }
-        PUTCH(buf,  '<');
+        PUTCH(buf, '<');
         PUTZERO(buf);
         if (*name)
         {
             name++;
             if (*name == '~')
             {
-                PUTCH(buf,  ',');
-                PUTCH(buf,  ' ');
+                PUTCH(buf, ',');
+                PUTCH(buf, ' ');
                 PUTZERO(buf);
             }
             else
@@ -747,8 +754,8 @@ static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, 
                         Utils::StrCpy(buf, UNMANGLE_SIZE(buf), tname);
                         buf += strlen(buf);
                     }
-                    PUTCH(buf,  ',');
-                    PUTCH(buf,  ' ');
+                    PUTCH(buf, ',');
+                    PUTCH(buf, ' ');
                     PUTZERO(buf);
                 }
             }
@@ -757,8 +764,8 @@ static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, 
         }
         else
         {
-            PUTCH(buf,  ',');
-            PUTCH(buf,  ' ');
+            PUTCH(buf, ',');
+            PUTCH(buf, ' ');
             PUTZERO(buf);
         }
         buf[-2] = '>';
@@ -766,7 +773,7 @@ static const char* unmangTemplate(char (&orig)[n], char* buf, const char* name, 
     }
     if (*name == '.' && name[1] == 'o')
     {
-        name = unmang1(orig, buf-1,name + 2, last, false);
+        name = unmang1(orig, buf - 1, name + 2, last, false);
         buf += strlen(buf);
     }
     return name;
@@ -783,11 +790,12 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
     buf[0] = 0;
     if (*name == '@')
     {
-       name++;
-       while (*name && *name != '#' && orig + n > buf-1) PUTCH(buf, *name++);
-       if (*name)
-           name = unmangTemplate(orig, buf, name, last);
-       return name;
+        name++;
+        while (*name && *name != '#' && orig + n > buf - 1)
+            PUTCH(buf, *name++);
+        if (*name)
+            name = unmangTemplate(orig, buf, name, last);
+        return name;
     }
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
@@ -840,8 +848,8 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
             {
                 if (name[1] == '.')  // in case of ..lambda
                 {
-                    PUTCH(buf,  *name++);
-                    PUTCH(buf,  *name++);
+                    PUTCH(buf, *name++);
+                    PUTCH(buf, *name++);
                     PUTZERO(buf);
                     v -= 2;
                 }
@@ -859,12 +867,12 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                 v--;
                 if (*name == '@')
                 {
-                    PUTCH(buf,  ':');
-                    PUTCH(buf,  ':');
+                    PUTCH(buf, ':');
+                    PUTCH(buf, ':');
                     name++;
                 }
                 else
-                    PUTCH(buf,  *name++);
+                    PUTCH(buf, *name++);
                 PUTZERO(buf);
             }
         }
@@ -992,8 +1000,8 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     const char* p = name + 1;
                     buf += strlen(buf);
                     while (isdigit(*p))
-                        PUTCH(buf,  *p++);
-                    PUTCH(buf,  ')');
+                        PUTCH(buf, *p++);
+                    PUTCH(buf, ')');
                     PUTZERO(buf);
                 }
                 else if (*name == 'N')
@@ -1028,8 +1036,8 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                 const char* p = name + 1;
                 buf += strlen(buf);
                 while (isdigit(*p))
-                    PUTCH(buf,  *p++);
-                PUTCH(buf,  ')');
+                    PUTCH(buf, *p++);
+                PUTCH(buf, ')');
                 PUTZERO(buf);
                 break;
             }
@@ -1176,19 +1184,19 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     while (*name == '?')
                     {
                         name++;
-                        PUTCH(buf,  '[');
+                        PUTCH(buf, '[');
                         while (isdigit(*name))
                         {
                             *buf++ = *name++;
                         }
-                        name++; // past ending '?'
-                        PUTCH(buf,  ']');
+                        name++;  // past ending '?'
+                        PUTCH(buf, ']');
                     }
                 }
                 else
                 {
-                   PUTCH(buf,  '[');
-                   PUTCH(buf,  ']');
+                    PUTCH(buf, '[');
+                    PUTCH(buf, ']');
                 }
                 PUTZERO(buf);
                 break;
@@ -1249,8 +1257,8 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     name = unmang1(orig, buf, name, last, false);
                 }
                 buf = buf + strlen(buf);
-                PUTCH(buf,  '&');
-                PUTCH(buf,  '&');
+                PUTCH(buf, '&');
+                PUTCH(buf, '&');
                 PUTZERO(buf);
                 break;
             case 'r':
@@ -1284,7 +1292,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                     name = unmang1(orig, buf, name, last, false);
                 }
                 buf = buf + strlen(buf);
-                PUTCH(buf,  '&');
+                PUTCH(buf, '&');
                 PUTZERO(buf);
                 break;
             case 'e':
@@ -1294,8 +1302,8 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
                 name++;  // past ?
                 Utils::StrCpy(buf, UNMANGLE_SIZE(buf), "decltype(");
                 buf += strlen(buf);
-                buf = unmangleExpression(orig,buf, &name);
-                PUTCH(buf,  ')');
+                buf = unmangleExpression(orig, buf, &name);
+                PUTCH(buf, ')');
                 PUTZERO(buf);
                 break;
             case '#':
@@ -1312,7 +1320,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
 template <int n>
 static const char* unmangcpptype(char (&orig)[n], char* buf, const char* name, const char* last)
 {
-    PUTCH(buf,  '<');
+    PUTCH(buf, '<');
     PUTZERO(buf);
     while (*name && *name != '.' && *name != '@' && *name != '#')
     {
@@ -1320,12 +1328,12 @@ static const char* unmangcpptype(char (&orig)[n], char* buf, const char* name, c
         buf = buf + strlen(buf);
         if (*name && *name != '.' && *name != '@' && *name != '#')
         {
-            PUTCH(buf,  ',');
+            PUTCH(buf, ',');
         }
         else
         {
-            PUTCH(buf,  '>');
-            PUTCH(buf,  ' ');
+            PUTCH(buf, '>');
+            PUTCH(buf, ' ');
         }
         PUTZERO(buf);
     }
@@ -1377,14 +1385,14 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                 {
                     // symbol name in a lambda function
                     while (*name && *name != '@')
-                        PUTCH(buf,  *name++);
-                    PUTCH(buf,  ':');
-                    PUTCH(buf,  ':');
+                        PUTCH(buf, *name++);
+                    PUTCH(buf, ':');
+                    PUTCH(buf, ':');
                     PUTZERO(buf);
                 }
                 else if (name[1] == 'x' && name[2] == 'c')
                 {
-                    PUTCH(buf,  *name++);
+                    PUTCH(buf, *name++);
                     PUTZERO(buf);
                 }
                 // discard the template params if they are there
@@ -1407,7 +1415,7 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                     else
                     {
                         name++;
-                        PUTCH(buf,  '<');
+                        PUTCH(buf, '<');
                         while (*name && *name != '~')
                         {
                             PUTZERO(buf);
@@ -1415,10 +1423,10 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                             buf += strlen(buf);
                             if (*name == '?')
                             {
-                                char(&temp)[5000] = (char(&)[5000]) * (char *)alloca(5000);
+                                char(&temp)[5000] = (char(&)[5000]) * (char*)alloca(5000);
                                 temp[0] = 0;
                                 name++;
-                                PUTCH(buf,  '=');
+                                PUTCH(buf, '=');
                                 PUTZERO(buf);
                                 unmangleExpression(temp, temp, &name);
                                 unmang2(orig, buf, temp);
@@ -1426,8 +1434,8 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                             }
                             if (*name && *name != '~')
                             {
-                                PUTCH(buf,  ',');
-                                PUTCH(buf,  ' ');
+                                PUTCH(buf, ',');
+                                PUTCH(buf, ' ');
                             }
                             PUTZERO(buf);
                         }
@@ -1446,24 +1454,24 @@ static char* unmang2(char (&orig)[n], char* val, const char* name)
                     Utils::StrCpy(last, UNMANGLE_SIZE(last), "{unique}");
                     buf = last + strlen(last);
                 }
-                PUTCH(buf,  ':');
-                PUTCH(buf,  ':');
+                PUTCH(buf, ':');
+                PUTCH(buf, ':');
                 PUTZERO(buf);
                 if (*name != '.' && (*name != '#' || name[1] != '.'))
                     last = buf;
             }
             else
             {
-                PUTCH(buf,  *name++);
+                PUTCH(buf, *name++);
                 PUTZERO(buf);
             }
         }
     }
     return val;
 }
-char* unmangle(char *val, const char* name)
+char* unmangle(char* val, const char* name)
 {
-    char(&buf)[UNMANGLE_BUFFER_SIZE] = (char(&)[UNMANGLE_BUFFER_SIZE])*val;
+    char(&buf)[UNMANGLE_BUFFER_SIZE] = (char(&)[UNMANGLE_BUFFER_SIZE]) * val;
     manglenamecount = 0;
     return unmang2(buf, buf, name);
 }

@@ -47,8 +47,8 @@ CmdSwitchBool arocc::Verbose(arocc::SwitchParser, 'v');
 CmdSwitchBool arocc::Extract(arocc::SwitchParser, 'x');
 CmdSwitchBool arocc::Delete(arocc::SwitchParser, 'd');
 
-const char* arocc::helpText = 
-R"help([options] library files...
+const char* arocc::helpText =
+    R"help([options] library files...
     
 This program is wrapper that convert linux/ar style
 Librarian command line options to olib librarian options
@@ -66,11 +66,10 @@ Librarian command line options to olib librarian options
 /?, --help     This text
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* arocc::usageText = "[options] library files...";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     arocc ar;
     return ar.Run(argc, argv);

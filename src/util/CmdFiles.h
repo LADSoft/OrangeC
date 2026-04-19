@@ -35,18 +35,15 @@ class CmdSwitchBase;
 
 class FileEntry
 {
-public:
-    FileEntry(const std::string&name): Name(name) { }
-    FileEntry(FileEntry&& old)
-    {
-        Name = std::move(old.Name);
-    }
+  public:
+    FileEntry(const std::string& name) : Name(name) {}
+    FileEntry(FileEntry&& old) { Name = std::move(old.Name); }
     FileEntry(const FileEntry& old)
     {
         Name = old.Name;
         activeSwitches = old.activeSwitches;
     }
-    FileEntry &operator=(const FileEntry& old)
+    FileEntry& operator=(const FileEntry& old)
     {
         Name = old.Name;
         return *this;

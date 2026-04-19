@@ -59,7 +59,7 @@ CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32, 0, 100, {"processor-m
 CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, {"warningsaserrors"});
 CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, {"nogasdirectivewarning"});
 const char* AsmMain::helpText =
-R"help([options] file
+    R"help([options] file
     
 This program is an x86/x64 assembly language assembler.
 It emulates NASM and GAS to a considerable extent.
@@ -82,11 +82,10 @@ It emulates NASM and GAS to a considerable extent.
 --nogasdirectivewarning            Don't show warnings for missing GAS directives
     
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* AsmMain::usageText = "[options] file";
 
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     AsmMain rc;
     try
@@ -213,7 +212,8 @@ int AsmMain::Run(int argc, char* argv[])
         if (npos != std::string::npos)
         {
             // qualifiedfile is going to strip an extension off arbitrarily, so give it one
-            if (!Utils::HasExt(fileName.c_str(), ".asm") &&!Utils::HasExt(fileName.c_str(), ".s") && !Utils::HasExt(fileName.c_str(), ".nas"))
+            if (!Utils::HasExt(fileName.c_str(), ".asm") && !Utils::HasExt(fileName.c_str(), ".s") &&
+                !Utils::HasExt(fileName.c_str(), ".nas"))
                 fileName += ".aaaaaaaa";
         }
         if (npos == std::string::npos || (npos && inName[npos - 1] == '.') ||

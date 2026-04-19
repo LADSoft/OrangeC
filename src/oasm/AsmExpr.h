@@ -81,7 +81,9 @@ class AsmExprNode : public AdlExprNode
     {
     }
     AsmExprNode(const FPF& Fval) : AdlExprNode(0), type(FVAL), fval(Fval), sect(nullptr), left(nullptr), right(nullptr) {}
-    AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(std::move(lbl)), sect(nullptr), left(nullptr), right(nullptr) {}
+    AsmExprNode(std::string lbl) : AdlExprNode(0), type(LABEL), label(std::move(lbl)), sect(nullptr), left(nullptr), right(nullptr)
+    {
+    }
     AsmExprNode(std::shared_ptr<Section>& Sect, int offs) :
         AdlExprNode(offs), type(BASED), sect(Sect), left(nullptr), right(nullptr)
     {
@@ -99,7 +101,7 @@ class AsmExprNode : public AdlExprNode
     FPF fval;
     std::string label;
     std::shared_ptr<AsmExprNode> GetLeft() { return left; }
-    void SetLeft(std::shared_ptr<AsmExprNode> n) { left =std::move( n); }
+    void SetLeft(std::shared_ptr<AsmExprNode> n) { left = std::move(n); }
     std::shared_ptr<AsmExprNode> GetRight() { return right; }
     void SetRight(std::shared_ptr<AsmExprNode> n) { right = std::move(n); };
     std::shared_ptr<Section> GetSection() { return sect; }

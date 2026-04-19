@@ -48,7 +48,9 @@ InputFile::~InputFile()
     {
         CheckErrors();
     }
-    catch (std::exception) { /* don't care */ }
+    catch (std::exception)
+    { /* don't care */
+    }
 }
 bool InputFile::Open()
 {

@@ -178,7 +178,7 @@ static void RenameOneSym(SimpleSymbol* sym, int structret)
         !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) || sym->tp->structuredAlias ||
          (tp->type == st_pointer && tp->btp->type != st_func) || tp->type == st_lref || tp->type == st_rref) &&
-        (sym->storage_class == scc_auto || sym->storage_class == scc_register || sym->storage_class == scc_parameter ) &&
+        (sym->storage_class == scc_auto || sym->storage_class == scc_register || sym->storage_class == scc_parameter) &&
         (!sym->usedasbit || fastcallCandidate) && !sym->tp->isvolatile)
     {
         /* this works because all IMODES refering to the same
@@ -230,8 +230,11 @@ static void RenameOneSym(SimpleSymbol* sym, int structret)
                 *parmName = *sym->imvalue;
             }
         }
-        if (sym->storage_class != scc_parameter || dofastcall || (sym->tp->type == st_pointer && (sym->tp->btp->type == st_struct || sym->tp->btp->type == st_union || sym->tp->btp->type == st_class)) || (chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
-//        if (1 || sym->storage_class != scc_parameter || dofastcall || (chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
+        if (sym->storage_class != scc_parameter || dofastcall ||
+            (sym->tp->type == st_pointer &&
+             (sym->tp->btp->type == st_struct || sym->tp->btp->type == st_union || sym->tp->btp->type == st_class)) ||
+            (chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
+        //        if (1 || sym->storage_class != scc_parameter || dofastcall || (chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
         {
             if (sym->imvalue)
             {
@@ -258,8 +261,12 @@ static void RenameOneSym(SimpleSymbol* sym, int structret)
             }
         }
         ep->sp->imvalue = sym->imvalue;
-        if (sym->storage_class == scc_parameter && (dofastcall || (sym->tp->type == st_pointer && (sym->tp->btp->type == st_struct || sym->tp->btp->type == st_union || sym->tp->btp->type == st_class)))  && !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
-//        if (sym->storage_class == scc_parameter && (1 || dofastcall)  && !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
+        if (sym->storage_class == scc_parameter &&
+            (dofastcall || (sym->tp->type == st_pointer && (sym->tp->btp->type == st_struct || sym->tp->btp->type == st_union ||
+                                                            sym->tp->btp->type == st_class))) &&
+            !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
+        //        if (sym->storage_class == scc_parameter && (1 || dofastcall)  && !(chosenAssembler->arch->denyopts &
+        //        DO_NOLOADSTACK))
         {
             QUAD* q;
             QUAD* bl1 = blockArray[1]->head;

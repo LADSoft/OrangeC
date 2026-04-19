@@ -50,7 +50,9 @@ ResourceContainer::~ResourceContainer()
                 delete[] nt.second.data;
         }
     }
-    catch (std::bad_array_new_length) { /* don't care */ }
+    catch (std::bad_array_new_length)
+    { /* don't care */
+    }
 }
 bool ResourceContainer::LoadFiles()
 {

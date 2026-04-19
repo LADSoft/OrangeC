@@ -87,46 +87,46 @@ static Optimizer::ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                                             {"dt", op_reserved, ISZ_LDOUBLE, 0},
                                             {"label", op_label, 0, 0},
                                             {0}};
-static Optimizer::ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
-                                     {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
-                                     {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
-                                     {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
-                                     {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
-                                     {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
-                                     {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
-                                     {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
-                                     {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
-                                     {"sym", am_dreg, 4, ISZ_USHORT},   {"bp", am_dreg, 5, ISZ_USHORT},
-                                     {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
-                                     {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
-                                     {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
-                                     {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
-                                     {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
-                                     {"mm0", am_mmreg, 0, ISZ_DOUBLE},     {"mm1", am_mmreg, 1, ISZ_DOUBLE},
-                                     {"mm2", am_mmreg, 2, ISZ_DOUBLE},     {"mm3", am_mmreg, 3, ISZ_DOUBLE},
-                                     {"mm4", am_mmreg, 4, ISZ_DOUBLE},     {"mm5", am_mmreg, 5, ISZ_DOUBLE},
-                                     {"mm6", am_mmreg, 6, ISZ_DOUBLE},     {"mm7", am_mmreg, 7, ISZ_DOUBLE},
-                                     {"xmm0", am_xmmreg, 0, ISZ_DOUBLE},     {"xmm1", am_xmmreg, 1, ISZ_DOUBLE},
-                                     {"xmm2", am_xmmreg, 2, ISZ_DOUBLE},     {"xmm3", am_xmmreg, 3, ISZ_DOUBLE},
-                                     {"xmm4", am_xmmreg, 4, ISZ_DOUBLE},     {"xmm5", am_xmmreg, 5, ISZ_DOUBLE},
-                                     {"xmm6", am_xmmreg, 6, ISZ_DOUBLE},     {"xmm7", am_xmmreg, 7, 0},
-                                     {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
-                                     {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
-                                     {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
-                                     {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
-                                     {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
-                                     {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
-                                     {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
-                                     {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
-                                     {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
-                                     {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
-                                     {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
-                                     {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
-                                     {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
-                                     {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
-                                     {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
-                                     {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
-                                     {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
+static Optimizer::ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},      {"ds", am_seg, 2, ISZ_USHORT},
+                                     {"es", am_seg, 3, ISZ_USHORT},      {"fs", am_seg, 4, ISZ_USHORT},
+                                     {"gs", am_seg, 5, ISZ_USHORT},      {"ss", am_seg, 6, ISZ_USHORT},
+                                     {"al", am_dreg, 0, ISZ_UCHAR},      {"cl", am_dreg, 1, ISZ_UCHAR},
+                                     {"dl", am_dreg, 2, ISZ_UCHAR},      {"bl", am_dreg, 3, ISZ_UCHAR},
+                                     {"ah", am_dreg, 4, ISZ_UCHAR},      {"ch", am_dreg, 5, ISZ_UCHAR},
+                                     {"dh", am_dreg, 6, ISZ_UCHAR},      {"bh", am_dreg, 7, ISZ_UCHAR},
+                                     {"ax", am_dreg, 0, ISZ_USHORT},     {"cx", am_dreg, 1, ISZ_USHORT},
+                                     {"dx", am_dreg, 2, ISZ_USHORT},     {"bx", am_dreg, 3, ISZ_USHORT},
+                                     {"sym", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
+                                     {"si", am_dreg, 6, ISZ_USHORT},     {"di", am_dreg, 7, ISZ_USHORT},
+                                     {"eax", am_dreg, 0, ISZ_UINT},      {"ecx", am_dreg, 1, ISZ_UINT},
+                                     {"edx", am_dreg, 2, ISZ_UINT},      {"ebx", am_dreg, 3, ISZ_UINT},
+                                     {"esp", am_dreg, 4, ISZ_UINT},      {"ebp", am_dreg, 5, ISZ_UINT},
+                                     {"esi", am_dreg, 6, ISZ_UINT},      {"edi", am_dreg, 7, ISZ_UINT},
+                                     {"mm0", am_mmreg, 0, ISZ_DOUBLE},   {"mm1", am_mmreg, 1, ISZ_DOUBLE},
+                                     {"mm2", am_mmreg, 2, ISZ_DOUBLE},   {"mm3", am_mmreg, 3, ISZ_DOUBLE},
+                                     {"mm4", am_mmreg, 4, ISZ_DOUBLE},   {"mm5", am_mmreg, 5, ISZ_DOUBLE},
+                                     {"mm6", am_mmreg, 6, ISZ_DOUBLE},   {"mm7", am_mmreg, 7, ISZ_DOUBLE},
+                                     {"xmm0", am_xmmreg, 0, ISZ_DOUBLE}, {"xmm1", am_xmmreg, 1, ISZ_DOUBLE},
+                                     {"xmm2", am_xmmreg, 2, ISZ_DOUBLE}, {"xmm3", am_xmmreg, 3, ISZ_DOUBLE},
+                                     {"xmm4", am_xmmreg, 4, ISZ_DOUBLE}, {"xmm5", am_xmmreg, 5, ISZ_DOUBLE},
+                                     {"xmm6", am_xmmreg, 6, ISZ_DOUBLE}, {"xmm7", am_xmmreg, 7, 0},
+                                     {"st", am_freg, 0, ISZ_LDOUBLE},    {"cr0", am_screg, 0, ISZ_UINT},
+                                     {"cr1", am_screg, 1, ISZ_UINT},     {"cr2", am_screg, 2, ISZ_UINT},
+                                     {"cr3", am_screg, 3, ISZ_UINT},     {"cr4", am_screg, 4, ISZ_UINT},
+                                     {"cr5", am_screg, 5, ISZ_UINT},     {"cr6", am_screg, 6, ISZ_UINT},
+                                     {"cr7", am_screg, 7, ISZ_UINT},     {"dr0", am_sdreg, 0, ISZ_UINT},
+                                     {"dr1", am_sdreg, 1, ISZ_UINT},     {"dr2", am_sdreg, 2, ISZ_UINT},
+                                     {"dr3", am_sdreg, 3, ISZ_UINT},     {"dr4", am_sdreg, 4, ISZ_UINT},
+                                     {"dr5", am_sdreg, 5, ISZ_UINT},     {"dr6", am_sdreg, 6, ISZ_UINT},
+                                     {"dr7", am_sdreg, 7, ISZ_UINT},     {"tr0", am_streg, 0, ISZ_UINT},
+                                     {"tr1", am_streg, 1, ISZ_UINT},     {"tr2", am_streg, 2, ISZ_UINT},
+                                     {"tr3", am_streg, 3, ISZ_UINT},     {"tr4", am_streg, 4, ISZ_UINT},
+                                     {"tr5", am_streg, 5, ISZ_UINT},     {"tr6", am_streg, 6, ISZ_UINT},
+                                     {"tr7", am_streg, 7, ISZ_UINT},     {"byte", am_ext, akw_byte, 0},
+                                     {"word", am_ext, akw_word, 0},      {"dword", am_ext, akw_dword, 0},
+                                     {"fword", am_ext, akw_fword, 0},    {"qword", am_ext, akw_qword, 0},
+                                     {"tbyte", am_ext, akw_tbyte, 0},    {"ptr", am_ext, akw_ptr, 0},
+                                     {"offset", am_ext, akw_offset, 0},  {0, 0, 0}};
 
 static int floating;
 static SymbolTable<ASM_HASH_ENTRY>* asmHash;
@@ -197,16 +197,16 @@ static void setreg(std::vector<int>& srcRegs, Optimizer::ASMREG* regImage)
     int reg = regImage->regnum;
     switch (regImage->size)
     {
-    case ISZ_UCHAR:
-        reg += R_AL;
-        break;
-    case ISZ_USHORT:
-        reg += R_AX;
-        break;
-    default:
-    case ISZ_UINT:
-        reg += R_EAX;
-        break;
+        case ISZ_UCHAR:
+            reg += R_AL;
+            break;
+        case ISZ_USHORT:
+            reg += R_AX;
+            break;
+        default:
+        case ISZ_UINT:
+            reg += R_EAX;
+            break;
     }
     srcRegs.push_back(reg);
 }
@@ -231,7 +231,7 @@ static void inasm_txsym(void)
     }
     else if (currentLex)
     {
-        const char *name = nullptr;
+        const char* name = nullptr;
         if (MATCHKW(Keyword::land_))
             name = "and";
         else if (MATCHKW(Keyword::lor_))
@@ -249,7 +249,7 @@ static void inasm_txsym(void)
                 currentLex->type = LexType::l_asmInstruction_;
                 insdata = (Optimizer::ASMNAME*)e->data;
             }
-         }
+        }
     }
 }
 static void inasm_getsym(void)
@@ -257,7 +257,7 @@ static void inasm_getsym(void)
     getsym();
     inasm_txsym();
 }
-static void inasm_needkw( Keyword Kw)
+static void inasm_needkw(Keyword Kw)
 {
     needkw(Kw);
     inasm_txsym();
@@ -328,13 +328,12 @@ static EXPRESSION* inasm_ident(void)
                     Optimizer::SymbolManager::Get(sym);
                     node = MakeExpression(ExpressionNode::absolute_, sym);
                     break;
-                case StorageClass::overloads_:
-                {
-                    node = MakeExpression(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());                    
+                case StorageClass::overloads_: {
+                    node = MakeExpression(ExpressionNode::pc_, (SYMBOL*)sym->tp->syms->front());
                     StatementGenerator sg(sym->tp->syms->front());
                     sg.CompileFunctionFromStream();
                 }
-                    break;
+                break;
                 case StorageClass::localstatic_:
                 case StorageClass::global_:
                 case StorageClass::external_:
@@ -618,7 +617,7 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
 {
     int reg1 = -1, reg2 = -1, scale = 0, seg = 0;
     bool subtract = false;
-    EXPRESSION* node = 0, *node2 = 0;
+    EXPRESSION *node = 0, *node2 = 0;
     AMODE* rv;
     int gotident = 0;
     inasm_getsym();
@@ -1235,18 +1234,18 @@ Statement* AssembleInstruction(OCODE* ins, std::list<FunctionBlock*>& parent, st
     rv->select = (EXPRESSION*)ins;
     switch (ins->opcode)
     {
-    case op_div:
-    case op_idiv:
-    case op_mul:
-        if (destRegs.size())
-            destRegs[0] = R_EAXEDX;
-        break;
-    case op_imul:
-        if (!ins->oper2 && destRegs.size())
-            destRegs[0] = R_EAXEDX;
-        break;
-    default:
-        break;
+        case op_div:
+        case op_idiv:
+        case op_mul:
+            if (destRegs.size())
+                destRegs[0] = R_EAXEDX;
+            break;
+        case op_imul:
+            if (!ins->oper2 && destRegs.size())
+                destRegs[0] = R_EAXEDX;
+            break;
+        default:
+            break;
     }
     unsigned char* regs = Allocate<unsigned char>(srcRegs.size() + 2);
     if (destRegs.size())
@@ -1383,7 +1382,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
                 rv->oper2->length = 0;
             }
         }
-        if(rv->oper3)
+        if (rv->oper3)
         {
             if (rv->oper3->length & 0xff00)
             {
@@ -1395,7 +1394,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             }
             else
             {
-                rv->oper3->length &= 0xff;            
+                rv->oper3->length &= 0xff;
             }
         }
 

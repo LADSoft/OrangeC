@@ -147,11 +147,10 @@ void Field::ObjOut(PELib& peLib, std::ostream& out, int pass) const
                 break;
             case Enum:
                 out << std::endl << "=";
-                out << (longlong)enumValue_ << "," << (int)size_ << ")" ;
+                out << (longlong)enumValue_ << "," << (int)size_ << ")";
 
                 break;
-            case Bytes:
-            {
+            case Bytes: {
                 std::ios_base::fmtflags f(out.flags());
                 out << std::endl << "(" << std::hex;
                 for (int i = 0; i < byteLength_; i++)

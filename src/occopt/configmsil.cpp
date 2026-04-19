@@ -41,7 +41,7 @@
 namespace Optimizer
 {
 static char help_text[] =
-R"help([options] [@response file] files
+    R"help([options] [@response file] files
 
 This program is the Orange C compiler for MSIL
 
@@ -105,7 +105,7 @@ Dependency generation:
 Command line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 static char usage_text[] = "[options] [@response file] files";
 
 char msil_bltins[] =

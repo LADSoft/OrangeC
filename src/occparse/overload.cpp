@@ -88,8 +88,10 @@ static int GetHashValue(const char* string)
 
 static bool EmptyPackedTemplateParam(Type* tnew, Type* told)
 {
-    while (tnew->IsRef()) tnew = tnew->BaseType()->btp;
-    while (told->IsRef()) told = told->BaseType()->btp;
+    while (tnew->IsRef())
+        tnew = tnew->BaseType()->btp;
+    while (told->IsRef())
+        told = told->BaseType()->btp;
     tnew = tnew->BaseType();
     told = told->BaseType();
     if (tnew->type == BasicType::templateparam_ && told->type == BasicType::templateparam_)
@@ -104,7 +106,6 @@ static bool EmptyPackedTemplateParam(Type* tnew, Type* told)
         }
     }
     return false;
-
 }
 bool matchOverload(Type* tnew, Type* told)
 {
@@ -181,7 +182,8 @@ bool matchOverload(Type* tnew, Type* told)
                 }
                 auto tpn1 = tpn;
                 auto tps1 = tps;
-                if ((tps1->IsArray() && tps1->size == 0 && tpn1->IsPtr()) || (tpn1->IsArray() && tpn1->size == 0 && tps1->IsPtr())) // empty array matches ptr (this is as an argument)
+                if ((tps1->IsArray() && tps1->size == 0 && tpn1->IsPtr()) ||
+                    (tpn1->IsArray() && tpn1->size == 0 && tps1->IsPtr()))  // empty array matches ptr (this is as an argument)
                 {
                     tps1 = tps1->BaseType()->btp;
                     tpn1 = tpn1->BaseType()->btp;
@@ -189,7 +191,8 @@ bool matchOverload(Type* tnew, Type* told)
                 while (tpn1->IsPtr() && tps1->IsPtr())
                 {
                     if (tpn1->IsArray() != tps1->IsArray() || (!tpn1->IsArray() && tpn1->size != tps1->size) ||
-                            (tpn1->IsArray() && (tpn1->BaseType()->esize && isintconst(tpn1->BaseType()->esize) != isintconst(tps1->BaseType()->esize))))
+                        (tpn1->IsArray() &&
+                         (tpn1->BaseType()->esize && isintconst(tpn1->BaseType()->esize) != isintconst(tps1->BaseType()->esize))))
                     {
                         matchOverloadLevel--;
                         return false;
@@ -254,7 +257,8 @@ bool matchOverload(Type* tnew, Type* told)
             tpx = tpx->BaseType();
             if (tpx->type == BasicType::void_ || (tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed))
             {
-                if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack ||
+                    !tpx->templateParam->second->byPack.pack->size())
                 {
                     if (hnew != hnewe)
                     {
@@ -262,9 +266,11 @@ bool matchOverload(Type* tnew, Type* told)
                         while (tpx->IsRef())
                             tpx = tpx->BaseType()->btp;
                         tpx = tpx->BaseType();
-                        if (tpx->type == BasicType::void_ || tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed)
+                        if (tpx->type == BasicType::void_ ||
+                            tpx->type == BasicType::templateparam_ && tpx->templateParam->second->packed)
                         {
-                            if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack || !tpx->templateParam->second->byPack.pack->size())
+                            if (tpx->type == BasicType::void_ || !tpx->templateParam->second->byPack.pack ||
+                                !tpx->templateParam->second->byPack.pack->size())
                             {
                                 hold = holde;
                                 hnew = hnewe;
@@ -469,20 +475,18 @@ bool matchOverload(Type* tnew, Type* told)
                                 }
                                 if (typedefSym)
                                 {
-                                    if (strcmp((*tpn->sp->sb->templateSelector)[2].name,
-                                        typedefSym->name) == 0)
+                                    if (strcmp((*tpn->sp->sb->templateSelector)[2].name, typedefSym->name) == 0)
                                     {
                                     }
                                     else
                                     {
                                         return false;
                                     }
-
                                 }
                                 else
                                 {
                                     if (strcmp((*tpn->sp->sb->templateSelector)[2].name,
-                                        (*tps->sp->sb->templateSelector)[2].name) == 0)
+                                               (*tps->sp->sb->templateSelector)[2].name) == 0)
                                     {
                                     }
                                     else
@@ -2067,7 +2071,8 @@ static void SelectBestFunc(SYMBOL** spList, e_cvsrn** icsList, int** lenList, Ca
                                     else if (!(*it)->sb->initializer_list)
                                     {
                                         int m = 0;
-                                        while (it != ite) ++it, ++m;
+                                        while (it != ite)
+                                            ++it, ++m;
                                         if (m != n)
                                         {
                                             spList[i] = nullptr;
@@ -2430,7 +2435,7 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                     }
                 }
             }
-            SelectBestFunc(spList, icsList, lenList, &funcparams, 1, funcs, nullptr);   
+            SelectBestFunc(spList, icsList, lenList, &funcparams, 1, funcs, nullptr);
             WeedTemplates(spList, funcs, &funcparams, nullptr);
             found1 = found2 = nullptr;
             for (int i = 0; i < funcs && !found1; i++)
@@ -2440,7 +2445,10 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                     auto itParams = spList[i]->tp->syms->begin();
                     auto itParamsEnd = spList[i]->tp->syms->end();
                     ++itParams;
-                    if (itParams != itParamsEnd && ((*itParams)->tp->CompatibleType(tpa) && (!tpa->IsArithmetic() || tpa->BaseType()->type == (*itParams)->tp->BaseType()->type) || SameTemplate((*itParams)->tp, tpa)))
+                    if (itParams != itParamsEnd &&
+                        ((*itParams)->tp->CompatibleType(tpa) &&
+                             (!tpa->IsArithmetic() || tpa->BaseType()->type == (*itParams)->tp->BaseType()->type) ||
+                         SameTemplate((*itParams)->tp, tpa)))
                     {
                         ++itParams;
                         if (itParams == itParamsEnd || (*itParams)->sb->defaultarg)
@@ -2620,7 +2628,7 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
         {
             Type* t1 = tpp;
             Type* t2 = tpa;
-            if (t1->IsArray() && t1->size == 0 && t2->IsPtr()) // empty array (this is as an argument)
+            if (t1->IsArray() && t1->size == 0 && t2->IsPtr())  // empty array (this is as an argument)
             {
                 t1 = t1->BaseType()->btp;
                 t2 = t2->BaseType()->btp;
@@ -2637,7 +2645,8 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
             {
                 if (t1->IsArray() != t2->IsArray() ||
                     (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) != isintconst(t2->BaseType()->esize)) ||
-                    (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) && t1->BaseType()->esize->v.i != t2->BaseType()->esize->v.i))
+                    (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) &&
+                     t1->BaseType()->esize->v.i != t2->BaseType()->esize->v.i))
                 {
                     seq[(*n)++] = CV_NONE;
                 }
@@ -2662,7 +2671,7 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
                 {
                     if (tpa->IsPtr())
                         seq[(*n)++] = CV_POINTERCONVERSION;
-                    else if (!tpp->BaseType()->nullptrType && exp  && !isconstzero(tpa->BaseType(), exp) &&
+                    else if (!tpp->BaseType()->nullptrType && exp && !isconstzero(tpa->BaseType(), exp) &&
                              exp->type != ExpressionNode::nullptr_)
                         seq[(*n)++] = CV_NONE;
                 }
@@ -2789,7 +2798,7 @@ void arg_compare_bitint(Type* tpp, Type* tpa, int* n, e_cvsrn* seq)
     }
 }
 void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
-    bool allowUser, bool ref)
+                         bool allowUser, bool ref)
 {
     bool lref = false;
     bool rref = false;
@@ -4055,7 +4064,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
         if (it != ite)
         {
             SYMBOL* sym = *it;
-            if (sym->sb->init  || sym->packed || initTokenStreams.get(sym))
+            if (sym->sb->init || sym->packed || initTokenStreams.get(sym))
             {
                 return true;
             }
@@ -4092,7 +4101,7 @@ SYMBOL* detemplate(SYMBOL* sym, CallSite* args, Type* atp)
 
                 globalNameSpace->push_front(ns->sb->nameSpaceValues->front());
             }
-             if (args && !FunctionTemplateCandidate(sym->templateParams, args->templateParams))
+            if (args && !FunctionTemplateCandidate(sym->templateParams, args->templateParams))
                 sym = nullptr;
             else if (atp)
                 sym = TemplateDeduceArgsFromType(sym, atp);
@@ -4378,7 +4387,7 @@ static int insertFuncs(SYMBOL** spList, std::list<SYMBOL*>& gather, CallSite* ar
                     {
                         if (sym->sb->castoperator)
                         {
-                            spList[n] = args ?  detemplate(sym, nullptr, args->thistp->BaseType()->btp) : nullptr;
+                            spList[n] = args ? detemplate(sym, nullptr, args->thistp->BaseType()->btp) : nullptr;
                         }
                         else
                         {
@@ -4812,12 +4821,14 @@ static bool ConfusedRefs(SYMBOL* sp, std::list<SYMBOL*>& viableCandidates)
                         }
                         while (its != itse)
                         {
-                            if (!(((*its)->tp->IsRef() && (*itc)->tp->IsRef()
-                                && ((*its)->tp->BaseType()->type == BasicType::rref_ || (*its)->tp->BaseType()->btp->IsConst())
-                                && ((*itc)->tp->BaseType()->type == BasicType::rref_ || (*itc)->tp->BaseType()->btp->IsConst())
-                                && ((*its)->tp->BaseType()->btp->BaseType()->CompatibleType((*itc)->tp->BaseType()->btp->BaseType())
-                                    || SameTemplate((*its)->tp->BaseType()->btp->BaseType(), (*itc)->tp->BaseType()->btp->BaseType())))
-                                    || (*its)->tp->CompatibleType((*itc)->tp) || SameTemplate((*its)->tp, (*itc)->tp)))
+                            if (!(((*its)->tp->IsRef() && (*itc)->tp->IsRef() &&
+                                   ((*its)->tp->BaseType()->type == BasicType::rref_ || (*its)->tp->BaseType()->btp->IsConst()) &&
+                                   ((*itc)->tp->BaseType()->type == BasicType::rref_ || (*itc)->tp->BaseType()->btp->IsConst()) &&
+                                   ((*its)->tp->BaseType()->btp->BaseType()->CompatibleType(
+                                        (*itc)->tp->BaseType()->btp->BaseType()) ||
+                                    SameTemplate((*its)->tp->BaseType()->btp->BaseType(),
+                                                 (*itc)->tp->BaseType()->btp->BaseType()))) ||
+                                  (*its)->tp->CompatibleType((*itc)->tp) || SameTemplate((*its)->tp, (*itc)->tp)))
                             {
                                 break;
                             }
@@ -4887,7 +4898,8 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         if (args->thisptr)
         {
             auto tp2 = args->thistp;
-            while (tp2->IsPtr() || tp2->IsRef()) tp2 = tp2->BaseType()->btp;
+            while (tp2->IsPtr() || tp2->IsRef())
+                tp2 = tp2->BaseType()->btp;
             SYMBOL* spt = tp2->BaseType()->sp;
             if (spt->templateParams)
             {
@@ -5225,7 +5237,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 p++;
                             else
                                 p = buf;
-                            Utils::StrCpy(buf + n + 2, sizeof(buf) - n - 2,  p);
+                            Utils::StrCpy(buf + n + 2, sizeof(buf) - n - 2, p);
                             buf[n] = buf[n + 1] = ':';
                             Utils::StrCat(buf, "(");
                             if (args->arguments && args->arguments->size())
@@ -5340,7 +5352,8 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             auto mi = *found1->sb->constructorInitializers;
                             found1->sb->constructorInitializers = Allocate<std::list<CONSTRUCTORINITIALIZER*>*>();
                             *found1->sb->constructorInitializers = constructorInitializerListFactory.CreateList();
-                            (*found1->sb->constructorInitializers)->insert((*found1->sb->constructorInitializers)->end(), mi->begin(), mi->end());
+                            (*found1->sb->constructorInitializers)
+                                ->insert((*found1->sb->constructorInitializers)->end(), mi->begin(), mi->end());
                         }
                         found1->sb->mainsym = old;
                         found1->sb->parentClass = CopySymbol(found1->sb->parentClass);
@@ -5372,14 +5385,14 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 context.Computed = false;
                             }
                         }
-                        if (found1->tp->BaseType()->btp->IsAutoType() &&
-                            !found1->sb->inlineFunc.stmt && (!currentlyInsertingFunctions || processingTemplateArgs || (flags & _F_INDECLTYPE)) && bodyTokenStreams.get(found1))
+                        if (found1->tp->BaseType()->btp->IsAutoType() && !found1->sb->inlineFunc.stmt &&
+                            (!currentlyInsertingFunctions || processingTemplateArgs || (flags & _F_INDECLTYPE)) &&
+                            bodyTokenStreams.get(found1))
                         {
                             StatementGenerator sg(found1);
                             sg.CompileFunctionFromStream(false, true);
                         }
-                        else if ((flags & _F_IS_NOTHROW) ||
-                                 (found1->sb->constexpression && (!IsDefiningTemplate())))
+                        else if ((flags & _F_IS_NOTHROW) || (found1->sb->constexpression && (!IsDefiningTemplate())))
                         {
                             if ((!found1->sb->constexpression || IsDefiningTemplate()) && noExceptTokenStreams.get(found1))
                             {

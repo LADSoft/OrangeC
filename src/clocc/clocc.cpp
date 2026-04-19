@@ -66,7 +66,7 @@ CmdSwitchBool clocc::RuntimeObjectOverflow(SwitchParser, 0, 0, {"RTCs"});
 CmdSwitchBool clocc::RuntimeUninitializedVariable(SwitchParser, 0, 0, {"RTCu"});
 
 const char* clocc::helpText =
-R"help([options] files...
+    R"help([options] files...
     
 This program is a wrapper that converts ms/cl style
 C++ compiler command line options to occ compiler options
@@ -111,11 +111,10 @@ C++ compiler command line options to occ compiler options
 /?, --help           this text
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* clocc::usageText = "[options] files...";
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     clocc cl;
     return cl.Run(argc, argv);

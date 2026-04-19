@@ -475,8 +475,8 @@ static void renameToPhi(Block* b)
     }
     ins_hash = save_ins;
     name_hash = save_name;
-//    ins_hash = std::move(save_ins);
-//    name_hash = std::move(save_name);
+    //    ins_hash = std::move(save_ins);
+    //    name_hash = std::move(save_name);
 }
 void TranslateToSSA(void)
 {
@@ -570,7 +570,7 @@ static void mergePartition(int tnew, int told)
             tnew = temp;
         }
     }
-//    JoinConflictLists(told, tnew);
+    //    JoinConflictLists(told, tnew);
     tempInfo[told]->partition = tnew;
     changed = true;
 }

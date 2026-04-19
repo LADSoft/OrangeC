@@ -59,11 +59,14 @@ std::string reconstruct_string(const std::vector<embed_token_type>& embed_vec)
     }
     return start;
 }
-struct FileDeleter {
-    void operator()(FILE* file) const {
-        if (file) {
-            if (fclose(file) != 0) {
-
+struct FileDeleter
+{
+    void operator()(FILE* file) const
+    {
+        if (file)
+        {
+            if (fclose(file) != 0)
+            {
             }
         }
     }
@@ -106,7 +109,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         push_back_values(info.suffix, info.mapped_values, "suffix");
         builder.insert(builder.end(), info.prefix.begin(), info.prefix.end());
 
-        std::unique_ptr<FILE,FileDeleter> file(fopen(fil.c_str(), "rb"));
+        std::unique_ptr<FILE, FileDeleter> file(fopen(fil.c_str(), "rb"));
         // we need to actually get the real file in here
         size_t resval = info.limit < 0 ? size : info.limit;
         next_thing.resize(resval);

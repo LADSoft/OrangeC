@@ -28,48 +28,42 @@
 #include "Utils.h"
 namespace Parser
 {
-    class TemplateHashContext
+class TemplateHashContext
+{
+  public:
+    static const int DataSize = 16;
+    typedef std::array<unsigned char, DataSize> DataType;
+    bool Computed = false;
+    unsigned str32 = 5381;
+    unsigned sum32 = 0;
+    unsigned len32 = 0;
+    unsigned h32 = 0;
+    // we need a 'value' for hashing but the entire body of these hashes can be very long
+    // so we compress it to get a value.
+    void Input(const unsigned char* data, int len)
     {
-    public:
-        static const int DataSize = 16;
-        typedef std::array<unsigned char, DataSize> DataType;
-        bool Computed = false;
-        unsigned str32 = 5381;
-        unsigned sum32 = 0;
-        unsigned len32 = 0;
-        unsigned h32 = 0;
-        // we need a 'value' for hashing but the entire body of these hashes can be very long
-        // so we compress it to get a value.
-        void Input(const unsigned char* data, int len)
+        len32 += len;
+        for (int i = 0; i < len; i++, data++)
         {
-            len32 += len;
-            for (int i = 0; i < len; i++, data++)
-            {
-                sum32 += *data;
-                str32 = (str32 << 5) + str32 + *data;
-            }
-            h32 += len32 + str32 + sum32;
+            sum32 += *data;
+            str32 = (str32 << 5) + str32 + *data;
         }
-        void Reset()
-        {
-            Computed = false;
-        }
-        void Result()
-        {
-            Computed = true;
-        }
-        void Result(DataType& result)
-        {
-            *(reinterpret_cast<unsigned*>(&result.front()) + 0) = h32;
-            *(reinterpret_cast<unsigned*>(&result.front()) + 1) = len32;
-            *(reinterpret_cast<unsigned*>(&result.front()) + 2) = sum32;
-            *(reinterpret_cast<unsigned*>(&result.front()) + 3) = str32;
-        }
-    };
-    void templateHashInit();
-    SYMBOL* LookupTemplateClass(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
-    SYMBOL* LookupGeneratedTemplateClass(TemplateHashContext& context, SYMBOL* sym);
-    void RegisterTemplateClass(TemplateHashContext& context, SYMBOL* cls);
-    SYMBOL* LookupTemplateFunction(TemplateHashContext& context, SYMBOL* sym, std::list<SYMBOL*>* gather, CallSite* callSite);
-    void RegisterTemplateFunction(TemplateHashContext& context, SYMBOL* func);
+        h32 += len32 + str32 + sum32;
+    }
+    void Reset() { Computed = false; }
+    void Result() { Computed = true; }
+    void Result(DataType& result)
+    {
+        *(reinterpret_cast<unsigned*>(&result.front()) + 0) = h32;
+        *(reinterpret_cast<unsigned*>(&result.front()) + 1) = len32;
+        *(reinterpret_cast<unsigned*>(&result.front()) + 2) = sum32;
+        *(reinterpret_cast<unsigned*>(&result.front()) + 3) = str32;
+    }
+};
+void templateHashInit();
+SYMBOL* LookupTemplateClass(TemplateHashContext& context, SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* params);
+SYMBOL* LookupGeneratedTemplateClass(TemplateHashContext& context, SYMBOL* sym);
+void RegisterTemplateClass(TemplateHashContext& context, SYMBOL* cls);
+SYMBOL* LookupTemplateFunction(TemplateHashContext& context, SYMBOL* sym, std::list<SYMBOL*>* gather, CallSite* callSite);
+void RegisterTemplateFunction(TemplateHashContext& context, SYMBOL* func);
 }  // namespace Parser

@@ -39,8 +39,8 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
                                                            bool definition);
 bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, std::list<TEMPLATEPARAMPAIR>* special, SYMBOL* sp);
 static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym);
-std::list<TEMPLATEPARAMPAIR>* TemplateMatching( std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym,
-                                               SYMBOL* sp, bool definition);
+std::list<TEMPLATEPARAMPAIR>* TemplateMatching(std::list<TEMPLATEPARAMPAIR>* old, std::list<TEMPLATEPARAMPAIR>* sym, SYMBOL* sp,
+                                               bool definition);
 static bool structHasTemplateArg(std::list<TEMPLATEPARAMPAIR>* tplx);
 bool typeHasTemplateArg(Type* t);
 void TemplateValidateSpecialization(std::list<TEMPLATEPARAMPAIR>* arg);
@@ -79,15 +79,10 @@ void copySyms(SYMBOL* found1, SYMBOL* sym);
 
 struct TemplateNamespaceScope
 {
-    inline TemplateNamespaceScope(SYMBOL* sym)
-    {
-        n = PushTemplateNamespace(sym);
-    }
-    inline ~TemplateNamespaceScope()
-    {
-        PopTemplateNamespace(n);
-    }
-private:
+    inline TemplateNamespaceScope(SYMBOL* sym) { n = PushTemplateNamespace(sym); }
+    inline ~TemplateNamespaceScope() { PopTemplateNamespace(n); }
+
+  private:
     int n;
 };
 }  // namespace Parser

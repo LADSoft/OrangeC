@@ -42,8 +42,7 @@
 
 #define EXTRACT_CHAR '\xa0'
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     ImpLibMain librarian;
     try
@@ -67,7 +66,7 @@ CmdSwitchString ImpLibMain::CDLLSwitch(SwitchParser, 'C', 0);
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 const char* ImpLibMain::helpText =
-R"help([options] outputfile [+ files] [- files] [* files]
+    R"help([options] outputfile [+ files] [- files] [* files]
     
 This program is an import librarian for Win32.
 It is windows-specific
@@ -85,8 +84,8 @@ etc...
 outputfile can be a library, object, or def file
 the input files can be objects, def files, or dll files
 
-)help"    
-"Time: " __TIME__ "  Date: " __DATE__;
+)help"
+    "Time: " __TIME__ "  Date: " __DATE__;
 const char* ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]";
 
 ImpLibMain::~ImpLibMain() {}

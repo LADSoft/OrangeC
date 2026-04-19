@@ -84,7 +84,7 @@ static void ReorderSEHRecords(std::list<Statement*>* xtry, std::list<FunctionBlo
     }
     parent.front()->statements->insert(parent.front()->statements->end(), xtry->begin(), xtry->end());
 }
-static void SEH_catch( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_catch(SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
@@ -136,7 +136,7 @@ static void SEH_catch( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     parent.pop_front();
     return;
 }
-static void SEH_finally( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_finally(SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
@@ -173,7 +173,7 @@ static void SEH_finally( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     parent.pop_front();
     return;
 }
-static void SEH_fault( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_fault(SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
@@ -210,7 +210,7 @@ static void SEH_fault( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     parent.pop_front();
     return;
 }
-static void SEH_try( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+static void SEH_try(SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     auto before = parent.front();
     auto next = parent.begin();
@@ -274,7 +274,7 @@ static void SEH_try( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
     return;
 }
 
-void ParseSEH( SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
+void ParseSEH(SYMBOL* funcsp, std::list<FunctionBlock*>& parent)
 {
     switch (KW())
     {

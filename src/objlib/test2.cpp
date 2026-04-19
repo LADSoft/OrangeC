@@ -44,8 +44,7 @@
 #include <iomanip>
 #include <iostream>
 
-int main()
-MAINTRY
+int main() MAINTRY
 {
     try
     {
@@ -71,4 +70,3 @@ MAINTRY
     }
 }
 MAINCATCH
-

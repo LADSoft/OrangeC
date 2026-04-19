@@ -415,8 +415,7 @@ int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
     return ToolChain::ToolInvoke("occopt", occil_verbosity, "-! -S %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 }  // namespace occmsil
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     using namespace occmsil;
     bool showBanner = true;

@@ -172,7 +172,7 @@ void deprecateMessage(SYMBOL* sym)
     char buf[1024];
     Optimizer::my_sprintf(buf, "%s deprecated", sym->name);
     if (sym->sb->attribs.uninheritable.deprecationText && sym->sb->attribs.uninheritable.deprecationText != (char*)-1)
-        Optimizer::my_sprintf(buf + strlen(buf), sizeof(buf)-strlen(buf), "; %s", sym->sb->attribs.uninheritable.deprecationText);
+        Optimizer::my_sprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "; %s", sym->sb->attribs.uninheritable.deprecationText);
     errorstr(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...
@@ -352,8 +352,10 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
                         }
                         else
                         {
-                            while (IsCastValue(exp)) exp = exp->left;
-                            if (IsLValue(exp) && exp->type != ExpressionNode::l_ref_) exp = exp->left;
+                            while (IsCastValue(exp))
+                                exp = exp->left;
+                            if (IsLValue(exp) && exp->type != ExpressionNode::l_ref_)
+                                exp = exp->left;
                             if (exp->type == ExpressionNode::l_ref_)
                             {
                                 *pat = Type::MakeType(BasicType::lref_, nt);
@@ -414,7 +416,7 @@ SYMBOL* getFunctionSP(Type** tp)
     }
     return nullptr;
 }
-void concatStringsInternal( StringData** str, int* elems)
+void concatStringsInternal(StringData** str, int* elems)
 {
     Optimizer::SLCHAR** list;
     char* suffix = nullptr;
@@ -423,9 +425,9 @@ void concatStringsInternal( StringData** str, int* elems)
     LexType type = LexType::l_astr_;
     StringData* string;
     list = Allocate<Optimizer::SLCHAR*>(count);
-    while (currentLex &&
-           (currentLex->type == LexType::l_astr_ || currentLex->type == LexType::l_wstr_ || currentLex->type == LexType::l_ustr_ ||
-            currentLex->type == LexType::l_Ustr_ || currentLex->type == LexType::l_msilstr_ || currentLex->type == LexType::l_u8str_))
+    while (currentLex && (currentLex->type == LexType::l_astr_ || currentLex->type == LexType::l_wstr_ ||
+                          currentLex->type == LexType::l_ustr_ || currentLex->type == LexType::l_Ustr_ ||
+                          currentLex->type == LexType::l_msilstr_ || currentLex->type == LexType::l_u8str_))
     {
         if (currentLex->type == LexType::l_u8str_)
             type = LexType::l_u8str_;
@@ -471,7 +473,7 @@ void concatStringsInternal( StringData** str, int* elems)
     *str = string;
     return;
 }
-void concatStrings( EXPRESSION** expr, LexType* tp, int* elems)
+void concatStrings(EXPRESSION** expr, LexType* tp, int* elems)
 {
     StringData* data;
     concatStringsInternal(&data, elems);
@@ -1208,7 +1210,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
 {
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
-    EXPRESSION *exp = nullptr;
+    EXPRESSION* exp = nullptr;
     EXPRESSION *expsymin = expsym, *base;
     bool noClear = false;
     if (sym)
@@ -1379,14 +1381,17 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                         if (exp2->type == ExpressionNode::callsite_ && exp2->v.func->returnSP)
                         {
                             exp2->v.func->returnSP->sb->allocate = false;
-                            exp2->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                            exp2->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym),
+                                                                     MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = exp2;
                             noClear = true;
                         }
                         else if (exp2->type == ExpressionNode::thisref_ && exp2->left->v.func->returnSP)
                         {
                             exp2->left->v.func->returnSP->sb->allocate = false;
-                            exp2->left->v.func->returnEXP = MakeExpression(ExpressionNode::add_, copy_expression(expsym), MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                            exp2->left->v.func->returnEXP =
+                                MakeExpression(ExpressionNode::add_, copy_expression(expsym),
+                                               MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                             exp = exp2;
                             noClear = true;
                         }
@@ -1460,7 +1465,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                                 else
                                 {
                                     asn = MakeExpression(ExpressionNode::add_, copy_expression(expsym),
-                                                            MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                                         MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
                                 }
                                 Dereference(initItem->basetp, &asn);
                                 cast(initItem->basetp, &right);
@@ -2118,7 +2123,8 @@ Type* destSize(Type* tp1, Type* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         {
             rv = inttype(t1);
         }
-        if (Optimizer::cparams.prm_cplusplus && tp1->IsInt() && tp2->IsInt() && tp1->btp && tp2->btp && tp1->btp->type == BasicType::enum_ && tp1->btp->CompatibleType(tp2->btp))
+        if (Optimizer::cparams.prm_cplusplus && tp1->IsInt() && tp2->IsInt() && tp1->btp && tp2->btp &&
+            tp1->btp->type == BasicType::enum_ && tp1->btp->CompatibleType(tp2->btp))
         {
             return tp1;
         }
@@ -2222,7 +2228,7 @@ EXPRESSION* EvaluateDest(EXPRESSION* exp, Type* tp)
     }
     return result;
 }
-void SetRuntimeData( EXPRESSION* exp, SYMBOL* sym)
+void SetRuntimeData(EXPRESSION* exp, SYMBOL* sym)
 {
     if ((Optimizer::cparams.prm_stackprotect & STACK_UNINIT_VARIABLE) && sym->sb->runtimeSym && currentLex->sourceFileName)
     {

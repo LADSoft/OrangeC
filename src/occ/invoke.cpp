@@ -121,11 +121,13 @@ int InsertExternalFile(const std::string& name)
 {
     int index = name.find_last_of('#');
     if (index < 0)
-        return 1; // shouldn't process, this is a safety net.
+        return 1;  // shouldn't process, this is a safety net.
     std::string fileToCompile = name.substr(0, index);
     std::string as = name.substr(index + 1);
     std::string stem = fileToCompile;
-    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) || (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str())) || (IsAssemblerSource(fileToCompile.c_str()) && IsAssemblerSource(("a" + as).c_str()))))
+    if (!as.empty() && (Utils::HasExt(stem.c_str(), as.c_str()) ||
+                        (IsCompilerSource(fileToCompile.c_str()) && IsCompilerSource(("a" + as).c_str())) ||
+                        (IsAssemblerSource(fileToCompile.c_str()) && IsAssemblerSource(("a" + as).c_str()))))
     {
         index = stem.find_last_of('.');
         stem = stem.substr(0, index);
@@ -136,9 +138,9 @@ int InsertExternalFile(const std::string& name)
         {
             index = stem.find_last_of("\\");
             if (index < 0)
-                 index = stem .find_last_of("/");
+                index = stem.find_last_of("/");
             if (index > 0)
-                 stem = stem.substr(index+1);
+                stem = stem.substr(index + 1);
             // compiling via assembly
             if (Optimizer::cparams.prm_viaassembly && !Optimizer::cparams.prm_compileonly)
             {
@@ -154,8 +156,7 @@ int InsertExternalFile(const std::string& name)
             InsertFile(asmlist, fileToCompile);
             return 1; /* compiler shouldn't process it*/
         }
-        else if (Utils::iequal(as, ".l") || Utils::iequal(as, ".a") || Utils::iequal(as, ".lib") ||
-                 Utils::iequal(as, ".dll"))
+        else if (Utils::iequal(as, ".l") || Utils::iequal(as, ".a") || Utils::iequal(as, ".lib") || Utils::iequal(as, ".dll"))
         {
             InsertFile(liblist, fileToCompile);
             return 1;
@@ -181,11 +182,11 @@ int InsertExternalFile(const std::string& name)
     // no extenstion or an unknown one, just use the name intact (sans directory specification)
     index = fileToCompile.find_last_of("\\");
     if (index < 0)
-        index = fileToCompile .find_last_of("/");
+        index = fileToCompile.find_last_of("/");
     if (index > 0)
-        fileToCompile = fileToCompile.substr(index+1);
+        fileToCompile = fileToCompile.substr(index + 1);
     InsertFile(objlist, fileToCompile);
-    
+
     return 0; /* compiler should process it*/
 }
 
@@ -249,8 +250,8 @@ int RunExternalFiles()
     {
         if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
             rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"",
-                                       Optimizer::outputFileName.c_str(), rc_params.c_str(),
-                                       !Optimizer::showBanner ? "-!" : "", args, r.c_str());
+                                       Optimizer::outputFileName.c_str(), rc_params.c_str(), !Optimizer::showBanner ? "-!" : "",
+                                       args, r.c_str());
         else
             rv = ToolChain::ToolInvoke("orc.exe", Optimizer::cparams.verbosity ? "" : nullptr, "-r %s %s %s \"%s\"",
                                        rc_params.c_str(), !Optimizer::showBanner ? "-!" : "", args, r.c_str());
@@ -258,7 +259,8 @@ int RunExternalFiles()
         if (rv)
             return rv;
     }
-    if (!Optimizer::cparams.prm_compileonly && (!Optimizer::cparams.prm_asmfile || Optimizer::cparams.prm_viaassembly) && objlist.size())
+    if (!Optimizer::cparams.prm_compileonly && (!Optimizer::cparams.prm_asmfile || Optimizer::cparams.prm_viaassembly) &&
+        objlist.size())
     {
         char with[50000];
         with[0] = 0;
@@ -266,7 +268,7 @@ int RunExternalFiles()
         FILE* fil = Utils::TempName(tempName);
         if (Optimizer::cparams.prm_makelib)
         {
-            for (auto &&o : objlist)
+            for (auto&& o : objlist)
             {
                 fprintf(fil, " \"%s%s\"", temp, o.c_str());
             }
@@ -323,7 +325,7 @@ int RunExternalFiles()
                 fprintf(fil, " climp.l crtdll.l ");
             else
                 fprintf(fil, " climp.l clwin.l ");
-            for (auto && r : reslist)
+            for (auto&& r : reslist)
             {
                 fprintf(fil, " \"%s\"", r.c_str());
             }
@@ -348,9 +350,8 @@ int RunExternalFiles()
                 !Optimizer::prm_OutputImportLibraryFile.empty()
                     ? ("--out-implib \"" + Optimizer::prm_OutputImportLibraryFile + "\"").c_str()
                     : "",
-                (Optimizer::cparams.prm_stackprotect & HEAP_CHECK) ? "-D__HEAP_CHECK=1" : "", 
-                (Optimizer::cparams.prm_exportAll) ? "--export-all-symbols" : "", 
-                tempName.c_str());
+                (Optimizer::cparams.prm_stackprotect & HEAP_CHECK) ? "-D__HEAP_CHECK=1" : "",
+                (Optimizer::cparams.prm_exportAll) ? "--export-all-symbols" : "", tempName.c_str());
         }
         _unlink(tempName.c_str());
         if (Optimizer::cparams.verbosity > 1)

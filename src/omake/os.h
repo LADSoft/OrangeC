@@ -97,6 +97,7 @@ class OS
     static bool IsUnixLikeShell(const std::string&);
     static std::string AbsPath(const std::string&);
     static std::string SelfPath();
+
   private:
     static std::shared_ptr<OMAKE::JobServer> localJobServer;
     static int jobsLeft;

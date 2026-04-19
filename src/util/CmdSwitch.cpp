@@ -227,7 +227,7 @@ void CmdSwitchFile::Dispatch(char* data)
 {
     int max = 10;
     argc = 1;
-    argv = std::make_shared<char **>(new char*[max]);
+    argv = std::make_shared<char**>(new char*[max]);
     (*argv)[0] = (char*)"";
     while (*data)
     {
@@ -235,8 +235,8 @@ void CmdSwitchFile::Dispatch(char* data)
         if (argc == max)
         {
             max += 10;
-            std::shared_ptr<char **> p = argv;
-            argv = std::make_shared<char **>(new char*[max]);
+            std::shared_ptr<char**> p = argv;
+            argv = std::make_shared<char**>(new char*[max]);
             memcpy(*argv, *p, argc * sizeof(char*));
         }
     }
@@ -248,7 +248,7 @@ char* CmdSwitchFile::GetStr(char* data)
 {
     int size = 30000 + 1;
     auto buf = std::make_unique<char[]>(size);
-    char *p = buf.get();
+    char* p = buf.get();
     bool quote = false;
     while (isspace(*data))
         data++;

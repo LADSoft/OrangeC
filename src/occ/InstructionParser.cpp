@@ -255,7 +255,6 @@ asmError InstructionParser::GetInstruction(OCODE* ins, std::shared_ptr<Instructi
                 case op_psrlq:
                 case op_psrlw:
 
-
                     if (ins->oper2 && ins->oper2->mode == am_immed)
                         ins->oper2->length = 0;
                     break;

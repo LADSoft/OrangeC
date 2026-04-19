@@ -111,7 +111,6 @@ void CalculateBackendLives(void)
                 liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[i]->color].reg1live;
                 if (chosenAssembler->arch->regNames[tempInfo[i]->color].reg2live >= 0)
                     liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[i]->color].reg2live;
-
             }
             while (tail != head)
             {

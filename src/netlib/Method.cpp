@@ -86,9 +86,8 @@ bool Method::ILSrcDump(PELib& peLib, std::ostream& out) const
         {
             // allow C# to use ...
             out << "\t.param\t[" << prototype_->ParamCount() << "]" << std::endl;
-            out << "\t.custom instance void [" + peLib.GetRuntimeName() +
-                               "]System.ParamArrayAttribute::.ctor() = (01 00 00 00)"
-                        << std::endl;
+            out << "\t.custom instance void [" + peLib.GetRuntimeName() + "]System.ParamArrayAttribute::.ctor() = (01 00 00 00)"
+                << std::endl;
         }
         if (varList_.size())
         {

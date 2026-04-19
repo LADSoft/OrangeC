@@ -383,7 +383,8 @@ static void convertCallToTemplate(SYMBOL* func)
             second->index = index++;
             func->templateParams->push_back(TEMPLATEPARAMPAIR{first, second});
             auto* tpn = &arg->tp;
-            while((*tpn)->type != BasicType::auto_) tpn = &(*tpn)->btp;
+            while ((*tpn)->type != BasicType::auto_)
+                tpn = &(*tpn)->btp;
             *tpn = Type::MakeType(BasicType::templateparam_);
             (*tpn)->templateParam = &func->templateParams->back();
         }
@@ -414,8 +415,8 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 
     insertFunc(lambdas.front()->cls, func);
     func->tp->syms->remove(func->tp->syms->begin());  // elide this pointer
-    st = Statement::MakeStatement(
-        block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_ : StatementNode::return_);
+    st = Statement::MakeStatement(block2, lambdas.front()->func->tp->BaseType()->btp->IsStructured() ? StatementNode::expr_
+                                                                                                     : StatementNode::return_);
     st->select = MakeExpression(params);
     st->select = MakeExpression(ExpressionNode::thisref_, st->select);
 
@@ -475,7 +476,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         val += ");} ;";
         SetAlternateParse(true, val);
         getsym();
-        auto stream = GetTokenStream(  true);
+        auto stream = GetTokenStream(true);
         bodyTokenStreams.set(func, stream);
         bodyArgs.set(func, func->tp->BaseType()->syms);
         SetAlternateParse(false, "");
@@ -564,7 +565,7 @@ static void createConverter(SYMBOL* self)
 
         SetAlternateParse(true, val);
         getsym();
-        auto stream = GetTokenStream( true);
+        auto stream = GetTokenStream(true);
         bodyTokenStreams.set(func, stream);
         bodyArgs.set(func, func->tp->BaseType()->syms);
         SetAlternateParse(false, "");
@@ -807,7 +808,7 @@ static EXPRESSION* createLambda(bool noinline)
     *cur = copy_expression(clsThs);  // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
+void expression_lambda(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
 {
     auto declline = lines;
     LAMBDA* self;
@@ -984,7 +985,8 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         {
                             if (sp->packed)
                             {
-                                if (currentStream->get(idlex)->type != LexType::l_kw_ ||  currentStream->get(idlex)->kw->key != Keyword::ellipse_)
+                                if (currentStream->get(idlex)->type != LexType::l_kw_ ||
+                                    currentStream->get(idlex)->kw->key != Keyword::ellipse_)
                                     error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                                 else
                                 {
@@ -1119,10 +1121,10 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
             {
                 if (lambdas.front()->enclosingFunc)
                 {
-                    auto ths =
-                        makeID(StorageClass::member_,
-                            lambda_type(lambdas.front()->enclosingFunc->tp->BaseType()->syms->front()->tp->BaseType()->btp, cmValue),
-                            NULL, "*this");
+                    auto ths = makeID(
+                        StorageClass::member_,
+                        lambda_type(lambdas.front()->enclosingFunc->tp->BaseType()->syms->front()->tp->BaseType()->btp, cmValue),
+                        NULL, "*this");
                     SetLinkerNames(ths, Linkage::cdecl_);
                     lambda_insert(ths, lambdas.front());
                 }
@@ -1153,7 +1155,7 @@ void expression_lambda( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                     // defer referencing it until the lambda is used
                     // as it might not have the right name yet...
                     sg.FunctionBody(false);
-                    });
+                });
             }
         }
         else

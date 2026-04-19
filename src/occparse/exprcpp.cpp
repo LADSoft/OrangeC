@@ -389,7 +389,7 @@ EXPRESSION* substitute_params_for_function(CallSite* funcparams, SymbolTable<SYM
     exp->v.stmt = st;
     return exp;
 }
-void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+void expression_func_type_cast(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     Linkage linkage = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     bool defd = false;
@@ -665,7 +665,7 @@ void expression_func_type_cast( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
     }
     return;
 }
-void expression_typeid( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+void expression_typeid(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     (void)flags;
     getsym();
@@ -811,10 +811,10 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
 }
 bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRESSION** exp, Type* tp1, EXPRESSION* exp1,
                           std::list<Argument*>* args, int flags)
-{ 
+{
     if ((int)kw >= (int)Keyword::new_ && (int)kw <= (int)Keyword::unary_and_)
     {
-        SYMBOL* s1 = nullptr, * s2 = nullptr, * s3, * s4 = nullptr, * s5 = nullptr;
+        SYMBOL *s1 = nullptr, *s2 = nullptr, *s3, *s4 = nullptr, *s5 = nullptr;
         CallSite* funcparams;
         const char* name = overloadNameTab[(int)kw - (int)Keyword::new_ + CI_NEW];
         Type* tpin = *tp;
@@ -840,32 +840,32 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         // but only if it is binary or unary...
         switch (cls)
         {
-        case ovcl_unary_numeric:
-        case ovcl_unary_numericptr:
-        case ovcl_unary_int:
-        case ovcl_unary_prefix:
-        case ovcl_unary_postfix:
-        case ovcl_unary_pointer:
-        case ovcl_unary_any:
-        case ovcl_binary_any:
-        case ovcl_binary_numericptr:
-        case ovcl_binary_numeric:
-        case ovcl_binary_int:
-        case ovcl_comma:
-        case ovcl_assign_any:
-        case ovcl_assign_numericptr:
-        case ovcl_assign_numeric:
-        case ovcl_assign_int:
-            s1 = search(localNameSpace->front()->syms, name);
-            if (!s1)
-                s1 = namespacesearch(name, localNameSpace, false, false);
-            if (!s1 && enumSyms)
-                s1 = search(enumSyms->tp->syms, name);
-            if (!s1)
-                s1 = namespacesearch(name, globalNameSpace, false, false);
-            break;
-        default:
-            break;
+            case ovcl_unary_numeric:
+            case ovcl_unary_numericptr:
+            case ovcl_unary_int:
+            case ovcl_unary_prefix:
+            case ovcl_unary_postfix:
+            case ovcl_unary_pointer:
+            case ovcl_unary_any:
+            case ovcl_binary_any:
+            case ovcl_binary_numericptr:
+            case ovcl_binary_numeric:
+            case ovcl_binary_int:
+            case ovcl_comma:
+            case ovcl_assign_any:
+            case ovcl_assign_numericptr:
+            case ovcl_assign_numeric:
+            case ovcl_assign_int:
+                s1 = search(localNameSpace->front()->syms, name);
+                if (!s1)
+                    s1 = namespacesearch(name, localNameSpace, false, false);
+                if (!s1 && enumSyms)
+                    s1 = search(enumSyms->tp->syms, name);
+                if (!s1)
+                    s1 = namespacesearch(name, globalNameSpace, false, false);
+                break;
+            default:
+                break;
         }
         DeclarationScope scope;
         // next find some occurrance in the class or struct
@@ -881,7 +881,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         {
             if (tpClean->BaseType()->type == BasicType::enum_ && tpClean->sp)
             {
-                std::list<SYMBOL*> aa{ tpClean->sp->sb->parentNameSpace };
+                std::list<SYMBOL*> aa{tpClean->sp->sb->parentNameSpace};
                 tpClean->sp->sb->templateNameSpace = tpClean->sp->sb->parentNameSpace ? &aa : nullptr;
                 TemplateNamespaceScope namespaceScope(tpClean->BaseType()->sp);  // used for more than just templates here
                 s4 = namespacesearch(name, globalNameSpace, false, false);
@@ -906,7 +906,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             }
             else if (tp1->BaseType()->type == BasicType::enum_)  // enum
             {
-                std::list<SYMBOL*> aa{ tp1->BaseType()->sp->sb->parentNameSpace };
+                std::list<SYMBOL*> aa{tp1->BaseType()->sp->sb->parentNameSpace};
                 tp1->BaseType()->sp->sb->templateNameSpace = tp1->BaseType()->sp->sb->parentNameSpace ? &aa : nullptr;
                 TemplateNamespaceScope namespaceScope(tp1->BaseType()->sp);  // used for more than just templates here
                 s5 = namespacesearch(name, globalNameSpace, false, false);
@@ -959,7 +959,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         }
         funcparams = Allocate<CallSite>();
         {
-            Argument* one = nullptr, * two = nullptr;
+            Argument *one = nullptr, *two = nullptr;
             if (*tp)
             {
                 one = Allocate<Argument>();
@@ -994,34 +994,34 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         }
         switch (cls)
         {
-        case ovcl_unary_any:
-        case ovcl_unary_prefix:
-        case ovcl_unary_numericptr:
-        case ovcl_unary_numeric:
-        case ovcl_unary_int:
-            break;
-        case ovcl_unary_postfix:
-            break;
-        case ovcl_unary_pointer:
-            break;
-        case ovcl_binary_any:
-        case ovcl_binary_numericptr:
-        case ovcl_binary_numeric:
-        case ovcl_binary_int:
-            break;
-        case ovcl_assign_any:
-        case ovcl_assign_numericptr:
-        case ovcl_assign_numeric:
-        case ovcl_assign_int:
-            break;
-        case ovcl_pointsto:
-            break;
-        case ovcl_openbr:
-            break;
-        case ovcl_openpa:
-            break;
-        case ovcl_comma:
-            break;
+            case ovcl_unary_any:
+            case ovcl_unary_prefix:
+            case ovcl_unary_numericptr:
+            case ovcl_unary_numeric:
+            case ovcl_unary_int:
+                break;
+            case ovcl_unary_postfix:
+                break;
+            case ovcl_unary_pointer:
+                break;
+            case ovcl_binary_any:
+            case ovcl_binary_numericptr:
+            case ovcl_binary_numeric:
+            case ovcl_binary_int:
+                break;
+            case ovcl_assign_any:
+            case ovcl_assign_numericptr:
+            case ovcl_assign_numeric:
+            case ovcl_assign_int:
+                break;
+            case ovcl_pointsto:
+                break;
+            case ovcl_openbr:
+                break;
+            case ovcl_openpa:
+                break;
+            case ovcl_comma:
+                break;
         }
         funcparams->ascall = true;
         Type* ctype = *tp;
@@ -1035,34 +1035,34 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             // which we do by returning false...
             switch (cls)
             {
-            case ovcl_unary_any:
-            case ovcl_unary_prefix:
-            case ovcl_unary_numeric:
-            case ovcl_unary_int:
-            case ovcl_unary_numericptr:
-            case ovcl_unary_postfix:
-            case ovcl_binary_any:
-            case ovcl_binary_numeric:
-            case ovcl_binary_int:
-            case ovcl_binary_numericptr:
-                if (!tpClean->IsStructured() && (!tp1Clean || !tp1Clean->IsStructured()))
-                {
-                    auto it = s3->tp->BaseType()->syms->begin();
-                    if ((*it)->sb->thisPtr)
+                case ovcl_unary_any:
+                case ovcl_unary_prefix:
+                case ovcl_unary_numeric:
+                case ovcl_unary_int:
+                case ovcl_unary_numericptr:
+                case ovcl_unary_postfix:
+                case ovcl_binary_any:
+                case ovcl_binary_numeric:
+                case ovcl_binary_int:
+                case ovcl_binary_numericptr:
+                    if (!tpClean->IsStructured() && (!tp1Clean || !tp1Clean->IsStructured()))
+                    {
+                        auto it = s3->tp->BaseType()->syms->begin();
+                        if ((*it)->sb->thisPtr)
+                            ++it;
+                        Type* arg1 = (*it)->tp;
                         ++it;
-                    Type* arg1 = (*it)->tp;
-                    ++it;
-                    Type* arg2 = tp1 && it != s3->tp->BaseType()->syms->end() ? (*it)->tp : nullptr;
-                    if (arg1 && arg1->IsRef())
-                        arg1 = arg1->BaseType()->btp;
-                    if (arg2 && arg2->IsRef())
-                        arg2 = arg2->BaseType()->btp;
-                    if (((tpClean->BaseType()->type == BasicType::enum_) != (arg1->BaseType()->type == BasicType::enum_)) ||
-                        (tp1Clean &&
-                            ((tp1Clean->BaseType()->type == BasicType::enum_) != (arg2->BaseType()->type == BasicType::enum_))))
-                        return false;
-                    break;
-                }
+                        Type* arg2 = tp1 && it != s3->tp->BaseType()->syms->end() ? (*it)->tp : nullptr;
+                        if (arg1 && arg1->IsRef())
+                            arg1 = arg1->BaseType()->btp;
+                        if (arg2 && arg2->IsRef())
+                            arg2 = arg2->BaseType()->btp;
+                        if (((tpClean->BaseType()->type == BasicType::enum_) != (arg1->BaseType()->type == BasicType::enum_)) ||
+                            (tp1Clean &&
+                             ((tp1Clean->BaseType()->type == BasicType::enum_) != (arg2->BaseType()->type == BasicType::enum_))))
+                            return false;
+                        break;
+                    }
             }
             *tp = ctype;
             if (ismember(s3))
@@ -1088,7 +1088,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
     }
     return false;
 }
-void expression_new( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags)
+void expression_new(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags)
 {
     CallSite* placement = Allocate<CallSite>();
     CallSite* initializers = nullptr;
@@ -1402,7 +1402,7 @@ void expression_new( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, i
     }
     return;
 }
-void expression_delete( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags)
+void expression_delete(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, int flags)
 {
     bool byArray = false;
     SYMBOL* s1 = nullptr;
@@ -1771,7 +1771,7 @@ static bool noexceptStmt(std::list<Statement*>* blocks)
     }
     return rv;
 }
-void expression_noexcept( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+void expression_noexcept(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     getsym();
     if (needkw(Keyword::openpa_))

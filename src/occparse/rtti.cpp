@@ -8,7 +8,7 @@
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.sg
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -134,7 +134,7 @@ void insertXCInfo(SYMBOL* funcsp)
     funcsp->sb->xc->xclab = sym;
 }
 
-static char* addNameSpace(char *top, char* buf, SYMBOL* sym)
+static char* addNameSpace(char* top, char* buf, SYMBOL* sym)
 {
     if (!sym)
         return buf;
@@ -142,7 +142,7 @@ static char* addNameSpace(char *top, char* buf, SYMBOL* sym)
     Optimizer::my_sprintf(buf, top - buf, "%s::", sym->name);
     return buf + strlen(buf);
 }
-static char* addParent(char *top, char* buf, SYMBOL* sym)
+static char* addParent(char* top, char* buf, SYMBOL* sym)
 {
     if (!sym)
         return buf;
@@ -153,7 +153,7 @@ static char* addParent(char *top, char* buf, SYMBOL* sym)
     Optimizer::my_sprintf(buf, top - buf, "%s", sym->name);
     return buf + strlen(buf);
 }
-static char* RTTIGetDisplayName(char *top, char* buf, Type* tp)
+static char* RTTIGetDisplayName(char* top, char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
@@ -184,13 +184,13 @@ static char* RTTIGetDisplayName(char *top, char* buf, Type* tp)
     }
     else if (tp->IsRef())
     {
-        buf = RTTIGetDisplayName(top,buf, tp->btp);
+        buf = RTTIGetDisplayName(top, buf, tp->btp);
         *buf++ = '&';
         *buf = 0;
     }
     else if (tp->type == BasicType::templateparam_)
     {
-        Utils::StrCpy(buf,  top - buf, "*templateParam");
+        Utils::StrCpy(buf, top - buf, "*templateParam");
         buf += strlen(buf);
     }
     else if (tp->type == BasicType::any_)
@@ -223,7 +223,7 @@ static char* RTTIGetDisplayName(char *top, char* buf, Type* tp)
     }
     return buf;
 }
-static char* RTTIGetName(char *top, char* buf, Type* tp)
+static char* RTTIGetName(char* top, char* buf, Type* tp)
 {
     if (tp->type == BasicType::templateparam_)
     {
@@ -233,7 +233,7 @@ static char* RTTIGetName(char *top, char* buf, Type* tp)
     mangledNamesCount = 0;
     Utils::StrCpy(buf, top - buf, "@.xt@");
     buf += strlen(buf);
-    buf = mangleType(buf, top - buf,  tp, true);
+    buf = mangleType(buf, top - buf, tp, true);
     return buf;
 }
 static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)

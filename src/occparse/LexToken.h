@@ -41,12 +41,17 @@ struct LexemeStreamPosition
     void Restore();
     void Bump();
     int Position() const { return origPosition; }
-    void Position(int pos) { origPosition = pos;  }
+    void Position(int pos) { origPosition = pos; }
     bool CheckMin(int pos) { return origPosition < pos || currentPosition < pos; }
     Lexeme* get();
-    bool operator != (LexemeStreamPosition& right) { return this->origPosition != right.origPosition;  }
-    LexemeStreamPosition& operator++() { origPosition++; return* this; }
-private:
+    bool operator!=(LexemeStreamPosition& right) { return this->origPosition != right.origPosition; }
+    LexemeStreamPosition& operator++()
+    {
+        origPosition++;
+        return *this;
+    }
+
+  private:
     int origPosition;
     int currentPosition = 0;
     LexemeStream* tokenContext;
@@ -62,7 +67,8 @@ struct LexemeTokenFactory
     Lexeme* Create();
     void Destroy(Lexeme* lex, int pruneSize);
     void clear();
-private:
+
+  private:
     static void Initialize();
     std::deque<Lexeme*> cache;
 
@@ -86,14 +92,8 @@ struct LexemeStream
         return *this;
     }
     LexemeStream& operator--();
-    int Index()
-    {
-        return current;
-    }
-    void Index(int index)
-    {
-        current = index;
-    }
+    int Index() { return current; }
+    void Index(int index) { current = index; }
     Lexeme* get(int index)
     {
         assert(index >= currentBase && index <= currentBase + size());
@@ -107,14 +107,8 @@ struct LexemeStream
         replaying = true;
         current = top = 0;
     }
-    bool RePlaying()
-    {
-        return replaying;
-    }
-    bool Reloaded()
-    {
-        return current < top;
-    }
+    bool RePlaying() { return replaying; }
+    bool Reloaded() { return current < top; }
     void Prune(unsigned maxDepth, unsigned pruneSize);
     bool ValidPrune(unsigned pruneSize);
     void Register(LexemeStreamPosition* position, bool enable);
@@ -124,7 +118,8 @@ struct LexemeStream
     int Base() const { return currentBase; }
     int ReloadIndex() const { return reloadIndex; }
     void ReloadIndex(int val) { reloadIndex = val; }
-private:
+
+  private:
     bool replaying = false;
     int current = -1;
     int top = -1;
@@ -159,7 +154,8 @@ struct LexemeStreamFactory
         }
         lists.clear();
     }
-private:
+
+  private:
     static void Initialize();
     std::set<LexemeStream*> lists;
 
@@ -177,4 +173,4 @@ extern LexemeStream* currentStream;
 
 void ParseOnStream(LexemeStream* newContext, std::function<void()> callback);
 
-} // namespace Parser
+}  // namespace Parser

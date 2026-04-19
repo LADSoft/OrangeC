@@ -26,7 +26,7 @@
 
 namespace Parser
 {
-    extern attributes basisAttribs;
-    Type* AttributeFinish(SYMBOL* sym, Type* tp);
-    bool ParseAttributeSpecifiers(SYMBOL* funcsp, bool always);
+extern attributes basisAttribs;
+Type* AttributeFinish(SYMBOL* sym, Type* tp);
+bool ParseAttributeSpecifiers(SYMBOL* funcsp, bool always);
 }  // namespace Parser

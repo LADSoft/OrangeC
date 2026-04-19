@@ -67,6 +67,7 @@ class POSIXJobServer : public JobServer
     int get_write_fd() { return writefd; }
     std::stack<char> popped_char_stack;
     std::mutex char_stack_mutex;
+
   public:
     std::string PassThroughCommandString();
     bool TakeNewJob();

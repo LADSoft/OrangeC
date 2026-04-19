@@ -30,10 +30,10 @@ namespace Parser
 
 struct Type
 {
-    BasicType type;        /* the type */
-    long size;             /* total size of type */
-    Type* btp;             /* pointer to next type (pointers & arrays */
-    Type* rootType;        /* pointer to base type of sequence */
+    BasicType type;             /* the type */
+    long size;                  /* total size of type */
+    Type* btp;                  /* pointer to next type (pointers & arrays */
+    Type* rootType;             /* pointer to base type of sequence */
     unsigned used : 1;          /* type has actually been used in a declaration or cast or expression */
     unsigned array : 1;         /* not a dereferenceable pointer */
     unsigned msil : 1;          /* allocate as an MSIL array */
@@ -114,7 +114,7 @@ struct Type
     bool SameType(Type* other) { return CompareTypes(this, other, 0); }
     bool CompatibleType(Type* other) { return CompareTypes(this, other, 1); }
     bool CompatibleTypeNoQualifiers(Type* other) { return CompareTypes(this, other, 2); }
-    inline void BasicTypeToString(char *top, char* buf) { BasicTypeToString(top, buf, this); }
+    inline void BasicTypeToString(char* top, char* buf) { BasicTypeToString(top, buf, this); }
     Type* CopyType(bool deep = false, std::function<void(Type*&, Type*&)> callback = nullptr);
     bool IsConstWithArr();
     bool SameIntegerType(Type* t2);
@@ -129,36 +129,32 @@ struct Type
   protected:
     static void ToString(char* top, char* buf, Type* typ);
     static char* PutPointer(char* top, char* p, Type* tp);
-    static void PointerToString(char *top, char* buf, Type* tp);
+    static void PointerToString(char* top, char* buf, Type* tp);
     static Type* QualifierToString(char* top, char* buf, Type* tp);
-    static Type* BasicTypeToString(char *top, char* buf, Type* tp);
+    static Type* BasicTypeToString(char* top, char* buf, Type* tp);
     static void RenderExpr(char* top, char* buf, EXPRESSION* exp);
 };
 struct TypeGenerator
 {
     static Type* PointerQualifiers(Type* tp, bool allowstatic);
-    static Type* FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
-                                bool funcptr);
-    static Type* BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym,
-                            std::list<NAMESPACEVALUEDATA*>** nsv, bool inTemplate, StorageClass storage_class, Linkage* linkage,
-                            Linkage* linkage2, Linkage* linkage3, bool* notype, bool asFriend, int consdest, bool beforeOnly,
-                            bool funcptr);
-    static Type* UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate,
-                               StorageClass storage_class, Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in,
-                               AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate,
-                               bool isTypedef, bool templateErr, bool inUsing, bool* asfriend, bool constexpression);
+    static Type* FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class, bool funcptr);
+    static Type* BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+                            bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
+                            bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr);
+    static Type* UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+                               Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access, bool* notype,
+                               bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef, bool templateErr,
+                               bool inUsing, bool* asfriend, bool constexpression);
     static Type* TypeId(SYMBOL* funcsp, StorageClass storage_class, bool beforeOnly, bool toErr, bool inUsing);
     static bool StartOfType(bool* structured, bool assumeType);
     static void ExceptionSpecifiers(SYMBOL* funcsp, SYMBOL* sp, StorageClass storage_class);
 
   private:
-    static Type* FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL** sp, Type* tp,
-                                                     StorageClass storage_class);
+    static Type* FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class);
     static void ResolveVLAs(Type* tp);
-    static Type* ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first,
-                           bool msil);
-    static Type* AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
-                           int consdest, bool funcptr);
+    static Type* ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first, bool msil);
+    static Type* AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class, int consdest,
+                           bool funcptr);
 };
 bool istype(SYMBOL* sym);
 }  // namespace Parser

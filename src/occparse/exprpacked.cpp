@@ -531,8 +531,8 @@ void expandPackedInitList(std::list<Argument*>** lptr, SYMBOL* funcsp, LexemeStr
             PushPackIndex();
             int i;
             int n = arg.front();
-            if (n > 1 || n == 1 && (packedExp->type != ExpressionNode::callsite_ ||
-                                    !packedExp->v.func->arguments || !packedExp->v.func->arguments->size() ||
+            if (n > 1 || n == 1 && (packedExp->type != ExpressionNode::callsite_ || !packedExp->v.func->arguments ||
+                                    !packedExp->v.func->arguments->size() ||
                                     packedExp->v.func->arguments->front()->tp->type != BasicType::void_))
             {
                 if (!*lptr)
@@ -761,7 +761,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORI
                                 added->sp = sym;
                                 shim.arguments = nullptr;
                                 GetConstructorInitializers(funcsp, &shim,
-                                    MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
+                                                           MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_, false);
                                 if (shim.arguments)
                                 {
                                     added->init = initListFactory.CreateList();
@@ -789,7 +789,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORI
     }
 }
 void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* templatePack,
-                                    std::list<CONSTRUCTORINITIALIZER*>** p, LexemeStream* start, std::list<Argument*>* list)
+                                         std::list<CONSTRUCTORINITIALIZER*>** p, LexemeStream* start, std::list<Argument*>* list)
 {
     int n = CountPacks(templatePack);
     CONSTRUCTORINITIALIZER* orig = (*p)->front();
@@ -873,8 +873,8 @@ void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<
                         ParseOnStream(mi->initData, [&]() {
                             shim.arguments = nullptr;
                             GetConstructorInitializers(funcsp, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
-                                false);
-                            });
+                                                       false);
+                        });
                         if (shim.arguments)
                         {
                             mi->init = initListFactory.CreateList();
@@ -1028,8 +1028,7 @@ std::list<Argument*>* ExpandTemplateArguments(EXPRESSION* exp)
                                         {
                                             defaults.push_back(tpx.second);
 
-                                            if (!tpx.second->resolved &&
-                                                tpx.second->packed && tpx.second->byPack.pack)
+                                            if (!tpx.second->resolved && tpx.second->packed && tpx.second->byPack.pack)
                                             {
                                                 auto tpl = LookupPackedInstance(tpx);
                                                 if (tpl)
@@ -1159,8 +1158,8 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     (*lst)->back().first = select->front().first;
     return lst;
 }
-std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* funcsp,
-                                                       std::list<TEMPLATEPARAMPAIR>* select)
+std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start,
+                                                       SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* select)
 {
     int beginning = 0;
     if (*lst)
@@ -1285,8 +1284,8 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     return lst;
 }
 
-void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* name, SYMBOL* first, SYMBOL* funcsp,
-                             Type** tp, EXPRESSION** exp)
+void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPosition& start, SYMBOL* name, SYMBOL* first,
+                             SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     // this is going to presume that the expression involved
     // is not too long to be cached by the LexList mechanism.

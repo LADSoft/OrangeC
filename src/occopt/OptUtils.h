@@ -59,10 +59,10 @@ int pwrof2(long long i);
 long long mod_mask(int i);
 void my_sprintf(char* dest, int len, const char* fmt, ...);
 
-template <class ...T, int n>
-void my_sprintf(char (&dest)[n], const char *fmt, T...args)
+template <class... T, int n>
+void my_sprintf(char (&dest)[n], const char* fmt, T... args)
 {
-    my_sprintf(dest,n, fmt, args...);
+    my_sprintf(dest, n, fmt, args...);
 }
 void cacheTempSymbol(SimpleSymbol* sym);
 }  // namespace Optimizer

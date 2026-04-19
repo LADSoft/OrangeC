@@ -156,10 +156,10 @@ CmdSwitchBool prmDumpMachine(SwitchParser, 0, 0, {"dumpmachine"});
 CmdSwitchCombineString prmPrintFileName(SwitchParser, 0, 0, {"print-file-name"});
 CmdSwitchCombineString prmPrintProgName(SwitchParser, 0, 0, {"print-prog-name"});
 
-CmdSwitchBool prmPIC(SwitchParser, 0, 0, {"fPIC"});       // ignored for now
-CmdSwitchBool prmWall(SwitchParser, 0, 0, {"Wall"});      // ignored for now
-CmdSwitchBool prmWextra(SwitchParser, 0, 0, {"Wextra"});  // ignored for now
-CmdSwitchBool prmEnableAutoImport(SwitchParser, 0, 0, {"enable-auto-import"}); // ignored for now
+CmdSwitchBool prmPIC(SwitchParser, 0, 0, {"fPIC"});                             // ignored for now
+CmdSwitchBool prmWall(SwitchParser, 0, 0, {"Wall"});                            // ignored for now
+CmdSwitchBool prmWextra(SwitchParser, 0, 0, {"Wextra"});                        // ignored for now
+CmdSwitchBool prmEnableAutoImport(SwitchParser, 0, 0, {"enable-auto-import"});  // ignored for now
 
 CmdSwitchBool MakeStubsOption(SwitchParser, 0, 0, {"M"});
 CmdSwitchBool MakeStubsUser(SwitchParser, 0, 0, {"MM"});
@@ -802,7 +802,7 @@ void setglbdefs(void)
                 break;
             case Dialect::cpp17:
                 preProcessor->Define("__cplusplus", "201703");
-                preProcessor->Define("__cpp_deduction_guides","201611");
+                preProcessor->Define("__cpp_deduction_guides", "201611");
                 break;
         }
         if (Optimizer::cparams.prm_xcept)
@@ -861,7 +861,7 @@ void setglbdefs(void)
         {
             preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded
         }
-    
+
         if (Optimizer::cparams.c_dialect >= Dialect::c11 || Optimizer::cparams.c_dialect >= Dialect::c23)
         {
             if (Optimizer::cparams.c_dialect >= Dialect::c23)
@@ -876,10 +876,11 @@ void setglbdefs(void)
             }
             Optimizer::ARCH_SIZING* local_store_of_locks = Optimizer::chosenAssembler->arch->type_needsLock;
 
-            preProcessor->Define("ATOMIC_BOOL_LOCK_FREE",
-                             std::to_string((local_store_of_locks->a_bool == 0)
-                                                ? 2
-                                                : 0));  // In our current system, 0 means always lock free, so change it to conform
+            preProcessor->Define(
+                "ATOMIC_BOOL_LOCK_FREE",
+                std::to_string((local_store_of_locks->a_bool == 0)
+                                   ? 2
+                                   : 0));  // In our current system, 0 means always lock free, so change it to conform
             preProcessor->Define("ATOMIC_CHAR_LOCK_FREE", std::to_string((local_store_of_locks->a_char == 0) ? 2 : 0));
             preProcessor->Define("ATOMIC_WCHAR_T_LOCK_FREE", std::to_string((local_store_of_locks->a_wchar_t == 0) ? 2 : 0));
             preProcessor->Define("ATOMIC_SHORT_LOCK_FREE", std::to_string((local_store_of_locks->a_short == 0) ? 2 : 0));
@@ -891,8 +892,8 @@ void setglbdefs(void)
             preProcessor->Define(
                 "ATOMIC_CHAR16_T_LOCK_FREE",
                 std::to_string((local_store_of_locks->a_char16_t == 0)
-                               ? 2
-                               : 0));  // temporary since this is how it's done internally, will fix when sizing is fixed
+                                   ? 2
+                                   : 0));  // temporary since this is how it's done internally, will fix when sizing is fixed
             preProcessor->Define("ATOMIC_CHAR32_T_LOCK_FREE", std::to_string((local_store_of_locks->a_char32_t == 0) ? 2 : 0));
 
             preProcessor->Define("__ATOMIC_RELAXED", std::to_string(Optimizer::e_mo::mo_relaxed));
@@ -973,7 +974,7 @@ int insert_noncompile_file(const char* buf, std::string& currentExt)
     return 0;
 }
 
-bool IsCompilerSource(const char *buffer) 
+bool IsCompilerSource(const char* buffer)
 {
     bool found = false;
     static std::list<std::string> acceptedExtensions = {".c", ".cc", ".cpp", ".cxx"};
@@ -988,7 +989,7 @@ bool IsCompilerSource(const char *buffer)
     return found;
 }
 void InsertOneFile(const char* filename, char* path, int drive, std::string& currentExt)
-    /*
+/*
  * Insert a file name onto the list of files to process
  */
 
@@ -1004,7 +1005,7 @@ void InsertOneFile(const char* filename, char* path, int drive, std::string& cur
     }
     if (path)
     {
-        Utils::StrCpy(p, sizeof(buffer)-(p - buffer), path);
+        Utils::StrCpy(p, sizeof(buffer) - (p - buffer), path);
     }
     else
         *p = 0;
@@ -1045,7 +1046,7 @@ void InsertOneFile(const char* filename, char* path, int drive, std::string& cur
 }
 void InsertAnyFile(const FileEntry& filename, char* path, int drive, std::string& currentExt)
 {
-    auto it = filename.activeSwitches.find('x'); // language selection
+    auto it = filename.activeSwitches.find('x');  // language selection
     if (it != filename.activeSwitches.end())
     {
         CmdSwitchCombineString* setting = static_cast<CmdSwitchCombineString*>(it->second.get());
@@ -1270,11 +1271,14 @@ int ccinit(int argc, char* argv[])
     }
     auto old = argv[0];
     argv[0] = temp;
-    auto files = ToolChain::StandardToolStartup(SwitchParser, argc, argv, getUsageText(), getHelpText(), []() {
-        return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
-               prmPrintProgName.GetExists() || MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ||
-               (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
-    }, EXIT_WITHOUT_RUNNING_OPTIMIZER);
+    auto files = ToolChain::StandardToolStartup(
+        SwitchParser, argc, argv, getUsageText(), getHelpText(),
+        []() {
+            return prmDumpVersion.GetValue() || prmDumpMachine.GetValue() || prmPrintFileName.GetExists() ||
+                   prmPrintProgName.GetExists() || MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ||
+                   (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
+        },
+        EXIT_WITHOUT_RUNNING_OPTIMIZER);
 
     argv[0] = old;
     Optimizer::showBanner = prm_verbose.GetExists();

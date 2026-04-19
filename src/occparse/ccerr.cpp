@@ -130,14 +130,8 @@ void DumpErrorNameToHelpMap()
     printf("Name to help map Keyword::end_.\n");
 }
 
-void EnterInstantiation(SymbolLocation location)
-{
-    instantiationList.push_front(location);
-}
-void LeaveInstantiation() 
-{ 
-    instantiationList.pop_front(); 
-}
+void EnterInstantiation(SymbolLocation location) { instantiationList.push_front(location); }
+void LeaveInstantiation() { instantiationList.pop_front(); }
 static void DumpInstantiations()
 {
     bool show = false;
@@ -439,8 +433,9 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (err < maxErrors && !(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && currentErrorFile[0] && currentErrorLine &&
-        !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) && preProcessor->GetRealLineNo() == currentErrorLine)
+    if (err < maxErrors && !(errors[err].level & CE_NOTE) && !alwaysErr(err) && currentErrorFile && currentErrorFile[0] &&
+        currentErrorLine && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
+        preProcessor->GetRealLineNo() == currentErrorLine)
     {
         disabledNote = true;
         return false;
@@ -742,7 +737,7 @@ void errortype(int err, Type* tp1, Type* tp2)
     memset(tpb2, 0, sizeof(tpb2));
     tp1->ToString(tpb1 + sizeof(tpb1), tpb1);
     if (tp2)
-        tp2->ToString(tpb2 +sizeof(tpb2), tpb2);
+        tp2->ToString(tpb2 + sizeof(tpb2), tpb2);
     printerr(err, nullptr, 0, tpb1, tpb2);
 }
 void errorConversionOrCast(bool convert, Type* tp1, Type* tp2)
@@ -790,7 +785,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     currentErrorLine = 0;
     printerr(err, nullptr, 0, argbuf, buf);
 }
-static BALANCE* newbalance( BALANCE* bal)
+static BALANCE* newbalance(BALANCE* bal)
 {
     BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
@@ -805,7 +800,7 @@ static BALANCE* newbalance( BALANCE* bal)
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance( BALANCE** bal, bool assumeTemplate)
+static void setbalance(BALANCE** bal, bool assumeTemplate)
 {
     switch (KW())
     {
@@ -875,7 +870,7 @@ static void setbalance( BALANCE** bal, bool assumeTemplate)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim( Keyword* skimlist, bool assumeTemplate)
+void errskim(Keyword* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
@@ -894,12 +889,12 @@ void errskim( Keyword* skimlist, bool assumeTemplate)
         getsym();
     }
 }
-void skip( Keyword kw)
+void skip(Keyword kw)
 {
     if (MATCHKW(kw))
         getsym();
 }
-bool needkw( Keyword kw)
+bool needkw(Keyword kw)
 {
     if (currentLex && MATCHKW(kw))
     {

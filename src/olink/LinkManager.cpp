@@ -230,7 +230,7 @@ void LinkManager::MergePublics(ObjFile* file, bool fromLibrary, bool toerr)
             auto it2 = exports.find(newSymbol);
             if (exportAllSymbols && !fromLibrary && it2 == exports.end())
             {
-                static std::set<std::string> invalid = { "startupStruct", "___unaligned_stacktop" };
+                static std::set<std::string> invalid = {"startupStruct", "___unaligned_stacktop"};
                 if (invalid.find((*it)->GetName()) == invalid.end())
                 {
                     auto sym = new ObjExportSymbol((*it)->GetName());
@@ -464,11 +464,14 @@ bool LinkManager::ScanVirtuals()
     }
     return rv;
 }
-struct FileDeleter {
-    void operator()(FILE* file) const {
-        if (file) {
-            if (fclose(file) != 0) {
-
+struct FileDeleter
+{
+    void operator()(FILE* file) const
+    {
+        if (file)
+        {
+            if (fclose(file) != 0)
+            {
             }
         }
     }

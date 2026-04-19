@@ -58,8 +58,8 @@
 
 namespace Parser
 {
-    static const int LexCacheDepth = 20000;
-    static const int LexCachePrune = 1000;
+static const int LexCacheDepth = 20000;
+static const int LexCachePrune = 1000;
 
 #ifndef LONGLONG_MAX
 #    define LONGLONG_MAX LONG_MAX
@@ -932,7 +932,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                             count++;
                         }
 #endif
-                        * dest++ = st[0];
+                        *dest++ = st[0];
                         len--;
                         count++;
                         if (st[0] == ')')
@@ -1787,7 +1787,7 @@ void FlushLineData(const char* file, int lineno)
         }
     }
 }
-std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme* lex, int offset )
+std::list<Statement*>* currentLineData(std::list<FunctionBlock*>& parent, Lexeme* lex, int offset)
 {
     if (!lex || !lines)
         return nullptr;
@@ -1850,7 +1850,7 @@ void getsym(void)
 
     if (currentStream->RePlaying() || currentStream->Reloaded())
     {
-        if (currentStream->Index() < currentStream->Base() +  currentStream->size())
+        if (currentStream->Index() < currentStream->Base() + currentStream->size())
         {
             if (currentStream->Index())
                 TemplateRegisterToken(currentLex, false);
@@ -1886,7 +1886,7 @@ void getsym(void)
     }
     if (currentStream->size() > LexCacheDepth)
     {
-        currentStream->Prune(LexCacheDepth, LexCachePrune);    
+        currentStream->Prune(LexCacheDepth, LexCachePrune);
         currentLex = currentStream->get(currentStream->Index());
     }
     if (!parsingPreprocessorConstant)
@@ -1931,7 +1931,7 @@ void getsym(void)
                 }
             }
         } while (*linePointer == 0);
-        currentLex =  lex = LexemeTokenFactory::Instantiation().Create();
+        currentLex = lex = LexemeTokenFactory::Instantiation().Create();
         currentStream->Add(lex);
         currentLex->linedata = &nullLineData;
 

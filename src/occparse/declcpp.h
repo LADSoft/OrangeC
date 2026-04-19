@@ -33,11 +33,10 @@ extern int noNeedToSpecialize;
 // decl group
 void deferredInitializeStructFunctions(SYMBOL* cur);
 void deferredInitializeStructMembers(SYMBOL* cur);
-void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess);
+void baseClasses(SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess);
 void checkOperatorArgs(SYMBOL* sp, bool asFriend);
 void CheckIsLiteralClass(Type* tp);
-void GetStructuredBinding( SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
-                              std::list<FunctionBlock*>& block);
+void GetStructuredBinding(SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, std::list<FunctionBlock*>& block);
 // templatedecl.cpp
 bool declaringTemplate(SYMBOL* sym);
 // cpplookup.cpp
@@ -49,5 +48,5 @@ int classRefCount(SYMBOL* base, SYMBOL* derived);
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp);
 void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func);
 bool MatchesConstFunction(SYMBOL* sym);
-void getDeclType( SYMBOL* funcsp, Type** tn);
+void getDeclType(SYMBOL* funcsp, Type** tn);
 }  // namespace Parser

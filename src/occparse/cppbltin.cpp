@@ -120,7 +120,7 @@ void ParseBuiltins(void)
         SetAlternateParse(true, cppbuiltin);
         getsym();
         while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                AccessLevel::public_))
+                       AccessLevel::public_))
             ;
         SetAlternateParse(false, "");
     }
@@ -129,7 +129,7 @@ void ParseBuiltins(void)
         SetAlternateParse(true, cbuiltin);
         getsym();
         while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                AccessLevel::public_))
+                       AccessLevel::public_))
             ;
         SetAlternateParse(false, "");
     }
@@ -139,7 +139,7 @@ void ParseBuiltins(void)
         SetAlternateParse(true, temp);
         getsym();
         while (declare(nullptr, nullptr, StorageClass::global_, Linkage::none_, emptyBlockdata, true, false, false,
-                                AccessLevel::public_)) 
+                       AccessLevel::public_))
             ;
         SetAlternateParse(false, "");
     }

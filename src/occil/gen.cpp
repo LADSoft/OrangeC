@@ -868,7 +868,7 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
-            diag("gen_convert: conversion to complex"); 
+            diag("gen_convert: conversion to complex");
             return;
         case ISZ_OBJECT:
             box(im);
@@ -879,8 +879,8 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
             Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_call, ap);
             return;
-       }
-         default:
+        }
+        default:
             diag("gen_convert: unknown conversion");
             return;
     }

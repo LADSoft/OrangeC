@@ -125,8 +125,8 @@ bool ppDefine::Check(kw token, std::string& line)
     return rv;
 }
 #include <iostream>
-ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& value, DefinitionArgList* args, std::string vaArgsName, bool permanent,
-                                       bool varargs, bool errors, bool caseInsensitive)
+ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& value, DefinitionArgList* args, std::string vaArgsName,
+                                       bool permanent, bool varargs, bool errors, bool caseInsensitive)
 {
     if (asmpp)
     {
@@ -674,7 +674,8 @@ bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
 }
 /* replace macro args */
 bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newargs,
-                           const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions, Definition* currentDefinition, const std::string varargs)
+                           const DefinitionArgList& expandedargs, std::deque<Definition*>& definitions,
+                           Definition* currentDefinition, const std::string varargs)
 {
     std::string name;
     int waiting = 0;

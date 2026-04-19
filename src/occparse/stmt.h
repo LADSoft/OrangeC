@@ -61,7 +61,7 @@ struct Statement
     int explicitGoto : 1;
     int indirectGoto : 1;
     int blockInit : 1;
-    static Statement* MakeStatement(std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme *lex = nullptr);
+    static Statement* MakeStatement(std::list<FunctionBlock*>& parent, StatementNode stype, Lexeme* lex = nullptr);
 };
 struct FunctionBlock
 {
@@ -79,7 +79,7 @@ struct FunctionBlock
     int hasbreak : 1;
     int hassemi : 1;
     int nosemi : 1; /* ok to skip semi */
-    void AddThis( std::list<FunctionBlock*>& parent);
+    void AddThis(std::list<FunctionBlock*>& parent);
 };
 struct StatementGenerator
 {
@@ -95,10 +95,10 @@ struct StatementGenerator
     bool CompileFunctionFromStreamInternal();
 
     static void SetFunctionDefine(std::string name, bool set);
-    static int GetLabelValue( std::list<FunctionBlock*>* parent, Statement* st);
+    static int GetLabelValue(std::list<FunctionBlock*>* parent, Statement* st);
     static void AssignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
     static void ParseNoExceptClause(SYMBOL* sp);
-    static bool ResolvesToDeclaration( bool structured);
+    static bool ResolvesToDeclaration(bool structured);
     static bool HasInlineAsm() { return Optimizer::architecture == ARCHITECTURE_X86; }
     static EXPRESSION* DestructorsForExpression(EXPRESSION* exp);
     static void DestructorsForBlock(EXPRESSION** exp, SymbolTable<SYMBOL>* table, bool mainDestruct);

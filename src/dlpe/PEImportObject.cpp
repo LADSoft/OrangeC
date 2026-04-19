@@ -530,7 +530,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             publics[(*it)->GetName()] = (*it);
         }
 
-        WriteThunks(delayLoad, std::move(modules),std::move( publics));
+        WriteThunks(delayLoad, std::move(modules), std::move(publics));
     }
     regions.push_back(std::pair<ObjInt, ObjInt>(virtual_addr, importSize));
     if (delayLoadImportSize)

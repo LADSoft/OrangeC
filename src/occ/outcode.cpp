@@ -547,7 +547,7 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
                     // trim the spaces out of the string...
                     size_t start = name.find_first_not_of(" \t\n");
                     size_t end = name.find_last_not_of(" \t\n");
-    
+
                     if (end > start)
                     {
                         name = name.substr(start, end - start + 1);
@@ -920,7 +920,7 @@ void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
             Utils::StrCpy(buf, "vsr@");
             break;
     }
-    Utils::StrCpy(buf + 3 + (sym->outputName[0] != '@'), sizeof(buf)-4, sym->outputName);
+    Utils::StrCpy(buf + 3 + (sym->outputName[0] != '@'), sizeof(buf) - 4, sym->outputName);
     std::shared_ptr<Section> virtsect = std::make_shared<Section>(buf, virtualSegmentNumber++);
     virtualSyms[virtsect] = sym;
     virtuals.push_back(virtsect);

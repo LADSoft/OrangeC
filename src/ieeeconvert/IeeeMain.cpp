@@ -33,7 +33,7 @@
 
 const char* IeeeMain::usageText = "input file[s]";
 const char* IeeeMain::helpText =
-R"help(input file[s]"
+    R"help(input file[s]"
 
 This program converts between the binary and ascii object file formats
 It can be useful for taking the binary format currently generated
@@ -43,12 +43,11 @@ and turning it into a readable format.
 ".oa extension means read ascii convert to binary"
 
 )help"
-"Time: " __TIME__ "  Date: " __DATE__;
+    "Time: " __TIME__ "  Date: " __DATE__;
 
 CmdSwitchParser IeeeMain::SwitchParser;
 
-int main(int argc, char** argv)
-MAINTRY
+int main(int argc, char** argv) MAINTRY
 {
     IeeeMain ieeeMain;
     try

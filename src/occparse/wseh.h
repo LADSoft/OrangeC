@@ -25,5 +25,5 @@
 
 namespace Parser
 {
-void ParseSEH( SYMBOL* funcsp, std::list<FunctionBlock*>& parent);
+void ParseSEH(SYMBOL* funcsp, std::list<FunctionBlock*>& parent);
 }

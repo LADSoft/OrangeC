@@ -56,10 +56,10 @@ bool CmdFiles::Add(char** array, bool recurseDirs)
     return true;
 }
 bool CmdFiles::Add(std::string& name, const std::map<int, std::shared_ptr<CmdSwitchBase>>& switches)
-{ 
+{
     int index = names.size();
     Add(name, false);
-    for (; index <names.size(); ++index)
+    for (; index < names.size(); ++index)
         names[index].activeSwitches = switches;
     return true;
 }

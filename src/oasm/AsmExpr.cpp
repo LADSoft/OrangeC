@@ -160,25 +160,25 @@ std::shared_ptr<AsmExprNode> AsmExpr::Eval(std::shared_ptr<AsmExprNode> n, int p
             {
                 switch ((xleft->GetType() << 8) + xright->GetType())
                 {
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
-                    rv = std::make_shared<AsmExprNode>(xleft->ival + xright->ival);
-                    break;
-                case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->ival;
-                    fv += xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv = xright->ival;
-                    fv += xleft->fval;
-                    break;
-                case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
-                    fv = xleft->fval + xright->fval;
-                    rv = std::make_shared<AsmExprNode>(fv);
-                    break;
-                default:
-                    rv = std::move(n);
-                    break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::IVAL:
+                        rv = std::make_shared<AsmExprNode>(xleft->ival + xright->ival);
+                        break;
+                    case (AsmExprNode::IVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->ival;
+                        fv += xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
+                        fv = xright->ival;
+                        fv += xleft->fval;
+                        break;
+                    case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
+                        fv = xleft->fval + xright->fval;
+                        rv = std::make_shared<AsmExprNode>(fv);
+                        break;
+                    default:
+                        rv = std::move(n);
+                        break;
                 }
             }
             else

@@ -433,7 +433,6 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
                     else if ((*exp)->left->type == ExpressionNode::blockclear_)
                     {
                         exp1 = &(*exp)->left->left;
-
                     }
                     exp = &(*exp)->right;
                 }
@@ -471,7 +470,7 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
         Dereference(&stdpointer, &varptr);
         rv = MakeExpression(ExpressionNode::assign_, varptr, thisptr);
 
-//        for (auto sp : *ths->v.sp->sb->parentClass->tp->syms)
+        //        for (auto sp : *ths->v.sp->sb->parentClass->tp->syms)
         for (auto sp : *tp->BaseType()->syms)
         {
             if (ismemberdata(sp))
@@ -492,9 +491,12 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
                     {
                         if (ismemberdata(sp1))
                         {
-                            EXPRESSION* next = MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset + sp1->sb->offset));
+                            EXPRESSION* next =
+                                MakeExpression(ExpressionNode::structadd_, varptr,
+                                               MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset + sp1->sb->offset));
                             Dereference(sp1->tp, &next);
-                            next = MakeExpression(ExpressionNode::assign_, next,
+                            next = MakeExpression(
+                                ExpressionNode::assign_, next,
                                 EvaluateExpression(data->v.constexprData.data[sp1->sb->offset], data, nullptr, true));
                             if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
                             {
@@ -512,10 +514,10 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
                 }
                 else
                 {
-                    EXPRESSION* next = MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
+                    EXPRESSION* next =
+                        MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
                     Dereference(sp->tp, &next);
-                    next = MakeExpression(ExpressionNode::assign_, next,
-                    EvaluateExpression(data, ths, nullptr, true));
+                    next = MakeExpression(ExpressionNode::assign_, next, EvaluateExpression(data, ths, nullptr, true));
                     if (next->right == nullptr || !IsConstantExpression(next->right, false, false))
                     {
                         if (varsp)

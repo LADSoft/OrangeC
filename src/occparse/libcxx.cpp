@@ -312,10 +312,10 @@ void libcxx_builtins(void)
     }
 }
 static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool initialize = false);
-static void GetTypeList( SYMBOL* funcsp, std::list<Argument*>** lptr);
+static void GetTypeList(SYMBOL* funcsp, std::list<Argument*>** lptr);
 void EvaluateLibcxxConstant(EXPRESSION** exp);
 
-bool parseBuiltInTypelistFunc( SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
+bool parseBuiltInTypelistFunc(SYMBOL* funcsp, SYMBOL* sym, Type** tp, EXPRESSION** exp)
 {
     auto it = intrinsicHash.find(sym->name);
     if (it != intrinsicHash.end())
@@ -397,7 +397,7 @@ static void GetTypeList(EXPRESSION* exp, std::list<Argument*>** arguments, bool 
         }
     }
 }
-static void GetTypeList( SYMBOL* funcsp, std::list<Argument*>** lptr)
+static void GetTypeList(SYMBOL* funcsp, std::list<Argument*>** lptr)
 {
     if (!*lptr)
         *lptr = argumentListFactory.CreateList();
@@ -670,10 +670,7 @@ static bool isPOD(Type* tp)
     }
     return false;
 }
-inline Argument* first(std::list<Argument*>* args) 
-{ 
-    return args->front(); 
-}
+inline Argument* first(std::list<Argument*>* args) { return args->front(); }
 inline Argument* second(std::list<Argument*>* args)
 {
     auto it = args->begin();
@@ -816,7 +813,8 @@ static bool is_base_of(EXPRESSION* exp)
     if (arguments->size() == 2)
     {
         if (first(arguments)->tp->IsStructured() && second(arguments)->tp->IsStructured())
-        {;
+        {
+            ;
             auto spl = first(arguments)->tp->BaseType()->sp;
             auto spr = second(arguments)->tp->BaseType()->sp;
             if (spl->tp->BaseType()->type != BasicType::union_)
@@ -1144,8 +1142,8 @@ static bool is_convertible_to(EXPRESSION* exp)
                     else
                     {
                         auto sp1 = lookupGenericConversion(from->BaseType()->sp, to->BaseType());
-// covscript
-//                         auto sp1 = lookupNonspecificCast(from->BaseType()->sp, to->BaseType());
+                        // covscript
+                        //                         auto sp1 = lookupNonspecificCast(from->BaseType()->sp, to->BaseType());
                         rv = sp1 && !sp1->sb->isExplicit;
                     }
                 }
@@ -1209,7 +1207,7 @@ static bool is_empty(EXPRESSION* exp)
             if (first(arguments)->tp->BaseType()->syms)
                 rv = first(arguments)->tp->BaseType()->syms->size() <= 1;
             else
-               rv = true;
+                rv = true;
     }
     return rv;
 }
@@ -1867,7 +1865,7 @@ SYMBOL* RemoveReference(SYMBOL* sym, std::list<TEMPLATEPARAMPAIR>* args)
     }
     return sym;
 }
-bool underlying_type( SYMBOL* funcsp, Type** tp)
+bool underlying_type(SYMBOL* funcsp, Type** tp)
 {
     bool rv = false;
     std::list<Argument*>* arguments = nullptr;

@@ -379,7 +379,8 @@ static bool DeduceFromTemplates(Type* P, Type* A, bool change, bool byClass)
                         *tp = itTA->second->byClass.val;
                     }
                     to->second->deduced = true;
-                    if (to->second->byClass.dflt && to->second->byClass.val && to->second->byClass.dflt->type != BasicType::templateselector_ &&
+                    if (to->second->byClass.dflt && to->second->byClass.val &&
+                        to->second->byClass.dflt->type != BasicType::templateselector_ &&
                         !Deduce(to->second->byClass.dflt, to->second->byClass.val, nullptr, change, byClass, false, false))
                         return false;
                     break;
@@ -930,64 +931,65 @@ bool Deduce(Type* P, Type* A, EXPRESSION* exp, bool change, bool byClass, bool a
                         }
                     }
                 }
-                else while (ita != itaend && itp != itpend)
-                {
-                    SYMBOL* sp = *itp;
-                    if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed)
+                else
+                    while (ita != itaend && itp != itpend)
                     {
-                        sp->tp->templateParam->second->packed = false;
-                        std::list<Type*> types;
-                        if ((*ita)->tp->type != BasicType::void_)
+                        SYMBOL* sp = *itp;
+                        if (sp->tp->type == BasicType::templateparam_ && sp->tp->templateParam->second->packed)
                         {
-                            for (; ita != itaend; ++ita)
+                            sp->tp->templateParam->second->packed = false;
+                            std::list<Type*> types;
+                            if ((*ita)->tp->type != BasicType::void_)
                             {
-                                if ((*ita)->tp->type == BasicType::templateparam_ && (*ita)->tp->templateParam->second->packed)
+                                for (; ita != itaend; ++ita)
                                 {
-                                    if ((*ita)->tp->templateParam->second->byPack.pack)
-                                        for (auto&& tpl : *(*ita)->tp->templateParam->second->byPack.pack)
-                                        {
-                                            types.push_back(tpl.second->byClass.val);
-                                        }
-                                }
-                                else
-                                {
-                                    types.push_back((*ita)->tp);
+                                    if ((*ita)->tp->type == BasicType::templateparam_ && (*ita)->tp->templateParam->second->packed)
+                                    {
+                                        if ((*ita)->tp->templateParam->second->byPack.pack)
+                                            for (auto&& tpl : *(*ita)->tp->templateParam->second->byPack.pack)
+                                            {
+                                                types.push_back(tpl.second->byClass.val);
+                                            }
+                                    }
+                                    else
+                                    {
+                                        types.push_back((*ita)->tp);
+                                    }
                                 }
                             }
+                            else
+                            {
+                                ita = itaend;
+                            }
+                            if (types.size())
+                            {
+                                sp->tp->templateParam->second->byPack.pack = templateParamPairListFactory.CreateList();
+                                for (auto tp : types)
+                                {
+                                    TEMPLATEPARAM* tpl = Allocate<TEMPLATEPARAM>();
+                                    *tpl = *sp->tp->templateParam->second;
+                                    tpl->byPack.pack = nullptr;
+                                    tpl->byClass.val = tp;
+                                    sp->tp->templateParam->second->byPack.pack->push_back({nullptr, tpl});
+                                }
+                                sp->tp->templateParam->second->packed = true;
+                            }
+                            else
+                            {
+                                sp->tp->templateParam->second->packed = true;
+                                sp->tp->templateParam->second->byPack.pack = nullptr;
+                            }
+                            ++itp;
+                            break;
                         }
                         else
                         {
-                            ita = itaend;
+                            if (!Deduce(sp->tp, (*ita)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
+                                return false;
+                            ++itp;
+                            ++ita;
                         }
-                        if (types.size())
-                        {
-                            sp->tp->templateParam->second->byPack.pack = templateParamPairListFactory.CreateList();
-                            for (auto tp : types)
-                            {
-                                TEMPLATEPARAM* tpl = Allocate<TEMPLATEPARAM>();
-                                *tpl = *sp->tp->templateParam->second;
-                                tpl->byPack.pack = nullptr;
-                                tpl->byClass.val = tp;
-                                sp->tp->templateParam->second->byPack.pack->push_back({ nullptr, tpl });
-                            }
-                            sp->tp->templateParam->second->packed = true;
-                        }
-                        else
-                        {
-                            sp->tp->templateParam->second->packed = true;
-                            sp->tp->templateParam->second->byPack.pack = nullptr;
-                        }
-                        ++itp;
-                        break;
                     }
-                    else
-                    {
-                        if (!Deduce(sp->tp, (*ita)->tp, nullptr, change, byClass, allowSelectors, baseClasses))
-                            return false;
-                        ++itp;
-                        ++ita;
-                    }
-                }
                 if (ita != itaend)
                     return false;
                 if (itp != itpend && !(*itp)->sb->init)
@@ -1519,7 +1521,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                             }
                             else
                             {
-                                auto tp1 = Type::MakeType(BasicType::const_,(*symArgs)->tp->BaseType()->btp);
+                                auto tp1 = Type::MakeType(BasicType::const_, (*symArgs)->tp->BaseType()->btp);
                                 auto tp2 = Allocate<Type>();
                                 *tp2 = *(*symArgs)->tp;
                                 tp2->stringconst = false;
@@ -1591,7 +1593,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, CallSite* args)
                 }
                 else if (tp->IsDeferred())
                 {
-                    if (!TemplateParseDefaultArgs(tp->BaseType()->sp, nullptr, tp->BaseType()->templateArgs, tp->BaseType()->templateArgs, tp->BaseType()->templateArgs))
+                    if (!TemplateParseDefaultArgs(tp->BaseType()->sp, nullptr, tp->BaseType()->templateArgs,
+                                                  tp->BaseType()->templateArgs, tp->BaseType()->templateArgs))
                         return nullptr;
                 }
             }

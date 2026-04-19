@@ -171,8 +171,8 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
             // we are evauating a function argument
             // have to disable searching in any function blocks
             SymbolTable<struct sym> syms;
-            NAMESPACEVALUEDATA ns{ &syms };
-            std::list<NAMESPACEVALUEDATA*> nswrapper = { &ns };
+            NAMESPACEVALUEDATA ns{&syms};
+            std::list<NAMESPACEVALUEDATA*> nswrapper = {&ns};
 
             auto oldNS = localNameSpace;
             localNameSpace = &nswrapper;
@@ -386,7 +386,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
     }
     return bc;
 }
-void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
+void baseClasses(SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
 {
     auto baseClasses = baseClassListFactory.CreateList();
     AccessLevel currentAccess;
@@ -460,7 +460,8 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
             restart:
                 if (bcsym && bcsym->tp->type == BasicType::templateselector_)
                 {
-                    //                if (!templateDefinitionLevel && !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
+                    //                if (!templateDefinitionLevel &&
+                    //                !declaringTemplate((*bcsym->tp->sp->sb->templateSelector)[1].sp))
                     //                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
                     if (MATCHKW(Keyword::lt_))
                     {
@@ -488,9 +489,9 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                     }
                     skiptoend = true;
                 }
-                else if (bcsym &&
-                    (bcsym->sb && bcsym->sb->templateLevel ||
-                        bcsym->tp->type == BasicType::templateparam_ && bcsym->tp->templateParam->second->type == TplType::template_))
+                else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel ||
+                                   bcsym->tp->type == BasicType::templateparam_ &&
+                                       bcsym->tp->templateParam->second->type == TplType::template_))
                 {
                     if (bcsym->tp->type == BasicType::templateparam_)
                     {
@@ -596,7 +597,8 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                                                 SetPackIndex(i);
                                                 placeHolder.Replay([&]() {
                                                     SYMBOL* sym = nullptr;
-                                                    nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false, StorageClass::global_, false, false);
+                                                    nestedSearch(&sym, nullptr, nullptr, nullptr, nullptr, false,
+                                                                 StorageClass::global_, false, false);
                                                     getsym();
                                                     if (sym)
                                                     {
@@ -608,7 +610,8 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                                                         if (sym)
                                                         {
                                                             if (allTemplateArgsSpecified(sym, sym->templateParams))
-                                                                sym = TemplateClassInstantiateInternal(sym, sym->templateParams, false);
+                                                                sym = TemplateClassInstantiateInternal(sym, sym->templateParams,
+                                                                                                       false);
                                                             if (sym)
                                                             {
                                                                 SetLinkerNames(sym, Linkage::cdecl_);
@@ -620,7 +623,7 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                                                             }
                                                         }
                                                     }
-                                                    });
+                                                });
                                             }
                                             processingTemplateArgs--;
                                             PopPackIndex();
@@ -754,26 +757,26 @@ void baseClasses( SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
             else
                 switch (KW())
                 {
-                case Keyword::virtual_:
-                    isvirtual = true;
-                    getsym();
-                    break;
-                case Keyword::private_:
-                    currentAccess = AccessLevel::private_;
-                    getsym();
-                    break;
-                case Keyword::protected_:
-                    currentAccess = AccessLevel::protected_;
-                    getsym();
-                    break;
-                case Keyword::public_:
-                    currentAccess = AccessLevel::public_;
-                    getsym();
-                    break;
-                default:
-                    error(ERR_IDENTIFIER_EXPECTED);
-                    errskim(skim_end);
-                    return;
+                    case Keyword::virtual_:
+                        isvirtual = true;
+                        getsym();
+                        break;
+                    case Keyword::private_:
+                        currentAccess = AccessLevel::private_;
+                        getsym();
+                        break;
+                    case Keyword::protected_:
+                        currentAccess = AccessLevel::protected_;
+                        getsym();
+                        break;
+                    case Keyword::public_:
+                        currentAccess = AccessLevel::public_;
+                        getsym();
+                        break;
+                    default:
+                        error(ERR_IDENTIFIER_EXPECTED);
+                        errskim(skim_end);
+                        return;
                 }
             LeavePackedSequence();
             if (!done)
@@ -1261,7 +1264,7 @@ bool MatchesConstFunction(SYMBOL* sym)
     }
     return true;
 }
-void getDeclType( SYMBOL* funcsp, Type** tn)
+void getDeclType(SYMBOL* funcsp, Type** tn)
 {
     bool hasAmpersand = false;
     bool hasAuto = false;
@@ -1498,8 +1501,7 @@ static int CountMembers(SYMBOL* sym)
     return count;
 }
 
-void  GetStructuredBinding( SYMBOL* funcsp, StorageClass storage_class, Linkage linkage,
-                              std::list<FunctionBlock*>& block)
+void GetStructuredBinding(SYMBOL* funcsp, StorageClass storage_class, Linkage linkage, std::list<FunctionBlock*>& block)
 {
     getsym();
     if (!ISID())
@@ -1529,7 +1531,7 @@ void  GetStructuredBinding( SYMBOL* funcsp, StorageClass storage_class, Linkage 
             EXPRESSION* exp = nullptr;
             Type* tp = nullptr;
             expression_no_comma(funcsp, nullptr, &tp, &exp, nullptr, 0);
-            currentLineData(block, currentLex,-1);
+            currentLineData(block, currentLex, -1);
             if (tp == nullptr)
             {
                 error(ERR_EXPRESSION_SYNTAX);

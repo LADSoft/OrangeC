@@ -438,8 +438,8 @@ void AllocateStackSpace(int begin)
         // we dont do stack compression if we are doing runtime checks
         // so the stack compression got completely broken at some point in the past, the if statement was never true
         // im commenting it out for now since so much testing was done but leaving it in causes static analysis flags.
-//        if (!Optimizer::cparams.prm_stackprotect & (STACK_OBJECT_OVERFLOW | STACK_UNINIT_VARIABLE))
-//            lc_maxauto = max;
+        //        if (!Optimizer::cparams.prm_stackprotect & (STACK_OBJECT_OVERFLOW | STACK_UNINIT_VARIABLE))
+        //            lc_maxauto = max;
         for (auto&& sym : dq)
         {
             if (modes[sym] & 1)  // overlay?
@@ -568,7 +568,8 @@ static void GetSpillVar(int i)
                 if (tempInfo[sp1->i]->instructionDefines)
                 {
                     auto im1 = tempInfo[sp1->i]->instructionDefines->dc.left;
-                    if (im1->mode == i_direct && (im1->offset->type == se_global || im1->offset->type == se_auto || im1->offset->type == se_absolute))
+                    if (im1->mode == i_direct &&
+                        (im1->offset->type == se_global || im1->offset->type == se_auto || im1->offset->type == se_absolute))
                     {
                         exp = im1->offset;
                     }
@@ -603,7 +604,7 @@ static void CopyLocalColors(void)
         {
             for (int i = 0; i < head->assemblyRegCount; i++)
                 if (head->assemblyRegs[i] != 255)
-                    regmask |= chosenAssembler->arch->regNames[head->assemblyRegs[i]-1].pushMask;
+                    regmask |= chosenAssembler->arch->regNames[head->assemblyRegs[i] - 1].pushMask;
         }
         else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
         {
@@ -2014,7 +2015,7 @@ static void SpillCoalesce(BriggsSet* C, BriggsSet* S)
                 GetSpillVar(ml->a);
                 tempInfo[ml->b]->spillVar = tempInfo[ml->a]->spillVar;
             }
-//            JoinConflictLists(ml->a, ml->b);
+            //            JoinConflictLists(ml->a, ml->b);
         }
     }
 }
@@ -2340,7 +2341,7 @@ void retemp(void)
     {
         if (head->dc.opcode == i_passthrough)
         {
-            for (int i=0; i < head->assemblyRegCount; i++)
+            for (int i = 0; i < head->assemblyRegCount; i++)
                 tempInfo[head->assemblyTempRegStart + i]->inUse = true;
         }
         else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)

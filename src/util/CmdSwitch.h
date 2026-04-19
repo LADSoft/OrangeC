@@ -42,7 +42,8 @@ class CmdSwitchBase
   public:
     CmdSwitchBase() : switchChar(-1), exists(false) {}
     CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::deque<std::string> LongNames);
-    CmdSwitchBase(char SwitchChar, std::deque<std::string> LongNames) : switchChar(SwitchChar), exists(false), longNames(std::move(LongNames))
+    CmdSwitchBase(char SwitchChar, std::deque<std::string> LongNames) :
+        switchChar(SwitchChar), exists(false), longNames(std::move(LongNames))
     {
     }
     CmdSwitchBase(const CmdSwitchBase& orig) = default;
@@ -57,6 +58,7 @@ class CmdSwitchBase
     virtual bool RequiresArgument() { return true; }
 
     virtual CmdSwitchBase* Clone() = 0;
+
   private:
     bool exists;
     char switchChar;
@@ -78,10 +80,7 @@ class CmdSwitchBool : public CmdSwitchBase
         value = flag;
         SetExists();
     }
-    CmdSwitchBase* Clone() override 
-    { 
-        return new CmdSwitchBool(*this);
-    }
+    CmdSwitchBase* Clone() override { return new CmdSwitchBool(*this); }
 
   private:
     bool value;
@@ -279,12 +278,9 @@ class CmdSwitchParser
 
     CmdSwitchBase* Find(const char* sw, bool useLongNames, bool toErr, bool longErr);
 
-    void AddCurrent(CmdSwitchBase* orig)
-    {
-        currentlySelected[orig] = std::shared_ptr<CmdSwitchBase>(orig->Clone());
-    }
+    void AddCurrent(CmdSwitchBase* orig) { currentlySelected[orig] = std::shared_ptr<CmdSwitchBase>(orig->Clone()); }
     std::map<int, std::shared_ptr<CmdSwitchBase>> GetCurrent()
-    { 
+    {
         std::map<int, std::shared_ptr<CmdSwitchBase>> rv;
         for (auto s : currentlySelected)
         {
@@ -292,8 +288,8 @@ class CmdSwitchParser
         }
         return rv;
     }
-    void ResetCurrent() { currentlySelected.clear();
-    }
+    void ResetCurrent() { currentlySelected.clear(); }
+
   protected:
     void ScanEnv(char* output, size_t len, const char* string);
 

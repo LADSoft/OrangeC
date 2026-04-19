@@ -1105,7 +1105,7 @@ bool Type::IsConstWithArr()
     }
     return tp->IsConst();
 }
-char* Type::PutPointer(char *top, char* p, Type* tp)
+char* Type::PutPointer(char* top, char* p, Type* tp)
 {
     *p = 0;
     if (tp->type == BasicType::far_)
@@ -1134,16 +1134,16 @@ Type* Type::QualifierToString(char* top, char* buf, Type* tp)
         switch (tp->type)
         {
             case BasicType::lrqual_:
-                Utils::StrCat(buf, top-buf, "& ");
+                Utils::StrCat(buf, top - buf, "& ");
                 break;
             case BasicType::rrqual_:
-                Utils::StrCat(buf, top-buf, "&& ");
+                Utils::StrCat(buf, top - buf, "&& ");
                 break;
             case BasicType::const_:
-                Utils::StrCat(buf, top-buf, tn_const);
+                Utils::StrCat(buf, top - buf, tn_const);
                 break;
             case BasicType::volatile_:
-                Utils::StrCat(buf, top-buf, tn_volatile);
+                Utils::StrCat(buf, top - buf, tn_volatile);
                 break;
             case BasicType::restrict_:
             case BasicType::derivedfromtemplate_:
@@ -1156,7 +1156,7 @@ Type* Type::QualifierToString(char* top, char* buf, Type* tp)
     }
     return tp;
 }
-void Type::PointerToString(char *top, char* buf, Type* tp)
+void Type::PointerToString(char* top, char* buf, Type* tp)
 {
     char bf[256], *p = bf;
     p = PutPointer(top, bf, tp);
@@ -1171,12 +1171,12 @@ void Type::PointerToString(char *top, char* buf, Type* tp)
     BasicTypeToString(top, buf, tp);
     Utils::StrCat(buf, top - buf, bf);
 }
-void Type::RenderExpr(char *top, char* buf, EXPRESSION* exp)
+void Type::RenderExpr(char* top, char* buf, EXPRESSION* exp)
 {
     (void)exp;
     Utils::StrCpy(buf, top - buf, "decltype(...)");
 }
-Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
+Type* Type::BasicTypeToString(char* top, char* buf, Type* tp)
 {
     SYMBOL* sym;
     char name[UNMANGLE_BUFFER_SIZE];
@@ -1255,129 +1255,129 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
             }
             else
             {
-                Utils::StrCat(buf, top-buf, " (*)(");
+                Utils::StrCat(buf, top - buf, " (*)(");
                 buf += strlen(buf);
             }
             *buf++ = ')';
             *buf = 0;
             break;
         case BasicType::float__complex_:
-            Utils::StrCpy(buf, top-buf, tn_floatcomplex);
+            Utils::StrCpy(buf, top - buf, tn_floatcomplex);
             break;
         case BasicType::double__complex_:
-            Utils::StrCpy(buf, top-buf, tn_doublecomplex);
+            Utils::StrCpy(buf, top - buf, tn_doublecomplex);
             break;
         case BasicType::long_double_complex_:
-            Utils::StrCpy(buf, top-buf, tn_longdoublecomplex);
+            Utils::StrCpy(buf, top - buf, tn_longdoublecomplex);
             break;
         case BasicType::float__imaginary_:
-            Utils::StrCpy(buf, top-buf, tn_floatimaginary);
+            Utils::StrCpy(buf, top - buf, tn_floatimaginary);
             break;
         case BasicType::double__imaginary_:
-            Utils::StrCpy(buf, top-buf, tn_doubleimaginary);
+            Utils::StrCpy(buf, top - buf, tn_doubleimaginary);
             break;
         case BasicType::long_double_imaginary_:
-            Utils::StrCpy(buf, top-buf, tn_longdoubleimaginary);
+            Utils::StrCpy(buf, top - buf, tn_longdoubleimaginary);
             break;
         case BasicType::float_:
-            Utils::StrCpy(buf, top-buf, tn_float);
+            Utils::StrCpy(buf, top - buf, tn_float);
             break;
         case BasicType::double_:
-            Utils::StrCpy(buf, top-buf, tn_double);
+            Utils::StrCpy(buf, top - buf, tn_double);
             break;
         case BasicType::long_double_:
-            Utils::StrCpy(buf, top-buf, tn_longdouble);
+            Utils::StrCpy(buf, top - buf, tn_longdouble);
             break;
         case BasicType::unsigned_:
-            Utils::StrCpy(buf, top-buf, tn_unsigned);
+            Utils::StrCpy(buf, top - buf, tn_unsigned);
             buf = buf + strlen(buf);
-            Utils::StrCpy(buf, top-buf, tn_int);
+            Utils::StrCpy(buf, top - buf, tn_int);
             break;
         case BasicType::int_:
-            Utils::StrCpy(buf, top-buf, tn_int);
+            Utils::StrCpy(buf, top - buf, tn_int);
             break;
         case BasicType::char8_t_:
-            Utils::StrCpy(buf, top-buf, tn_char8_t);
+            Utils::StrCpy(buf, top - buf, tn_char8_t);
             break;
         case BasicType::char16_t_:
-            Utils::StrCpy(buf, top-buf, tn_char16_t);
+            Utils::StrCpy(buf, top - buf, tn_char16_t);
             break;
         case BasicType::char32_t_:
-            Utils::StrCpy(buf, top-buf, tn_char32_t);
+            Utils::StrCpy(buf, top - buf, tn_char32_t);
             break;
         case BasicType::unsigned_long_long_:
-            Utils::StrCpy(buf, top-buf, tn_unsigned);
+            Utils::StrCpy(buf, top - buf, tn_unsigned);
             buf = buf + strlen(buf);
-            Utils::StrCpy(buf, top-buf, tn_longlong);
+            Utils::StrCpy(buf, top - buf, tn_longlong);
             break;
         case BasicType::long_long_:
-            Utils::StrCpy(buf, top-buf, tn_longlong);
+            Utils::StrCpy(buf, top - buf, tn_longlong);
             break;
         case BasicType::unsigned_long_:
-            Utils::StrCpy(buf, top-buf, tn_unsigned);
+            Utils::StrCpy(buf, top - buf, tn_unsigned);
             buf = buf + strlen(buf);
-            Utils::StrCpy(buf, top-buf, tn_long);
+            Utils::StrCpy(buf, top - buf, tn_long);
             break;
         case BasicType::long_:
-            Utils::StrCpy(buf, top-buf, tn_long);
+            Utils::StrCpy(buf, top - buf, tn_long);
             break;
         case BasicType::wchar_t_:
-            Utils::StrCpy(buf, top-buf, tn_wchar_t);
+            Utils::StrCpy(buf, top - buf, tn_wchar_t);
             break;
         case BasicType::unsigned_short_:
-            Utils::StrCpy(buf, top-buf, tn_unsigned);
+            Utils::StrCpy(buf, top - buf, tn_unsigned);
             buf = buf + strlen(buf);
-            Utils::StrCpy(buf, top-buf, tn_short);
+            Utils::StrCpy(buf, top - buf, tn_short);
             break;
         case BasicType::short_:
-            Utils::StrCpy(buf, top-buf, tn_short);
+            Utils::StrCpy(buf, top - buf, tn_short);
             break;
         case BasicType::signed_char_:
-            Utils::StrCpy(buf, top-buf, tn_signed);
+            Utils::StrCpy(buf, top - buf, tn_signed);
             buf = buf + strlen(buf);
-            Utils::StrCpy(buf, top-buf, tn_char);
+            Utils::StrCpy(buf, top - buf, tn_char);
             break;
         case BasicType::unsigned_char_:
-            Utils::StrCpy(buf, top-buf, tn_unsigned);
+            Utils::StrCpy(buf, top - buf, tn_unsigned);
             buf = buf + strlen(buf);
-            Utils::StrCpy(buf, top-buf, tn_char);
+            Utils::StrCpy(buf, top - buf, tn_char);
             break;
         case BasicType::char_:
-            Utils::StrCpy(buf, top-buf, tn_char);
+            Utils::StrCpy(buf, top - buf, tn_char);
             break;
         case BasicType::bool_:
-            Utils::StrCpy(buf, top-buf, tn_bool);
+            Utils::StrCpy(buf, top - buf, tn_bool);
             break;
         case BasicType::bit_:
-            Utils::StrCpy(buf, top-buf, "bit");
+            Utils::StrCpy(buf, top - buf, "bit");
             break;
         case BasicType::inative_:
-            Utils::StrCpy(buf, top-buf, "native int");
+            Utils::StrCpy(buf, top - buf, "native int");
             break;
         case BasicType::unative_:
-            Utils::StrCpy(buf, top-buf, "native unsigned int");
+            Utils::StrCpy(buf, top - buf, "native unsigned int");
             break;
         case BasicType::bitint_:
-            Utils::StrCpy(buf, top-buf, "_Bitint");
+            Utils::StrCpy(buf, top - buf, "_Bitint");
             sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
             break;
         case BasicType::unsigned_bitint_:
-            Utils::StrCpy(buf, top-buf, "unsigned _Bitint");
+            Utils::StrCpy(buf, top - buf, "unsigned _Bitint");
             sprintf(buf + strlen(buf), "(%d)", tp->bitintbits);
             break;
         case BasicType::void_:
-            Utils::StrCpy(buf, top-buf, tn_void);
+            Utils::StrCpy(buf, top - buf, tn_void);
             break;
         case BasicType::string_:
-            Utils::StrCpy(buf, top-buf, "__string");
+            Utils::StrCpy(buf, top - buf, "__string");
             break;
         case BasicType::object_:
-            Utils::StrCpy(buf, top-buf, "__object");
+            Utils::StrCpy(buf, top - buf, "__object");
             break;
         case BasicType::pointer_:
             if (tp->nullptrType)
             {
-                Utils::StrCpy(buf, top-buf, "nullptr_t");
+                Utils::StrCpy(buf, top - buf, "nullptr_t");
             }
             else
             {
@@ -1389,14 +1389,14 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
             {
                 Type* func = tp->BaseType()->btp;
                 BasicTypeToString(top, buf, func->BaseType()->btp);
-                Utils::StrCat(buf, top-buf, " (");
+                Utils::StrCat(buf, top - buf, " (");
                 buf += strlen(buf);
                 char temp[4000];
                 temp[0] = 0;
                 getcls(temp, tp->sp);
-                Utils::StrCpy(buf, top-buf, temp);
+                Utils::StrCpy(buf, top - buf, temp);
                 buf += strlen(buf);
-                Utils::StrCpy(buf, top-buf, "::*)(");
+                Utils::StrCpy(buf, top - buf, "::*)(");
                 buf += strlen(buf);
                 if (func->BaseType()->syms)
                 {
@@ -1415,19 +1415,19 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
             else
             {
                 BasicTypeToString(top, buf, tp->btp);
-                Utils::StrCat(buf, top-buf, " ");
+                Utils::StrCat(buf, top - buf, " ");
                 buf += strlen(buf);
                 char temp[4000];
                 getcls(temp, tp->sp);
                 Utils::StrCpy(buf, top - buf, temp);
                 buf += strlen(buf);
-                Utils::StrCpy(buf, top-buf, "::*");
+                Utils::StrCpy(buf, top - buf, "::*");
             }
             break;
         case BasicType::seg_:
             BasicTypeToString(top, buf, tp->btp);
             buf += strlen(buf);
-            Utils::StrCpy(buf, top-buf, " _seg *");
+            Utils::StrCpy(buf, top - buf, " _seg *");
             break;
         case BasicType::lref_:
             BasicTypeToString(top, buf, tp->btp);
@@ -1445,41 +1445,41 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
             *buf = 0;
             break;
         case BasicType::ellipse_:
-            Utils::StrCpy(buf, top-buf, tn_ellipse);
+            Utils::StrCpy(buf, top - buf, tn_ellipse);
             break;
         case BasicType::any_:
-            Utils::StrCpy(buf, top-buf, "???");
+            Utils::StrCpy(buf, top - buf, "???");
             break;
         case BasicType::class_:
             /*                Utils::StrCpy(buf, top-buf, tn_class); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            Utils::StrCpy(buf, top-buf, name);
+            Utils::StrCpy(buf, top - buf, name);
             break;
         case BasicType::struct_:
             /*                Utils::StrCpy(buf, top-buf, tn_struct); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            Utils::StrCpy(buf, top-buf, name);
+            Utils::StrCpy(buf, top - buf, name);
             break;
         case BasicType::union_:
             /*                Utils::StrCpy(buf, top-buf, tn_union); */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            Utils::StrCpy(buf, top-buf, name);
+            Utils::StrCpy(buf, top - buf, name);
             break;
         case BasicType::enum_:
             /*                Utils::StrCpy(buf, top-buf, tn_enum);  */
             unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
-            Utils::StrCpy(buf, top-buf, name);
+            Utils::StrCpy(buf, top - buf, name);
             break;
         case BasicType::templateselector_: {
             auto itts = tp->sp->sb->templateSelector->begin();
             ++itts;
             if (itts->sp)
             {
-                Utils::StrCpy(buf, top-buf, itts->sp->name);
+                Utils::StrCpy(buf, top - buf, itts->sp->name);
                 for (++itts; itts != tp->sp->sb->templateSelector->end(); ++itts)
                 {
-                    Utils::StrCat(buf, top-buf, "::");
-                    Utils::StrCat(buf, top-buf, itts->name);
+                    Utils::StrCat(buf, top - buf, "::");
+                    Utils::StrCat(buf, top - buf, itts->name);
                 }
             }
             break;
@@ -1488,14 +1488,14 @@ Type* Type::BasicTypeToString(char *top, char* buf, Type* tp)
             RenderExpr(top, buf, tp->templateDeclType);
             break;
         case BasicType::auto_:
-            Utils::StrCpy(buf, top-buf, "auto ");
+            Utils::StrCpy(buf, top - buf, "auto ");
             break;
         default:
-            Utils::StrCpy(buf, top-buf, "\?\?\?");
+            Utils::StrCpy(buf, top - buf, "\?\?\?");
     }
     return 0;
 }
-void Type::ToString(char *top, char* buf, Type* typ)
+void Type::ToString(char* top, char* buf, Type* typ)
 {
     if (typ && (typ->IsFunction() || typ->IsFunctionPtr()))
     {
@@ -1619,8 +1619,7 @@ void TypeGenerator::ExceptionSpecifiers(SYMBOL* funcsp, SYMBOL* sp, StorageClass
             break;
     }
 }
-Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL** sp, Type* tp,
-                                                         StorageClass storage_class)
+Type* TypeGenerator::FunctionQualifiersAndTrailingReturn(SYMBOL* funcsp, SYMBOL** sp, Type* tp, StorageClass storage_class)
 {
     bool foundFinal = false;
     bool foundOverride = false;
@@ -1775,8 +1774,7 @@ void TypeGenerator::ResolveVLAs(Type* tp)
         tp = tp->btp;
     }
 }
-Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals,
-                               bool first, bool msil)
+Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_class, bool* vla, Type** quals, bool first, bool msil)
 {
     if (tp)
         tp->InstantiateDeferred();
@@ -1907,8 +1905,8 @@ Type* TypeGenerator::ArrayType(SYMBOL* funcsp, Type* tp, StorageClass storage_cl
     }
     return tp;
 }
-Type* TypeGenerator::AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class,
-                               int consdest, bool funcptr)
+Type* TypeGenerator::AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTemplate, StorageClass storage_class, int consdest,
+                               bool funcptr)
 {
     bool isvla = false;
     Type* quals = nullptr;
@@ -1941,8 +1939,8 @@ Type* TypeGenerator::AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTem
                 }
                 break;
             case Keyword::openbr_:
-                tp = TypeGenerator::ArrayType(funcsp, tp, (*sp) ? (*sp)->sb->storage_class : storage_class, &isvla, &quals,
-                                              true, false);
+                tp = TypeGenerator::ArrayType(funcsp, tp, (*sp) ? (*sp)->sb->storage_class : storage_class, &isvla, &quals, true,
+                                              false);
                 if (!tp)
                 {
                     error(ERR_TYPE_NAME_EXPECTED);
@@ -2045,10 +2043,9 @@ Type* TypeGenerator::AfterName(SYMBOL* funcsp, Type* tp, SYMBOL** sp, bool inTem
     }
     return tp;
 }
-Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym,
-    std::list<NAMESPACEVALUEDATA*>** nsv, bool inTemplate, StorageClass storage_class, Linkage* linkage,
-    Linkage* linkage2, Linkage* linkage3, bool* notype, bool asFriend, int consdest, bool beforeOnly,
-    bool funcptr)
+Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>** nsv,
+                                bool inTemplate, StorageClass storage_class, Linkage* linkage, Linkage* linkage2, Linkage* linkage3,
+                                bool* notype, bool asFriend, int consdest, bool beforeOnly, bool funcptr)
 {
     SYMBOL* sp;
     Type* ptype = nullptr;
@@ -2136,8 +2133,8 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                     *strSym = nullptr;
                 if (nsv)
                     *nsv = nullptr;
-                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                    linkage3, nullptr, asFriend, false, beforeOnly, false);
+                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
+                                               nullptr, asFriend, false, beforeOnly, false);
                 if (tp && (ptype != tp && tp->IsRef()))
                 {
                     error(ERR_NO_REF_POINTER_REF);
@@ -2271,281 +2268,281 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
         LexemeStreamPosition start(currentStream);
         switch (KW())
         {
-        case Keyword::openpa_:
-            if (beforeOnly)
-                break;
-            getsym();
-            /* in a parameter, open paren followed by a type is an  unnamed function */
-            if ((storage_class == StorageClass::parameter_ || processingUsingStatement) &&
-                (MATCHKW(Keyword::closepa_) || (TypeGenerator::StartOfType(nullptr, false) &&
-                    (!ISKW() || !(currentLex->kw->tokenTypes & TT_LINKAGE)))))
-            {
-                Type* tp1;
-                if (!*spi)
+            case Keyword::openpa_:
+                if (beforeOnly)
+                    break;
+                getsym();
+                /* in a parameter, open paren followed by a type is an  unnamed function */
+                if ((storage_class == StorageClass::parameter_ || processingUsingStatement) &&
+                    (MATCHKW(Keyword::closepa_) ||
+                     (TypeGenerator::StartOfType(nullptr, false) && (!ISKW() || !(currentLex->kw->tokenTypes & TT_LINKAGE)))))
                 {
-                    sp = makeID(storage_class, tp, *spi, NewUnnamedID());
-                    SetLinkerNames(sp, Linkage::none_);
-                    sp->sb->anonymous = true;
+                    Type* tp1;
+                    if (!*spi)
+                    {
+                        sp = makeID(storage_class, tp, *spi, NewUnnamedID());
+                        SetLinkerNames(sp, Linkage::none_);
+                        sp->sb->anonymous = true;
+                        sp->sb->declcharpos = currentLex->charindex;
+                        sp->sb->realcharpos = currentLex->realcharindex;
+                        *spi = sp;
+                    }
+                    tp = (*spi)->tp;
+                    start.Backup();
+                    tp1 = tp;
+                    if (!processingUsingStatement)
+                    {
+                        tp = TypeGenerator::FunctionParams(funcsp, spi, tp, inTemplate, storage_class, false);
+                        tp1 = tp;
+                        tp = tp->btp;
+                    }
+                    tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                    if (!processingUsingStatement)
+                    {
+                        tp1->btp = tp;
+                        tp = tp1;
+                    }
+                    tp1->UpdateRootTypes();
+                    return tp;
+                }
+                else if (Optimizer::cparams.prm_cplusplus && consdest)
+                {
+                    // constructor or destructor name
+                    const char* name;
+                    if (consdest == CT_DEST)
+                    {
+                        tp = &stdvoid;
+                        name = overloadNameTab[CI_DESTRUCTOR];
+                    }
+                    else
+                    {
+                        tp = Type::MakeType(BasicType::pointer_, tp);
+                        name = overloadNameTab[CI_CONSTRUCTOR];
+                    }
+                    sp = makeID(storage_class, tp, *spi, name);
                     sp->sb->declcharpos = currentLex->charindex;
                     sp->sb->realcharpos = currentLex->realcharindex;
                     *spi = sp;
-                }
-                tp = (*spi)->tp;
-                start.Backup();
-                tp1 = tp;
-                if (!processingUsingStatement)
-                {
-                    tp = TypeGenerator::FunctionParams(funcsp, spi, tp, inTemplate, storage_class, false);
-                    tp1 = tp;
-                    tp = tp->btp;
-                }
-                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                if (!processingUsingStatement)
-                {
-                    tp1->btp = tp;
-                    tp = tp1;
-                }
-                tp1->UpdateRootTypes();
-                return tp;
-            }
-            else if (Optimizer::cparams.prm_cplusplus && consdest)
-            {
-                // constructor or destructor name
-                const char* name;
-                if (consdest == CT_DEST)
-                {
-                    tp = &stdvoid;
-                    name = overloadNameTab[CI_DESTRUCTOR];
-                }
-                else
-                {
-                    tp = Type::MakeType(BasicType::pointer_, tp);
-                    name = overloadNameTab[CI_CONSTRUCTOR];
-                }
-                sp = makeID(storage_class, tp, *spi, name);
-                sp->sb->declcharpos = currentLex->charindex;
-                sp->sb->realcharpos = currentLex->realcharindex;
-                *spi = sp;
-                if (*strSym)
-                {
-                    enclosingDeclarations.Add(*strSym);
-                }
-                start.Backup();
-                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                if (*strSym)
-                {
-                    enclosingDeclarations.Drop();
-                }
-            }
-            else if (MATCHKW(Keyword::openbr_))
-            {
-                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                needkw(Keyword::closepa_);
-            }
-            else
-            {
-                /* stdcall et.al. before the ptr means one thing in borland,
-                 * stdcall after means another
-                 * we are treating them both the same, e.g. the resulting
-                 * pointer-to-function will be stdcall linkage either way
-                 */
-                attributes oldAttribs = basisAttribs;
-
-                basisAttribs = { 0 };
-
-                ParseAttributeSpecifiers(funcsp, true);
-                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
-                ptype = TypeGenerator::BeforeName(funcsp, ptype, spi, strSym, nsv, inTemplate, storage_class, linkage,
-                    linkage2, linkage3, nullptr, asFriend, false, beforeOnly, true);
-                basisAttribs = oldAttribs;
-                if (!needkw(Keyword::closepa_))
-                {
-                    errskim(skim_closepa);
-                    skip(Keyword::closepa_);
-                }
-                if (ptype->IsFunctionPtr() && !MATCHKW(Keyword::openpa_) && !MATCHKW(Keyword::openbr_))
-                {
-                    auto  atype = tp->BaseType();
-                    if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
-                        atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
-                    auto tp1 = ptype;
-                    ptype = ptype->BaseType()->btp->BaseType();
-                    ptype->btp = tp;
-                    tp = tp1;
-                    tp->UpdateRootTypes();
-                }
-                else
-                {
-                    if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
-                        ptype->BaseType()->type != BasicType::memberptr_))
+                    if (*strSym)
                     {
-                        // if here is not a potential pointer to func
-                        if (!ptype)
-                            tp = &stdint;
-                        ptype = nullptr;
+                        enclosingDeclarations.Add(*strSym);
                     }
-                    tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, true);
-                    if (ptype)
+                    start.Backup();
+                    tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                    if (*strSym)
                     {
-                        // pointer to func or pointer to memberfunc
-                        Type* atype = tp;
-                        tp = ptype;
-                        if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
-                            atype->BaseType()->byRefArray = true;
-                        while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
-                            ptype->BaseType()->type == BasicType::memberptr_) &&
-                            ptype->btp)
-                            if (ptype->btp->type == BasicType::any_)
-                            {
-                                break;
-                            }
-                            else
-                            {
-                                ptype = ptype->btp;
-                            }
-                        ptype->btp = atype;
-                        ptype->rootType = atype->rootType;
-                        tp->UpdateRootTypes();
+                        enclosingDeclarations.Drop();
+                    }
+                }
+                else if (MATCHKW(Keyword::openbr_))
+                {
+                    tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                    needkw(Keyword::closepa_);
+                }
+                else
+                {
+                    /* stdcall et.al. before the ptr means one thing in borland,
+                     * stdcall after means another
+                     * we are treating them both the same, e.g. the resulting
+                     * pointer-to-function will be stdcall linkage either way
+                     */
+                    attributes oldAttribs = basisAttribs;
 
-                        atype = tp->BaseType();
+                    basisAttribs = {0};
+
+                    ParseAttributeSpecifiers(funcsp, true);
+                    getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                    ptype = TypeGenerator::BeforeName(funcsp, ptype, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                                                      linkage3, nullptr, asFriend, false, beforeOnly, true);
+                    basisAttribs = oldAttribs;
+                    if (!needkw(Keyword::closepa_))
+                    {
+                        errskim(skim_closepa);
+                        skip(Keyword::closepa_);
+                    }
+                    if (ptype->IsFunctionPtr() && !MATCHKW(Keyword::openpa_) && !MATCHKW(Keyword::openbr_))
+                    {
+                        auto atype = tp->BaseType();
                         if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
                             atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                        auto tp1 = ptype;
+                        ptype = ptype->BaseType()->btp->BaseType();
+                        ptype->btp = tp;
+                        tp = tp1;
+                        tp->UpdateRootTypes();
                     }
-                }
-                if (*spi)
-                    (*spi)->tp = tp;
-                if (tp && tp->IsFunction())
-                    sizeQualifiers(tp->BaseType()->btp);
-                if (tp)
-                    sizeQualifiers(tp);
-            }
-            break;
-        case Keyword::star_: {
-            if (tp && tp->IsRef())
-            {
-                error(ERR_NO_REF_POINTER_REF);
-            }
-            bool inparen = false;
-            getsym();
-            if (funcptr && MATCHKW(Keyword::openpa_))
-            {
-                getsym();
-                // this isn't perfect, it doesn't work with nested parens around the identifier
+                    else
+                    {
+                        if (!ptype || (!ptype->IsRef() && !ptype->IsPtr() && !ptype->IsFunction() &&
+                                       ptype->BaseType()->type != BasicType::memberptr_))
+                        {
+                            // if here is not a potential pointer to func
+                            if (!ptype)
+                                tp = &stdint;
+                            ptype = nullptr;
+                        }
+                        tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, true);
+                        if (ptype)
+                        {
+                            // pointer to func or pointer to memberfunc
+                            Type* atype = tp;
+                            tp = ptype;
+                            if (ptype->IsRef() && atype->BaseType()->array && storage_class != StorageClass::parameter_)
+                                atype->BaseType()->byRefArray = true;
+                            while ((ptype->IsRef() || ptype->IsFunction() || ptype->IsPtr() ||
+                                    ptype->BaseType()->type == BasicType::memberptr_) &&
+                                   ptype->btp)
+                                if (ptype->btp->type == BasicType::any_)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    ptype = ptype->btp;
+                                }
+                            ptype->btp = atype;
+                            ptype->rootType = atype->rootType;
+                            tp->UpdateRootTypes();
 
-                if (!ISID())
-                    --*currentStream;
-                else
-                    inparen = true;
-            }
-            ParseAttributeSpecifiers(funcsp, true);
-            ptype = tp;
-            while (ptype && ptype->type != BasicType::pointer_ && xtype == BasicType::none_)
-            {
-                if (ptype->type == BasicType::far_)
-                    xtype = BasicType::pointer_;
-                else if (ptype->type == BasicType::near_)
-                    xtype = BasicType::pointer_;
-                else if (ptype->type == BasicType::seg_)
-                    xtype = BasicType::seg_;
-                ptype = ptype->btp;
-            }
-            if (xtype == BasicType::none_)
-                xtype = BasicType::pointer_;
-            tp = Type::MakeType(xtype, tp);
-            getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
-            tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                linkage3, nullptr, asFriend, false, beforeOnly, false);
-            if (inparen)
-            {
-                if (!needkw(Keyword::closepa_))
-                {
-                    errskim(skim_closepa);
-                    skip(Keyword::closepa_);
+                            atype = tp->BaseType();
+                            if (atype->type == BasicType::memberptr_ && atype->btp->IsFunction())
+                                atype->size = getSize(BasicType::int_) * 2 + getSize(BasicType::pointer_);
+                        }
+                    }
+                    if (*spi)
+                        (*spi)->tp = tp;
+                    if (tp && tp->IsFunction())
+                        sizeQualifiers(tp->BaseType()->btp);
+                    if (tp)
+                        sizeQualifiers(tp);
                 }
-            }
-        }
-                           break;
-        case Keyword::and_:
-        case Keyword::land_:
-            if (storage_class == StorageClass::catchvar_)
-            {
-                // already a ref;
-                getsym();
-                ParseAttributeSpecifiers(funcsp, true);
-                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
-                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                    linkage3, nullptr, asFriend, false, beforeOnly, false);
                 break;
-            }
-            // using the C++ reference operator as the ref keyword...
-            if (Optimizer::cparams.prm_cplusplus ||
-                ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
-                    storage_class == StorageClass::parameter_ && KW() == Keyword::and_))
-            {
-                if (tp && tp->IsRef() && !templateInstantiationLevel && !templateDefinitionLevel)
+            case Keyword::star_: {
+                if (tp && tp->IsRef())
                 {
                     error(ERR_NO_REF_POINTER_REF);
                 }
-                tp = Type::MakeType(MATCHKW(Keyword::and_) ? BasicType::lref_ : BasicType::rref_, tp);
-                if (templateInstantiationLevel)
-                    CollapseReferences(tp);
+                bool inparen = false;
                 getsym();
-                ParseAttributeSpecifiers(funcsp, true);
-                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
-                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
-                    linkage3, nullptr, asFriend, false, beforeOnly, false);
-                if (storage_class != StorageClass::typedef_ && !tp->IsFunction() && !IsDefiningTemplate())
+                if (funcptr && MATCHKW(Keyword::openpa_))
                 {
-                    auto tp2 = tp;
-                    while (tp2 && tp2->type != BasicType::lref_ && tp2->type != BasicType::rref_)
+                    getsym();
+                    // this isn't perfect, it doesn't work with nested parens around the identifier
+
+                    if (!ISID())
+                        --*currentStream;
+                    else
+                        inparen = true;
+                }
+                ParseAttributeSpecifiers(funcsp, true);
+                ptype = tp;
+                while (ptype && ptype->type != BasicType::pointer_ && xtype == BasicType::none_)
+                {
+                    if (ptype->type == BasicType::far_)
+                        xtype = BasicType::pointer_;
+                    else if (ptype->type == BasicType::near_)
+                        xtype = BasicType::pointer_;
+                    else if (ptype->type == BasicType::seg_)
+                        xtype = BasicType::seg_;
+                    ptype = ptype->btp;
+                }
+                if (xtype == BasicType::none_)
+                    xtype = BasicType::pointer_;
+                tp = Type::MakeType(xtype, tp);
+                getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
+                                               nullptr, asFriend, false, beforeOnly, false);
+                if (inparen)
+                {
+                    if (!needkw(Keyword::closepa_))
                     {
-                        if ((tp2->type == BasicType::const_ || tp2->type == BasicType::volatile_))
-                        {
-                            error(ERR_REF_NO_QUALIFIERS);
-                            break;
-                        }
-                        tp2 = tp2->btp;
+                        errskim(skim_closepa);
+                        skip(Keyword::closepa_);
                     }
                 }
             }
             break;
-        case Keyword::colon_: /* may have unnamed bit fields */
-            *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
-            SetLinkerNames(*spi, Linkage::none_);
-            (*spi)->sb->anonymous = true;
-            tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-            break;
-        case Keyword::gt_:
-        case Keyword::comma_:
-            break;
-        default:
-            if (beforeOnly)
-                return tp;
-            if (tp && (tp->IsStructured() || tp->type == BasicType::enum_) && KW() == Keyword::semicolon_)
-            {
+            case Keyword::and_:
+            case Keyword::land_:
+                if (storage_class == StorageClass::catchvar_)
+                {
+                    // already a ref;
+                    getsym();
+                    ParseAttributeSpecifiers(funcsp, true);
+                    getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                    tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                                                   linkage3, nullptr, asFriend, false, beforeOnly, false);
+                    break;
+                }
+                // using the C++ reference operator as the ref keyword...
+                if (Optimizer::cparams.prm_cplusplus ||
+                    ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
+                     storage_class == StorageClass::parameter_ && KW() == Keyword::and_))
+                {
+                    if (tp && tp->IsRef() && !templateInstantiationLevel && !templateDefinitionLevel)
+                    {
+                        error(ERR_NO_REF_POINTER_REF);
+                    }
+                    tp = Type::MakeType(MATCHKW(Keyword::and_) ? BasicType::lref_ : BasicType::rref_, tp);
+                    if (templateInstantiationLevel)
+                        CollapseReferences(tp);
+                    getsym();
+                    ParseAttributeSpecifiers(funcsp, true);
+                    getQualifiers(&tp, linkage, linkage2, linkage3, nullptr);
+                    tp = TypeGenerator::BeforeName(funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
+                                                   linkage3, nullptr, asFriend, false, beforeOnly, false);
+                    if (storage_class != StorageClass::typedef_ && !tp->IsFunction() && !IsDefiningTemplate())
+                    {
+                        auto tp2 = tp;
+                        while (tp2 && tp2->type != BasicType::lref_ && tp2->type != BasicType::rref_)
+                        {
+                            if ((tp2->type == BasicType::const_ || tp2->type == BasicType::volatile_))
+                            {
+                                error(ERR_REF_NO_QUALIFIERS);
+                                break;
+                            }
+                            tp2 = tp2->btp;
+                        }
+                    }
+                }
+                break;
+            case Keyword::colon_: /* may have unnamed bit fields */
+                *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
+                SetLinkerNames(*spi, Linkage::none_);
+                (*spi)->sb->anonymous = true;
                 tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-                *spi = nullptr;
-                return tp;
-            }
-            if (storage_class != StorageClass::parameter_ && storage_class != StorageClass::cast_ &&
-                storage_class != StorageClass::catchvar_ && !asFriend)
-            {
-                if (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::openbr_) || MATCHKW(Keyword::assign_) ||
-                    MATCHKW(Keyword::semicolon_))
-                    error(ERR_IDENTIFIER_EXPECTED);
-                else
-                    errortype(ERR_IMPROPER_USE_OF_TYPE, tp, nullptr);
-            }
-            if (!tp)
-            {
-                *spi = nullptr;
-                return tp;
-            }
-            *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
-            SetLinkerNames(*spi, Linkage::none_);
-            (*spi)->sb->anonymous = true;
-            tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
-            break;
+                break;
+            case Keyword::gt_:
+            case Keyword::comma_:
+                break;
+            default:
+                if (beforeOnly)
+                    return tp;
+                if (tp && (tp->IsStructured() || tp->type == BasicType::enum_) && KW() == Keyword::semicolon_)
+                {
+                    tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                    *spi = nullptr;
+                    return tp;
+                }
+                if (storage_class != StorageClass::parameter_ && storage_class != StorageClass::cast_ &&
+                    storage_class != StorageClass::catchvar_ && !asFriend)
+                {
+                    if (MATCHKW(Keyword::openpa_) || MATCHKW(Keyword::openbr_) || MATCHKW(Keyword::assign_) ||
+                        MATCHKW(Keyword::semicolon_))
+                        error(ERR_IDENTIFIER_EXPECTED);
+                    else
+                        errortype(ERR_IMPROPER_USE_OF_TYPE, tp, nullptr);
+                }
+                if (!tp)
+                {
+                    *spi = nullptr;
+                    return tp;
+                }
+                *spi = makeID(storage_class, tp, *spi, NewUnnamedID());
+                SetLinkerNames(*spi, Linkage::none_);
+                (*spi)->sb->anonymous = true;
+                tp = TypeGenerator::AfterName(funcsp, tp, spi, inTemplate, storage_class, consdest, false);
+                break;
         }
     }
     if (tp && (ptype = tp->BaseType()))
@@ -2567,11 +2564,10 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
     ParseAttributeSpecifiers(funcsp, true);
     return tp;
 }
-Type* TypeGenerator::UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate,
-                                   StorageClass storage_class, Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in,
-                                   AccessLevel access, bool* notype, bool* defd, int* consdest, bool* templateArg,
-                                   bool* deduceTemplate, bool isTypedef, bool templateErr, bool inUsing, bool* asfriend,
-                                   bool constexpression)
+Type* TypeGenerator::UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out, bool inTemplate, StorageClass storage_class,
+                                   Linkage* linkage_in, Linkage* linkage2_in, Linkage* linkage3_in, AccessLevel access,
+                                   bool* notype, bool* defd, int* consdest, bool* templateArg, bool* deduceTemplate, bool isTypedef,
+                                   bool templateErr, bool inUsing, bool* asfriend, bool constexpression)
 {
     int oldDeclaringInitialType = declaringInitialType;
     BasicType type = BasicType::none_;
@@ -2950,7 +2946,7 @@ Type* TypeGenerator::UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out
                     flagerror = true;
                 declaringInitialType = 0;
                 declstruct(funcsp, &tn, inTemplate, asfriend && *asfriend, storage_class, *linkage2_in, access, defd,
-                                 constexpression);
+                           constexpression);
                 declaringInitialType = oldDeclaringInitialType;
                 goto exit;
             case Keyword::enum_:
@@ -3080,8 +3076,8 @@ founddecltype:
         }
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);
-        else if (ISID() || MATCHKW(Keyword::classsel_) || MATCHKW(Keyword::complx_) ||
-                 MATCHKW(Keyword::decltype_) || MATCHKW(Keyword::typename_))
+        else if (ISID() || MATCHKW(Keyword::classsel_) || MATCHKW(Keyword::complx_) || MATCHKW(Keyword::decltype_) ||
+                 MATCHKW(Keyword::typename_))
         {
             std::list<NAMESPACEVALUEDATA*>* nsv = nullptr;
             SYMBOL* strSym = nullptr;
@@ -3771,8 +3767,8 @@ Type* TypeGenerator::PointerQualifiers(Type* tp, bool allowstatic)
     return tp;
 }
 int count4;
-Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate,
-                                    StorageClass storage_class, bool funcptr)
+Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, bool inTemplate, StorageClass storage_class,
+                                    bool funcptr)
 {
     (void)storage_class;
     SYMBOL* sp = *spin;
@@ -3804,8 +3800,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
         MATCHKW(Keyword::constexpr_))
     {
         sp->sb->hasproto = true;
-        while (TypeGenerator::StartOfType(nullptr, true) || MATCHKW(Keyword::ellipse_) ||
-               MATCHKW(Keyword::constexpr_))
+        while (TypeGenerator::StartOfType(nullptr, true) || MATCHKW(Keyword::ellipse_) || MATCHKW(Keyword::constexpr_))
         {
             if (MATCHKW(Keyword::constexpr_))
             {
@@ -3853,9 +3848,9 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 tp1 = nullptr;
                 LexemeStreamPosition start(currentStream);
                 noTypeNameError++;
-                getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
-                                        &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
-                                        AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
+                getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address, &blocked,
+                                  nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
+                                  AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
                 noTypeNameError--;
                 if (!tp1->BaseType())
                     error(ERR_TYPE_NAME_EXPECTED);
@@ -3866,8 +3861,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 {
                     LexemeStreamPosition cur(currentStream);
                     getsym();
-                    if (!MATCHKW(Keyword::star_) && !MATCHKW(Keyword::and_) &&
-                        !TypeGenerator::StartOfType(nullptr, true))
+                    if (!MATCHKW(Keyword::star_) && !MATCHKW(Keyword::and_) && !TypeGenerator::StartOfType(nullptr, true))
                     {
                         if (*spin)
                         {
@@ -3913,7 +3907,8 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                     {
                         if (!templateDefinitionLevel ||
                             (!funcptr && tp2->type == BasicType::templateparam_ && tp2->templateParam->first &&
-                                !inCurrentTemplate(tp2->templateParam->first->name) && definedInTemplate(tp2->templateParam->first->name)))
+                             !inCurrentTemplate(tp2->templateParam->first->name) &&
+                             definedInTemplate(tp2->templateParam->first->name)))
                         {
                             if (tp2->templateParam && tp2->templateParam->second->packed)
                             {
@@ -3923,7 +3918,8 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                     auto tp3 = tp1;
                                     tp3 = tp3->BaseType()->btp;
                                     // unadorned rref means we are forwading
-                                    forwarding = !tp3->IsConst() && !tp3->IsVolatile() && tp3->BaseType()->type == BasicType::templateparam_;
+                                    forwarding =
+                                        !tp3->IsConst() && !tp3->IsVolatile() && tp3->BaseType()->type == BasicType::templateparam_;
                                 }
                                 Type* newtp1 = Allocate<Type>();
                                 std::list<TEMPLATEPARAMPAIR>* templateParams = tp2->templateParam->second->byPack.pack;
@@ -3932,7 +3928,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                 std::list<TEMPLATEPARAMPAIR>* newPack = templateParamPairListFactory.CreateList();
                                 bool first = true;
                                 *tpnew = *tp2->templateParam->second;
-                                *tpp = TEMPLATEPARAMPAIR{ tp2->templateParam->first, tpnew };
+                                *tpp = TEMPLATEPARAMPAIR{tp2->templateParam->first, tpnew};
                                 *newtp1 = *tp2;
                                 newtp1->templateParam = tpp;
                                 tp1 = newtp1;
@@ -3956,7 +3952,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                                     old = tpp.second->byClass.val;
                                                     *newx = *old;
                                                 }
-                                                });
+                                            });
                                         }
                                         CollapseReferences(clone->tp);
                                         SetLinkerNames(clone, Linkage::none_);
@@ -3974,7 +3970,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                         auto second = Allocate<TEMPLATEPARAM>();
                                         *second = *tpp.second;
                                         second->packsym = clone;
-                                        newPack->push_back(TEMPLATEPARAMPAIR{ nullptr, second });
+                                        newPack->push_back(TEMPLATEPARAMPAIR{nullptr, second});
                                         tp->syms->Add(clone);
                                         first = false;
                                         tp1->templateParam->second->index++;
@@ -4010,17 +4006,19 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                 noTypeNameError++;
                                 tp1 = nullptr;
                                 getStorageAndType(funcsp, nullptr, false, true, nullptr, &storage_class, &storage_class, &address,
-                                    &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
-                                    AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
+                                                  &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2,
+                                                  &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
                                 noTypeNameError--;
-                            
-                                SYMBOL* spi1 = nullptr;;
-                                tp1 = TypeGenerator::BeforeName(funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage, &linkage2,
-                                    &linkage3, nullptr, false, false, false, false);
+
+                                SYMBOL* spi1 = nullptr;
+                                ;
+                                tp1 =
+                                    TypeGenerator::BeforeName(funcsp, tp1, &spi1, nullptr, nullptr, false, storage_class, &linkage,
+                                                              &linkage2, &linkage3, nullptr, false, false, false, false);
                             });
 
                             SYMBOL* clone = CopySymbol(spi);
-                            clone->tp = tp1; 
+                            clone->tp = tp1;
                             CollapseReferences(clone->tp);
                             SetLinkerNames(clone, Linkage::none_);
                             sizeQualifiers(clone->tp);
@@ -4032,7 +4030,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                             else
                             {
                                 clone->synthesized = true;
-//                                clone->tp->templateParam = tp1->templateParam;
+                                //                                clone->tp->templateParam = tp1->templateParam;
                             }
                             tp->syms->Add(clone);
                             first = false;
@@ -4072,8 +4070,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                 sym = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                                 anonymousNotAlloc--;
                                 sym->sb->stackblock = !spi->tp->IsRef();
-                                initialize(funcsp, sym, StorageClass::auto_, true, false, false,
-                                                 0); /* also reserves space */
+                                initialize(funcsp, sym, StorageClass::auto_, true, false, false, 0); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
                                 if (spi->sb->init->front()->exp && spi->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                 {
@@ -4084,8 +4081,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                             }
                             else
                             {
-                                initialize(funcsp, spi, StorageClass::auto_, true, false, false,
-                                                 0); /* also reserves space */
+                                initialize(funcsp, spi, StorageClass::auto_, true, false, false, 0); /* also reserves space */
                             }
                             if (spi->sb->init)
                             {
@@ -4226,16 +4222,16 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 bool defd = false;
                 bool notype = false;
                 tp1 = nullptr;
-                getStorageAndType(funcsp, nullptr, false, false, nullptr, &storage_class, &storage_class, &address,
-                                        &blocked, nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
-                                        AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
+                getStorageAndType(funcsp, nullptr, false, false, nullptr, &storage_class, &storage_class, &address, &blocked,
+                                  nullptr, &constexpression, &constexpression, &tp1, &linkage, &linkage2, &linkage3,
+                                  AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr);
 
                 while (1)
                 {
                     Type* tpx = tp1;
                     spi = nullptr;
-                    tpx = TypeGenerator::BeforeName(funcsp, tpx, &spi, nullptr, nullptr, false, StorageClass::parameter_,
-                                                    &linkage, &linkage2, &linkage3, nullptr, false, false, false, false);
+                    tpx = TypeGenerator::BeforeName(funcsp, tpx, &spi, nullptr, nullptr, false, StorageClass::parameter_, &linkage,
+                                                    &linkage2, &linkage3, nullptr, false, false, false, false);
                     sizeQualifiers(tpx);
                     if (!spi || spi->sb->anonymous)
                     {
@@ -4411,12 +4407,12 @@ Type* TypeGenerator::TypeId(SYMBOL* funcsp, StorageClass storage_class, bool bef
     Type* tp = nullptr;
 
     getQualifiers(&tp, &linkage, &linkage2, &linkage3, nullptr);
-    tp = TypeGenerator::UnadornedType(funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_,
-                                      &linkage, &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr,
-                                      nullptr, false, false, inUsing, nullptr, false);
+    tp = TypeGenerator::UnadornedType(funcsp, tp, nullptr, false, funcsp ? StorageClass::auto_ : StorageClass::global_, &linkage,
+                                      &linkage2, &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false,
+                                      false, inUsing, nullptr, false);
     getQualifiers(&tp, &linkage, &linkage2, &linkage3, nullptr);
-    tp = TypeGenerator::BeforeName(funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3,
-                                   &notype, false, false, beforeOnly, false); /* fixme at file scope init */
+    tp = TypeGenerator::BeforeName(funcsp, tp, &sp, &strSym, &nsv, false, storage_class, &linkage, &linkage2, &linkage3, &notype,
+                                   false, false, beforeOnly, false); /* fixme at file scope init */
     sizeQualifiers(tp);
     if (notype)
         tp = nullptr;

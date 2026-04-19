@@ -246,7 +246,7 @@ bool handleCPUID(AMODE* cx_init)
 {
     AMODE* ax = makedreg(EAX);
     AMODE* bx = makedreg(EBX);
-    AMODE* cx = makedreg(ECX);   
+    AMODE* cx = makedreg(ECX);
     AMODE* dx = makedreg(EDX);
     AMODE* si = makedreg(ESI);
     AMODE* siind = makedreg(ESI);
@@ -271,27 +271,23 @@ bool handleCPUID(AMODE* cx_init)
     siind->mode = am_indisp;
     siind->offset = Optimizer::simpleIntNode(Optimizer::se_i, 12);
     gen_code(op_mov, siind, dx);
-    
+
     gen_code(op_pop, si, nullptr);
     gen_code(op_pop, bx, nullptr);
     return true;
 }
-bool handleCPUID()
-{
-   return handleCPUID(aimmed(0));
-}
+bool handleCPUID() { return handleCPUID(aimmed(0)); }
 bool handleCPUIDEX()
 {
-   auto ebp = makedreg(EBP);
-   auto subfunction = makedreg(EBP);
-   subfunction->mode = am_indisp;
-   subfunction->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
-   gen_code(op_push, ebp, nullptr);
-   gen_code(op_mov, ebp, makedreg(ESP));
-   auto rv = handleCPUID(subfunction);
-   gen_code(op_pop, ebp, nullptr);
-   return rv;
-
+    auto ebp = makedreg(EBP);
+    auto subfunction = makedreg(EBP);
+    subfunction->mode = am_indisp;
+    subfunction->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
+    gen_code(op_push, ebp, nullptr);
+    gen_code(op_mov, ebp, makedreg(ESP));
+    auto rv = handleCPUID(subfunction);
+    gen_code(op_pop, ebp, nullptr);
+    return rv;
 }
 // for __fastcall, first arg is in ECX, second arg is in EDX
 // more args will be pushed on the stack, but if you do that you have to leave them there so they can get cleaned up properly.

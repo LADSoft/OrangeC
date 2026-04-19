@@ -74,7 +74,7 @@
 #include "casts.h"
 #include "attribs.h"
 
- // there is a bug where the compiler needs constant values for the memory order,
+// there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
 //
@@ -99,12 +99,11 @@ std::list<StringData*> strtab;
 /* handling of const int */
 /*--------------------------------------------------------------------------------------------------------------------------------
  */
-static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable,
-                                   int flags);
-void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-static void expression_pm( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
-static void expression_msilfunc( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
+static void expression_primary(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void expression_unary(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+static void expression_pm(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void expression_assign(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
+static void expression_msilfunc(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags);
 
 std::unordered_map<const char*, unsigned, StringHash, StringEqual> cattributes = {
     {"deprecated", 202311}, {"fallthrough", 202311}, {"nodiscard", 202311}, {"noreturn", 202311}, {"maybe_unused", 202311}};
@@ -532,7 +531,7 @@ static EXPRESSION* GetConstMakeExpression(SYMBOL* sym)
             return MakeExpression(ExpressionNode::const_, sym);
     return nullptr;
 }
-static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     char idname[512];
     CallSite* funcparams = nullptr;
@@ -781,7 +780,8 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                     {
                         sym->packed = true;
                         *exp = MakeExpression(ExpressionNode::auto_, sym);
-                        AddPackedEntityToSequence(sym->tp->BaseType()->templateParam->first, sym->tp->BaseType()->templateParam->second);
+                        AddPackedEntityToSequence(sym->tp->BaseType()->templateParam->first,
+                                                  sym->tp->BaseType()->templateParam->second);
                     }
                 }
                 else
@@ -847,7 +847,8 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                             funcparams->sp->sb->attribs.inheritable.used = true;
                             funcparams->fcall = MakeExpression(ExpressionNode::pc_, funcparams->sp);
                             if (!MATCHKW(Keyword::openpa_))
-                                if (funcparams->sp->sb->attribs.inheritable.isInline && (Optimizer::architecture != ARCHITECTURE_MSIL))
+                                if (funcparams->sp->sb->attribs.inheritable.isInline &&
+                                    (Optimizer::architecture != ARCHITECTURE_MSIL))
                                 {
                                     funcparams->sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                     funcparams->sp->sb->generateInline = true;
@@ -1026,8 +1027,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
                         break;
                     case StorageClass::static_:
                     case StorageClass::global_:
-                    case StorageClass::external_:
-                    {
+                    case StorageClass::external_: {
                         if (sym->sb->storage_class == StorageClass::static_)
                         {
                             sym->sb->attribs.inheritable.used = true;
@@ -1298,8 +1298,8 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
             Dereference(&stdint, exp);
             SetLinkerNames(sym, Linkage::c_);
             if (!nsv && (!strSym || !templateDefinitionLevel ||
-                            (!strSym->sb->templateLevel && strSym->tp->type != BasicType::templateselector_ &&
-                            strSym->tp->type != BasicType::templatedecltype_)))
+                         (!strSym->sb->templateLevel && strSym->tp->type != BasicType::templateselector_ &&
+                          strSym->tp->type != BasicType::templatedecltype_)))
             {
                 char buf[4000];
                 buf[0] = 0;
@@ -1363,7 +1363,7 @@ static void variableName( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
     }
     return;
 }
-static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     Type *typein = *tp, *typein2 = typein->IsArray() ? typein : nullptr;
     bool points = false;
@@ -1469,9 +1469,9 @@ static void expression_member( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool
             bool defd = false;
             bool notype = false;
             Type* tp1 = nullptr;
-            tp1 = TypeGenerator::UnadornedType(funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2,
-                                               &linkage3, AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false,
-                                               true, false, nullptr, false);
+            tp1 = TypeGenerator::UnadornedType(funcsp, tp1, nullptr, false, StorageClass::auto_, &linkage, &linkage2, &linkage3,
+                                               AccessLevel::public_, &notype, &defd, nullptr, nullptr, nullptr, false, true, false,
+                                               nullptr, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1908,7 +1908,7 @@ static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
     }
     return in;
 }
-static void expression_bracket( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_bracket(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     Type* tp2 = nullptr;
     EXPRESSION* expr2 = nullptr;
@@ -2473,8 +2473,8 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
     }
 }
-static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting,
-                                bool allowPack, bool toErr, int flags)
+static void getInitInternal(SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting, bool allowPack,
+                            bool toErr, int flags)
 {
     *lptr = argumentListFactory.CreateList();
     getsym(); /* past ( */
@@ -2495,7 +2495,7 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
             LexemeStreamPosition placeHolder(currentStream);
             EnterPackedSequence();
             expression_assign(funcsp, nullptr, &p->tp, &p->exp, nullptr,
-                                    _F_PACKABLE | (finish == Keyword::closepa_ ? _F_INARGS : 0) | (flags & _F_SIZEOF));
+                              _F_PACKABLE | (finish == Keyword::closepa_ ? _F_INARGS : 0) | (flags & _F_SIZEOF));
             if (p->tp && p->tp->IsVoid() && finish != Keyword::closepa_)
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             if (!p->exp)
@@ -2587,19 +2587,19 @@ static void getInitInternal( SYMBOL* funcsp, std::list<Argument*>** lptr, Keywor
     StatementGenerator::DestructorsForArguments(*lptr);
     return;
 }
-void getInitList( SYMBOL* funcsp, std::list<Argument*>** owner)
+void getInitList(SYMBOL* funcsp, std::list<Argument*>** owner)
 {
     argumentNestingLevel++;
     getInitInternal(funcsp, owner, Keyword::end_, false, true, true, 0);
     argumentNestingLevel--;
 }
-void  getArgs( SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack, int flags)
+void getArgs(SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack, int flags)
 {
     argumentNestingLevel++;
     getInitInternal(funcsp, &funcparams->arguments, finish, true, allowPack, argumentNestingLevel == 1, flags);
     argumentNestingLevel--;
 }
-void GetConstructorInitializers( SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack)
+void GetConstructorInitializers(SYMBOL* funcsp, CallSite* funcparams, Keyword finish, bool allowPack)
 {
     argumentNestingLevel++;
     getInitInternal(funcsp, &funcparams->arguments, finish, true, allowPack, false, 0);
@@ -2926,13 +2926,13 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
 
                     SymbolTable<SYMBOL>::iterator it;
                     for (it = initializerListType->syms->begin(); ita != itae && it != initializerListType->syms->end();
-                        ++it, ++ita)
+                         ++it, ++ita)
                     {
                         auto sym = *it;
                         if (ismemberdata(sym))
                         {
                             auto pos = MakeExpression(ExpressionNode::structadd_, dest,
-                                MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, (*ita)->exp);
                             if (node)
@@ -2952,7 +2952,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         if (ismemberdata(sym))
                         {
                             auto pos = MakeExpression(ExpressionNode::structadd_, dest,
-                                MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, MakeIntExpression(ExpressionNode::c_i_, 0));
                             if (node)
@@ -3230,9 +3230,10 @@ EXPRESSION* convertArgToRef(EXPRESSION* exp, Type* tp, Type* boundTP)
 
     return exp;
 }
-EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destructors, std::list<Argument*>* nested, EXPRESSION* ptr, EXPRESSION* consexp, EXPRESSION* final, int offset = 0)
+EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destructors, std::list<Argument*>* nested, EXPRESSION* ptr,
+                                   EXPRESSION* consexp, EXPRESSION* final, int offset = 0)
 {
-    EXPRESSION* rv = nullptr, ** last = &rv;
+    EXPRESSION *rv = nullptr, **last = &rv;
     *last = MakeExpression(ExpressionNode::assign_, ptr, consexp);
     auto it = ctype->syms->begin();
     int count = 0;
@@ -3246,7 +3247,7 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
                 break;
             count++;
             auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
-                MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
+                                       MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
             if ((*it)->tp->IsStructured())
             {
                 if (!(*it)->tp->BaseType()->sp->sb->trivialCons)
@@ -3286,7 +3287,8 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
                         }
                     }
                     *last = AdjustNestedConversion((*it)->tp->BaseType(), destructors, init->nested, ptr, consexp, nullptr, offset);
-                    while ((*last)->right->type == ExpressionNode::comma_) last = &(*last)->right;
+                    while ((*last)->right->type == ExpressionNode::comma_)
+                        last = &(*last)->right;
                 }
             }
             else
@@ -3312,7 +3314,7 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
             if (it != ctype->syms->end())
             {
                 auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
-                    MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
+                                           MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
                 if ((*it)->tp->IsStructured())
                 {
                     if ((*it)->tp->BaseType()->sp->sb->hasUserCons)
@@ -3343,14 +3345,14 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
                             }
                         }
                         *last = AdjustNestedConversion((*it)->tp->BaseType(), destructors, nullptr, ptr, consexp, nullptr, offset);
-                        while ((*last)->right->type == ExpressionNode::comma_) last = &(*last)->right;
+                        while ((*last)->right->type == ExpressionNode::comma_)
+                            last = &(*last)->right;
                     }
                 }
                 else
                 {
                     Dereference((*it)->tp, &exp2);
-                    auto exp1 = MakeExpression(ExpressionNode::assign_, exp2,
-                        MakeIntExpression(ExpressionNode::c_i_, 0));
+                    auto exp1 = MakeExpression(ExpressionNode::assign_, exp2, MakeIntExpression(ExpressionNode::c_i_, 0));
                     *last = MakeExpression(ExpressionNode::comma_, *last, exp1);
                 }
                 last = &(*last)->right;
@@ -3378,8 +3380,8 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
         return;
     if (it != itend && (*it)->sb->thisPtr)
         ++it;
-    while (it != itend && (itl != itle || (*it)->sb->init != nullptr ||
-                           ((!IsDefiningTemplate()) && initTokenStreams.get(*it) != nullptr)))
+    while (it != itend &&
+           (itl != itle || (*it)->sb->init != nullptr || ((!IsDefiningTemplate()) && initTokenStreams.get(*it) != nullptr)))
     {
         SYMBOL* sym = *it;
         Argument* p;
@@ -3798,8 +3800,9 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                             if (!ctype->sp->sb->hasUserCons)
                             {
 
-                                EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
-                                    sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                                EXPRESSION* consexp =
+                                    AnonymousVar(StorageClass::auto_,
+                                                 sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                 SYMBOL* esp = consexp->v.sp;
                                 EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
                                 ptr->v.sp->sb->constexpression = true;
@@ -3824,8 +3827,9 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
                                     params->arguments = argumentListFactory.CreateList();
                                     params->arguments->push_back(p);
                                 }
-                                EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
-                                    sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                                EXPRESSION* consexp =
+                                    AnonymousVar(StorageClass::auto_,
+                                                 sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
                                 SYMBOL* esp = consexp->v.sp;
                                 p->exp = consexp;
                                 CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
@@ -4429,7 +4433,7 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
     }
     return rv;
 }
-void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex)
+void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex)
 {
     Type* tp_cpp = *tp;
     EXPRESSION* exp_cpp = *exp;
@@ -4445,13 +4449,14 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
     {
         funcparams = Allocate<CallSite>();
         auto right = exp_in->right->v.sp->tp;
-        while (right->btp) right = right->btp;
+        while (right->btp)
+            right = right->btp;
         funcparams->sp = right->templateParam->first;
         funcparams->functp = funcparams->sp->tp;
         funcparams->fcall = exp_in->right;
         exp_in->right = MakeExpression(funcparams);
     }
-    else if (exp_in->type != ExpressionNode::callsite_ || (*tp)->IsFunctionPtr() || (*tp)->IsStructured()) 
+    else if (exp_in->type != ExpressionNode::callsite_ || (*tp)->IsFunctionPtr() || (*tp)->IsStructured())
     {
         if (exp_in->type != ExpressionNode::templateselector_ || !processingTrailingReturnOrUsing)
         {
@@ -4661,8 +4666,8 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be ad  ded after we select a member function that needs it.
             funcparams->ascall = true;
-            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr,
-                                        !(MATCHKW(Keyword::ellipse_)), false, flags);
+            sym = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, !(MATCHKW(Keyword::ellipse_)),
+                                        false, flags);
             if ((*tp)->IsFunction())
             {
                 if ((*tp)->BaseType()->btp->IsStructured())
@@ -4679,10 +4684,10 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
             {
                 if (!(flags & (_F_SIZEOF | _F_INDECLTYPE | _F_NOEVAL)))
                 {
-//	printf("exprfuncin: %s\n", sym->sb->decoratedName);
+                    //	printf("exprfuncin: %s\n", sym->sb->decoratedName);
                     StatementGenerator sg(sym);
                     sg.CompileFunctionFromStream();
-//	printf("exprfuncout: %s\n", sym->sb->decoratedName);
+                    //	printf("exprfuncout: %s\n", sym->sb->decoratedName);
                 }
                 sym->sb->attribs.inheritable.used = true;
                 if (sym->sb->decoratedName[0] == '@' && currentLex)
@@ -4815,7 +4820,6 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
     }
     {
 
-            
         SymbolTable<SYMBOL>* temp = (*tp)->BaseType()->syms;
         if (temp)
         {
@@ -4829,7 +4833,8 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
             }
             else
             {
-                if (!enclosingDeclarations.GetFirst() && !tp_cpp->IsPtr() && (tp_cpp->BaseType()->type != BasicType::memberptr_) && !hasThisPtr)
+                if (!enclosingDeclarations.GetFirst() && !tp_cpp->IsPtr() && (tp_cpp->BaseType()->type != BasicType::memberptr_) &&
+                    !hasThisPtr)
                     errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
             }
             std::list<Argument*>::iterator itl, itle = itl;
@@ -5024,11 +5029,12 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
                 funcparams->functp = *tp;
 
                 auto tp2 = *tp;
-                while (tp2->btp) tp2 = tp2->btp;
+                while (tp2->btp)
+                    tp2 = tp2->btp;
                 *tp = ResolveTemplateSelectors((*tp)->BaseType()->sp, (*tp)->BaseType()->btp);
                 if (tp2->type == BasicType::templateparam_ && tp2->templateParam->second->byClass.val)
                 {
-                    *tp= tp2->templateParam->second->byClass.val;
+                    *tp = tp2->templateParam->second->byClass.val;
                 }
                 if ((*tp)->IsRef())
                 {
@@ -5183,7 +5189,7 @@ void expression_arguments( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flag
     }
     return;
 }
-static void expression_alloca( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_alloca(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     getsym();
     if (needkw(Keyword::openpa_))
@@ -5215,7 +5221,7 @@ static void expression_alloca( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int 
     }
     return;
 }
-static void expression_offsetof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_offsetof(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
     getsym();
@@ -5246,7 +5252,8 @@ static void expression_offsetof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bo
                     sym = nullptr;
                 }
             }
-            if (sym && sym->tp->type == BasicType::templateparam_ && !sym->tp->templateParam->second->packed && sym->tp->templateParam->second->type == TplType::typename_)
+            if (sym && sym->tp->type == BasicType::templateparam_ && !sym->tp->templateParam->second->packed &&
+                sym->tp->templateParam->second->type == TplType::typename_)
             {
                 auto tp1 = sym->tp->templateParam->second->byClass.val;
                 if (tp1->IsStructured())
@@ -5301,7 +5308,7 @@ static void expression_offsetof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bo
 
     return;
 }
-static void expression_msilfunc( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_msilfunc(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     Keyword kw = currentLex->kw->key;
     getsym();
@@ -5390,7 +5397,7 @@ static void expression_msilfunc( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, in
     }
     return;
 }
-static void expression_string( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+static void expression_string(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     int elems = 0;
     StringData* data;
@@ -5527,7 +5534,7 @@ static bool sameTypedef(Type* tp1, Type* tp2)
         tp2 = tp2->btp;
     return tp1->typedefType == tp2->typedefType;
 }
-static void expression_generic( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_generic(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     RequiresDialect::Keyword(Dialect::c11, "_Generic");
     getsym();
@@ -5648,7 +5655,7 @@ static void expression_generic( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
     }
     return;
 }
-static bool getSuffixedChar( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+static bool getSuffixedChar(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     char name[512];
     BasicType tpb = (*tp)->type;
@@ -5712,7 +5719,7 @@ static bool getSuffixedChar( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     }
     return false;
 }
-static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+static bool getSuffixedNumber(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     char name[512];
     BasicType tpb;
@@ -5726,7 +5733,7 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     if (sym)
     {
         // look for parameter of type unsigned long long or long double
-        SYMBOL *sym1 = nullptr;
+        SYMBOL* sym1 = nullptr;
         auto found = false;
         for (auto sp : *sym->tp->syms)
         {
@@ -5840,7 +5847,8 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 std::string holder;
                 holder.resize(10000);
                 sym1->tp->ToString(holder.data() + holder.capacity() - 1, holder.data());
-                printerr(ERR_NOTE_GENERIC, sym1->sb->declfile, sym1->sb->declline, "Candidate was checked, but had more than one potential parameter");
+                printerr(ERR_NOTE_GENERIC, sym1->sb->declfile, sym1->sb->declline,
+                         "Candidate was checked, but had more than one potential parameter");
             }
         }
         // not found, look for parameter of type const char *
@@ -5871,9 +5879,8 @@ static bool getSuffixedNumber( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     }
     return false;
 }
-static void  atomic_modify_specific_op(Parser::SYMBOL* funcsp, Parser::Type** tp,
-                                                  Parser::Type** typf, Parser::ATOMICDATA* d, int flags, Parser::Keyword function,
-                                                  bool fetch_first)
+static void atomic_modify_specific_op(Parser::SYMBOL* funcsp, Parser::Type** tp, Parser::Type** typf, Parser::ATOMICDATA* d,
+                                      int flags, Parser::Keyword function, bool fetch_first)
 {
     Parser::Type* tpf = *typf;
     expression_assign(funcsp, nullptr, &tpf, &d->address, nullptr, flags);
@@ -5921,7 +5928,7 @@ static void  atomic_modify_specific_op(Parser::SYMBOL* funcsp, Parser::Type** tp
         d->memoryOrder2 = d->memoryOrder1;
     return;
 }
-static void expression_atomic_func( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_atomic_func(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     RequiresDialect::Feature(Dialect::c11, "Atomic Functions");
     Keyword kw = KW();
@@ -6423,7 +6430,7 @@ static std::list<Argument*>* checked_arguments(std::list<Argument*>* args)
     }
     return args;
 }
-static void expression_checked_int( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_checked_int(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     Keyword kw = KW();
     getsym();
@@ -6566,7 +6573,7 @@ static int ___typeid_val(Type* tp)
     }
     return id;
 }
-static void expression___typeid( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+static void expression___typeid(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     getsym();
     if (needkw(Keyword::openpa_))
@@ -6589,8 +6596,7 @@ static void expression___typeid( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     }
     return;
 }
-static void expression_statement( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable,
-                                     int flags)
+static void expression_statement(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     // gcc extension
     if (expressionStatements.size())
@@ -6618,7 +6624,7 @@ static void expression_statement( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSI
     return;
 }
 
-static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_primary(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     switch (currentLex ? currentLex->type : LexType::none_)
     {
@@ -6674,7 +6680,8 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                             *tp = &stdint;
                         }
                     }
-                    else if (enclosingDeclarations.GetFirst() && theCurrentFunc && (theCurrentFunc->sb->parentClass || theCurrentFunc->sb->storage_class == StorageClass::member_))
+                    else if (enclosingDeclarations.GetFirst() && theCurrentFunc &&
+                             (theCurrentFunc->sb->parentClass || theCurrentFunc->sb->storage_class == StorageClass::member_))
                     {
                         // the complexity is a nod to the fact that 'this' can appear in a trailing return statement...
                         auto old = theCurrentFunc->sb->parentClass;
@@ -6682,7 +6689,8 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                             theCurrentFunc->sb->parentClass = enclosingDeclarations.GetFirst();
                         getThisType(theCurrentFunc, tp);
                         theCurrentFunc->sb->parentClass = old;
-                        *exp = MakeExpression(ExpressionNode::auto_, (SYMBOL*)theCurrentFunc->tp->BaseType()->syms->front());  // this ptr
+                        *exp = MakeExpression(ExpressionNode::auto_,
+                                              (SYMBOL*)theCurrentFunc->tp->BaseType()->syms->front());  // this ptr
                         Dereference(&stdpointer, exp);
                     }
                     else
@@ -6795,9 +6803,8 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                 }
                                 else
                                 {
-                                    placeHolder.Replay([&]() {
-                                        eval_unary_left_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
-                                    });
+                                    placeHolder.Replay(
+                                        [&]() { eval_unary_left_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags); });
                                     needkw(Keyword::closepa_);
                                 }
                             }
@@ -6813,8 +6820,7 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                     {
                         LexemeStreamPosition start(currentStream);
                         expression_comma(funcsp, nullptr, tp, exp, ismutable,
-                                               (flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD)) |
-                                                   _F_EXPRESSIONINPAREN);
+                                         (flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD)) | _F_EXPRESSIONINPAREN);
                         if (!*tp)
                         {
                             *tp = &stdint;
@@ -6853,9 +6859,10 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                     getsym();
                                     Type* tp1 = nullptr;
                                     EXPRESSION* exp1 = nullptr;
-                                    LexemeStreamPosition start2(currentStream);;
+                                    LexemeStreamPosition start2(currentStream);
+                                    ;
                                     expression_cast(funcsp, atp, &tp1, &exp1, nullptr,
-                                                          flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD));
+                                                    flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR | _F_NOVARIADICFOLD));
                                     if (!tp1)
                                     {
                                         error(ERR_EXPRESSION_SYNTAX);
@@ -6865,15 +6872,14 @@ static void expression_primary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                                     {
                                         placeHolder.Replay([&]() {
                                             eval_binary_fold(funcsp, atp, tp, exp, start, *tp, *exp, start2, tp1, exp1, false,
-                                                         flags);
+                                                             flags);
                                         });
                                     }
                                 }
                                 else
                                 {
-                                    placeHolder.Replay([&]() {
-                                        eval_unary_right_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags);
-                                    });
+                                    placeHolder.Replay(
+                                        [&]() { eval_unary_right_fold(funcsp, atp, tp, exp, start, *tp, *exp, false, flags); });
                                 }
                             }
                         }
@@ -7213,7 +7219,7 @@ static int widelen(LCHAR* s)
         rv++;
     return rv;
 }
-static void expression_sizeof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+static void expression_sizeof(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     int paren = false;
     *exp = nullptr;
@@ -7336,7 +7342,7 @@ static void expression_sizeof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     }
     return;
 }
-static void expression_alignof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+static void expression_alignof(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     getsym();
     if (needkw(Keyword::openpa_))
@@ -7375,7 +7381,7 @@ static void expression_alignof( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
     *tp = &stdint;
     return;
 }
-static void expression_ampersand( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_ampersand(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
 {
     getsym();
     expression_cast(funcsp, atp, tp, exp, nullptr, (flags) | _F_AMPERSAND);
@@ -7521,7 +7527,7 @@ static void expression_ampersand( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSI
     }
     return;
 }
-static void expression_deref( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_deref(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     getsym();
     expression_cast(funcsp, nullptr, tp, exp, nullptr, flags);
@@ -7586,7 +7592,7 @@ static void expression_deref( SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int f
     tagNonConst(funcsp, *tp);
     return;
 }
-static void expression_postfix( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_postfix(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     Type* oldType;
     bool done = false;
@@ -7643,7 +7649,7 @@ static void expression_postfix( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
                     *ismutable = localMutable;
                 break;
         }
-        if (!*tp)
+    if (!*tp)
         return;
     while (!done && currentLex && !parsingPreprocessorConstant)
     {
@@ -7761,7 +7767,7 @@ static void expression_postfix( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION
     }
     return;
 }
-void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+void expression_unary(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     bool localMutable = false;
     LexemeStreamPosition placeHolder(currentStream);
@@ -7778,9 +7784,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             expression_cast(funcsp, atp, tp, exp, nullptr, flags);
             if (*tp)
             {
-                placeHolder.Replay([=]() {
-                    eval_unary_plus(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                });
+                placeHolder.Replay([=]() { eval_unary_plus(funcsp, atp, tp, exp, *tp, *exp, false, flags); });
             }
             break;
         case Keyword::minus_:
@@ -7793,9 +7797,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             }
             else
             {
-                placeHolder.Replay([=]() {
-                    eval_unary_minus(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                });
+                placeHolder.Replay([=]() { eval_unary_minus(funcsp, atp, tp, exp, *tp, *exp, false, flags); });
             }
             break;
         case Keyword::star_:
@@ -7814,9 +7816,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             }
             else
             {
-                placeHolder.Replay([=]() {
-                    eval_unary_not(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                });
+                placeHolder.Replay([=]() { eval_unary_not(funcsp, atp, tp, exp, *tp, *exp, false, flags); });
             }
             break;
         case Keyword::complx_:
@@ -7829,9 +7829,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             }
             else
             {
-                placeHolder.Replay([=]() {
-                    eval_unary_complement(funcsp, atp, tp, exp, *tp, *exp, false, flags);
-                });
+                placeHolder.Replay([=]() { eval_unary_complement(funcsp, atp, tp, exp, *tp, *exp, false, flags); });
             }
             break;
         case Keyword::autoinc_:
@@ -7841,9 +7839,7 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
             if (*tp)
             {
                 CheckThroughConstObject(nullptr, *exp);
-                placeHolder.Replay([=]() {
-                    eval_unary_autoincdec(funcsp, atp, tp, exp, *tp, *exp, localMutable, flags);
-                });
+                placeHolder.Replay([=]() { eval_unary_autoincdec(funcsp, atp, tp, exp, *tp, *exp, localMutable, flags); });
             }
             break;
         case Keyword::sizeof_:
@@ -7882,14 +7878,15 @@ void expression_unary( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
     }
     return;
 }
-void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+void expression_cast(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     Type* throwaway = nullptr;
     if (MATCHKW(Keyword::openpa_))
     {
         bool loadedAttribs = false;
         attributes oldAttribs;
-        LexemeStreamPosition  start(currentStream);;
+        LexemeStreamPosition start(currentStream);
+        ;
         getsym();
         if (MATCHKW(Keyword::attribute_))
         {
@@ -8019,7 +8016,7 @@ void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bo
                     }
                     else
                     {
-                        LexemeStreamPosition  lastSym(currentStream);
+                        LexemeStreamPosition lastSym(currentStream);
                         expression_cast(funcsp, nullptr, &throwaway, exp, ismutable, flags);
                         if (throwaway)
                         {
@@ -8102,7 +8099,7 @@ void expression_cast( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bo
     }
     return;
 }
-static void expression_pm( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_pm(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_cast(funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -8132,13 +8129,11 @@ static void expression_pm( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** ex
             return;
         }
         expression_cast(funcsp, nullptr, &tp1, &exp1, nullptr, flags | _F_NOVARIADICFOLD);
-        placeHolder.Replay([=]() {
-            eval_binary_pm(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
-        });
+        placeHolder.Replay([=]() { eval_binary_pm(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags); });
     }
     return;
 }
-static void expression_times( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_times(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_pm(funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -8172,13 +8167,12 @@ static void expression_times( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
             *tp = nullptr;
             return;
         }
-        placeHolder.Replay([=]() {
-            eval_binary_times(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        });
+        placeHolder.Replay(
+            [=]() { eval_binary_times(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD); });
     }
     return;
 }
-static void expression_add( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_add(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     /* fixme add vlas */
     expression_times(funcsp, atp, tp, exp, ismutable, flags);
@@ -8213,13 +8207,12 @@ static void expression_add( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
             *tp = nullptr;
             return;
         }
-        placeHolder.Replay([=]() {
-            eval_binary_add(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        });
+        placeHolder.Replay(
+            [=]() { eval_binary_add(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD); });
     }
     return;
 }
-static void expression_shift( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_shift(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_add(funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -8253,14 +8246,12 @@ static void expression_shift( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION**
             *tp = nullptr;
             return;
         }
-        placeHolder.Replay([=]() {
-            eval_binary_shift(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        });
+        placeHolder.Replay(
+            [=]() { eval_binary_shift(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD); });
     }
     return;
 }
-static void expression_inequality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable,
-                                      int flags)
+static void expression_inequality(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     bool done = false;
     expression_shift(funcsp, atp, tp, exp, ismutable, flags);
@@ -8309,15 +8300,13 @@ static void expression_inequality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESS
                 *tp = nullptr;
                 return;
             }
-            placeHolder.Replay([=]() {
-                eval_binary_inequality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-            });
+            placeHolder.Replay(
+                [=]() { eval_binary_inequality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD); });
         }
     }
     return;
 }
-static void expression_equality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable,
-                                    int flags)
+static void expression_equality(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_inequality(funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -8350,9 +8339,8 @@ static void expression_equality( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSIO
             *tp = nullptr;
             return;
         }
-        placeHolder.Replay([=]() {
-            eval_binary_equality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD);
-        });
+        placeHolder.Replay(
+            [=]() { eval_binary_equality(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags | _F_NOVARIADICFOLD); });
     }
     return;
 }
@@ -8444,10 +8432,9 @@ void GetAssignDestructors(std::list<EXPRESSION*>** rv, EXPRESSION* exp)
     }
 }
 
-static void  binop( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, Keyword kw,
-                      void(nextFunc)( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable,
-                                         int flags),
-                      bool* ismutable, int flags)
+static void binop(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, Keyword kw,
+                  void(nextFunc)(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags),
+                  bool* ismutable, int flags)
 {
     bool first = true;
     (*nextFunc)(funcsp, atp, tp, exp, ismutable, flags);
@@ -8516,28 +8503,28 @@ static void  binop( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, Keyw
     }
     return;
 }
-static void expression_and( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_and(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     return binop(funcsp, atp, tp, exp, Keyword::and_, expression_equality, ismutable, flags);
 }
-static void expression_xor( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_xor(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     return binop(funcsp, atp, tp, exp, Keyword::uparrow_, expression_and, ismutable, flags);
 }
-static void expression_or( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_or(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     return binop(funcsp, atp, tp, exp, Keyword::or_, expression_xor, ismutable, flags);
 }
-static void expression_land( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_land(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     return binop(funcsp, atp, tp, exp, Keyword::land_, expression_or, ismutable, flags);
 }
-static void expression_lor( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_lor(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     return binop(funcsp, atp, tp, exp, Keyword::lor_, expression_land, ismutable, flags);
 }
 
-static void expression_hook( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_hook(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_lor(funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -8896,7 +8883,7 @@ static void expression_hook( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** 
     }
     return;
 }
-void expression_throw( SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
+void expression_throw(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
 {
     Type* tp1 = nullptr;
     EXPRESSION* exp1 = nullptr;
@@ -9016,7 +9003,7 @@ static void ReplaceThisAssign(EXPRESSION** init, SYMBOL* sym, EXPRESSION* exp)
         }
     }
 }
-void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+void expression_assign(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     bool done = false;
     EXPRESSION *exp1 = nullptr, **exp2;
@@ -9065,8 +9052,7 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
                         tp1 = *tp;
                         spinit = AnonymousVar(StorageClass::localstatic_, tp1)->v.sp;
                         localNameSpace->front()->syms->Add(spinit);
-                        initType(funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, spinit, false, false,
-                                       flags | _F_ASSIGNINIT);
+                        initType(funcsp, 0, StorageClass::auto_, &init, nullptr, tp1, spinit, false, false, flags | _F_ASSIGNINIT);
                         EXPRESSION* exp2 = nullptr;
                         if (init && init->front()->exp->type == ExpressionNode::thisref_)
                         {
@@ -9162,13 +9148,11 @@ void expression_assign( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, 
         }
         if (!(*tp)->IsStructured())
             CheckThroughConstObject(nullptr, *exp);
-        placeHolder.Replay([=]() {
-            eval_binary_assign(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, localMutable, flags);
-        });
+        placeHolder.Replay([=]() { eval_binary_assign(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, localMutable, flags); });
     }
     return;
 }
-void expression_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+void expression_comma(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_assign(funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == nullptr)
@@ -9200,19 +9184,17 @@ void expression_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, b
         {
             break;
         }
-        placeHolder.Replay([=]() {
-            eval_binary_comma(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags);
-        });
+        placeHolder.Replay([=]() { eval_binary_comma(funcsp, atp, tp, exp, *tp, *exp, tp1, exp1, false, flags); });
     }
     return;
 }
-void expression_no_comma( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+void expression_no_comma(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     expression_assign(funcsp, atp, tp, exp, ismutable, flags);
     assignmentUsages(*exp, false);
     return;
 }
-void expression_no_check( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
+void expression_no_check(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
 {
     if (flags & _F_TYPETEST)
     {
@@ -9227,7 +9209,7 @@ void expression_no_check( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp
     return;
 }
 
-void expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
+void expression(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flags)
 {
     expression_comma(funcsp, atp, tp, exp, nullptr, flags);
     assignmentUsages(*exp, false);

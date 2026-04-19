@@ -523,6 +523,8 @@ static int PeepParm(Block* b, QUAD* head)
                     }
                     if (head->back->runtimeData)
                         doit = false;
+                    if (head->back->dc.left->bits)
+                        doit = false;
                     if (doit)
                     {
                         if (!(head->liveRegs & (1 << head->leftColor)))

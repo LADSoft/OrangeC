@@ -30,6 +30,7 @@ INCLUDES=
 C_DEPENDENCIES=sqlite3.c
 LIB_DEPENDENCIES=
 
+NOFORMAT=YES
 include ../redirect.mak
 
 DISTRIBUTE:

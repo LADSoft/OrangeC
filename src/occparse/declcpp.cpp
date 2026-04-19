@@ -170,9 +170,9 @@ void deferredInitializeDefaultArg(SYMBOL* arg, SYMBOL* func)
         {
             // we are evauating a function argument
             // have to disable searching in any function blocks
-            static SymbolTable<struct sym> syms;
-            static NAMESPACEVALUEDATA ns{ &syms };
-            static std::list<NAMESPACEVALUEDATA*> nswrapper = { &ns };
+            SymbolTable<struct sym> syms;
+            NAMESPACEVALUEDATA ns{ &syms };
+            std::list<NAMESPACEVALUEDATA*> nswrapper = { &ns };
 
             auto oldNS = localNameSpace;
             localNameSpace = &nswrapper;

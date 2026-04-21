@@ -1001,7 +1001,7 @@ void oa_genint(enum Optimizer::e_gt type, long long val)
                 ColumnPosition(8);
                 AsmOutput("d2");
                 ColumnPosition(16);
-                AsmOutput("0%lxh\n", val);
+                AsmOutput("0%lxh\n", static_cast<unsigned long>(val));
                 break;
             default:
                 diag("genint - unknown type");

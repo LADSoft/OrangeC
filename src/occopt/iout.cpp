@@ -591,7 +591,7 @@ static void iop_icon(Optimizer::QUAD* q)
 {
     oputc('\t', icdFile);
     putamode(q, q->ans);
-    oprintf(icdFile, " C= #%lX", static_cast<unsigned long long>(q->dc.v.i));
+    oprintf(icdFile, " C= #%lX", static_cast<unsigned long>(q->dc.v.i));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -936,7 +936,7 @@ void putconst(Optimizer::SimpleExpression* offset, int color)
             break;
 
         case Optimizer::se_labcon:
-            oprintf(icdFile, "L_%ld:PC", offset->i);
+            oprintf(icdFile, "L_%ld:PC", static_cast<long>(offset->i));
             break;
         case Optimizer::se_pc:
             oprintf(icdFile, "%s:PC", (offset->sp)->outputName);
@@ -1336,39 +1336,39 @@ static void PutData(BaseData* data)
         case DT_BIT:
             break;
         case DT_BOOL:
-            oprintf(icdFile, "\tDC.BOOL 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.BOOL 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_BYTE:
-            oprintf(icdFile, "\tDC.B 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.B 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_USHORT:
-            oprintf(icdFile, "\tDC.S 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.S 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_UINT:
-            oprintf(icdFile, "\tDC.I 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.I 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_ULONG:
-            oprintf(icdFile, "\tDC.L 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.L 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_ULONGLONG:
-            oprintf(icdFile, "\tDC.LL 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.LL 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_16:
-            oprintf(icdFile, "\tDC.16 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.16 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_32:
-            oprintf(icdFile, "\tDC.32 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.32 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_ENUM:
-            oprintf(icdFile, "\tDC.ENUM 0x%lx", data->i);
+            oprintf(icdFile, "\tDC.ENUM 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_FLOAT:
@@ -1390,7 +1390,7 @@ static void PutData(BaseData* data)
             PutComplex(".CLD", data->c.r, data->c.i);
             break;
         case DT_ADDRESS:
-            oprintf(icdFile, "\tDC.A 0x%x", data->i);
+            oprintf(icdFile, "\tDC.A 0x%lx", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_VIRTUAL:
@@ -1409,7 +1409,7 @@ static void PutData(BaseData* data)
             break;
         case DT_ALIGN:
             nl();
-            oprintf(icdFile, "\t align %d", data->i);
+            oprintf(icdFile, "\t align %ld", static_cast<unsigned long>(data->i));
             nl();
             break;
         case DT_VTT:

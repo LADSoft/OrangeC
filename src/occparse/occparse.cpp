@@ -694,7 +694,7 @@ int main(int argc, char* argv[]) MAINTRY
         if (Optimizer::cparams.prm_makestubs)
         {
             std::string inFile;
-            inFile = fileToCompile;
+            inFile = std::move(fileToCompile);
             ;
             int end = inFile.find_last_of('/');
             if (end == std::string::npos)

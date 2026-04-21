@@ -39,7 +39,8 @@ class ConfigData : public xmlVisitor
     friend class SwitchConfig;
 
   public:
-    ConfigData(xmlNode* node) : selected(false), currentDefine(nullptr), relFile(false), mapMode(0), debugPassThrough(false)
+    ConfigData(xmlNode* node) :
+        selected(false), currentDefine(nullptr), relFile(false), mapMode(0), debugPassThrough(false), currentPreEntry(nullptr)
     {
         node->Visit(*this);
     }

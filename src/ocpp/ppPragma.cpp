@@ -313,8 +313,10 @@ void Once::OnceItem::SetParams(const std::string& fileName)
         }
         fclose(fil);
         struct stat statbuf;
-        stat(fileName.c_str(), &statbuf);
-        filetime = statbuf.st_mtime;
+        if (!stat(fileName.c_str(), &statbuf))
+        {
+            filetime = statbuf.st_mtime;
+        }
     }
     else
     {

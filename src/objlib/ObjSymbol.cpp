@@ -826,6 +826,7 @@ static const char* unmang1(char (&orig)[n], char* buf, const char* name, const c
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
     char buf1[10000], *p, buf2[10000], buf3[1000];
+    buf1[0] = 0;
     while (*name == '_')
         name++;
     while (*name == 'x' || *name == 'y')

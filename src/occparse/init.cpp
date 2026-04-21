@@ -3711,7 +3711,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                 {
                     if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
                         sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
-                        !base->sb->attribs.inheritable.isInline)
+                        base && !base->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(base, it);
                     }
@@ -3935,7 +3935,16 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                 {
                     std::list<Initializer*>* it = nullptr;
                     if (!itype->size)
-                        itype->size = tp1->size;
+                    {
+                        if (tp1)
+                        {
+                            itype->size = tp1->size;
+                        }
+                        else
+                        {
+                            diag("initialize_aggregate_type: tp1 is null");
+                        }
+                    }
                     if (exp1->type == ExpressionNode::labcon_ && exp1->string && itype->IsArray() &&
                         !itype->BaseType()->btp->IsPtr())
                     {

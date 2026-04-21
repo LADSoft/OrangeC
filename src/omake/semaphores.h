@@ -130,7 +130,7 @@ class Semaphore
             if (!null)
             {
 #ifdef TARGET_OS_WINDOWS
-                CloseHandle(other.handle);
+                CloseHandle(handle);
 #else
                 if (named)
                 {

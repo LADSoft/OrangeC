@@ -4999,7 +4999,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         std::list<SYMBOL*> viableCandidates;
         if (gather.size())
         {
-            auto candidate = LookupTemplateFunction(context, sp, &gather, args);
+            auto candidate = sp ? LookupTemplateFunction(context, sp, &gather, args) : nullptr;
             if (candidate)
             {
                 candidate->tp->BaseType()->btp->UpdateRootTypes();

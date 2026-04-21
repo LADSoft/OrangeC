@@ -326,9 +326,11 @@ int RegExpMatch::Matches(RegExpContext& context, const char* str)
         int n, m = 0;
         int count = 0;
         n = MatchOne(context, str);
-        while (n > 0 && n < len && m + n < len &&
-               m >= 0)  // the latter check isn't really necessary, just make the static analysis happy...
+        while (n > 0 && n < len && m + n < len)
         {
+            // ,ake sanitizer happy
+            if (m > INT_MAX - n)
+                return -1;
             m += n;
             n = MatchOne(context, str + m);
             count++;

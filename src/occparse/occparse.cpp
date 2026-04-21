@@ -786,7 +786,7 @@ int main(int argc, char* argv[]) MAINTRY
         int index = firstFile.find_last_of('#');
         std::string as = firstFile.substr(index + 1);
         std::string fileToCompile = firstFile.substr(0, index);
-        std::string stem = fileToCompile;
+        std::string stem = std::move(fileToCompile);
         if (IsCompilerSource(stem.c_str()))
         {
             index = stem.find_last_of('.');

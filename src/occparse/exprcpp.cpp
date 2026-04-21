@@ -1137,7 +1137,7 @@ void expression_new(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, in
                 getsym();
                 expression(funcsp, nullptr, &tp1, &exp, flags);
                 if (tp1->IsStructured())
-                    castToArithmeticInternal(false, &tp1, &exp, (Keyword)-1, &stdint, false);
+                    (void)castToArithmeticInternal(false, &tp1, &exp, (Keyword)-1, &stdint, false);
                 if (!tp1->IsInt())
                 {
                     error(ERR_NEED_INTEGER_TYPE);

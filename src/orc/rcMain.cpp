@@ -94,7 +94,7 @@ int rcMain::Run(int argc, char* argv[])
         size_t n = ipath.find_first_of(';');
         if (n == std::string::npos)
         {
-            sysSrchPth = ipath;
+            sysSrchPth = std::move(ipath);
         }
         else
         {

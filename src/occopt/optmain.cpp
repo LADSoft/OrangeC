@@ -385,7 +385,7 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
         int index = name.find_last_of('#');
         std::string fileToCompile = name.substr(0, index);
         std::string as = name.substr(index + 1);
-        std::string stem = fileToCompile;
+        std::string stem = std::move(fileToCompile);
         if (!as.empty() && Utils::HasExt(stem.c_str(), as.c_str()))
         {
             index = stem.find_last_of('.');

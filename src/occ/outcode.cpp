@@ -538,7 +538,7 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
             i.SetDebugInfoFlag(Optimizer::cparams.prm_debug && outputFile == Optimizer::outputFile);
             if (Optimizer::bePragma.find("ENTRYPOINT") != Optimizer::bePragma.end())
             {
-                auto entryPointName = Optimizer::bePragma["ENTRYPOINT"];
+                const auto& entryPointName = Optimizer::bePragma["ENTRYPOINT"];
                 if (entryPointName.size())
                 {
                     Optimizer::SimpleSymbol s = {};

@@ -1032,7 +1032,7 @@ void InsertOneFile(const char* filename, char* path, int drive, std::string& cur
         }
         clist.push_back(file);
         Optimizer::backendFiles.push_back(file);
-        Optimizer::inputFiles.push_back(file);
+        Optimizer::inputFiles.push_back(std::move(file));
     }
     else
     {
@@ -1059,7 +1059,7 @@ void InsertAnyFile(const FileEntry& filename, char* path, int drive, std::string
         }
         else
         {
-            currentExt = value;
+            currentExt = std::move(value);
         }
         if (Utils::iequal(currentExt, "C++"))
             currentExt = "cpp";
@@ -1345,7 +1345,7 @@ int ccinit(int argc, char* argv[])
         for (auto&& item : clist)
         {
             char buf[260];
-            strcpy(buf, item.c_str());
+            Utils::StrCpy(buf, item.c_str());
             item = Utils::FullQualify(buf);
         }
     }

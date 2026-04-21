@@ -190,7 +190,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     std::string name1 = name;
     if (caseInsensitive)
         name1 = UTF8::ToUpper(name1);
-    Definition* d = new Definition(name1, value, args, vaArgsName, permanent);
+    Definition* d = new Definition(name1, value, args, std::move(vaArgsName), permanent);
     if (value[1] == REPLACED_TOKENIZING)
         d->DefinedError("macro definition begins with tokenizing token");
     d->SetCaseInsensitive(caseInsensitive);
@@ -373,7 +373,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
     if (!failed)
     {
         std::string ref = tk.GetString();
-        Define(name, ref, da.release(), vaArgsName, false, hasEllipses, !asmpp, caseInsensitive);
+        Define(name, ref, da.release(), std::move(vaArgsName), false, hasEllipses, !asmpp, caseInsensitive);
     }
     else
         Errors::Error("Macro argument syntax error");

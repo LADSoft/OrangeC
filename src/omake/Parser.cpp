@@ -107,7 +107,7 @@ std::string Parser::GetLine(bool inCommand)
         {
             std::string val_plus_rv = "Value of rv that includes a backslash in the last 3 lines, starting next line:\n";
             val_plus_rv += rv;
-            OrangeC::Utils::BasicLogger::log(((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG), val_plus_rv);
+            OrangeC::Utils::BasicLogger::log(((int)OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG), std::move(val_plus_rv));
         }
         while ((rv[rv.size() - 1] == '\\' || (rv[rv.size() - 1] == '\r' && rv[rv.size() - 2] == '\\')))
         // while (rv[rv.size() - 1] == '\\')

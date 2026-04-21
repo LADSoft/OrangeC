@@ -630,7 +630,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         rv = x;
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
-        OrangeC::Utils::BasicLogger::extremedebug("Closing command: ", command1);
+        OrangeC::Utils::BasicLogger::extremedebug("Closing command: ", std::move(command1));
     }
     else
     {
@@ -668,7 +668,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             rv = x;
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
-            OrangeC::Utils::BasicLogger::extremedebug("Closing spawned command: ", cmd);
+            OrangeC::Utils::BasicLogger::extremedebug("Closing spawned command: ", std::move(cmd));
         }
         else
         {
@@ -1108,6 +1108,7 @@ std::string OS::GetWorkingDir()
     {
         fprintf(stderr, "GetWorkingDir failed!\n");
         fflush(stderr);
+        return "";
     }
     return ret;
 }

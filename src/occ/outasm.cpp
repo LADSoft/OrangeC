@@ -314,7 +314,7 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
                 Optimizer::beputc('+');
                 linepos++;
             }
-            AsmOutput("L_%d", offset->i);
+            AsmOutput("L_%d", static_cast<int>(offset->i));
             break;
         case Optimizer::se_pc:
         case Optimizer::se_global:
@@ -673,7 +673,7 @@ void oa_put_code(OCODE* cd)
     {
         if (!Optimizer::cparams.prm_lines)
             return;
-        AsmOutput("%s", aps);
+        AsmOutput("%s", reinterpret_cast<char *>(aps));
         return;
     }
     else if (op == op_align)
@@ -985,7 +985,7 @@ void oa_genint(enum Optimizer::e_gt type, long long val)
                 ColumnPosition(8);
                 AsmOutput("dd");
                 ColumnPosition(16);
-                AsmOutput("0%lxh\n", val);
+                AsmOutput("0%lxh\n", static_cast<unsigned long long>(val));
                 break;
             case Optimizer::longlonggen:
                 ColumnPosition(8);

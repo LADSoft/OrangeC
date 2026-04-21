@@ -84,8 +84,14 @@ class Utils
     static size_t file_size(const std::string& file)
     {
         struct stat stats;
-        stat(file.c_str(), &stats);
-        return stats.st_size;
+        if (!stat(file.c_str(), &stats))
+        {
+            return stats.st_size;
+        }
+        else
+        {
+            return 0;
+        }
     }
     static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();

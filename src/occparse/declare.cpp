@@ -1442,7 +1442,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
             browse_variable(sp);
-            (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass && !funcsp ? globalNameSpace->front()->tags : table)->Add(sp);
+            (!table || (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass && !funcsp) ? globalNameSpace->front()->tags : table)->Add(sp);
         }
     }
     else

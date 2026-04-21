@@ -273,7 +273,7 @@ void MakeMain::SetMakeFlags()
     if (verbose2.GetExists())
     {
         vals += std::string(" -y");
-        auto value = verbose2.GetValue();
+        const auto& value = verbose2.GetValue();
         for (int i = 0; i < value.length(); i++)
         {
             vals += "y";

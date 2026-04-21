@@ -730,7 +730,7 @@ void ScanForVariableMotion(void)
 // Before going into SSA
 void MoveLoopVariables(void)
 {
-    if (Optimizer::architecture != ARCHITECTURE_MSIL && !currentFunction->anyTry)
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && !currentFunction->anyTry && !Optimizer::cparams.prm_debug)
     {
         refs = nullptr;
         ScanForVariableMotion();
@@ -742,7 +742,8 @@ void MoveLoopInvariants(void)
 {
     int i;
     refs = nullptr;
-    return;
+#if 0
+// this code doesn't work at the preset time.   MoveLoopVariables() broke it.
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
@@ -751,5 +752,6 @@ void MoveLoopInvariants(void)
     current = 1;
     ScanForInvariants(blockArray[0]);
     WeedRefs();
+#endif
 }
 }  // namespace Optimizer

@@ -71,7 +71,7 @@ class ppDefine
             preprocessing(false),
             undefined(false),
             elipses(false),
-            vaArgs(VaArgs)
+            vaArgs(std::move(VaArgs))
         {
         }
         Definition& operator=(const Definition&);

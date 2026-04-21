@@ -591,7 +591,7 @@ static void iop_icon(Optimizer::QUAD* q)
 {
     oputc('\t', icdFile);
     putamode(q, q->ans);
-    oprintf(icdFile, " C= #%llX", q->dc.v.i);
+    oprintf(icdFile, " C= #%lX", static_cast<unsigned long long>(q->dc.v.i));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -658,10 +658,10 @@ static void iop_endexcept(Optimizer::QUAD* q)
 
     putamode(q, q->dc.left);
 }
-static void iop_pushcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tPUSHCONTEXT", q->dc.v.label); }
-static void iop_popcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tPOPCONTEXT", q->dc.v.label); }
-static void iop_loadcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tLOADCONTEXT", q->dc.v.label); }
-static void iop_unloadcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tUNLOADCONTEXT", q->dc.v.label); }
+static void iop_pushcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tPUSHCONTEXT"); }
+static void iop_popcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tPOPCONTEXT"); }
+static void iop_loadcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tLOADCONTEXT"); }
+static void iop_unloadcontext(Optimizer::QUAD* q) { oprintf(icdFile, "\tUNLOADCONTEXT"); }
 static void iop_tryblock(Optimizer::QUAD* q) { (void)q; }
 static void iop_substack(Optimizer::QUAD* q) { putasunary(q, "STACKALLOC"); }
 static void iop_loadstack(Optimizer::QUAD* q)
@@ -1336,39 +1336,39 @@ static void PutData(BaseData* data)
         case DT_BIT:
             break;
         case DT_BOOL:
-            oprintf(icdFile, "\tDC.BOOL 0x%x", data->i);
+            oprintf(icdFile, "\tDC.BOOL 0x%lx", data->i);
             nl();
             break;
         case DT_BYTE:
-            oprintf(icdFile, "\tDC.B 0x%x", data->i);
+            oprintf(icdFile, "\tDC.B 0x%lx", data->i);
             nl();
             break;
         case DT_USHORT:
-            oprintf(icdFile, "\tDC.S 0x%x", data->i);
+            oprintf(icdFile, "\tDC.S 0x%lx", data->i);
             nl();
             break;
         case DT_UINT:
-            oprintf(icdFile, "\tDC.I 0x%x", data->i);
+            oprintf(icdFile, "\tDC.I 0x%lx", data->i);
             nl();
             break;
         case DT_ULONG:
-            oprintf(icdFile, "\tDC.L 0x%x", data->i);
+            oprintf(icdFile, "\tDC.L 0x%lx", data->i);
             nl();
             break;
         case DT_ULONGLONG:
-            oprintf(icdFile, "\tDC.LL 0x%x", data->i);
+            oprintf(icdFile, "\tDC.LL 0x%lx", data->i);
             nl();
             break;
         case DT_16:
-            oprintf(icdFile, "\tDC.16 0x%x", data->i);
+            oprintf(icdFile, "\tDC.16 0x%lx", data->i);
             nl();
             break;
         case DT_32:
-            oprintf(icdFile, "\tDC.32 0x%x", data->i);
+            oprintf(icdFile, "\tDC.32 0x%lx", data->i);
             nl();
             break;
         case DT_ENUM:
-            oprintf(icdFile, "\tDC.ENUM 0x%x", data->i);
+            oprintf(icdFile, "\tDC.ENUM 0x%lx", data->i);
             nl();
             break;
         case DT_FLOAT:

@@ -6435,7 +6435,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* arg
         return rv;
     }
     basetp = sp->tp->btp;
-    if (basetp->IsPtr())
+    if (rv && basetp->IsPtr())
     {
         Type *tpr = nullptr, **last = &tpr;
         rv = makeID(StorageClass::type_, rv->tp, rv, AnonymousName());

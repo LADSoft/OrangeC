@@ -81,7 +81,7 @@ struct holding_struct
 {
     std::string command;
     std::thread workingThread;
-    holding_struct(std::string goal, std::thread&& workingThread) : command(goal)
+    holding_struct(std::string goal, std::thread&& workingThread) : command(std::move(goal))
     {
         this->workingThread = std::thread(std::move(workingThread));
     }

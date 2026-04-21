@@ -47,6 +47,7 @@ class CmdSwitchBase
     {
     }
     CmdSwitchBase(const CmdSwitchBase& orig) = default;
+    virtual ~CmdSwitchBase() {}
     virtual int Parse(const char* data) { return 0; }
 
     char GetSwitchChar() const { return switchChar; }
@@ -282,7 +283,7 @@ class CmdSwitchParser
     std::map<int, std::shared_ptr<CmdSwitchBase>> GetCurrent()
     {
         std::map<int, std::shared_ptr<CmdSwitchBase>> rv;
-        for (auto s : currentlySelected)
+        for (const auto& s : currentlySelected)
         {
             rv[s.second->GetSwitchChar()] = s.second;
         }

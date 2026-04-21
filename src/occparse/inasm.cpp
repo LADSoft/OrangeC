@@ -1260,7 +1260,6 @@ Statement* AssembleInstruction(OCODE* ins, std::list<FunctionBlock*>& parent, st
 }
 void inlineAsm(std::list<FunctionBlock*>& parent)
 {
-    Statement* snp;
     OCODE* rv;
     EXPRESSION* node;
     lastsym = 0;
@@ -1290,14 +1289,14 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             if (MATCHKW(Keyword::semicolon_))
                 inasm_getsym();
 
-            snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
+            auto snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
             snp->type = StatementNode::label_;
             snp->label = node->v.i;
             return;
         }
         if (insdata->atype == op_reserved)
         {
-            snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
+            auto snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
             getData(snp);
             return;
         }
@@ -1398,7 +1397,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             }
         }
 
-        snp = AssembleInstruction(rv, parent, srcRegs, destRegs);
+        AssembleInstruction(rv, parent, srcRegs, destRegs);
         if (theCurrentFunc)
         {
             theCurrentFunc->sb->noinline = true;

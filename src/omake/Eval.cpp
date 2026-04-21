@@ -640,7 +640,7 @@ std::string Eval::ExpandMacro(const std::string& name)
     if (!extra.empty())
     {
         size_t m = extra.find_first_not_of(' ');
-        if (m < 0 || extra[m] != ':')
+        if (m == std::string::npos   || extra[m] != ':')
         {
             error("Invalid macro qualifier");
         }
@@ -1192,7 +1192,8 @@ std::string Eval::notdir(const std::string& names)
             rv += " ";
         rv += intermed;
     }
-    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: ", names, " evaluated names ", working, " returns: ", rv);
+    OrangeC::Utils::BasicLogger::debug("Eval::notdir with Original name: ", names, " evaluated names ", std::move(working),
+                                       " returns: ", rv);
     return rv;
 }
 

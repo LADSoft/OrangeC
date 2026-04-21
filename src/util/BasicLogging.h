@@ -24,7 +24,7 @@ class BasicLogger
 
   public:
     static void SetVerbosity(int iverbosity) { verbosity = iverbosity; }
-    static void SetPrologue(std::string str) { prologue = str; }
+    static void SetPrologue(std::string str) { prologue = std::move(str); }
     static std::string stringify(const std::string&& str) { return str; }
     static std::string stringify(const std::string& str) { return str; }
     static std::string stringify(const char* str) { return str; }
@@ -52,17 +52,17 @@ class BasicLogger
     template <typename... Args>
     static void log(VerbosityLevels verbositylevel, Args... args)
     {
-        log((int)verbositylevel, args...);
+        log((int)verbositylevel, std::move(args)...);
     }
     template <typename... Args>
     static void extremedebug(Args... args)
     {
-        log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, args...);
+        log(OrangeC::Utils::VerbosityLevels::VERB_EXTREMEDEBUG, std::move(args)...);
     }
     template <typename... Args>
     static void debug(Args... args)
     {
-        log(OrangeC::Utils::VerbosityLevels::VERB_DEBUG, args...);
+        log(OrangeC::Utils::VerbosityLevels::VERB_DEBUG, std::move(args)...);
     }
 };
 class LoggerEnterExit

@@ -4573,7 +4573,7 @@ void StatementGenerator::FunctionBody(bool enter)
         InsertInline(funcsp->sb->parentClass);
         Optimizer::SymbolManager::Get(funcsp->sb->parentClass->sb->vtabsp);
     }
-    EnterInstantiation({funcsp, currentLex ? currentLex->sourceFileName : 0, currentLex ? currentLex->sourceLineNumber : 0});
+    EnterInstantiation({funcsp, currentLex->sourceFileName, currentLex->sourceLineNumber});
     int oldNoexcept = funcsp->sb->noExcept;
     if (bodyIsDestructor)
         funcsp->sb->noExcept = true;

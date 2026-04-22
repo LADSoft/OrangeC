@@ -1263,11 +1263,11 @@ static void PutData(BaseData* data)
             break;
         case DT_LABELDEFINITION:
             nl();
-            oprintf(icdFile, "L_%d:", data->i);
+            oprintf(icdFile, "L_%ld:", static_cast<long>(data->i));
             nl();
             break;
         case DT_RESERVE:
-            oprintf(icdFile, "\treserve %d", data->i);
+            oprintf(icdFile, "\treserve %ld", static_cast<long>(data->i));
             nl();
             break;
         case DT_SYM:
@@ -1298,7 +1298,7 @@ static void PutData(BaseData* data)
             }
             break;
         case DT_LABEL:
-            oprintf(icdFile, "\tDC.A L_%d", data->i);
+            oprintf(icdFile, "\tDC.A L_l%d", static_cast<long>(data->i));
             nl();
             break;
         case DT_LABDIFFREF:

@@ -815,10 +815,10 @@ void oa_put_label(int lab)
         if (oa_currentSeg == Optimizer::dataseg || oa_currentSeg == Optimizer::bssxseg)
         {
             newlabel = true;
-            AsmOutput("\nL_%ld", lab);
+            AsmOutput("\nL_%ld", static_cast<long>(lab));
         }
         else
-            AsmOutput("L_%ld:\n", lab);
+            AsmOutput("L_%ld:\n", static_cast<long>(lab));
     }
     else
         outcode_put_label(lab);
@@ -969,14 +969,14 @@ void oa_genint(enum Optimizer::e_gt type, long long val)
                 ColumnPosition(8);
                 AsmOutput("db");
                 ColumnPosition(16);
-                AsmOutput("0%xh\n", val & 0x00ff);
+                AsmOutput("0%xh\n", static_cast<unsigned>(val & 0x00ff));
                 break;
             case Optimizer::shortgen:
             case Optimizer::u16gen:
                 ColumnPosition(8);
                 AsmOutput("dw");
                 ColumnPosition(16);
-                AsmOutput("0%xh\n", val & 0x0ffff);
+                AsmOutput("0%xh\n", static_cast<unsigned>(val & 0x0ffff));
                 break;
             case Optimizer::longgen:
             case Optimizer::enumgen:
@@ -985,7 +985,7 @@ void oa_genint(enum Optimizer::e_gt type, long long val)
                 ColumnPosition(8);
                 AsmOutput("dd");
                 ColumnPosition(16);
-                AsmOutput("0%lxh\n", static_cast<unsigned long long>(val));
+                AsmOutput("0%lxh\n", static_cast<unsigned long>(val));
                 break;
             case Optimizer::longlonggen:
                 ColumnPosition(8);
@@ -994,7 +994,7 @@ void oa_genint(enum Optimizer::e_gt type, long long val)
 #ifndef USE_LONGLONG
                 AsmOutput("0%lxh,0%lxh\n", val, val < 0 ? -1 : 0);
 #else
-                AsmOutput("0%lxh,0%lxh\n", val, val >> 32);
+                AsmOutput("0%lxh,0%lxh\n", static_cast<long>(val), static_cast<long>(val >> 32));
 #endif
                 break;
             case Optimizer::wchar_tgen:
@@ -1159,7 +1159,7 @@ void oa_gen_labref(int n)
         ColumnPosition(8);
         AsmOutput("dd");
         ColumnPosition(16);
-        AsmOutput("L_%d\n", n);
+        AsmOutput("L_;%d\n", static_cast<unsigned long>(n));
         oa_gentype = Optimizer::longgen;
     }
     else
@@ -1704,7 +1704,7 @@ void dump_muldivval(void)
             {
                 AsmOutput("dd");
                 ColumnPosition(16);
-                AsmOutput("0%xh\n", muldivlink->value);
+                AsmOutput("0%lxh\n", static_cast<unsigned long>(muldivlink->value));
             }
             else
             {

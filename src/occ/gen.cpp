@@ -3786,6 +3786,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
     else
     {
         apl = aimmed(0);
+        apl1 = aimmed(0);
         diag("asm_assn: unknown opcode");
     }
     if (sza == szl || q->dc.left->mode == Optimizer::i_immed)

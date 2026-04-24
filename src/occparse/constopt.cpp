@@ -2515,8 +2515,8 @@ int opt0(EXPRESSION** node)
             break;
         case ExpressionNode::callsite_:
             // rv |= opt0(&((*node)->v.func->fcall));
-            if ((*node)->v.func->thisptr)
-                rv |= opt0(&((*node)->v.func->thisptr));
+//            if ((*node)->v.func->thisptr)
+//                rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
         case ExpressionNode::atomic_:
             rv |= opt0(&((*node)->v.ad->flg));

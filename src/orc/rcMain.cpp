@@ -151,7 +151,14 @@ int rcMain::Run(int argc, char* argv[])
         else
             outName = Utils::QualifiedFile(fileName.c_str(), ".res");
         ResFile resFile;
-        RCFile rcFile(pp, resFile, srchPth, language);
+        // add the file path to the beginning of the search path, if there is one.
+        auto srchPthx = srchPth;
+        npos = fileName.find_last_of('\\');
+        if (npos == std::string::npos)
+            npos = fileName.find_last_of('/');
+        if (npos != std::string::npos)
+            srchPthx = fileName.substr(0, npos) + ";" + srchPth;
+        RCFile rcFile(pp, resFile, srchPthx, language);
         if (rcFile.Read())
         {
             if (!resFile.Write(outName))

@@ -246,7 +246,7 @@ void CmdSwitchFile::Dispatch(char* data)
 }
 char* CmdSwitchFile::GetStr(char* data)
 {
-    int size = 30000 + 1;
+    static const int size = 30000 + 1;
     auto buf = std::make_unique<char[]>(size);
     char* p = buf.get();
     bool quote = false;
@@ -266,23 +266,15 @@ char* CmdSwitchFile::GetStr(char* data)
         char* q = (char*)strchr(p + 1, '%');
         if (q)
         {
+            char name[1000];
             int len = q + 1 - p;
-            char* name = new char[len - 1];
             memcpy(name, p + 1, len - 2);
             name[len - 2] = 0;
             char* env = getenv(name);
-            delete[] name;
             if (env)
             {
                 int len2 = strlen(env);
-                if (len > len2)
-                {
-                    Utils::StrCpy(p + len2, size - (p + len2 - buf.get()), p + len);
-                }
-                else if (len < len2)
-                {
-                    memmove(p + len2, p + len, strlen(p + len) + 1);
-                }
+                memmove(p + len2, p + len, strlen(p + len) + 1);
                 memcpy(p, env, strlen(env));
             }
             else

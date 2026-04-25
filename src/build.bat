@@ -14,7 +14,6 @@
          omake -DCOMPILER=MINGW64 clean -j:%NUMBER_OF_PROCESSORS%
          set BUILD_PROFILE=MS
          set TESTS=TRUE
-         set PARALLEL=%NUMBER_OF_PROCESSORS%
      )
               cd c:\orangec\src
               echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js
@@ -26,6 +25,7 @@
      )
               IF "%BUILD_PROFILE%" EQU "OCCIL" goto occil
               IF "%BUILD_PROFILE%" EQU "MSDEBUGBUILD" goto msdebugbuild
+              IF "%BUILD_PROFILE%" EQU "SANITIZER" goto sanitizerbuild
               IF "%BUILD_PROFILE%" EQU "CODEANALYZER" goto codeanalyzer
               IF "%BUILD_PROFILE%" EQU "LIBCXXTEST" goto libcxxtest
               IF "%BUILD_PROFILE%" NEQ "TEST" goto normal
@@ -56,6 +56,22 @@
                   REM PARALLEL=1 is an attempt to fix failing builds
                   set PARALLEL=1
                   c:\orangec\temp\omake -j:%PARALLEL% /DCOMPILER=MS /DMSPDB=%MSPDB% fullbuild
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  cd ..\src
+                  echo succeeded
+                  goto done
+:sanitizerbuild
+                  REM  Build with Microsoft address sanitizer
+                  REM PARALLEL=1 is an attempt to fix failing builds
+                  set PARALLEL=1
+                  c:\orangec\temp\omake -j:%PARALLEL% /DCOMPILER=MS /DSANITIZE=YES fullbuild
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  cd ..\tests
+                  omake -B -j:%PARALLEL% /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

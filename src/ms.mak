@@ -49,7 +49,7 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 CC=cl.exe
 ifneq "$(SANITIZE)" ""
-CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++17 /fsanitize=address
+CCFLAGS =/O2 /Zi /EHsc /c /nologo /MTd /std:c++17 /fsanitize=address /DSANITIZER
 else
 ifneq "$(MSPDB)" ""
 CCFLAGS =/Od /Zi /FS /EHsc /c /nologo /MTd /std:c++17

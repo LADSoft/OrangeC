@@ -22,10 +22,11 @@
  *
  *
  */
-#ifndef x64_compiler
-#    include <cstdlib>
-#    include "Utils.h"
-#    pragma pack(4)
+#ifndef SANITIZER
+#    ifndef x64_compiler
+#        include <cstdlib>
+#        include "Utils.h"
+#        pragma pack(4)
 
 namespace
 {
@@ -240,4 +241,5 @@ void ReleaseMemoryPools()
     initted = false;
     delete memPool;
 }
+#    endif
 #endif

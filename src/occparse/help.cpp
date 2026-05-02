@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -2241,7 +2241,7 @@ void SetRuntimeData(EXPRESSION* exp, SYMBOL* sym)
         else
             p++;
         runtimeData->fileName = p;
-        runtimeData->varName = sym->sb->decoratedName;
+        runtimeData->varName = sym->name;
         runtimeData->lineno = currentLex->sourceLineNumber;
         runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
         exp->runtimeData = runtimeData;

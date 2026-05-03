@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -66,7 +66,6 @@
 namespace Parser
 {
 
-int dontRegisterTemplate;
 int templateInstantiationLevel;
 int processingTemplateBody;
 int templateDefinitionLevel = 0;
@@ -100,7 +99,6 @@ void templateInit(void)
     currents = nullptr;
     processingTemplateArgs = 0;
     inTemplateType = false;
-    dontRegisterTemplate = 0;
     inTemplateSpecialization = 0;
     instantiatingMemberFuncClass = nullptr;
     parsingSpecializationDeclaration = false;
@@ -111,24 +109,6 @@ void templateInit(void)
     templateNameTag = 1;
     isFullySpecialized = false;
     templateDeclarationLevel = 0;
-}
-void TemplateGetDeferredTokenStream(SYMBOL* sym)
-{
-    if (currents)
-    {
-        if (currents->bodyTokenStream)
-        {
-            if (sym->tp->IsFunction() || (sym->sb->storage_class == StorageClass::type_ && sym->tp->IsStructured()))
-            {
-                bodyTokenStreams.set(sym, currents->bodyTokenStream);
-                bodyArgs.set(sym, sym->tp->BaseType()->syms);
-            }
-            else
-            {
-                initTokenStreams.set(sym, currents->bodyTokenStream);
-            }
-        }
-    }
 }
 TEMPLATEPARAMPAIR* TemplateLookupSpecializationParam(const char* name)
 {
@@ -165,44 +145,6 @@ std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym)
         params->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
     }
     return params;
-}
-bool TemplateRegisterToken(Lexeme* lex, bool force)
-{
-    bool rv = false;
-    if (lex && templateDeclarationLevel && !dontRegisterTemplate)
-    {
-        if (processingTemplateBody)
-        {
-            if (!currents->bodyTokenStream)
-            {
-                currents->bodyTokenStream = streamFactory.Create();
-            }
-            if (force || currents->bodyTokenStream->ReloadIndex() < currentStream->Index())
-            {
-                if (lex->type == LexType::l_id_ && lex->refcount < 2)
-                    lex->value.s.a = litlate(lex->value.s.a);
-                currents->bodyTokenStream->Add(lex);
-                currents->bodyTokenStream->ReloadIndex(currentStream->Index());
-                rv = true;
-            }
-        }
-        else
-        {
-            if (!currents->head)
-            {
-                currents->head = streamFactory.Create();
-            }
-            if (force || currents->head->ReloadIndex() < currentStream->Index())
-            {
-                if (lex->type == LexType::l_id_ && lex->refcount < 2)
-                    lex->value.s.a = litlate(lex->value.s.a);
-                currents->head->Add(lex);
-                currents->head->ReloadIndex(currentStream->Index());
-                rv = true;
-            }
-        }
-    }
-    return rv;
 }
 void UnrollTemplatePacks(std::list<TEMPLATEPARAMPAIR>* tplx)
 {
@@ -542,7 +484,7 @@ void GetTemplateArguments(SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAM
                     {
                         exp = MakeExpression(ExpressionNode::construct_);
                         exp->v.construct.tp = tp;
-                        exp->v.construct.tokenStream = GetTokenStream(true);
+                        exp->v.construct.tokenStream = GetFunctionTokenStream(nullptr);
                     }
                     else
                     {
@@ -2988,7 +2930,6 @@ void TemplateDeclaration(SYMBOL* funcsp, AccessLevel access, StorageClass storag
             l.ptail = &l.args;
             l.sp = nullptr;
             l.head = nullptr;
-            l.bodyTokenStream = nullptr;
             currents = &l;
         }
         else

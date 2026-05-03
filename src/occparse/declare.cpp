@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1170,6 +1170,7 @@ void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel de
     {
         processingTemplateBody++;
     }
+    LexemeStreamPosition pos(currentStream);
     if (Optimizer::cparams.prm_cplusplus)
         if (KW() == Keyword::colon_)
         {
@@ -1198,7 +1199,11 @@ void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel de
     if (inTemplate && templateDeclarationLevel == 1)
     {
         processingTemplateBody--;
-        TemplateGetDeferredTokenStream(sp);
+        auto fullTokenStream = CopyParsedLexemes(nullptr, pos);
+        if (fullTokenStream)
+        {
+            bodyTokenStreams.set(sp, fullTokenStream);
+        }
     }
     --structLevel;
     inFunctionExpressionParsing = oldExpressionParsing;
@@ -1442,7 +1447,9 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
             browse_variable(sp);
-            (!table || (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass && !funcsp) ? globalNameSpace->front()->tags : table)->Add(sp);
+            (!table || (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass && !funcsp) ? globalNameSpace->front()->tags
+                                                                                             : table)
+                ->Add(sp);
         }
     }
     else
@@ -2528,94 +2535,6 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
         }
     }
 }
-LexemeStream* GetTokenStream(bool braces)
-{
-    LexemeStream* savePos = streamFactory.Create();
-    int paren = 0;
-    int begin = 0;
-    int brack = 0;
-    int ltgt = 0;
-    bool viaTry = false;
-    if (braces)  // theoretically we can only have a try at this point for function bodies...
-        viaTry = MATCHKW(Keyword::try_);
-    while (currentLex)
-    {
-        Keyword kw = KW();
-        if (braces)
-        {
-            if (kw == Keyword::begin_)
-            {
-                paren++;
-            }
-            else if (kw == Keyword::end_ && !--paren)
-            {
-                savePos->Add(currentLex);
-                getsym();
-                if (!viaTry || !MATCHKW(Keyword::catch_))
-                {
-                    break;
-                }
-            }
-        }
-        else
-        {
-            if (kw == Keyword::semicolon_)
-            {
-                break;
-            }
-            else if (kw == Keyword::openpa_)
-            {
-                paren++;
-            }
-            else if (kw == Keyword::closepa_)
-            {
-                if (paren-- == 0 && !brack && !begin)
-                {
-                    break;
-                }
-            }
-            else if (kw == Keyword::begin_)
-            {
-                begin++;
-            }
-            else if (kw == Keyword::end_)
-            {
-                if (begin-- == 0 && !brack && !paren)
-                {
-                    break;
-                }
-            }
-            else if (kw == Keyword::openbr_)
-            {
-                brack++;
-            }
-            else if (kw == Keyword::closebr_)
-            {
-                brack--;
-            }
-            else if (kw == Keyword::comma_ && !paren && !brack && !ltgt && !begin)
-            {
-                break;
-            }
-            // there is some ambiguity between templates and <
-            else if (kw == Keyword::lt_)
-            {
-                ltgt++;
-            }
-            else if (kw == Keyword::gt_)
-            {
-                ltgt--;
-            }
-        }
-        if (currentLex->type == LexType::l_id_)
-            currentLex->value.s.a = litlate(currentLex->value.s.a);
-        savePos->Add(currentLex);
-        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
-        lines = nullptr;
-        getsym();
-    }
-    return savePos;
-}
 static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
 {
     EXPRESSION *loader, *unloader;
@@ -3180,6 +3099,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
             bool asFriend = false;
             bool deduceTemplate = false;
             int consdest = CT_NONE;
+            LexemeStream* functionTokenStream = nullptr;
             declaringInitialType++;
             getStorageAndType(funcsp, &strSym, inTemplate, false, &deduceTemplate, &storage_class, &storage_class_in, &address,
                               &blocked, &isExplicit, &constexpression, &builtin_constexpression, &tp, &linkage, &linkage2,
@@ -3591,8 +3511,10 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                         {
                             if (MATCHKW(Keyword::colon_))
                             {
+                                functionTokenStream = streamFactory.Create();
+                                functionTokenStream->Add(currentLex);
                                 getsym();
-                                constructorInitializers = GetConstructorInitializers(funcsp, sp);
+                                constructorInitializers = GetConstructorInitializers(funcsp, sp, functionTokenStream);
                             }
                         }
                         if (storage_class == StorageClass::absolute_)
@@ -4501,7 +4423,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     auto startStmt = currentLineData(emptyBlockdata, currentLex, 0);
                                     if (startStmt)
                                         sp->sb->linedata = startStmt->front()->lineData;
-                                    auto stream = GetTokenStream(true);
+                                    auto stream = GetFunctionTokenStream(functionTokenStream);
                                     bodyTokenStreams.set(sp, stream);
                                     bodyArgs.set(sp, sp->tp->BaseType()->syms);
                                     Optimizer::SymbolManager::Get(sp);
@@ -4523,7 +4445,8 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                                 (sp->sb->specialized && sp->templateParams->size() == 1) || sp->sb->isDestructor)
                                             {
                                                 sp->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
-                                                if ((!sp->sb->parentNameSpace && (!IsDefiningTemplate())) || sp->sb->isDestructor)
+                                                if ((!sp->sb->parentNameSpace && !IsDefiningTemplate()) ||
+                                                    (sp->sb->isDestructor && (!inTemplate || templateDeclarationLevel != 1)))
                                                 {
                                                     directCompile = true;
                                                 }
@@ -4544,7 +4467,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                             sp->sb->origdeclline = currentLex->sourceLineNumber;
                                             sp->sb->realcharpos = currentLex->realcharindex;
                                         }
-                                        auto stream = GetTokenStream(true);
+                                        auto stream = GetFunctionTokenStream(functionTokenStream);
                                         bodyTokenStreams.set(sp, stream);
                                         bodyArgs.set(sp, sp->tp->BaseType()->syms);
                                         Optimizer::SymbolManager::Get(sp);
@@ -4569,7 +4492,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     else if (Optimizer::cparams.prm_cplusplus &&
                                              (sp->sb->attribs.inheritable.linkage == Linkage::inline_ || sp->sb->constexpression))
                                     {
-                                        auto stream = GetTokenStream(true);
+                                        auto stream = GetFunctionTokenStream(functionTokenStream);
                                         bodyTokenStreams.set(sp, stream);
                                         bodyArgs.set(sp, sp->tp->BaseType()->syms);
                                         Optimizer::SymbolManager::Get(sp);
@@ -4704,8 +4627,9 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 (Optimizer::architecture == ARCHITECTURE_MSIL))
                                 sp->sb->label = Optimizer::nextLabel++;
                             if (Optimizer::cparams.prm_cplusplus && sp->sb->storage_class != StorageClass::type_ &&
-                                sp->sb->storage_class != StorageClass::typedef_ && structLevel && (!templateInstantiationLevel) &&
-                                !funcsp && (MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)))
+                                sp->sb->storage_class != StorageClass::typedef_ && !funcsp &&
+                                ((structLevel && !templateInstantiationLevel &&
+                                  (MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)))))
                             {
                                 if ((MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_)) &&
                                     storage_class_in == StorageClass::member_ &&
@@ -4722,7 +4646,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                         errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }
                                 }
-                                auto stream = GetTokenStream(false);
+                                auto stream = GetDataTokenStream();
                                 initTokenStreams.set(sp, stream);
                             }
                             else
@@ -4739,8 +4663,14 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                         sp->tp = tn;
                                     }
                                 }
+                                LexemeStreamPosition pos(currentStream);
                                 initialize(funcsp, sp, storage_class_in, asExpression, inTemplate, deduceTemplate,
                                            0); /* also reserves space */
+                                auto fullTokenStream = CopyParsedLexemes(nullptr, pos);
+                                if (fullTokenStream)
+                                {
+                                    initTokenStreams.set(sp, fullTokenStream);
+                                }
                                 if (sp->sb->parentClass && sp->sb->storage_class == StorageClass::global_)
                                 {
 
@@ -4880,7 +4810,6 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                     if (inTemplate && templateDeclarationLevel == 1)
                     {
                         processingTemplateBody--;
-                        TemplateGetDeferredTokenStream(sp);
                     }
                     if (!strcmp(sp->name, "main") && !sp->sb->parentClass)
                     {

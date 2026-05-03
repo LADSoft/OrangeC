@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1602,7 +1602,7 @@ void TypeGenerator::ExceptionSpecifiers(SYMBOL* funcsp, SYMBOL* sp, StorageClass
             if (MATCHKW(Keyword::openpa_))
             {
                 getsym();
-                auto stream = GetTokenStream(false);
+                auto stream = GetDataTokenStream();
                 noExceptTokenStreams.set(sp, stream);
                 needkw(Keyword::closepa_);
             }
@@ -4054,7 +4054,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                         if (storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || structLevel ||
                             (templateDefinitionLevel == 1 && !templateInstantiationLevel))
                         {
-                            auto stream = GetTokenStream(false);
+                            auto stream = GetDataTokenStream();
                             initTokenStreams.set(spi, stream);
                         }
                         else

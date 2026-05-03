@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1971,12 +1971,10 @@ SYMBOL* ValidateArgsSpecified(std::list<TEMPLATEPARAMPAIR>* params, SYMBOL* func
             SYMBOL* sp = *it;
             if (initTokenStreams.get(sp))
             {
-                dontRegisterTemplate += templateDeclarationLevel != 0;
                 ParseOnStream(initTokenStreams.get(sp), [=]() {
                     sp->sb->init = nullptr;
                     initialize(func, sp, StorageClass::parameter_, true, false, false, _F_TEMPLATEARGEXPANSION);
                 });
-                dontRegisterTemplate -= templateDeclarationLevel != 0;
                 if (sp->sb->init && sp->sb->init->front()->exp && !ValidExp(&sp->sb->init->front()->exp))
                 {
                     inDefaultParam--;
@@ -2189,7 +2187,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     std::list<TEMPLATEPARAMPAIR>* defaults = nullptr;
     Optimizer::LIST* oldOpenStructs = openStructs;
     int oldStructLevel = structLevel;
-    LexemeStream* head = nullptr;
     SYMBOL* oldMemberClass = instantiatingMemberFuncClass;
     std::list<TEMPLATEPARAMPAIR>::iterator itPrimary, itePrimary = itPrimary;
     if (declareSym->sb->specialized && declareSym->sb->parentTemplate &&
@@ -2201,10 +2198,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
     }
 
     instantiatingMemberFuncClass = declareSym->sb->parentClass;
-    if (currents)
-    {
-        head = currents->bodyTokenStream;
-    }
     DeclarationScope scope(enclosing);
     auto oldContext = defaultParsingContext;
     defaultParsingContext = declareSym;
@@ -2373,10 +2366,6 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
         if (itPrimary != itePrimary)
             ++itPrimary;
     }
-    if (currents)
-    {
-        currents->bodyTokenStream = head;
-    }
     defaultParsingContext = oldContext;
     instantiatingMemberFuncClass = oldMemberClass;
     return true;
@@ -2523,14 +2512,12 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
                 int oldResolvingStructDeclarations = resolvingStructDeclarations;
                 int oldBodyIsDestructor = bodyIsDestructor;
                 int oldTemplateDeclarationLevel = templateDeclarationLevel;
-                int oldDontRegister = dontRegisterTemplate;
                 bool oldFullySpecialized = isFullySpecialized;
                 int oldInTemplateBody = processingTemplateBody;
                 int oldInLoop = processingLoopOrConditional;
                 processingLoopOrConditional = 0;
                 processingTemplateBody = 0;
                 isFullySpecialized = false;
-                dontRegisterTemplate = 0;
                 templateDeclarationLevel = 0;
                 bodyIsDestructor = 0;
                 resolvingStructDeclarations = 0;
@@ -2586,7 +2573,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, std::list<TEMPLATEPARAMPAI
                 processingLoopOrConditional = oldInLoop;
                 processingTemplateBody = oldInTemplateBody;
                 isFullySpecialized = oldFullySpecialized;
-                dontRegisterTemplate = oldDontRegister;
                 templateDeclarationLevel = oldTemplateDeclarationLevel;
                 bodyIsDestructor = oldBodyIsDestructor;
                 resolvingStructDeclarations = oldResolvingStructDeclarations;

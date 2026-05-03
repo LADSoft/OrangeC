@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -170,6 +170,12 @@ extern std::stack<LexemeStream*> contextStack;
 
 extern Lexeme* currentLex;
 extern LexemeStream* currentStream;
+
+LexemeStream* GetFunctionTokenStream(LexemeStream* stream);
+LexemeStream* GetDataTokenStream();
+LexemeStream* GetStructTokenStream();
+
+LexemeStream* CopyParsedLexemes(LexemeStream* fullTokenStream, LexemeStreamPosition& pos);
 
 void ParseOnStream(LexemeStream* newContext, std::function<void()> callback);
 

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -476,7 +476,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         val += ");} ;";
         SetAlternateParse(true, val);
         getsym();
-        auto stream = GetTokenStream(true);
+        auto stream = GetFunctionTokenStream(nullptr);
         bodyTokenStreams.set(func, stream);
         bodyArgs.set(func, func->tp->BaseType()->syms);
         SetAlternateParse(false, "");
@@ -565,7 +565,7 @@ static void createConverter(SYMBOL* self)
 
         SetAlternateParse(true, val);
         getsym();
-        auto stream = GetTokenStream(true);
+        auto stream = GetFunctionTokenStream(nullptr);
         bodyTokenStreams.set(func, stream);
         bodyArgs.set(func, func->tp->BaseType()->syms);
         SetAlternateParse(false, "");
@@ -601,7 +601,6 @@ static void finishClass(void)
     if (lambdas.front()->templateFunctions)
     {
         templateDefinitionLevel++;
-        dontRegisterTemplate++;
         convertCallToTemplate(lambdas.front()->func);
     }
     SetLinkerNames(lambdas.front()->func, Linkage::cdecl_);
@@ -610,7 +609,6 @@ static void finishClass(void)
     if (lambdas.front()->templateFunctions)
     {
         templateDefinitionLevel--;
-        dontRegisterTemplate--;
     }
     if (!lambdas.front()->isMutable)
     {
@@ -1144,7 +1142,7 @@ void expression_lambda(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, i
         }
         if (MATCHKW(Keyword::begin_))
         {
-            auto stream = GetTokenStream(true);
+            auto stream = GetFunctionTokenStream(nullptr);
             bodyTokenStreams.set(self->func, stream);
             bodyArgs.set(self->func, self->func->tp->BaseType()->syms);
             if (!lambdas.front()->templateFunctions)

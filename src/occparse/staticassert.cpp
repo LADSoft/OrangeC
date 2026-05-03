@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -67,7 +67,7 @@ void handleStaticAssert()
     }
     else if (structLevel && enclosingDeclarations.GetFirst())
     {
-        auto stream = GetTokenStream(false);
+        auto stream = GetDataTokenStream();
         EnterStructureStaticAssert(enclosingDeclarations.GetFirst(), stream);
     }
     else

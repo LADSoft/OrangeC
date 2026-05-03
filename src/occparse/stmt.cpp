@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package
  *
@@ -4509,7 +4509,6 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
     auto stream = noExceptTokenStreams.get(funcsp);
     if (stream && stream != (LexemeStream*)-1)
     {
-        dontRegisterTemplate++;
         TemplateNamespaceScope namespaceScope(funcsp);
         DeclarationScope scope;
         ParseOnStream(stream, [=]() {
@@ -4542,7 +4541,6 @@ void StatementGenerator::ParseNoExceptClause(SYMBOL* funcsp)
             }
         });
         noExceptTokenStreams.set(funcsp, (LexemeStream*)-1);
-        dontRegisterTemplate--;
     }
 }
 void StatementGenerator::SetFunctionDefine(std::string name, bool set)
@@ -4813,7 +4811,6 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
                                 enclosingDeclarations.Add(funcsp->sb->parentClass->templateParams);
                             }
                         }
-                        dontRegisterTemplate++;
                         oldLambdas = lambdas;
                         lambdas.clear();
                         int oldStructLevel = structLevel;
@@ -4840,13 +4837,12 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
                             if (funcsp->sb->isConstructor && MATCHKW(Keyword::colon_))
                             {
                                 getsym();
-                                *funcsp->sb->constructorInitializers = GetConstructorInitializers(nullptr, funcsp);
+                                *funcsp->sb->constructorInitializers = GetConstructorInitializers(nullptr, funcsp, nullptr);
                             }
                             StatementGenerator sg(funcsp);
                             sg.FunctionBody();
                         });
                         //                        printf("CompileFromStream out: %s\n", funcsp->sb->decoratedName);
-                        dontRegisterTemplate--;
                         lambdas = std::move(oldLambdas);
                         openStructs = oldOpen;
                         structLevel = oldStructLevel;

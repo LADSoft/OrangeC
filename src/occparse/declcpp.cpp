@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -247,7 +247,6 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
     {
         enclosingDeclarations.Add(cur->templateParams);
     }
-    //    dontRegisterTemplate++;
     for (auto sp : *cur->tp->syms)
     {
         if (sp->sb->storage_class == StorageClass::overloads_)
@@ -284,7 +283,6 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
             }
         }
     }
-    //    dontRegisterTemplate--;
 }
 void deferredInitializeStructMembers(SYMBOL* cur)
 {
@@ -297,7 +295,6 @@ void deferredInitializeStructMembers(SYMBOL* cur)
     {
         enclosingDeclarations.Add(cur->templateParams);
     }
-    dontRegisterTemplate++;
     for (auto sp : *cur->tp->syms)
     {
         if (sp->tp->IsArray() && sp->tp->esize)
@@ -319,7 +316,6 @@ void deferredInitializeStructMembers(SYMBOL* cur)
             }
         }
     }
-    dontRegisterTemplate--;
 }
 bool declaringTemplate(SYMBOL* sym)
 {

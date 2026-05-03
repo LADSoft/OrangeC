@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -26,7 +26,6 @@
 namespace Parser
 {
 
-extern int dontRegisterTemplate;
 extern int templateInstantiationLevel;
 extern int processingTemplateBody;
 extern int templateDefinitionLevel;
@@ -52,10 +51,8 @@ extern struct templateListData* currents;
 inline bool IsDefiningTemplate() { return !(!templateDefinitionLevel | templateInstantiationLevel); }
 
 void templateInit(void);
-void TemplateGetDeferredTokenStream(SYMBOL* sym);
 TEMPLATEPARAMPAIR* TemplateLookupSpecializationParam(const char* name);
 std::list<TEMPLATEPARAMPAIR>* TemplateGetParams(SYMBOL* sym);
-bool TemplateRegisterToken(Lexeme* lex, bool force);
 static std::list<TEMPLATEPARAMPAIR>** expandArgs(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStream& start, SYMBOL* funcsp,
                                                  std::list<TEMPLATEPARAMPAIR>* select, bool packable);
 void UnrollTemplatePacks(std::list<TEMPLATEPARAMPAIR>* tplx);

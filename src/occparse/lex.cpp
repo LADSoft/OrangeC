@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1651,8 +1651,6 @@ void SplitGreaterThanFromRightShift()
     lex->type = LexType::l_kw_;
     lex->kw = kw;
     currentLex = lex;
-    if (TemplateRegisterToken(currentLex, false))
-        TemplateRegisterToken(currentLex, true);
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }
 bool AtEol()
@@ -1841,8 +1839,7 @@ void getsym(void)
     bool contin;
     FPF rval;
     long long ival;
-    static unsigned char buf[16384];
-    static int pos = 0;
+    static char buf[8192];
     int cval;
 
     static int trailer;
@@ -1852,8 +1849,6 @@ void getsym(void)
     {
         if (currentStream->Index() < currentStream->Base() + currentStream->size())
         {
-            if (currentStream->Index())
-                TemplateRegisterToken(currentLex, false);
             ++*currentStream;
             if (currentStream->Index() == currentStream->size())
             {
@@ -1889,8 +1884,6 @@ void getsym(void)
         currentStream->Prune(LexCacheDepth, LexCachePrune);
         currentLex = currentStream->get(currentStream->Index());
     }
-    if (!parsingPreprocessorConstant)
-        TemplateRegisterToken(currentLex, false);
     bool fetched = false;
     do
     {
@@ -2037,13 +2030,10 @@ void getsym(void)
                     currentLex->kw = kw;
                 }
             }
-            else if (getId(&linePointer, buf + pos) != INT_MIN)
+            else if (getId(&linePointer, (unsigned char*)buf) != INT_MIN)
             {
-                currentLex->value.s.a = (char*)buf + pos;
+                currentLex->value.s.a = litlate(buf);
                 currentLex->type = LexType::l_id_;
-                pos += strlen((char*)buf + pos) + 1;
-                if (pos >= sizeof(buf) - 512)
-                    pos = 0;
             }
             else
             {
@@ -2199,9 +2189,7 @@ long long ParseExpression(std::string& line)
     SetAlternateParse(true, line);
     getsym();
     parsingPreprocessorConstant = true;
-    dontRegisterTemplate++;
     expression_no_comma(nullptr, nullptr, &tp, &exp, nullptr, 0);
-    dontRegisterTemplate--;
     if (tp)
     {
         if (Optimizer::architecture == ARCHITECTURE_MSIL)

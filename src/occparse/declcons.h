@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -30,7 +30,7 @@ namespace Parser
 extern bool noExcept;
 
 // decl group
-std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym);
+std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym, LexemeStream* fullTokenStream);
 void SetParams(SYMBOL* cons);
 void ConditionallyDeleteClassMethods(SYMBOL* sp);
 void createConstructorsForLambda(SYMBOL* sp);

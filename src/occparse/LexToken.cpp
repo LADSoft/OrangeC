@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -26,6 +26,9 @@
 #include "compiler.h"
 #include "lex.h"
 #include "templatedecl.h"
+#include "memory.h"
+#include "stmt.h"
+#include "ccerr.h"
 
 namespace Parser
 {
@@ -205,6 +208,115 @@ void ParseOnStream(LexemeStream* newStream, std::function<void()> callback)
     contextStack.pop();
     currentStream = contextStack.top();
     currentLex = lex;
+}
+LexemeStream* GetFunctionTokenStream(LexemeStream* stream)
+{
+    LexemeStream* savePos = stream ? stream : streamFactory.Create();
+    int paren = 0;
+    bool viaTry = false;
+    viaTry = MATCHKW(Keyword::try_);
+    while (currentLex)
+    {
+        Keyword kw = KW();
+        if (kw == Keyword::begin_)
+        {
+            paren++;
+        }
+        else if (kw == Keyword::end_ && !--paren)
+        {
+            savePos->Add(currentLex);
+            getsym();
+            if (!viaTry || !MATCHKW(Keyword::catch_))
+            {
+                break;
+            }
+        }
+        savePos->Add(currentLex);
+        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+        lines = nullptr;
+        getsym();
+    }
+    return savePos;
+}
+
+LexemeStream* GetDataTokenStream()
+{
+    LexemeStream* savePos = streamFactory.Create();
+    int paren = 0;
+    int begin = 0;
+    int brack = 0;
+    int ltgt = 0;
+    bool viaTry = false;
+    while (currentLex)
+    {
+        Keyword kw = KW();
+        if (kw == Keyword::semicolon_)
+        {
+            break;
+        }
+        else if (kw == Keyword::openpa_)
+        {
+            paren++;
+        }
+        else if (kw == Keyword::closepa_)
+        {
+            if (paren-- == 0 && !brack && !begin)
+            {
+                break;
+            }
+        }
+        else if (kw == Keyword::begin_)
+        {
+            begin++;
+        }
+        else if (kw == Keyword::end_)
+        {
+            if (begin-- == 0 && !brack && !paren)
+            {
+                break;
+            }
+        }
+        else if (kw == Keyword::openbr_)
+        {
+            brack++;
+        }
+        else if (kw == Keyword::closebr_)
+        {
+            brack--;
+        }
+        else if (kw == Keyword::comma_ && !paren && !brack && !ltgt && !begin)
+        {
+            break;
+        }
+        // there is some ambiguity between templates and <
+        else if (kw == Keyword::lt_)
+        {
+            ltgt++;
+        }
+        else if (kw == Keyword::gt_)
+        {
+            ltgt--;
+        }
+        savePos->Add(currentLex);
+        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+        lines = nullptr;
+        getsym();
+    }
+    return savePos;
+}
+LexemeStream* CopyParsedLexemes(LexemeStream* fullTokenStream, LexemeStreamPosition& pos)
+{
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        LexemeStreamPosition end(currentStream);
+        for (; pos != end; ++pos)
+        {
+            if (!fullTokenStream)
+                fullTokenStream = LexemeStreamFactory::Instantiation().Create();
+            fullTokenStream->Add(pos.get());
+        }
+    }
+    return fullTokenStream;
 }
 
 }  // namespace Parser

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -92,7 +92,7 @@ void FindClass(SYMBOL* funcsp, SYMBOL** sym)
     }
     return;
 }
-std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym)
+std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym, LexemeStream* fullTokenStream)
 {
     (void)sym;
     std::list<CONSTRUCTORINITIALIZER*>* rv = constructorInitializerListFactory.CreateList();
@@ -104,7 +104,12 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
         if (ISID() || MATCHKW(Keyword::classsel_))
         {
             SYMBOL* sym = nullptr;
+            LexemeStreamPosition pos(currentStream);
             FindClass(funcsp, &sym);
+            if (fullTokenStream)
+            {
+                CopyParsedLexemes(fullTokenStream, pos);
+            }
             char name[1024];
             auto v = Allocate<CONSTRUCTORINITIALIZER>();
             v->line = currentLex->sourceLineNumber;
@@ -114,6 +119,12 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
             if (ISID())
             {
                 Utils::StrCpy(name, currentLex->value.s.a);
+                if (fullTokenStream)
+                {
+                    fullTokenStream->Add(currentLex);
+                    currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                    lines = nullptr;
+                }
                 getsym();
             }
             v->name = litlate(name);
@@ -123,6 +134,12 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
             {
                 int paren = 0, tmpl = 0;
                 v->initData->Add(currentLex);
+                if (fullTokenStream)
+                {
+                    fullTokenStream->Add(currentLex);
+                    currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                    lines = nullptr;
+                }
                 getsym();
                 while (currentLex && (!MATCHKW(Keyword::gt_) || paren || tmpl))
                 {
@@ -134,8 +151,6 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
                         tmpl++;
                     if (!paren && (MATCHKW(Keyword::gt_) || MATCHKW(Keyword::rightshift_)))
                         tmpl--;
-                    if (currentLex->type == LexType::l_id_)
-                        currentLex->value.s.a = litlate(currentLex->value.s.a);
                     if (MATCHKW(Keyword::rightshift_))
                     {
                         SplitGreaterThanFromRightShift();
@@ -145,12 +160,24 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
                     else
                     {
                         v->initData->Add(currentLex);
+                        if (fullTokenStream)
+                        {
+                            fullTokenStream->Add(currentLex);
+                            currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                            lines = nullptr;
+                        }
                         getsym();
                     }
                 }
                 if (MATCHKW(Keyword::gt_))
                 {
                     v->initData->Add(currentLex);
+                    if (fullTokenStream)
+                    {
+                        fullTokenStream->Add(currentLex);
+                        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                        lines = nullptr;
+                    }
                     getsym();
                 }
             }
@@ -159,6 +186,13 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
                 Keyword open = KW(), close = open == Keyword::openpa_ ? Keyword::closepa_ : Keyword::end_;
                 int paren = 0;
                 v->initData->Add(currentLex);
+                if (fullTokenStream)
+                {
+                    fullTokenStream->Add(currentLex);
+                    currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                    lines = nullptr;
+                }
+
                 getsym();
                 while (currentLex && (!MATCHKW(close) || paren))
                 {
@@ -166,20 +200,36 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
                         paren++;
                     if (MATCHKW(close))
                         paren--;
-                    if (currentLex->type == LexType::l_id_)
-                        currentLex->value.s.a = litlate(currentLex->value.s.a);
                     v->initData->Add(currentLex);
+                    if (fullTokenStream)
+                    {
+                        fullTokenStream->Add(currentLex);
+                        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                        lines = nullptr;
+                    }
                     getsym();
                 }
                 if (MATCHKW(close))
                 {
                     v->initData->Add(currentLex);
+                    if (fullTokenStream)
+                    {
+                        fullTokenStream->Add(currentLex);
+                        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                        lines = nullptr;
+                    }
                     getsym();
                 }
                 if (MATCHKW(Keyword::ellipse_))
                 {
                     ClearPackedSequence();
                     v->packed = true;
+                    if (fullTokenStream)
+                    {
+                        fullTokenStream->Add(currentLex);
+                        currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+                        lines = nullptr;
+                    }
                     getsym();
                 }
             }
@@ -198,6 +248,12 @@ std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, S
         LeavePackedSequence();
         if (!MATCHKW(Keyword::comma_))
             break;
+        if (fullTokenStream)
+        {
+            fullTokenStream->Add(currentLex);
+            currentLex->linedata = lines && lines->size() ? lines->front() : &nullLineData;
+            lines = nullptr;
+        }
         getsym();
     }
     return rv;

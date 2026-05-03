@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -673,7 +673,7 @@ void oa_put_code(OCODE* cd)
     {
         if (!Optimizer::cparams.prm_lines)
             return;
-        AsmOutput("%s", reinterpret_cast<char *>(aps));
+        AsmOutput("%s", reinterpret_cast<char*>(aps));
         return;
     }
     else if (op == op_align)
@@ -1159,7 +1159,7 @@ void oa_gen_labref(int n)
         ColumnPosition(8);
         AsmOutput("dd");
         ColumnPosition(16);
-        AsmOutput("L_;%d\n", static_cast<unsigned long>(n));
+        AsmOutput("L_%d\n", static_cast<unsigned long>(n));
         oa_gentype = Optimizer::longgen;
     }
     else

@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -28,7 +28,7 @@ NAME=occopt
 MAIN_FILE=optmain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occ ..$(PATHEXT2)objlib ..$(PATHEXT2)oasm ..$(PATHEXT2)occopt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util ocpplib
+LIB_DEPENDENCIES=util ocpplib objlib
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 

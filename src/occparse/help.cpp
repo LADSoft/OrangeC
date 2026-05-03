@@ -2241,7 +2241,7 @@ void SetRuntimeData(EXPRESSION* exp, SYMBOL* sym)
         else
             p++;
         runtimeData->fileName = p;
-        runtimeData->varName = sym->name;
+        runtimeData->varName = sym->sb->decoratedName;
         runtimeData->lineno = currentLex->sourceLineNumber;
         runtimeData->runtimeSymOrig = sym->sb->runtimeSym;
         exp->runtimeData = runtimeData;

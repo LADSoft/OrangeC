@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -34,7 +34,7 @@
 #include "ilocal.h"
 #include "irc.h"
 #include "optmain.h"
-
+#include "ObjSymbol.h"
 namespace Optimizer
 {
 static std::unordered_map<std::string, int> nameMap;
@@ -103,7 +103,9 @@ static auto InsertName(const char* name)
     {
         label = nextLabel++;
         put_label(label);
-        putstring(name, strlen(name));
+        ObjSymbol sym(name, ObjSymbol::ePublic, 0);
+        ObjString displayName = sym.GetDisplayName();
+        putstring(displayName.c_str(), displayName.size());
         genbyte(0);
         nameMap[name] = label;
     }

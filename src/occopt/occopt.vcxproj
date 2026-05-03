@@ -27,6 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\objlib\ObjSymbol.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="configmsil.cpp" />
@@ -332,4 +333,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-</Project>
+</Project>

@@ -174,6 +174,7 @@ extern LexemeStream* currentStream;
 LexemeStream* GetFunctionTokenStream(LexemeStream* stream);
 LexemeStream* GetDataTokenStream();
 LexemeStream* GetStructTokenStream();
+std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym, LexemeStream* fullTokenStream);
 
 LexemeStream* CopyParsedLexemes(LexemeStream* fullTokenStream, LexemeStreamPosition& pos);
 

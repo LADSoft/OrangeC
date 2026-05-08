@@ -30,7 +30,6 @@ namespace Parser
 extern bool noExcept;
 
 // decl group
-std::list<CONSTRUCTORINITIALIZER*>* GetConstructorInitializers(SYMBOL* funcsp, SYMBOL* sym, LexemeStream* fullTokenStream);
 void SetParams(SYMBOL* cons);
 void ConditionallyDeleteClassMethods(SYMBOL* sp);
 void createConstructorsForLambda(SYMBOL* sp);

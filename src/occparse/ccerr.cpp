@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -650,13 +650,19 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
     if (strSym)
     {
         strSym->tp->ToString(buf + sizeof(buf), buf + strlen(buf));
+        if (strSym->tp->type == BasicType::templateselector_)
+        {
+            auto p = strrchr(buf + 1, ':');
+            if (p && p[-1] == ':')
+                ((char*)p)[-1] = '\0';
+        }
     }
     else if (nsv)
     {
         getns(buf, nsv->name);
     }
     Utils::StrCat(buf, "'");
-    if (strSym && !strSym->tp->syms)
+    if (strSym && strSym->tp->IsStructured() && !strSym->tp->syms)
         Utils::StrCat(buf, " because the type is not defined");
     printerr(err, nullptr, 0, buf);
 }

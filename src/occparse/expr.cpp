@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -4682,7 +4682,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                 tp1 = tp1->btp;
             if (sym)
             {
-                if (!(flags & (_F_SIZEOF | _F_INDECLTYPE | _F_NOEVAL)))
+                if (!(flags & (_F_SIZEOF | _F_INDECLTYPE | _F_NOEVAL | _F_NOFUNCINSTANTIATE)))
                 {
                     //	printf("exprfuncin: %s\n", sym->sb->decoratedName);
                     StatementGenerator sg(sym);

@@ -4070,7 +4070,8 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                                 sym = AnonymousVar(StorageClass::auto_, tp2)->v.sp;
                                 anonymousNotAlloc--;
                                 sym->sb->stackblock = !spi->tp->IsRef();
-                                initialize(funcsp, sym, StorageClass::auto_, true, false, false, 0); /* also reserves space */
+                                initialize(funcsp, sym, StorageClass::auto_, true, false, false,
+                                           _F_NOFUNCINSTANTIATE); /* also reserves space */
                                 spi->sb->init = sym->sb->init;
                                 if (spi->sb->init->front()->exp && spi->sb->init->front()->exp->type == ExpressionNode::thisref_)
                                 {
@@ -4081,7 +4082,8 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                             }
                             else
                             {
-                                initialize(funcsp, spi, StorageClass::auto_, true, false, false, 0); /* also reserves space */
+                                initialize(funcsp, spi, StorageClass::auto_, true, false, false,
+                                           _F_NOFUNCINSTANTIATE); /* also reserves space */
                             }
                             if (spi->sb->init)
                             {

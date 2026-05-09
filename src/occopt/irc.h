@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -45,6 +45,7 @@ void FillInPrologue(QUAD* head, SimpleSymbol* funcsp);
 int SqueezeChange(int temp, int t, int delta);
 void SqueezeInit(void);
 void Precolor(bool optimized);
+void RearrangePrecolors(void);
 void Fastcallcolor(void);
 void retemp(void);
 void AllocateRegisters(QUAD* head);

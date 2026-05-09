@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -119,7 +119,6 @@ void briggsFreet() { freex(tabt, &tbtab); }
 void briggsFreec() { freex(tabc, &cbtab); }
 void briggsFrees() { freex(tabs, &sbtab); }
 void briggsFreea() { freex(taba, &abtab); }
-void briggsFreez() { freex(tabz, &zbtab); }
 int briggsSet(BriggsSet* p, unsigned index)
 {
     if (index < p->size)

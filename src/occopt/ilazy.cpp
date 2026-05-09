@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1513,75 +1513,6 @@ static void MoveExpressions(void)
         }
     }
 }
-void RearrangePrecolors(void)
-{
-    QUAD* head = intermed_head;
-    int i;
-    for (i = 0; i < tempCount; i++)
-        tempInfo[i]->temp = -1;
-    while (head)
-    {
-        if ((head->precolored & TEMP_ANS) && !head->ans->retval)
-        {
-            QUAD* newIns = Allocate<QUAD>();
-            i = head->ans->offset->sp->i;
-            if (tempInfo[i]->temp < 0)
-            {
-                IMODE* newImode = InitTempOpt(head->ans->size, head->ans->size);
-                tempInfo[i]->temp = newImode->offset->sp->i;
-                newIns->dc.left = newImode;
-            }
-            else
-            {
-                newIns->dc.left = tempInfo[tempInfo[i]->temp]->enode->sp->imvalue;
-            }
-            newIns->dc.opcode = i_assn;
-            newIns->ans = head->ans;
-            head->ans = newIns->dc.left;
-            InsertInstruction(head, newIns);
-        }
-        if ((head->precolored & TEMP_LEFT) && !head->dc.left->retval)
-        {
-            QUAD* newIns = Allocate<QUAD>();
-            i = head->dc.left->offset->sp->i;
-            if (tempInfo[i]->temp < 0)
-            {
-                IMODE* newImode = InitTempOpt(head->dc.left->size, head->dc.left->size);
-                tempInfo[i]->temp = newImode->offset->sp->i;
-                newIns->ans = newImode;
-            }
-            else
-            {
-                newIns->ans = tempInfo[tempInfo[i]->temp]->enode->sp->imvalue;
-            }
-            newIns->dc.opcode = i_assn;
-            newIns->dc.left = head->dc.left;
-            head->dc.left = newIns->ans;
-            InsertInstruction(head->back, newIns);
-        }
-        if ((head->precolored & TEMP_RIGHT) && !head->dc.right->retval)
-        {
-            QUAD* newIns = Allocate<QUAD>();
-            i = head->dc.right->offset->sp->i;
-            if (tempInfo[i]->temp < 0)
-            {
-                IMODE* newImode = InitTempOpt(head->dc.right->size, head->dc.right->size);
-                tempInfo[i]->temp = newImode->offset->sp->i;
-                newIns->ans = newImode;
-            }
-            else
-            {
-                newIns->ans = tempInfo[tempInfo[i]->temp]->enode->sp->imvalue;
-            }
-            newIns->dc.opcode = i_assn;
-            newIns->dc.left = head->dc.right;
-            head->dc.right = newIns->ans;
-            InsertInstruction(head->back, newIns);
-        }
-        head->precolored = 0;
-        head = head->fwd;
-    }
-}
 static void PadBlocks(void)
 {
     int i;
@@ -1686,7 +1617,5 @@ void GlobalOptimization(void)
     CalculateIsolated();
     CalculateOCPAndRO();
     MoveExpressions();
-    if (!(cparams.icd_flags & ICD_OCP & ~ICD_QUITEARLY))
-        briggsFreez();
 }
 }  // namespace Optimizer

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -742,8 +742,6 @@ void MoveLoopInvariants(void)
 {
     int i;
     refs = nullptr;
-#if 0
-// this code doesn't work at the preset time.   MoveLoopVariables() broke it.
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
@@ -752,6 +750,5 @@ void MoveLoopInvariants(void)
     current = 1;
     ScanForInvariants(blockArray[0]);
     WeedRefs();
-#endif
 }
 }  // namespace Optimizer

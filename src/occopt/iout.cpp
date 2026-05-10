@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -39,7 +39,7 @@
 #include "config.h"
 #include "OptUtils.h"
 #include "iblock.h"
-#include "ilazy.h"
+#include "igcse.h"
 #include "iflow.h"
 #include "optmain.h"
 #include "iout.h"

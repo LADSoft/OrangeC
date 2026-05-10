@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -56,7 +56,7 @@
 #include "ioptutil.h"
 #include "ipinning.h"
 #include "optmodules.h"
-#include "ilazy.h"
+#include "igcse.h"
 #include "iloop.h"
 #include "localprotect.h"
 
@@ -84,7 +84,7 @@ CmdSwitchString prm_verbosity(SwitchParser, 'y');
 CmdSwitchString prm_optimize(SwitchParser, 'O', ';');
 
 const char* helpText =
-R"help([options] inputfile
+    R"help([options] inputfile
 
 This program is the optimizer for Orange C
 
@@ -98,14 +98,12 @@ Ox           optimization control
 -Y output icd file
 
 Optimization control: 
-)help"
-OPTIMIZATION_DESCRIPTION
-R"help(
+)help" OPTIMIZATION_DESCRIPTION
+    R"help(
 Flags:\n"
-)help"
-OPTMODULES_DESCRIPTION 
+)help" OPTMODULES_DESCRIPTION
 
-"\nTime: __TIME__  Date: " __DATE__;
+    "\nTime: __TIME__  Date: " __DATE__;
 
 const char* usageText = "[options] inputfile";
 
@@ -420,8 +418,7 @@ void ParseParams(CmdFiles& files)
     }
 }
 }  // namespace Optimizer
-int main(int argc, char* argv[])
-MAINTRY
+int main(int argc, char* argv[]) MAINTRY
 {
     using namespace Optimizer;
     unsigned startTime, stopTime;

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <functional>
 namespace Optimizer
 {
 extern int cachedTempCount;
@@ -40,6 +41,8 @@ struct UIVHash
 
 void AliasInit(void);
 void AliasRundown(void);
+void ProcessUIVAddresses(std::function<void(IMODE*)> processor);
+void ProcessIMModifies(IMODE* im, std::function<void(IMODE*)> processor);
 void AliasStruct(BITINT* bits, IMODE* ans, IMODE* left, IMODE* right);
 void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n);
 void AliasUses(BITINT* bits, IMODE* im, bool rhs);

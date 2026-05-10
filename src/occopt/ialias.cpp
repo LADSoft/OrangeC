@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -33,7 +33,7 @@
 #include "iblock.h"
 #include "iflow.h"
 #include "iloop.h"
-#include "ilazy.h"
+#include "igcse.h"
 #include "ildata.h"
 #include "OptUtils.h"
 #include "output.h"
@@ -43,6 +43,8 @@
 #include "ioptutil.h"
 #include "optmain.h"
 #include "FNV_hash.h"
+#include <functional>
+#include <algorithm>
 /* This is a partial implementation of the VLLPA algorithm in
  * Practical and Accurate Low-Level Pointer Analysis
  * Bolei Guo, Matthew J. Bridges, Spyridon Triantafyllis
@@ -90,6 +92,7 @@ static std::unordered_map<ptrint*, UIVHash*, OrangeC::Utils::fnv1a32_binary<size
 static std::unordered_map<ALIASNAME**, ADDRBYNAME*, OrangeC::Utils::fnv1a32_binary<sizeof(ALIASNAME*)>,
                           OrangeC::Utils::bin_eql<sizeof(ALIASNAME*)>>
     addrNames;
+static std::multimap<IMODE*, IMODE*> pointsFrom;
 static void ResetProcessed(void);
 static void GatherInds(BITINT* p, int n, ALIASLIST* al);
 void AliasInit(void)
@@ -104,6 +107,7 @@ void AliasInit(void)
     names.clear();
     mem.clear();
     addrNames.clear();
+    pointsFrom.clear();
     parmList = nullptr;
     uivBytes = nullptr;
     cachedTempCount = tempCount;
@@ -113,8 +117,11 @@ void AliasInit(void)
 }
 void AliasRundown(void)
 {
-    aFree();
-    briggsFreea();
+    addresses.clear();
+    names.clear();
+    mem.clear();
+    addrNames.clear();
+    pointsFrom.clear();
 }
 static void PrintOffs(struct UIVOffset* offs)
 {
@@ -142,18 +149,6 @@ static void PrintName(ALIASNAME* name, int offs)
     }
     oprintf(icdFile, ",%d)", offs);
 }
-static void PrintTemps(BITINT* modifiedBy)
-{
-    int i;
-    if (modifiedBy)
-    {
-        oprintf(icdFile, "[");
-        for (i = 1; i < termCount; i++)
-            if (isset(modifiedBy, i))
-                oprintf(icdFile, "T%d ", termMapUp[i]);
-        oprintf(icdFile, "]");
-    }
-}
 static void DumpAliases(void)
 {
     oprintf(icdFile, "function: %s\n", currentFunction->name);
@@ -175,7 +170,6 @@ static void DumpAliases(void)
             oprintf(icdFile, " ");
             al = al->next;
         }
-        PrintTemps(aa1->modifiedBy);
         oprintf(icdFile, "\n");
     }
     for (i = 0; i < cachedTempCount; i++)
@@ -190,7 +184,6 @@ static void DumpAliases(void)
                 oprintf(icdFile, " ");
                 al = al->next;
             }
-            PrintTemps(tempInfo[i]->modifiedBy);
             oprintf(icdFile, "\n");
         }
     }
@@ -206,7 +199,6 @@ static void DumpAliases(void)
             oprintf(icdFile, " ");
             al = al->next;
         }
-        PrintTemps(uivBytes);
     }
 }
 static ALIASNAME* LookupMem(IMODE* im)
@@ -1109,310 +1101,9 @@ static void GatherAliases(Loop* lp)
     } while (changed);
     changed = xchanged;
 }
-static void ormap(BITINT* dest, BITINT* src)
+static void InitIMModifies()
 {
-    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
-    int i;
-    for (i = 0; i < n; i++)
-    {
-        if (~*dest & *src)
-        {
-            changed = true;
-            *dest |= *src;
-        }
-        dest++, src++;
-    }
-}
-static void andmap(BITINT* dest, BITINT* src)
-{
-    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
-    int i;
-    for (i = 0; i < n; i++)
-    {
-        *dest &= *src;
-        dest++, src++;
-    }
-}
-static void complementmap(BITINT* dest)
-{
-    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
-    int i;
-    for (i = 0; i < n; i++)
-    {
-        *dest = ~*dest;
-        dest++;
-    }
-}
-static void scanDepends(BITINT* bits, ALIASLIST* alin)
-{
-    ALIASLIST* al = alin;
-    al = alin;
-    while (al)
-    {
-        ALIASADDRESS* aa2 = (ALIASADDRESS*)al->address;
-        IMODE* im;
-        while (aa2->merge)
-            aa2 = aa2->merge;
-        if (!isset(processBits, aa2->processIndex))
-        {
-            setbit(processBits, aa2->processIndex);
-            if (aa2->modifiedBy)
-                ormap(bits, aa2->modifiedBy);
-            scanDepends(bits, aa2->pointsto);
-        }
-        al = al->next;
-    }
-}
-void AliasStruct(BITINT* bits, IMODE* ans, IMODE* left, IMODE* right)
-{
-    ALIASLIST* src;
-    int i, n = ans->offset->i;
-    if (left->offset->type == se_tempref && left->mode == i_direct)
-    {
-        src = tempInfo[left->offset->sp->i]->pointsto;
-        while (src)
-        {
-            ALIASADDRESS* aa = src->address;
-            while (aa->merge)
-                aa = aa->merge;
-            for (i = 0; i < n; i++)
-            {
-                ALIASNAME* an = GetAliasName(aa->name, i);
-                if (an)
-                {
-                    ALIASADDRESS* aa2 = LookupAddress(an, 0);
-                    while (aa2->merge)
-                        aa2 = aa2->merge;
-                    if (aa2->modifiedBy)
-                    {
-                        ormap(bits, aa2->modifiedBy);
-                    }
-                }
-            }
-            src = src->next;
-        }
-        setbit(bits, termMap[left->offset->sp->i]);
-        return;
-    }
-    else if (left->mode == i_immed)
-    {
-        ALIASNAME* an = LookupMem(left);
-        ALIASADDRESS* aa;
-        for (i = 0; i < n; i++)
-        {
-            ALIASNAME* an2 = GetAliasName(an, i);
-            if (an2)
-            {
-                aa = LookupAddress(an2, 0);
-                while (aa->merge)
-                    aa = aa->merge;
-                if (aa->modifiedBy)
-                {
-                    ormap(bits, aa->modifiedBy);
-                }
-                ResetProcessed();
-                scanDepends(bits, aa->pointsto);
-            }
-        }
-        return;
-    }
-    else
-    {
-        diag("AliasStruct: invalid src type");
-    }
-}
-void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
-{
-    int i;
-    andmap(bits, uivBytes);
-    tail = tail->back;
-    while (tail && tail->dc.opcode != i_block && tail->dc.opcode != i_gosub && tail->dc.opcode != i_label)
-    {
-        if (tail->dc.opcode == i_parm)
-        {
-            if (tail->temps & TEMP_LEFT)
-            {
-                int n = tail->dc.left->offset->sp->i;
-                ALIASLIST* al = tempInfo[n]->pointsto;
-                ResetProcessed();
-                scanDepends(parms, al);
-                if (tempInfo[n]->indTerms)
-                    andmap(parms, tempInfo[n]->indTerms);
-            }
-            else if (tail->dc.left->mode == i_immed && !isintconst(tail->dc.left->offset) && !isfloatconst(tail->dc.left->offset) &&
-                     !iscomplexconst(tail->dc.left->offset) && tail->dc.left->offset->type != se_labcon)
-            {
-                SimpleType* tp = tail->dc.left->offset->sp->tp;
-                while (tp->type == st_pointer)
-                    tp = tp->btp;
-                if (tail->dc.left->offset->sp->tp->isarray || tp->type == st_struct || tp->type == st_union || tp->type == st_class)
-                {
-                    ALIASNAME* an = LookupMem(tail->dc.left);
-                    int n = tail->dc.left->offset->sp->tp->isarray ? tail->dc.left->offset->sp->tp->size : tp->size;
-                    for (i = 0; i < n; i++)
-                    {
-                        ALIASADDRESS* aa = GetAddress(an, i);
-                        if (aa)
-                        {
-                            while (aa->merge)
-                                aa = aa->merge;
-                            if (aa->modifiedBy)
-                            {
-                                ormap(parms, aa->modifiedBy);
-                            }
-                            ResetProcessed();
-                            scanDepends(parms, aa->pointsto);
-                        }
-                    }
-                }
-                else
-                {
-                    AliasUses(parms, tail->dc.left, true);
-                }
-            }
-            else
-            {
-                AliasUses(parms, tail->dc.left, true);
-            }
-        }
-        tail = tail->back;
-    }
-    for (i = 0; i < n; i++)
-    {
-        *bits &= ~*parms;
-        bits++, parms++;
-    }
-}
-void AliasUses(BITINT* bits, IMODE* im, bool rhs)
-{
-    if (im)
-    {
-        if (rhs)
-        {
-            if (im->offset->type == se_tempref)
-            {
-                ormap(bits, tempInfo[im->offset->sp->i]->modifiedBy);
-                if (im->mode == i_direct)
-                {
-                    im = LookupLoadTemp(im, im);
-                }
-                setbit(bits, termMap[im->offset->sp->i]);
-            }
-            else if (im->mode == i_direct)
-            {
-                ALIASNAME* an = LookupMem(im);
-                ALIASADDRESS* aa;
-                an = LookupAliasName(an, 0);
-                aa = LookupAddress(an, 0);
-                while (aa->merge)
-                    aa = aa->merge;
-                if (aa->modifiedBy)
-                    ormap(bits, aa->modifiedBy);
-                im = GetLoadTemp(im);
-                if (im)
-                {
-                    setbit(bits, termMap[im->offset->sp->i]);
-                }
-            }
-            else if (im->mode == i_immed && !isintconst(im->offset) && !isimaginaryconst(im->offset) &&
-                     !iscomplexconst(im->offset) && !isfloatconst(im->offset) && im->offset->type != se_labcon)
-            {
-                ALIASNAME* an = LookupMem(im);
-                ALIASADDRESS* aa;
-                aa = LookupAddress(an, 0);
-                while (aa->merge)
-                    aa = aa->merge;
-                if (aa->modifiedBy)
-                    ormap(bits, aa->modifiedBy);
-                im = im->offset->sp->imvalue;
-                if (im)
-                {
-                    im = GetLoadTemp(im);
-                    if (im)
-                    {
-                        setbit(bits, termMap[im->offset->sp->i]);
-                    }
-                }
-            }
-        }
-        else
-        {
-            if (im->offset->type == se_tempref)
-            {
-                ormap(bits, tempInfo[im->offset->sp->i]->modifiedBy);
-                if (im->mode == i_direct)
-                {
-                    im = LookupLoadTemp(im, im);
-                    setbit(bits, termMap[im->offset->sp->i]);
-                }
-                else
-                {
-                    auto al = tempInfo[im->offset->sp->i]->pointsto;
-                    while (al)
-                    {
-                        auto addr = al->address;
-                        while (addr->merge)
-                            addr = addr->merge;
-                        if (addr->name->byUIV)
-                        {
-                            AliasUses(bits, addr->name->v.uiv->im, true);
-                        }
-                        //                        if (al->address->modifiedBy)
-                        //                            ormap(bits, al->address->modifiedBy);
-                        al = al->next;
-                    }
-                    clearbit(bits, termMap[im->offset->sp->i]);
-                    im = GetLoadTemp(im);
-                    if (im)
-                        setbit(bits, termMap[im->offset->sp->i]);
-                }
-            }
-            else if (im->mode == i_direct)
-            {
-                ALIASNAME* an = LookupMem(im);
-                ALIASADDRESS* aa;
-                an = LookupAliasName(an, 0);
-                aa = LookupAddress(an, 0);
-                while (aa->merge)
-                    aa = aa->merge;
-                if (aa->modifiedBy)
-                    ormap(bits, aa->modifiedBy);
-                im = GetLoadTemp(im);
-                if (im)
-                {
-                    setbit(bits, termMap[im->offset->sp->i]);
-                }
-            }
-            else if (im->mode == i_immed && !isintconst(im->offset) && !isimaginaryconst(im->offset) &&
-                     !iscomplexconst(im->offset) && !isfloatconst(im->offset) && im->offset->type != se_labcon)
-            {
-                ALIASNAME* an = LookupMem(im);
-                ALIASADDRESS* aa;
-                aa = LookupAddress(an, 0);
-                while (aa->merge)
-                    aa = aa->merge;
-                if (aa->modifiedBy)
-                    ormap(bits, aa->modifiedBy);
-                im = im->offset->sp->imvalue;
-                if (im)
-                {
-                    im = GetLoadTemp(im);
-                    if (im)
-                    {
-                        setbit(bits, termMap[im->offset->sp->i]);
-                    }
-                }
-            }
-        }
-    }
-}
-static void ScanUIVs(void)
-{
-    bool done = false;
     ALIASLIST* al = parmList;
-    int i;
-    ResetProcessed();
-    uivBytes = aallocbit(termCount);
     for (auto aab : addresses)
     {
         auto aa = aab.second;
@@ -1428,143 +1119,87 @@ static void ScanUIVs(void)
         {
             im = aa1->name->v.name;
         }
-        switch (im->offset->type)
+        auto addr = aa1->pointsto;
+        while (addr)
         {
-            case se_auto:
-            case se_global:
-            case se_pc:
-            case se_threadlocal:
-                im = GetLoadTemp(im);
-                if (im)
-                    setbit(uivBytes, termMap[im->offset->sp->i]);
-                if (aa1->modifiedBy)
-                    ormap(uivBytes, aa1->modifiedBy);
-                break;
-            default:
-                break;
-        }
-    }
-}
-void FinishScanUIVs()
-{
-    int n = ((termCount) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT);
-    ALIASLIST* al = parmList;
-    while (al)
-    {
-        ALIASADDRESS* aa1 = al->address;
-        while (aa1->merge)
-        {
-            aa1 = aa1->merge;
-        }
-        if (aa1->modifiedBy)
-            ormap(uivBytes, aa1->modifiedBy);
-        auto lst = aa1->pointsto;
-        while (lst)
-        {
-            ALIASADDRESS* aa2 = lst->address;
-            while (aa2->merge)
-            {
-                aa2 = aa2->merge;
-            }
-            if (aa2->modifiedBy)
-                ormap(uivBytes, aa2->modifiedBy);
-            lst = lst->next;
-        }
-        al = al->next;
-    }
-}
-static void MakeAliasLists(void)
-{
-    int i;
-    for (i = 0; i < cachedTempCount; i++)
-    {
-        int n = tempInfo[i]->postSSATemp;
-        if (n >= 0 && tempInfo[i]->pointsto)
-        {
-            tempInfo[n]->pointsto = tempInfo[i]->pointsto;
-            tempInfo[i]->pointsto = nullptr;
-        }
-        tempInfo[i]->modifiedBy = aallocbit(termCount);
-    }
-    for (i = 0; i < cachedTempCount; i++)
-        if (tempInfo[i]->pointsto)
-        {
-            ALIASLIST* al = tempInfo[i]->pointsto;
-            while (al)
-            {
-                ALIASADDRESS* aa = al->address;
-                while (aa->merge)
-                    aa = aa->merge;
-                if (!aa->modifiedBy)
-                    aa->modifiedBy = aallocbit(termCount);
-                setbit(aa->modifiedBy, termMap[i]);
-                al = al->next;
-            }
-        }
-}
-static void ResetProcessed(void) { bitarrayClear(processBits, processCount); }
-static void AllocateProcessed(void)
-{
-    int i;
-    processCount = 0;
-    for (auto aab : addresses)
-    {
-        ALIASADDRESS* addr = aab.second;
-        ALIASADDRESS* aa = addr;
-        while (aa->merge)
-            aa = aa->merge;
-        aa->processIndex = processCount++;
-        addr = addr->next;
-    }
-    processBits = aallocbit(processCount);
-}
-static void GatherInds(BITINT* p, int n, ALIASLIST* al)
-{
-    while (al)
-    {
-        int k;
-        BITINT *r, *s;
-        if (!isset(processBits, al->address->processIndex))
-        {
-            setbit(processBits, al->address->processIndex);
-            GatherInds(p, n, al->address->pointsto);
-        }
-        s = p;
-        r = al->address->modifiedBy;
-        if (s)
-        {
-            if (!r)
-                r = al->address->modifiedBy = aallocbit(termCount);
-            for (k = 0; k < n; k++)
-            {
-                if (~*r & *s)
-                {
-                    changed = true;
-                    *r |= *s;
-                }
-                r++, s++;
-            }
-        }
-        al = al->next;
-    }
-}
-static void ScanMem(void)
-{
-    int i, k;
-    int n = (termCount + BITINTBITS - 1) / BITINTBITS;
-    do
-    {
-        changed = false;
-        ResetProcessed();
-        for (auto aab : addresses)
-        {
-            ALIASADDRESS* aa = aab.second;
-            ALIASADDRESS* aa1 = aa;
+            IMODE* imp;
+            aa1 = addr->address;
             while (aa1->merge)
                 aa1 = aa1->merge;
-            GatherInds(&aa1->modifiedBy[0], n, aa->pointsto);
+            if (aa1->name->byUIV)
+            {
+                imp = aa1->name->v.uiv->im;
+            }
+            else
+            {
+                imp = aa1->name->v.name;
+            }
+            pointsFrom.insert(std::pair(imp, im));
+            addr = addr->next;
         }
-    } while (changed);
+    }
+    for (int i = 0; i < cachedTempCount; i++)
+    {
+        if (tempInfo[i]->pointsto)
+        {
+            auto iml = tempInfo[i]->enode->sp->imind;
+            while (iml)
+            {
+                IMODE* im = iml->im;
+                if (im)
+                {
+                    auto addr = tempInfo[i]->pointsto;
+                    while (addr)
+                    {
+                        IMODE* imp;
+                        auto aa1 = addr->address;
+                        while (aa1->merge)
+                            aa1 = aa1->merge;
+                        if (aa1->name->byUIV)
+                        {
+                            imp = aa1->name->v.uiv->im;
+                        }
+                        else
+                        {
+                            imp = aa1->name->v.name;
+                        }
+                        pointsFrom.insert(std::pair(im, imp));
+                        addr = addr->next;
+                    }
+                }
+                iml = iml->next;
+            }
+        }
+    }
+}
+void ProcessIMModifies(IMODE* mem, std::function<void(IMODE*)> processor)
+{
+    auto bounds = pointsFrom.equal_range(mem);
+    for (auto it = bounds.first; it != bounds.second; ++it)
+    {
+        processor(it->second);
+    }
+}
+void ProcessUIVAddresses(std::function<void(IMODE*)> processor)
+{
+    ALIASLIST* al = parmList;
+    for (auto aab : addresses)
+    {
+        auto aa = aab.second;
+        ALIASADDRESS* aa1 = aa;
+        IMODE* im;
+        while (aa1->merge)
+            aa1 = aa1->merge;
+        if (aa1->name->byUIV)
+        {
+            im = aa1->name->v.uiv->im;
+        }
+        else
+        {
+            im = aa1->name->v.name;
+        }
+        processor(im);
+    }
 }
 void AliasPass1(void)
 {
@@ -1579,16 +1214,10 @@ void AliasPass1(void)
         changed = false;
         GatherAliases(loopArray[loopCount - 1]);
     } while (changed);
-}
-void AliasPass2(void)
-{
-    AllocateProcessed();
-    MakeAliasLists();
-    ScanUIVs();
-    ScanMem();
-    FinishScanUIVs();
-    if (icdFile)
-        DumpAliases();
-    complementmap(uivBytes);
+    InitIMModifies();
+    icdFile = fopen("hi.txt", "w");
+    DumpAliases();
+    fclose(icdFile);
+    icdFile = nullptr;
 }
 }  // namespace Optimizer

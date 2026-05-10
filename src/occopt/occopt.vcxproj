@@ -38,8 +38,8 @@
     <ClCompile Include="iconst.cpp" />
     <ClCompile Include="ifloatconv.cpp" />
     <ClCompile Include="iflow.cpp" />
+    <ClCompile Include="igcse.cpp" />
     <ClCompile Include="iinvar.cpp" />
-    <ClCompile Include="ilazy.cpp" />
     <ClCompile Include="ildata.cpp" />
     <ClCompile Include="ilive.cpp" />
     <ClCompile Include="ilocal.cpp" />
@@ -80,6 +80,7 @@
     <ClInclude Include="iconst.h" />
     <ClInclude Include="ifloatconv.h" />
     <ClInclude Include="iflow.h" />
+    <ClInclude Include="igcse.h" />
     <ClInclude Include="iinvar.h" />
     <ClInclude Include="ilazy.h" />
     <ClInclude Include="ildata.h" />
@@ -333,4 +334,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-</Project>
+</Project>

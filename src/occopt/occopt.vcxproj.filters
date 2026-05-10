@@ -41,9 +41,6 @@
     <ClCompile Include="iinvar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ilazy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ildata.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,6 +123,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\objlib\ObjSymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="igcse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -250,5 +250,8 @@
     <ClInclude Include="symfuncs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="igcse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
-</Project>
+</Project>

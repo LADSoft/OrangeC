@@ -39,7 +39,7 @@ namespace Optimizer
 BITINT bittab[BITINTBITS];
 
 static std::list<BriggsSet*> tab, tabc, tabt, tabs, taba, tabz;
-std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab, abtab, zbtab;
+std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab;
 
 inline static void freex(std::list<BriggsSet*>& set, std::unordered_set<BITINT*>* bits)
 {
@@ -82,8 +82,6 @@ void BitInit(void)
     freex(tabc, &cbtab);
     freex(tabt, &tbtab);
     freex(tabs, &sbtab);
-    freex(taba, &abtab);
-    freex(tabz, &zbtab);
 }
 void briggsClear(BriggsSet* data)
 {
@@ -118,7 +116,6 @@ void briggsFree() { freex(tab, &btab); }
 void briggsFreet() { freex(tabt, &tbtab); }
 void briggsFreec() { freex(tabc, &cbtab); }
 void briggsFrees() { freex(tabs, &sbtab); }
-void briggsFreea() { freex(taba, &abtab); }
 int briggsSet(BriggsSet* p, unsigned index)
 {
     if (index < p->size)
@@ -209,16 +206,6 @@ void bitarrayClear(BITINT* array, unsigned size)
         printf("diag::arrayclear:%d,%d\n", size, array[-1]);
 #endif
     memset(array, 0, (size + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
-}
-void zfreebit(BITINT* array)
-{
-    if (array == nullptr)
-        return;
-    zbtab.erase(array);
-#ifdef TESTBITS
-    array--;
-#endif
-    delete[] array;
 }
 
 }  // namespace Optimizer

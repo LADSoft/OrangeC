@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -31,7 +31,7 @@
 #include "issa.h"
 #include "ialias.h"
 #include "ilive.h"
-#include "ilazy.h"
+#include "igcse.h"
 #include "iloop.h"
 #include "iflow.h"
 #include "istren.h"
@@ -117,17 +117,14 @@ OptimizerModule Modules[]{
     {RedoDoms, nullptr, OPT_CONSTANT, 0, false, false},
     ////    { Reshape, "Loop reshaping", OPT_RESHAPE, 0, false, false },
     {ReduceLoopStrength, "Reduce Loop Strength", OPT_LSTRENGTH, DO_NOGCSE, true, false},
-    {MoveLoopInvariants, "Move Loop Invariants Pass 2", OPT_INVARIANT, DO_NOGCSE, true, false},
+    ////    {MoveLoopInvariants, "Move Loop Invariants Pass 2", OPT_INVARIANT, DO_NOGCSE, true, false},
     {AliasPass1, nullptr, ~0, DO_NOALIAS, false, false},
-    {SSAOut, nullptr, ~0, 0, false, false},
-    {RemoveDead, nullptr, ~0, 0, false, false},
-    {SetGlobalTerms, nullptr, ~0, 0, false, false},
-    {AliasPass2, nullptr, ~0, DO_NOALIAS, false, false},
-    {RemoveCriticalThunks, nullptr, ~0, 0, false, false},
+    //    {RemoveDead, nullptr, ~0, 0, false, false},
     {GlobalOptimization, "Lazy global optimization", OPT_GCSE, DO_NOGCSE, false, false},
     {AliasRundown, nullptr, ~0, DO_NOALIAS, false, false},
-    {ResetTempBottom, nullptr, ~0, 0, false, false},
+    {SSAOut, nullptr, ~0, 0, false, false},
     {RemoveDead, nullptr, ~0, 0, false, false},
+    {RemoveCriticalThunks, nullptr, ~0, 0, false, false},
     {RemoveInfiniteThunks, nullptr, ~0, 0, false, false},
 };
 

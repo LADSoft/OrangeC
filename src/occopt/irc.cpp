@@ -36,7 +36,7 @@
 #include "irc.h"
 #include "config.h"
 #include "iblock.h"
-#include "ilazy.h"
+#include "igcse.h"
 #include "OptUtils.h"
 #include "ildata.h"
 #include "ioptutil.h"
@@ -887,7 +887,7 @@ static void CountInstructions(bool first)
     instructionCount += 1000;
     workingMoves = tallocbit(instructionCount);
     activeMoves = tallocbit(instructionCount);
-    coalescedMoves = aallocbit(instructionCount);
+    coalescedMoves = tallocbit(instructionCount);
     constrainedMoves = tallocbit(instructionCount);
     frozenMoves = tallocbit(instructionCount);
     tempMoves[0] = tallocbit(instructionCount);
@@ -2552,7 +2552,7 @@ void AllocateRegisters(QUAD* head)
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);
-        coalescedNodes = aallocbit(tempCount);
+        coalescedNodes = tallocbit(tempCount);
         adjacent = tallocbit(tempCount);
         adjacent1 = tallocbit(tempCount);
         stackedTemps = tallocbit(tempCount);
@@ -2621,8 +2621,6 @@ void AllocateRegisters(QUAD* head)
         diag("register allocator failed");
     tFree();
     briggsFreet();
-    aFree();
-    briggsFreea();
     cFree();
     briggsFreec();
     registersAssigned = true;

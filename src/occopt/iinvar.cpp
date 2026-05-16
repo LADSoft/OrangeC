@@ -492,7 +492,7 @@ void ScanForVariableMotion(void)
             if (it != loopDoms.end())
             {
                 int n = blockArray[b]->loopParent->loopnum;
-                for (; b < blockCount && blockArray[b]->loopParent->loopnum == n; b++)
+                for (; b < blockCount && blockArray[b]->loopParent && blockArray[b]->loopParent->loopnum == n; b++)
                 {
                     blockToLoop[b] = it->second;
                 }
@@ -508,7 +508,7 @@ void ScanForVariableMotion(void)
             if (it != loopDoms.end())
             {
                 int n = blockArray[b]->loopParent->loopnum;
-                for (; b < blockCount && blockArray[b]->loopParent->loopnum == n; b++)
+                for (; b < blockCount && blockArray[b]->loopParent && blockArray[b]->loopParent->loopnum == n; b++)
                 {
                     blockToLoop[b] = it->second;
                 }

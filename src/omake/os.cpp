@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -140,6 +140,27 @@ static Variable* var_lookup_shell_names()
         v = VariableContainer::Instance()->Lookup("ComSpec");
     }
     return v;
+}
+static std::string TranslateUnixShellForMsys2(Variable* v)
+{
+    if (v)
+    {
+        // for msys2, we gotta strip the unix path off
+        // we don't need to add the .exe file extension, we just gotta get rid of the path
+        auto rv = v->GetValue();
+        auto n = rv.find_last_of('/');
+        if (n == std::string::npos)
+        {
+            n = rv.find_last_of('\\');
+        }
+        if (n != std::string::npos)
+        {
+            rv = rv.substr(n + 1);
+        }
+        OrangeC::Utils::BasicLogger::extremedebug("Translated unix shell to ", rv);
+        return rv;
+    }
+    return v ? v->GetValue() : "";
 }
 std::string OS::LookupShellNames()
 {
@@ -516,7 +537,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     Variable* shell_flags = VariableContainer::Instance()->Lookup(".SHELLFLAGS");
     if (IsUnixLikeShell(shell))
     {
-        cmd = v->GetValue() + " " + shell_flags->GetValue() + " ";
+        cmd = TranslateUnixShellForMsys2(v) + " " + shell_flags->GetValue() + " ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v && v->GetValue().find_first_of("\\") != std::string::npos)
@@ -831,7 +852,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     }
     if (IsUnixLikeShell(v->GetValue()))
     {
-        cmd = v->GetValue() + " -c ";
+        cmd = TranslateUnixShellForMsys2(v) + " -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
         v = VariableContainer::Instance()->Lookup("MAKE");
         if (v && v->GetValue().find_first_of("\\") != std::string::npos)

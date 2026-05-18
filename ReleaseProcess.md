@@ -2,6 +2,7 @@
 
 
 
+* passes Coverity scan
 * builds locally
 * builds in git actions
 * builds on appveyor

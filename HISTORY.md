@@ -1,5 +1,79 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
+## Version 7.0.10
+
+ * project: run code that has the MSVC sanitizer over most of the test programs in the tests directories
+ * project: add release process documentation
+ * project: update build.bat to explicitly check for appveyor instead of relying on an environment that had to be set locally
+ * project: update VisualStudio projects to VS2026
+ * project: remove nightly build from git actions (rely on per-checkin builds
+ * occ(optimizer): move variable references out of loops to the extent p  ossible
+ * occ(optimizer): refactor live variable analysis
+ * occ: arguments which were bit fields might be passed to the function call incorrectly
+ * occ: speed up compiles
+ * occ: refactor tokenizing
+ * occ: move various functions to new files
+ * occ: fix -x switch to be more comprehensive
+ * occ: C++17 supported in CMAKE
+ * occ: fix parenthesized string initialization to work again
+ * occ: fix hook to work propery with references
+ * occ: occ /? crashed
+ * occ: speed up new/delete with local pools
+ * occ: allow overloaded function arguments to differ only by array index valuews
+ * occ: don't define __STDC_VERSION__ in C++ mode
+ * occ: don't crash when run without arguments
+ * occ: fix inline assembler bugs with call, jmp, and ret
+ * occ: fix bug where DBL_MIN was used instead of -DBL_MAX (DBL_MIN being close to 0)
+ * occ: add '#pragma entrypoint' to support the new RTL with c0??? files
+ * occ: remove stack alignment (it needs to be rewritten another way)
+ * occ/oasm: fix problems with pshufb, add sha1 instructions 
+ * occ: fix FASTCALL calling convention to work like MSVC
+ * occ: inline assembler, fix SSE instructions to compile now
+ * occ: inline assembler, add rudimentary support for 'synthesized' index modes
+ * occ: add __cupid intrinsic
+ * occ: fix bug in name mangling of arrays
+ * occ: fix various problems with initializer lists (compiles picobench now)
+ * occ: fix some problems with inefficient moves in and around loops
+ * occ: atomic assign of long long didn't get propagate to EDX:EAX
+ * occ: use smaller stack frames (reduce number of unused variables on the stack)
+ * occ: fix problem where shimming default constructors didn't work when there was a virtual base class
+ * occ: improve code quality on the increments for example for for-next loops, or similar incrementers explicitly placed in other loops
+ * occ: optimize parameter pushes to lessen the need for intermediate temporary registers
+ * occ: bug fixes to the uninitialized variable checks
+ * occ: fix bug where atommic_cmpxchg could overwrite in-use registers
+ * occ: bug fix to add code generation
+ * occ: relax rules for which arguments get -loaded at the top of a function body (helps other optimizations)
+ * occ: fix bugs with member pointer thunks and the thisptr
+ * occ: atomic_fetch_* functions couldn't be used.
+ * occ: don't use PUSH ECX to reserve stack space (subtract from ESP instead)
+ * occ: fix problems with user-defined literals
+ * occ: improvements to deduction guides
+ * occopt: wouldn't load ICF files
+ * occil: don't crash when run without arguments
+ * occil: support .net core 9 and .net core 10
+ * orc: supported in CMAKE
+ * orc: fix various bugs found when using CMAKE
+ * omake: refactoring
+ * omake: works on Linux
+ * omake: bug fixes
+ * oasm: fix listing file to show emitted bytes again
+ * olink:  linker wouldn't generate an error when passed an invalid library
+ * olink:  add /DFIXED to force a fixed load address
+ * olink:  change to support not having c0??? files
+ * olib: support the runtime library without c0??? files
+ * tests: various new tests added
+ * tests: a couple of tests updated
+ * clibs: rtl rewritten to not need the c0??? files any more
+ * clibs: rtl rewritten to better support wmain and wWinMain better
+ * clibs: improve the make files and the clean process
+ * clibs: link LSCRTL.DLL at a fixed address
+ * clibs: memcpy returned the wrong value
+ * clibs: remove various commented out stuff related to MSDOS
+ * clibs: add PE file dos header back into the build, fix it.
+ * clibs: MSVCRT.DLL uses an alternate prototype for swprintf
+ * clibs: remove obsolete SSE initialization code
+ * clibs: updates to how argument and environment are processed, change __wenviron to _wenviron
+
 ## Version 7.0.0
 * project: make updates so that it would compile with g++15
 * project: full support for C++17

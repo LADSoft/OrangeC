@@ -17,10 +17,10 @@
 
 
 * cull release notes from git commit log
-* add release notes to the releasenotes file and the history file
+* add release notes to the orangec/src/relnotes.txt file and the history file
 * add the release date to the release notes
-* update the version in orange/src/version.h
-* update the version stem in orange/appveyory.yml
+* update the version in orangec/src/version.h
+* update the version stem in orangec/appveyor.yml
 * go to the appveyor site and set the build number back to 1
 * tag the release (vx.y.z)
 * push the tag

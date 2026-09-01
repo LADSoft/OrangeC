@@ -22,7 +22,7 @@
 #ifndef LAME_VERSION_H
 #define LAME_VERSION_H
 
-# include <lame.h>
+# include "lame.h"
 
 /* 
  * To make a string from a token, use the # operator:

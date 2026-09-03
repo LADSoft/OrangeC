@@ -44,18 +44,30 @@ namespace Optimizer
 {
 namespace
 {
+static int gcseBlockNumber;
 static std::unordered_map<IMODE*, IMODE*> tempTranslation;
-static std::unordered_map<IMODE*, IMODE*> memTranslation;
-static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(_basic_dag)>,
-                          OrangeC::Utils::bin_eql<sizeof(_basic_dag)>>
+static std::vector<std::unordered_map<IMODE*, IMODE*>> memTranslation;
+static std::vector<std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(_basic_dag)>,
+                                      OrangeC::Utils::bin_eql<sizeof(_basic_dag)>>>
     expressionTranslation;
+static std::vector<std::unordered_set<IMODE*>> memKilled;
 
-static void InsertTempEquivalence(IMODE* src, IMODE* dest) { tempTranslation[src] = dest; }
+static void InsertTempEquivalence(IMODE* src, IMODE* dest)
+{
+    if (!src->vol && src->size < ISZ_FLOAT)
+    {
+        tempTranslation[src] = dest;
+    }
+}
 static void InsertMemEquivalence(IMODE* src, IMODE* dest)
 {
-    auto it = memTranslation.find(src);
-    if (it == memTranslation.end())
-        memTranslation[src] = dest;
+    if (!src->vol && src->size < ISZ_FLOAT)
+    {
+        auto&& mt = memTranslation[gcseBlockNumber];
+        auto it = mt.find(src);
+        if (it == mt.end())
+            mt[src] = dest;
+    }
 }
 static void LookupInd(IMODE*& im)
 {
@@ -83,7 +95,7 @@ static void LookupInd(IMODE*& im)
         }
     }
 }
-static void LookupMemOrTempEquivalence(IMODE*& im)
+static void LookupMemOrTempEquivalence(IMODE*& im, bool skipMem)
 {
     if (im)
     {
@@ -92,26 +104,33 @@ static void LookupMemOrTempEquivalence(IMODE*& im)
         {
             auto it = tempTranslation.find(im);
             if (it != tempTranslation.end() && !it->second->retval)
-                im = it->second;
+                if (!skipMem || (it->second->mode == i_direct && it->second->offset->type == se_tempref))
+                    im = it->second;
         }
         else if (im->mode != i_immed)
         {
-            auto it = memTranslation.find(im);
-            if (it != memTranslation.end())
+            auto&& mt = memTranslation[gcseBlockNumber];
+            auto it = mt.find(im);
+            if (it != mt.end())
                 im = it->second;
         }
     }
 }
 static void LookupEquivalence(QUAD* temp, QUAD* head)
 {
-    LookupMemOrTempEquivalence(head->dc.left);
+    LookupMemOrTempEquivalence(head->dc.left, !!head->dc.right);
     if (head->dc.left && !head->dc.left->retval && head->dc.left->offset->type == se_tempref)
         head->temps |= TEMP_LEFT;
-    LookupMemOrTempEquivalence(head->dc.right);
+    else
+        head->temps &= ~TEMP_LEFT;
+    LookupMemOrTempEquivalence(head->dc.right, !!head->dc.left);
     if (head->dc.right && head->dc.right->offset->type == se_tempref)
         head->temps |= TEMP_RIGHT;
-    auto it = expressionTranslation.find(head);
-    if (it != expressionTranslation.end())
+    else
+        head->temps &= ~TEMP_RIGHT;
+    auto&& et = expressionTranslation[gcseBlockNumber];
+    auto it = et.find(head);
+    if (it != et.end())
     {
         head->dc.opcode = i_assn;
         head->dc.left = it->second;
@@ -121,16 +140,101 @@ static void LookupEquivalence(QUAD* temp, QUAD* head)
 }
 static void InsertExpressionEquivalence(QUAD* src, IMODE* dest)
 {
-    auto it = expressionTranslation.find(src);
-    if (it == expressionTranslation.end())
-        expressionTranslation[src] = dest;
+    if (!dest->vol && dest->size < ISZ_FLOAT)
+    {
+        auto&& et = expressionTranslation[gcseBlockNumber];
+        auto it = et.find(src);
+        if (it == et.end())
+            et[src] = dest;
+    }
 }
-static void ModifyOne(IMODE* im) { memTranslation.erase(im); }
-static void Modifies(IMODE* mem) { ProcessIMModifies(mem, ModifyOne); }
+static void ModifyOne(IMODE* im)
+{
+    memTranslation[gcseBlockNumber].erase(im);
+    memKilled[gcseBlockNumber].insert(im);
+}
+static void Modifies(IMODE* mem)
+{
+    ProcessIMModifies(mem, ModifyOne);
+    memTranslation[gcseBlockNumber].erase(mem);
+    memKilled[gcseBlockNumber].insert(mem);
+}
 static void ModifiesGosub() { ProcessUIVAddresses(ModifyOne); }
+
+static void LoadBlockMem(Block* b)
+{
+    gcseBlockNumber = b->blocknum;
+    if (b->pred)
+    {
+        if (b->pred->next)
+        {
+            struct myless
+            {
+                bool operator()(const QUAD* a, const QUAD* b) const { return memcmp(a, b, sizeof(_basic_dag)) < 0; }
+            };
+            int count = 0;
+            std::multimap<IMODE*, IMODE*> mmmemTranslation;
+            std::multimap<QUAD*, IMODE*, myless> mmexpressionTranslation;
+            std::unordered_set<IMODE*> mmKilled;
+            // multiple predecessors
+            for (auto bl = b->pred; bl; bl = bl->next, count++)
+            {
+                for (auto&& mt : memTranslation[bl->block->blocknum])
+                {
+                    mmmemTranslation.emplace(mt.first, mt.second);
+                }
+                for (auto&& et : expressionTranslation[bl->block->blocknum])
+                {
+                    mmexpressionTranslation.emplace(et.first, et.second);
+                }
+                for (auto k : memKilled[bl->block->blocknum])
+                {
+                    mmKilled.insert(k);
+                }
+            }
+            for (auto key = mmmemTranslation.begin(); key != mmmemTranslation.end(); ++key)
+            {
+                int count1 = 0;
+                auto range = mmmemTranslation.equal_range(key->first);
+                IMODE* cmp = nullptr;
+                for (auto d = range.first; d != range.second; ++d)
+                {
+                    if (cmp && cmp != d->second)
+                        break;
+                    ++count1;
+                    cmp = d->second;
+                }
+                if (count1 == count && mmKilled.find(key->first) != mmKilled.end())
+                    memTranslation[gcseBlockNumber][range.first->first] = range.first->second;
+            }
+            for (auto key = mmexpressionTranslation.begin(); key != mmexpressionTranslation.end(); ++key)
+            {
+                int count1 = 0;
+                auto range = mmexpressionTranslation.equal_range(key->first);
+                IMODE* cmp = nullptr;
+                for (auto d = range.first; d != range.second; ++d)
+                {
+                    if (cmp && cmp != d->second)
+                        break;
+                    ++count1;
+                    cmp = d->second;
+                }
+                if (count1 == count)
+                    expressionTranslation[gcseBlockNumber][range.first->first] = range.first->second;
+            }
+        }
+        else
+        {
+            // single predecessor
+            memTranslation[gcseBlockNumber] = memTranslation[b->pred->block->blocknum];
+            expressionTranslation[gcseBlockNumber] = expressionTranslation[b->pred->block->blocknum];
+        }
+    }
+}
 
 static void GCSEProcessBlock(Block* b)
 {
+    LoadBlockMem(b);
     auto head = b->head;
     while (head != b->tail->fwd)
     {
@@ -143,11 +247,12 @@ static void GCSEProcessBlock(Block* b)
                 {
                     Modifies(temp.ans);
                     LookupEquivalence(&temp, head);
+                    LookupInd(head->ans);
+                    Modifies(head->ans);
                 }
                 else
                 {
                     LookupEquivalence(&temp, head);
-                    int n = temp.ans->offset->sp->i;
                     if (temp.dc.opcode == i_assn)
                     {
                         if (!head->ans->retval)
@@ -163,7 +268,8 @@ static void GCSEProcessBlock(Block* b)
                                 else
                                 {
                                     // load from temp
-                                    if (!head->dc.left->retval && head->ans->size == head->dc.left->size)
+                                    if (!head->dc.left->retval && head->ans->size == head->dc.left->size &&
+                                        !head->ans->offset->sp->pushedtotemp && !head->genConflict)
                                         InsertTempEquivalence(head->ans, head->dc.left);
                                 }
                             }
@@ -213,6 +319,37 @@ static void GCSEProcessBlock(Block* b)
         head = head->fwd;
     }
 }
+
+static void GCSEProcessPhi(Block* b)
+{
+    auto head = b->head;
+    while (head != b->tail->fwd)
+    {
+        if (!head->ignoreMe && head->dc.opcode != i_label && !head->atomic)
+        {
+            if (head->dc.opcode == i_phi)
+            {
+                struct _phiblock* pb = head->dc.v.phi->temps;
+                while (pb)
+                {
+                    auto im = tempInfo[pb->Tn]->enode->sp->imvalue;
+                    if (im)
+                    {
+                        LookupMemOrTempEquivalence(im, false);
+                        pb->Tn = im->offset->sp->i;
+                    }
+                    pb = pb->next;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+        head = head->fwd;
+    }
+}
+
 }  // namespace
 
 void GlobalOptimization(void)
@@ -234,10 +371,11 @@ void GlobalOptimization(void)
     // this one is completely consumed while making the forward order list
     workList.push_back(0);
     // this one is consumed later, when we are evaluating the livouts
-    forwardOrder.push_back(0);
+    forwardOrder.push_front(0);
     // last block has been visited
     blockArray[0]->visiteddfst = true;
-    // calculate a foorward order to traverse the blocks, where each block is evaluated sometime after all its successors are
+    // calculate a foorward order to traverse the blocks, where each block is evaluated sometime after all its predecessors are
+
     // evaluated.
     while (!workList.empty())
     {
@@ -249,26 +387,41 @@ void GlobalOptimization(void)
         BLOCKLIST* bl = blockArray[n]->succ;
         while (bl)
         {
-            // if a a succecessor has not been visited
+            // if a successor has not been visited
             if (!bl->block->visiteddfst)
             {
-                // mark it as visited
-                bl->block->visiteddfst = true;
-                // the the block to the work list to visit it
-                workList.push_back(bl->block->blocknum);
-                // we add it to the reverse order list here
-                forwardOrder.push_back(bl->block->blocknum);
+                bool doVisit = true;
+                for (auto pred = bl->block->pred; pred && doVisit; pred = pred->next)
+                    doVisit &= pred->block->visiteddfst;
+
+                if (doVisit)
+                {
+                    // mark it as visited
+                    bl->block->visiteddfst = true;
+                    // the the block to the work list to visit it
+                    workList.push_back(bl->block->blocknum);
+                    // we add it to the forward order list here
+                    forwardOrder.push_back(bl->block->blocknum);
+                }
             }
             bl = bl->next;
         }
     }
+    memTranslation.resize(blockCount);
+    expressionTranslation.resize(blockCount);
+    memKilled.resize(blockCount);
     for (auto f : forwardOrder)
     {
         GCSEProcessBlock(blockArray[f]);
     }
+    for (auto f : forwardOrder)
+    {
+        GCSEProcessPhi(blockArray[f]);
+    }
     tempTranslation.clear();
     memTranslation.clear();
     expressionTranslation.clear();
+    memKilled.clear();
 }
 
 }  // namespace Optimizer

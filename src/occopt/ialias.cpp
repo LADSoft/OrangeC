@@ -89,9 +89,8 @@ static std::unordered_map<IMODE**, std::list<ALIASNAME*>, OrangeC::Utils::fnv1a3
 static std::unordered_map<ptrint*, UIVHash*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
                           OrangeC::Utils::bin_eql<sizeof(ptrint)>>
     names;
-static std::unordered_map<ALIASNAME**, ADDRBYNAME*, OrangeC::Utils::fnv1a32_binary<sizeof(ALIASNAME*)>,
-                          OrangeC::Utils::bin_eql<sizeof(ALIASNAME*)>>
-    addrNames;
+
+static std::multimap<ALIASNAME*, ALIASADDRESS*> addrNames;
 static std::multimap<IMODE*, IMODE*> pointsFrom;
 static void ResetProcessed(void);
 static void GatherInds(BITINT* p, int n, ALIASLIST* al);
@@ -312,6 +311,28 @@ static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
         src = src->next;
     }
 }
+inline static bool isstructptr(SimpleType* tp)
+{
+    return (tp->type == st_pointer) && ((tp->btp->type == st_union) || (tp->btp->type == st_class) || (tp->btp->type == st_struct));
+}
+static void AliasUnionIndirect(ALIASLIST* dest, ALIASADDRESS* name)
+{
+    IMODE* im;
+    if (name->name->byUIV)
+    {
+        im = name->name->v.uiv->im;
+    }
+    else
+    {
+        im = name->name->v.name;
+    }
+    if (isstructptr(im->offset->sp->tp))
+    {
+    }
+    else
+    {
+    }
+}
 static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
 {
     ptrint str;
@@ -402,26 +423,7 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
     li->next = name->addresses;
     name->addresses = li;
 
-    auto it1 = addrNames.find(&name);
-    if (it1 == addrNames.end())
-    {
-        auto q = aAllocate<ADDRBYNAME>();
-        q->name = name;
-        ALIASNAME** name1 = Allocate<ALIASNAME*>();
-        *name1 = name;
-        addrNames[name1] = q;
-        ALIASLIST* ali = aAllocate<ALIASLIST>();
-        ali->address = addr;
-        ali->next = q->addresses;
-        q->addresses = ali;
-    }
-    else
-    {
-        ALIASLIST* ali = aAllocate<ALIASLIST>();
-        ali->address = addr;
-        ali->next = it1->second->addresses;
-        it1->second->addresses = ali;
-    }
+    addrNames.insert(std::pair(name, addr));
     return addr;
 }
 static ALIASADDRESS* GetAddress(ALIASNAME* name, int offset)
@@ -757,39 +759,34 @@ static int InferStride(IMODE* im)
 }
 static void SetStride(ALIASADDRESS* addr, int stride)
 {
-    auto it = addrNames.find(&addr->name);
-    if (it != addrNames.end())
+    auto range = addrNames.equal_range(addr->name);
+    for (auto address = range.first; address != range.second; ++address)
     {
-        ALIASLIST* addresses = it->second->addresses;
-        while (addresses)
+        ALIASADDRESS* scan = address->second;
+        while (scan)
         {
-            ALIASADDRESS* scan = addresses->address;
-            while (scan)
+            if (addr != scan && addr->name == scan->name)
             {
-                if (addr != scan && addr->name == scan->name)
+                if (addr->offset < scan->offset)
                 {
-                    if (addr->offset < scan->offset)
+                    int o2 = addr->offset + (scan->offset - addr->offset) % stride;
+                    if (addr->offset == o2)
                     {
-                        int o2 = addr->offset + (scan->offset - addr->offset) % stride;
-                        if (addr->offset == o2)
+                        AliasUnion(&addr->pointsto, scan->pointsto);
+                        scan->merge = addr;
+                    }
+                    else
+                    {
+                        ALIASADDRESS* sc2 = LookupAddress(addr->name, o2);
+                        if (sc2 && sc2 != scan)
                         {
-                            AliasUnion(&addr->pointsto, scan->pointsto);
-                            scan->merge = addr;
-                        }
-                        else
-                        {
-                            ALIASADDRESS* sc2 = LookupAddress(addr->name, o2);
-                            if (sc2 && sc2 != scan)
-                            {
-                                AliasUnion(&sc2->pointsto, scan->pointsto);
-                                scan->merge = sc2;
-                            }
+                            AliasUnion(&sc2->pointsto, scan->pointsto);
+                            scan->merge = sc2;
                         }
                     }
                 }
-                scan = scan->next;
             }
-            addresses = addresses->next;
+            scan = scan->next;
         }
     }
 }

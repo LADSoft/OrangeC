@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -224,13 +224,6 @@ typedef struct _aliaslist
     struct _aliaslist* next;
     ALIASADDRESS* address;
 } ALIASLIST;
-
-typedef struct _addrByName
-{
-    struct _addrByName* next;
-    ALIASNAME* name;
-    ALIASLIST* addresses;
-} ADDRBYNAME;
 
 typedef struct _normlist
 {

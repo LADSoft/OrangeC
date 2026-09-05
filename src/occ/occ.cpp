@@ -532,7 +532,7 @@ int main(int argc, char* argv[]) MAINTRY
     }
     delete optimizerMem;
     if (rv == 255)  // means don't run the optimizer or backend
-        rv = 0;
+        rv = 1;
     return rv;
 }
 MAINCATCH

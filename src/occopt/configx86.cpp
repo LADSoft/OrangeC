@@ -109,7 +109,8 @@ Executable Mode:
     d - dll                             c = crtdll.dll
     g - windowing                       m = msvcrtdll.dll
     
-Optimization control: OPTIMIZATION_DESCRIPTION Flags: OPTMODULES_DESCRIPTION
+Optimization control:)help" "\n" OPTIMIZATION_DESCRIPTION "Flags:\n" OPTMODULES_DESCRIPTION
+    R"help(
     -fsyntax-only                  compile only, don't produce an output file
     -funsigned-char                'char' type is unsigned
     -std=xxxx                       specify the language standard to use

@@ -1773,6 +1773,7 @@ static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool*
                                 *exp = baseClassOffset(sp2->sb->parentClass, typ2->BaseType()->sp, *exp);
                             }
                             *exp = MakeExpression(ExpressionNode::structadd_, *exp, offset);
+                            (*exp)->size = sp2->tp;
                             if (sp3)
                             {
                                 do
@@ -2933,6 +2934,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         {
                             auto pos = MakeExpression(ExpressionNode::structadd_, dest,
                                                       MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                            pos->size = sym->tp;
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, (*ita)->exp);
                             if (node)
@@ -2953,6 +2955,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                         {
                             auto pos = MakeExpression(ExpressionNode::structadd_, dest,
                                                       MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                            pos->size = sym->tp;
                             Dereference(sym->tp, &pos);
                             auto node1 = MakeExpression(ExpressionNode::assign_, pos, MakeIntExpression(ExpressionNode::c_i_, 0));
                             if (node)
@@ -3078,6 +3081,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
                     {
                         auto pos = MakeExpression(ExpressionNode::structadd_, dest,
                                                   MakeIntExpression(ExpressionNode::c_i_, count1++ * initializerListType->size));
+                        pos->size = initializerListType;
                         Dereference(initializerListType, &pos);
                         auto node1 = MakeExpression(ExpressionNode::assign_, pos, (*ita)->exp);
                         listOfScalars.push_back((*ita)->exp);
@@ -3124,6 +3128,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
             }
         }
         dest = MakeExpression(ExpressionNode::structadd_, initList, MakeIntExpression(ExpressionNode::c_i_, begin->sb->offset));
+        dest->size = begin->tp;
         Dereference(&stdpointer, &dest);
         dest = MakeExpression(ExpressionNode::assign_, dest, data);
         if (rv)
@@ -3136,6 +3141,7 @@ void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* in
             rv = dest;
         }
         dest = MakeExpression(ExpressionNode::structadd_, initList, MakeIntExpression(ExpressionNode::c_i_, size->sb->offset));
+        dest->size = size->tp;
         Dereference(&stdpointer, &dest);
         dest = MakeExpression(ExpressionNode::assign_, dest,
                               MakeIntExpression(ExpressionNode::c_i_, tp->size / initializerListType->size));
@@ -3248,6 +3254,7 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
             count++;
             auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
                                        MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
+            exp2->size = (*it)->tp;
             if ((*it)->tp->IsStructured())
             {
                 if (!(*it)->tp->BaseType()->sp->sb->trivialCons)
@@ -3315,6 +3322,7 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
             {
                 auto exp2 = MakeExpression(ExpressionNode::structadd_, ptr,
                                            MakeIntExpression(ExpressionNode::c_i_, (*it)->sb->offset) + offset);
+                exp2->size = (*it)->tp;
                 if ((*it)->tp->IsStructured())
                 {
                     if ((*it)->tp->BaseType()->sp->sb->hasUserCons)
@@ -6664,6 +6672,7 @@ static void expression_primary(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION*
                                 Dereference(&stdpointer, exp);
                                 *exp = MakeExpression(ExpressionNode::structadd_, *exp,
                                                       MakeIntExpression(ExpressionNode::c_i_, ths->sb->offset));
+                                (*exp)->size = ths->tp;
                                 if (!lambdas.front()->thisByVal)
                                 {
                                     Dereference(&stdpointer, exp);

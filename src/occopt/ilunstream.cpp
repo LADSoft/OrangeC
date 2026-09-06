@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -383,6 +383,7 @@ static Optimizer::IMODE* UnstreamOperand()
     Optimizer::IMODE* rv = Allocate<Optimizer::IMODE>();
     UnstreamBlockType(STT_OPERAND, false);
     rv->mode = (i_adr)UnstreamIndex();
+    rv->structSpan = UnstreamIndex();
     rv->scale = UnstreamIndex();
     rv->useindx = UnstreamIndex();
     rv->size = UnstreamIndex();

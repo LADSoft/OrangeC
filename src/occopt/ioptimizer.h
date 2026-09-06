@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -466,7 +466,8 @@ typedef struct _imode_
     SimpleExpression* offset3; /* an address */
     SimpleExpression* vararg;
     RUNTIMEDATA* runtimeData;  // this is a temporary, will be moved to the quad when it gets generated
-    int scale;                 /* scale factor on the second temp reg */
+    int structSpan;            /* span for a structure pointer (including as a substruct) */
+    char scale;                /* scale factor on the second temp reg */
     char useindx;
     char size;           /* size */
     char ptrsize;        /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
@@ -527,7 +528,7 @@ struct _basic_dag
                          // when working on 64 bit compilers. as more on this story, later coverity pointed out that using dc.v.i in
                          // iconst.cpp was broken, because all the conversions were from long long...  but just adding a new long
                          // long member to this union so i could attempt to fix it, again broke the builds...
-            void* data; /* generic data, won't be filled in until after LCSE */
+            void* data;  /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
             long label;  // branches
         };

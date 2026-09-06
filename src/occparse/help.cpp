@@ -1187,6 +1187,7 @@ static EXPRESSION* msilThunkSubStructs(EXPRESSION* exps, EXPRESSION* expsym, SYM
                                 offset -= sp->sb->offset;
                                 exps = MakeExpression(ExpressionNode::structadd_, exps,
                                                       MakeExpression(ExpressionNode::structelem_, sp));
+                                exps->size = sp->tp;
                                 tp = sp->tp;
                             }
                             else
@@ -1291,11 +1292,16 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                         diag("ConverInitializersToExpression: no this ptr");
                     }
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
                         expsym =
                             MakeExpression(ExpressionNode::structadd_, expsym, MakeExpression(ExpressionNode::structelem_, sym));
+                    }
                     else
+                    {
                         expsym = MakeExpression(ExpressionNode::structadd_, expsym,
                                                 MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                        expsym->size = sym->tp;
+                    }
                     break;
                 case StorageClass::external_:
                     /*			expsym = MakeExpression(ExpressionNode::global_, sym);
@@ -1619,6 +1625,7 @@ EXPRESSION* ConverInitializersToExpression(Type* tp, SYMBOL* sym, EXPRESSION* ex
                             {
                                 exps = MakeExpression(ExpressionNode::structadd_, exps,
                                                       MakeIntExpression(ExpressionNode::c_i_, initItem->offset));
+                                exps->size = initItem->basetp;
                             }
                             else if (initItem->offset || (last != init->end() && (*last)->basetp &&
                                                           (Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND)))

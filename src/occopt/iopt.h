@@ -217,6 +217,7 @@ typedef struct _aliasAddress
     int offset;
     BITINT* modifiedBy;
     int processIndex;
+    int structSpan;
 } ALIASADDRESS;
 
 typedef struct _aliaslist

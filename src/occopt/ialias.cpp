@@ -94,8 +94,11 @@ static std::multimap<ALIASNAME*, ALIASADDRESS*> addrNames;
 static std::multimap<IMODE*, IMODE*> pointsFrom;
 static void ResetProcessed(void);
 static void GatherInds(BITINT* p, int n, ALIASLIST* al);
-void AliasInit(void)
+void AliasInit(void) { AliasRundown(); }
+void AliasRundown(void)
 {
+    cachedTempCount = 0;
+    aFree();
     int i;
     for (i = 0; i < tempCount; i++)
     {
@@ -113,15 +116,6 @@ void AliasInit(void)
     processBits = nullptr;
     processCount = 0;
     changed = false;
-}
-void AliasRundown(void)
-{
-    aFree();
-    addresses.clear();
-    names.clear();
-    mem.clear();
-    addrNames.clear();
-    pointsFrom.clear();
 }
 static void PrintOffs(struct UIVOffset* offs)
 {
@@ -151,7 +145,7 @@ static void PrintName(ALIASNAME* name, int offs)
 }
 static void DumpAliases(void)
 {
-    oprintf(icdFile, "function: %s\n", currentFunction->name);
+    oprintf(icdFile, "function: %s\n", currentFunction->outputName);
     int i;
     oprintf(icdFile, "Alias Dump:\n");
     for (auto aab : addresses)
@@ -288,6 +282,10 @@ static void AliasUnion(ALIASLIST** dest, ALIASLIST* src)
         src = src->next;
     }
 }
+inline static bool isstructptr(SimpleType* tp)
+{
+    return (tp->type == st_pointer) && ((tp->btp->type == st_union) || (tp->btp->type == st_class) || (tp->btp->type == st_struct));
+}
 static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
 {
     while (src)
@@ -309,28 +307,6 @@ static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
             changed = true;
         }
         src = src->next;
-    }
-}
-inline static bool isstructptr(SimpleType* tp)
-{
-    return (tp->type == st_pointer) && ((tp->btp->type == st_union) || (tp->btp->type == st_class) || (tp->btp->type == st_struct));
-}
-static void AliasUnionIndirect(ALIASLIST* dest, ALIASADDRESS* name)
-{
-    IMODE* im;
-    if (name->name->byUIV)
-    {
-        im = name->name->v.uiv->im;
-    }
-    else
-    {
-        im = name->name->v.name;
-    }
-    if (isstructptr(im->offset->sp->tp))
-    {
-    }
-    else
-    {
     }
 }
 static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
@@ -885,12 +861,14 @@ static void HandleAdd(QUAD* head)
                 {
                     // R+C
                     int c = head->dc.opcode == i_add ? head->dc.right->offset->i : -head->dc.right->offset->i;
+                    int structSpan = head->ans->structSpan;
                     ALIASLIST* scan = tempInfo[head->dc.left->offset->sp->i]->pointsto;
                     ALIASLIST* result = nullptr;
                     bool xchanged = changed;
                     while (scan)
                     {
                         ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + c);
+                        addr->structSpan = structSpan;
                         ALIASLIST* al = aAllocate<ALIASLIST>();
                         al->address = addr;
                         AliasUnion(&result, al);
@@ -1021,8 +999,8 @@ static void HandleParm(QUAD* head)
         }
         if (base)
         {
-            addr = *base;
             AliasUnionParm(&parmList, (*base));
+            addr = *base;
             while (addr)
             {
                 if (addr->address->name->byUIV)
@@ -1034,6 +1012,22 @@ static void HandleParm(QUAD* head)
                         ALIASLIST* al = aAllocate<ALIASLIST>();
                         al->address = aa;
                         AliasUnion(&addr->address->pointsto, al);
+                        if (addr->address->structSpan)
+                        {
+                            int begin = addr->address->offset;
+                            int end = begin + addr->address->structSpan;
+                            auto range = addrNames.equal_range(addr->address->name);
+                            for (auto a = range.first; a != range.second; ++a)
+                            {
+                                if (a->second->offset > begin && a->second->offset < end)
+                                {
+                                    ALIASLIST* al = aAllocate<ALIASLIST>();
+                                    al->address = a->second;
+                                    al->next = parmList;
+                                    parmList = al;
+                                }
+                            }
+                        }
                     }
                 }
                 addr = addr->next;
@@ -1214,5 +1208,10 @@ void AliasPass1(void)
         GatherAliases(loopArray[loopCount - 1]);
     } while (changed);
     InitIMModifies();
+
+    icdFile = fopen("hi.log", "a");
+    DumpAliases();
+    fclose(icdFile);
+    icdFile = nullptr;
 }
 }  // namespace Optimizer

@@ -121,11 +121,13 @@ OptimizerModule Modules[]{
     {AliasPass1, nullptr, ~0, DO_NOALIAS, false, false},
     //    {RemoveDead, nullptr, ~0, 0, false, false},
     {GlobalOptimization, "Lazy global optimization", OPT_GCSE, DO_NOGCSE, false, false},
+    /*
     {AliasRundown, nullptr, ~0, DO_NOALIAS, false, false},
     {SSAOut, nullptr, ~0, 0, false, false},
     {RemoveDead, nullptr, ~0, 0, false, false},
     {RemoveCriticalThunks, nullptr, ~0, 0, false, false},
     {RemoveInfiniteThunks, nullptr, ~0, 0, false, false},
+*/
 };
 
 void OptimizerStats()

@@ -245,7 +245,7 @@ void Optimize(SimpleSymbol* funcsp)
     flows_and_doms();
     gatherLocalInfo(functionVariables);
     RunOptimizerModules();
-
+    return;
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !dontOptimizeFunction)
     {
         if (cparams.icd_flags & ICD_QUITEARLY)

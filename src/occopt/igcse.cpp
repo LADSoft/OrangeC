@@ -84,7 +84,7 @@ static void LookupInd(IMODE*& im)
                 {
                     for (auto lst = im2->offset->sp->imind; lst; lst = lst->next)
                     {
-                        if (lst->im->ptrsize == im->ptrsize)
+                        if (lst->im->size == im->size)
                         {
                             im = lst->im;
                             break;

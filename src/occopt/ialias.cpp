@@ -549,6 +549,10 @@ static void HandleAssn(QUAD* head)
         ALIASLIST* result = nullptr;
         ALIASLIST* addr = tempInfo[head->dc.left->offset->sp->i]->pointsto;
         bool xchanged = changed;
+        ALIASNAME* an1 = LookupMem(head->dc.left);
+        ALIASADDRESS* aa1;
+        an1 = LookupAliasName(an1, 0);
+        aa1 = LookupAddress(an1, 0);
         while (addr)
         {
             if (addr->address->name->byUIV)
@@ -560,13 +564,15 @@ static void HandleAssn(QUAD* head)
                     ALIASLIST* al = aAllocate<ALIASLIST>();
                     al->address = aa;
                     AliasUnion(&addr->address->pointsto, al);
+                    al = aAllocate<ALIASLIST>();
+                    al->address = aa1;
+                    AliasUnion(&addr->address->pointsto, al);
                 }
             }
             AliasUnion(&result, addr->address->pointsto);
             addr = addr->next;
         }
         changed = xchanged;
-        tempInfo[head->ans->offset->sp->i]->pointsto = result;
     }
     else if (head->ans->size == ISZ_ADDR)
     {

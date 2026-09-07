@@ -3173,10 +3173,10 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
             Optimizer::intermed_tail->alwayslive = true;
             break;
         case Optimizer::ao_flag_set_test:
-            left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-            right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
-            rv = Optimizer::tempreg(ISZ_UINT, 0);
-            Optimizer::gen_icode(Optimizer::i_atomic_flag_test_and_set, rv, left, right);
+            left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UCHAR);
+            right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UCHAR);
+            rv = Optimizer::tempreg(ISZ_UCHAR, 0);
+            Optimizer::gen_icode_with_conflict(Optimizer::i_atomic_flag_test_and_set, rv, left, right, false, true);
             Optimizer::intermed_tail->alwayslive = true;
             break;
         case Optimizer::ao_flag_clear:

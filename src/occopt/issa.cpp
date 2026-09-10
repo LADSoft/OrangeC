@@ -263,7 +263,6 @@ static void renameToPhi(Block* b)
             tempInfo[n]->enode->sp->invartemp = tempInfo[pd->T0]->enode->sp->invartemp;
             tempInfo[n]->enode->sp->storeTemp = tempInfo[pd->T0]->enode->sp->storeTemp;
             tempInfo[n]->enode->sp->loadTemp = tempInfo[pd->T0]->enode->sp->loadTemp;
-            tempInfo[n]->enode->sp->imvalue->structSpan = tempInfo[pd->T0]->enode->sp->imvalue->structSpan;
             tempInfo[n]->preSSATemp = pd->T0;
         }
         /* replace Left if necessary */
@@ -340,9 +339,12 @@ static void renameToPhi(Block* b)
                 tempInfo[n]->enode->sp->invartemp = tempInfo[tnum]->enode->sp->invartemp;
                 tempInfo[n]->enode->sp->loadTemp = tempInfo[tnum]->enode->sp->loadTemp;
                 tempInfo[n]->enode->sp->storeTemp = tempInfo[tnum]->enode->sp->storeTemp;
-                tempInfo[n]->enode->sp->imvalue->structSpan = tempInfo[tnum]->enode->sp->imvalue->structSpan;
                 if (tempInfo[tnum]->enode->sp->tp)
                     tempInfo[n]->enode->sp->tp = tempInfo[tnum]->enode->sp->tp;
+                if (head->dc.left->mode == i_direct && head->dc.left->offset->sp->thisPtr)
+                {
+                    head->dc.left->offset->sp->imvalue = rv;
+                }
             }
         }
         if (head->temps & TEMP_LEFT)
@@ -747,7 +749,6 @@ static void returnToNormal(IMODE** adr, bool all)
             t->enode->sp->loadTemp |= tempInfo[tnum]->enode->sp->loadTemp;
             t->enode->sp->imvalue->vol |= tempInfo[tnum]->enode->sp->imvalue->vol;
             t->enode->sp->imvalue->restricted |= tempInfo[tnum]->enode->sp->imvalue->restricted;
-            t->enode->sp->imvalue->structSpan = tempInfo[tnum]->enode->sp->imvalue->structSpan;
         }
         t->temp = true;
         if (!(*adr)->offset2 && !(*adr)->offset3)
@@ -824,7 +825,6 @@ static void returnToNormal(IMODE** adr, bool all)
                 t->enode->sp->loadTemp |= tempInfo[tnum]->enode->sp->loadTemp;
                 t->enode->sp->imvalue->vol |= tempInfo[tnum]->enode->sp->imvalue->vol;
                 t->enode->sp->imvalue->restricted |= tempInfo[tnum]->enode->sp->imvalue->restricted;
-                t->enode->sp->imvalue->structSpan = tempInfo[tnum]->enode->sp->imvalue->structSpan;
             }
             t->temp = true;
             im->offset2 = t->enode;
@@ -958,7 +958,6 @@ static void CreateCopy(BriggsSet* visited, Block* pred, int T, bool all)
         tempInfo[u]->enode->sp->invartemp = tempInfo[T]->enode->sp->invartemp;
         tempInfo[u]->enode->sp->storeTemp = tempInfo[T]->enode->sp->storeTemp;
         tempInfo[u]->enode->sp->loadTemp = tempInfo[T]->enode->sp->loadTemp;
-        tempInfo[u]->enode->sp->imvalue->structSpan = tempInfo[T]->enode->sp->imvalue->structSpan;
         copyInstruction(pred, u, T, all);
         l = tempInfo[T]->elimPredecessors;
         while (l)

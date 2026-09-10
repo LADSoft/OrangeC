@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -265,7 +265,6 @@ EXPRESSION* getMemberNode(SYMBOL* memberSym, SYMBOL* strSym, Type** tp, SYMBOL* 
 {
     EXPRESSION* en = getMemberBase(memberSym, strSym, funcsp, true);
     en = MakeExpression(ExpressionNode::structadd_, en, MakeIntExpression(ExpressionNode::c_i_, memberSym->sb->offset));
-    en->size = memberSym->tp;
     *tp = memberSym->tp;
     return en;
 }

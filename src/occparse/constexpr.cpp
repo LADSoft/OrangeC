@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -494,7 +494,6 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
                             EXPRESSION* next =
                                 MakeExpression(ExpressionNode::structadd_, varptr,
                                                MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset + sp1->sb->offset));
-                            next->size = sp1->tp;
                             Dereference(sp1->tp, &next);
                             next = MakeExpression(
                                 ExpressionNode::assign_, next,
@@ -517,7 +516,6 @@ static EXPRESSION* InstantiateStruct(Type* tp, EXPRESSION* thisptr, EXPRESSION* 
                 {
                     EXPRESSION* next =
                         MakeExpression(ExpressionNode::structadd_, varptr, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
-                    next->size = sp->tp;
                     Dereference(sp->tp, &next);
                     next = MakeExpression(ExpressionNode::assign_, next, EvaluateExpression(data, ths, nullptr, true));
                     if (next->right == nullptr || !IsConstantExpression(next->right, false, false))

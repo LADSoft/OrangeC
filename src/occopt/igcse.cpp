@@ -52,16 +52,20 @@ static std::vector<std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_bin
     expressionTranslation;
 static std::vector<std::unordered_set<IMODE*>> memKilled;
 
+static bool IsReplaceable(IMODE* im)
+{
+    return (!chosenAssembler->arch->hasFloatRegs && im->size >= ISZ_FLOAT && im->size != ISZ_BITINT) || im->bits || im->vol;
+}
 static void InsertTempEquivalence(IMODE* src, IMODE* dest)
 {
-    if (!src->vol && src->size < ISZ_FLOAT)
+    if (!IsReplaceable(src))
     {
         tempTranslation[src] = dest;
     }
 }
 static void InsertMemEquivalence(IMODE* src, IMODE* dest)
 {
-    if (!src->vol && src->size < ISZ_FLOAT)
+    if (!IsReplaceable(src))
     {
         auto&& mt = memTranslation[gcseBlockNumber];
         auto it = mt.find(src);
@@ -84,7 +88,7 @@ static void LookupInd(IMODE*& im)
                 {
                     for (auto lst = im2->offset->sp->imind; lst; lst = lst->next)
                     {
-                        if (lst->im->size == im->size)
+                        if (lst->im->size == im->size && lst->im->bits == im->bits && lst->im->startbit == im->startbit)
                         {
                             im = lst->im;
                             break;
@@ -140,7 +144,7 @@ static void LookupEquivalence(QUAD* temp, QUAD* head)
 }
 static void InsertExpressionEquivalence(QUAD* src, IMODE* dest)
 {
-    if (!dest->vol && dest->size < ISZ_FLOAT)
+    if (!IsReplaceable(dest))
     {
         auto&& et = expressionTranslation[gcseBlockNumber];
         auto it = et.find(src);

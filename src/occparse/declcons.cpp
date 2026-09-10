@@ -1392,9 +1392,7 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CON
     if (doCopy && (matchesCopy(parentCons, false) || matchesCopy(parentCons, true)))
     {
         thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
-        thisptr->size = member->tp;
         otherptr = MakeExpression(ExpressionNode::structadd_, otherptr, MakeIntExpression(ExpressionNode::c_i_, offset));
-        otherptr->size = member->tp;
         thisptr->right->keepZero = true;
         otherptr->right->keepZero = true;
         if (member->tp->IsStructured() || member->tp->IsArray() || member->tp->BaseType()->type == BasicType::memberptr_)
@@ -2469,9 +2467,7 @@ static void genAsnData(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* member
                        EXPRESSION* other)
 {
     EXPRESSION* left = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
-    left->size = member->tp;
     EXPRESSION* right = MakeExpression(ExpressionNode::structadd_, other, MakeIntExpression(ExpressionNode::c_i_, offset));
-    right->size = member->tp;
     left->right->keepZero = true;
     right->right->keepZero = true;
     Statement* st;

@@ -416,7 +416,7 @@ typedef struct expr
     struct expr *left, *right;
     ExpressionNode type;
     int pragmas;
-    Type* size; /* For block moves and structure addresses */
+    Type* size; /* For block moves */
     void* altdata;
     Optimizer::RUNTIMEDATA* runtimeData;
     struct

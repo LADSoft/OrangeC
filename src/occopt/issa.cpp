@@ -341,7 +341,8 @@ static void renameToPhi(Block* b)
                 tempInfo[n]->enode->sp->storeTemp = tempInfo[tnum]->enode->sp->storeTemp;
                 if (tempInfo[tnum]->enode->sp->tp)
                     tempInfo[n]->enode->sp->tp = tempInfo[tnum]->enode->sp->tp;
-                if (head->dc.left->mode == i_direct && head->dc.left->offset->sp->thisPtr)
+                if (head->dc.left->mode == i_direct && head->dc.left->offset->type != se_labcon &&
+                    head->dc.left->offset->sp->thisPtr)
                 {
                     head->dc.left->offset->sp->imvalue = rv;
                 }

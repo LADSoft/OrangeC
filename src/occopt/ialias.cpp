@@ -45,6 +45,7 @@
 #include "FNV_hash.h"
 #include <functional>
 #include <algorithm>
+#include <iterator>
 /* This is a partial implementation of the VLLPA algorithm in
  * Practical and Accurate Low-Level Pointer Analysis
  * Bolei Guo, Matthew J. Bridges, Spyridon Triantafyllis
@@ -64,13 +65,22 @@
  */
 namespace Optimizer
 {
-int cachedTempCount;
-BITINT* uivBytes;
-BITINT* processBits;
 
-static bool changed;
-static ALIASLIST* parmList;
-static int processCount;
+typedef struct _aliasName
+{
+    bool byUIV;
+    IMODE* im;
+    std::list<int> offset;
+} ALIASNAME;
+
+typedef struct _aliasAddress
+{
+    struct _aliasAddress* merge;
+    ALIASNAME* name;
+    int offset;
+} ALIASADDRESS;
+
+typedef std::set<ALIASADDRESS*> ALIASLIST;
 
 #pragma pack(1)
 struct ptrint
@@ -80,124 +90,159 @@ struct ptrint
 };
 #pragma pack()
 
-static std::unordered_map<ptrint*, ALIASADDRESS*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
-                          OrangeC::Utils::bin_eql<sizeof(ptrint)>>
-    addresses;
+static int cachedTempCount;
+
+static bool changed;
+static ALIASLIST parmList;
+
+static std::unordered_map<ptrint, ALIASADDRESS*, OrangeC::Utils::fnv1a32_type<ptrint>, OrangeC::Utils::type_eql<ptrint>> addresses;
 static std::unordered_map<IMODE**, std::list<ALIASNAME*>, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>,
                           OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     mem;
-static std::unordered_map<ptrint*, UIVHash*, OrangeC::Utils::fnv1a32_binary<sizeof(ptrint)>,
-                          OrangeC::Utils::bin_eql<sizeof(ptrint)>>
-    names;
+static std::unordered_map<ptrint, ALIASNAME, OrangeC::Utils::fnv1a32_type<ptrint>, OrangeC::Utils::type_eql<ptrint>> names;
 
-static std::multimap<ALIASNAME*, ALIASADDRESS*> addrNames;
+static std::multimap<ALIASNAME*, ALIASNAME*> nameToChildren;
+
+static std::multimap<ALIASNAME*, ALIASADDRESS*> nameToAddress;
 static std::multimap<IMODE*, IMODE*> pointsFrom;
-static void ResetProcessed(void);
-static void GatherInds(BITINT* p, int n, ALIASLIST* al);
+static std::vector<ALIASLIST> tempPointsTo;
+static std::unordered_map<ALIASADDRESS*, ALIASLIST> addressToAlias;
+static std::multimap<ALIASADDRESS*, IMODE*> addressToInd;
+static std::unordered_map<ALIASNAME*, ALIASNAME*> nameToParent;
 void AliasInit(void)
 {
-    int i;
-    for (i = 0; i < tempCount; i++)
-    {
-        tempInfo[i]->pointsto = nullptr;
-        tempInfo[i]->modifiedBy = nullptr;
-    }
+    tempPointsTo.clear();
+    tempPointsTo.resize(tempCount);
     addresses.clear();
     names.clear();
     mem.clear();
-    addrNames.clear();
+    nameToChildren.clear();
+    nameToParent.clear();
+    nameToAddress.clear();
+    addressToAlias.clear();
+    addressToInd.clear();
     pointsFrom.clear();
-    parmList = nullptr;
-    uivBytes = nullptr;
+    parmList.clear();
     cachedTempCount = tempCount;
-    processBits = nullptr;
-    processCount = 0;
     changed = false;
 }
 void AliasRundown(void)
 {
     aFree();
+    tempPointsTo.clear();
     addresses.clear();
     names.clear();
     mem.clear();
-    addrNames.clear();
+    nameToChildren.clear();
+    nameToParent.clear();
+    nameToAddress.clear();
+    addressToAlias.clear();
+    addressToInd.clear();
     pointsFrom.clear();
+    parmList.clear();
 }
-static void PrintOffs(struct UIVOffset* offs)
+static void PrintOffs(std::list<int>& data)
 {
-    if (offs)
+    for (auto offset : data)
     {
-        PrintOffs(offs->next);
-        oprintf(icdFile, "@%d", offs->offset);
+        oprintf(icdFile, "@%d", offset);
     }
 }
-static void PrintName(ALIASNAME* name, int offs)
+static void PrintAddress(ALIASNAME* name, int offs)
 {
     oprintf(icdFile, "(");
     if (!name)
     {
         oprintf(icdFile, "stub");
     }
-    else if (name->byUIV)
-    {
-        putamode(nullptr, name->v.uiv->im);
-        PrintOffs(name->v.uiv->offset);
-    }
     else
     {
-        putamode(nullptr, name->v.name);
+        putamode(nullptr, name->im);
+        PrintOffs(name->offset);
     }
     oprintf(icdFile, ",%d)", offs);
 }
 static void DumpAliases(void)
 {
-    oprintf(icdFile, "function: %s\n", currentFunction->name);
+    oprintf(icdFile, "\nfunction: %s\n", currentFunction->outputName);
     int i;
     oprintf(icdFile, "Alias Dump:\n");
     for (auto aab : addresses)
     {
         ALIASADDRESS* aa = aab.second;
-        ALIASLIST* al;
         ALIASADDRESS* aa1 = aa;
         while (aa1->merge)
             aa1 = aa1->merge;
-        al = aa1->pointsto;
-        PrintName(aa->name, aa->offset);
+        PrintAddress(aa->name, aa->offset);
         oprintf(icdFile, ": ");
-        while (al)
+        for (auto address : addressToAlias[aa1])
         {
-            PrintName(al->address->name, al->address->offset);
+            PrintAddress(address->name, address->offset);
             oprintf(icdFile, " ");
-            al = al->next;
         }
         oprintf(icdFile, "\n");
     }
     for (i = 0; i < cachedTempCount; i++)
     {
-        if (tempInfo[i]->pointsto)
+        if (tempPointsTo[i].size())
         {
-            ALIASLIST* al = tempInfo[i]->pointsto;
             oprintf(icdFile, "T%d:", i);
-            while (al)
+            for (auto address : tempPointsTo[i])
             {
-                PrintName(al->address->name, al->address->offset);
+                PrintAddress(address->name, address->offset);
                 oprintf(icdFile, " ");
-                al = al->next;
             }
             oprintf(icdFile, "\n");
         }
     }
+    ALIASNAME* current = nullptr;
+    for (auto&& pair : nameToChildren)
     {
-        ALIASLIST* al = parmList;
-        oprintf(icdFile, "UIV: ");
-        while (al)
+        if (current != pair.first)
         {
-            ALIASADDRESS* aa1 = al->address;
-            while (aa1->merge)
-                aa1 = aa1->merge;
-            PrintName(aa1->name, aa1->offset);
+            oprintf(icdFile, "\n");
+            putamode(nullptr, pair.first->im);
+            PrintOffs(pair.first->offset);
+            oprintf(icdFile, ": ");
+            current = pair.first;
+        }
+        putamode(nullptr, pair.second->im);
+        PrintOffs(pair.second->offset);
+    }
+    current = nullptr;
+    for (auto&& pair : nameToAddress)
+    {
+        if (current != pair.first)
+        {
+            oprintf(icdFile, "\n");
+            putamode(nullptr, pair.first->im);
+            PrintOffs(pair.first->offset);
+            oprintf(icdFile, ": ");
+            current = pair.first;
+        }
+        PrintAddress(pair.second->name, pair.second->offset);
+    }
+
+    ALIASADDRESS* current1 = nullptr;
+    for (auto&& pair : addressToInd)
+    {
+        if (current1 != pair.first)
+        {
+            oprintf(icdFile, "\n");
+            PrintAddress(pair.first->name, pair.first->offset);
+            oprintf(icdFile, ": ");
+            current1 = pair.first;
+        }
+        putamode(nullptr, pair.second);
+    }
+    {
+        oprintf(icdFile, "\nUIV: ");
+        for (auto address : parmList)
+        {
+            while (address->merge)
+                address = address->merge;
+            PrintAddress(address->name, address->offset);
             oprintf(icdFile, " ");
-            al = al->next;
         }
     }
 }
@@ -220,7 +265,7 @@ static ALIASNAME* LookupMem(IMODE* im)
     {
         for (auto p : it->second)
         {
-            if ((p->byUIV == false && p->v.name == im) || (p->byUIV == true && p->v.uiv->im == im && p->v.uiv->offset == nullptr))
+            if ((p->byUIV == false && p->im == im) || (p->byUIV == true && p->im == im && p->offset.size() == 0))
             {
                 return p;
             }
@@ -234,13 +279,12 @@ static ALIASNAME* LookupMem(IMODE* im)
         it = mem.find(im2);
     }
     auto p = Allocate<ALIASNAME>();
-    p->v.name = im;
+    p->im = im;
     switch (im->offset->type)
     {
         case se_auto:
         case se_global:
-            p->v.uiv = aAllocate<UIV>();
-            p->v.uiv->im = im;
+            p->im = im;
             p->byUIV = true;
             break;
         default:
@@ -249,88 +293,34 @@ static ALIASNAME* LookupMem(IMODE* im)
     it->second.push_back(p);
     return p;
 }
-static void AliasUnion(ALIASLIST** dest, ALIASLIST* src)
+static void AliasUnion(ALIASLIST& dest, ALIASLIST& src)
 {
-    while (src)
+    std::unordered_set<IMODE*> matches;
+    for (auto&& d : dest)
+        matches.insert(d->name->im);
+    for (auto s : src)
     {
-        ALIASLIST** q = dest;
-        ALIASNAME* nm2 = src->address->name;
-        IMODE* im2;
-        if (nm2->byUIV)
-            im2 = nm2->v.uiv->im;
-        else
-            im2 = nm2->v.name;
-        ALIASLIST* q1 = *q;
-        while (q1)
+        if (matches.find(s->name->im) == matches.end())
         {
-            ALIASNAME* nm1 = q1->address->name;
-            IMODE* im1;
-            // we don't check the offset here because of the rule if the same
-            // name is used with different offsets it is assumed to be an array.
-            if (nm1 == nm2)
-                break;
-            if (nm1->byUIV)
-                im1 = nm1->v.uiv->im;
-            else
-                im1 = nm1->v.name;
-            if (im1 == im2)
-                break;
-            q1 = q1->next;
-        }
-        if (!q1)
-        {
-            ALIASLIST* al = aAllocate<ALIASLIST>();
-            al->address = src->address;
-            al->next = *q;
-            *q = al;
+            matches.insert(s->name->im);
+            dest.insert(s);
             changed = true;
         }
-        src = src->next;
     }
 }
-static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
+static void AliasUnionParm(ALIASLIST& dest, ALIASLIST& src)
 {
-    while (src)
+    std::unordered_set<ALIASNAME*> matches;
+    for (auto&& d : dest)
+        matches.insert(d->name);
+    for (auto s : src)
     {
-        ALIASLIST** q = dest;
-        while (*q)
+        if (matches.find(s->name) == matches.end())
         {
-            // we don't check the offset here because of the rule if the same
-            // name is used with different offsets it is assumed to be an array.
-            if ((*q)->address->name == src->address->name)
-                break;
-            q = &(*q)->next;
-        }
-        if (!*q)
-        {
-            ALIASLIST* al = aAllocate<ALIASLIST>();
-            al->address = src->address;
-            *q = al;
+            matches.insert(s->name);
+            dest.insert(s);
             changed = true;
         }
-        src = src->next;
-    }
-}
-inline static bool isstructptr(SimpleType* tp)
-{
-    return (tp->type == st_pointer) && ((tp->btp->type == st_union) || (tp->btp->type == st_class) || (tp->btp->type == st_struct));
-}
-static void AliasUnionIndirect(ALIASLIST* dest, ALIASADDRESS* name)
-{
-    IMODE* im;
-    if (name->name->byUIV)
-    {
-        im = name->name->v.uiv->im;
-    }
-    else
-    {
-        im = name->name->v.name;
-    }
-    if (isstructptr(im->offset->sp->tp))
-    {
-    }
-    else
-    {
     }
 }
 static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
@@ -338,45 +328,33 @@ static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
     ptrint str;
     str.ptr = name;
     str.intval = offset;
-    auto it = names.find(&str);
+    auto it = names.find(str);
     if (it != names.end())
-        return it->second->result;
-    ptrint* mystr = Allocate<ptrint>();
-    memcpy(mystr, &str, sizeof(ptrint));
+        return &it->second;
 
-    UIVHash* uiv;
-    uiv = aAllocate<UIVHash>();
-    uiv->name = name;
-    uiv->offset = offset;
-    ALIASNAME* result;
-    result = aAllocate<ALIASNAME>();
-    result->byUIV = true;
-    result->v.uiv = aAllocate<UIV>();
+    ALIASNAME result;
+
+    result.byUIV = true;
+    result.im = name->im;
     if (name->byUIV)
     {
-        *result->v.uiv = *name->v.uiv;
-        result->v.uiv->alias = nullptr;
+        result.offset = name->offset;
     }
-    else
-    {
-        result->v.uiv->im = name->v.name;
-    }
-    result->v.uiv->offset = aAllocate<UIVOffset>();
-    result->v.uiv->offset->offset = offset;
-    if (name->byUIV)
-        result->v.uiv->offset->next = name->v.uiv->offset;
-    uiv->result = result;
-    names[mystr] = uiv;
-    return result;
+    result.offset.push_back(offset);
+    names[str] = std::move(result);
+    auto rv = &names[str];
+    nameToChildren.insert(std::pair(name, rv));
+    nameToParent[rv] = name;
+    return rv;
 }
 static ALIASNAME* GetAliasName(ALIASNAME* name, int offset)
 {
     ptrint str;
     str.ptr = name;
     str.intval = offset;
-    auto it = names.find(&str);
+    auto it = names.find(str);
     if (it != names.end())
-        return it->second->result;
+        return &it->second;
     return nullptr;
 }
 static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
@@ -386,44 +364,30 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
     str.intval = offset;
     IMODE* im;
     LIST* li;
-    auto it = addresses.find(&str);
+    auto it = addresses.find(str);
     if (it != addresses.end())
         return it->second;
     ALIASADDRESS* addr;
     addr = aAllocate<ALIASADDRESS>();
     addr->name = name;
     addr->offset = offset;
-    ptrint* mystr = Allocate<ptrint>();
-    memcpy(mystr, &str, sizeof(ptrint));
-    addresses[mystr] = addr;
-    if (addr->name->byUIV)
-    {
-        im = addr->name->v.uiv->im;
-    }
-    else
-    {
-        im = addr->name->v.name;
-    }
+    addresses[str] = addr;
+    im = addr->name->im;
     switch (im->offset->type)
     {
         case se_auto:
             //			if (im->offset->sp->storage_class != scc_parameter)
             break;
         case se_global: {
-            ALIASLIST* l = aAllocate<ALIASLIST>();
-            l->address = addr;
-            AliasUnion(&parmList, l);
+            ALIASLIST l = {addr};
+            AliasUnion(parmList, l);
         }
         break;
         default:
             break;
     }
-    li = aAllocate<LIST>();
-    li->data = addr;
-    li->next = name->addresses;
-    name->addresses = li;
 
-    addrNames.insert(std::pair(name, addr));
+    nameToAddress.insert(std::pair(name, addr));
     return addr;
 }
 static ALIASADDRESS* GetAddress(ALIASNAME* name, int offset)
@@ -431,7 +395,7 @@ static ALIASADDRESS* GetAddress(ALIASNAME* name, int offset)
     ptrint str;
     str.ptr = name;
     str.intval = offset;
-    auto it = addresses.find(&str);
+    auto it = addresses.find(str);
     if (it != addresses.end())
         return it->second;
     return nullptr;
@@ -465,11 +429,11 @@ static void CreateMem(IMODE* im)
         {
             ALIASADDRESS* aa;
             aa = LookupAddress(p, 0);
-            if (!aa->pointsto)
+            if (addressToAlias[aa].size() == 0)
             {
                 ALIASNAME* an = LookupAliasName(p, 0);
-                aa->pointsto = aAllocate<ALIASLIST>();
-                aa->pointsto->address = LookupAddress(an, 0);
+                addressToAlias[aa].clear();
+                addressToAlias[aa].insert(LookupAddress(an, 0));
             }
         }
     }
@@ -506,13 +470,12 @@ static void Createaddresses(void)
         head = head->fwd;
     }
 }
-static bool IntersectsUIV(ALIASLIST* list)
+static bool IntersectsUIV(ALIASLIST& al)
 {
-    while (list)
+    for (auto address : al)
     {
-        if (list->address->name->byUIV)
+        if (address->name->byUIV)
             return true;
-        list = list->next;
     }
     return false;
 }
@@ -521,15 +484,15 @@ static void HandlePhi(QUAD* head)
     if (tempInfo[head->dc.v.phi->T0]->enode->sp->imvalue->size == ISZ_ADDR)
     {
         struct _phiblock* pb = head->dc.v.phi->temps;
-        ALIASLIST* l = nullptr;
+        ALIASLIST l;
         bool xchanged = changed;
         while (pb)
         {
-            AliasUnion(&l, tempInfo[pb->Tn]->pointsto);
+            AliasUnion(l, tempPointsTo[pb->Tn]);
             pb = pb->next;
         }
         changed = xchanged;
-        tempInfo[head->dc.v.phi->T0]->pointsto = l;
+        tempPointsTo[head->dc.v.phi->T0] = std::move(l);
     }
 }
 static void HandleAssn(QUAD* head)
@@ -541,60 +504,43 @@ static void HandleAssn(QUAD* head)
         if (head->temps & TEMP_LEFT)
         {
             // ind, temp
-            ALIASLIST* addr;
-            ALIASLIST* src = tempInfo[head->dc.left->offset->sp->i]->pointsto;
-            addr = tempInfo[head->ans->offset->sp->i]->pointsto;
-            while (addr)
+            for (auto addr : tempPointsTo[head->ans->offset->sp->i])
             {
-                AliasUnion(&addr->address->pointsto, src);
-                addr = addr->next;
+                AliasUnion(addressToAlias[addr], tempPointsTo[head->dc.left->offset->sp->i]);
             }
         }
         else if (head->dc.left->mode == i_immed && head->dc.left->size == ISZ_ADDR && head->dc.left->offset->type != se_labcon)
         {
             // ind, immed
-            ALIASLIST* addr;
             ALIASNAME* an = LookupMem(head->ans->offset->sp->imvalue);
             ALIASADDRESS* aa;
             if (head->ans->mode == i_direct)
                 an = LookupAliasName(an, 0);
             aa = LookupAddress(an, 0);
-            addr = tempInfo[head->ans->offset->sp->i]->pointsto;
-            while (addr)
+            for (auto addr : tempPointsTo[head->ans->offset->sp->i])
             {
-                AliasUnion(&addr->address->pointsto, aa->pointsto);
-                addr = addr->next;
+                AliasUnion(addressToAlias[addr], addressToAlias[aa]);
             }
         }
     }
     else if (head->dc.left->mode == i_ind && (head->temps & TEMP_ANS))
     {
         // temp, ind
-        ALIASLIST* result = nullptr;
-        ALIASLIST* addr = tempInfo[head->dc.left->offset->sp->i]->pointsto;
+        ALIASLIST result;
         bool xchanged = changed;
-        ALIASNAME* an1 = LookupMem(head->dc.left);
-        ALIASADDRESS* aa1;
-        an1 = LookupAliasName(an1, 0);
-        aa1 = LookupAddress(an1, 0);
-        while (addr)
+        for (auto addr : tempPointsTo[head->dc.left->offset->sp->i])
         {
-            if (addr->address->name->byUIV)
+            if (addr->name->byUIV)
             {
-                if (!IntersectsUIV(addr->address->pointsto))
+                if (!IntersectsUIV(addressToAlias[addr]))
                 {
-                    ALIASNAME* an = LookupAliasName(addr->address->name, addr->address->offset);
+                    ALIASNAME* an = LookupAliasName(addr->name, addr->offset);
                     ALIASADDRESS* aa = LookupAddress(an, 0);
-                    ALIASLIST* al = aAllocate<ALIASLIST>();
-                    al->address = aa;
-                    AliasUnion(&addr->address->pointsto, al);
-                    al = aAllocate<ALIASLIST>();
-                    al->address = aa1;
-                    AliasUnion(&addr->address->pointsto, al);
+                    ALIASLIST al1 = {aa};
+                    AliasUnion(addressToAlias[addr], al1);
                 }
             }
-            AliasUnion(&result, addr->address->pointsto);
-            addr = addr->next;
+            AliasUnion(result, addressToAlias[addr]);
         }
         changed = xchanged;
     }
@@ -605,12 +551,11 @@ static void HandleAssn(QUAD* head)
             if (head->temps & TEMP_LEFT)
             {
                 // mem, temp
-                ALIASLIST* al;
                 ALIASNAME* an = LookupMem(head->ans);
                 ALIASADDRESS* aa;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
-                AliasUnion(&aa->pointsto, tempInfo[head->dc.left->offset->sp->i]->pointsto);
+                AliasUnion(addressToAlias[aa], tempPointsTo[head->dc.left->offset->sp->i]);
             }
             else if (head->dc.left->mode == i_immed && head->dc.left->size == ISZ_ADDR && head->dc.left->offset->type != se_labcon)
             {
@@ -621,12 +566,11 @@ static void HandleAssn(QUAD* head)
                 {
                     ALIASNAME* an = LookupMem(head->ans->offset->sp->imvalue);
                     ALIASADDRESS* aa;
-                    ALIASLIST* al = aAllocate<ALIASLIST>();
-                    al->address = aa2;
+                    ALIASLIST al = {aa2};
                     if (head->ans->mode == i_direct)
                         an = LookupAliasName(an, 0);
                     aa = LookupAddress(an, 0);
-                    AliasUnion(&aa->pointsto, al);
+                    AliasUnion(addressToAlias[aa], al);
                 }
             }
         }
@@ -639,33 +583,30 @@ static void HandleAssn(QUAD* head)
                 bool xchanged = changed;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa = LookupAddress(an, 0);
-                ALIASLIST* al = aAllocate<ALIASLIST>();
-                al->address = aa;
-                tempInfo[head->ans->offset->sp->i]->pointsto = nullptr;
-                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
+                ALIASLIST al = {aa};
+                tempPointsTo[head->ans->offset->sp->i].clear();
+                AliasUnion(tempPointsTo[head->ans->offset->sp->i], al);
                 changed = xchanged;
             }
             else if (head->dc.left->retval)
             {
-                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, parmList);
+                AliasUnion(tempPointsTo[head->ans->offset->sp->i], parmList);
             }
             else if (!(head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
             {
                 // temp, mem
-                ALIASLIST* result = nullptr;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa;
-                ALIASLIST* addr;
                 bool xchanged = changed;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
-                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, aa->pointsto);
+                AliasUnion(tempPointsTo[head->ans->offset->sp->i], addressToAlias[aa]);
                 changed = xchanged;
             }
             else if (head->temps & TEMP_LEFT)
             {
                 // temp, temp
-                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, tempInfo[head->dc.left->offset->sp->i]->pointsto);
+                AliasUnion(tempPointsTo[head->ans->offset->sp->i], tempPointsTo[head->dc.left->offset->sp->i]);
             }
         }
     }
@@ -673,14 +614,12 @@ static void HandleAssn(QUAD* head)
              head->dc.left->offset->type == se_global)
     {
         // mem, temp
-        ALIASLIST* al;
         ALIASNAME* an = LookupMem(head->dc.left);
         ALIASADDRESS* aa;
         an = LookupAliasName(an, 0);
         aa = LookupAddress(an, 0);
-        al = Allocate<ALIASLIST>();
-        al->address = aa;
-        AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
+        ALIASLIST al = {aa};
+        AliasUnion(tempPointsTo[head->ans->offset->sp->i], al);
     }
 }
 static int InferOffset(IMODE* im)
@@ -765,58 +704,52 @@ static int InferStride(IMODE* im)
 }
 static void SetStride(ALIASADDRESS* addr, int stride)
 {
-    auto range = addrNames.equal_range(addr->name);
-    for (auto address = range.first; address != range.second; ++address)
+    auto range = nameToAddress.equal_range(addr->name);
+    for (auto it = range.first; it != range.second; ++it)
     {
-        ALIASADDRESS* scan = address->second;
-        while (scan)
+        ALIASADDRESS* scan = it->second;
+        if (addr != scan && addr->name == scan->name)
         {
-            if (addr != scan && addr->name == scan->name)
+            if (addr->offset < scan->offset)
             {
-                if (addr->offset < scan->offset)
+                int o2 = addr->offset + (scan->offset - addr->offset) % stride;
+                if (addr->offset == o2)
                 {
-                    int o2 = addr->offset + (scan->offset - addr->offset) % stride;
-                    if (addr->offset == o2)
+                    AliasUnion(addressToAlias[addr], addressToAlias[scan]);
+                    scan->merge = addr;
+                }
+                else
+                {
+                    ALIASADDRESS* sc2 = LookupAddress(addr->name, o2);
+                    if (sc2 && sc2 != scan)
                     {
-                        AliasUnion(&addr->pointsto, scan->pointsto);
-                        scan->merge = addr;
-                    }
-                    else
-                    {
-                        ALIASADDRESS* sc2 = LookupAddress(addr->name, o2);
-                        if (sc2 && sc2 != scan)
-                        {
-                            AliasUnion(&sc2->pointsto, scan->pointsto);
-                            scan->merge = sc2;
-                        }
+                        AliasUnion(addressToAlias[sc2], addressToAlias[scan]);
+                        scan->merge = sc2;
                     }
                 }
             }
-            scan = scan->next;
         }
     }
 }
-static void Infer(IMODE* ans, IMODE* reg, ALIASLIST* pointsto)
+static void Infer(IMODE* ans, IMODE* reg, ALIASLIST& pointsto)
 {
-    if (pointsto)
+    if (pointsto.size())
     {
-        ALIASLIST* result = nullptr;
+        ALIASLIST result;
         int c = InferOffset(reg);
         int l = InferStride(reg);
         if (l)
         {
             bool xchanged = changed;
-            while (pointsto)
+            for (auto address : pointsto)
             {
-                ALIASADDRESS* addr = LookupAddress(pointsto->address->name, pointsto->address->offset + c);
-                ALIASLIST* al = aAllocate<ALIASLIST>();
-                al->address = addr;
-                AliasUnion(&result, al);
-                SetStride(pointsto->address, l);
-                pointsto = pointsto->next;
+                ALIASADDRESS* addr = LookupAddress(address->name, address->offset + c);
+                ALIASLIST al = {addr};
+                AliasUnion(result, al);
+                SetStride(address, l);
             }
             changed = xchanged;
-            AliasUnion(&tempInfo[ans->offset->sp->i]->pointsto, result);
+            AliasUnion(tempPointsTo[ans->offset->sp->i], result);
         }
     }
 }
@@ -831,19 +764,16 @@ static void HandleAdd(QUAD* head)
                 if (isintconst(head->dc.left->offset))
                 {
                     // C + R
-                    ALIASLIST* scan = tempInfo[head->dc.right->offset->sp->i]->pointsto;
-                    ALIASLIST* result = nullptr;
+                    ALIASLIST result;
                     bool xchanged = changed;
-                    while (scan)
+                    for (auto scan : tempPointsTo[head->dc.right->offset->sp->i])
                     {
-                        ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + head->dc.left->offset->i);
-                        ALIASLIST* al = aAllocate<ALIASLIST>();
-                        al->address = addr;
-                        AliasUnion(&result, al);
-                        scan = scan->next;
+                        ALIASADDRESS* addr = LookupAddress(scan->name, scan->offset + head->dc.left->offset->i);
+                        ALIASLIST al = {addr};
+                        AliasUnion(result, al);
                     }
                     changed = xchanged;
-                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, result);
+                    AliasUnion(tempPointsTo[head->ans->offset->sp->i], result);
                 }
                 else
                 {
@@ -852,8 +782,7 @@ static void HandleAdd(QUAD* head)
                     {
                         ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
-                        ALIASLIST* al = aAllocate<ALIASLIST>();
-                        al->address = aa;
+                        ALIASLIST al = {aa};
                         Infer(head->ans, head->dc.right, al);
                     }
                 }
@@ -866,9 +795,8 @@ static void HandleAdd(QUAD* head)
                     // p + C
                     ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
                     ALIASADDRESS* aa = LookupAddress(nm, head->dc.right->offset->i);
-                    ALIASLIST* al = aAllocate<ALIASLIST>();
-                    al->address = aa;
-                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
+                    ALIASLIST al = {aa};
+                    AliasUnion(tempPointsTo[head->ans->offset->sp->i], al);
                 }
                 else if (!isintconst(head->dc.right->offset) && head->dc.right->offset->type != se_labcon &&
                          head->dc.right->offset->type != se_pc)
@@ -876,9 +804,8 @@ static void HandleAdd(QUAD* head)
                     // C + p
                     ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
                     ALIASADDRESS* aa = LookupAddress(nm, head->dc.left->offset->i);
-                    ALIASLIST* al = aAllocate<ALIASLIST>();
-                    al->address = aa;
-                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
+                    ALIASLIST al = {aa};
+                    AliasUnion(tempPointsTo[head->ans->offset->sp->i], al);
                 }
             }
         }
@@ -891,19 +818,16 @@ static void HandleAdd(QUAD* head)
                 {
                     // R+C
                     int c = head->dc.opcode == i_add ? head->dc.right->offset->i : -head->dc.right->offset->i;
-                    ALIASLIST* scan = tempInfo[head->dc.left->offset->sp->i]->pointsto;
-                    ALIASLIST* result = nullptr;
+                    ALIASLIST result;
                     bool xchanged = changed;
-                    while (scan)
+                    for (auto scan : tempPointsTo[head->dc.left->offset->sp->i])
                     {
-                        ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + c);
-                        ALIASLIST* al = aAllocate<ALIASLIST>();
-                        al->address = addr;
-                        AliasUnion(&result, al);
-                        scan = scan->next;
+                        ALIASADDRESS* addr = LookupAddress(scan->name, scan->offset + c);
+                        ALIASLIST al = {addr};
+                        AliasUnion(result, al);
                     }
                     changed = xchanged;
-                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, result);
+                    AliasUnion(tempPointsTo[head->ans->offset->sp->i], result);
                 }
                 else
                 {
@@ -912,8 +836,7 @@ static void HandleAdd(QUAD* head)
                     {
                         ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
-                        ALIASLIST* al = aAllocate<ALIASLIST>();
-                        al->address = aa;
+                        ALIASLIST al = {aa};
                         Infer(head->ans, head->dc.left, al);
                     }
                 }
@@ -922,7 +845,6 @@ static void HandleAdd(QUAD* head)
         else if ((head->temps & (TEMP_LEFT | TEMP_RIGHT)) == (TEMP_LEFT | TEMP_RIGHT))
         {
             // R+R
-            ALIASLIST* src;
             IMODE* one = head->dc.left;
             IMODE* two = head->dc.right;
             if (two->size == ISZ_ADDR)
@@ -934,8 +856,7 @@ static void HandleAdd(QUAD* head)
             if (one->size == ISZ_ADDR)
             {
                 // now one has the pointer, two has something else
-                src = tempInfo[one->offset->sp->i]->pointsto;
-                Infer(head->ans, two, src);
+                Infer(head->ans, two, tempPointsTo[one->offset->sp->i]);
             }
         }
     }
@@ -961,32 +882,26 @@ static void HandleAssnBlock(QUAD* head)
 
     if (head->dc.right->mode == i_direct && ((head->temps & TEMP_RIGHT) || head->dc.right->retval))
     {
-        ALIASLIST* src = tempInfo[head->dc.right->offset->sp->i]->pointsto;
-        while (src)
+        for (auto src : tempPointsTo[head->dc.right->offset->sp->i])
         {
-            ALIASNAME* srcn = src->address->name;
-            LIST* addr = srcn->addresses;
-            while (addr)
+            auto range = nameToAddress.equal_range(src->name);
+            for (auto it = range.first; it != range.second; ++it)
             {
-                ALIASADDRESS* aa = (ALIASADDRESS*)addr->data;
+                ALIASADDRESS* aa = it->second;
                 ALIASADDRESS* aadest = LookupAddress(dest, aa->offset);
-                AliasUnion(&aadest->pointsto, aa->pointsto);
-                addr = addr->next;
+                AliasUnion(addressToAlias[aadest], addressToAlias[aa]);
             }
-            src = src->next;
         }
     }
     else if (head->dc.right->mode == i_immed)
     {
         ALIASNAME* src = LookupMem(head->dc.right);
-        LIST* addr;
-        addr = src->addresses;
-        while (addr)
+        auto range = nameToAddress.equal_range(src);
+        for (auto it = range.first; it != range.second; ++it)
         {
-            ALIASADDRESS* aa = (ALIASADDRESS*)addr->data;
+            ALIASADDRESS* aa = it->second;
             ALIASADDRESS* aadest = LookupAddress(dest, aa->offset);
-            AliasUnion(&aadest->pointsto, aa->pointsto);
-            addr = addr->next;
+            AliasUnion(addressToAlias[aadest], addressToAlias[aa]);
         }
     }
     else
@@ -1000,10 +915,27 @@ static void HandleParm(QUAD* head)
     if (head->dc.left->size == ISZ_ADDR)
     {
         // temp, mem
-        ALIASLIST *result = nullptr, **base = nullptr, *addr;
+        ALIASLIST result, *base = nullptr, templist;
         if (head->temps & TEMP_LEFT)
         {
-            base = &tempInfo[head->dc.left->offset->sp->i]->pointsto;
+            for (auto p : tempPointsTo[head->dc.left->offset->sp->i])
+            {
+                int offset = 0;
+                ALIASNAME* tempname;
+                ALIASADDRESS* tempaddr;
+                if (auto parent = nameToParent[p->name]; parent != nullptr)
+                {
+                    tempname = parent;
+                    offset = p->name->offset.back();
+                }
+                else
+                {
+                    tempname = p->name;
+                }
+                tempaddr = LookupAddress(tempname, offset);
+                templist.insert(tempaddr);
+            }
+            base = &templist;
         }
         else if (!isintconst(head->dc.left->offset))
         {
@@ -1023,26 +955,23 @@ static void HandleParm(QUAD* head)
             if (head->dc.left->mode == i_direct)
                 an = LookupAliasName(an, 0);
             aa = LookupAddress(an, 0);
-            base = &aa->pointsto;
+            base = &addressToAlias[aa];
         }
         if (base)
         {
-            addr = *base;
-            AliasUnionParm(&parmList, (*base));
-            while (addr)
+            AliasUnionParm(parmList, *base);
+            for (auto addr : *base)
             {
-                if (addr->address->name->byUIV)
+                if (addr->name->byUIV)
                 {
-                    if (!IntersectsUIV(addr->address->pointsto))
+                    if (!IntersectsUIV(addressToAlias[addr]))
                     {
-                        ALIASNAME* an = LookupAliasName(addr->address->name, 0);
+                        ALIASNAME* an = LookupAliasName(addr->name, 0);
                         ALIASADDRESS* aa = LookupAddress(an, 0);
-                        ALIASLIST* al = aAllocate<ALIASLIST>();
-                        al->address = aa;
-                        AliasUnion(&addr->address->pointsto, al);
+                        ALIASLIST al = {aa};
+                        AliasUnion(addressToAlias[addr], al);
                     }
                 }
-                addr = addr->next;
             }
         }
     }
@@ -1108,7 +1037,6 @@ static void GatherAliases(Loop* lp)
 }
 static void InitIMModifies()
 {
-    ALIASLIST* al = parmList;
     for (auto aab : addresses)
     {
         auto aa = aab.second;
@@ -1116,36 +1044,20 @@ static void InitIMModifies()
         IMODE* im;
         while (aa1->merge)
             aa1 = aa1->merge;
-        if (aa1->name->byUIV)
-        {
-            im = aa1->name->v.uiv->im;
-        }
-        else
-        {
-            im = aa1->name->v.name;
-        }
-        auto addr = aa1->pointsto;
-        while (addr)
+        im = aa1->name->im;
+        for (auto addr : addressToAlias[aa1])
         {
             IMODE* imp;
-            aa1 = addr->address;
+            aa1 = addr;
             while (aa1->merge)
                 aa1 = aa1->merge;
-            if (aa1->name->byUIV)
-            {
-                imp = aa1->name->v.uiv->im;
-            }
-            else
-            {
-                imp = aa1->name->v.name;
-            }
+            imp = aa1->name->im;
             pointsFrom.insert(std::pair(imp, im));
-            addr = addr->next;
         }
     }
     for (int i = 0; i < cachedTempCount; i++)
     {
-        if (tempInfo[i]->pointsto)
+        if (tempPointsTo[i].size())
         {
             auto iml = tempInfo[i]->enode->sp->imind;
             while (iml)
@@ -1153,23 +1065,15 @@ static void InitIMModifies()
                 IMODE* im = iml->im;
                 if (im)
                 {
-                    auto addr = tempInfo[i]->pointsto;
-                    while (addr)
+                    for (auto addr : tempPointsTo[i])
                     {
                         IMODE* imp;
-                        auto aa1 = addr->address;
+                        auto aa1 = addr;
                         while (aa1->merge)
                             aa1 = aa1->merge;
-                        if (aa1->name->byUIV)
-                        {
-                            imp = aa1->name->v.uiv->im;
-                        }
-                        else
-                        {
-                            imp = aa1->name->v.name;
-                        }
+                        imp = aa1->name->im;
                         pointsFrom.insert(std::pair(im, imp));
-                        addr = addr->next;
+                        addressToInd.insert(std::pair(addr, im));
                     }
                 }
                 iml = iml->next;
@@ -1185,25 +1089,35 @@ void ProcessIMModifies(IMODE* mem, std::function<void(IMODE*)> processor)
         processor(it->second);
     }
 }
+void UIVAddressesInternal(std::function<void(IMODE*)> processor, std::unordered_set<ALIASNAME*>& visitedNames, ALIASNAME* name,
+                          int offset)
+{
+    visitedNames.insert(name);
+    auto addresses = nameToAddress.equal_range(name);
+    for (auto currentAddress = addresses.first; currentAddress != addresses.second; ++currentAddress)
+    {
+        if (currentAddress->second->offset >= offset)
+        {
+            auto range = addressToInd.equal_range(currentAddress->second);
+            for (auto imp = range.first; imp != range.second; ++imp)
+                processor(imp->second);
+        }
+    }
+    auto children = nameToChildren.equal_range(name);
+    for (auto child = children.first; child != children.second; ++child)
+    {
+        if (visitedNames.find(child->second) == visitedNames.end())
+        {
+            UIVAddressesInternal(processor, visitedNames, child->second, 0);
+        }
+    }
+}
 void ProcessUIVAddresses(std::function<void(IMODE*)> processor)
 {
-    ALIASLIST* al = parmList;
-    for (auto aab : addresses)
+    std::unordered_set<ALIASNAME*> visitedNames;
+    for (auto address : parmList)
     {
-        auto aa = aab.second;
-        ALIASADDRESS* aa1 = aa;
-        IMODE* im;
-        while (aa1->merge)
-            aa1 = aa1->merge;
-        if (aa1->name->byUIV)
-        {
-            im = aa1->name->v.uiv->im;
-        }
-        else
-        {
-            im = aa1->name->v.name;
-        }
-        processor(im);
+        UIVAddressesInternal(processor, visitedNames, address->name, address->offset);
     }
 }
 void AliasPass1(void)

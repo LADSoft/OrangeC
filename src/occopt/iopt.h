@@ -183,48 +183,6 @@ typedef struct
     IMODE* lastName;
 } RESHAPE_EXPRESSION;
 
-struct UIVOffset
-{
-    struct UIVOffset* next;
-    int offset;
-};
-
-typedef struct _uiv
-{
-    IMODE* im;
-    struct UIVOffset* offset;
-    struct _uiv* alias;
-    struct _uiv* base;
-} UIV;
-typedef struct _aliasName
-{
-    struct _aliasName* next;
-    LIST* addresses;
-    int byUIV;
-    union
-    {
-        UIV* uiv;
-        IMODE* name;
-    } v;
-} ALIASNAME;
-
-typedef struct _aliasAddress
-{
-    struct _aliasAddress* next;
-    struct _aliasAddress* merge;
-    ALIASNAME* name;
-    struct _aliaslist* pointsto;
-    int offset;
-    BITINT* modifiedBy;
-    int processIndex;
-} ALIASADDRESS;
-
-typedef struct _aliaslist
-{
-    struct _aliaslist* next;
-    ALIASADDRESS* address;
-} ALIASLIST;
-
 typedef struct _normlist
 {
     struct _normlist* next;
@@ -268,8 +226,6 @@ struct TempInfo
     LIST* storesOut;
     BITINT* workingMoves;
     USES_STRENGTH* sl;
-    ALIASLIST* pointsto;
-    BITINT* modifiedBy;
     BITINT* uses;
     BITINT* terms;
     BITINT* indTerms;

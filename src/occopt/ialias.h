@@ -28,17 +28,6 @@
 #include <functional>
 namespace Optimizer
 {
-extern int cachedTempCount;
-extern BITINT* uivBytes;
-extern BITINT* processBits;
-struct UIVHash
-{
-    struct UIVHash* next;
-    ALIASNAME* name;
-    int offset;
-    ALIASNAME* result;
-};
-
 void AliasInit(void);
 void AliasRundown(void);
 void ProcessUIVAddresses(std::function<void(IMODE*)> processor);

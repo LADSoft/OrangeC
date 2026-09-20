@@ -143,14 +143,6 @@ enum reg32 { eax, ecx, edx, ebx, esp, ebp, esi, edi };
 enum reg16 {  ax,  cx,  dx,  bx,  sp,  bp,  si,  di };
 enum reg8  {  al,  cl,  dl,  bl,  ah,  ch,  dh,  bh };
 
-struct
-{
-    template <typename T> Wrap<T> operator[](T t)
-	{
-        return Wrap<T>(t);
-    }
-} ptr;
-
 void nop();
 void ret();
 void leave();

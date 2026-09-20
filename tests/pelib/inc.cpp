@@ -6,6 +6,14 @@
 
 using namespace std;
 
+struct
+{
+    template <typename T> Wrap<T> operator[](T t)
+	{
+        return Wrap<T>(t);
+    }
+} ptr;
+
 static PE pe;
 
 void vdie(const string &src, int line, int column, const char *format, va_list arg)

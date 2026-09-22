@@ -54,18 +54,18 @@ static std::vector<std::unordered_set<IMODE*>> memKilled;
 
 static bool IsReplaceable(IMODE* im)
 {
-    return (!chosenAssembler->arch->hasFloatRegs && im->size >= ISZ_FLOAT && im->size != ISZ_BITINT) || im->bits || im->vol;
+    return (chosenAssembler->arch->hasFloatRegs || im->size < ISZ_FLOAT) && !im->bits && !im->vol;
 }
 static void InsertTempEquivalence(IMODE* src, IMODE* dest)
 {
-    if (!IsReplaceable(src))
+    if (IsReplaceable(src))
     {
         tempTranslation[src] = dest;
     }
 }
 static void InsertMemEquivalence(IMODE* src, IMODE* dest)
 {
-    if (!IsReplaceable(src))
+    if (IsReplaceable(src))
     {
         auto&& mt = memTranslation[gcseBlockNumber];
         auto it = mt.find(src);
@@ -144,7 +144,7 @@ static void LookupEquivalence(QUAD* temp, QUAD* head)
 }
 static void InsertExpressionEquivalence(QUAD* src, IMODE* dest)
 {
-    if (!IsReplaceable(dest))
+    if (IsReplaceable(dest))
     {
         auto&& et = expressionTranslation[gcseBlockNumber];
         auto it = et.find(src);
@@ -154,14 +154,20 @@ static void InsertExpressionEquivalence(QUAD* src, IMODE* dest)
 }
 static void ModifyOne(IMODE* im)
 {
-    memTranslation[gcseBlockNumber].erase(im);
-    memKilled[gcseBlockNumber].insert(im);
+    if (IsReplaceable(im))
+    {
+        memTranslation[gcseBlockNumber].erase(im);
+        memKilled[gcseBlockNumber].insert(im);
+    }
 }
 static void Modifies(IMODE* mem)
 {
-    ProcessIMModifies(mem, ModifyOne);
-    memTranslation[gcseBlockNumber].erase(mem);
-    memKilled[gcseBlockNumber].insert(mem);
+    if (IsReplaceable(mem))
+    {
+        ProcessIMModifies(mem, ModifyOne);
+        memTranslation[gcseBlockNumber].erase(mem);
+        memKilled[gcseBlockNumber].insert(mem);
+    }
 }
 static void ModifiesGosub() { ProcessUIVAddresses(ModifyOne); }
 
@@ -358,6 +364,8 @@ static void GCSEProcessPhi(Block* b)
 
 void GlobalOptimization(void)
 {
+    if (currentFunction->xc)
+        return;
     tempTranslation.clear();
     memTranslation.clear();
     expressionTranslation.clear();

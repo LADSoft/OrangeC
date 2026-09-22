@@ -542,6 +542,7 @@ static void HandleAssn(QUAD* head)
             }
             AliasUnion(result, addressToAlias[addr]);
         }
+        AliasUnion(tempPointsTo[head->ans->offset->sp->i], result);
         changed = xchanged;
     }
     else if (head->ans->size == ISZ_ADDR)
@@ -1093,6 +1094,10 @@ void UIVAddressesInternal(std::function<void(IMODE*)> processor, std::unordered_
                           int offset)
 {
     visitedNames.insert(name);
+    if (name->im->size != ISZ_ADDR && name->im->mode == i_direct)
+    {
+        processor(name->im);
+    }
     auto addresses = nameToAddress.equal_range(name);
     for (auto currentAddress = addresses.first; currentAddress != addresses.second; ++currentAddress)
     {

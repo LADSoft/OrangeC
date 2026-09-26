@@ -1,0 +1,1 @@
+msbuild /maxcpucount /Property:configuration=Release /Property:platform=x64 "orange c.slnx"

@@ -1,25 +1,25 @@
 /*  Software License Agreement
- *  
- *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- *  
+ *
+ *      Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *
  *      This file is part of the Orange C Compiler package.
- *  
+ *
  *      The Orange C Compiler package is free software: you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *  
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *  
+ *
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 #include <errno.h>
@@ -63,17 +63,13 @@ time_t __to_timet(FILETIME* time)
     TIME_ZONE_INFORMATION tzinfo;
     int bias;
     SYSTEMTIME stime;
-    struct tm tmx = { 0 };
+    struct tm tmx = {0};
     time_t tempTime;
     int temp = GetTimeZoneInformation(&tzinfo);
     if (temp != TIME_ZONE_ID_INVALID)
         bias = tzinfo.Bias;
     else
         bias = 0;
-    if (temp == TIME_ZONE_ID_DAYLIGHT)
-        bias += tzinfo.DaylightBias;
-    else
-        bias += tzinfo.StandardBias;
     FileTimeToSystemTime(time, &stime);
     tmx.tm_hour = stime.wHour;
     tmx.tm_min = stime.wMinute;
@@ -86,11 +82,10 @@ time_t __to_timet(FILETIME* time)
         return tempTime;
     return tempTime - bias * 60;
 }
-int __ll_stat(int handle, struct _stat64 * sb)
+int __ll_stat(int handle, struct _stat64* sb)
 {
     BY_HANDLE_FILE_INFORMATION info;
     FILETIME timex;
-
 
     if (sb->st_mode & S_IFCHR)
         return 0;

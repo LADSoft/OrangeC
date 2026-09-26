@@ -1,0 +1,67 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <BuildType Name="sanitizer" />
+    <Platform Name="Win32" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Assembler/">
+    <Project Path="oasm/oasm.vcxproj" />
+  </Folder>
+  <Folder Name="/Compiler/" />
+  <Folder Name="/Compiler/Backends/">
+    <Project Path="occ/occ.vcxproj" />
+    <Project Path="occil/occil.vcxproj" />
+  </Folder>
+  <Folder Name="/Compiler/Optimizer/">
+    <Project Path="occopt/occopt.vcxproj" />
+  </Folder>
+  <Folder Name="/Compiler/Parser/">
+    <Project Path="occparse/occparse.vcxproj" />
+  </Folder>
+  <Folder Name="/Compiler/Preprocessor/">
+    <Project Path="ocpp/ocpp.vcxproj" />
+  </Folder>
+  <Folder Name="/Development Utilities/">
+    <Project Path="ogrep/ogrep.vcxproj" />
+    <Project Path="omake/omake.vcxproj" />
+  </Folder>
+  <Folder Name="/Development Utilities/Debug support/">
+    <Project Path="obrc/obrc.vcxproj" />
+    <Project Path="occpr/occpr.vcxproj" />
+  </Folder>
+  <Folder Name="/Development Utilities/Gcc Wrappers/">
+    <Project Path="arocc/arocc.vcxproj" />
+    <Project Path="gccocc/gccocc.vcxproj" />
+  </Folder>
+  <Folder Name="/Development Utilities/MSVC Wrappers/">
+    <Project Path="clocc/clocc.vcxproj" />
+    <Project Path="libocc/libocc.vcxproj" />
+    <Project Path="linkocc/linkocc.vcxproj" />
+  </Folder>
+  <Folder Name="/Downloaders/">
+    <Project Path="dlhex/dlhex.vcxproj" />
+    <Project Path="dlmz/dlmz.vcxproj" />
+    <Project Path="dlpe/dlpe.vcxproj" />
+  </Folder>
+  <Folder Name="/InformationalUtilities/">
+    <Project Path="ieeeconvert/ieeeconvert.vcxproj" />
+    <Project Path="onm/onm.vcxproj" />
+  </Folder>
+  <Folder Name="/Linkage Utilities/">
+    <Project Path="netlib/NetLink.vcxproj" />
+    <Project Path="oimplib/oimplib.vcxproj" />
+    <Project Path="olib/olib.vcxproj" />
+    <Project Path="olink/olink.vcxproj" />
+    <Project Path="orc/orc.vcxproj" />
+  </Folder>
+  <Folder Name="/Standalone Libraries/">
+    <Project Path="libhostfxr/libhostfxr.vcxproj" />
+    <Project Path="netlib/DotNetPELib.vcxproj" />
+    <Project Path="objlib/objlib.lib.vcxproj" />
+    <Project Path="sqlite3/sqlite3.lib.vcxproj" />
+    <Project Path="util/util.lib.vcxproj" />
+  </Folder>
+  <Project Path="adl/adl.exe.vcxproj" />
+</Solution>

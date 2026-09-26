@@ -1,0 +1,1 @@
+msbuild /maxcpucount /Property:configuration=Release /Property:platform=x64 -t:clean "orange c.slnx"

@@ -956,7 +956,15 @@ static void HandleParm(QUAD* head)
             if (head->dc.left->mode == i_direct)
                 an = LookupAliasName(an, 0);
             aa = LookupAddress(an, 0);
-            base = &addressToAlias[aa];
+            if (head->dc.left->mode == i_direct)
+            {
+                base = &addressToAlias[aa];
+            }
+            else
+            {
+                base = &templist;
+                templist.insert(aa);
+            }
         }
         if (base)
         {

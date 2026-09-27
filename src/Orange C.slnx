@@ -7,61 +7,61 @@
     <Platform Name="x64" />
   </Configurations>
   <Folder Name="/Assembler/">
-    <Project Path="oasm/oasm.vcxproj" />
+    <Project Path="oasm/oasm.vcxproj" Id="3314a225-370e-4a64-b25c-9be9e7ce1db1" />
   </Folder>
   <Folder Name="/Compiler/" />
   <Folder Name="/Compiler/Backends/">
-    <Project Path="occ/occ.vcxproj" />
-    <Project Path="occil/occil.vcxproj" />
+    <Project Path="occ/occ.vcxproj" Id="fce76643-5237-4199-a752-d95a85bebb39" />
+    <Project Path="occil/occil.vcxproj" Id="658e5d2a-cf60-4da7-8cbc-ad91f998822b" />
   </Folder>
   <Folder Name="/Compiler/Optimizer/">
-    <Project Path="occopt/occopt.vcxproj" />
+    <Project Path="occopt/occopt.vcxproj" Id="3c58e290-51e1-4163-9842-e804e3920be5" />
   </Folder>
   <Folder Name="/Compiler/Parser/">
-    <Project Path="occparse/occparse.vcxproj" />
+    <Project Path="occparse/occparse.vcxproj" Id="6f4a4182-7acb-4c9f-934b-394768e49574" />
   </Folder>
   <Folder Name="/Compiler/Preprocessor/">
-    <Project Path="ocpp/ocpp.vcxproj" />
+    <Project Path="ocpp/ocpp.vcxproj" Id="95fd1874-6c55-4876-b12d-4e88f6d506ad" />
   </Folder>
   <Folder Name="/Development Utilities/">
-    <Project Path="ogrep/ogrep.vcxproj" />
-    <Project Path="omake/omake.vcxproj" />
+    <Project Path="ogrep/ogrep.vcxproj" Id="b5814b2a-4265-4bda-8431-da134fe85592" />
+    <Project Path="omake/omake.vcxproj" Id="f6c325ca-be29-419a-9357-5b480068c9f8" />
   </Folder>
   <Folder Name="/Development Utilities/Debug support/">
-    <Project Path="obrc/obrc.vcxproj" />
-    <Project Path="occpr/occpr.vcxproj" />
+    <Project Path="obrc/obrc.vcxproj" Id="711882b1-0b5e-4a49-a793-a8fb054c96bd" />
+    <Project Path="occpr/occpr.vcxproj" Id="1dbc2695-3b1e-4461-9c74-128327a37b7b" />
   </Folder>
   <Folder Name="/Development Utilities/Gcc Wrappers/">
-    <Project Path="arocc/arocc.vcxproj" />
-    <Project Path="gccocc/gccocc.vcxproj" />
+    <Project Path="arocc/arocc.vcxproj" Id="e304de89-bbfe-49ae-a953-57706d5a32e1" />
+    <Project Path="gccocc/gccocc.vcxproj" Id="9eece4fb-84ae-44b5-928f-bea4eaaa4dbb" />
   </Folder>
   <Folder Name="/Development Utilities/MSVC Wrappers/">
-    <Project Path="clocc/clocc.vcxproj" />
-    <Project Path="libocc/libocc.vcxproj" />
-    <Project Path="linkocc/linkocc.vcxproj" />
+    <Project Path="clocc/clocc.vcxproj" Id="2a9fa237-3093-4565-87f9-0594e3963fbc" />
+    <Project Path="libocc/libocc.vcxproj" Id="3f50b6a2-d63e-45c0-aad6-79338202ec99" />
+    <Project Path="linkocc/linkocc.vcxproj" Id="44a57572-60cc-405f-93fe-f3433c35dd4f" />
   </Folder>
   <Folder Name="/Downloaders/">
-    <Project Path="dlhex/dlhex.vcxproj" />
-    <Project Path="dlmz/dlmz.vcxproj" />
-    <Project Path="dlpe/dlpe.vcxproj" />
+    <Project Path="dlhex/dlhex.vcxproj" Id="19225f50-eac0-48b0-b595-e5c50d4eb06a" />
+    <Project Path="dlmz/dlmz.vcxproj" Id="eedbfaeb-217c-439d-ad89-da874258c60d" />
+    <Project Path="dlpe/dlpe.vcxproj" Id="7f0c2480-f731-44fa-879e-c9a6adcc66ab" />
   </Folder>
   <Folder Name="/InformationalUtilities/">
-    <Project Path="ieeeconvert/ieeeconvert.vcxproj" />
-    <Project Path="onm/onm.vcxproj" />
+    <Project Path="ieeeconvert/ieeeconvert.vcxproj" Id="e5c722a9-ca55-4ae6-8813-cb01a3731caa" />
+    <Project Path="onm/onm.vcxproj" Id="fabd87b4-85e3-404d-a833-51139feac953" />
   </Folder>
   <Folder Name="/Linkage Utilities/">
-    <Project Path="netlib/NetLink.vcxproj" />
-    <Project Path="oimplib/oimplib.vcxproj" />
-    <Project Path="olib/olib.vcxproj" />
-    <Project Path="olink/olink.vcxproj" />
-    <Project Path="orc/orc.vcxproj" />
+    <Project Path="netlib/NetLink.vcxproj" Id="7b52b07b-8f39-4099-8355-f2f88d31f1fd" />
+    <Project Path="oimplib/oimplib.vcxproj" Id="d790d315-e03e-4400-bab1-c22bafbc9a60" />
+    <Project Path="olib/olib.vcxproj" Id="3092c538-0c18-46a6-bee9-f92f571f86d3" />
+    <Project Path="olink/olink.vcxproj" Id="5e7eb317-3a07-4564-b18f-a279174828e4" />
+    <Project Path="orc/orc.vcxproj" Id="96f30dde-3fb2-4fbb-9fea-5a2b43967f1d" />
   </Folder>
   <Folder Name="/Standalone Libraries/">
-    <Project Path="libhostfxr/libhostfxr.vcxproj" />
-    <Project Path="netlib/DotNetPELib.vcxproj" />
-    <Project Path="objlib/objlib.lib.vcxproj" />
-    <Project Path="sqlite3/sqlite3.lib.vcxproj" />
-    <Project Path="util/util.lib.vcxproj" />
+    <Project Path="libhostfxr/libhostfxr.vcxproj" Id="047ac59d-a120-4b63-bf7d-4c560c68d643" />
+    <Project Path="netlib/DotNetPELib.vcxproj" Id="9e09e239-7370-4cbc-a82e-40dbcc0947f3" />
+    <Project Path="objlib/objlib.lib.vcxproj" Id="22e147d5-e684-4b10-9cb4-d6cd8ef02118" />
+    <Project Path="sqlite3/sqlite3.lib.vcxproj" Id="14d061f3-1306-4c91-a04d-f46bd01d8504" />
+    <Project Path="util/util.lib.vcxproj" Id="72430015-06c0-42a2-b9ec-d0e5e2eae83d" />
   </Folder>
-  <Project Path="adl/adl.exe.vcxproj" />
+  <Project Path="adl/adl.exe.vcxproj" Id="4a3aaba9-ab7a-4ea6-a839-d1c2bd461a1a" />
 </Solution>

@@ -1102,10 +1102,6 @@ void UIVAddressesInternal(std::function<void(IMODE*)> processor, std::unordered_
                           int offset)
 {
     visitedNames.insert(name);
-    if (name->im->size != ISZ_ADDR && name->im->mode == i_direct)
-    {
-        processor(name->im);
-    }
     auto addresses = nameToAddress.equal_range(name);
     for (auto currentAddress = addresses.first; currentAddress != addresses.second; ++currentAddress)
     {
@@ -1130,6 +1126,10 @@ void ProcessUIVAddresses(std::function<void(IMODE*)> processor)
     std::unordered_set<ALIASNAME*> visitedNames;
     for (auto address : parmList)
     {
+        if (address->name->im->mode == i_direct)
+        {
+            processor(address->name->im);
+        }
         UIVAddressesInternal(processor, visitedNames, address->name, address->offset);
     }
 }

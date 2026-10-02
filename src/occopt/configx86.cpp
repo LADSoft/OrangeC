@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -109,7 +109,8 @@ Executable Mode:
     d - dll                             c = crtdll.dll
     g - windowing                       m = msvcrtdll.dll
     
-Optimization control: OPTIMIZATION_DESCRIPTION Flags: OPTMODULES_DESCRIPTION
+Optimization control:
+)help" OPTIMIZATION_DESCRIPTION "\nFlags:\n" OPTMODULES_DESCRIPTION R"help(
     -fsyntax-only                  compile only, don't produce an output file
     -funsigned-char                'char' type is unsigned
     -std=xxxx                       specify the language standard to use

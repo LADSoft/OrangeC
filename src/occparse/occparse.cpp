@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -583,6 +583,7 @@ int main(int argc, char* argv[]) MAINTRY
         }
         else
         {
+            Optimizer::cparams.cpp_dialect = Dialect::cpp17;
             Optimizer::cparams.prm_cplusplus = true;
             Optimizer::cparams.c_dialect = Dialect::c89;
         }
@@ -592,7 +593,7 @@ int main(int argc, char* argv[]) MAINTRY
             fileToCompile.c_str(), prm_cinclude.GetValue(),
             Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
             Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-            Optimizer::cparams.prm_cplusplus ? Dialect::c23 : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
+            Optimizer::cparams.prm_cplusplus ? Dialect::cpp17 : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
             prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 

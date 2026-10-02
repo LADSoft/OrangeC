@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -673,15 +673,15 @@ int Maker::RunCommands(bool keepGoing)
 
     OS::JobInit();
     std::list<std::future<int>> workingList;
-    std::list<std::thread> workingThreads;
     int rv = 0;
     for (auto& i : depends)
     {
         std::promise<int> promise;
         workingList.push_back(promise.get_future());
         OrangeC::Utils::BasicLogger::debug("Creating a runner: " + i->GetGoal());
-        auto thrd = std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise));
-        workingThreads.push_back(std::move(thrd));
+        std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise)).detach();
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1)
         {
             int rv1 = workingList.back().get();
@@ -719,8 +719,6 @@ int Maker::RunCommands(bool keepGoing)
         }
     }
 
-    for (auto&& w : workingThreads)
-        w.join();
     OS::JobRundown();
     for (auto& d : depends)
     {

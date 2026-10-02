@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -77,34 +77,6 @@ struct future_holding_struct
         return *this;
     }
 };
-struct holding_struct
-{
-    std::string command;
-    std::thread workingThread;
-    holding_struct(std::string goal, std::thread&& workingThread) : command(std::move(goal))
-    {
-        this->workingThread = std::thread(std::move(workingThread));
-    }
-    void join() { workingThread.join(); }
-    ~holding_struct()
-    {
-        if (workingThread.joinable())
-        {
-            workingThread.join();
-        }
-    }
-    holding_struct(holding_struct&& other) noexcept
-    {
-        this->command = std::move(other.command);
-        this->workingThread = std::move(other.workingThread);
-    }
-    holding_struct& operator=(holding_struct&& holder) noexcept
-    {
-        this->command.swap(holder.command);
-        this->workingThread.swap(holder.workingThread);
-        return *this;
-    }
-};
 int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
 {
     std::shared_ptr<RuleList> rl = depend->GetRuleList();
@@ -117,7 +89,6 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
     auto ruleStack(*ruleStack_in);
     ruleStack.push_back(rl);
     std::vector<future_holding_struct> workingList;
-    std::vector<holding_struct> workingThreads;
     int rv = 0;
     bool stop = false;
     for (auto& i : *depend)
@@ -126,8 +97,9 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
         workingList.push_back(future_holding_struct(depend->GetGoal(), promise.get_future()));
         OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: ", i->GetGoal());
 
-        auto thrd = std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise));
-        workingThreads.emplace_back(i->GetGoal(), std::move(thrd));
+        std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1)
         {
             int rv1 = workingList.back().get();
@@ -179,13 +151,6 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
                 }
             }
         }
-    }
-    OrangeC::Utils::BasicLogger::extremedebug("Joining workingThreads");
-    for (auto&& w : workingThreads)
-    {
-        OrangeC::Utils::BasicLogger::extremedebug("Joining working thread for depend: ", w.command);
-        w.join();
-        OrangeC::Utils::BasicLogger::extremedebug("Joined working thread for depend: ", w.command);
     }
     if (stop)
     {

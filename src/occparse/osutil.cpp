@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -52,8 +52,6 @@
 #include "initbackend.h"
 #include "optmodules.h"
 #include "beinterf.h"
-
-#define EXIT_WITHOUT_RUNNING_OPTIMIZER 255
 
 namespace Optimizer
 {
@@ -466,7 +464,10 @@ static void ParamTransfer(const char* name)
     }
     Optimizer::cparams.optimizer_modules = ~0;
     if (Optimizer::ParseOptimizerParams(prm_flags.GetValue()) != "")
-        ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
+    {
+        Optimizer::dontProcessCode = true;
+        ToolChain::Usage(getUsageText(), 1);
+    }
     // booleans
     if (prm_c23.GetValue())
         Optimizer::cparams.c_dialect = Dialect::c23;
@@ -1221,7 +1222,8 @@ int ccinit(int argc, char* argv[])
             ToolChain::ShowBanner();
             printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
         }
-        exit(EXIT_WITHOUT_RUNNING_OPTIMIZER);
+        Optimizer::dontProcessCode = true;
+        exit(0);
     }
     if (!architecture.empty())
     {
@@ -1271,6 +1273,7 @@ int ccinit(int argc, char* argv[])
     }
     auto old = argv[0];
     argv[0] = temp;
+    Optimizer::dontProcessCode = true;
     auto files = ToolChain::StandardToolStartup(
         SwitchParser, argc, argv, getUsageText(), getHelpText(),
         []() {
@@ -1278,7 +1281,8 @@ int ccinit(int argc, char* argv[])
                    prmPrintProgName.GetExists() || MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ||
                    (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
         },
-        EXIT_WITHOUT_RUNNING_OPTIMIZER);
+        1);
+    Optimizer::dontProcessCode = false;
 
     argv[0] = old;
     Optimizer::showBanner = prm_verbose.GetExists();
@@ -1303,12 +1307,18 @@ int ccinit(int argc, char* argv[])
         SwitchParser.ResetCurrent();
         const char* env = getenv(Optimizer::chosenAssembler->envname);
         if (env && !SwitchParser.Parse(std::string(env), &ecnt, eargs, &envFiles))
-            ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
+        {
+            Optimizer::dontProcessCode = true;
+            ToolChain::Usage(getUsageText(), 1);
+        }
     }
 
     ParamTransfer(files[0].Name.c_str());
     if (files.size() < 2)
-        ToolChain::Usage(getUsageText(), EXIT_WITHOUT_RUNNING_OPTIMIZER);
+    {
+        Optimizer::dontProcessCode = true;
+        ToolChain::Usage(getUsageText(), 1);
+    }
 
     /* tack the environment includes in */
     addinclude();

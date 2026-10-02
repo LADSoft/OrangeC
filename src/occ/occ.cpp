@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -492,7 +492,7 @@ int main(int argc, char* argv[]) MAINTRY
         {
             Utils::Fatal("internal error: could not load intermediate file");
         }
-        if (!Optimizer::syntaxOnly)
+        if (!Optimizer::syntaxOnly && !Optimizer::dontProcessCode)
         {
             if (Optimizer::cparams.prm_displaytiming)
             {
@@ -531,8 +531,6 @@ int main(int argc, char* argv[]) MAINTRY
         }
     }
     delete optimizerMem;
-    if (rv == 255)  // means don't run the optimizer or backend
-        rv = 0;
     return rv;
 }
 MAINCATCH

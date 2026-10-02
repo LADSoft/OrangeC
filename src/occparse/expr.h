@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -54,6 +54,8 @@ void GetConstructorInitializers(SYMBOL* funcsp, CallSite* funcparams, Keyword fi
 void CreateInitializerList(SYMBOL* func, Type* initializerListTemplate, Type* initializerListType, std::list<Argument*>** lptr,
                            bool operands, bool asref);
 void PromoteConstructorArgs(SYMBOL* cons1, CallSite* params);
+void AdjustSingleParam(SYMBOL* func, SYMBOL* sym, Argument* p, std::list<Argument*>::iterator itl,
+                       std::list<Argument*>::iterator itle, bool implicit = false);
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr,
                   bool operands, bool implicit);
 void expression_assign(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);

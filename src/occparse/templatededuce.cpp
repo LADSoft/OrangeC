@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -2100,6 +2100,12 @@ void CTADLookup(SYMBOL* funcsp, EXPRESSION** exp, Type** templateType, CallSite*
                 optimize_for_constants(&(*exp));
                 if (sym && (*exp)->type == ExpressionNode::thisref_ && !(*exp)->left->v.func->sp->sb->constexpression)
                     sym->sb->constexpression = false;
+                auto ait = funcparams->sp->tp->BaseType()->syms->begin();
+                ++ait;  // past thisptr
+                for (auto it = funcparams->arguments->begin(); it != funcparams->arguments->end(); ++it, ++ait)
+                {
+                    AdjustSingleParam(funcparams->sp, *ait, *it, it, funcparams->arguments->end());
+                }
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 // can't default destruct while deducing a template
             }

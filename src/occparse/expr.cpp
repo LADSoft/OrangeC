@@ -3364,17 +3364,914 @@ EXPRESSION* AdjustNestedConversion(Type* ctype, std::list<EXPRESSION*>* destruct
         *last = MakeExpression(ExpressionNode::comma_, *last, final);
     return rv;
 }
+void AdjustSingleParam(SYMBOL* func, SYMBOL* sym, Argument* p, std::list<Argument*>::iterator itl,
+                       std::list<Argument*>::iterator itle, bool implicit)
+{
+    auto old = argFriend;
+    argFriend = func;
+    if (p->exp && (p->exp->type == ExpressionNode::pc_ || p->exp->type == ExpressionNode::callsite_))
+    {
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        {
+            ValidateMSILFuncPtr(func->tp, p->tp, &p->exp);
+        }
+        thunkForImportTable(&p->exp);
+    }
+    if (Optimizer::cparams.prm_cplusplus)
+    {
+        auto exp2 = p->exp;
+        if (exp2 && exp2->type == ExpressionNode::thisref_)
+            exp2 = exp2->left;
+
+        if (!sym->tp->IsStructured() && p->tp)
+        {
+            if (p->tp->IsStructured())
+            {
+                Type* btp = func->tp->BaseType()->btp;
+                if (btp && (!btp->IsRef() || !btp->BaseType()->btp->IsStructured()))
+                {
+                    SYMBOL* sym = nullptr;
+                    auto exp2 = p->exp;
+                    if (exp2 && exp2->type == ExpressionNode::thisref_)
+                        exp2 = exp2->left;
+                    if (exp2 && exp2->type == ExpressionNode::callsite_)
+                        sym = exp2->v.func->returnSP;
+                    if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->front()->exp &&
+                        !sym->tp->BaseType()->sp->sb->trivialCons)
+                    {
+                        exp2->v.func->returnSP->sb->destructed = true;
+                        if (!p->destructors)
+                            p->destructors = exprListFactory.CreateList();
+                        p->destructors->push_front(exp2->v.func->returnSP->sb->dest->front()->exp);
+                    }
+                }
+            }
+            else
+            {
+                GetLogicalDestructors(&p->destructors, p->exp);
+            }
+        }
+        bool done = false;
+        if (!done && !p->tp && sym->tp->IsStructured() && sym->tp->BaseType()->sp->sb->initializer_list)
+        {
+            // initlist
+            std::list<Argument*>::iterator itpinit, itpinite = itpinit;
+            if (p->nested)
+            {
+                itpinit = p->nested->begin();
+                itpinite = p->nested->end();
+            }
+            if (sym->tp->IsStructured() || (sym->tp->IsRef() && sym->tp->BaseType()->btp->IsStructured()))
+            {
+                Type* stype = sym->tp;
+                SYMBOL* sp;
+                EXPRESSION* thisptr;
+                if (stype->IsRef())
+                    stype = stype->BaseType()->btp;
+                thisptr =
+                    AnonymousVar(theCurrentFunc || !sym->tp->IsRef() ? StorageClass::auto_ : StorageClass::localstatic_, stype);
+                sp = thisptr->v.sp;
+                if (!theCurrentFunc)
+                {
+                    sp->sb->label = Optimizer::nextLabel++;
+                    insertInitSym(sp);
+                }
+                if (stype->BaseType()->sp->sb->trivialCons)
+                {
+                    std::list<Initializer*> init1;
+                    std::list<Initializer*>* init = {&init1};
+                    for (auto shr : *stype->BaseType()->syms)
+                    {
+                        if (itpinit == itpinite)
+                            break;
+                        if (ismemberdata(shr))
+                        {
+                            InsertInitializer(&init, (*itpinit)->tp, (*itpinit)->exp, shr->sb->offset, false);
+                            ++itpinit;
+                        }
+                    }
+                    p->exp = ConverInitializersToExpression(stype, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
+                    if (!sym->tp->IsRef())
+                        sp->sb->stackblock = true;
+                    done = true;
+                }
+                else
+                {
+                    CallSite* params = Allocate<CallSite>();
+                    params->ascall = true;
+                    Type* ctype = sp->tp;
+                    EXPRESSION* dexp = thisptr;
+                    params->thisptr = thisptr;
+                    auto itx = itpinit;
+                    if (itpinit != itpinite)
+                        ++itx;
+                    params->arguments = argumentListFactory.CreateList();
+                    if ((itpinit != itpinite && itx != itpinite) ||
+                        (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
+                    {
+                        Type* tp;
+                        if (itpinit == itpinite)
+                        {
+                            params->arguments->push_back(p);
+                            tp = &stdint;
+                        }
+                        else
+                        {
+                            params->arguments->insert(params->arguments->begin(), itl, itle);
+                            tp = (*itpinit)->tp;
+                        }
+                        p->tp = tp->InitializerListType();
+                        p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                        CreateInitializerList(nullptr, p->tp, tp, &params->arguments, true, sym->tp->IsRef());
+                        **itl = *params->arguments->front();
+                        (*itl)->tp = sym->tp;
+                        if (itpinit == itpinite)
+                        {
+                            auto itl1 = itl;
+                            ++itl1;
+                            params->arguments->insert(params->arguments->end(), itl1, itle);
+                        }
+                    }
+                    else
+                    {
+                        params->arguments->push_back(p);
+                        p->exp = thisptr;
+                        CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
+                    }
+
+                    if (!sym->tp->IsRef())
+                    {
+                        sp->sb->stackblock = true;
+                    }
+                    else
+                    {
+                        CallDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                        if (dexp)
+                        {
+                            if (!p->destructors)
+                                p->destructors = exprListFactory.CreateList();
+                            p->destructors->push_front(dexp);
+                        }
+                    }
+                    done = true;
+                }
+                p->tp = sym->tp;
+            }
+            else if (sym->tp->IsPtr())
+            {
+                EXPRESSION* thisptr = AnonymousVar(theCurrentFunc ? StorageClass::auto_ : StorageClass::localstatic_, sym->tp);
+                SYMBOL* sp = thisptr->v.sp;
+                int n = 0;
+                Type* btp = sym->tp;
+                while (btp->IsArray())
+                    btp = btp->BaseType()->btp;
+                if (!theCurrentFunc)
+                {
+                    sp->sb->label = Optimizer::nextLabel++;
+                    insertInitSym(sp);
+                }
+                if (!sym->tp->IsArray())
+                {
+                    auto itx = itpinit;
+                    while (itx != itpinite)
+                    {
+                        n++;
+                        ++itx;
+                    }
+                    sym->tp = sym->tp->CopyType();
+                    sym->tp->array = true;
+                    sym->tp->esize = MakeIntExpression(ExpressionNode::c_i_, n);
+                    sym->tp->UpdateRootTypes();
+                    sym->tp->size = btp->size * n;
+                }
+                n = 0;
+                std::list<Initializer*> init1;
+                std::list<Initializer*>* init = &init1;
+                for (; itpinit != itpinite; ++itpinit)
+                {
+                    InsertInitializer(&init, (*itpinit)->tp, (*itpinit)->exp, n, false);
+                    n += btp->size;
+                }
+                p->exp = ConverInitializersToExpression(sym->tp, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
+                p->tp = sym->tp;
+                done = true;
+            }
+            else
+            {
+                // defer to below processing
+                if (itpinit != itpinite)
+                {
+                    p->exp = (*itpinit)->exp;
+                    p->tp = (*itpinit)->tp;
+                }
+                else
+                {
+                    p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+                    p->tp = &stdint;
+                }
+            }
+        }
+        if (!done && (p->exp || p->nested))
+        {
+            if (sym->tp->type == BasicType::ellipse_)
+            {
+                if (!p->tp->IsStructured() && (p->tp->lref || p->tp->rref))
+                    if (p->tp->IsFunction())
+                        p->exp = MakeExpression(ExpressionNode::l_ref_, p->exp);
+            }
+            else if (sym->tp->IsStructured())
+            {
+                bool sameType = false;
+                EXPRESSION* temp = p->exp;
+                Type* tpx = p->tp;
+                if (!tpx)
+                    tpx = sym->tp;
+                if (tpx->IsRef())
+                    tpx = tpx->BaseType()->btp;
+                // result of a nested constructor
+                if (temp && temp->type == ExpressionNode::thisref_)
+                {
+                    temp = p->exp->left;
+                }
+                if (p->nested)
+                {
+                    Type* ctype = sym->tp->BaseType();
+                    EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, ctype);  // StorageClass::parameter_ to push it...
+                    SYMBOL* esp = consexp->v.sp;
+                    p->exp = consexp;
+                    esp->sb->stackblock = true;
+                    esp->sb->constexpression = true;
+                    if (!sym->tp->BaseType()->sp->sb->hasUserCons)
+                    {
+                        auto initListType = p->nested->front()->tp->BaseType();
+                        EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
+                        ptr->v.sp->sb->constexpression = true;
+                        if (!theCurrentFunc)
+                        {
+                            ptr->v.sp->sb->label = Optimizer::nextLabel++;
+                            insertInitSym(ptr->v.sp);
+                        }
+                        Dereference(&stdpointer, &ptr);
+                        p->exp = AdjustNestedConversion(ctype, p->destructors, p->nested, ptr, consexp, ptr);
+                    }
+                    else
+                    {
+                        CallSite* params = Allocate<CallSite>();
+                        params->ascall = true;
+                        if (p->nested)
+                        {
+                            params->arguments = p->nested;
+                        }
+                        else
+                        {
+                            params->arguments = argumentListFactory.CreateList();
+                            params->arguments->push_back(p);
+                        }
+                        CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
+                        if (p->exp->type == ExpressionNode::thisref_)
+                        {
+                            Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
+                            if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
+                            {
+                                p->tp = tpx->btp;
+                            }
+                        }
+                    }
+                }
+                // use constructor or conversion function and push on stack ( no destructor)
+                else if (temp->type == ExpressionNode::callsite_ && temp->v.func->sp->tp->BaseType()->btp &&
+                         !temp->v.func->sp->tp->BaseType()->btp->IsRef() &&
+                         ((sameType = sym->tp->CompatibleType(tpx)) ||
+                          classRefCount(sym->tp->BaseType()->sp, tpx->BaseType()->sp) == 1))
+                {
+                    SYMBOL* esp;
+                    EXPRESSION* consexp;
+                    // copy constructor...
+                    Type* ctype = sym->tp;
+                    EXPRESSION* paramexp;
+                    consexp = AnonymousVar(StorageClass::auto_, sym->tp);  // StorageClass::parameter_ to push it...
+                    esp = consexp->v.sp;
+                    esp->sb->stackblock = true;
+                    esp->sb->constexpression = true;
+                    consexp = MakeExpression(ExpressionNode::auto_, esp);
+                    paramexp = p->exp;
+                    paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
+                    auto exp = consexp;
+                    callConstructorParam(&ctype, &exp, sym->tp, paramexp, true, true, implicit, false, true);
+                    // copy elision
+                    if (p->exp->type != ExpressionNode::thisref_ || !p->exp->left->v.func->thistp ||
+                        (!sym->tp->SameType(p->exp->left->v.func->thistp) &&
+                         !SameTemplate(sym->tp, p->exp->left->v.func->thistp)) ||
+                        !exp || exp->type != ExpressionNode::thisref_ || !exp->left->v.func->sp->sb->isConstructor ||
+                        !matchesCopy(exp->left->v.func->sp, false))
+                    {
+                        if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
+                        {
+                            if (temp->v.func->returnEXP)
+                            {
+                                temp->v.func->returnEXP = consexp;
+                            }
+                            else
+                            {
+                                if (p->exp->type == ExpressionNode::thisref_ && p->exp->left->v.func->thisptr)
+                                    p->exp->left->v.func->thisptr = consexp;
+                                p->exp = paramexp;
+                            }
+                        }
+                        else
+                        {
+                            p->exp = exp;
+                        }
+                        if (p->exp->type != ExpressionNode::comma_)
+                            p->exp = MakeExpression(ExpressionNode::comma_, p->exp, consexp);
+                    }
+                }
+                else if (sym->tp->BaseType()->sp->sb->trivialCons)
+                {
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = p->tp;
+                }
+                else
+                {
+                    Type* ctype = sym->tp = sym->tp->InitializeDeferred()->BaseType();
+                    EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, ctype);  // StorageClass::parameter_ to push it...
+                    SYMBOL* esp = consexp->v.sp;
+                    EXPRESSION* paramexp = p->exp;
+                    esp->sb->stackblock = true;
+                    esp->sb->constexpression = true;
+                    auto currentFunc = theCurrentFunc;
+                    theCurrentFunc = func;
+                    callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
+                    theCurrentFunc = currentFunc;
+                    if (consexp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
+                    {
+                        p->exp = paramexp;
+                    }
+                    else
+                    {
+                        if (consexp->type == ExpressionNode::thisref_)
+                            esp->sb->constexpression = false;
+                        p->exp = consexp;
+                    }
+                }
+                p->tp = sym->tp;
+            }
+            else if (sym->tp->IsRef())
+            {
+                bool nested = false;
+                Type* tpx1 = p->tp;
+                if (!tpx1)
+                {
+                    tpx1 = sym->tp;
+                }
+                if (sym->tp->BaseType()->btp->IsStructured())
+                {
+                    Type* tpx = tpx1;
+                    if (tpx->IsRef())
+                        tpx = tpx->BaseType()->btp;
+                    if (tpx->type == BasicType::templateparam_)
+                    {
+                        tpx = tpx->templateParam->second->byClass.val;
+                        if (!tpx)
+                            tpx = sym->tp->BaseType()->btp;
+                    }
+                    if (p->nested)
+                    {
+                        nested = true;
+                        Type* ctype = sym->tp->BaseType()->btp->BaseType();
+                        if (!ctype->sp->sb->hasUserCons)
+                        {
+
+                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                                               sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                            SYMBOL* esp = consexp->v.sp;
+                            EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
+                            ptr->v.sp->sb->constexpression = true;
+                            if (!theCurrentFunc)
+                            {
+                                ptr->v.sp->sb->label = Optimizer::nextLabel++;
+                                insertInitSym(ptr->v.sp);
+                            }
+                            Dereference(&stdpointer, &ptr);
+                            p->exp = AdjustNestedConversion(ctype, p->destructors, p->nested, ptr, consexp, consexp);
+                        }
+                        else
+                        {
+                            CallSite* params = Allocate<CallSite>();
+                            params->ascall = true;
+                            if (p->nested)
+                            {
+                                params->arguments = p->nested;
+                            }
+                            else
+                            {
+                                params->arguments = argumentListFactory.CreateList();
+                                params->arguments->push_back(p);
+                            }
+                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                                               sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                            SYMBOL* esp = consexp->v.sp;
+                            p->exp = consexp;
+                            CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
+                            if (p->exp->type == ExpressionNode::thisref_)
+                            {
+                                Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
+                                if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
+                                {
+                                    p->tp = tpx->btp;
+                                }
+                            }
+                            EXPRESSION* dexp = consexp;
+                            CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                            InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
+                        }
+                    }
+                    else if ((!sym->tp->BaseType()->btp->IsConst() && !sym->tp->IsConst() &&
+                              (sym->tp->type != BasicType::rref_ &&
+                               (!func->sb->templateLevel &&
+                                (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
+                              tpx->IsConst()) ||
+                             (!sym->tp->CompatibleType(tpx) && !SameTemplate(sym->tp, tpx) &&
+                              !classRefCount(sym->tp->BaseType()->btp->BaseType()->sp, tpx->BaseType()->sp)))
+                    {
+                        // make temp via constructor or conversion function
+                        EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
+                                                           sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                        SYMBOL* esp = consexp->v.sp;
+                        Type* ctype = sym->tp->BaseType()->btp;
+                        EXPRESSION* paramexp = p->exp;
+                        p->exp = consexp;
+                        callConstructorParam(&ctype, &p->exp, p->tp->BaseType(), paramexp, true, true, false, false, true);
+                        bool dodest = true;
+                        if (p->exp->type == ExpressionNode::thisref_)
+                        {
+                            Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
+                            if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
+                            {
+                                p->tp = tpx->btp;
+                                dodest = !p->tp->IsRef();
+                            }
+                        }
+                        if (dodest)
+                        {
+                            EXPRESSION* dexp = consexp;
+                            CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
+                            InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
+                        }
+                        else
+                        {
+                            esp->sb->allocate = false;
+                        }
+                    }
+                    else
+                    {
+                        if (!sym->tp->CompatibleType(tpx))
+                            p->exp = DerivedToBase(sym->tp, tpx, p->exp, 0);
+                    }
+                }
+                else if (sym->tp->BaseType()->btp->IsArray() && p->nested)
+                {
+                    Type* sourceType = p->nested->front()->tp;
+                    Type* arrtype = sym->tp->BaseType()->btp;
+                    Type* basetype = sym->tp->BaseType()->btp;
+                    while (basetype->IsArray())
+                        basetype = basetype->BaseType()->btp;
+                    int elemsize = basetype->size;
+                    int elems = arrtype->size / basetype->size;
+                    EXPRESSION* consexp =
+                        AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
+                    auto it = p->nested->begin();
+                    auto ite = p->nested->end();
+                    EXPRESSION *rv = nullptr, **last = &rv;
+                    if (!basetype->IsStructured())
+                    {
+                        // this is broken right now, arraysize is number of elements instead of total size...
+                        *last = MakeExpression(ExpressionNode::blockclear_, copy_expression(consexp));
+                        (*last)->size = Type::MakeType(BasicType::struct_);
+                        (*last)->size->size = arrtype->size;
+                    }
+                    if (sourceType->IsArray())
+                    {
+                        error(ERR_ARRAY_TYPE_NOT_EXPECTED);
+                    }
+                    else
+                    {
+                        auto it = p->nested->begin();
+                        auto ite = p->nested->end();
+                        for (int i = 0; i < elems; i++)
+                        {
+                            bool skip = false;
+                            EXPRESSION* baseAddress = MakeExpression(ExpressionNode::arrayadd_, consexp,
+                                                                     MakeIntExpression(ExpressionNode::c_i_, i * elemsize));
+                            EXPRESSION* next = nullptr;
+                            if (basetype->IsStructured())
+                            {
+                                Type* ctype = basetype;
+                                EXPRESSION* paramexp = it == ite ? nullptr : (*it)->exp;
+                                Type* paramtp = it == ite ? nullptr : (*it)->tp;
+                                p->exp = baseAddress;
+                                callConstructorParam(&ctype, &p->exp, paramtp, paramexp, true, true, false, false, true);
+                            }
+                            else if (it != ite)
+                            {
+                                if (sourceType->IsStructured())
+                                {
+                                    if (basetype->IsPtr())
+                                    {
+                                        auto ctype = basetype;
+                                        p->exp = (*it)->exp;
+                                        castToPointer(&ctype, &p->exp, (Keyword)-1, sourceType);
+                                    }
+                                    else
+                                    {
+                                        auto ctype = basetype;
+                                        p->exp = (*it)->exp;
+                                        castToArithmetic(basetype->IsInt(), &ctype, &p->exp, (Keyword)-1, sourceType, true);
+                                    }
+                                }
+                                else
+                                {
+                                    // both arithmetic
+                                    p->exp = (*it)->exp;
+                                    CheckNarrowing(basetype, sourceType, p->exp);
+                                    if (basetype->BaseType()->type != sourceType->BaseType()->type)
+                                    {
+                                        cast(basetype, &p->exp);
+                                    }
+                                    auto left = baseAddress;
+                                    Dereference(basetype, &left);
+                                    p->exp = MakeExpression(ExpressionNode::assign_, left, p->exp);
+                                }
+                            }
+                            else
+                            {
+                                skip = true;
+                            }
+                            if (!skip)
+                            {
+                                optimize_for_constants(&p->exp);
+                                if (*last)
+                                {
+                                    *last = MakeExpression(ExpressionNode::comma_, *last, p->exp);
+                                    last = &(*last)->right;
+                                }
+                                else
+                                {
+                                    *last = p->exp;
+                                }
+                                if (it != ite)
+                                {
+                                    ++it;
+                                }
+                            }
+                        }
+                        if (*last)
+                        {
+                            *last = MakeExpression(ExpressionNode::comma_, p->exp, consexp);
+                            last = &(*last)->right;
+                        }
+                        else
+                        {
+                            *last = consexp;
+                        }
+                    }
+                    p->exp = rv;
+                }
+                else if (sym->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
+                {
+                    // in case there was an error somewhere
+                    if (p->exp)
+                    {
+                        Type* tp2 = sym->tp->BaseType()->btp;
+                        if (p->exp->type == ExpressionNode::memberptr_)
+                        {
+                            int lbl = dumpMemberPtr(p->exp->v.sp, tp2, true);
+                            p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+                        }
+                        else if (isconstzero(p->tp, p->exp) || p->exp->type == ExpressionNode::nullptr_)
+                        {
+                            EXPRESSION* dest = createTemporary(tp2, nullptr);
+                            p->exp = MakeExpression(ExpressionNode::blockclear_, dest);
+                            p->exp->size = tp2;
+                            p->exp = MakeExpression(ExpressionNode::comma_, p->exp, dest);
+                        }
+                        else if (p->exp->type == ExpressionNode::callsite_ && p->exp->v.func->returnSP)
+                        {
+                            int lbl = dumpMemberPtr(p->exp->v.sp, tp2, true);
+                            p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+                        }
+                        else if (p->exp->type == ExpressionNode::pc_)
+                        {
+                            int lbl = dumpMemberPtr(p->exp->v.sp, tp2, true);
+                            p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+                        }
+                    }
+                    p->tp = sym->tp;
+                }
+                else if (sym->tp->CompatibleType(p->tp ? p->tp : p->nested->front()->tp))
+                {
+                    Argument* p1;
+                    if (p->tp)
+                        p1 = p;
+                    else
+                        p1 = p->nested->front();
+                    if (isarithmeticconst(p1->exp) || (sym->tp->BaseType()->type != BasicType::rref_ &&
+                                                       !sym->tp->BaseType()->btp->IsConst() && p1->tp->IsConst()))
+                    {
+                        // make numeric temp and perform cast
+                        if (p1->exp)
+                        {
+                            p->exp = createTemporary(sym->tp, p1->exp);
+                        }
+                    }
+                    else
+                    {
+                        // pass address
+                        EXPRESSION* exp = p1->exp;
+                        while (IsCastValue(exp) || exp->type == ExpressionNode::not__lvalue_)
+                            exp = exp->left;
+                        if (exp->type != ExpressionNode::l_ref_)
+                        {
+                            if (!sym->tp->IsRef() ||
+                                (!sym->tp->BaseType()->btp->IsFunction() && !sym->tp->BaseType()->btp->IsArray()))
+                            {
+                                if (exp->type == ExpressionNode::lvalue_)
+                                {
+                                    exp = createTemporary(sym->tp, exp);
+                                }
+                                else
+                                {
+                                    exp = convertArgToRef(exp, sym->tp, p1->tp);
+                                }
+                            }
+                            p->exp = exp;
+                        }
+                        else if (p->tp->IsPtr() && p->tp->BaseType()->btp->IsStructured())
+                        {
+                            // make numeric temp and perform cast
+                            p->exp = createTemporary(sym->tp, exp);
+                        }
+                        else if (sym->tp->BaseType()->btp->BaseType()->byRefArray)
+                        {
+                            p->exp->left = p->exp->left->left;
+                        }
+                    }
+                }
+                // in case there was an error somewhere
+                else if (p->exp)
+                {
+                    if (p->tp->IsStructured())
+                    {
+                        // arithmetic or pointer
+                        Type* etp = sym->tp->BaseType()->btp;
+                        if (cppCast(p->tp, &etp, &p->exp))
+                            p->tp = etp;
+                        if (!TakeAddress(&p->exp))
+                            p->exp = createTemporary(sym->tp, p->exp);
+                    }
+                    else
+                    {
+                        // make numeric temp and perform cast
+                        p->exp = createTemporary(sym->tp, p->exp);
+                    }
+                }
+                if (!tpx1->IsRef() && ((tpx1->IsConst() && !sym->tp->BaseType()->btp->IsConst()) ||
+                                       (tpx1->IsVolatile() && !sym->tp->BaseType()->btp->IsVolatile())))
+                    if (sym->tp->BaseType()->type != BasicType::rref_)  // converting const lref to rref is ok...
+                        if (!sym->tp->BaseType()->btp->IsStructured())  // structure constructor is ok
+                            if (!tpx1->IsArray())
+                                error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+                p->tp = sym->tp;
+            }
+            else if (p->tp->IsStructured())
+            {
+                if (sym->tp->type == BasicType::ellipse_)
+                {
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = p->tp;
+                }
+                else
+                {
+                    // arithmetic or pointer
+                    Type* etp = sym->tp;
+                    if (cppCast(p->tp, &etp, &p->exp))
+                        p->tp = etp;
+                }
+            }
+            else if (sym->tp->IsVoidPtr() && p->tp->type == BasicType::aggregate_)
+            {
+                LookupSingleAggregate(p->tp, &p->exp);
+            }
+            else if (sym->tp->IsPtr() && p->tp->IsPtr())
+            {
+                // handle vla to pointer conversion
+                if (p->tp->vla && !sym->tp->vla)
+                {
+                    Type* tpd1 = Allocate<Type>();
+                    *tpd1 = *p->tp;
+                    tpd1->vla = false;
+                    tpd1->array = false;
+                    tpd1->size = getSize(BasicType::pointer_);
+                    p->tp = tpd1;
+                    Dereference(p->tp, &p->exp);
+                }
+                // handle base class conversion
+                Type* tpb = sym->tp->BaseType()->btp;
+                Type* tpd = p->tp->BaseType()->btp;
+
+                if (Optimizer::cparams.prm_cplusplus && p->tp->BaseType()->stringconst && !sym->tp->BaseType()->btp->IsConst())
+                    error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
+                if (!tpb->BaseType()->CompatibleType(tpd->BaseType()))
+                {
+                    if (tpb->IsStructured() && tpd->IsStructured())
+                    {
+                        p->exp = DerivedToBase(tpb, tpd, p->exp, 0);
+                    }
+                    p->tp = sym->tp;
+                }
+            }
+            else if (sym->tp->BaseType()->type == BasicType::memberptr_)
+            {
+                if (p->exp->type == ExpressionNode::memberptr_)
+                {
+                    int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
+                    p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = sym->tp;
+                }
+                else if (isconstzero(p->tp, p->exp) || p->exp->type == ExpressionNode::nullptr_)
+                {
+                    EXPRESSION* dest = createTemporary(sym->tp, nullptr);
+                    p->exp = MakeExpression(ExpressionNode::blockclear_, dest);
+                    p->exp->size = sym->tp;
+                    p->exp = MakeExpression(ExpressionNode::comma_, p->exp, dest);
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = sym->tp;
+                }
+                else if (p->exp->type == ExpressionNode::callsite_ && p->exp->v.func->returnSP)
+                {
+                    EXPRESSION* dest = AnonymousVar(StorageClass::auto_, sym->tp);
+                    SYMBOL* esp = dest->v.sp;
+                    int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
+                    esp->sb->stackblock = true;
+                    p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = sym->tp;
+                }
+                else if (p->exp->type == ExpressionNode::pc_)
+                {
+                    int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
+                    p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = sym->tp;
+                }
+                else
+                {
+                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                    p->exp->size = sym->tp;
+                }
+                p->tp = sym->tp;
+            }
+            else if (sym->tp->IsArithmetic() && p->tp->IsArithmetic())
+                if (sym->tp->BaseType()->type != p->tp->BaseType()->type)
+                {
+                    p->tp = sym->tp;
+                    cast(p->tp, &p->exp);
+                }
+        }
+    }
+    else if (Optimizer::architecture == ARCHITECTURE_MSIL)
+    {
+        if (!p->exp)
+        {
+            diag("adjust_params, empty expression");
+            p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
+        }
+        if (sym->tp->IsRef())
+        {
+            if (sym->tp->CompatibleType(p->tp))
+            {
+                if (isarithmeticconst(p->exp) ||
+                    (sym->tp->BaseType()->type != BasicType::rref_ && !sym->tp->BaseType()->btp->IsConst() && p->tp->IsConst()))
+                {
+                    // make numeric temp and perform cast
+                    p->exp = createTemporary(sym->tp, p->exp);
+                }
+                else
+                {
+                    // pass address
+                    EXPRESSION* exp = p->exp;
+                    while (IsCastValue(exp) || exp->type == ExpressionNode::not__lvalue_)
+                        exp = exp->left;
+                    if (exp->type != ExpressionNode::l_ref_)
+                    {
+                        if (!sym->tp->IsRef() || !sym->tp->BaseType()->btp->IsFunction())
+                        {
+                            if (!TakeAddress(&exp))
+                            {
+                                // make numeric temp and perform cast
+                                exp = createTemporary(sym->tp, exp);
+                            }
+                        }
+                        p->exp = exp;
+                    }
+                    else if (p->tp->IsPtr() && p->tp->BaseType()->btp->IsStructured())
+                    {
+                        // make numeric temp and perform cast
+                        p->exp = createTemporary(sym->tp, exp);
+                    }
+                }
+            }
+            else
+            {
+                // make numeric temp and perform cast
+                p->exp = createTemporary(sym->tp, p->exp);
+            }
+            p->tp = sym->tp;
+        }
+        else
+        {
+            if (p && sym->tp->BaseType()->type == BasicType::string_)
+            {
+                if ((p->tp->BaseType()->type == BasicType::string_) || (p->exp->type == ExpressionNode::labcon_ && p->exp->string))
+                {
+                    if (p->exp->type == ExpressionNode::labcon_)
+                        p->exp->type = ExpressionNode::c_string_;
+                }
+                else if ((p->tp->IsArray() || p->tp->IsPtr()) && !p->tp->BaseType()->msil &&
+                         p->tp->BaseType()->btp->BaseType()->type == BasicType::char_)
+                {
+                    // make a 'string' object and initialize it with the string
+                    Type* ctype = find_boxed_type(sym->tp->BaseType());
+                    EXPRESSION *exp1, *exp2;
+                    exp1 = exp2 = AnonymousVar(StorageClass::auto_, &std__string);
+                    callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false, true);
+                    exp2 = MakeExpression(ExpressionNode::l_string_, exp2);
+                    p->exp = exp2;
+                    p->tp = &std__string;
+                }
+            }
+            else if (p && sym->tp->BaseType()->type == BasicType::object_)
+            {
+                if (p->tp->BaseType()->type != BasicType::object_ && !p->tp->IsStructured() &&
+                    (!p->tp->IsArray() || !p->tp->BaseType()->msil))
+                {
+                    if ((p->tp->IsArray() || p->tp->IsPtr()) && !p->tp->BaseType()->msil &&
+                        p->tp->BaseType()->btp->BaseType()->type == BasicType::char_)
+                    {
+                        // make a 'string' object and initialize it with the string
+                        Type* ctype = find_boxed_type(&std__string);
+                        EXPRESSION *exp1, *exp2;
+                        exp1 = exp2 = AnonymousVar(StorageClass::auto_, &std__string);
+                        callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false, true);
+                        exp2 = MakeExpression(ExpressionNode::l_string_, exp2);
+                        p->exp = exp2;
+                        p->tp = &std__string;
+                    }
+                    else
+                        p->exp = MakeExpression(ExpressionNode::x_object_, p->exp);
+                }
+            }
+            else if (p && p->tp->IsMsil())
+                ;  // error
+            // legacy c language support
+            else if (p && p->tp && p->tp->IsStructured() && (!p->tp->BaseType()->sp->sb->msil || !isconstzero(p->tp, p->exp)))
+            {
+                p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                p->exp->size = p->tp;
+            }
+        }
+    }
+    else
+    {
+        // legacy c language support
+        if (p && p->tp)
+        {
+            if (p->tp->IsStructured())
+            {
+                p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
+                p->exp->size = p->tp;
+            }
+            else if (sym->tp->IsFloat() || sym->tp->IsImaginary() || sym->tp->IsComplex())
+            {
+                cast(sym->tp, &p->exp);
+                optimize_for_constants(&p->exp);
+            }
+        }
+    }
+    argFriend = old;
+}
 void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SYMBOL>::iterator itend, std::list<Argument*>** lptr,
                   bool operands, bool implicit)
 {
+    auto old = argFriend;
+    argFriend = func;
     std::list<Argument*>::iterator itl, itle;
     if (*lptr)
     {
         itl = (*lptr)->begin();
         itle = (*lptr)->end();
     }
-    auto old = argFriend;
-    argFriend = func;
     (void)operands;
     if (func->sb->storage_class == StorageClass::overloads_)
         return;
@@ -3426,900 +4323,7 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
             }
         }
         p = *itl;
-        if (p->exp && (p->exp->type == ExpressionNode::pc_ || p->exp->type == ExpressionNode::callsite_))
-        {
-            if (Optimizer::architecture == ARCHITECTURE_MSIL)
-            {
-                ValidateMSILFuncPtr(func->tp, p->tp, &p->exp);
-            }
-            thunkForImportTable(&p->exp);
-        }
-        if (Optimizer::cparams.prm_cplusplus)
-        {
-            auto exp2 = p->exp;
-            if (exp2 && exp2->type == ExpressionNode::thisref_)
-                exp2 = exp2->left;
-
-            if (!sym->tp->IsStructured() && p->tp)
-            {
-                if (p->tp->IsStructured())
-                {
-                    Type* btp = func->tp->BaseType()->btp;
-                    if (btp && (!btp->IsRef() || !btp->BaseType()->btp->IsStructured()))
-                    {
-                        SYMBOL* sym = nullptr;
-                        auto exp2 = p->exp;
-                        if (exp2 && exp2->type == ExpressionNode::thisref_)
-                            exp2 = exp2->left;
-                        if (exp2 && exp2->type == ExpressionNode::callsite_)
-                            sym = exp2->v.func->returnSP;
-                        if (sym && !sym->sb->destructed && sym->sb->dest && sym->sb->dest->front()->exp &&
-                            !sym->tp->BaseType()->sp->sb->trivialCons)
-                        {
-                            exp2->v.func->returnSP->sb->destructed = true;
-                            if (!p->destructors)
-                                p->destructors = exprListFactory.CreateList();
-                            p->destructors->push_front(exp2->v.func->returnSP->sb->dest->front()->exp);
-                        }
-                    }
-                }
-                else
-                {
-                    GetLogicalDestructors(&p->destructors, p->exp);
-                }
-            }
-            bool done = false;
-            if (!done && !p->tp && sym->tp->IsStructured() && sym->tp->BaseType()->sp->sb->initializer_list)
-            {
-                // initlist
-                std::list<Argument*>::iterator itpinit, itpinite = itpinit;
-                if (p->nested)
-                {
-                    itpinit = p->nested->begin();
-                    itpinite = p->nested->end();
-                }
-                if (sym->tp->IsStructured() || (sym->tp->IsRef() && sym->tp->BaseType()->btp->IsStructured()))
-                {
-                    Type* stype = sym->tp;
-                    SYMBOL* sp;
-                    EXPRESSION* thisptr;
-                    if (stype->IsRef())
-                        stype = stype->BaseType()->btp;
-                    thisptr =
-                        AnonymousVar(theCurrentFunc || !sym->tp->IsRef() ? StorageClass::auto_ : StorageClass::localstatic_, stype);
-                    sp = thisptr->v.sp;
-                    if (!theCurrentFunc)
-                    {
-                        sp->sb->label = Optimizer::nextLabel++;
-                        insertInitSym(sp);
-                    }
-                    if (stype->BaseType()->sp->sb->trivialCons)
-                    {
-                        std::list<Initializer*> init1;
-                        std::list<Initializer*>* init = {&init1};
-                        for (auto shr : *stype->BaseType()->syms)
-                        {
-                            if (itpinit == itpinite)
-                                break;
-                            if (ismemberdata(shr))
-                            {
-                                InsertInitializer(&init, (*itpinit)->tp, (*itpinit)->exp, shr->sb->offset, false);
-                                ++itpinit;
-                            }
-                        }
-                        p->exp = ConverInitializersToExpression(stype, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
-                        if (!sym->tp->IsRef())
-                            sp->sb->stackblock = true;
-                        done = true;
-                    }
-                    else
-                    {
-                        CallSite* params = Allocate<CallSite>();
-                        params->ascall = true;
-                        Type* ctype = sp->tp;
-                        EXPRESSION* dexp = thisptr;
-                        params->thisptr = thisptr;
-                        auto itx = itpinit;
-                        if (itpinit != itpinite)
-                            ++itx;
-                        params->arguments = argumentListFactory.CreateList();
-                        if ((itpinit != itpinite && itx != itpinite) ||
-                            (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
-                        {
-                            Type* tp;
-                            if (itpinit == itpinite)
-                            {
-                                params->arguments->push_back(p);
-                                tp = &stdint;
-                            }
-                            else
-                            {
-                                params->arguments->insert(params->arguments->begin(), itl, itle);
-                                tp = (*itpinit)->tp;
-                            }
-                            p->tp = tp->InitializerListType();
-                            p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                            CreateInitializerList(nullptr, p->tp, tp, &params->arguments, true, sym->tp->IsRef());
-                            **itl = *params->arguments->front();
-                            (*itl)->tp = sym->tp;
-                            if (itpinit == itpinite)
-                            {
-                                auto itl1 = itl;
-                                ++itl1;
-                                params->arguments->insert(params->arguments->end(), itl1, itle);
-                            }
-                        }
-                        else
-                        {
-                            params->arguments->push_back(p);
-                            p->exp = thisptr;
-                            CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, true, false, true, false, true);
-                        }
-
-                        if (!sym->tp->IsRef())
-                        {
-                            sp->sb->stackblock = true;
-                        }
-                        else
-                        {
-                            CallDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false, true);
-                            if (dexp)
-                            {
-                                if (!p->destructors)
-                                    p->destructors = exprListFactory.CreateList();
-                                p->destructors->push_front(dexp);
-                            }
-                        }
-                        done = true;
-                    }
-                    p->tp = sym->tp;
-                }
-                else if (sym->tp->IsPtr())
-                {
-                    EXPRESSION* thisptr = AnonymousVar(theCurrentFunc ? StorageClass::auto_ : StorageClass::localstatic_, sym->tp);
-                    SYMBOL* sp = thisptr->v.sp;
-                    int n = 0;
-                    Type* btp = sym->tp;
-                    while (btp->IsArray())
-                        btp = btp->BaseType()->btp;
-                    if (!theCurrentFunc)
-                    {
-                        sp->sb->label = Optimizer::nextLabel++;
-                        insertInitSym(sp);
-                    }
-                    if (!sym->tp->IsArray())
-                    {
-                        auto itx = itpinit;
-                        while (itx != itpinite)
-
-                        {
-                            n++;
-                            ++itx;
-                        }
-                        sym->tp = sym->tp->CopyType();
-                        sym->tp->array = true;
-                        sym->tp->esize = MakeIntExpression(ExpressionNode::c_i_, n);
-                        sym->tp->UpdateRootTypes();
-                        sym->tp->size = btp->size * n;
-                    }
-                    n = 0;
-                    std::list<Initializer*> init1;
-                    std::list<Initializer*>* init = &init1;
-                    for (; itpinit != itpinite; ++itpinit)
-                    {
-                        InsertInitializer(&init, (*itpinit)->tp, (*itpinit)->exp, n, false);
-                        n += btp->size;
-                    }
-                    p->exp = ConverInitializersToExpression(sym->tp, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
-                    p->tp = sym->tp;
-                    done = true;
-                }
-                else
-                {
-                    // defer to below processing
-                    if (itpinit != itpinite)
-                    {
-                        p->exp = (*itpinit)->exp;
-                        p->tp = (*itpinit)->tp;
-                    }
-                    else
-                    {
-                        p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        p->tp = &stdint;
-                    }
-                }
-            }
-            if (!done && (p->exp || p->nested))
-            {
-                if (sym->tp->type == BasicType::ellipse_)
-                {
-                    if (!p->tp->IsStructured() && (p->tp->lref || p->tp->rref))
-                        if (p->tp->IsFunction())
-                            p->exp = MakeExpression(ExpressionNode::l_ref_, p->exp);
-                }
-                else if (sym->tp->IsStructured())
-                {
-                    bool sameType = false;
-                    EXPRESSION* temp = p->exp;
-                    Type* tpx = p->tp;
-                    if (!tpx)
-                        tpx = sym->tp;
-                    if (tpx->IsRef())
-                        tpx = tpx->BaseType()->btp;
-                    // result of a nested constructor
-                    if (temp && temp->type == ExpressionNode::thisref_)
-                    {
-                        temp = p->exp->left;
-                    }
-                    if (p->nested)
-                    {
-                        Type* ctype = sym->tp->BaseType();
-                        EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, ctype);  // StorageClass::parameter_ to push it...
-                        SYMBOL* esp = consexp->v.sp;
-                        p->exp = consexp;
-                        esp->sb->stackblock = true;
-                        esp->sb->constexpression = true;
-                        if (!sym->tp->BaseType()->sp->sb->hasUserCons)
-                        {
-                            auto initListType = p->nested->front()->tp->BaseType();
-                            EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
-                            ptr->v.sp->sb->constexpression = true;
-                            if (!theCurrentFunc)
-                            {
-                                ptr->v.sp->sb->label = Optimizer::nextLabel++;
-                                insertInitSym(ptr->v.sp);
-                            }
-                            Dereference(&stdpointer, &ptr);
-                            p->exp = AdjustNestedConversion(ctype, p->destructors, p->nested, ptr, consexp, ptr);
-                        }
-                        else
-                        {
-                            CallSite* params = Allocate<CallSite>();
-                            params->ascall = true;
-                            if (p->nested)
-                            {
-                                params->arguments = p->nested;
-                            }
-                            else
-                            {
-                                params->arguments = argumentListFactory.CreateList();
-                                params->arguments->push_back(p);
-                            }
-                            CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
-                            if (p->exp->type == ExpressionNode::thisref_)
-                            {
-                                Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
-                                if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
-                                {
-                                    p->tp = tpx->btp;
-                                }
-                            }
-                        }
-                    }
-                    // use constructor or conversion function and push on stack ( no destructor)
-                    else if (temp->type == ExpressionNode::callsite_ && temp->v.func->sp->tp->BaseType()->btp &&
-                             !temp->v.func->sp->tp->BaseType()->btp->IsRef() &&
-                             ((sameType = sym->tp->CompatibleType(tpx)) ||
-                              classRefCount(sym->tp->BaseType()->sp, tpx->BaseType()->sp) == 1))
-                    {
-                        SYMBOL* esp;
-                        EXPRESSION* consexp;
-                        // copy constructor...
-                        Type* ctype = sym->tp;
-                        EXPRESSION* paramexp;
-                        consexp = AnonymousVar(StorageClass::auto_, sym->tp);  // StorageClass::parameter_ to push it...
-                        esp = consexp->v.sp;
-                        esp->sb->stackblock = true;
-                        esp->sb->constexpression = true;
-                        consexp = MakeExpression(ExpressionNode::auto_, esp);
-                        paramexp = p->exp;
-                        paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
-                        auto exp = consexp;
-                        callConstructorParam(&ctype, &exp, sym->tp, paramexp, true, true, implicit, false, true);
-                        // copy elision
-                        if (p->exp->type != ExpressionNode::thisref_ || !p->exp->left->v.func->thistp ||
-                            (!sym->tp->SameType(p->exp->left->v.func->thistp) &&
-                             !SameTemplate(sym->tp, p->exp->left->v.func->thistp)) ||
-                            !exp || exp->type != ExpressionNode::thisref_ || !exp->left->v.func->sp->sb->isConstructor ||
-                            !matchesCopy(exp->left->v.func->sp, false))
-                        {
-                            if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
-                            {
-                                if (temp->v.func->returnEXP)
-                                {
-                                    temp->v.func->returnEXP = consexp;
-                                }
-                                else
-                                {
-                                    if (p->exp->type == ExpressionNode::thisref_ && p->exp->left->v.func->thisptr)
-                                        p->exp->left->v.func->thisptr = consexp;
-                                    p->exp = paramexp;
-                                }
-                            }
-                            else
-                            {
-                                p->exp = exp;
-                            }
-                            if (p->exp->type != ExpressionNode::comma_)
-                                p->exp = MakeExpression(ExpressionNode::comma_, p->exp, consexp);
-                        }
-                    }
-                    else if (sym->tp->BaseType()->sp->sb->trivialCons)
-                    {
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = p->tp;
-                    }
-                    else
-                    {
-                        Type* ctype = sym->tp = sym->tp->InitializeDeferred()->BaseType();
-                        EXPRESSION* consexp = AnonymousVar(StorageClass::auto_, ctype);  // StorageClass::parameter_ to push it...
-                        SYMBOL* esp = consexp->v.sp;
-                        EXPRESSION* paramexp = p->exp;
-                        esp->sb->stackblock = true;
-                        esp->sb->constexpression = true;
-                        auto currentFunc = theCurrentFunc;
-                        theCurrentFunc = func;
-                        callConstructorParam(&ctype, &consexp, p->tp, paramexp, true, true, implicit, false, true);
-                        theCurrentFunc = currentFunc;
-                        if (consexp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
-                        {
-                            p->exp = paramexp;
-                        }
-                        else
-                        {
-                            if (consexp->type == ExpressionNode::thisref_)
-                                esp->sb->constexpression = false;
-                            p->exp = consexp;
-                        }
-                    }
-                    p->tp = sym->tp;
-                }
-                else if (sym->tp->IsRef())
-                {
-                    bool nested = false;
-                    Type* tpx1 = p->tp;
-                    if (!tpx1)
-                    {
-                        tpx1 = sym->tp;
-                    }
-                    if (sym->tp->BaseType()->btp->IsStructured())
-                    {
-                        Type* tpx = tpx1;
-                        if (tpx->IsRef())
-                            tpx = tpx->BaseType()->btp;
-                        if (tpx->type == BasicType::templateparam_)
-                        {
-                            tpx = tpx->templateParam->second->byClass.val;
-                            if (!tpx)
-                                tpx = sym->tp->BaseType()->btp;
-                        }
-                        if (p->nested)
-                        {
-                            nested = true;
-                            Type* ctype = sym->tp->BaseType()->btp->BaseType();
-                            if (!ctype->sp->sb->hasUserCons)
-                            {
-
-                                EXPRESSION* consexp =
-                                    AnonymousVar(StorageClass::auto_,
-                                                 sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
-                                SYMBOL* esp = consexp->v.sp;
-                                EXPRESSION* ptr = AnonymousVar(StorageClass::auto_, &stdpointer);
-                                ptr->v.sp->sb->constexpression = true;
-                                if (!theCurrentFunc)
-                                {
-                                    ptr->v.sp->sb->label = Optimizer::nextLabel++;
-                                    insertInitSym(ptr->v.sp);
-                                }
-                                Dereference(&stdpointer, &ptr);
-                                p->exp = AdjustNestedConversion(ctype, p->destructors, p->nested, ptr, consexp, consexp);
-                            }
-                            else
-                            {
-                                CallSite* params = Allocate<CallSite>();
-                                params->ascall = true;
-                                if (p->nested)
-                                {
-                                    params->arguments = p->nested;
-                                }
-                                else
-                                {
-                                    params->arguments = argumentListFactory.CreateList();
-                                    params->arguments->push_back(p);
-                                }
-                                EXPRESSION* consexp =
-                                    AnonymousVar(StorageClass::auto_,
-                                                 sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
-                                SYMBOL* esp = consexp->v.sp;
-                                p->exp = consexp;
-                                CallConstructor(&ctype, &p->exp, params, false, nullptr, true, false, false, false, 0, false, true);
-                                if (p->exp->type == ExpressionNode::thisref_)
-                                {
-                                    Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
-                                    if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
-                                    {
-                                        p->tp = tpx->btp;
-                                    }
-                                }
-                                EXPRESSION* dexp = consexp;
-                                CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
-                                InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
-                            }
-                        }
-                        else if ((!sym->tp->BaseType()->btp->IsConst() && !sym->tp->IsConst() &&
-                                  (sym->tp->type != BasicType::rref_ &&
-                                   (!func->sb->templateLevel &&
-                                    (!func->sb->parentClass || !func->sb->parentClass->sb->templateLevel) /*forward*/)) &&
-                                  tpx->IsConst()) ||
-                                 (!sym->tp->CompatibleType(tpx) && !SameTemplate(sym->tp, tpx) &&
-                                  !classRefCount(sym->tp->BaseType()->btp->BaseType()->sp, tpx->BaseType()->sp)))
-                        {
-                            // make temp via constructor or conversion function
-                            EXPRESSION* consexp = AnonymousVar(StorageClass::auto_,
-                                                               sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
-                            SYMBOL* esp = consexp->v.sp;
-                            Type* ctype = sym->tp->BaseType()->btp;
-                            EXPRESSION* paramexp = p->exp;
-                            p->exp = consexp;
-                            callConstructorParam(&ctype, &p->exp, p->tp->BaseType(), paramexp, true, true, false, false, true);
-                            bool dodest = true;
-                            if (p->exp->type == ExpressionNode::thisref_)
-                            {
-                                Type* tpx = p->exp->left->v.func->sp->tp->BaseType();
-                                if (tpx->IsFunction() && tpx->sp && tpx->sp->sb->castoperator)
-                                {
-                                    p->tp = tpx->btp;
-                                    dodest = !p->tp->IsRef();
-                                }
-                            }
-                            if (dodest)
-                            {
-                                EXPRESSION* dexp = consexp;
-                                CallDestructor(esp->tp->BaseType()->sp, nullptr, &dexp, nullptr, true, false, false, true);
-                                InsertInitializer(&esp->sb->dest, sym->tp->BaseType()->btp, dexp, 0, true);
-                            }
-                            else
-                            {
-                                esp->sb->allocate = false;
-                            }
-                        }
-                        else
-                        {
-                            if (!sym->tp->CompatibleType(tpx))
-                                p->exp = DerivedToBase(sym->tp, tpx, p->exp, 0);
-                        }
-                    }
-                    else if (sym->tp->BaseType()->btp->IsArray() && p->nested)
-                    {
-                        Type* sourceType = p->nested->front()->tp;
-                        Type* arrtype = sym->tp->BaseType()->btp;
-                        Type* basetype = sym->tp->BaseType()->btp;
-                        while (basetype->IsArray())
-                            basetype = basetype->BaseType()->btp;
-                        int elemsize = basetype->size;
-                        int elems = arrtype->size / basetype->size;
-                        EXPRESSION* consexp =
-                            AnonymousVar(StorageClass::auto_, sym->tp->BaseType()->btp);  // StorageClass::parameter_ to push it...
-                        auto it = p->nested->begin();
-                        auto ite = p->nested->end();
-                        EXPRESSION *rv = nullptr, **last = &rv;
-                        if (!basetype->IsStructured())
-                        {
-                            // this is broken right now, arraysize is number of elements instead of total size...
-                            *last = MakeExpression(ExpressionNode::blockclear_, copy_expression(consexp));
-                            (*last)->size = Type::MakeType(BasicType::struct_);
-                            (*last)->size->size = arrtype->size;
-                        }
-                        if (sourceType->IsArray())
-                        {
-                            error(ERR_ARRAY_TYPE_NOT_EXPECTED);
-                        }
-                        else
-                        {
-                            auto it = p->nested->begin();
-                            auto ite = p->nested->end();
-                            for (int i = 0; i < elems; i++)
-                            {
-                                bool skip = false;
-                                EXPRESSION* baseAddress = MakeExpression(ExpressionNode::arrayadd_, consexp,
-                                                                         MakeIntExpression(ExpressionNode::c_i_, i * elemsize));
-                                EXPRESSION* next = nullptr;
-                                if (basetype->IsStructured())
-                                {
-                                    Type* ctype = basetype;
-                                    EXPRESSION* paramexp = it == ite ? nullptr : (*it)->exp;
-                                    Type* paramtp = it == ite ? nullptr : (*it)->tp;
-                                    p->exp = baseAddress;
-                                    callConstructorParam(&ctype, &p->exp, paramtp, paramexp, true, true, false, false, true);
-                                }
-                                else if (it != ite)
-                                {
-                                    if (sourceType->IsStructured())
-                                    {
-                                        if (basetype->IsPtr())
-                                        {
-                                            auto ctype = basetype;
-                                            p->exp = (*it)->exp;
-                                            castToPointer(&ctype, &p->exp, (Keyword)-1, sourceType);
-                                        }
-                                        else
-                                        {
-                                            auto ctype = basetype;
-                                            p->exp = (*it)->exp;
-                                            castToArithmetic(basetype->IsInt(), &ctype, &p->exp, (Keyword)-1, sourceType, true);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // both arithmetic
-                                        p->exp = (*it)->exp;
-                                        CheckNarrowing(basetype, sourceType, p->exp);
-                                        if (basetype->BaseType()->type != sourceType->BaseType()->type)
-                                        {
-                                            cast(basetype, &p->exp);
-                                        }
-                                        auto left = baseAddress;
-                                        Dereference(basetype, &left);
-                                        p->exp = MakeExpression(ExpressionNode::assign_, left, p->exp);
-                                    }
-                                }
-                                else
-                                {
-                                    skip = true;
-                                }
-                                if (!skip)
-                                {
-                                    optimize_for_constants(&p->exp);
-                                    if (*last)
-                                    {
-                                        *last = MakeExpression(ExpressionNode::comma_, *last, p->exp);
-                                        last = &(*last)->right;
-                                    }
-                                    else
-                                    {
-                                        *last = p->exp;
-                                    }
-                                    if (it != ite)
-                                    {
-                                        ++it;
-                                    }
-                                }
-                            }
-                            if (*last)
-                            {
-                                *last = MakeExpression(ExpressionNode::comma_, p->exp, consexp);
-                                last = &(*last)->right;
-                            }
-                            else
-                            {
-                                *last = consexp;
-                            }
-                        }
-                        p->exp = rv;
-                    }
-                    else if (sym->tp->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
-                    {
-                        // in case there was an error somewhere
-                        if (p->exp)
-                        {
-                            Type* tp2 = sym->tp->BaseType()->btp;
-                            if (p->exp->type == ExpressionNode::memberptr_)
-                            {
-                                int lbl = dumpMemberPtr(p->exp->v.sp, tp2, true);
-                                p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
-                            }
-                            else if (isconstzero(p->tp, p->exp) || p->exp->type == ExpressionNode::nullptr_)
-                            {
-                                EXPRESSION* dest = createTemporary(tp2, nullptr);
-                                p->exp = MakeExpression(ExpressionNode::blockclear_, dest);
-                                p->exp->size = tp2;
-                                p->exp = MakeExpression(ExpressionNode::comma_, p->exp, dest);
-                            }
-                            else if (p->exp->type == ExpressionNode::callsite_ && p->exp->v.func->returnSP)
-                            {
-                                int lbl = dumpMemberPtr(p->exp->v.sp, tp2, true);
-                                p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
-                            }
-                            else if (p->exp->type == ExpressionNode::pc_)
-                            {
-                                int lbl = dumpMemberPtr(p->exp->v.sp, tp2, true);
-                                p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
-                            }
-                        }
-                        p->tp = sym->tp;
-                    }
-                    else if (sym->tp->CompatibleType(p->tp ? p->tp : p->nested->front()->tp))
-                    {
-                        Argument* p1;
-                        if (p->tp)
-                            p1 = p;
-                        else
-                            p1 = p->nested->front();
-                        if (isarithmeticconst(p1->exp) || (sym->tp->BaseType()->type != BasicType::rref_ &&
-                                                           !sym->tp->BaseType()->btp->IsConst() && p1->tp->IsConst()))
-                        {
-                            // make numeric temp and perform cast
-                            if (p1->exp)
-                            {
-                                p->exp = createTemporary(sym->tp, p1->exp);
-                            }
-                        }
-                        else
-                        {
-                            // pass address
-                            EXPRESSION* exp = p1->exp;
-                            while (IsCastValue(exp) || exp->type == ExpressionNode::not__lvalue_)
-                                exp = exp->left;
-                            if (exp->type != ExpressionNode::l_ref_)
-                            {
-                                if (!sym->tp->IsRef() ||
-                                    (!sym->tp->BaseType()->btp->IsFunction() && !sym->tp->BaseType()->btp->IsArray()))
-                                {
-                                    if (exp->type == ExpressionNode::lvalue_)
-                                    {
-                                        exp = createTemporary(sym->tp, exp);
-                                    }
-                                    else
-                                    {
-                                        exp = convertArgToRef(exp, sym->tp, p1->tp);
-                                    }
-                                }
-                                p->exp = exp;
-                            }
-                            else if (p->tp->IsPtr() && p->tp->BaseType()->btp->IsStructured())
-                            {
-                                // make numeric temp and perform cast
-                                p->exp = createTemporary(sym->tp, exp);
-                            }
-                            else if (sym->tp->BaseType()->btp->BaseType()->byRefArray)
-                            {
-                                p->exp->left = p->exp->left->left;
-                            }
-                        }
-                    }
-                    // in case there was an error somewhere
-                    else if (p->exp)
-                    {
-                        if (p->tp->IsStructured())
-                        {
-                            // arithmetic or pointer
-                            Type* etp = sym->tp->BaseType()->btp;
-                            if (cppCast(p->tp, &etp, &p->exp))
-                                p->tp = etp;
-                            if (!TakeAddress(&p->exp))
-                                p->exp = createTemporary(sym->tp, p->exp);
-                        }
-                        else
-                        {
-                            // make numeric temp and perform cast
-                            p->exp = createTemporary(sym->tp, p->exp);
-                        }
-                    }
-                    if (!tpx1->IsRef() && ((tpx1->IsConst() && !sym->tp->BaseType()->btp->IsConst()) ||
-                                           (tpx1->IsVolatile() && !sym->tp->BaseType()->btp->IsVolatile())))
-                        if (sym->tp->BaseType()->type != BasicType::rref_)  // converting const lref to rref is ok...
-                            if (!sym->tp->BaseType()->btp->IsStructured())  // structure constructor is ok
-                                if (!tpx1->IsArray())
-                                    error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
-                    p->tp = sym->tp;
-                }
-                else if (p->tp->IsStructured())
-                {
-                    if (sym->tp->type == BasicType::ellipse_)
-                    {
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = p->tp;
-                    }
-                    else
-                    {
-                        // arithmetic or pointer
-                        Type* etp = sym->tp;
-                        if (cppCast(p->tp, &etp, &p->exp))
-                            p->tp = etp;
-                    }
-                }
-                else if (sym->tp->IsVoidPtr() && p->tp->type == BasicType::aggregate_)
-                {
-                    LookupSingleAggregate(p->tp, &p->exp);
-                }
-                else if (sym->tp->IsPtr() && p->tp->IsPtr())
-                {
-                    // handle vla to pointer conversion
-                    if (p->tp->vla && !sym->tp->vla)
-                    {
-                        Type* tpd1 = Allocate<Type>();
-                        *tpd1 = *p->tp;
-                        tpd1->vla = false;
-                        tpd1->array = false;
-                        tpd1->size = getSize(BasicType::pointer_);
-                        p->tp = tpd1;
-                        Dereference(p->tp, &p->exp);
-                    }
-                    // handle base class conversion
-                    Type* tpb = sym->tp->BaseType()->btp;
-                    Type* tpd = p->tp->BaseType()->btp;
-
-                    if (Optimizer::cparams.prm_cplusplus && p->tp->BaseType()->stringconst && !sym->tp->BaseType()->btp->IsConst())
-                        error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
-                    if (!tpb->BaseType()->CompatibleType(tpd->BaseType()))
-                    {
-                        if (tpb->IsStructured() && tpd->IsStructured())
-                        {
-                            p->exp = DerivedToBase(tpb, tpd, p->exp, 0);
-                        }
-                        p->tp = sym->tp;
-                    }
-                }
-                else if (sym->tp->BaseType()->type == BasicType::memberptr_)
-                {
-                    if (p->exp->type == ExpressionNode::memberptr_)
-                    {
-                        int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
-                        p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = sym->tp;
-                    }
-                    else if (isconstzero(p->tp, p->exp) || p->exp->type == ExpressionNode::nullptr_)
-                    {
-                        EXPRESSION* dest = createTemporary(sym->tp, nullptr);
-                        p->exp = MakeExpression(ExpressionNode::blockclear_, dest);
-                        p->exp->size = sym->tp;
-                        p->exp = MakeExpression(ExpressionNode::comma_, p->exp, dest);
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = sym->tp;
-                    }
-                    else if (p->exp->type == ExpressionNode::callsite_ && p->exp->v.func->returnSP)
-                    {
-                        EXPRESSION* dest = AnonymousVar(StorageClass::auto_, sym->tp);
-                        SYMBOL* esp = dest->v.sp;
-                        int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
-                        esp->sb->stackblock = true;
-                        p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = sym->tp;
-                    }
-                    else if (p->exp->type == ExpressionNode::pc_)
-                    {
-                        int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, true);
-                        p->exp = MakeIntExpression(ExpressionNode::labcon_, lbl);
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = sym->tp;
-                    }
-                    else
-                    {
-                        p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                        p->exp->size = sym->tp;
-                    }
-                    p->tp = sym->tp;
-                }
-                else if (sym->tp->IsArithmetic() && p->tp->IsArithmetic())
-                    if (sym->tp->BaseType()->type != p->tp->BaseType()->type)
-                    {
-                        p->tp = sym->tp;
-                        cast(p->tp, &p->exp);
-                    }
-            }
-        }
-        else if (Optimizer::architecture == ARCHITECTURE_MSIL)
-        {
-            if (!p->exp)
-            {
-                diag("adjust_params, empty expression");
-                p->exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-            }
-            if (sym->tp->IsRef())
-            {
-                if (sym->tp->CompatibleType(p->tp))
-                {
-                    if (isarithmeticconst(p->exp) ||
-                        (sym->tp->BaseType()->type != BasicType::rref_ && !sym->tp->BaseType()->btp->IsConst() && p->tp->IsConst()))
-                    {
-                        // make numeric temp and perform cast
-                        p->exp = createTemporary(sym->tp, p->exp);
-                    }
-                    else
-                    {
-                        // pass address
-                        EXPRESSION* exp = p->exp;
-                        while (IsCastValue(exp) || exp->type == ExpressionNode::not__lvalue_)
-                            exp = exp->left;
-                        if (exp->type != ExpressionNode::l_ref_)
-                        {
-                            if (!sym->tp->IsRef() || !sym->tp->BaseType()->btp->IsFunction())
-                            {
-                                if (!TakeAddress(&exp))
-                                {
-                                    // make numeric temp and perform cast
-                                    exp = createTemporary(sym->tp, exp);
-                                }
-                            }
-                            p->exp = exp;
-                        }
-                        else if (p->tp->IsPtr() && p->tp->BaseType()->btp->IsStructured())
-                        {
-                            // make numeric temp and perform cast
-                            p->exp = createTemporary(sym->tp, exp);
-                        }
-                    }
-                }
-                else
-                {
-                    // make numeric temp and perform cast
-                    p->exp = createTemporary(sym->tp, p->exp);
-                }
-                p->tp = sym->tp;
-            }
-            else
-            {
-                if (p && sym->tp->BaseType()->type == BasicType::string_)
-                {
-                    if ((p->tp->BaseType()->type == BasicType::string_) ||
-                        (p->exp->type == ExpressionNode::labcon_ && p->exp->string))
-                    {
-                        if (p->exp->type == ExpressionNode::labcon_)
-                            p->exp->type = ExpressionNode::c_string_;
-                    }
-                    else if ((p->tp->IsArray() || p->tp->IsPtr()) && !p->tp->BaseType()->msil &&
-                             p->tp->BaseType()->btp->BaseType()->type == BasicType::char_)
-                    {
-                        // make a 'string' object and initialize it with the string
-                        Type* ctype = find_boxed_type(sym->tp->BaseType());
-                        EXPRESSION *exp1, *exp2;
-                        exp1 = exp2 = AnonymousVar(StorageClass::auto_, &std__string);
-                        callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false, true);
-                        exp2 = MakeExpression(ExpressionNode::l_string_, exp2);
-                        p->exp = exp2;
-                        p->tp = &std__string;
-                    }
-                }
-                else if (p && sym->tp->BaseType()->type == BasicType::object_)
-                {
-                    if (p->tp->BaseType()->type != BasicType::object_ && !p->tp->IsStructured() &&
-                        (!p->tp->IsArray() || !p->tp->BaseType()->msil))
-                    {
-                        if ((p->tp->IsArray() || p->tp->IsPtr()) && !p->tp->BaseType()->msil &&
-                            p->tp->BaseType()->btp->BaseType()->type == BasicType::char_)
-                        {
-                            // make a 'string' object and initialize it with the string
-                            Type* ctype = find_boxed_type(&std__string);
-                            EXPRESSION *exp1, *exp2;
-                            exp1 = exp2 = AnonymousVar(StorageClass::auto_, &std__string);
-                            callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false, true);
-                            exp2 = MakeExpression(ExpressionNode::l_string_, exp2);
-                            p->exp = exp2;
-                            p->tp = &std__string;
-                        }
-                        else
-                            p->exp = MakeExpression(ExpressionNode::x_object_, p->exp);
-                    }
-                }
-                else if (p && p->tp->IsMsil())
-                    ;  // error
-                // legacy c language support
-                else if (p && p->tp && p->tp->IsStructured() && (!p->tp->BaseType()->sp->sb->msil || !isconstzero(p->tp, p->exp)))
-                {
-                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                    p->exp->size = p->tp;
-                }
-            }
-        }
-        else
-        {
-            // legacy c language support
-            if (p && p->tp)
-            {
-                if (p->tp->IsStructured())
-                {
-                    p->exp = MakeExpression(ExpressionNode::stackblock_, p->exp);
-                    p->exp->size = p->tp;
-                }
-                else if (sym->tp->IsFloat() || sym->tp->IsImaginary() || sym->tp->IsComplex())
-                {
-                    cast(sym->tp, &p->exp);
-                    optimize_for_constants(&p->exp);
-                }
-            }
-        }
+        AdjustSingleParam(func, sym, p, itl, itle, implicit);
         ++it;
         ++itl;
     }

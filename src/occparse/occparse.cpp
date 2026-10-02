@@ -184,6 +184,7 @@ char realOutFile[260];
 InstructionParser* instructionParser;
 #endif
 static int stoponerr = 0;
+SharedMemory* parserMem = nullptr;
 
 Optimizer::COMPILER_PARAMS cparams_default = {
     25, /* int  prm_maxerr;*/
@@ -446,7 +447,6 @@ int main(int argc, char* argv[]) MAINTRY
     if (clist.size() > 1)
         multipleFiles = true;
     std::string firstFile = clist.size() ? clist.front() : "temp";
-    SharedMemory* parserMem = nullptr;
     if (!IsCompiler())
     {
         char buffer[260];
@@ -463,18 +463,13 @@ int main(int argc, char* argv[]) MAINTRY
 #endif
         if (bePostFile.size())
         {
-            parserMem = new SharedMemory(0, bePostFile.c_str());
-            if (!parserMem->Open() || !parserMem->GetMapping())
-                Utils::Fatal("internal error: invalid shared memory region");
             if (clist.empty())
             {
                 Optimizer::OutputIntermediate(parserMem);
             }
         }
-        else  // so we can do compiles without the output going anywhere...
+        else
         {
-            parserMem = new SharedMemory(240 * 1024 * 1024);
-            parserMem->Create();
             compileToFile = true;
         }
     }

@@ -52,6 +52,7 @@
 #include "initbackend.h"
 #include "optmodules.h"
 #include "beinterf.h"
+#include "ilstream.h"
 
 namespace Optimizer
 {
@@ -1212,19 +1213,6 @@ int ccinit(int argc, char* argv[])
                 architecture = argv[i + 1];
             }
         }
-
-    if (showVersion)
-    {
-        // have to handle version specially because of the return code...
-        // exiting with no display becase -v should show info about the compiler if on the command line alone.
-        if (0)
-        {
-            ToolChain::ShowBanner();
-            printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
-        }
-        Optimizer::dontProcessCode = true;
-        exit(0);
-    }
     if (!architecture.empty())
     {
         auto splt = Utils::split(architecture, ';');
@@ -1251,6 +1239,34 @@ int ccinit(int argc, char* argv[])
     {
         // default to x86
         Optimizer::architecture = ARCHITECTURE_X86;
+    }
+    if (IsCompiler())
+    {
+        if (bePostFile.size())
+        {
+            parserMem = new SharedMemory(0, bePostFile.c_str());
+            if (!parserMem->Open() || !parserMem->GetMapping())
+                Utils::Fatal("internal error: invalid shared memory region");
+        }
+        else  // so we can do compiles without the output going anywhere...
+        {
+            parserMem = new SharedMemory(240 * 1024 * 1024);
+            parserMem->Create();
+        }
+    }
+
+    if (showVersion)
+    {
+        // have to handle version specially because of the return code...
+        // exiting with no display becase -v should show info about the compiler if on the command line alone.
+        if (0)
+        {
+            ToolChain::ShowBanner();
+            printf("\nCompile date: " __DATE__ ", time: " __TIME__ "\n");
+        }
+        Optimizer::dontProcessCode = true;
+        Optimizer::OutputIntermediate(parserMem);
+        exit(0);
     }
     if (!init_backend())
         Utils::Fatal("Could not initialize back Keyword::end_");
@@ -1281,7 +1297,7 @@ int ccinit(int argc, char* argv[])
                    prmPrintProgName.GetExists() || MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ||
                    (prm_cppfile.GetExists() && prm_output.GetValue() == CONSOLE_DEVICE);
         },
-        1);
+        1, [] { Optimizer::OutputIntermediate(parserMem); });
     Optimizer::dontProcessCode = false;
 
     argv[0] = old;

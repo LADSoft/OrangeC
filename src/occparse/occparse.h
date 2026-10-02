@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -29,6 +29,7 @@
 #    include "InstructionParser.h"
 #endif
 #include "PreProcessor.h"
+#include "SharedMemory.h"
 
 namespace Parser
 {
@@ -49,6 +50,7 @@ extern char realOutFile[260];
 extern InstructionParser* instructionParser;
 #endif
 extern int usingEsp;
+extern SharedMemory* parserMem;
 
 extern Optimizer::COMPILER_PARAMS cparams_default;
 

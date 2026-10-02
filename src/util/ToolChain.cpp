@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -97,7 +97,8 @@ void ToolChain::Usage(const char* text, int exitVal)
     exit(exitVal);
 }
 CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc, char** argv, const char* usageText,
-                                        const char* helpText, std::function<bool()> noBanner, int exitVal)
+                                        const char* helpText, std::function<bool()> noBanner, int exitVal,
+                                        std::function<void()> helpCleanup)
 {
     CmdSwitchBool NoLogo(SwitchParser, '!', false, {"nologo"});
     CmdSwitchBool ShowVersion(SwitchParser, 'v', false, {"version"});
@@ -131,7 +132,10 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
     if (ShowVersion.GetValue())
         ToolChain::ShowVersion();
     if (ShowHelp.GetExists())
-        ToolChain::Usage(helpText, exitVal);
+    {
+        helpCleanup();
+        ToolChain::Usage(helpText, 0);
+    }
     rv.Add(File);
     return rv;
 }

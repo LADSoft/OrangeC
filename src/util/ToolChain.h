@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -49,7 +49,8 @@ class ToolChain
 {
   public:
     static CmdFiles StandardToolStartup(CmdSwitchParser& SwitchParser, int argc, char** argv, const char* usageText,
-                                        const char* helpText, std::function<bool()> noBanner = nullptr, int exitVal = 0);
+                                        const char* helpText, std::function<bool()> noBanner = nullptr, int exitVal = 0,
+                                        std::function<void()> helpCleanup = {});
     static void ShowBanner();
     static void ShowVersion();
     [[noreturn]] static void Usage(const char* text, int exitVal = 0);

@@ -31,8 +31,16 @@ sqlite3.dll: sqlite3.c
 zzz.dll:
 	occil $(NETCOREDLL) /Wd zzz.c /Nzzz.ar
 
-test.exe: sqlite3.c shell.c
-	occil $(NETCOREDLL) /otest.exe sqlite3.c shell.c /I$(ORANGEC)\src\sqlite3 /LKernel32
+sqlite3.ilo: sqlite3.c
+	occil $(NETCOREDLL) /c sqlite3.c /I$(ORANGEC)\src\sqlite3 /LKernel32
+
+shell.ilo: shell.c
+	occil $(NETCOREDLL) /c shell.c /I$(ORANGEC)\src\sqlite3 /LKernel32
+
+test.exe: sqlite3.ilo shell.ilo
+	netlink $(NETCOREDLL) /otest.exe @&&|
+shell.ilo sqlite3.ilo
+|
 
 testsqlite.exe: testsqlite.cs sqlite3.dll
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 testsqlite.cs 

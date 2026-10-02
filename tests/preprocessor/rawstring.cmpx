@@ -1,0 +1,16 @@
+#line 5 "rawstring.cpp"
+R"abc( hi ABC bye )abc" xx yy R"abc(hi DEF bye)abc") yy 
+#line 6 "rawstring.cpp"
+xx 
+#line 7 "rawstring.cpp"
+yy 
+#line 8 "rawstring.cpp"
+R"abc( hi  
+#line 9 "rawstring.cpp"
+ABC 
+#line 10 "rawstring.cpp"
+DEF 
+#line 11 "rawstring.cpp"
+bye 
+#line 12 "rawstring.cpp"
+)abc" xx yy 

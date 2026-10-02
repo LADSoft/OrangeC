@@ -32,7 +32,8 @@ TEST_FILES = n_1.exe \
     n_9.exe \
     n_std.exe \
     bignum.exe \
-    stringize1.exe
+    stringize1.exe \
+    rawstring.tst
 
 
 all: af.o namedvarargs.exe
@@ -41,6 +42,7 @@ all: af.o namedvarargs.exe
 tests: $(TEST_FILES)
 
 clean:
+	-del *.i
 	$(CLEAN)
 
 af.o : af.c
@@ -50,6 +52,10 @@ namedvarargs.exe: namedvarargs.c
 	occ /! /T /9 $^
 	-$* > $*.out
 	fc /b $*.cmpx $*.out
+
+rawstring.tst: rawstring.cpp
+	ocpp rawstring.cpp > rawstring.tst
+	fc /b rawstring.cmpx rawstring.tst
 
 %.exe: %.c af.o
 	occ /! /T /9 $^ af.o

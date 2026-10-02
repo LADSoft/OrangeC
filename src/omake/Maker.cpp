@@ -39,6 +39,8 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_set>
+#include <thread>
+#include <chrono>
 std::unordered_map<std::string, Depends*> Depends::all;
 std::string Maker::firstGoal;
 std::unordered_map<std::string, std::string> Maker::filePaths;

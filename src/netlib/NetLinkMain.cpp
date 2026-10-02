@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -136,25 +136,30 @@ const std::string& NetLinkMain::GetOutputFile(CmdFiles& files)
 bool NetLinkMain::LoadImage(CmdFiles& files)
 {
     bool rv = true;
+    bool first = true;
     for (auto name : files)
     {
-        int n = name.Name.find_last_of('.');
-        if (n == std::string::npos)
+        if (!first)
         {
-            name.Name += ".ilo";
-        }
-        else if (n > 0)
-        {
-            if (name.Name[n - 1] == '.')
+            int n = name.Name.find_last_of('.');
+            if (n == std::string::npos)
             {
                 name.Name += ".ilo";
             }
+            else if (n > 0)
+            {
+                if (name.Name[n - 1] == '.')
+                {
+                    name.Name += ".ilo";
+                }
+            }
+            if (!peLib->LoadObject(name.Name))
+            {
+                std::cout << "Error loading object file: " << name.Name.c_str() << std::endl;
+                rv = false;
+            }
         }
-        if (!peLib->LoadObject(name.Name))
-        {
-            std::cout << "Error loading object file: " << name.Name.c_str() << std::endl;
-            rv = false;
-        }
+        first = false;
     }
     return rv;
 }
@@ -728,7 +733,8 @@ int NetLinkMain::Run(int argc, char** argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::Fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
+    CmdFiles files;
+    if (!SwitchParser.Parse(&argc, argv, &files) || (argc == 1 && File.GetCount() <= 1 && !ShowHelp.GetExists()))
     {
         if (!NoLogo.GetValue() || ShowVersion.GetValue())
             ToolChain::ShowBanner();
@@ -738,9 +744,7 @@ int NetLinkMain::Run(int argc, char** argv)
         ToolChain::ShowBanner();
     if (ShowHelp.GetExists())
         ToolChain::Usage(helpText);
-    CmdFiles files(argv + 1);
-    if (File.GetValue())
-        files.Add(File.GetValue() + 1);
+    files.Add(File);
 
 #ifdef TARGET_OS_WINDOWS
     if (NetCoreSwitch.GetExists())

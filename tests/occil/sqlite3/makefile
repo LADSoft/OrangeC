@@ -38,9 +38,7 @@ shell.ilo: shell.c
 	occil $(NETCOREDLL) /c shell.c /I$(ORANGEC)\src\sqlite3 /LKernel32
 
 test.exe: sqlite3.ilo shell.ilo
-	netlink $(NETCOREDLL) /otest.exe @&&|
-shell.ilo sqlite3.ilo
-|
+	netlink $(NETCOREDLL) /otest.exe shell.ilo sqlite3.ilo
 
 testsqlite.exe: testsqlite.cs sqlite3.dll
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 testsqlite.cs 

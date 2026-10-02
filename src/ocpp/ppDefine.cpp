@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -818,6 +818,39 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
     int origPos = begin;
     for (p = begin; p < end;)
     {
+        // deal with raw strings here
+        if (dialect >= Dialect::cpp11)
+        {
+            if (!rawStringPostfix.empty())
+            {
+                int n = line.find(rawStringPostfix, p);
+                if (n == std::string::npos)
+                {
+                    origPos += end - p;
+                    p += end - p;
+                }
+                else
+                {
+                    origPos += n - p + rawStringPostfix.size();
+                    p += n - p + rawStringPostfix.size();
+                    rawStringPostfix.clear();
+                }
+                continue;
+            }
+            else if (p < line.size() - 1 && line[p] == 'R' && line[p + 1] == '"')
+            {
+                p += 2;
+                origPos += 2;
+                int n = line.find('(', p);
+                if (n != std::string::npos)
+                {
+                    rawStringPostfix = ")" + line.substr(p, n - p) + "\"";
+                    p += n - p + 1;
+                    origPos += n - p + 1;
+                }
+                continue;
+            }
+        }
         int q = p;
         if (!waiting && (line[p] == '"' || line[p] == '\'') && NotSlashed(line, p))
         {

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -433,7 +433,10 @@ int main(int argc, char* argv[]) MAINTRY
     */
     /* parse environment variables, command lines, and config files  */
     if (ccinit(argc, argv))
-        return 255;  // some sort of noop operation such as a display occurred
+    {
+        Optimizer::dontProcessCode = true;
+        return 1;
+    }
 
     if (Optimizer::cparams.prm_displaytiming)
     {
@@ -583,6 +586,7 @@ int main(int argc, char* argv[]) MAINTRY
         }
         else
         {
+            Optimizer::cparams.cpp_dialect = Dialect::cpp17;
             Optimizer::cparams.prm_cplusplus = true;
             Optimizer::cparams.c_dialect = Dialect::c89;
         }
@@ -592,7 +596,7 @@ int main(int argc, char* argv[]) MAINTRY
             fileToCompile.c_str(), prm_cinclude.GetValue(),
             Optimizer::cparams.prm_cplusplus ? prm_CPPsysinclude.GetValue() : prm_Csysinclude.GetValue(), true,
             Optimizer::cparams.prm_trigraph, '#', Optimizer::cparams.prm_charisunsigned,
-            Optimizer::cparams.prm_cplusplus ? Dialect::c23 : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
+            Optimizer::cparams.prm_cplusplus ? Dialect::cpp17 : Optimizer::cparams.c_dialect, !Optimizer::cparams.prm_ansi,
             (MakeStubsOption.GetValue() || MakeStubsUser.GetValue()) && MakeStubsMissingHeaders.GetValue(),
             prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 
@@ -607,6 +611,7 @@ int main(int argc, char* argv[]) MAINTRY
         {
             if (Optimizer::cparams.prm_cppfile)
             {
+                Optimizer::dontProcessCode = true;
                 if (prm_output.GetExists())
                 {
                     Utils::StrCpy(cppfile, prm_output.GetValue().c_str());
@@ -731,6 +736,8 @@ int main(int argc, char* argv[]) MAINTRY
                               MakeStubsPhonyTargets.GetValue(), inFile, outFile, MakeStubsTargets.GetValue(),
                               MakeStubsQuotedTargets.GetValue());
             stubber.Run(MakeStubsOption.GetValue() || MakeStubsUser.GetValue() ? &std::cout : nullptr);
+            Optimizer::dontProcessCode = true;
+            Optimizer::OutputIntermediate(parserMem);
         }
         if (!IsCompiler())
         {
@@ -820,9 +827,13 @@ int main(int argc, char* argv[]) MAINTRY
     if (!Optimizer::cparams.prm_cppfile &&
         (!Optimizer::cparams.prm_makestubs || (MakeStubsContinue.GetValue() || MakeStubsContinueUser.GetValue()) &&
                                                   (!prm_error.GetExists() || !prm_error.GetValue().empty())))
+    {
         rv = IsCompiler() ? !!stoponerr : 0;
+    }
     else
-        rv = 255;
+    {
+        rv = 0;
+    }
     return rv;
 }
 MAINCATCH

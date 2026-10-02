@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -625,6 +625,7 @@ static void StreamXParams()
     StreamIndex(initializeScalars);
     StreamIndex(registersAssigned);
     StreamIndex(syntaxOnly);
+    StreamIndex(dontProcessCode);
     StreamString(prm_assemblerSpecifier);
     StreamString(prm_libPath);
     StreamString(prm_include);

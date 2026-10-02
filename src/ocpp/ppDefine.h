@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -166,6 +166,7 @@ class ppDefine
     std::string date;
     std::string dateiso;
     std::string time;
+    std::string rawStringPostfix;
     std::unordered_map<std::string, std::stack<Definition*>> macroStacks;
     std::deque<TokenPos> tokenPositions;
     static KeywordHash defTokens;

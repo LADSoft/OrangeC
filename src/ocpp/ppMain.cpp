@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -180,7 +180,9 @@ int ppMain::Run(int argc, char* argv[])
             }
         }
         Dialect dialect;
-        if (c23Mode.GetValue())
+        if (cplusplus)
+            dialect = Dialect::cpp17;
+        else if (c23Mode.GetValue())
             dialect = Dialect::c23;
         else if (c11Mode.GetValue())
             dialect = Dialect::c11;

@@ -98,12 +98,10 @@ Ox           optimization control
 -Y output icd file
 
 Optimization control: 
-)help" 
-OPTIMIZATION_DESCRIPTION
+)help" OPTIMIZATION_DESCRIPTION
     R"help(
 Flags:\n"
-)help" 
-OPTMODULES_DESCRIPTION
+)help" OPTMODULES_DESCRIPTION
 
     "\nTime: __TIME__  Date: " __DATE__;
 

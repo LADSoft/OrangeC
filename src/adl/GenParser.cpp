@@ -1203,7 +1203,7 @@ bool GenParser::GenerateOpcodes()
             }
             else
             {
-                std::cout << "Undefined opcode class '" << x->cclass << "' in definition of opcode '" << x->name << "'";
+                std::cout << "Undefined opcode class '" << x->cclass << "' in definition of opcode '" << x->name << "'" << std::endl;
             }
         }
         else

@@ -17,7 +17,7 @@ EXE_dependencies = \
 		CmdSwitch.obj \
 		CmdFiles.obj \
 		Utils.obj \
-                ToolChain.obj \
+		ToolChain.obj \
 		xml.obj \
 		GenParser.obj \
 		Loader.obj \

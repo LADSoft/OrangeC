@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -3710,8 +3710,8 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                 if (it)
                 {
                     if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
-                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember &&
-                        base && !base->sb->attribs.inheritable.isInline)
+                        sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember && base &&
+                        !base->sb->attribs.inheritable.isInline)
                     {
                         insertDynamicInitializer(base, it);
                     }
@@ -4238,17 +4238,24 @@ static void initialize_auto(SYMBOL* funcsp, int offset, StorageClass sc, Type* i
         }
         if (Optimizer::cparams.prm_cplusplus && sym->tp->IsStructured())
         {
-
-            std::list<Initializer*>*dest = nullptr, *it;
+            Type* ctype = sym->tp;
+            std::list<Initializer*>*dest2 = nullptr, *it;
             EXPRESSION* expl = getThisNode(sym);
-            InsertInitializer(init, sym->tp, exp, offset, false);
+            callConstructorParam(&ctype, &expl, ctype, exp, true, false, false, false, false);
+            InsertInitializer(init, sym->tp, expl, offset, true);
+            expl = getThisNode(sym);
             if (sym->sb->storage_class != StorageClass::auto_ && sym->sb->storage_class != StorageClass::parameter_ &&
                 sym->sb->storage_class != StorageClass::member_ && sym->sb->storage_class != StorageClass::mutable_ &&
                 !sym->sb->attribs.inheritable.isInline)
             {
                 CallDestructor(sym->tp->BaseType()->sp, nullptr, &expl, nullptr, true, false, false, true);
-                InsertInitializer(&dest, sym->tp, expl, offset, true);
-                insertDynamicDestructor(sym, dest);
+                InsertInitializer(&dest2, sym->tp, expl, offset, true);
+                insertDynamicDestructor(sym, dest2);
+            }
+            else
+            {
+                CallDestructor(sym->tp->BaseType()->sp, nullptr, &expl, nullptr, true, false, false, true);
+                InsertInitializer(dest, nullptr, expl, offset, true);
             }
         }
         else

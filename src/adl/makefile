@@ -2,7 +2,7 @@
 #
 
 CC=cl.exe
-CCFLAGS = /O2 /EHs /c /nologo /I../util /DTARGET_OS_WINDOWS /std:c++17
+CCFLAGS = /O2 /EHs /c /nologo /I../util
 
 LINK=link.exe
 LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
@@ -17,7 +17,6 @@ EXE_dependencies = \
 		CmdSwitch.obj \
 		CmdFiles.obj \
 		Utils.obj \
-                ToolChain.obj \
 		xml.obj \
 		GenParser.obj \
 		Loader.obj \
@@ -25,4 +24,4 @@ EXE_dependencies = \
 		ADLMain.obj
 
 adl.exe: $(EXE_dependencies)
-	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@  $(EXE_dependencies)
+	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@  $(EXE_dependencies) ..\lib\ms\util.lib

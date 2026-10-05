@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- * 
+ *
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- * 
+ *
+ *
  */
 
 #include "Loader.h"
@@ -66,12 +66,17 @@ void Parser::EnterRegisterClasses(Register* reg)
         }
         std::string cclass = temp.substr(npos, npos1 - npos);
         temp.replace(0, npos1, "");
-        RegClass* p = registerClasses[cclass];
-        if (!p)
+        auto it = registerClasses.find(cclass);
+        RegClass* p;
+        if (it == registerClasses.end())
         {
             p = new RegClass(cclass, registers.size());
             p->id = registerClasses.size();
             registerClasses[cclass] = p;
+        }
+        else
+        {
+            p = it->second;
         }
         p->regs[reg->id / 8] |= (1 << (reg->id & 7));
     }
@@ -99,10 +104,10 @@ void Parser::EnterAddressClasses(Address* address)
         }
         std::string cclass = temp.substr(npos, npos1 - npos);
         temp.replace(0, npos1, "");
-        AddressClass* p = addressClasses[cclass];
-        if (!p)
+        auto it = addressClasses.find(cclass);
+        if (it == addressClasses.end())
         {
-            p = new AddressClass(cclass);
+            auto p = new AddressClass(cclass);
             p->id = addressClasses.size();
             addressClasses[cclass] = p;
         }
@@ -273,12 +278,13 @@ void Parser::TagClasses(std::string& cclass, std::string coding, std::map<std::s
         }
         std::string cclass = temp.substr(npos, npos1 - npos);
         temp.replace(0, npos1, "");
-        AddressClass* p = addressClasses[cclass];
-        if (!p)
+        auto it = addressClasses.find(cclass);
+        if (it == addressClasses.end())
         {
             return;
         }
-        b[(p->id - 1) / 8] |= (1 << ((p->id - 1) & 7));
+        auto p = it->second;
+        b[(p->id) / 8] |= (1 << ((p->id) & 7));
     }
     for (auto x : nodes)
     {

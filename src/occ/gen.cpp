@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1013,9 +1013,19 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
         {
             gen_codes(op_and, size, src, aimmed((1 << bits) - 1));
             gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
+            bool pushed = false;
+            if (live(dest->liveRegs, src->preg))
+            {
+                int n = getreg(dest, (1 << dest->preg) || (1 << src->preg), pushed);
+                auto temp = makedreg(n);
+                gen_codes(op_mov, src->length, temp, src);
+                src = temp;
+            }
             if (startbit)
                 gen_codes(op_shl, size, src, aimmed(startbit));
             gen_codes(op_or, size, dest, src);
+            if (pushed)
+                gen_codes(op_pop, ISZ_UINT, src, nullptr);
         }
         else
             gen_codes(op_mov, size, dest, src);

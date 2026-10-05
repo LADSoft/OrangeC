@@ -1,0 +1,135 @@
+#!/bin/sh
+
+# Check prerequisites
+
+# Check if clang-format is installed
+if ! command -v clang-format &> /dev/null; then
+    echo "ERROR: clang-format is not installed. Please install it to commit."
+    exit 1
+fi
+
+# figure out what we are comparing against
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=$(git hash-object -t tree /dev/null)
+fi
+
+
+# check for non-ascii file names
+
+if test $(git diff --cached --name-only --diff-filter=A -z $against |
+	  LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+then
+    echo "Attempt to use non-ascii file name"
+    exit 1;
+fi
+
+# Pre-commit hook to update the copyright date
+
+# Define a regex to gather the old date list
+# this starts with a date range, then has a comma-separated list that can be any combination of single years and date ranges
+COPYRIGHT_OLD='.*Copyright(C)[[:space:]]\([0-9]\{4\}-[0-9]\{4\}\([[:space:]]*,[[:space:]]*[0-9]\{4\}\([[:space:]]*-[[:space:]]*[0-9]\{4\}\)\?\)*\)[[:space:]]David[[:space:]]Lindauer,[[:space:]](LADSoft).*'
+
+# Get list of staged files
+STAGED_FILES_C=$(git diff --cached --name-only --diff-filter=ACM)
+
+
+new_year=$(date +%Y)
+# change the copyright on each staged file and stage changes
+for FILE in $STAGED_FILES_C; do
+    # if a change can be made
+    if grep -q "$COPYRIGHT_OLD" "$FILE"; then
+        temp_file=$(mktemp)  # Create a safe temporary file
+        # load the date string (does not have extraneous text)
+        olddates=$(sed -n "s/$COPYRIGHT_OLD/\1/p" "$FILE")
+        # break out the trailing year or year range and cache the beginning one
+        echo $olddates > $temp_file
+        back=$(awk -F, '{print $NF}' $temp_file)
+        front=$(awk -F, '{OFS=FS; $NF=""; sub(/,$/, ""); print}' $temp_file)
+        # in the final year range, get the first and last year
+        # if it is not a range, first will be empty
+        echo $back > $temp_file
+        last=$(awk -F- '{print $NF}' $temp_file)
+        first=$(awk -F- '{OFS=FS; $NF=""; sub(/-$/, ""); print}' $temp_file)
+
+        #if the last year is actually changing we can make the change
+        if [ "$last" != "$new_year" ]; then
+            echo "Changing copyright date in $FILE..."
+
+            # we do different things depending on whether there is a gap in the years
+            let next=$last+1;
+            if [ "$next" == "$new_year" ]; then
+                # handle updating to the next year, 
+                if [ -z "$first" ]; then
+                    # create a new range
+                    newdates="$last-$new_year"
+                else
+                    # replace the year in the old range
+                    newdates="$first-$new_year"
+                fi
+            else
+                # there is a gap, add the new year
+                if [ -z "$first" ]; then
+                    # add to a single year
+                    newdates="$last, $new_year"
+                else
+                    # add to a range
+                    newdates="$first-$last, $new_year"
+                fi
+            fi
+            # add the cached earlier dates
+            if [ -n "$front" ]; then
+                newdates="$front, $newdates"
+            fi
+            # perform the replace
+            sed "s/$olddates/$newdates/g" "$FILE" > "$temp_file"
+            # On windows, change the line breaks back...
+            if [ -n "$(uname -s) | grep -E 'MINGW'" ]; then
+               sed -i 's/$/\r/' "$temp_file"
+            fi
+            # move the file back and create a new temp file
+            mv "$temp_file" "$FILE"
+            # Re-stage the formatted file to include changes in the commit
+            git add "$FILE"     
+        else
+            $(rm $temp_file)
+        fi
+    fi
+
+done
+
+
+# Pre-commit hook to format staged C/C++ files with clang-format
+ 
+# Define file extensions to format (add/remove as needed)
+EXTENSIONS="\.c$|\.cpp$|\.h$|\.hpp$|\.cc$|\.cxx$"
+
+# Define third party directories
+THIRD_PARTY="libhostfxr|sqlite3|tests"
+ 
+# Get list of staged files matching the extensions
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "$EXTENSIONS")
+ 
+if [ -n "$STAGED_FILES" ]; then
+
+    # Format each staged file and re-stage changes
+    for FILE in $STAGED_FILES; do
+        # Skip if file no longer exists (e.g., deleted but still in index)
+        if [ ! -f "$FILE" ]; then
+            continue
+        fi
+        # Skip if file in one of the third party controls
+        if [ ! $(echo "$FILE" | grep -E $THIRD_PARTY) ]; then
+
+            echo "Formatting source code file: $FILE..."
+            # Run clang-format in-place (modifies the file)
+            clang-format -i "$FILE"
+ 
+            # Re-stage the formatted file to include changes in the commit
+            git add "$FILE"
+        fi
+    done
+fi 

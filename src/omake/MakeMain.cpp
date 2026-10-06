@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -406,8 +406,11 @@ void MakeMain::ShowRule(RuleList* ruleList)
         std::cout << "\t\t" << rule->GetPrerequisites() << std::endl;
         std::cout << "\tOrder Prerequisites:" << std::endl;
         std::cout << "\t\t" << rule->GetOrderPrerequisites() << std::endl;
-        std::cout << "\tCommands:" << std::endl;
         std::shared_ptr<Command> commands = rule->GetCommands();
+        const char* grouped = "";
+        if (commands != nullptr && commands->GetGrouped())
+            grouped = "Grouped";
+        std::cout << "\tCommands: " << grouped << std::endl;
         if (commands)
         {
             for (auto&& command : *commands)

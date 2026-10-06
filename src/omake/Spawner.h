@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -60,11 +60,16 @@ class Command
     iterator end() { return commands.end(); }
     std::string GetFile() const { return file; }
     int GetLine() const { return lineno; }
+    bool AlreadyRun() { return grouped && alreadyRun.test_and_set(std::memory_order_acquire); }
+    void SetGrouped() { grouped = true; }
+    bool GetGrouped() const { return grouped; }
 
   private:
     std::list<std::string> commands;
     std::string file;
     int lineno;
+    std::atomic_flag alreadyRun = ATOMIC_FLAG_INIT;
+    bool grouped = false;
 };
 class RuleList;
 class Rule;

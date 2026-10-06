@@ -67,8 +67,8 @@ EXES:= $(addsuffix .exefile,$(DIRS))
 CLEANS:= $(addsuffix .clean,$(DIRS))
 DISTS:= $(addsuffix .dist,$(DIRS))
 DISTS1:= $(addsuffix .dist1,$(DIRS))
-CDIRS:= $(addsuffix .dirs,$(DIRS))
-FORMATS:= $(addsuffix .format,$(DIRS))
+CDIRS:= $(addsuffix .dirs,$(TOOLDIRS) $(DIRS))
+FORMATS:= $(addsuffix .format,$(TOOLDIRS) $(DIRS))
 COMPARES:= $(addsuffix .comp,$(DIRS))
 
 ifeq "$(COMPILER)" "gcc-linux"

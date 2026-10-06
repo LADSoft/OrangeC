@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -582,7 +582,9 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
     {
         iline = line;
     }
-    Eval l(left, true);
+    bool grouped = left.size() && left[left.size() - 1] == '&';
+    auto temp = grouped ? left.substr(0, left.size() - 1) : left;
+    Eval l(temp, true);
     std::string ls = l.Evaluate();
     if (ls.find(".SECONDEXPANSION") != std::string::npos)
     {
@@ -718,6 +720,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         else
         {
         join:
+
             n = UnfetteredChar(line, ':');
             if (n != std::string::npos)
             {
@@ -789,6 +792,8 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         *CommandContainer::Instance() += lastCommand;
         if (hasCmd)
             *lastCommand += command;
+        if (grouped)
+            lastCommand->SetGrouped();
         Eval p(prereqs, true);
         std::string ps = p.Evaluate();
         Eval o(orderPrereqs, true);

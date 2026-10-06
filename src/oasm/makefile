@@ -36,17 +36,13 @@ PRECOMPILE=tools
 include ../redirect.mak
 
 
-clean:
+clean2:
 	-del x64Parser.* x64Instructions.* adl*.* ..$(PATHEXT2)occ$(PATHEXT2)x64parser.cpp
 
-tools: | x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
+tools: x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp 
 
-x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp: | doadl docopy
-
-docopy:
-	copy x64Parser.cpp ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
-
-doadl:
+x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp &: x64.adl
 	..\adl\adl x64.adl
+	copy x64Parser.cpp ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
 
 DISTRIBUTE: copyexe

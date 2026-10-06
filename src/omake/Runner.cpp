@@ -178,7 +178,7 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
         if (precious)
             depend->Precious();
     }
-    if (depend->GetRule() && depend->GetRule()->GetCommands())
+    if (depend->GetRule() && depend->GetRule()->GetCommands() && !depend->GetRule()->GetCommands()->AlreadyRun())
     {
         Eval::SetRuleStack(ruleStack);
         Spawner sp(*env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);

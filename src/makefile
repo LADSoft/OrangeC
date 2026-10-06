@@ -63,7 +63,7 @@ export NOMAKEDIR
 
 tools: 
 	@$(MAKE) -f $(_TREEROOT) createdirs
-	@$(MAKE) -f $(_TREEROOT) library
+#	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
 
 distribute:

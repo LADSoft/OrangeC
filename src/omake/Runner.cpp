@@ -102,9 +102,10 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
         std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(20ms);
-        if (MakeMain::jobs.GetValue() == 1)
+        if (MakeMain::jobs.GetValue() == 1 || i->GetOrdered())
         {
             int rv1 = workingList.back().get();
+            workingList.pop_back();
             if (rv <= 0 && rv1 != 0)
                 rv = rv1;
             if (rv > 0)
@@ -119,38 +120,33 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
             }
         }
     }
-    if (MakeMain::jobs.GetValue() != 1)
+    for (auto it = workingList.begin(); it != workingList.end(); it++)
     {
-        for (auto it = workingList.begin(); it != workingList.end(); it++)
+        OrangeC::Utils::BasicLogger::extremedebug("Waiting for a return value from futures in the list");
+        size_t distance = std::distance(it, workingList.end());
+        OrangeC::Utils::BasicLogger::extremedebug("Waiting on iterator at distance from end: ", std::to_string(distance),
+                                                  " for future get. Distance from start: ", std::distance(workingList.begin(), it));
+        auto& w = *it;
+        using namespace std::chrono_literals;
+        while (w.wait_for(1s) != std::future_status::ready)
         {
-            OrangeC::Utils::BasicLogger::extremedebug("Waiting for a return value from futures in the list");
-            size_t distance = std::distance(it, workingList.end());
-            OrangeC::Utils::BasicLogger::extremedebug(
-                "Waiting on iterator at distance from end: ", std::to_string(distance),
-                " for future get. Distance from start: ", std::distance(workingList.begin(), it));
+            OrangeC::Utils::BasicLogger::extremedebug("Waiting on the future for depends: ", w.command,
+                                                      " current jobs: ", OS::GetCurrentJobs());
+        }
+        int rv1 = w.get();
+        OrangeC::Utils::BasicLogger::extremedebug("Finished the future get on iterator: ", std::to_string(distance));
 
-            auto& w = *it;
-            using namespace std::chrono_literals;
-            while (w.wait_for(1s) != std::future_status::ready)
+        if (rv <= 0 && rv1 != 0)
+            rv = rv1;
+        if (rv > 0)
+        {
+            stop = true;
+            if (!keepGoing)
             {
-                OrangeC::Utils::BasicLogger::extremedebug("Waiting on the future for depends: ", w.command,
-                                                          " current jobs: ", OS::GetCurrentJobs());
-            }
-            int rv1 = w.get();
-            OrangeC::Utils::BasicLogger::extremedebug("Finished the future get on iterator: ", std::to_string(distance));
-
-            if (rv <= 0 && rv1 != 0)
-                rv = rv1;
-            if (rv > 0)
-            {
-                stop = true;
-                if (!keepGoing)
-                {
-                    OrangeC::Utils::BasicLogger::extremedebug("Terminating all subprograms");
-                    Spawner::Stop();
-                    OS::TerminateAll();
-                    break;
-                }
+                OrangeC::Utils::BasicLogger::extremedebug("Terminating all subprograms");
+                Spawner::Stop();
+                OS::TerminateAll();
+                break;
             }
         }
     }

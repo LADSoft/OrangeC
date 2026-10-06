@@ -133,7 +133,8 @@ CmdFiles ToolChain::StandardToolStartup(CmdSwitchParser& SwitchParser, int argc,
         ToolChain::ShowVersion();
     if (ShowHelp.GetExists())
     {
-        helpCleanup();
+        if (helpCleanup)
+            helpCleanup();
         ToolChain::Usage(helpText, 0);
     }
     rv.Add(File);

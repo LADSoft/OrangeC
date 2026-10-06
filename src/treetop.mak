@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -62,6 +62,7 @@ COMPARER:=fc /b
 
 
 LIBS:= $(addsuffix .library,$(DIRS))
+TOOLS:= $(addsuffix .tools,$(TOOLDIRS))
 EXES:= $(addsuffix .exefile,$(DIRS))
 CLEANS:= $(addsuffix .clean,$(DIRS))
 DISTS:= $(addsuffix .dist,$(DIRS))
@@ -323,8 +324,12 @@ endif
 $(CDIRS): %.dirs :
 	-$(MKDIR) $*$(PATHEXT2)obj$(PATHEXT2)$(OBJ_IND_PATH) 2> $(NULLDEV)
 
+$(TOOLS): %.tools :
+	$(MAKE) tools  -f $(_TREEROOT) -C$*
+
 $(LIBS): %.library :
 	$(MAKE) library compile -f $(_TREEROOT) -C$*
+
 $(EXES): %.exefile : library
 	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
@@ -341,7 +346,10 @@ distribute_clibs:
 makelibdir:
 	-$(MKDIR)  $(_LIBDIR) 2> $(NULLDEV)
 
-library: $(LIBS)
+
+lib1: | $(TOOLS)
+lib2: $(LIBS)
+library: | lib1 lib2
 
 exefile: $(EXES)
 

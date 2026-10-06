@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -33,7 +33,7 @@ _TREETARGET := $(CURRENT)
 export _TREEROOT
 export _TREETARGET
 
-redirect:
+redirect: $(PRECOMPILE)
 	@$(MAKE) -f $(_TREEROOT) localfiles
 
 ifeq "$(NOFORMAT)" ""

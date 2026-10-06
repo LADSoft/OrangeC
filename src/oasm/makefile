@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -32,6 +32,21 @@ LIB_DEPENDENCIES=ocpplib objlib util
 DEFINES=x64
 H_FILES=$(wildcard *.h)
 
+PRECOMPILE=tools
 include ../redirect.mak
+
+
+clean:
+	-del x64Parser.* x64Instructions.* adl*.* ..$(PATHEXT2)occ$(PATHEXT2)x64parser.cpp
+
+tools: | x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
+
+x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp: | doadl docopy
+
+docopy:
+	copy x64Parser.cpp ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
+
+doadl:
+	..\adl\adl x64.adl
 
 DISTRIBUTE: copyexe

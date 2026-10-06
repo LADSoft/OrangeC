@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2024 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2024, 2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -23,6 +23,8 @@
 # 
 
 # dlle dlpm 
+
+TOOLDIRS := adl oasm
 ifeq "$(COMPILER)" "gcc-linux"
 
 DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlmz dlpe olib olink \

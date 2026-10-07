@@ -8535,6 +8535,8 @@ static void expression_hook(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
         return;
     if (MATCHKW(Keyword::hook_))
     {
+        if (funcsp && !strcmp(funcsp->name, "mm"))
+            printf("hi");
         Type *tph = nullptr, *tpc = nullptr;
         EXPRESSION *eph = nullptr, *epc = nullptr;
         if (Optimizer::cparams.prm_cplusplus && *tp && (*tp)->IsStructured())
@@ -8646,8 +8648,7 @@ static void expression_hook(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
                         }
                     }
                     else if (!tpc->IsStructured() || !tph->IsStructured() ||
-                             (((!tpc->lref && !tpc->rref && !tph->lref && !tph->rref) ||
-                               (tpc->lref != tph->lref && tpc->rref != tph->rref)) &&
+                             (!((tpc->lref | tpc->rref) && (tph->lref | tph->rref)) &&
                               ((tph->SameType(tpc) && !SameTemplate(tph, tpc, false)) || epc->type == ExpressionNode::thisref_ ||
                                epc->type == ExpressionNode::callsite_ || eph->type == ExpressionNode::thisref_ ||
                                eph->type == ExpressionNode::callsite_)))

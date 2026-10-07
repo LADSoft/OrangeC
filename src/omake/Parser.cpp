@@ -583,8 +583,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         iline = line;
     }
     bool grouped = left.size() && left[left.size() - 1] == '&';
-    auto temp = grouped ? left.substr(0, left.size() - 1) : left;
-    Eval l(temp, true);
+    Eval l(grouped ? left.substr(0, left.size() - 1) : left, true);
     std::string ls = l.Evaluate();
     if (ls.find(".SECONDEXPANSION") != std::string::npos)
     {

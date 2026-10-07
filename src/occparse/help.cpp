@@ -173,7 +173,7 @@ void deprecateMessage(SYMBOL* sym)
     Optimizer::my_sprintf(buf, "%s deprecated", sym->name);
     if (sym->sb->attribs.uninheritable.deprecationText && sym->sb->attribs.uninheritable.deprecationText != (char*)-1)
         Optimizer::my_sprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "; %s", sym->sb->attribs.uninheritable.deprecationText);
-    errorstr(ERR_WARNING, buf);
+    error(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...
 bool ismember(SYMBOL* sym)
@@ -241,7 +241,7 @@ EXPRESSION* createTemporary(Type* tp, EXPRESSION* val)
         cast(tp, &val);
         rv = MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, val), rv1);
     }
-    errortype(ERR_CREATE_TEMPORARY, tp, tp);
+    error(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
 EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val)
@@ -254,7 +254,7 @@ EXPRESSION* msilCreateTemporary(Type* tp, EXPRESSION* val)
         cast(tp, &val);
         rv = MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, val), rv1);
     }
-    errortype(ERR_CREATE_TEMPORARY, tp, tp);
+    error(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
 void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
@@ -332,7 +332,7 @@ void DeduceAuto(Type** pat, Type* nt, EXPRESSION* exp, bool canref)
         nt = nt->BaseType();
         if (err)
         {
-            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, patin, in);
+            error(ERR_CANNOT_DEDUCE_AUTO_TYPE, patin, in);
         }
         else if (!pointerOrRef)
         {

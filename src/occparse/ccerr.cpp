@@ -144,7 +144,7 @@ static void DumpInstantiations()
     {
         for (auto&& i : instantiationList)
         {
-            errorsym(ERR_REFERENCED_IN_INSTANTIATION, i.sym, i.declline, i.declfile);
+            error(ERR_REFERENCED_IN_INSTANTIATION, i.sym, i.declline, i.declfile);
         }
     }
 }
@@ -543,7 +543,7 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
             {
                 if (Optimizer::cparams.c_dialect >= cpp)
                 {
-                    errorstr2(err, feature, lookup[cpp]);
+                    error(err, feature, lookup[cpp]);
                     return true;
                 }
             }
@@ -551,7 +551,7 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
             {
                 if (Optimizer::cparams.c_dialect < cpp)
                 {
-                    errorstr2(err, feature, lookup[cpp]);
+                    error(err, feature, lookup[cpp]);
                     return true;
                 }
             }
@@ -566,7 +566,7 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
             {
                 if (Optimizer::cparams.cpp_dialect >= cpp)
                 {
-                    errorstr2(err, feature, lookup[cpp]);
+                    error(err, feature, lookup[cpp]);
                     return true;
                 }
             }
@@ -574,7 +574,7 @@ bool RequiresDialect::Base(Dialect cpp, int err, const char* feature)
             {
                 if (Optimizer::cparams.cpp_dialect < cpp)
                 {
-                    errorstr2(err, feature, lookup[cpp]);
+                    error(err, feature, lookup[cpp]);
                     return true;
                 }
             }
@@ -588,23 +588,23 @@ bool RequiresDialect::Removed(Dialect cpp, const char* feature) { return Base(cp
 bool RequiresDialect::Keyword(Dialect cpp, const char* keyword) { return Base(cpp, ERR_KEYWORD_AVAILABLE_IN, keyword); }
 
 void pperror(int err, int data) { printerr(err, nullptr, 0, data); }
-void pperrorstr(int err, const char* str) { printerr(err, nullptr, 0, str); }
+void pperror(int err, const char* str) { printerr(err, nullptr, 0, str); }
 void preverror(int err, const char* name, const char* origFile, int origLine)
 {
     if (printerr(err, nullptr, 0, name))
         if (origFile && origLine)
             printerr(ERR_PREVIOUS, origFile, origLine, name);
 }
-void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
+void preverror(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
     char buf[UNMANGLE_BUFFER_SIZE];
     unmangle(buf, sp->sb->decoratedName);
     if (origFile && origLine)
         preverror(err, buf, origFile, origLine);
 }
-void errorat(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
+void error(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 void errorcurrent(int err) { printerr(err, nullptr, 0); }
-void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
+void error(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
     char buf[4096];
     if (Warning::Instance()->IsSet(err, Warning::Disable))
@@ -668,19 +668,19 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char
 }
 void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name)
 {
-    errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
+    error(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
 void error(int err) { printerr(err, nullptr, 0); }
-void errorint(int err, int val) { printerr(err, nullptr, 0, val); }
-void errorstr(int err, const char* val)
+void error(int err, int val) { printerr(err, nullptr, 0, val); }
+void error(int err, const char* val)
 {
     const char* t = LookupIntrinsicName(val);
     if (t)
         val = t;
     printerr(err, nullptr, 0, (char*)val);
 }
-void errorstr2(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
-void errorsym(int err, SYMBOL* sym)
+void error(int err, const char* val, const char* two) { printerr(err, nullptr, 0, (char*)val, (char*)two); }
+void error(int err, SYMBOL* sym)
 {
     if (Warning::Instance()->IsSet(err, Warning::Disable))
         return;
@@ -699,7 +699,7 @@ void errorsym(int err, SYMBOL* sym)
     }
     printerr(err, nullptr, 0, buf);
 }
-void errorsym(int err, SYMBOL* sym, int line, const char* file)
+void error(int err, SYMBOL* sym, int line, const char* file)
 {
     if (Warning::Instance()->IsSet(err, Warning::Disable))
         return;
@@ -711,7 +711,7 @@ void errorsym(int err, SYMBOL* sym, int line, const char* file)
     unmangle(buf, sym->sb->decoratedName);
     printerr(err, file, line, buf);
 }
-void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
+void error(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
     if (Warning::Instance()->IsSet(err, Warning::Disable))
         return;
@@ -720,7 +720,7 @@ void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, one, two);
 }
-void errorstrsym(int err, const char* name, SYMBOL* sym2)
+void error(int err, const char* name, SYMBOL* sym2)
 {
     if (Warning::Instance()->IsSet(err, Warning::Disable))
         return;
@@ -728,7 +728,7 @@ void errorstrsym(int err, const char* name, SYMBOL* sym2)
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
 }
-void errorstringtype(int err, char* str, Type* tp1)
+void error(int err, char* str, Type* tp1)
 {
     char tpb1[4096];
     memset(tpb1, 0, sizeof(tpb1));
@@ -736,7 +736,7 @@ void errorstringtype(int err, char* str, Type* tp1)
     printerr(err, nullptr, 0, str, tpb1);
 }
 
-void errortype(int err, Type* tp1, Type* tp2)
+void error(int err, Type* tp1, Type* tp2)
 {
     char tpb1[4096], tpb2[4096];
     memset(tpb1, 0, sizeof(tpb1));
@@ -750,25 +750,25 @@ void errorConversionOrCast(bool convert, Type* tp1, Type* tp2)
 {
     if (tp1->IsStructured())
     {
-        errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, tp1, tp2);
+        error(ERR_CANNOT_CALL_CONVERSION_FUNCTION_UD, tp1, tp2);
     }
     else if (tp2->IsStructured())
     {
-        errortype(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, tp1, tp2);
+        error(ERR_CANNOT_CALL_CONVERSION_FUNCTION_CONS, tp1, tp2);
     }
     else
     {
-        errortype(convert ? ERR_CANNOT_CONVERT_TYPE : ERR_CANNOT_CAST_TYPE, tp1, tp2);
+        error(convert ? ERR_CANNOT_CONVERT_TYPE : ERR_CANNOT_CAST_TYPE, tp1, tp2);
     }
 }
-void errorabstract(int error, SYMBOL* sp)
+void errorabstract(int errornum, SYMBOL* sp)
 {
     if (sp)
     {
         SYMBOL* sp1;
-        errorsym(error, sp);
+        error(errornum, sp);
         sp1 = calculateStructAbstractness(sp, sp);
-        errorsym2(ERR_ABSTRACT_BECAUSE, sp, sp1);
+        error(ERR_ABSTRACT_BECAUSE, sp, sp1);
     }
 }
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
@@ -909,7 +909,7 @@ bool needkw(Keyword kw)
     }
     else
     {
-        errorint(ERR_NEEDY, kwtosym(kw));
+        error(ERR_NEEDY, kwtosym(kw));
         return false;
     }
 }
@@ -1367,14 +1367,14 @@ void checkUnused(SymbolTable<SYMBOL>* syms)
             {
                 if (sp->sb->storage_class == StorageClass::auto_ || sp->sb->storage_class == StorageClass::register_ ||
                     sp->sb->storage_class == StorageClass::parameter_)
-                    errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
+                    error(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
             }
             else if (!sp->sb->attribs.uninheritable.maybe_unused && !sp->sb->anonymousGlobalUnion)
             {
                 if (sp->sb->storage_class == StorageClass::parameter_)
-                    errorsym(ERR_UNUSED_PARAMETER, sp);
+                    error(ERR_UNUSED_PARAMETER, sp);
                 else
-                    errorsym(ERR_UNUSED_VARIABLE, sp);
+                    error(ERR_UNUSED_VARIABLE, sp);
             }
         }
     }
@@ -1398,16 +1398,16 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                         if (sp1->sb->attribs.inheritable.isInline && !sp1->sb->inlineFunc.stmt && !bodyTokenStreams.get(sp1) &&
                             !sp1->sb->templateLevel)
                         {
-                            errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
+                            error(ERR_UNDEFINED_IDENTIFIER, sp1);
                         }
                         else if (sp1->sb->attribs.inheritable.linkage2 == Linkage::internal_ ||
                                  (sp1->sb->storage_class == StorageClass::static_ && !sp1->sb->inlineFunc.stmt &&
                                   !(sp1->sb->templateLevel || sp1->sb->instantiated)))
                         {
                             if (sp1->sb->attribs.inheritable.used)
-                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
+                                error(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
                             else if (sp1->sb->attribs.inheritable.linkage2 != Linkage::internal_)
-                                errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
+                                error(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
                         }
                     }
                 }
@@ -1416,14 +1416,14 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                     currentErrorLine = 0;
                     if (sp->sb->storage_class == StorageClass::static_ && !sp->sb->attribs.inheritable.used)
                         if (!sp->sb->attribs.uninheritable.maybe_unused)
-                            errorsym(ERR_UNUSED_STATIC, sp);
+                            error(ERR_UNUSED_STATIC, sp);
                     currentErrorLine = 0;
                     if (sp->sb->storage_class == StorageClass::global_ || sp->sb->storage_class == StorageClass::static_ ||
                         sp->sb->storage_class == StorageClass::localstatic_)
                         /* void will be caught earlier */
                         if (!sp->tp->IsFunction() && !sp->tp->IsArray() && sp->tp->size == 0 && !sp->tp->IsVoid() &&
                             sp->tp->type != BasicType::any_ && !sp->sb->templateLevel)
-                            errorsym(ERR_UNSIZED, sp);
+                            error(ERR_UNSIZED, sp);
                 }
             }
         }
@@ -1436,7 +1436,7 @@ static void usageErrorCheck(SYMBOL* sp)
         !sp->sb->assigned && !sp->sb->attribs.inheritable.used && !sp->sb->altered)
     {
         if (!structLevel || !initTokenStreams.get(sp))
-            errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
+            error(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
     sp->sb->attribs.inheritable.used = true;
 }
@@ -1969,7 +1969,7 @@ void CheckUndefinedStructures(SYMBOL* funcsp)
     if ((tp->IsStructured() && !tp->BaseType()->sp->tp->syms) || tp->IsDeferred())
     {
         currentErrorLine = 0;
-        errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
+        error(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
     }
     for (auto sym : *funcsp->tp->BaseType()->syms)
     {
@@ -1980,7 +1980,7 @@ void CheckUndefinedStructures(SYMBOL* funcsp)
             if (!tp->BaseType()->sp->tp->syms)
             {
                 currentErrorLine = 0;
-                errorsym(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
+                error(ERR_STRUCT_NOT_DEFINED, tp->BaseType()->sp);
             }
         }
     }
@@ -1992,9 +1992,9 @@ void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
         if (!notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
         else if (sp->sb->storage_class == StorageClass::virtual_)
-            errorstr(ERR_INVALID_STORAGE_CLASS, "virtual");
+            error(ERR_INVALID_STORAGE_CLASS, "virtual");
         else if (sp->sb->storage_class == StorageClass::static_)
-            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+            error(ERR_INVALID_STORAGE_CLASS, "static");
         else if (sp->tp->IsConst() || sp->tp->IsVolatile())
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
     }
@@ -2003,7 +2003,7 @@ void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
         if (!notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
         else if (sp->sb->storage_class == StorageClass::static_)
-            errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+            error(ERR_INVALID_STORAGE_CLASS, "static");
         else if (sp->tp->IsConst() || sp->tp->IsVolatile())
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
     }
@@ -2057,7 +2057,7 @@ void ConstexprMembersNotInitializedErrors(SYMBOL* cons)
                             // this should check the actual base class constructor in use
                             // but that would be difficult to get at this point.
                             if (!sp->tp->IsStructured() || !HasConstexprConstructor(sp->tp))
-                                errorsym(ERR_CONSTEXPR_MUST_INITIALIZE, sp);
+                                error(ERR_CONSTEXPR_MUST_INITIALIZE, sp);
                         }
                     }
                 }
@@ -2079,13 +2079,13 @@ bool MustSpecialize(const char* name)
 void SpecializationError(char* str)
 {
     if (MustSpecialize(str))
-        errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, str);
+        error(ERR_NEED_TEMPLATE_ARGUMENTS, str);
 }
 
 void SpecializationError(SYMBOL* sym)
 {
     if (MustSpecialize(sym->name))
-        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
+        error(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
 }
 void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
 {
@@ -2094,14 +2094,14 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
         for (auto cur : *sym->tp->syms)
         {
             if (cur->sb->storage_class == StorageClass::static_ && (cur->tp->hasbits || localClassWarnings))
-                errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+                error(ERR_INVALID_STORAGE_CLASS, "static");
             if (sym != cur && !strcmp(sym->name, cur->name))
             {
                 if (sym->sb->hasUserCons || cur->sb->storage_class == StorageClass::static_ ||
                     cur->sb->storage_class == StorageClass::overloads_ || cur->sb->storage_class == StorageClass::const_ ||
                     cur->sb->storage_class == StorageClass::type_)
                 {
-                    errorsym(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
+                    error(ERR_MEMBER_SAME_NAME_AS_CLASS, sym);
                     break;
                 }
             }
@@ -2114,7 +2114,7 @@ void warnCPPWarnings(SYMBOL* sym, bool localClassWarnings)
                         if (cur1->tp->IsFunction())
                             if (cur1->tp->BaseType()->sp && !cur1->tp->BaseType()->sp->sb->inlineFunc.stmt &&
                                 !bodyTokenStreams.get(cur1->tp->BaseType()->sp))
-                                errorsym(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
+                                error(ERR_LOCAL_CLASS_FUNCTION_NEEDS_BODY, cur1);
                     }
                     if (cur1->sb->isfinal || cur1->sb->isoverride || cur1->sb->ispure)
                         if (cur1->sb->storage_class != StorageClass::virtual_)
@@ -2195,7 +2195,7 @@ void CheckThroughConstObject(Type* tp, EXPRESSION* exp)
                 if (ismemberdata(s) && s->sb->offset == offset)
                 {
                     if (s->sb->storage_class != StorageClass::mutable_)
-                        errorsym(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, s);
+                        error(ERR_CANNOT_MODIFY_MEMBER_ACCESSED_THROUGH_CONST_OBJECT, s);
                     break;
                 }
             }

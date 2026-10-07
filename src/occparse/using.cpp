@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -87,7 +87,7 @@ void insertUsing(SYMBOL** sp_out, AccessLevel access, StorageClass storage_class
             {
                 if (sp->sb->storage_class != StorageClass::namespace_ && sp->sb->storage_class != StorageClass::namespace_alias_)
                 {
-                    errorsym(ERR_NOT_A_NAMESPACE, sp);
+                    error(ERR_NOT_A_NAMESPACE, sp);
                 }
                 else
                 {
@@ -279,7 +279,7 @@ void insertUsing(SYMBOL** sp_out, AccessLevel access, StorageClass storage_class
                 {
                     if (!spi->tp->CompatibleType(sp->tp) && !SameTemplate(spi->tp, sp->tp))
                     {
-                        errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
+                        error(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
                     }
                     sp = spi;
                 }

@@ -1463,7 +1463,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             if (useDefault)
             {
                 if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
-                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
             {
@@ -1481,7 +1481,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                 }
                 tp->UpdateRootTypes();
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
-                    errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+                    error(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
             }
         }
         else if (doCopy && matchesCopy(parentCons, true))
@@ -1489,7 +1489,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             if (useDefault)
             {
                 if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
-                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
             {
@@ -1506,7 +1506,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                 }
                 tp->UpdateRootTypes();
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
-                    errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+                    error(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
             }
         }
         else
@@ -1547,7 +1547,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                     }
                 }
                 if (!CallConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
-                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
                 if (mix->sp && !mix->init)
                 {
                     EXPRESSION* clr = MakeExpression(ExpressionNode::blockclear_, exp);
@@ -1562,7 +1562,7 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             else
             {
                 if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
-                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
         }
         st = Statement::MakeStatement(b, StatementNode::expr_);
@@ -1827,7 +1827,7 @@ SYMBOL* findClassName(const char* name, SYMBOL* cls, std::list<BASECLASS*>* bc, 
         }
     if ((ccount && vcount) || ccount > 1)
     {
-        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp, cls);
+        error(ERR_NOT_UNAMBIGUOUS_BASE, sp, cls);
     }
     return sp;
 }
@@ -1866,7 +1866,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                 if (init->sp != cls && init->sp->sb->storage_class != StorageClass::member_ &&
                     init->sp->sb->storage_class != StorageClass::mutable_)
                 {
-                    errorsym(ERR_NEED_NONSTATIC_MEMBER, init->sp);
+                    error(ERR_NEED_NONSTATIC_MEMBER, init->sp);
                 }
                 else
                 {
@@ -1882,7 +1882,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             }
                             else
                             {
-                                errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                                error(ERR_NOT_A_TEMPLATE, init->sp);
                             }
                         }
                         if (!init->sp->tp->IsStructured())
@@ -2000,7 +2000,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                             }
                             if ((ccount && vcount) || ccount > 1)
                             {
-                                errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
+                                error(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
                             }
                             if (init->sp && init->sp == tp->BaseType()->sp)
                             {
@@ -2082,7 +2082,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                 }
                                 else
                                 {
-                                    errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                                    error(ERR_NOT_A_TEMPLATE, init->sp);
                                 }
                             }
                             sp = makeID(StorageClass::member_, init->sp->tp, nullptr, init->sp->name);
@@ -2147,7 +2147,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
                                     }
                                     else
                                     {
-                                        errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                                        error(ERR_NOT_A_TEMPLATE, init->sp);
                                     }
                                 }
                                 sp = makeID(StorageClass::member_, init->sp->tp, nullptr, init->sp->name);
@@ -2184,7 +2184,7 @@ void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons)
             }
             if (!init->sp)
             {
-                errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, init->name, cls);
+                error(ERR_NOT_A_MEMBER_OR_BASE_CLASS, init->name, cls);
             }
             ++it;
             first = false;
@@ -2225,9 +2225,9 @@ static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
             if (!sp->sb->init && ismember(sp))
             {
                 if (sp->tp->IsRef())
-                    errorsym(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
+                    error(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
                 else if (sp->tp->IsConst())
-                    errorsym(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
+                    error(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
             }
         }
     }
@@ -2542,7 +2542,7 @@ static void genAsnCall(std::list<FunctionBlock*>& b, SYMBOL* cls, SYMBOL* base, 
         }
         if (!isAccessible(base, base, asn1, nullptr, AccessLevel::protected_, false))
         {
-            errorsym(ERR_CANNOT_ACCESS, asn1);
+            error(ERR_CANNOT_ACCESS, asn1);
         }
         if (asn1->sb->defaulted && !asn1->sb->inlineFunc.stmt)
             createAssignment(base, asn1);
@@ -2936,7 +2936,7 @@ bool CallDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
                     : AccessLevel::protected_,
                 false))
         {
-            errorsym(ERR_CANNOT_ACCESS, dest1);
+            error(ERR_CANNOT_ACCESS, dest1);
         }
         if (dest1 && dest1->sb->defaulted && !dest1->sb->inlineFunc.stmt)
             createDestructor(sp);
@@ -3045,7 +3045,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
             if (!inNoExceptHandler &&
                 !isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, AccessLevel::public_, false))
             {
-                errorsym(ERR_CANNOT_ACCESS, cons1);
+                error(ERR_CANNOT_ACCESS, cons1);
             }
             if (cons1->sb->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
@@ -3073,7 +3073,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                         : AccessLevel::private_,
                     false))
             {
-                errorsym(ERR_CANNOT_ACCESS, cons1);
+                error(ERR_CANNOT_ACCESS, cons1);
             }
             if (cons1->sb->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
@@ -3200,7 +3200,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                                                : AccessLevel::protected_,
                                            false))
                 {
-                    errorsym(ERR_CANNOT_ACCESS, dest1);
+                    error(ERR_CANNOT_ACCESS, dest1);
                 }
                 if (dest1 && dest1->sb->defaulted && !dest1->sb->inlineFunc.stmt)
                     createDestructor(sp);

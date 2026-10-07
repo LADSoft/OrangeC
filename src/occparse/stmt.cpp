@@ -2037,7 +2037,7 @@ void StatementGenerator::ParseIf(std::list<FunctionBlock*>& parent)
                 st = Statement::MakeStatement(parent, StatementNode::label_);
                 st->label = ifbranch;
                 if (!parent.front()->nosemi && !parent.front()->hassemi)
-                    errorint(ERR_NEEDY, ';');
+                    error(ERR_NEEDY, ';');
                 if (parent.front()->nosemi && parent.front()->hassemi)
                     error(ERR_MISPLACED_ELSE);
                 currentLineData(parent, currentLex, 0);
@@ -2250,7 +2250,7 @@ void StatementGenerator::ParseLabel(std::list<FunctionBlock*>& parent)
         }
         else
         {
-            errorsym(ERR_DUPLICATE_LABEL, spx);
+            error(ERR_DUPLICATE_LABEL, spx);
         }
     }
     else
@@ -2311,7 +2311,7 @@ EXPRESSION* StatementGenerator::ConvertReturnToRef(EXPRESSION* exp, Type* tp, Ty
             }
             if (exp2->type != ExpressionNode::l_ref_ && referenceTypeError(tp, exp2) != exp2->type &&
                 (!tp->BaseType()->btp->IsStructured() || exp2->type != ExpressionNode::lvalue_))
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
+                error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
         }
     }
     exp2 = exp;
@@ -2364,7 +2364,7 @@ void StatementGenerator::MatchReturnTypes(Type* tp1, Type* tp2)
         }
         if (tp1 || tp2 || err)
         {
-            errorsym(ERR_RETURN_TYPE_MISMATCH_FOR_AUTO_FUNCTION, funcsp);
+            error(ERR_RETURN_TYPE_MISMATCH_FOR_AUTO_FUNCTION, funcsp);
         }
     }
 }
@@ -3113,7 +3113,7 @@ void StatementGenerator::ParseSwitch(std::list<FunctionBlock*>& parent)
             st = Statement::MakeStatement(parent, StatementNode::label_);
             st->label = switchstmt->breaklabel;
             if (!switchstmt->nosemi && !switchstmt->hassemi)
-                errorint(ERR_NEEDY, ';');
+                error(ERR_NEEDY, ';');
             before->nosemi = true;
         }
         else
@@ -3551,7 +3551,7 @@ bool StatementGenerator::ParseAsm(std::list<FunctionBlock*>& parent)
          * are just going to make an error and scan past tokens
          */
         getsym();
-        errorstr(ERR_ASM, "Assembly language not supported by this compiler");
+        error(ERR_ASM, "Assembly language not supported by this compiler");
         if (MATCHKW(Keyword::begin_))
         {
             while (currentLex && !MATCHKW(Keyword::end_))
@@ -3624,7 +3624,7 @@ void StatementGenerator::AutoDeclare(Type** tp, EXPRESSION** exp, std::list<Func
     {
         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
         if (!(asExpression & _F_NOCHECKAUTO))
-            errorint(ERR_NEEDY, '=');
+            error(ERR_NEEDY, '=');
     }
 }
 bool StatementGenerator::ResolvesToDeclaration(bool structured)
@@ -4138,7 +4138,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         while (currentLex && !MATCHKW(Keyword::end_))
         {
             if (!blockstmt->hassemi && !blockstmt->nosemi)
-                errorint(ERR_NEEDY, ';');
+                error(ERR_NEEDY, ';');
             if (MATCHKW(Keyword::semicolon_))
             {
                 getsym();  // helps in error processing to not do default statement processing here...
@@ -4172,7 +4172,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         before->needlabel = blockstmt->needlabel;
     if (!blockstmt->hassemi && !blockstmt->nosemi)
     {
-        errorint(ERR_NEEDY, ';');
+        error(ERR_NEEDY, ';');
     }
     if (blockstmt->statements)
     {

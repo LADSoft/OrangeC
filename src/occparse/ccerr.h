@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -131,23 +131,23 @@ void errorinit(void);
 bool printerrinternal(int err, const char* file, int line, va_list args);
 int printerr(int err, const char* file, int line, ...);
 void pperror(int err, int data);
-void pperrorstr(int err, const char* str);
+void pperror(int err, const char* str);
 void preverror(int err, const char* name, const char* origFile, int origLine);
-void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine);
-void errorat(int err, const char* name, const char* file, int line);
+void preverror(int err, SYMBOL* sp, const char* origFile, int origLine);
+void error(int err, const char* name, const char* file, int line);
 void errorcurrent(int err);
-void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
+void error(int err, SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
 void errorNotMember(SYMBOL* strSym, NAMESPACEVALUEDATA* nsv, const char* name);
 void error(int err);
-void errorint(int err, int val);
-void errorstr(int err, const char* val);
-void errorstr2(int err, const char* val, const char* two);
-void errorsym(int err, SYMBOL* sym);
-void errorsym(int err, SYMBOL* sym, int line, const char* file);
-void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2);
-void errorstrsym(int err, const char* name, SYMBOL* sym2);
-void errorstringtype(int err, char* str, Type* tp1);
-void errortype(int err, Type* tp1, Type* tp2);
+void error(int err, int val);
+void error(int err, const char* val);
+void error(int err, const char* val, const char* two);
+void error(int err, SYMBOL* sym);
+void error(int err, SYMBOL* sym, int line, const char* file);
+void error(int err, SYMBOL* sym1, SYMBOL* sym2);
+void error(int err, const char* name, SYMBOL* sym2);
+void error(int err, char* str, Type* tp1);
+void error(int err, Type* tp1, Type* tp2);
 void errorConversionOrCast(bool convert, Type* tp1, Type* tp2);
 void errorabstract(int error, SYMBOL* sp);
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp);

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -163,7 +163,7 @@ inline void SymbolTable<SYMBOL>::baseInsert(SYMBOL* in)
             {
                 SYMBOL* sym = search(this, in->name);
                 if (!sym || !sym->sb->wasUsing || !in->sb->wasUsing)
-                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
+                    preverror(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
             }
         }
     }
@@ -205,7 +205,7 @@ inline void SymbolTable<T>::insertOverload(T* in)
     if (AddOverloadName(in))
     {
         SetLinkerNames(in, Linkage::cdecl_);
-        preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
+        preverror(ERR_DUPLICATE_IDENTIFIER, in, in->sb->declfile, in->sb->declline);
     }
 }
 

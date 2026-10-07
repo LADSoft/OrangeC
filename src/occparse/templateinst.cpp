@@ -2648,7 +2648,7 @@ void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     }
     else if (warning)
     {
-        errorsym(ERR_TEMPLATE_ALREADY_INSTANTIATED, sym);
+        error(ERR_TEMPLATE_ALREADY_INSTANTIATED, sym);
     }
 }
 SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning)
@@ -4482,7 +4482,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     {
         if (!noErr)
         {
-            errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
+            error(ERR_NO_TEMPLATE_MATCHES, sp);
         }
         // might get more error info by procedeing;
         if (!sp->sb->specializations && sp->templateParams)
@@ -4503,7 +4503,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, std::list<TEMPLATEPARAMPAIR>* args, bool no
     else if (found2)
     {
         restoreParams(origList, n);
-        errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
+        error(ERR_NO_TEMPLATE_MATCHES, sp);
         return nullptr;
     }
     if (found1 && !found2)

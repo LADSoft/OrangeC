@@ -851,7 +851,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                 {
                     if (!preProcessor->GetLine(currentLine))
                     {
-                        errorint(ERR_EOF_RAW_STRING, lineno);
+                        error(ERR_EOF_RAW_STRING, lineno);
                         *source = p;
                         return nullptr;
                     }
@@ -903,7 +903,7 @@ Optimizer::SLCHAR* getString(const unsigned char** source, LexType* tp)
                     {
                         if (!preProcessor->GetLine(currentLine, true))
                         {
-                            errorint(ERR_EOF_RAW_STRING, lineno);
+                            error(ERR_EOF_RAW_STRING, lineno);
                             *source = p;
                             return nullptr;
                         }
@@ -1711,7 +1711,7 @@ void CompilePragma(const unsigned char** linePointer)
     {
         err = '(';
     }
-    errorint(ERR_NEEDY, err);
+    error(ERR_NEEDY, err);
 }
 void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std::pair<int, int>> positions)
 {
@@ -2038,7 +2038,7 @@ void getsym(void)
             else
             {
                 contin = true;
-                errorint(ERR_UNKNOWN_CHAR, *linePointer++);
+                error(ERR_UNKNOWN_CHAR, *linePointer++);
             }
         }
         else

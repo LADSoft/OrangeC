@@ -192,21 +192,21 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                                 if (cil != lambdas.begin())
                                 {
                                     errorflg = true;
-                                    errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
+                                    error(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
                                     break;
                                 }
                             }
                             else if (cil != cilb)
                             {
                                 errorflg = true;
-                                errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
+                                error(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
                                 break;
                             }
                         }
                         else if ((*cil)->captureMode == cmValue && isExplicit && !(*cil)->thisByVal)
                         {
                             errorflg = true;
-                            errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
+                            error(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
                             break;
                         }
                     }
@@ -220,7 +220,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                 }
                 else
                 {
-                    errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
+                    error(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
                 }
             }
         }
@@ -277,13 +277,13 @@ SYMBOL* lambda_capture(SYMBOL* sym, e_cm mode, bool isExplicit)
                             {
                                 if (check != cilb)
                                 {
-                                    errorsym(ERR_EXPLICIT_CAPTURE_BLOCKED, sym);
+                                    error(ERR_EXPLICIT_CAPTURE_BLOCKED, sym);
                                     break;
                                 }
                             }
                             else
                             {
-                                errorsym(ERR_IMPLICIT_CAPTURE_BLOCKED, sym);
+                                error(ERR_IMPLICIT_CAPTURE_BLOCKED, sym);
                                 break;
                             }
                         }
@@ -715,7 +715,7 @@ static EXPRESSION* createLambda(bool noinline)
             en = MakeExpression(ExpressionNode::add_, clsThs, MakeIntExpression(ExpressionNode::c_i_, sp->sb->offset));
             Type* ctp = sp->tp;
             if (!callConstructorParam(&ctp, &en, sp->tp, en1, true, false, true, false, true))
-                errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, sp);
+                error(ERR_NO_APPROPRIATE_CONSTRUCTOR, sp);
         }
         else if (sp->sb->lambdaMode)
         {
@@ -730,7 +730,7 @@ static EXPRESSION* createLambda(bool noinline)
                     if (ctp->IsStructured())
                     {
                         if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->front()->exp, true, false, true, false, true))
-                            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
+                            error(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
                     else
@@ -781,7 +781,7 @@ static EXPRESSION* createLambda(bool noinline)
                     if (ctp->IsStructured())
                     {
                         if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false, true))
-                            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
+                            error(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
                     else
@@ -937,11 +937,11 @@ void expression_lambda(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, i
                     {
                         if (localMode != cmRef)
                         {
-                            errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, currentLex->value.s.a);
+                            error(ERR_CANNOT_CAPTURE_BY_REFERENCE, currentLex->value.s.a);
                         }
                         else
                         {
-                            errorstr(ERR_CANNOT_CAPTURE_BY_VALUE, currentLex->value.s.a);
+                            error(ERR_CANNOT_CAPTURE_BY_VALUE, currentLex->value.s.a);
                         }
                     }
                     auto idlex = currentStream->Index();
@@ -966,7 +966,7 @@ void expression_lambda(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, i
                             lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
                             {
-                                errorstr(ERR_CANNOT_CAPTURE_BY_REFERENCE, sp->name);
+                                error(ERR_CANNOT_CAPTURE_BY_REFERENCE, sp->name);
                             }
                         }
                     }
@@ -1010,7 +1010,7 @@ void expression_lambda(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, i
                             }
                         }
                         else
-                            errorstr(ERR_UNDEFINED_IDENTIFIER, currentStream->get(idlex)->value.s.a);
+                            error(ERR_UNDEFINED_IDENTIFIER, currentStream->get(idlex)->value.s.a);
                     }
                 }
                 else
@@ -1042,7 +1042,7 @@ void expression_lambda(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, i
         tpx = TypeGenerator::FunctionParams(NULL, &self->func, tpx, false, StorageClass::auto_, false);
         if (!self->func->tp->syms)
         {
-            errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
+            error(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
             *tp = &stdint;
             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
             return;

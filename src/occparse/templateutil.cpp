@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -684,7 +684,7 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
                     if (ito->second->byTemplate.txtdflt && its->second->byTemplate.txtdflt)
                     {
                         if (!CompareLex(ito->second->byNonType.txtdflt, its->second->byNonType.txtdflt))
-                            errorsym(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, its->first);
+                            error(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, its->first);
                     }
                     else if (!its->second->byTemplate.txtdflt)
                     {
@@ -696,7 +696,7 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
                     if (ito->second->byClass.txtdflt && its->second->byClass.txtdflt)
                     {
                         if (!CompareLex(ito->second->byNonType.txtdflt, its->second->byNonType.txtdflt))
-                            errorsym(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, its->first);
+                            error(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, its->first);
                     }
                     else if (!its->second->byClass.txtdflt)
                     {
@@ -708,7 +708,7 @@ static std::list<TEMPLATEPARAMPAIR>* mergeTemplateDefaults(std::list<TEMPLATEPAR
                     if (ito->second->byNonType.txtdflt && its->second->byNonType.txtdflt)
                     {
                         if (!CompareLex(ito->second->byNonType.txtdflt, its->second->byNonType.txtdflt))
-                            errorsym(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, its->first);
+                            error(ERR_MULTIPLE_DEFAULT_VALUES_IN_TEMPLATE_DECLARATION, its->first);
                     }
                     else if (!its->second->byNonType.txtdflt)
                     {
@@ -741,26 +741,26 @@ bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, st
             if (itp->second->type != its->second->type)
             {
                 if (itp->second->type != TplType::typename_ || its->second->type != TplType::template_)
-                    errorsym(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
+                    error(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
             }
             else if (itp->second->type == TplType::template_)
             {
                 if (!exactMatchOnTemplateParams(itp->second->byTemplate.args, its->second->byTemplate.args))
-                    errorsym(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
+                    error(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
             }
             else if (itp->second->type == TplType::int_)
             {
                 if (itp->second->byNonType.tp->type != BasicType::templateparam_ &&
                     !itp->second->byNonType.tp->SameType(its->second->byNonType.tp) &&
                     (!itp->second->byNonType.tp->IsPtr() || !isconstzero(itp->second->byNonType.tp, its->second->byNonType.dflt)))
-                    errorsym(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
+                    error(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
             }
         }
         if (itp != itpe)
         {
             if (!itp->second->packed && !itp->second->byClass.txtdflt)
             {
-                errorsym(ERR_TOO_FEW_ARGS_PASSED_TO_TEMPLATE, sp);
+                error(ERR_TOO_FEW_ARGS_PASSED_TO_TEMPLATE, sp);
             }
             else
             {
@@ -773,7 +773,7 @@ bool matchTemplateSpecializationToParams(std::list<TEMPLATEPARAMPAIR>* param, st
             if (its->second->packed)
                 special = nullptr;
             else
-                errorsym(ERR_TOO_MANY_ARGS_PASSED_TO_TEMPLATE, sp);
+                error(ERR_TOO_MANY_ARGS_PASSED_TO_TEMPLATE, sp);
         }
         return itp == itpe && its == itse;
     }
@@ -793,7 +793,7 @@ static void checkMultipleArgs(std::list<TEMPLATEPARAMPAIR>* sym)
                     if (it1->first && !strcmp(it->first->name, it1->first->name))
                     {
                         currentErrorLine = 0;
-                        errorsym(ERR_DUPLICATE_IDENTIFIER, it->first);
+                        error(ERR_DUPLICATE_IDENTIFIER, it->first);
                     }
                 }
             }

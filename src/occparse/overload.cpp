@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -4715,7 +4715,7 @@ SYMBOL* ClassTemplateArgumentDeduction(Type** tp, EXPRESSION** exp, SYMBOL* sp, 
         {
             if (found1->sb->deleted)
             {
-                errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
+                error(ERR_DELETED_FUNCTION_REFERENCED, found1);
             }
             else
             {
@@ -5249,11 +5249,11 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                                 }
                             }
                             Utils::StrCat(buf, ")");
-                            errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
+                            error(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
                         }
                         else
                         {
-                            errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
+                            error(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
                         }
                     }
                     else if ((!IsDefiningTemplate()) && !inDeduceArgs)
@@ -5288,7 +5288,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         }
                         SetLinkerNames(sym, Linkage::cpp_);
 
-                        errorsym(ERR_NO_OVERLOAD_MATCH_FOUND, sym);
+                        error(ERR_NO_OVERLOAD_MATCH_FOUND, sym);
                     }
                 }
             }
@@ -5296,7 +5296,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             {
                 if (toErr && !(flags & _F_INDECLTYPE))
                 {
-                    errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
+                    error(ERR_AMBIGUITY_BETWEEN, found1, found2);
                 }
                 else
                 {
@@ -5306,7 +5306,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
             else if (found1->sb->deleted && !templateDefinitionLevel)
             {
                 if (toErr)
-                    errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
+                    error(ERR_DELETED_FUNCTION_REFERENCED, found1);
                 else if (!(flags & _F_RETURN_DELETED))
                     found1 = nullptr;
             }
@@ -5435,7 +5435,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                     if (found1->templateParams)
                         SetLinkerNames(found1, Linkage::cdecl_);
                     if (found1->tp->BaseType()->btp->IsAutoType())
-                        errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
+                        error(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
                 }
                 if (flags & _F_IS_NOTHROW)
                     inNothrowHandler--;

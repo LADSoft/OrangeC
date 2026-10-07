@@ -357,13 +357,13 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, Access
             if (t->cls == bcsym)
             {
                 found = true;
-                errorsym(ERR_BASE_CLASS_INCLUDED_MORE_THAN_ONCE, bcsym);
+                error(ERR_BASE_CLASS_INCLUDED_MORE_THAN_ONCE, bcsym);
                 break;
             }
     if (bcsym->tp->BaseType()->type == BasicType::union_)
         error(ERR_UNION_CANNOT_BE_BASE_CLASS);
     if (bcsym->sb->isfinal)
-        errorsym(ERR_FINAL_BASE_CLASS, bcsym);
+        error(ERR_FINAL_BASE_CLASS, bcsym);
     auto bc = Allocate<BASECLASS>();
     bc->accessLevel = currentAccess;
     bc->isvirtual = isvirtual;
@@ -652,7 +652,7 @@ void baseClasses(SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
                 }
                 else if (MATCHKW(Keyword::lt_))
                 {
-                    errorstr(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
+                    error(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
                 }
                 if (!skiptoend)
                 {
@@ -799,7 +799,7 @@ void baseClasses(SYMBOL* funcsp, SYMBOL* declsym, AccessLevel defaultAccess)
             if (err)
             {
                 isExpressionAccessible(nullptr, lst->cls, nullptr, nullptr, false);
-                errorsym(ERR_CANNOT_ACCESS, lst->cls);
+                error(ERR_CANNOT_ACCESS, lst->cls);
             }
         }
     }
@@ -830,7 +830,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
         {
             Utils::StrCpy(buf, overloadXlateTab[sp->sb->operatorId]);
         }
-        errorstr(ERR_OPERATOR_MUST_BE_FUNCTION, buf);
+        error(ERR_OPERATOR_MUST_BE_FUNCTION, buf);
     }
     else
     {
@@ -846,7 +846,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                 SYMBOL* sym = *it;
                 if (sym->tp->type != BasicType::void_)
                 {
-                    errortype(ERR_OPERATOR_NEEDS_NO_PARAMETERS, sym->tp->BaseType()->btp, nullptr);
+                    error(ERR_OPERATOR_NEEDS_NO_PARAMETERS, sym->tp->BaseType()->btp, nullptr);
                 }
             }
             else
@@ -860,7 +860,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         // needs zero or one argument
                         if (sp->tp->BaseType()->syms->size() > 1)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         if (sp->tp->BaseType()->syms->size() == 0)
                         {
@@ -889,7 +889,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym = *it;
                         if (sym->tp->type != BasicType::void_)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case Keyword::divide_:
@@ -912,19 +912,19 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym = *it;
                         if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 1)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case Keyword::autoinc_:
                     case Keyword::autodec_:
                         if (sp->tp->BaseType()->syms->size() > 1)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         sym = *it;
                         if (sym->tp->type != BasicType::void_ && sym->tp->type != BasicType::int_)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case Keyword::new_:
@@ -947,7 +947,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym = *it;
                         if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 1)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
 
@@ -956,7 +956,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym = *it;
                         if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 1)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case Keyword::openpa_:
@@ -967,11 +967,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym = *it;
                         if (sym->tp->type != BasicType::void_)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_NO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                         }
                         break;
                     case Keyword::quot_:
-                        errorsym(ERR_OPERATOR_LITERAL_NAMESPACE_SCOPE, sp);
+                        error(ERR_OPERATOR_LITERAL_NAMESPACE_SCOPE, sp);
                         break;
                     default:
                         diag("checkoperatorargs: unknown operator type");
@@ -981,14 +981,14 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
             {
                 if (sp->sb->operatorId == CI_CAST)
                 {
-                    errortype(ERR_OPERATOR_NONSTATIC, sp->tp->BaseType()->btp, nullptr);
+                    error(ERR_OPERATOR_NONSTATIC, sp->tp->BaseType()->btp, nullptr);
                 }
                 else if ((Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::new_ &&
                          (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::delete_ &&
                          (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::newa_ &&
                          (Keyword)(sp->sb->operatorId - CI_NEW) != Keyword::dela_)
                 {
-                    errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
+                    error(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                 }
             }
         }
@@ -1016,7 +1016,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     ++it;
                     if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 2)
                     {
-                        errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        error(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
                     else
                     {
@@ -1024,7 +1024,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         if (!classOrEnumParam(sym) && (sp->tp->BaseType()->syms->size() == 1 || !classOrEnumParam((*it))))
                         {
                             if (!templateDefinitionLevel)
-                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                                error(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
                     break;
@@ -1034,7 +1034,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     sym = *it;
                     if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() != 1)
                     {
-                        errorstr(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        error(ERR_OPERATOR_NEEDS_ONE_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
                     else
                     {
@@ -1042,7 +1042,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         if (!classOrEnumParam(sym))
                         {
                             if (!templateDefinitionLevel)
-                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                                error(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
                     break;
@@ -1065,7 +1065,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     // needs two args, one of class or type
                     if (sp->tp->BaseType()->syms->size() != 2)
                     {
-                        errorstr(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
+                        error(ERR_OPERATOR_NEEDS_TWO_PARAMETERS, overloadXlateTab[sp->sb->operatorId]);
                     }
                     else
                     {
@@ -1080,7 +1080,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         if (!test)
                         {
                             if (!templateDefinitionLevel)
-                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                                error(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
                     break;
@@ -1091,7 +1091,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     sym = (*it);
                     if (sym->tp->type == BasicType::void_ || sp->tp->BaseType()->syms->size() > 2)
                     {
-                        errorstr(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                        error(ERR_OPERATOR_NEEDS_ONE_OR_TWO_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                     }
                     else
                     {
@@ -1099,7 +1099,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         if (!classOrEnumParam(sym))
                         {
                             if (!templateDefinitionLevel)
-                                errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
+                                error(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
                     if (sp->tp->BaseType()->syms->size() == 2)
@@ -1107,14 +1107,14 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         sym = *++it;
                         if (sym->tp->type != BasicType::int_)
                         {
-                            errorstr(ERR_OPERATOR_NEEDS_SECOND_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
+                            error(ERR_OPERATOR_NEEDS_SECOND_PARAMETER_OF_TYPE_INT, overloadXlateTab[sp->sb->operatorId]);
                         }
                     }
                     break;
                 case Keyword::quot_:
                     if (sp->tp->BaseType()->syms->size() > 2)
                     {
-                        errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                        error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     else if (sp->tp->BaseType()->syms->size() == 2)
                     {
@@ -1123,7 +1123,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         Type* tpr = (*++it)->tp;
                         if (!tpr->IsUnsigned() || !tpl->IsPtr())
                         {
-                            errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                            error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }
                         else
                         {
@@ -1133,7 +1133,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                                                     tpr->type != BasicType::char8_t_ && tpr->type != BasicType::char16_t_ &&
                                                     tpr->type != BasicType::char32_t_))
                             {
-                                errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                                error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                             }
                         }
                     }
@@ -1147,7 +1147,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                             tp->type != BasicType::char_ && tp->type != BasicType::wchar_t_ && tp->type != BasicType::char8_t_ &&
                             tp->type != BasicType::char16_t_ && tp->type != BasicType::char32_t_)
                         {
-                            errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                            error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                         }
                     }
                     break;
@@ -1158,11 +1158,11 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         // any number of args, but first must be a size
                         Type* tp = (*it)->tp;
                         if (!tp->IsInt())
-                            errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                            error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     else
                     {
-                        errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                        error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     break;
                 case Keyword::delete_:
@@ -1172,21 +1172,21 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                         // one or more args, first must be a pointer
                         Type* tp = (*it)->tp;
                         if (!tp->IsPtr())
-                            errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                            error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     else
                     {
-                        errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                        error(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                     }
                     break;
                 default:
                     if (sp->sb->operatorId == CI_CAST)
                     {
-                        errortype(ERR_OPERATOR_MUST_BE_NONSTATIC, sp->tp->BaseType()->btp, nullptr);
+                        error(ERR_OPERATOR_MUST_BE_NONSTATIC, sp->tp->BaseType()->btp, nullptr);
                     }
                     else
                     {
-                        errorstr(ERR_OPERATOR_MUST_BE_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
+                        error(ERR_OPERATOR_MUST_BE_NONSTATIC, overloadXlateTab[sp->sb->operatorId]);
                     }
                     break;
             }
@@ -1312,7 +1312,7 @@ void getDeclType(SYMBOL* funcsp, Type** tn)
                 auto it = (*tn)->syms->begin();
                 auto it1 = it;
                 ++it1;
-                errorsym2(ERR_AMBIGUITY_BETWEEN, *it, *it1);
+                error(ERR_AMBIGUITY_BETWEEN, *it, *it1);
             }
             exp->v.func->sp = (*tn)->syms->front();
             if (hasAmpersand)
@@ -1470,7 +1470,7 @@ void CheckIsLiteralClass(Type* tp)
         {
             if (tp->BaseType()->sp->tp->size && !tp->BaseType()->sp->sb->literalClass)
             {
-                errorsym(ERR_CONSTEXPR_CLASS_NOT_LITERAL, tp->BaseType()->sp);
+                error(ERR_CONSTEXPR_CLASS_NOT_LITERAL, tp->BaseType()->sp);
             }
             else if (tp->BaseType()->sp->templateParams)
             {
@@ -1535,7 +1535,7 @@ void GetStructuredBinding(SYMBOL* funcsp, StorageClass storage_class, Linkage li
             }
             else if ((!tp->IsStructured() && !tp->IsArray()) || tp->BaseType()->type == BasicType::union_)
             {
-                errortype(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, tp, nullptr);
+                error(ERR_STRUCTURED_BINDING_STRUCT_ARRAY, tp, nullptr);
             }
             else if (tp->IsArray())
             {
@@ -1672,11 +1672,11 @@ void GetStructuredBinding(SYMBOL* funcsp, StorageClass storage_class, Linkage li
                 }
                 if (!one)
                 {
-                    errorsym(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, structsym);
+                    error(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_NONE, structsym);
                 }
                 else if (two)
                 {
-                    errorsym2(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, two, one);
+                    error(ERR_STRUCTURED_BINDING_CANT_DECOMPOSE_ALL, two, one);
                 }
                 else if (count != identifiers.size())
                 {

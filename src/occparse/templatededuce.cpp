@@ -2112,13 +2112,13 @@ void CTADLookup(SYMBOL* funcsp, EXPRESSION** exp, Type** templateType, CallSite*
         }
         else
         {
-            errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, (*templateType)->BaseType()->sp->name);
+            error(ERR_CANNOT_DEDUCE_TEMPLATE, (*templateType)->BaseType()->sp->name);
             EXPRESSION* exp2 = AnonymousVar(StorageClass::auto_, (*templateType)->BaseType());
         }
     }
     else
     {
-        errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, (*templateType)->BaseType()->sp->name);
+        error(ERR_CANNOT_DEDUCE_TEMPLATE, (*templateType)->BaseType()->sp->name);
         EXPRESSION* exp2 = AnonymousVar(StorageClass::auto_, (*templateType)->BaseType());
     }
 }

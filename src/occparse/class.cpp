@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -377,7 +377,7 @@ void nestedPath(SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* through
                         }
                         else if (MATCHKW(Keyword::classsel_))
                         {
-                            errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, buf);
+                            error(ERR_NEED_TEMPLATE_ARGUMENTS, buf);
                         }
                     }
                     if (!MATCHKW(Keyword::classsel_))
@@ -450,7 +450,7 @@ void nestedPath(SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* through
                         if (hasTemplate && (sp->tp->BaseType()->type != BasicType::templateparam_ ||
                                             sp->tp->BaseType()->templateParam->second->type != TplType::template_))
                         {
-                            errorsym(ERR_NOT_A_TEMPLATE, sp);
+                            error(ERR_NOT_A_TEMPLATE, sp);
                         }
                     }
                 }
@@ -660,11 +660,11 @@ void nestedPath(SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* through
                     {
                         if (dependentType)
                             if (dependentType->IsStructured())
-                                errorstringtype(ERR_DEPENDENT_TYPE_DOES_NOT_EXIST_IN_TYPE, buf, dependentType->BaseType());
+                                error(ERR_DEPENDENT_TYPE_DOES_NOT_EXIST_IN_TYPE, buf, dependentType->BaseType());
                             else
-                                errortype(ERR_DEPENDENT_TYPE_NOT_A_CLASS_OR_STRUCT, dependentType, nullptr);
+                                error(ERR_DEPENDENT_TYPE_NOT_A_CLASS_OR_STRUCT, dependentType, nullptr);
                         else if (!IsPacking())
-                            errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
+                            error(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
                     }
                     placeHolder.Backup();
                     strSym = sp;
@@ -701,7 +701,7 @@ void nestedPath(SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* through
                     Optimizer::my_sprintf(buf + l, sizeof(buf) - l, "%s", placeHolder.get()->value.s.a);
             }
 
-            errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
+            error(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
         }
     }
     if (!pastClassSel && typeName && !dependentType && !processingTypedef && !processingUsingStatement && (!IsDefiningTemplate()))
@@ -959,7 +959,7 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool needTypeOrNamespace, b
                 {
                     rv = nullptr;
                     if (toErr)
-                        errorstr(ERR_AMBIGUOUS_MEMBER_DEFINITION, name);
+                        error(ERR_AMBIGUOUS_MEMBER_DEFINITION, name);
                     break;
                 }
             }
@@ -1173,7 +1173,7 @@ void nestedSearch(SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>*
                     encloser = nullptr;
                 if (errIfNotFound && !*sym)
                 {
-                    errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
+                    error(ERR_UNDEFINED_IDENTIFIER, buf);
                 }
             }
             else
@@ -1200,7 +1200,7 @@ void nestedSearch(SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>*
                         encloser = nullptr;
                     if (errIfNotFound && !*sym)
                     {
-                        errorstr(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
+                        error(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
                     }
                 }
             }
@@ -1229,11 +1229,11 @@ void nestedSearch(SYMBOL** sym, SYMBOL** strSym, std::list<NAMESPACEVALUEDATA*>*
                     }
                 }
                 if (!found)
-                    errorsym(ERR_NOT_A_TEMPLATE, *sym);
+                    error(ERR_NOT_A_TEMPLATE, *sym);
             }
             else
             {
-                errorsym(ERR_NOT_A_TEMPLATE, *sym);
+                error(ERR_NOT_A_TEMPLATE, *sym);
             }
         }
     }
@@ -1308,7 +1308,7 @@ void getIdName(SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
             tp = TypeGenerator::TypeId(funcsp, StorageClass::cast_, true, true, false);
             if (!tp)
             {
-                errorstr(ERR_INVALID_AS_OPERATOR, "");
+                error(ERR_INVALID_AS_OPERATOR, "");
                 tp = &stdint;
             }
             if (castType)
@@ -1350,9 +1350,9 @@ void getIdName(SYMBOL* funcsp, char* buf, int len, int* ov, Type** castType)
         else
         {
             if (ISKW())
-                errorstr(ERR_INVALID_AS_OPERATOR, currentLex->kw->name);
+                error(ERR_INVALID_AS_OPERATOR, currentLex->kw->name);
             else
-                errorstr(ERR_INVALID_AS_OPERATOR, "");
+                error(ERR_INVALID_AS_OPERATOR, "");
             --*currentStream;
         }
     }
@@ -1449,11 +1449,11 @@ void id_expression(SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym, std::list<NAME
                         }
                     }
                     if (!found)
-                        errorsym(ERR_NOT_A_TEMPLATE, *sym);
+                        error(ERR_NOT_A_TEMPLATE, *sym);
                 }
                 else if ((*sym)->sb->storage_class != StorageClass::typedef_ || !(*sym)->sb->templateLevel)
                 {
-                    errorsym(ERR_NOT_A_TEMPLATE, *sym);
+                    error(ERR_NOT_A_TEMPLATE, *sym);
                 }
             }
         }
@@ -1653,7 +1653,7 @@ bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp)
                     if (!isAccessible(ssp, ssp, sym, funcsp, AccessLevel::protected_, false))
                     {
                         currentErrorLine = 0;
-                        errorsym(ERR_CANNOT_ACCESS, sym);
+                        error(ERR_CANNOT_ACCESS, sym);
                         return false;
                     }
                 }
@@ -1667,14 +1667,14 @@ bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp)
                                 return true;
                             derived = derived->sb->parentClass;
                         }
-                        errorsym(ERR_CANNOT_ACCESS, sym);
+                        error(ERR_CANNOT_ACCESS, sym);
                         return false;
                     }
                     else
                     {
                         if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, AccessLevel::public_, false))
                         {
-                            errorsym(ERR_CANNOT_ACCESS, sym);
+                            error(ERR_CANNOT_ACCESS, sym);
                             return false;
                         }
                     }

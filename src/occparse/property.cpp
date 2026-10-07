@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -184,7 +184,7 @@ void initialize_property(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class
                 {
                     if (get)
                     {
-                        errorsym(ERR_GETTER_ALREADY_EXISTS, sym);
+                        error(ERR_GETTER_ALREADY_EXISTS, sym);
                         err = true;
                     }
                     else
@@ -196,7 +196,7 @@ void initialize_property(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class
                 {
                     if (set)
                     {
-                        errorsym(ERR_SETTER_ALREADY_EXISTS, sym);
+                        error(ERR_SETTER_ALREADY_EXISTS, sym);
                         err = true;
                     }
                     else
@@ -225,7 +225,7 @@ void initialize_property(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class
                 }
             }
             if (!get)
-                errorsym(ERR_MUST_DECLARE_PROPERTY_GETTER, sym);
+                error(ERR_MUST_DECLARE_PROPERTY_GETTER, sym);
             if (set)
                 sym->sb->has_property_setter = true;
             msilCreateProperty(sym, get, set);

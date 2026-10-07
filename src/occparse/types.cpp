@@ -2531,7 +2531,7 @@ Type* TypeGenerator::BeforeName(SYMBOL* funcsp, Type* tp, SYMBOL** spi, SYMBOL**
                         MATCHKW(Keyword::semicolon_))
                         error(ERR_IDENTIFIER_EXPECTED);
                     else
-                        errortype(ERR_IMPROPER_USE_OF_TYPE, tp, nullptr);
+                        error(ERR_IMPROPER_USE_OF_TYPE, tp, nullptr);
                 }
                 if (!tp)
                 {
@@ -3188,7 +3188,7 @@ founddecltype:
                                         std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                                         GetTemplateArguments(funcsp, nullptr, &lst);
                                     }
-                                    errorsym(ERR_NOT_A_TEMPLATE, sp);
+                                    error(ERR_NOT_A_TEMPLATE, sp);
                                 }
                             }
                             else if (tpx->templateParam->second->type == TplType::template_)
@@ -3448,7 +3448,7 @@ founddecltype:
                                     std::list<TEMPLATEPARAMPAIR>* lst = nullptr;
                                     GetTemplateArguments(funcsp, nullptr, &lst);
                                 }
-                                errorsym(ERR_NOT_A_TEMPLATE, sp);
+                                error(ERR_NOT_A_TEMPLATE, sp);
                             }
                             if (sp->tp->type == BasicType::typedef_)
                             {
@@ -3478,7 +3478,7 @@ founddecltype:
                             //                        if (sp->sb->parentClass && !isAccessible(sp->sb->parentClass, ssp ? ssp :
                             //                        sp->sb->parentClass, sp, funcsp, ssp == sp->sb->parentClass ?
                             //                        AccessLevel::protected_ : AccessLevel::public_, false))
-                            //                           errorsym(ERR_CANNOT_ACCESS, sp);
+                            //                           error(ERR_CANNOT_ACCESS, sp);
                         }
                         // DAL
                         if (Optimizer::cparams.prm_cplusplus && sp && MATCHKW(Keyword::openpa_) &&
@@ -4171,7 +4171,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
             {
                 if (!spo->tp->btp->CompatibleType(sp->tp->btp))
                 {
-                    preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
+                    preverror(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
                 }
             }
         }
@@ -4279,7 +4279,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                         sizeQualifiers(tpx);
                         spo = search(tp->syms, spi->name);
                         if (!spo)
-                            errorsym(ERR_UNDEFINED_IDENTIFIER, spi);
+                            error(ERR_UNDEFINED_IDENTIFIER, spi);
                         else
                         {
                             spo->tp = tpx;
@@ -4304,7 +4304,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                 if (spi->tp == nullptr)
                 {
                     if (Optimizer::cparams.c_dialect >= Dialect::c99)
-                        errorsym(ERR_MISSING_TYPE_FOR_PARAMETER, spi);
+                        error(ERR_MISSING_TYPE_FOR_PARAMETER, spi);
                     spi->tp = Type::MakeType(BasicType::int_);
                 }
             }

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -113,7 +113,7 @@ void castToArithmetic(bool integer, Type** tp, EXPRESSION** exp, Keyword kw, Typ
                     other->BaseType()->ToString(tbuf + sizeof(tbuf), tbuf + strlen(tbuf));
                 }
                 Optimizer::my_sprintf(buf, "operator %s(%s)", overloadXlateTab[(int)kw - (int)Keyword::new_ + CI_NEW], tbuf);
-                errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
+                error(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
             }
             else
             {
@@ -310,7 +310,7 @@ bool doDynamicCast(Type** newType, Type* oldType, EXPRESSION** exp, SYMBOL* func
                     if ((*newType)->IsRef())
                         *newType = tpn;
                     if (!tpo->BaseType()->sp->sb->hasvtab || !tpo->BaseType()->sp->tp->syms->front())
-                        errorsym(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, tpo->BaseType()->sp);
+                        error(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, tpo->BaseType()->sp);
                     return true;
                 }
                 return doStaticCast(newType, oldType, exp, funcsp, true);

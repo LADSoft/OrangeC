@@ -326,7 +326,7 @@ void InsertSymbol(SYMBOL* sp, StorageClass storage_class, Linkage linkage, bool 
             }
             else
             {
-                errorsym(ERR_DUPLICATE_IDENTIFIER, sp);
+                error(ERR_DUPLICATE_IDENTIFIER, sp);
             }
         }
         else if (!allowDups || sp != search(table, sp->name))
@@ -479,7 +479,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
             }
             if (p->sb->attribs.inheritable.warnAlign && p->sb->attribs.inheritable.warnAlign > align)
             {
-                errorsym(ERR_MINIMUM_ALIGN_NOT_ACHIEVED, p);
+                error(ERR_MINIMUM_ALIGN_NOT_ACHIEVED, p);
             }
             totalAlign = imax(totalAlign, align);
             p->sb->parent = sp;
@@ -501,7 +501,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
                     error(ERR_STRUCT_UNION_NO_FUNCTION);
                 else /* c90 doesn't allow unsized arrays here */
                     if (Optimizer::cparams.prm_ansi)
-                        errorsym(ERR_UNSIZED, p);
+                        error(ERR_UNSIZED, p);
             }
             if (!tp->IsUnion() && tp->IsStructured())
             {
@@ -509,7 +509,7 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
             }
             if (toerr && tp->IsStructured() && !tp->size && !templateDefinitionLevel)
             {
-                errorsym(ERR_STRUCT_NOT_DEFINED, p);
+                error(ERR_STRUCT_NOT_DEFINED, p);
             }
             if (tp->hasbits)
             {
@@ -632,7 +632,7 @@ static bool validateAnonymousUnion(SYMBOL* parent, Type* unionType)
                 if (parent && (spi = parent->tp->syms->Lookup(member->name)) != nullptr)
                 {
                     currentErrorLine = 0;
-                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->sb->declfile, spi->sb->declline);
+                    preverror(ERR_DUPLICATE_IDENTIFIER, spi, spi->sb->declfile, spi->sb->declline);
                     rv = false;
                 }
             }
@@ -1059,11 +1059,11 @@ static void structbody(SYMBOL* funcsp, SYMBOL* sp, AccessLevel currentAccess, Sy
                 {
                     if (sp1->tp->IsRef())
                     {
-                        errorsym(ERR_REF_CLASS_NO_CONSTRUCTORS, sp1);
+                        error(ERR_REF_CLASS_NO_CONSTRUCTORS, sp1);
                     }
                     else if (sp1->tp->IsConst())
                     {
-                        errorsym(ERR_CONST_CLASS_NO_CONSTRUCTORS, sp1);
+                        error(ERR_CONST_CLASS_NO_CONSTRUCTORS, sp1);
                     }
                 }
             }
@@ -1153,7 +1153,7 @@ void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel de
         {
             if (Optimizer::cparams.c_dialect != Dialect::c23)
             {
-                preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+                preverror(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
             }
         }
         sp->tp->syms = symbols->CreateSymbolTable();
@@ -1178,7 +1178,7 @@ void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel de
             if (injected)
                 injected->sb->baseClasses = sp->sb->baseClasses;
             if (!MATCHKW(Keyword::begin_))
-                errorint(ERR_NEEDY, '{');
+                error(ERR_NEEDY, '{');
         }
     if (hasBody && KW() == Keyword::begin_)
     {
@@ -1192,7 +1192,7 @@ void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel de
         {
             if (!compareStructSyms(oldsyms, sp->tp->syms))
             {
-                preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
+                preverror(ERR_STRUCT_HAS_BODY, sp, sp->sb->declfile, sp->sb->declline);
             }
         }
     }
@@ -1318,7 +1318,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
     else
     {
         if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
-            errorint(ERR_NEEDY, '{');
+            error(ERR_NEEDY, '{');
         tagname = "";
         charindex = -1;
         anonymous = true;
@@ -1347,7 +1347,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
             isfinal = true;
             getsym();
             if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
-                errorint(ERR_NEEDY, '{');
+                error(ERR_NEEDY, '{');
         }
     }
     if (ISID())
@@ -1440,7 +1440,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
             if (inTemplate && templateDefinitionLevel)
             {
                 if (MATCHKW(Keyword::lt_))
-                    errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
+                    error(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                 sp->templateParams = TemplateGetParams(sp);
                 sp->sb->templateLevel = templateDefinitionLevel;
                 TemplateMatching(nullptr, sp->templateParams, sp, MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_));
@@ -1489,7 +1489,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
         }
         if (type != sp->tp->type && (type == BasicType::union_ || sp->tp->type == BasicType::union_))
         {
-            errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
+            error(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
         }
         else if (inTemplate && templateDefinitionLevel && sp->sb)
         {
@@ -1497,7 +1497,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
             if (!sp->sb->templateLevel)
             {
                 if (!sp->sb->parentClass || !sp->sb->parentClass->sb->templateLevel)
-                    errorsym(ERR_NOT_A_TEMPLATE, sp);
+                    error(ERR_NOT_A_TEMPLATE, sp);
                 SetLinkerNames(sp, Linkage::cdecl_);
             }
             else
@@ -1534,7 +1534,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
                         isfinal = true;
                         getsym();
                         if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
-                            errorint(ERR_NEEDY, '{');
+                            error(ERR_NEEDY, '{');
                     }
                 }
                 else
@@ -1575,14 +1575,14 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
                     isfinal = true;
                     getsym();
                     if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
-                        errorint(ERR_NEEDY, '{');
+                        error(ERR_NEEDY, '{');
                 }
             }
             else if (!sp->sb || sp->sb->templateLevel)
             {
                 if ((MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_)))
                 {
-                    errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+                    error(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
                 }
                 else
                 {
@@ -1595,14 +1595,14 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
                         isfinal = true;
                         getsym();
                         if (!MATCHKW(Keyword::begin_) && !MATCHKW(Keyword::colon_))
-                            errorint(ERR_NEEDY, '{');
+                            error(ERR_NEEDY, '{');
                     }
                 }
             }
         }
         else if (sp->sb && sp->sb->templateLevel && (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_)))
         {
-            errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+            error(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
         }
     }
     if (sp)
@@ -1613,7 +1613,7 @@ void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, Stora
                 sp->sb->uuid = uuid;
             if (access != sp->sb->access && sp->tp->syms && (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::colon_)))
             {
-                errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
+                error(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
             }
             innerDeclStruct(funcsp, sp, inTemplate, defaultAccess, isfinal, defd, nobody, anonymous ? table : nullptr);
             if (constexpression)
@@ -1638,7 +1638,7 @@ static void enumbody(SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, Ac
     spi->sb->declaring = true;
     if (spi->tp->syms)
     {
-        preverrorsym(ERR_ENUM_CONSTANTS_DEFINED, spi, spi->sb->declfile, spi->sb->declline);
+        preverror(ERR_ENUM_CONSTANTS_DEFINED, spi, spi->sb->declfile, spi->sb->declline);
     }
     spi->tp->syms = symbols->CreateSymbolTable(); /* holds a list of all the values, e.g. for debug info */
     if (!MATCHKW(Keyword::end_))
@@ -1788,7 +1788,7 @@ static void enumbody(SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, Ac
         error(ERR_UNEXPECTED_EOF);
     else if (!MATCHKW(Keyword::end_))
     {
-        errorint(ERR_NEEDY, '}');
+        error(ERR_NEEDY, '}');
         errskim(skim_end);
         skip(Keyword::end_);
     }
@@ -1924,7 +1924,7 @@ void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel
     }
     else if (sp->tp->type != BasicType::enum_)
     {
-        errorsym(ERR_ORIGINAL_TYPE_NOT_ENUMERATION, sp);
+        error(ERR_ORIGINAL_TYPE_NOT_ENUMERATION, sp);
     }
     else if ((scoped && !sp->tp->scoped) || (fixedType && sp->tp->btp->type != fixedType->type))
     {
@@ -1947,11 +1947,11 @@ void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel
     }
     else if (noname)
     {
-        errorint(ERR_NEEDY, '{');
+        error(ERR_NEEDY, '{');
     }
     else if (!Optimizer::cparams.prm_cplusplus && Optimizer::cparams.prm_ansi && !sp->tp->syms)
     {
-        errorsym(ERR_ANSI_ENUM_NEEDS_BODY, sp);
+        error(ERR_ANSI_ENUM_NEEDS_BODY, sp);
     }
     sp->tp->sp = sp;
     *tp = sp->tp;
@@ -1980,7 +1980,7 @@ static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage
                 oldsc = *storage_class;
                 if (*storage_class == StorageClass::parameter_ || *storage_class == StorageClass::member_ ||
                     *storage_class == StorageClass::mutable_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
+                    error(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 else
                     *storage_class = StorageClass::external_;
                 getsym();
@@ -2034,7 +2034,7 @@ static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage
                             while (count--)
                                 *q++ = *p++;
                             *q = 0;
-                            errorstr(ERR_UNKNOWN_LINKAGE, buf);
+                            error(ERR_UNKNOWN_LINKAGE, buf);
                             getsym();
                         }
                     }
@@ -2043,7 +2043,7 @@ static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage
             case Keyword::virtual_:
                 if (*storage_class != StorageClass::member_)
                 {
-                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
+                    error(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 }
                 else
                 {
@@ -2073,7 +2073,7 @@ static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage
                 if (*storage_class == StorageClass::parameter_ ||
                     (!Optimizer::cparams.prm_cplusplus &&
                      (*storage_class == StorageClass::member_ || *storage_class == StorageClass::mutable_)))
-                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
+                    error(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 else if (*storage_class == StorageClass::auto_)
                     *storage_class = StorageClass::localstatic_;
                 else
@@ -2083,7 +2083,7 @@ static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage
             case Keyword::absolute_:
                 if (*storage_class == StorageClass::parameter_ || *storage_class == StorageClass::member_ ||
                     *storage_class == StorageClass::mutable_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
+                    error(ERR_INVALID_STORAGE_CLASS, currentLex->kw->name);
                 else
                     *storage_class = StorageClass::absolute_;
                 getsym();
@@ -2106,21 +2106,21 @@ static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage
                 break;
             case Keyword::auto_:
                 if (*storage_class != StorageClass::auto_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, "auto");
+                    error(ERR_INVALID_STORAGE_CLASS, "auto");
                 else
                     *storage_class = StorageClass::auto_;
                 getsym();
                 break;
             case Keyword::register_:
                 if (*storage_class != StorageClass::auto_ && *storage_class != StorageClass::parameter_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, "register");
+                    error(ERR_INVALID_STORAGE_CLASS, "register");
                 else if (*storage_class != StorageClass::parameter_)
                     *storage_class = StorageClass::register_;
                 getsym();
                 break;
             case Keyword::typedef_:
                 if (*storage_class == StorageClass::parameter_)
-                    errorstr(ERR_INVALID_STORAGE_CLASS, "typedef");
+                    error(ERR_INVALID_STORAGE_CLASS, "typedef");
                 else
                     *storage_class = StorageClass::typedef_;
                 getsym();
@@ -2389,7 +2389,7 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
                 !SameTemplatePointedTo(spo->tp->BaseType()->btp, sp->tp->BaseType()->btp))
             {
                 if (!IsDefiningTemplate())
-                    preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
+                    preverror(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
             }
             else
             {
@@ -2415,7 +2415,7 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
                     }
                     if ((ito1 != hro1end || it1 != hr1end) && spo != sp)
                     {
-                        preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
+                        preverror(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->sb->declfile, spo->sb->declline);
                     }
                     else
                     {
@@ -2436,12 +2436,12 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
                             auto io = initTokenStreams.get(so);
                             auto i = initTokenStreams.get(s);
                             if (so != s && ((so->sb->init && s->sb->init) || (io && i && i != io)))
-                                errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
+                                error(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
                             if (!err && last && last->sb->init &&
                                 !(so->sb->init || s->sb->init || initTokenStreams.get(s) || initTokenStreams.get(so)))
                             {
                                 err = true;
-                                errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
+                                error(ERR_MISSING_DEFAULT_ARGUMENT, last);
                             }
                             last = so;
                             if (so->sb->init)
@@ -2481,12 +2481,12 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
             if (!sp->sb->xc || !sp->sb->xc->xcDynamic)
             {
                 if (!MATCHKW(Keyword::begin_))
-                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                    error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
 
             else if (!spo->sb->xc || !spo->sb->xc->xcDynamic || spo->sb->xcMode != sp->sb->xcMode)
             {
-                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
             else
             {
@@ -2505,7 +2505,7 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
                     }
                     if (!li)
                     {
-                        errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                        error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
                     }
                     lo = lo->next;
                 }
@@ -2516,21 +2516,21 @@ static void matchFunctionDeclaration(SYMBOL* sp, SYMBOL* spo, bool checkReturn, 
             if (spo->sb->xcMode == xc_none && sp->sb->xcMode == xc_dynamic)
             {
                 if (sp->sb->xc->xcDynamic)
-                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                    error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
             else if (sp->sb->xcMode == xc_none && spo->sb->xcMode == xc_dynamic)
             {
                 if (spo->sb->xc->xcDynamic)
-                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                    error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
             else if (sp->sb->xcMode == xc_unspecified)
             {
                 if (!MATCHKW(Keyword::begin_))
-                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                    error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
             else
             {
-                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                error(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
             }
         }
     }
@@ -3042,7 +3042,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                 }
                 if (count > 1 && (hasAttributes || linkage == Linkage::inline_))
                 {
-                    errorsym(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, nameSpaceList.front());
+                    error(ERR_NESTED_NAMESPACE_DEFINITION_NOT_INLINE_NO_ATTRIBUTES, nameSpaceList.front());
                 }
                 if (linked && needkw(Keyword::begin_))
                 {
@@ -3481,7 +3481,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                             sp->sb->storage_class != StorageClass::localstatic_)
                         {
                             if (linkage2 != Linkage::none_ && linkage2 != ssp->sb->attribs.inheritable.linkage2 && !asFriend)
-                                errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
+                                error(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
                             else if (!ssp->sb->templateLevel || !inTemplate)
                                 sp->sb->attribs.inheritable.linkage2 = ssp->sb->attribs.inheritable.linkage2;
                         }
@@ -3553,7 +3553,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                         if (sp->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                         if (storage_class == StorageClass::mutable_ && tp->IsConst())
-                            errorsym(ERR_MUTABLE_NON_CONST, sp);
+                            error(ERR_MUTABLE_NON_CONST, sp);
                         // correct for previous errors
                         if (sp->sb->isConstructor && sp->tp->IsPtr())
                             sp->tp = sp->tp->BaseType()->btp;
@@ -3563,7 +3563,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                         {
                             if (strSym != ssp && strSym->sb->mainsym != ssp)
                             {
-                                errorsym(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
+                                error(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
                             }
                         }
                         spi = nullptr;
@@ -3577,7 +3577,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 {
                                     auto it = rvl.begin();
                                     ++it;
-                                    errorsym2(ERR_AMBIGUITY_BETWEEN, rvl.front(), *it);
+                                    error(ERR_AMBIGUITY_BETWEEN, rvl.front(), *it);
                                 }
                                 else
                                     spi = rvl.front();
@@ -3666,7 +3666,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 if (sp->sb->attribs.inheritable.linkage == Linkage::c_ ||
                                     (sym && sym->sb->attribs.inheritable.linkage == Linkage::c_))
                                     if (!sym || !sameNameSpace(sp->sb->parentNameSpace, sym->sb->parentNameSpace))
-                                        preverrorsym(ERR_CONFLICTS_WITH, sp, spi->sb->declfile, spi->sb->declline);
+                                        preverror(ERR_CONFLICTS_WITH, sp, spi->sb->declfile, spi->sb->declline);
                                 if (sym && sym->templateParams && (!sp->templateParams || sp->templateParams->size() > 1) &&
                                     (!exactMatchOnTemplateParams(sym->templateParams, sp->templateParams) ||
                                      ([](std::list<TEMPLATEPARAMPAIR>* a, std::list<TEMPLATEPARAMPAIR>* b) {
@@ -3698,7 +3698,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                       sym->sb->attribs.inheritable.linkage4 != Linkage::virtual_)) &&
                                     !sp->sb->attribs.inheritable.isInline && !sym->sb->attribs.inheritable.isInline)
                                 {
-                                    preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->sb->declfile, spi->sb->declline);
+                                    preverror(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->sb->declfile, spi->sb->declline);
                                 }
                                 else if (sym && !sym->sb->isConstructor && !sym->sb->isDestructor &&
                                          !sp->tp->BaseType()->btp->CompatibleType((sym)->tp->BaseType()->btp))
@@ -3742,7 +3742,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                             }
                                         }
                                         if (!found)
-                                            errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
+                                            error(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                                         sp->sb->specialized = true;
                                     }
                                     else if (sp->templateParams && sp->templateParams->size() == 1)
@@ -3807,7 +3807,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                         else if (!spi)
                         {
                             if (sp->templateParams && sp->templateParams->front().second->bySpecialization.types)
-                                errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
+                                error(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                             if (strSym && storage_class_in != StorageClass::member_ && storage_class_in != StorageClass::mutable_)
                             {
                                 errorNotMember(strSym, nsv ? nsv->front() : nullptr, sp->sb->decoratedName);
@@ -3869,11 +3869,11 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                             {
                                 if ((strSym && !strSym->sb->templateLevel) ||
                                     spi->sb->templateLevel != sp->sb->templateLevel + (strSym != 0))
-                                    errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+                                    error(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
                             }
                             if (spi && spi->sb->parentClass && storage_class_in == StorageClass::member_)
                             {
-                                errorsym(ERR_CLASS_MEMBER_ALREADY_DECLARED, spi);
+                                error(ERR_CLASS_MEMBER_ALREADY_DECLARED, spi);
                             }
                             if (spi->tp->IsFunction())
                             {
@@ -3894,7 +3894,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     sp->sb->storage_class != StorageClass::mutable_)
                                     if (spi->sb->storage_class != StorageClass::external_ &&
                                         sp->sb->storage_class != StorageClass::external_)
-                                        preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->sb->declfile, spi->sb->declline);
+                                        preverror(ERR_DUPLICATE_IDENTIFIER, spi, spi->sb->declfile, spi->sb->declline);
                             }
                             else
                             {
@@ -3912,7 +3912,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                             if (istype(spi))
                             {
                                 if (Optimizer::cparams.prm_ansi || !sp->tp->CompatibleType((spi)->tp) || !istype(sp))
-                                    preverrorsym(ERR_REDEFINITION_OF_TYPE, sp, spi->sb->declfile, spi->sb->declline);
+                                    preverror(ERR_REDEFINITION_OF_TYPE, sp, spi->sb->declfile, spi->sb->declline);
                             }
                             else
                             {
@@ -3938,31 +3938,31 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     !differentTemplateNames(spi->sb->parentClass->templateParams,
                                                             sp->sb->parentClass->templateParams))
                                 {
-                                    errorsym(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
+                                    error(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
                                 }
                                 else if ((!sp->tp->IsFunction() && !spi->tp->IsFunction() && !sp->tp->CompatibleType((spi)->tp)) ||
                                          istype(sp))
                                 {
-                                    preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
+                                    preverror(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
                                 }
                                 else if (!sameQuals(sp, spi) && (!IsDefiningTemplate()))
                                 {
-                                    errorsym(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
+                                    error(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
                                 }
                                 if (sp->sb->attribs.inheritable.linkage3 != spi->sb->attribs.inheritable.linkage3 &&
                                     (sp->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_ ||
                                      spi->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_))
                                     if (!spi->sb->parentClass)
-                                        errorsym(ERR_THREAD_LOCAL_MUST_ALWAYS_APPEAR, sp);
+                                        error(ERR_THREAD_LOCAL_MUST_ALWAYS_APPEAR, sp);
                                 if (strSym && storage_class == StorageClass::static_)
                                 {
-                                    errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+                                    error(ERR_INVALID_STORAGE_CLASS, "static");
                                 }
                                 if (ismember(spi))
                                 {
                                     if (!asFriend && !sp->tp->IsFunction() && sp->sb->storage_class != spi->sb->storage_class &&
                                         !sp->sb->templateLevel)
-                                        errorsym(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
+                                        error(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
                                     if (strSym)
                                     {
                                         sp->sb->storage_class = spi->sb->storage_class;
@@ -3975,7 +3975,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     case StorageClass::auto_:
                                     case StorageClass::register_:
                                     case StorageClass::parameter_:
-                                        preverrorsym(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
+                                        preverror(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
                                         break;
                                     case StorageClass::external_:
                                         if ((spi)->sb->storage_class == StorageClass::static_)
@@ -3988,7 +3988,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                                 }
                                                 else
                                                 {
-                                                    errorsym(ERR_ANSI_FORBID_BOTH_EXTERN_STATIC, spi);
+                                                    error(ERR_ANSI_FORBID_BOTH_EXTERN_STATIC, spi);
                                                     spi->sb->storage_class = StorageClass::global_;
                                                 }
                                             }
@@ -4015,25 +4015,25 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     case StorageClass::mutable_:
                                         if ((spi)->sb->storage_class != StorageClass::mutable_)
                                         {
-                                            preverrorsym(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
+                                            preverror(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
                                         }
                                         break;
                                     case StorageClass::member_:
                                         if ((spi)->sb->storage_class == StorageClass::static_)
                                         {
-                                            preverrorsym(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
+                                            preverror(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
                                         }
                                         break;
                                     case StorageClass::static_:
                                         if ((spi)->sb->storage_class == StorageClass::external_ && !spi->tp->IsFunction() &&
                                             !spi->sb->constexpression)
                                         {
-                                            errorsym(ERR_ANSI_FORBID_BOTH_EXTERN_STATIC, spi);
+                                            error(ERR_ANSI_FORBID_BOTH_EXTERN_STATIC, spi);
                                             spi->sb->storage_class = StorageClass::global_;
                                         }
                                         else if (ismember(spi))
                                         {
-                                            preverrorsym(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
+                                            preverror(ERR_DUPLICATE_IDENTIFIER, sp, spi->sb->declfile, spi->sb->declline);
                                         }
                                         else
                                         {
@@ -4234,7 +4234,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                         {
                             if (!tp1->IsFunction())
                             {
-                                errorsym(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_BE_FUNCTION, sp->sb->parentClass);
+                                error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_BE_FUNCTION, sp->sb->parentClass);
                             }
                             else
                             {
@@ -4242,13 +4242,13 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 if ((*s)->sb->thisPtr)
                                     ++s;
                                 if ((*s)->tp->type != BasicType::void_)
-                                    errorsym(ERR_DESTRUCTOR_CANNOT_HAVE_PARAMETERS, sp->sb->parentClass);
+                                    error(ERR_DESTRUCTOR_CANNOT_HAVE_PARAMETERS, sp->sb->parentClass);
                             }
                         }
                         else if (!strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]))
                         {
                             if (!tp1->IsFunction())
-                                errorsym(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_BE_FUNCTION, sp->sb->parentClass);
+                                error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_BE_FUNCTION, sp->sb->parentClass);
                         }
                     }
                     if (!templateArg)
@@ -4342,19 +4342,19 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 RequiresDialect::Feature(Dialect::cpp14, "Return value deduction");
                             if (sp->sb->hasBody && !instantiatingFunction && !templateInstantiationLevel &&
                                 (MATCHKW(Keyword::begin_) || MATCHKW(Keyword::try_)))
-                                errorsym(ERR_FUNCTION_HAS_BODY, sp);
+                                error(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == StorageClass::localstatic_)
-                                errorstr(ERR_INVALID_STORAGE_CLASS, "static");
+                                error(ERR_INVALID_STORAGE_CLASS, "static");
                             if (storage_class == StorageClass::member_ && !Optimizer::cparams.prm_cplusplus)
                                 error(ERR_FUNCTION_NOT_IN_STRUCT);
                             if (sp->tp->BaseType()->btp->IsStructured() ||
                                 sp->tp->BaseType()->btp->BaseType()->type == BasicType::enum_)
                                 if (defd)
-                                    errorsym(ERR_TYPE_DEFINITION_NOT_ALLOWED_HERE, sp->tp->btp->BaseType()->sp);
+                                    error(ERR_TYPE_DEFINITION_NOT_ALLOWED_HERE, sp->tp->btp->BaseType()->sp);
                             if (sp->sb->castoperator)
                             {
                                 if (!notype)
-                                    errortype(ERR_TYPE_OF_RETURN_IS_IMPLICIT_FOR_OPERATOR_FUNC, sp->tp->BaseType()->btp, nullptr);
+                                    error(ERR_TYPE_OF_RETURN_IS_IMPLICIT_FOR_OPERATOR_FUNC, sp->tp->BaseType()->btp, nullptr);
                             }
                             else
                             {
@@ -4510,7 +4510,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 {
                                     sp->sb->attribs.inheritable.isInline = true;
                                     if (sp->sb->nonConstVariableUsed)
-                                        errorsym(ERR_CONSTANT_FUNCTION_EXPECTED, sp);
+                                        error(ERR_CONSTANT_FUNCTION_EXPECTED, sp);
                                 }
                                 needsemi = false;
                             }
@@ -4518,7 +4518,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                             {
                                 browse_variable(sp);
                                 if (sp->sb->constructorInitializers && *sp->sb->constructorInitializers)
-                                    errorsym(ERR_CONSTRUCTOR_MUST_HAVE_BODY, sp);
+                                    error(ERR_CONSTRUCTOR_MUST_HAVE_BODY, sp);
                                 if (Optimizer::cparams.prm_cplusplus && MATCHKW(Keyword::assign_))
                                 {
                                     getsym();
@@ -4528,7 +4528,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                         sp->sb->constexpression = true;
                                         if (sp->sb->redeclared && !templateDefinitionLevel)
                                         {
-                                            errorsym(ERR_DELETE_ON_REDECLARATION, sp);
+                                            error(ERR_DELETE_ON_REDECLARATION, sp);
                                         }
                                         getsym();
                                     }
@@ -4581,7 +4581,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                          !(Optimizer::architecture == ARCHITECTURE_MSIL))
                                     if (!asFriend && storage_class_in != StorageClass::member_ &&
                                         storage_class_in != StorageClass::mutable_ && !sp->sb->templateLevel)
-                                        errorsym(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
+                                        error(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
                             }
                         }
                         else
@@ -4597,17 +4597,17 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                             bool structuredArray = false;
                             if (notype)
                             {
-                                errorsym(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);
+                                error(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);
                                 errskim(skim_semi);
                                 return currentLex;
                             }
                             if (linkage3 == Linkage::entrypoint_)
                             {
-                                errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);
+                                error(ERR_ENTRYPOINT_FUNC_ONLY, sp);
                             }
                             if (sp->sb->storage_class == StorageClass::virtual_)
                             {
-                                errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);
+                                error(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);
                             }
                             if (asExpression && !(asExpression & _F_NOCHECKAUTO))
                                 checkauto(sp->tp, ERR_AUTO_NOT_ALLOWED);
@@ -4643,7 +4643,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                     }
                                     else if (!sp->sb->constexpression)
                                     {
-                                        errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
+                                        error(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }
                                 }
                                 auto stream = GetDataTokenStream();
@@ -4798,9 +4798,9 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                             {
                                 if (storage_class_in == StorageClass::auto_ && sp->sb->storage_class != StorageClass::external_ &&
                                     !sp->tp->IsFunction())
-                                    errorsym(ERR_UNSIZED, sp);
+                                    error(ERR_UNSIZED, sp);
                                 if (storage_class_in == StorageClass::parameter_)
-                                    errorsym(ERR_UNSIZED, sp);
+                                    error(ERR_UNSIZED, sp);
                             }
                         }
                         sp->tp->used = true;

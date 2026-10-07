@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -200,9 +200,9 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             {
                 int n = classRefCount(strSym, enclosing);
                 if (n == 0)
-                    errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+                    error(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
                 else if (n > 1)
-                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, strSym, enclosing);
+                    error(ERR_NOT_UNAMBIGUOUS_BASE, strSym, enclosing);
             }
             //            enclosing = strSym;
         }
@@ -216,7 +216,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             {
                 en = MakeIntExpression(ExpressionNode::c_i_, 0);
                 if (toError)
-                    errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+                    error(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
             }
             else
             {
@@ -244,11 +244,11 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
         {
             if (toError && classRefCount(memberSym->sb->parentClass, enclosing) != 1)
             {
-                errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->sb->parentClass, enclosing);
+                error(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->sb->parentClass, enclosing);
             }
             else if (toError && !isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, memberSym, funcsp, en, false))
             {
-                errorsym(ERR_CANNOT_ACCESS, memberSym);
+                error(ERR_CANNOT_ACCESS, memberSym);
             }
             en = baseClassOffset(memberSym->sb->parentClass, enclosing, en);
         }
@@ -257,7 +257,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
     {
         en = MakeIntExpression(ExpressionNode::c_i_, 0);
         if (toError)
-            errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+            error(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
     }
     return en;
 }
@@ -278,7 +278,7 @@ EXPRESSION* getMemberPtr(SYMBOL* memberSym, SYMBOL* strSym, Type** tp, SYMBOL* f
     rv->isfunc = true;
     if (!isExpressionAccessible(nullptr, memberSym, funcsp, nullptr, true))
     {
-        errorsym(ERR_CANNOT_ACCESS, memberSym);
+        error(ERR_CANNOT_ACCESS, memberSym);
     }
     return rv;
 }
@@ -409,7 +409,7 @@ void expression_func_type_cast(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int 
         {
             (*tp) = (*tp)->BaseType()->sp->tp;
             if (!(*tp)->size && !deduceTemplate)
-                errorsym(ERR_STRUCT_NOT_DEFINED, (*tp)->BaseType()->sp);
+                error(ERR_STRUCT_NOT_DEFINED, (*tp)->BaseType()->sp);
         }
         if ((*tp)->IsStructured() && deduceTemplate && !MATCHKW(Keyword::openpa_))
         {
@@ -463,7 +463,7 @@ void expression_func_type_cast(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int 
             if (!(flags & _F_NOEVAL))
             {
                 *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
+                error(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
                 errskim(skim_semi);
             }
             else if (ISID())
@@ -476,7 +476,7 @@ void expression_func_type_cast(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int 
              ((Optimizer::architecture != ARCHITECTURE_MSIL) || Optimizer::cparams.msilAllowExtensions))
     {
         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-        errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
+        error(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
         errskim(skim_semi);
     }
     else
@@ -596,7 +596,7 @@ void expression_func_type_cast(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int 
         else if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-            errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
+            error(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);
             errskim(skim_semi);
         }
         else
@@ -792,7 +792,7 @@ bool insertOperatorParams(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, CallSite*
     if (s3)
     {
         if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, s3, funcsp, funcparams->thisptr, false))
-            errorsym(ERR_CANNOT_ACCESS, s3);
+            error(ERR_CANNOT_ACCESS, s3);
         s3->sb->throughClass = s3->sb->parentClass != nullptr;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
@@ -1029,7 +1029,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
         if (s3 && (!ismember(s3) || !s3->sb->parentClass->sb->trivialCons || strcmp(s3->name, overloadNameTab[CI_ASSIGN]) != 0))
         {
             if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
-                errorsym(ERR_CANNOT_ACCESS, s3);
+                error(ERR_CANNOT_ACCESS, s3);
             // if both parameters are non-struct, we do a check that enums map to enums
             // if they don't we want to select the builtin function
             // which we do by returning false...
@@ -1244,7 +1244,7 @@ void expression_new(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, in
         if (s1->sb->throughClass && !isAccessible(s1->sb->parentClass, s1->sb->parentClass, s1, funcsp,
                                                   placement->thisptr ? AccessLevel::protected_ : AccessLevel::public_, false))
         {
-            errorsym(ERR_CANNOT_ACCESS, s1);
+            error(ERR_CANNOT_ACCESS, s1);
         }
         placement->sp = s1;
         placement->functp = s1->tp;
@@ -1438,7 +1438,7 @@ void expression_delete(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global,
     {
         (*tp)->BaseType()->btp->InstantiateDeferred();
         if ((*tp)->BaseType()->btp->BaseType()->sp->tp->size == 0)
-            errorsym(ERR_DELETE_OF_POINTER_TO_UNDEFINED_TYPE, (*tp)->BaseType()->btp->BaseType()->sp);
+            error(ERR_DELETE_OF_POINTER_TO_UNDEFINED_TYPE, (*tp)->BaseType()->btp->BaseType()->sp);
     }
     asn = *exp;
     var = AnonymousVar(StorageClass::auto_, *tp);
@@ -1476,7 +1476,7 @@ void expression_delete(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global,
         if (s1->sb->throughClass && !isAccessible(s1->sb->parentClass, s1->sb->parentClass, s1, funcsp,
                                                   funcparams->thisptr ? AccessLevel::protected_ : AccessLevel::public_, false))
         {
-            errorsym(ERR_CANNOT_ACCESS, s1);
+            error(ERR_CANNOT_ACCESS, s1);
         }
         funcparams->sp = s1;
         funcparams->functp = s1->tp;

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -225,7 +225,7 @@ SYMBOL* namespacesearch(const char* name, std::list<NAMESPACEVALUEDATA*>* ns, bo
                 if ((*it) != (*it1) && (*it)->sb->mainsym != (*it1) && ((SYMBOL*)(*it1))->sb->mainsym != (*it))
                 {
                     if ((*it)->sb->mainsym && (*it)->sb->mainsym != ((SYMBOL*)(*it1))->sb->mainsym)
-                        errorsym2(ERR_AMBIGUITY_BETWEEN, (*it), (SYMBOL*)(*it1));
+                        error(ERR_AMBIGUITY_BETWEEN, (*it), (SYMBOL*)(*it1));
                 }
             }
         }
@@ -277,7 +277,7 @@ void insertNamespace(Linkage linkage, StorageClass storage_class, bool* linked)
                 {
                     if (sym->sb->storage_class != StorageClass::namespace_)
                     {
-                        errorsym(ERR_NOT_A_NAMESPACE, sym);
+                        error(ERR_NOT_A_NAMESPACE, sym);
                     }
                     else
                     {
@@ -409,12 +409,12 @@ void insertNamespace(Linkage linkage, StorageClass storage_class, bool* linked)
         sym = sp;
         if (sym->sb->storage_class != StorageClass::namespace_)
         {
-            errorsym(ERR_NOT_A_NAMESPACE, sym);
+            error(ERR_NOT_A_NAMESPACE, sym);
             return;
         }
         if (linkage == Linkage::inline_)
             if (sym->sb->attribs.inheritable.linkage != Linkage::inline_)
-                errorsym(ERR_NAMESPACE_NOT_INLINE, sym);
+                error(ERR_NAMESPACE_NOT_INLINE, sym);
     }
     sym->sb->value.i++;
 

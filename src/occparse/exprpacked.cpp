@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -652,7 +652,7 @@ void expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, std::list<CONSTRUCTORI
              (vbasecount && !vbaseEntries.front()->cls->sb->templateLevel))
     {
         ++init;
-        errorsym(ERR_NOT_A_TEMPLATE, linit->sp);
+        error(ERR_NOT_A_TEMPLATE, linit->sp);
     }
     else
     {
@@ -849,7 +849,7 @@ void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<
                         }
                 if ((ccount && vcount) || ccount > 1)
                 {
-                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, mi->sp, cls);
+                    error(ERR_NOT_UNAMBIGUOUS_BASE, mi->sp, cls);
                 }
                 if (mi->sp && mi->sp == tp->sp)
                 {
@@ -899,7 +899,7 @@ void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<
                 }
                 else
                 {
-                    errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, mi->name, cls);
+                    error(ERR_NOT_A_MEMBER_OR_BASE_CLASS, mi->name, cls);
                 }
             });
         }

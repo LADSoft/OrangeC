@@ -1149,7 +1149,7 @@ void GetTemplateArguments(SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAM
     {
         if (!MATCHKW(Keyword::gt_) && (tp && tp->type == BasicType::any_ && tp->sp))
         {
-            errorsym(ERR_EXPECTED_END_OF_TEMPLATE_ARGUMENTS_NEAR_UNDEFINED_TYPE, tp->sp);
+            error(ERR_EXPECTED_END_OF_TEMPLATE_ARGUMENTS_NEAR_UNDEFINED_TYPE, tp->sp);
             errskim(skim_templateend);
         }
         else
@@ -2347,7 +2347,7 @@ void GetDeductionGuide(SYMBOL* funcsp, StorageClass storage_class, Linkage linka
 {
     if (funcsp || storage_class == StorageClass::member_ || storage_class == StorageClass::mutable_ || (*tp)->sp->sb->parentClass)
     {
-        errorsym(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, (*tp)->sp);
+        error(ERR_DEDUCTION_GUIDE_GLOBAL_OR_NAMESPACE_SCOPE, (*tp)->sp);
     }
     SYMBOL* sp = makeID(StorageClass::member_, &stdint, nullptr, DG_NAME);
     sp->sb->templateLevel = 1;
@@ -2377,7 +2377,7 @@ void GetDeductionGuide(SYMBOL* funcsp, StorageClass storage_class, Linkage linka
         }
         if (!deductionGuide || !sp2 || sp1 != sp2)
         {
-            errorsym(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, (*tp)->sp);
+            error(ERR_DEDUCTION_GUIDE_DOES_NOT_MATCH_CLASS, (*tp)->sp);
         }
         if (sp2)
         {
@@ -2534,7 +2534,7 @@ void DoInstantiateTemplateFunction(Type* tp, SYMBOL** sp, std::list<NAMESPACEVAL
         }
         else
         {
-            errorsym(ERR_NOT_A_TEMPLATE, sym);
+            error(ERR_NOT_A_TEMPLATE, sym);
         }
     }
 }
@@ -2711,7 +2711,7 @@ static void MarkDllLinkage(SYMBOL* sp, Linkage linkage)
     {
         if (sp->sb->attribs.inheritable.linkage2 != Linkage::none_)
         {
-            errorsym(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, sp);
+            error(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, sp);
         }
         else
         {
@@ -2796,7 +2796,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
         tp->BaseType()->btp->InstantiateDeferred();
         if (!sp->tp->BaseType()->btp->CompatibleType(tp->BaseType()->btp))
         {
-            errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
+            error(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
         }
         if (isExtern)
         {
@@ -2845,16 +2845,16 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, Type* tp, std::list<NAMES
                 spi->sb->dontinstantiate = isExtern;
                 spi->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                 if (!sym->tp->CompatibleType(spi->tp))
-                    preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, spi, sym->sb->declfile, sym->sb->declline);
+                    preverror(ERR_TYPE_MISMATCH_IN_REDECLARATION, spi, sym->sb->declfile, sym->sb->declline);
             }
             else
             {
-                errorsym(ERR_NOT_A_TEMPLATE, sym);
+                error(ERR_NOT_A_TEMPLATE, sym);
             }
         }
         else
         {
-            errorsym(ERR_NOT_A_TEMPLATE, sym);
+            error(ERR_NOT_A_TEMPLATE, sym);
         }
     }
     if (strSym)
@@ -2980,7 +2980,7 @@ void TemplateDeclaration(SYMBOL* funcsp, AccessLevel access, StorageClass storag
                 {
                     if (l.sp->sb->storage_class == StorageClass::typedef_ && !l.sp->sb->typeAlias)
                     {
-                        errorat(ERR_TYPEDEFS_CANNOT_BE_TEMPLATES, "", l.sp->sb->declfile, l.sp->sb->declline);
+                        error(ERR_TYPEDEFS_CANNOT_BE_TEMPLATES, "", l.sp->sb->declfile, l.sp->sb->declline);
                     }
                     if (l.sp && l.sp->tp->IsFunction() && l.sp->sb->parentClass)
                     {
@@ -3055,11 +3055,11 @@ void TemplateDeclaration(SYMBOL* funcsp, AccessLevel access, StorageClass storag
                 {
                     if (!cls)
                     {
-                        errorstr(ERR_NOT_A_TEMPLATE, idname);
+                        error(ERR_NOT_A_TEMPLATE, idname);
                     }
                     else
                     {
-                        errorsym(ERR_CLASS_TYPE_EXPECTED, cls);
+                        error(ERR_CLASS_TYPE_EXPECTED, cls);
                     }
                 }
                 else
@@ -3088,7 +3088,7 @@ void TemplateDeclaration(SYMBOL* funcsp, AccessLevel access, StorageClass storag
                     }
                     else
                     {
-                        errorsym(ERR_NOT_A_TEMPLATE, cls);
+                        error(ERR_NOT_A_TEMPLATE, cls);
                     }
                 }
             }

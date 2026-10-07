@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -189,7 +189,7 @@ static void inasm_err(int errnum)
 {
     //    *lptr = 0;
     //    lastch = ' ';
-    errorstr(ERR_ASM, assembler_errors[errnum]);
+    error(ERR_ASM, assembler_errors[errnum]);
     getsym();
 }
 static void setreg(std::vector<int>& srcRegs, Optimizer::ASMREG* regImage)
@@ -368,7 +368,7 @@ static EXPRESSION* inasm_ident(void)
                     sym->sb->inasm = true;
                     break;
                 default:
-                    errorstr(ERR_INVALID_STORAGE_CLASS, "");
+                    error(ERR_INVALID_STORAGE_CLASS, "");
                     break;
             }
         }
@@ -410,7 +410,7 @@ static EXPRESSION* inasm_label(void)
     {
         if (sym->sb->storage_class == StorageClass::label_)
         {
-            errorsym(ERR_DUPLICATE_LABEL, sym);
+            error(ERR_DUPLICATE_LABEL, sym);
             inasm_getsym();
             return 0;
         }

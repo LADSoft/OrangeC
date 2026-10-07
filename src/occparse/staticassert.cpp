@@ -126,7 +126,7 @@ void handleStaticAssert()
         }
         else if (!v && (!templateDefinitionLevel))  // || templateInstantiationLevel))
         {
-            errorstr(ERR_STATIC_ASSERT, buf);
+            error(ERR_STATIC_ASSERT, buf);
         }
     }
     return;

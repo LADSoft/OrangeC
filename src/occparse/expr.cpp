@@ -610,7 +610,7 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
                     else if (IsDefiningTemplate())
                         *tp = &stdint;
                     else
-                        errorsym(ERR_NO_TEMPLATE_MATCHES, sym);
+                        error(ERR_NO_TEMPLATE_MATCHES, sym);
                 }
                 else
                 {
@@ -622,7 +622,7 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
             }
             else
             {
-                errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
+                error(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
             }
         }
         if ((!sym->sb || sym->sb->storage_class == StorageClass::templateparam_) && sym->tp->type == BasicType::templateparam_ &&
@@ -1056,7 +1056,7 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
                             TemplateDataInstantiate(sym, false, false);
                         }
                         if (sym->sb->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
-                            errorsym(ERR_CANNOT_ACCESS, sym);
+                            error(ERR_CANNOT_ACCESS, sym);
                         if (sym->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                             *exp = MakeExpression(ExpressionNode::threadlocal_, sym);
                         else if (sym->sb->anonymousGlobalUnion)
@@ -1071,7 +1071,7 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
                     }
                     case StorageClass::namespace_:
                     case StorageClass::namespace_alias_:
-                        errorsym(ERR_INVALID_USE_OF_NAMESPACE, sym);
+                        error(ERR_INVALID_USE_OF_NAMESPACE, sym);
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 1);
                         break;
                     default:
@@ -1333,7 +1333,7 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
                         }
                     }
                     if (!found)
-                        errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
+                        error(ERR_UNDEFINED_IDENTIFIER, buf);
                 }
                 if (!found && sym->sb->storage_class != StorageClass::overloads_ &&
                     (localNameSpace->front()->syms || sym->sb->storage_class != StorageClass::auto_))
@@ -1542,9 +1542,9 @@ static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool*
             if (!hasPackedExpression(*exp, true))
             {
                 if (points)
-                    errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, tokenName);
+                    error(ERR_POINTER_TO_STRUCTURE_EXPECTED, tokenName);
                 else
-                    errorstr(ERR_STRUCTURED_TYPE_EXPECTED, tokenName);
+                    error(ERR_STRUCTURED_TYPE_EXPECTED, tokenName);
             }
             while (ISID() || MATCHKW(Keyword::operator_))
             {
@@ -1642,12 +1642,12 @@ static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool*
                         }
                         else if (isTemplate)
                         {
-                            errorsym(ERR_NOT_A_TEMPLATE, sp2);
+                            error(ERR_NOT_A_TEMPLATE, sp2);
                         }
                     }
                     else if (isTemplate)
                     {
-                        errorsym(ERR_NOT_A_TEMPLATE, sp2);
+                        error(ERR_NOT_A_TEMPLATE, sp2);
                     }
                     funcparams->sp = sp2;
                     funcparams->thisptr = *exp;
@@ -1677,7 +1677,7 @@ static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool*
                                     if (sp1)
                                         sp2 = sp1;
                                     else
-                                        errorsym(ERR_NO_TEMPLATE_MATCHES, sp2);
+                                        error(ERR_NO_TEMPLATE_MATCHES, sp2);
                                 }
                             }
                             else if (sp2)
@@ -1688,7 +1688,7 @@ static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool*
                     }
                     else if (isTemplate)
                     {
-                        errorsym(ERR_NOT_A_TEMPLATE, sp2);
+                        error(ERR_NOT_A_TEMPLATE, sp2);
                     }
                     if (sp2->sb->storage_class == StorageClass::external_ || sp2->sb->storage_class == StorageClass::static_)
                     {
@@ -1716,7 +1716,7 @@ static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool*
                         ssp = enclosingDeclarations.GetFirst();
                         if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sp2, funcsp, *exp, true))
                         {
-                            errorsym(ERR_CANNOT_ACCESS, sp2);
+                            error(ERR_CANNOT_ACCESS, sp2);
                         }
                     }
                     bool structuredAlias = false;
@@ -1881,7 +1881,7 @@ Type* LookupSingleAggregate(Type* tp, EXPRESSION** exp, bool memberptr)
             auto sp = *it;
             if (!sp->sb->templateLevel || !sp->sb->mainsym)
             {
-                errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, sp);
+                error(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, sp);
                 break;
             }
         }
@@ -2186,7 +2186,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
     if (it != itend && (*it)->tp->type == BasicType::void_)
     {
         if (itp != itpe)
-            errorsym(ERR_FUNCTION_TAKES_NO_PARAMETERS, params->sp);
+            error(ERR_FUNCTION_TAKES_NO_PARAMETERS, params->sp);
     }
     else
         while (it != itend || itp != itpe)
@@ -2274,7 +2274,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                                 if (base != derived && classRefCount(base, derived) != 1)
                                     errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                 if (base != derived && !isAccessible(derived, derived, base, funcsp, AccessLevel::public_, false))
-                                    errorsym(ERR_CANNOT_ACCESS, base);
+                                    error(ERR_CANNOT_ACCESS, base);
                             }
                             else
                             {
@@ -2317,7 +2317,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                                         errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                     if (base != derived &&
                                         !isAccessible(derived, derived, base, funcsp, AccessLevel::public_, false))
-                                        errorsym(ERR_CANNOT_ACCESS, base);
+                                        error(ERR_CANNOT_ACCESS, base);
                                 }
                                 else if (!isconstzero((*itp)->tp, (*itp)->exp))
                                     errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
@@ -2357,7 +2357,7 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
                                                     if (base != derived && classRefCount(base, derived) != 1)
                                                         errorConversionOrCast(true, (*itp)->tp, decl->tp);
                                                     if (isAccessible(derived, derived, base, funcsp, AccessLevel::public_, false))
-                                                        errorsym(ERR_CANNOT_ACCESS, base);
+                                                        error(ERR_CANNOT_ACCESS, base);
                                                 }
                                                 else
                                                 {
@@ -2462,15 +2462,15 @@ void checkArgs(CallSite* params, SYMBOL* funcsp)
         }
     if (noproto)
     {
-        errorsym(ERR_CALL_FUNCTION_NO_PROTO, params->sp);
+        error(ERR_CALL_FUNCTION_NO_PROTO, params->sp);
     }
     else if (toolong)
     {
-        errorsym(ERR_PARAMETER_LIST_TOO_LONG, params->sp);
+        error(ERR_PARAMETER_LIST_TOO_LONG, params->sp);
     }
     else if (tooshort)
     {
-        errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
+        error(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
     }
 }
 static void getInitInternal(SYMBOL* funcsp, std::list<Argument*>** lptr, Keyword finish, bool allowNesting, bool allowPack,
@@ -4717,7 +4717,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                         }
                     }
                     if (!found && tpln != tplne)
-                        errorsym(ERR_TOO_MANY_ARGS_PASSED_TO_TEMPLATE, sym);
+                        error(ERR_TOO_MANY_ARGS_PASSED_TO_TEMPLATE, sym);
                 }
                 sym->sb->throughClass = funcparams->sp->sb->throughClass;
                 funcparams->sp = sym;
@@ -4727,11 +4727,11 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                     {
                         if (!funcsp->sb->parentClass || classRefCount(sym->sb->parentClass, funcsp->sb->parentClass) == 0)
                         {
-                            errorsym(ERR_USE_DOT_OR_POINTSTO_TO_CALL, sym);
+                            error(ERR_USE_DOT_OR_POINTSTO_TO_CALL, sym);
                         }
                         else if (classRefCount(sym->sb->parentClass, funcsp->sb->parentClass) != 1)
                         {
-                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
+                            error(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
                         }
                         else if (funcsp->sb->storage_class == StorageClass::member_ ||
                                  funcsp->sb->storage_class == StorageClass::virtual_)
@@ -4770,13 +4770,13 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
             *tp = sym->tp;
             if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym, funcsp, funcparams->thisptr, false))
             {
-                errorsym(ERR_CANNOT_ACCESS, sym);
+                error(ERR_CANNOT_ACCESS, sym);
             }
             if (ismember(funcparams->sp))
             {
                 if (funcparams->thistp && funcparams->thistp->BaseType()->btp->IsConst())
                     if (!(*tp)->IsConst())
-                        errorsym(ERR_NON_CONST_FUNCTION_CALLED_FOR_CONST_OBJECT, funcparams->sp);
+                        error(ERR_NON_CONST_FUNCTION_CALLED_FOR_CONST_OBJECT, funcparams->sp);
             }
         }
     }
@@ -4799,7 +4799,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
             else
             {
                 if (!templateDefinitionLevel && !(flags & _F_INDECLTYPE))
-                    errortype(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, *tp, nullptr);
+                    error(ERR_UNABLE_TO_FIND_SUITABLE_OPERATOR_CALL, *tp, nullptr);
             }
         }
         else
@@ -4839,7 +4839,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
             {
                 if (!enclosingDeclarations.GetFirst() && !tp_cpp->IsPtr() && (tp_cpp->BaseType()->type != BasicType::memberptr_) &&
                     !hasThisPtr)
-                    errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
+                    error(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
             }
             std::list<Argument*>::iterator itl, itle = itl;
             if (funcparams->arguments)
@@ -5137,7 +5137,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                             Dereference(tp, &rv);
                             exp_in =
                                 MakeExpression(ExpressionNode::comma_, MakeExpression(ExpressionNode::assign_, rv, exp_in), rv);
-                            errortype(ERR_CREATE_TEMPORARY, tp, tp);
+                            error(ERR_CREATE_TEMPORARY, tp, tp);
                         }
                     }
                     if (exp_in)
@@ -5325,12 +5325,12 @@ static void expression_msilfunc(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
         if (n > 3)
         {
             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-            errorstr(ERR_PARAMETER_LIST_TOO_LONG, "__cpblk/__initblk");
+            error(ERR_PARAMETER_LIST_TOO_LONG, "__cpblk/__initblk");
         }
         else if (n < 3)
         {
             *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-            errorstr(ERR_PARAMETER_LIST_TOO_SHORT, "__cpblk/__initblk");
+            error(ERR_PARAMETER_LIST_TOO_SHORT, "__cpblk/__initblk");
         }
         else
         {
@@ -5346,17 +5346,17 @@ static void expression_msilfunc(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                     if (!arg1->tp->IsPtr())
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__cpblk");
+                        error(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__cpblk");
                     }
                     else if (!arg2->tp->IsPtr())
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__src", "__cpblk");
+                        error(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__src", "__cpblk");
                     }
                     else if (!arg3->tp->IsInt())
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__cpblk");
+                        error(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__cpblk");
                     }
                     else
                     {
@@ -5368,17 +5368,17 @@ static void expression_msilfunc(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int
                     if (!arg1->tp->IsPtr())
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__initblk");
+                        error(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__initblk");
                     }
                     else if (!arg2->tp->IsInt())
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__value", "__initblk");
+                        error(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__value", "__initblk");
                     }
                     else if (!arg3->tp->IsInt())
                     {
                         *exp = MakeIntExpression(ExpressionNode::c_i_, 0);
-                        errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__initblk");
+                        error(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__initblk");
                     }
                     else
                     {
@@ -5477,7 +5477,7 @@ static void expression_string(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 return;
             }
         }
-        errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, data->suffix);
+        error(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, data->suffix);
     }
     if (data->strtype == LexType::l_msilstr_)
     {
@@ -5697,7 +5697,7 @@ static bool getSuffixedChar(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
             return true;
         }
     }
-    errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, currentLex->suffix);
+    error(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, currentLex->suffix);
     if (sym)
     {
         SYMBOL *sym1 = nullptr, *sym2;
@@ -5825,7 +5825,7 @@ static bool getSuffixedNumber(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
             }
         }
     }
-    errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, currentLex->suffix);
+    error(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, currentLex->suffix);
     SYMBOL* sym1 = nullptr;
     auto found = false;
     if (sym)
@@ -6373,12 +6373,12 @@ static bool validate_checked_args(std::list<Argument*>* args)
 
     if (!args || args->size() < 3)
     {
-        errorstr(ERR_PARAMETER_LIST_TOO_SHORT, "<checked math>");
+        error(ERR_PARAMETER_LIST_TOO_SHORT, "<checked math>");
         return false;
     }
     else if (args->size() > 3)
     {
-        errorstr(ERR_PARAMETER_LIST_TOO_LONG, "<checked math>");
+        error(ERR_PARAMETER_LIST_TOO_LONG, "<checked math>");
         return false;
     }
     else
@@ -7421,7 +7421,7 @@ static void expression_ampersand(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSIO
             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
         else if (symRef && symRef->type != ExpressionNode::labcon_ &&
                  symRef->v.sp->sb->attribs.inheritable.linkage2 == Linkage::property_)
-            errorsym(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, symRef->v.sp);
+            error(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, symRef->v.sp);
         else if (inreg(*exp, true))
             error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
         else if ((!btp->IsPtr() || !(btp)->array) && !btp->IsStructured() && !btp->IsFunction() &&
@@ -8808,11 +8808,11 @@ static void expression_hook(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
                         {
                             if (!tpc->SameType(tph))
                                 if (!(tpc->IsArithmetic() && tph->IsArithmetic()))
-                                    errortype(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
+                                    error(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
                         }
                         else if ((tph->IsFunction() || tpc->IsFunction()) && !tpc->CompatibleType(tph))
                             if (!tph->IsArithmetic() && !tpc->IsArithmetic())
-                                errortype(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
+                                error(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
                     }
                 }
                 if (tph->IsFunction())

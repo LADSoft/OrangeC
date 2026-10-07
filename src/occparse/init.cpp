@@ -207,7 +207,7 @@ void dumpStartups(void)
                 }
                 s = search(globalNameSpace->front()->syms, starts.first.c_str());
                 if (!s || s->sb->storage_class != StorageClass::overloads_)
-                    errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
+                    error(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
                 else
                 {
                     s = search(s->tp->syms, starts.first.c_str());
@@ -246,7 +246,7 @@ void dumpStartups(void)
                 }
                 s = search(globalNameSpace->front()->syms, starts.first.c_str());
                 if (!s || s->sb->storage_class != StorageClass::overloads_)
-                    errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
+                    error(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
                 else
                 {
                     s = search(s->tp->syms, starts.first.c_str());
@@ -1634,7 +1634,7 @@ void CheckNarrowing(Type* dest, Type* source, EXPRESSION* exp)
             err = source->IsFloat() || source->type > dest->type || source->IsUnsigned() != dest->IsUnsigned();
         }
         if (err)
-            errortype(ERR_INIT_NARROWING, source, dest);
+            error(ERR_INIT_NARROWING, source, dest);
     }
 }
 static void initialize_arithmetic_type(SYMBOL* funcsp, int offset, StorageClass sc, Type* itype, std::list<Initializer*>** init,
@@ -2159,7 +2159,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, Type* tp, Type* boundTP, St
         {
             if (!isarithmeticconst(exp) && exp->type != ExpressionNode::thisref_ && exp->type != ExpressionNode::callsite_ &&
                 tp->BaseType()->btp->BaseType()->type != BasicType::memberptr_ && !boundTP->rref && !boundTP->lref)
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
+                error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
             if (sc != StorageClass::parameter_ && !boundTP->rref && !boundTP->lref)
                 exp = createTemporary(tp, exp);
         }
@@ -2208,7 +2208,7 @@ static void initialize_reference_type(SYMBOL* funcsp, int offset, StorageClass s
             {
                 tp = tp->BaseType()->btp;
                 if (!itype1->CompatibleType(tp))
-                    errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
+                    error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
             }
             else
             {
@@ -2235,13 +2235,13 @@ static void initialize_reference_type(SYMBOL* funcsp, int offset, StorageClass s
                     }
                     else
                     {
-                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
+                        error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
                     }
                 }
                 else if (tp->IsFunction())
                 {
                     if (!itype1->CompatibleType(tp))
-                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
+                        error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
                     else
                     {
                         funcsp = tp->btp->BaseType()->sp;
@@ -2259,7 +2259,7 @@ static void initialize_reference_type(SYMBOL* funcsp, int offset, StorageClass s
                 else
                 {
                     if (!itype1->CompatibleType(tp))
-                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
+                        error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
                 }
                 if (exp->type == ExpressionNode::labcon_)
                 {
@@ -2288,7 +2288,7 @@ static void initialize_reference_type(SYMBOL* funcsp, int offset, StorageClass s
             }
             else
             {
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
+                error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
             }
         }
         else if (!tp->IsRef() && !tp->IsStructured() && !tp->IsFunction() && (!tp->IsPtr() || !tp->array))
@@ -2315,7 +2315,7 @@ static void initialize_reference_type(SYMBOL* funcsp, int offset, StorageClass s
                 lref = true;
             }
             if (lref)
-                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
+                error(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
         }
     }
     exp->structByAddress = true;
@@ -3399,7 +3399,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                                 spy = spy->tp->sp->sb->maintemplate;
                             if (spx != spy)
                             {
-                                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, spy->name);
+                                error(ERR_CANNOT_DEDUCE_TEMPLATE, spy->name);
                             }
                             exp = exp1;
                             itype = base->tp = tp1;
@@ -4384,7 +4384,7 @@ void initType(SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer
         {
             if (itype->BaseType()->type != BasicType::templateselector_)
             {
-                errortype(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
+                error(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
             }
             else
             {
@@ -4392,7 +4392,7 @@ void initType(SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer
                 if (unpackingTemplate || tpl.sp->name[0] != '_' || tpl.sp->name[2] != 'm' ||
                     strcmp(tpl.sp->name, "__make_integer_seq_cls") != 0)
                 {
-                    errortype(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
+                    error(ERR_CANNOT_INITIALIZE, itype->BaseType(), nullptr);
                 }
                 else
                 {
@@ -4524,7 +4524,7 @@ void initType(SYMBOL* funcsp, int offset, StorageClass sc, std::list<Initializer
             /* fallthrough */
         default:
             if (!templateDefinitionLevel)
-                errortype(ERR_CANNOT_INITIALIZE, tp, nullptr);
+                error(ERR_CANNOT_INITIALIZE, tp, nullptr);
             else if (MATCHKW(Keyword::begin_))
             {
                 getsym();
@@ -4710,7 +4710,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         }
         else
         {
-            errorsym(ERR_INLINE_NO_STATIC, sym);
+            error(ERR_INLINE_NO_STATIC, sym);
         }
     }
     // check for attempt to use an undefined struct
@@ -4754,7 +4754,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         if (MATCHKW(Keyword::assign_))
             errskim(skim_semi);
         if (!templateDefinitionLevel)
-            errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
+            error(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any Keyword::openpa_() will be eaten by an expression parser
     else if (MATCHKW(Keyword::assign_) ||
@@ -4766,7 +4766,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         bool isassign = MATCHKW(Keyword::assign_);
         sym->sb->assigned = true;
         if (sym->sb->init)
-            errorsym(ERR_MULTIPLE_INITIALIZATION, sym);
+            error(ERR_MULTIPLE_INITIALIZATION, sym);
         if (storage_class_in == StorageClass::auto_)
             if (sym->sb->storage_class == StorageClass::external_)
                 error(ERR_EXTERN_NO_INIT);
@@ -4876,7 +4876,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         {
             if (deduceTemplate)
             {
-                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
+                error(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
             }
             if (!tp->BaseType()->sp->sb->trivialCons)
             {
@@ -4929,7 +4929,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         {
             if (deduceTemplate)
             {
-                errorstr(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
+                error(ERR_CANNOT_DEDUCE_TEMPLATE, sym->tp->BaseType()->sp->name);
             }
         }
         else if (sym->tp->IsArray())
@@ -5063,7 +5063,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
     }
     if (sym->tp->IsAutoType() && !MATCHKW(Keyword::colon_))
     {
-        errorsym(ERR_AUTO_NEEDS_INITIALIZATION, sym);
+        error(ERR_AUTO_NEEDS_INITIALIZATION, sym);
         sym->tp = &stdint;
     }
     tp = sym->tp;
@@ -5147,7 +5147,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
                         if (!sym->sb->assigned && (!tp->IsStructured() || !Optimizer::cparams.prm_cplusplus ||
                                                    (tp->BaseType()->sp->sb->trivialCons && hasData(tp))))
                         {
-                            errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sym);
+                            error(ERR_CONSTANT_MUST_BE_INITIALIZED, sym);
                         }
                     }
                 }
@@ -5198,7 +5198,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         if (!sym->sb->init && sym->sb->storage_class != StorageClass::external_ &&
             sym->sb->storage_class != StorageClass::member_ && sym->sb->storage_class != StorageClass::mutable_ && !asExpression)
         {
-            errorsym(ERR_REF_MUST_INITIALIZE, sym);
+            error(ERR_REF_MUST_INITIALIZE, sym);
         }
     }
     if (Optimizer::architecture != ARCHITECTURE_MSIL && !templateInstantiationLevel && !structLevel &&

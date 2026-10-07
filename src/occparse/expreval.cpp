@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -128,7 +128,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
     if (tp->IsFunction())
         error(ERR_SIZEOF_NO_FUNCTION);
     if (Optimizer::cparams.prm_cplusplus && tp->size == 0 && !templateDefinitionLevel)
-        errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
+        error(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */
     if (tp->vla)
@@ -153,7 +153,7 @@ EXPRESSION* nodeSizeof(Type* tp, EXPRESSION* exp, int flags)
         if (tp->IsStructured())
         {
             if (tp->BaseType()->size == 0 && !templateDefinitionLevel)
-                errorsym(ERR_UNSIZED_TYPE, tp->BaseType()->sp);
+                error(ERR_UNSIZED_TYPE, tp->BaseType()->sp);
             if (tp->BaseType()->syms)
             {
                 SYMBOL* cache = nullptr;
@@ -673,15 +673,15 @@ bool eval_binary_pm(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** res
             *resulttp = (*resulttp)->btp;
             if (!(*resulttp)->IsStructured())
             {
-                errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, currentLex->kw->name);
+                error(ERR_POINTER_TO_STRUCTURE_EXPECTED, currentLex->kw->name);
             }
         }
         else
-            errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, currentLex->kw->name);
+            error(ERR_POINTER_TO_STRUCTURE_EXPECTED, currentLex->kw->name);
     }
     else if (!(*resulttp)->IsStructured())
     {
-        errorstr(ERR_STRUCTURED_TYPE_EXPECTED, currentLex->kw->name);
+        error(ERR_STRUCTURED_TYPE_EXPECTED, currentLex->kw->name);
     }
     if (righttp->IsFunction() && (*resulttp)->IsStructured())
     {
@@ -708,7 +708,7 @@ bool eval_binary_pm(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION** res
             {
                 if (classRefCount(righttp->BaseType()->sp, (*resulttp)->sp) != 1)
                 {
-                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, righttp->BaseType()->sp, (*resulttp)->sp);
+                    error(ERR_NOT_UNAMBIGUOUS_BASE, righttp->BaseType()->sp, (*resulttp)->sp);
                 }
                 else
                 {
@@ -1221,7 +1221,7 @@ bool eval_binary_inequality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
             righttp->type == BasicType::aggregate_)
         {
             if (righttp->syms->size() > 1)
-                errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)righttp->syms->front())->name);
+                error(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)righttp->syms->front())->name);
             rightexp = MakeExpression(ExpressionNode::pc_, righttp->syms->front());
             righttp = ((SYMBOL*)righttp->syms->front())->tp;
         }
@@ -1229,7 +1229,7 @@ bool eval_binary_inequality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
                  (*resulttp)->type == BasicType::aggregate_)
         {
             if ((*resulttp)->syms->size() > 1)
-                errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*resulttp)->syms->front())->name);
+                error(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*resulttp)->syms->front())->name);
             (*resultexp) = MakeExpression(ExpressionNode::pc_, (*resulttp)->syms->front());
             (*resulttp) = ((SYMBOL*)(*resulttp)->syms->front())->tp;
         }
@@ -1278,7 +1278,7 @@ bool eval_binary_inequality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSI
     else if ((*resulttp)->IsInt() && righttp->IsInt() && (!IsDefiningTemplate()))
     {
         if (((*resulttp)->IsUnsigned() && !righttp->IsUnsigned()) || (righttp->IsUnsigned() && !(*resulttp)->IsUnsigned()))
-            errorstr(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);
+            error(ERR_SIGNED_UNSIGNED_MISMATCH_RELAT, opname);
     }
     *resulttp = destSize(*resulttp, righttp, resultexp, &rightexp, true, nullptr);
     ExpressionNode type = ExpressionNode::gt_;
@@ -1341,7 +1341,7 @@ bool eval_binary_equality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION
             righttp->type == BasicType::aggregate_)
         {
             if (righttp->syms->size() > 1)
-                errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)righttp->syms->front())->name);
+                error(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)righttp->syms->front())->name);
             rightexp = MakeExpression(ExpressionNode::pc_, righttp->syms->front());
             righttp = ((SYMBOL*)righttp->syms->front())->tp;
         }
@@ -1349,7 +1349,7 @@ bool eval_binary_equality(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION
                  (*resulttp)->type == BasicType::aggregate_)
         {
             if (righttp->syms->size() > 1)
-                errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*resulttp)->syms->front())->name);
+                error(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL*)(*resulttp)->syms->front())->name);
             (*resultexp) = MakeExpression(ExpressionNode::pc_, (*resulttp)->syms->front());
             (*resulttp) = ((SYMBOL*)(*resulttp)->syms->front())->tp;
         }
@@ -1705,10 +1705,10 @@ bool eval_binary_assign(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION**
         error(ERR_LVALUE);
     else if (symRef && symRef->v.sp->sb->attribs.inheritable.linkage2 == Linkage::property_ &&
              !symRef->v.sp->sb->has_property_setter)
-        errorsym(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
+        error(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
     else if ((*resulttp)->IsStructured() && !(*resulttp)->BaseType()->sp->sb->trivialCons)
     {
-        errorsym(ERR_NO_ASSIGNMENT_OPERATOR, (*resulttp)->BaseType()->sp);
+        error(ERR_NO_ASSIGNMENT_OPERATOR, (*resulttp)->BaseType()->sp);
     }
     else
         switch (kw)
@@ -1981,7 +1981,7 @@ bool eval_binary_assign(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION**
                 else if ((*resulttp)->IsStructured() && !(*resulttp)->size)
                 {
                     if (!(flags & _F_SIZEOF))
-                        errorsym(ERR_STRUCT_NOT_DEFINED, (*resulttp)->BaseType()->sp);
+                        error(ERR_STRUCT_NOT_DEFINED, (*resulttp)->BaseType()->sp);
                 }
                 else if (!(*resulttp)->IsStructured() && righttp->IsStructured())
                 {

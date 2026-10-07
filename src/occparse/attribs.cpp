@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -157,7 +157,7 @@ void ParseOut___attribute__(SYMBOL* funcsp)
                     auto attrib = gccStyleAttribNames.find(name.c_str());
                     if (attrib == gccStyleAttribNames.end())
                     {
-                        errorstr(ERR_ATTRIBUTE_DOES_NOT_EXIST, name.c_str());
+                        error(ERR_ATTRIBUTE_DOES_NOT_EXIST, name.c_str());
                     }
                     else
                     {
@@ -278,7 +278,7 @@ void ParseOut___attribute__(SYMBOL* funcsp)
                                         }
                                         else
                                         {
-                                            errorstr(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
+                                            error(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
                                         }
                                         getsym();
                                     }
@@ -302,7 +302,7 @@ void ParseOut___attribute__(SYMBOL* funcsp)
                                         }
                                         else
                                         {
-                                            errorstr(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
+                                            error(ERR_UNDEFINED_IDENTIFIER, currentLex->value.s.a);
                                         }
                                         getsym();
                                     }
@@ -668,15 +668,14 @@ bool ParseAttributeSpecifiers(SYMBOL* funcsp, bool always)
                                         }
                                         else
                                         {
-                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                      occNamespace.c_str());
+                                            error(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(), occNamespace.c_str());
                                         }
                                         getsym();
                                     }
                                 }
                                 else
                                 {
-                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                    error(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
                                 }
                             }
                             else if (stripped_ver == clangNamespace)
@@ -709,15 +708,14 @@ bool ParseAttributeSpecifiers(SYMBOL* funcsp, bool always)
                                         }
                                         else
                                         {
-                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                      clangNamespace.c_str());
+                                            error(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(), clangNamespace.c_str());
                                         }
                                         getsym();
                                     }
                                 }
                                 else
                                 {
-                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
+                                    error(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, clangNamespace.c_str());
                                 }
                             }
                             else if (stripped_ver == gccNamespace)
@@ -761,15 +759,14 @@ bool ParseAttributeSpecifiers(SYMBOL* funcsp, bool always)
                                         }
                                         else
                                         {
-                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
-                                                      gccNamespace.c_str());
+                                            error(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(), gccNamespace.c_str());
                                         }
                                         getsym();
                                     }
                                 }
                                 else
                                 {
-                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
+                                    error(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
                                 }
                             }
                             else

@@ -107,7 +107,7 @@ ERRLIST(ERR_C99_KEYWORD, 75, "'%s' is a C99 or C11 keyword - did you mean to spe
 ERRLIST(ERR_TOO_MANY_TYPE_SPECIFIERS, 76, "Too many types in declaration", CE_ERROR)
 ERRLIST(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION, 77, "Too many identifiers in declaration", CE_ERROR)
 ERRLIST(ERR_TYPE_C99, 78, "Type '%s' requires C99", CE_ERROR)
-ERRLIST(ERR_VOID_NOT_ALLOWED, 79, "Type 'void' not allowed here", CE_ERROR)
+ERRLIST(ERR_VOID_NOT_ALLOWED, 79, "this use of 'void' ('%s') not allowed", CE_ERROR)
 ERRLIST(ERR_INCOMPATIBLE_TYPE_CONVERSION, 80, "Incompatible type conversion", CE_ERROR)
 ERRLIST(ERR_REDEFINITION_OF_TYPE, 81, "Multiple declaration for type '%s'", CE_ERROR)
 ERRLIST(ERR_TOO_MANY_QUALIFIERS, 82, "Too many type qualifiers", CE_ERROR)

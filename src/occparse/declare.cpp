@@ -3526,7 +3526,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                         if (tp1->IsVoid())
                             if (sp->sb->storage_class != StorageClass::parameter_ &&
                                 sp->sb->storage_class != StorageClass::typedef_)
-                                error(ERR_VOID_NOT_ALLOWED);
+                                error(ERR_VOID_NOT_ALLOWED, sp);
                         if (sp->sb->attribs.inheritable.linkage3 == Linkage::threadlocal_)
                         {
                             RequiresDialect::Keyword(Dialect::c11, "_Thread_local");

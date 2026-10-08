@@ -4303,7 +4303,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
             {
                 if (spi->tp == nullptr)
                 {
-                    if (Optimizer::cparams.c_dialect >= Dialect::c99)
+                    if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.c_dialect >= Dialect::c99)
                         error(ERR_MISSING_TYPE_FOR_PARAMETER, spi);
                     spi->tp = Type::MakeType(BasicType::int_);
                 }
@@ -4345,7 +4345,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
             getsym();
         }
         // else may have a constructor
-        else if (*spin)
+        else if (*spin && Optimizer::cparams.prm_cplusplus)
         {
             (*spin)->tp = tp = tp->btp;
             // constructor initialization

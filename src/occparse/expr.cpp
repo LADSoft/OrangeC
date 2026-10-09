@@ -8535,8 +8535,6 @@ static void expression_hook(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** e
         return;
     if (MATCHKW(Keyword::hook_))
     {
-        if (funcsp && !strcmp(funcsp->name, "mm"))
-            printf("hi");
         Type *tph = nullptr, *tpc = nullptr;
         EXPRESSION *eph = nullptr, *epc = nullptr;
         if (Optimizer::cparams.prm_cplusplus && *tp && (*tp)->IsStructured())

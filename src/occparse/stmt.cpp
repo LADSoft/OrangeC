@@ -2621,7 +2621,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                                 if (CallConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, implicit, false,
                                                     false, false, false))
                                 {
-                                    if (funcparams->sp && matchesCopy(funcparams->sp, true))
+                                    if (funcparams->sp && MatchesCopyConstructor(funcparams->sp, true))
                                     {
                                         switch (exp1->type)
                                         {
@@ -4054,8 +4054,7 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
         if (Optimizer::cparams.prm_cplusplus && funcsp->sb->isConstructor && funcsp->sb->parentClass)
         {
             ParseConstructorInitializers(funcsp->sb->parentClass, funcsp);
-            thisptr =
-                thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, funcsp->tp->BaseType()->syms, true, false, false);
+            thisptr = thunkConstructorHead(parent, funcsp->sb->parentClass, funcsp, funcsp->tp->BaseType()->syms, true);
         }
     }
     bool viaTry = MATCHKW(Keyword::try_);

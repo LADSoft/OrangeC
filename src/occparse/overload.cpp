@@ -3987,7 +3987,8 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                                                           !SameTemplate(tp1->BaseType(), sym->sb->parentClass->tp)))))
                         {
                             initializerListType = tp1->BaseType();
-                            if (!sym->sb->parentClass || (!matchesCopy(sym, false) && !matchesCopy(sym, true)))
+                            if (!sym->sb->parentClass ||
+                                (!MatchesCopyConstructor(sym, false) && !MatchesCopyConstructor(sym, true)))
                             {
                                 getInitListConversion(tp1->BaseType(), (*ita)->nested, nullptr, &m, seq, sym,
                                                       userFunc ? &userFunc[n] : nullptr);
@@ -5084,6 +5085,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         hasDest |= spList[i] && spList[i]->sb->deleted;
                         hasImplicit |= spList[i] && !spList[i]->sb->isExplicit;
                     }
+                    // prefer an implicit function if that is selected
                     if ((flags & _F_IMPLICIT) && hasImplicit)
                     {
                         for (int i = 0; i < n; i++)

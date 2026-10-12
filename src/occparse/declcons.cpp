@@ -320,7 +320,7 @@ static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
     sp1->tp->UpdateRootTypes();
     return insertFunc(sp, func);
 }
-bool matchesDefaultConstructor(SYMBOL* sp)
+bool MatchesDefaultConstructor(SYMBOL* sp)
 {
     auto it = sp->tp->BaseType()->syms->begin();
     ++it;
@@ -332,7 +332,7 @@ bool matchesDefaultConstructor(SYMBOL* sp)
     }
     return false;
 }
-bool matchesCopy(SYMBOL* sp, bool move)
+bool MatchesCopyConstructor(SYMBOL* sp, bool move)
 {
     if (sp->sb->parentClass)
     {
@@ -419,7 +419,7 @@ static bool checkDefaultCons(SYMBOL* sp, SymbolTable<SYMBOL>* syms, AccessLevel 
         SYMBOL* dflt = nullptr;
         for (auto cur : *cons->tp->BaseType()->syms)
         {
-            if (matchesDefaultConstructor(cur))
+            if (MatchesDefaultConstructor(cur))
             {
                 if (dflt)
                     return true;  // ambiguity
@@ -667,7 +667,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
                 SYMBOL* consovl = search(sp1->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
                 for (auto cons : *consovl->tp->BaseType()->syms)
                 {
-                    if (matchesDefaultConstructor(cons))
+                    if (MatchesDefaultConstructor(cons))
                         if (!cons->sb->trivialCons)
                             return true;
                 }
@@ -748,7 +748,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
                 SYMBOL* consovl = search(sp1->tp->BaseType()->syms, overloadNameTab[CI_CONSTRUCTOR]);
                 for (auto cons : *consovl->tp->BaseType()->syms)
                 {
-                    if (matchesCopy(cons, false))
+                    if (MatchesCopyConstructor(cons, false))
                         if (!cons->sb->trivialCons)
                             return true;
                 }
@@ -812,7 +812,7 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
                     search(sp1->tp->BaseType()->syms, overloadNameTab[(int)Keyword::assign_ - (int)Keyword::new_ + CI_NEW]);
                 for (auto cons : *consovl->tp->BaseType()->syms)
                 {
-                    if (matchesCopy(cons, false))
+                    if (MatchesCopyConstructor(cons, false))
                         if (!cons->sb->trivialCons)
                             return true;
                 }
@@ -864,7 +864,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
                 {
                     for (auto cons : *consovl->tp->BaseType()->syms)
                     {
-                        if (matchesCopy(cons, true))
+                        if (MatchesCopyConstructor(cons, true))
                             if (!cons->sb->trivialCons)
                                 return true;
                     }
@@ -929,7 +929,7 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
                 {
                     for (auto cons : *consovl->tp->BaseType()->syms)
                     {
-                        if (matchesCopy(cons, true))
+                        if (MatchesCopyConstructor(cons, true))
                             if (!cons->sb->trivialCons)
                                 return true;
                     }
@@ -1036,7 +1036,7 @@ static void conditionallyDeleteDefaultConstructor(SYMBOL* func)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesDefaultConstructor(sp))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && MatchesDefaultConstructor(sp))
         {
             if (isDefaultDeleted(sp->sb->parentClass))
             {
@@ -1049,7 +1049,7 @@ static bool conditionallyDeleteCopyConstructor(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesCopy(sp, move))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && MatchesCopyConstructor(sp, move))
         {
             if (move && isMoveConstructorDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
@@ -1063,7 +1063,7 @@ static bool conditionallyDeleteCopyAssignment(SYMBOL* func, bool move)
 {
     for (auto sp : *func->tp->BaseType()->syms)
     {
-        if (sp->sb->defaulted && !sp->sb->explicitDefault && matchesCopy(sp, move))
+        if (sp->sb->defaulted && !sp->sb->explicitDefault && MatchesCopyConstructor(sp, move))
         {
             if (move && isMoveAssignmentDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
@@ -1119,7 +1119,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
     SYMBOL* match = nullptr;
     for (auto sym : *cons->tp->BaseType()->syms)
     {
-        if (matchesDefaultConstructor(sym))
+        if (MatchesDefaultConstructor(sym))
         {
             if (match)
                 return;  // will get an error elsewhere because of the duplicate
@@ -1384,12 +1384,13 @@ void ConditionallyDeleteClassMethods(SYMBOL* sp)
         conditionallyDeleteDestructor(dest->tp->syms->front());
     }
 }
-static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CONSTRUCTORINITIALIZER*>* mi, SYMBOL* member,
-                        int offset, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool doCopy)
+static void GenConstructorData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CONSTRUCTORINITIALIZER*>* mi, SYMBOL* member,
+                               int offset, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons)
 {
     (void)cls;
     (void)mi;
-    if (doCopy && (matchesCopy(parentCons, false) || matchesCopy(parentCons, true)))
+    // if a function head and it is a copy constructor do the copy
+    if (parentCons->sb->defaulted && MatchesCopyConstructor(parentCons, false) || MatchesCopyConstructor(parentCons, true))
     {
         thisptr = MakeExpression(ExpressionNode::structadd_, thisptr, MakeIntExpression(ExpressionNode::c_i_, offset));
         otherptr = MakeExpression(ExpressionNode::structadd_, otherptr, MakeIntExpression(ExpressionNode::c_i_, offset));
@@ -1415,6 +1416,7 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CON
             st->select = exp;
         }
     }
+    // else if there is an inline member initializer poke it in
     else if (member->sb->init)
     {
         EXPRESSION* exp;
@@ -1424,14 +1426,18 @@ static void genConsData(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CON
         st->select = exp;
     }
 }
-static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CONSTRUCTORINITIALIZER*>* mi, SYMBOL* member,
+static void GenConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::list<CONSTRUCTORINITIALIZER*>* mi, SYMBOL* member,
                                int memberOffs, bool top, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons,
-                               bool baseClass, bool doCopy, bool useDefault)
+                               bool baseClass)
 {
+    // parse initializers, prefer initializers
+    // not parse initializers,
+    bool found = false;
     Statement* st = nullptr;
+    EXPRESSION* exp = nullptr;
+    // any initialization on this constructor trumps everything
     if (cls != member && member->sb->init)
     {
-        EXPRESSION* exp;
         if (member->sb->init->front()->exp)
         {
             exp = ConverInitializersToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
@@ -1450,22 +1456,67 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
             exp = MakeExpression(ExpressionNode::blockclear_, exp);
             exp->size = member->tp;
         }
-        st = Statement::MakeStatement(b, StatementNode::expr_);
-        optimize_for_constants(&exp);
-        st->select = exp;
+        found = true;
     }
     else
     {
         Type* ctype = member->tp;
-        EXPRESSION* exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
-        if (doCopy && matchesCopy(parentCons, false))
+        // otherwise check if there is an initializer on the parent that matches this call
+        CONSTRUCTORINITIALIZER* mix = nullptr;
+        if (mi && mi->size() && mi->front() && mi->front()->sp && baseClass)
         {
-            if (useDefault)
+            for (auto mi2 : *mi)
             {
-                if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
-                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                if (mi2->sp)
+                {
+                    mi2->sp->tp->InstantiateDeferred();
+                    if (mi2->sp->tp->IsStructured() &&
+                        (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate ||
+                         SameTemplate(mi2->sp->tp, member->tp)))
+                    {
+                        mix = mi2;
+                        break;
+                    }
+                }
             }
-            else
+        }
+        if (mix)
+        {
+            // there is an existing initializer, apply it
+            CallSite* funcparams = Allocate<CallSite>();
+            if (!funcparams->arguments)
+                funcparams->arguments = argumentListFactory.CreateList();
+            if (mix->init)
+            {
+                for (auto init : *mix->init)
+                {
+                    if (!init->exp)
+                        break;
+                    auto arg = Allocate<Argument>();
+                    arg->tp = init->basetp;
+                    arg->exp = init->exp;
+                    funcparams->arguments->push_back(arg);
+                }
+            }
+            exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
+            if (!CallConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
+                error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+            if (mix->sp && !mix->init)
+            {
+                EXPRESSION* clr = MakeExpression(ExpressionNode::blockclear_, exp);
+                clr->size = mix->sp->tp;
+                exp = MakeExpression(ExpressionNode::comma_, clr, exp);
+            }
+            // previously, CallConstructor can return false here, meaning that funcparams->sp is null
+            // This used to create a nullptr dereference in PromoteConstructorArgs
+            // Why this is only being found NOW is somewhat dumb, but it is.
+            PromoteConstructorArgs(funcparams->sp, funcparams);
+            // we don't need any prospective special constructor calls
+            found = true;
+        }
+        if (!found)
+        {
+            if ((parentCons->sb->defaulted || parentCons->sb->internallyGenned) && MatchesCopyConstructor(parentCons, false))
             {
                 EXPRESSION* other =
                     MakeExpression(ExpressionNode::add_, otherptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
@@ -1480,18 +1531,12 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                     tp->btp = Type::MakeType(BasicType::const_, tp->btp);
                 }
                 tp->UpdateRootTypes();
+                exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
                     error(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+                found = true;
             }
-        }
-        else if (doCopy && matchesCopy(parentCons, true))
-        {
-            if (useDefault)
-            {
-                if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
-                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
-            }
-            else
+            else if ((parentCons->sb->defaulted || parentCons->sb->internallyGenned) && MatchesCopyConstructor(parentCons, true))
             {
                 EXPRESSION* other =
                     MakeExpression(ExpressionNode::add_, otherptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
@@ -1505,66 +1550,22 @@ static void genConstructorCall(std::list<FunctionBlock*>& b, SYMBOL* cls, std::l
                     tp->btp = Type::MakeType(BasicType::const_, tp->btp);
                 }
                 tp->UpdateRootTypes();
+                exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
                     error(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-            }
-        }
-        else
-        {
-            CONSTRUCTORINITIALIZER* mix = nullptr;
-            if (mi && mi->size() && mi->front() && mi->front()->sp && baseClass)
-            {
-                for (auto mi2 : *mi)
-                {
-                    if (mi2->sp)
-                    {
-                        mi2->sp->tp->InstantiateDeferred();
-                        if (mi2->sp->tp->IsStructured() &&
-                            (mi2->sp->tp->BaseType()->sp == member || mi2->sp->tp->BaseType()->sp == member->sb->maintemplate ||
-                             SameTemplate(mi2->sp->tp, member->tp)))
-                        {
-                            mix = mi2;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (mix)
-            {
-                CallSite* funcparams = Allocate<CallSite>();
-                if (!funcparams->arguments)
-                    funcparams->arguments = argumentListFactory.CreateList();
-                if (mix->init)
-                {
-                    for (auto init : *mix->init)
-                    {
-                        if (!init->exp)
-                            break;
-                        auto arg = Allocate<Argument>();
-                        arg->tp = init->basetp;
-                        arg->exp = init->exp;
-                        funcparams->arguments->push_back(arg);
-                    }
-                }
-                if (!CallConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
-                    error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
-                if (mix->sp && !mix->init)
-                {
-                    EXPRESSION* clr = MakeExpression(ExpressionNode::blockclear_, exp);
-                    clr->size = mix->sp->tp;
-                    exp = MakeExpression(ExpressionNode::comma_, clr, exp);
-                }
-                // previously, CallConstructor can return false here, meaning that funcparams->sp is null
-                // This used to create a nullptr dereference in PromoteConstructorArgs
-                // Why this is only being found NOW is somewhat dumb, but it is.
-                PromoteConstructorArgs(funcparams->sp, funcparams);
+                found = true;
             }
             else
             {
+                exp = MakeExpression(ExpressionNode::add_, thisptr, MakeIntExpression(ExpressionNode::c_i_, memberOffs));
                 if (!CallConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     error(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                found = true;
             }
         }
+    }
+    if (found)
+    {
         st = Statement::MakeStatement(b, StatementNode::expr_);
         optimize_for_constants(&exp);
         st->select = exp;
@@ -1655,7 +1656,7 @@ static void dovtabThunks(std::list<FunctionBlock*>& b, SYMBOL* sym, EXPRESSION* 
     }
 }
 static void doVirtualBases(std::list<FunctionBlock*>& b, SYMBOL* sp, std::list<CONSTRUCTORINITIALIZER*>* mi,
-                           std::list<VBASEENTRY*>* vbe, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool doCopy)
+                           std::list<VBASEENTRY*>* vbe, EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons)
 {
     if (vbe && vbe->size())
     {
@@ -1663,8 +1664,7 @@ static void doVirtualBases(std::list<FunctionBlock*>& b, SYMBOL* sp, std::list<C
         {
             --it;
             if ((*it)->alloc)
-                genConstructorCall(b, sp, mi, (*it)->cls, (*it)->structOffset, false, thisptr, otherptr, parentCons, true, doCopy,
-                                   false);
+                GenConstructorCall(b, sp, mi, (*it)->cls, (*it)->structOffset, false, thisptr, otherptr, parentCons, true);
         }
     }
 }
@@ -2242,14 +2242,11 @@ static void releaseInitializers(SYMBOL* cls, SYMBOL* cons)
     }
 }
 EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMBOL* cons, SymbolTable<SYMBOL>* syms,
-                                 bool parseInitializers, bool doCopy, bool defaulted)
+                                 bool parseInitializers)
 {
     BASECLASS* bc;
     EXPRESSION* thisptr = MakeExpression(ExpressionNode::auto_, syms->front());
     EXPRESSION* otherptr = nullptr;
-    int oldCodeLabel = codeLabel;
-    if (defaulted)
-        codeLabel = INT_MIN;
     auto it = syms->begin();
     ++it;
     if (it != syms->end())
@@ -2261,8 +2258,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
     if (cons->sb->constructorInitializers && *cons->sb->constructorInitializers && (*cons->sb->constructorInitializers)->size() &&
         (*cons->sb->constructorInitializers)->front()->delegating)
     {
-        genConstructorCall(b, sym, *cons->sb->constructorInitializers, sym, 0, true, thisptr, otherptr, cons, true, doCopy,
-                           !cons->sb->defaulted);
+        GenConstructorCall(b, sym, *cons->sb->constructorInitializers, sym, 0, true, thisptr, otherptr, cons, true);
     }
     else
     {
@@ -2282,13 +2278,13 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     {
                         if (sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->trivialCons)
                         {
-                            genConstructorCall(b, sp->tp->BaseType()->sp, *cons->sb->constructorInitializers, sp, sp->sb->offset,
-                                               true, thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
+                            GenConstructorCall(b, sp->tp->BaseType()->sp, *cons->sb->constructorInitializers, sp, sp->sb->offset,
+                                               true, thisptr, otherptr, cons, false);
                         }
                         else
                         {
-                            genConsData(b, sym, *cons->sb->constructorInitializers, sp, sp->sb->offset, thisptr, otherptr, cons,
-                                        doCopy);
+                            GenConstructorData(b, sym, *cons->sb->constructorInitializers, sp, sp->sb->offset, thisptr, otherptr,
+                                               cons);
                         }
                     }
                 }
@@ -2314,7 +2310,7 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                 st->select = val;
                 st->label = lbl;
                 virtualBaseThunks(b, sym, thisptr);
-                doVirtualBases(b, sym, *cons->sb->constructorInitializers, sym->sb->vbaseEntries, thisptr, otherptr, cons, doCopy);
+                doVirtualBases(b, sym, *cons->sb->constructorInitializers, sym->sb->vbaseEntries, thisptr, otherptr, cons);
                 if (hasVTab(sym))
                     dovtabThunks(b, sym, thisptr, true);
                 st = Statement::MakeStatement(b, StatementNode::label_);
@@ -2324,10 +2320,8 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
             if (sym->sb->baseClasses)
                 for (auto bc : *sym->sb->baseClasses)
                     if (!bc->isvirtual)
-                        genConstructorCall(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr,
-                                           bc->cls, bc->offset, false, thisptr, otherptr, cons, true,
-                                           doCopy || !cons->sb->constructorInitializers || !*cons->sb->constructorInitializers,
-                                           !cons->sb->defaulted);
+                        GenConstructorCall(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr,
+                                           bc->cls, bc->offset, false, thisptr, otherptr, cons, true);
             if (hasVTab(sym))
                 dovtabThunks(b, sym, thisptr, false);
             for (auto sp : *sym->tp->syms)
@@ -2338,14 +2332,14 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
                     sp->tp->InitializeDeferred();
                     if (sp->tp->IsStructured() && !sp->tp->BaseType()->sp->sb->trivialCons)
                     {
-                        genConstructorCall(b, sp->tp->BaseType()->sp,
+                        GenConstructorCall(b, sp->tp->BaseType()->sp,
                                            cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp,
-                                           sp->sb->offset, true, thisptr, otherptr, cons, false, doCopy, !cons->sb->defaulted);
+                                           sp->sb->offset, true, thisptr, otherptr, cons, false);
                     }
                     else
                     {
-                        genConsData(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr, sp,
-                                    sp->sb->offset, thisptr, otherptr, cons, doCopy);
+                        GenConstructorData(b, sym, cons->sb->constructorInitializers ? *cons->sb->constructorInitializers : nullptr,
+                                           sp, sp->sb->offset, thisptr, otherptr, cons);
                     }
                 }
             }
@@ -2355,8 +2349,6 @@ EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMB
     if (parseInitializers)
         releaseInitializers(sym, cons);
     cons->sb->labelCount = codeLabel - INT_MIN;
-    if (defaulted)
-        codeLabel = oldCodeLabel;
     return thisptr;
 }
 static bool DefaultConstructorConstExpression(SYMBOL* sp)
@@ -2406,7 +2398,10 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     bd.type = Keyword::begin_;
     syms = localNameSpace->front()->syms;
     localNameSpace->front()->syms = consfunc->tp->BaseType()->syms;
-    thisptr = thunkConstructorHead(b, sp, consfunc, consfunc->tp->BaseType()->syms, false, true, true);
+    int oldCodeLabel = codeLabel;
+    codeLabel = INT_MIN;
+    thisptr = thunkConstructorHead(b, sp, consfunc, consfunc->tp->BaseType()->syms, false);
+    codeLabel = oldCodeLabel;
     st = Statement::MakeStatement(b, StatementNode::return_);
     st->select = thisptr;
     if (!inNoExceptHandler)
@@ -2445,7 +2440,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
         }
     }
     consfunc->sb->constexpression =
-        DefaultConstructorConstExpression(sp) || matchesCopy(consfunc, false) || matchesCopy(consfunc, true);
+        DefaultConstructorConstExpression(sp) || MatchesCopyConstructor(consfunc, false) || MatchesCopyConstructor(consfunc, true);
     sp->sb->literalClass |= consfunc->sb->constexpression;
     localNameSpace->front()->syms = syms;
     noExcept &= oldNoExcept;

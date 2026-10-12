@@ -1,0 +1,72 @@
+d1
+b1()
+b2()
+c1()
+b1()
+b2()
+c1()
+b1()
+b2()
+c1()
+d2
+b1(int)
+b2()
+c1()
+b1(const b1&)
+b2(const b2&)
+c1(const c1&)
+b1(int)
+b2()
+c1(int)
+d3
+b1(int)
+b2()
+c1()
+b1(const b1&)
+b2()
+c1()
+b1(int)
+b2()
+c1()
+d4
+b1()
+b2()
+c1()
+b1(const b1&)
+b2(const b2&)
+c1(const c1&)
+b1()
+b2()
+c1()
+d5
+b1(int)
+b2()
+c1()
+b1()
+b2()
+c1()
+b1(int)
+b2()
+c1(int)
+a2 ok
+a2 ok
+a2d ok
+a2d ok
+a2c ok
+a2c ok
+a2b ok
+a2b ok
+a2b ok
+a2b ok
+a2b ok
+a2b ok
+a2a ok
+a2a ok
+a2a ok
+a2 ok
+a2 ok
+a2 ok
+a2 ok
+a2 ok
+a2 ok
+a1 ok

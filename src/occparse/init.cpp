@@ -3574,7 +3574,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                 // copy constructor elision
                 if (tryelide && exp->type == ExpressionNode::thisref_ && exp->left->v.func->thistp &&
                     itype->SameType(exp->left->v.func->thistp) && exp->left->v.func->sp->sb->isConstructor &&
-                    matchesCopy(exp->left->v.func->sp, false))
+                    MatchesCopyConstructor(exp->left->v.func->sp, false))
                 {
                     exp = funcparams->arguments->back()->exp;
                 }

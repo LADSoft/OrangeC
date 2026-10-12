@@ -3663,7 +3663,7 @@ void AdjustSingleParam(SYMBOL* func, SYMBOL* sym, Argument* p, std::list<Argumen
                         (!sym->tp->SameType(p->exp->left->v.func->thistp) &&
                          !SameTemplate(sym->tp, p->exp->left->v.func->thistp)) ||
                         !exp || exp->type != ExpressionNode::thisref_ || !exp->left->v.func->sp->sb->isConstructor ||
-                        !matchesCopy(exp->left->v.func->sp, false))
+                        !MatchesCopyConstructor(exp->left->v.func->sp, false))
                     {
                         if (exp->type == ExpressionNode::auto_)  // recursive call to constructor A<U>(A<U>)
                         {

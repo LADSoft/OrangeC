@@ -37,13 +37,13 @@ void createDefaultConstructors(SYMBOL* sp);
 void createDestructor(SYMBOL* sp);
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
 //
-bool matchesCopy(SYMBOL* sp, bool move);
+bool MatchesCopyConstructor(SYMBOL* sp, bool move);
 SYMBOL* getCopyCons(SYMBOL* base, bool move);
 bool hasVTab(SYMBOL* sp);
 SYMBOL* findClassName(const char* name, SYMBOL* cls, std::list<BASECLASS*>* bc, std::list<VBASEENTRY*>* vbase, int* offset);
 void ParseConstructorInitializers(SYMBOL* cls, SYMBOL* cons);
 EXPRESSION* thunkConstructorHead(std::list<FunctionBlock*>& b, SYMBOL* sym, SYMBOL* cons, SymbolTable<SYMBOL>* syms,
-                                 bool parseInitializers, bool doCopy, bool defaulted);
+                                 bool parseInitializers);
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
 void createAssignment(SYMBOL* sym, SYMBOL* asnfunc);
 void thunkDestructorTail(std::list<FunctionBlock*>& b, SYMBOL* sp, SYMBOL* dest, SymbolTable<SYMBOL>* syms, bool defaulted);

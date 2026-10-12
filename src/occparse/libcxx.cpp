@@ -1,6 +1,6 @@
 ﻿/* Software License Agreement
  *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2018, 2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -499,7 +499,7 @@ static bool trivialFunc(SYMBOL* func, bool move)
 {
     for (auto sym : *func->tp->BaseType()->syms)
     {
-        if (matchesCopy(sym, move))
+        if (MatchesCopyConstructor(sym, move))
         {
             return sym->sb->defaulted;
         }

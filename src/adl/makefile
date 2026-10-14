@@ -28,7 +28,7 @@
 UTIL:=../util
 ifeq "$(COMPILER)" "gcc-linux"
 CC1:=g++
-CC1FLAGS := -O2 -I $(UTIL) -std=c++17
+CC1FLAGS := -O2 -I $(UTIL) -DHAVE_UNISTD_H=1 -std=c++17
 OUTSPECIFIER:= -o
 EXE=adl
 else

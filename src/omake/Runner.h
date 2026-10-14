@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -30,11 +30,41 @@
 #include <unordered_map>
 #include <list>
 #include <set>
+#include <future>
+#include <thread>
+#include <chrono>
 #include "Spawner.h"
 #include "Maker.h"
 
 class Depends;
 class Variable;
+struct future_holding_struct
+{
+    std::string command;
+    std::future<int> return_value;
+    future_holding_struct(const std::string& command, std::future<int>&& return_value) :
+        command(command), return_value(std::future(std::move(return_value)))
+    {
+    }
+    int get() { return return_value.get(); }
+    bool valid() { return return_value.valid(); }
+    template <class Rep, class Period>
+    std::future_status wait_for(const std::chrono::duration<Rep, Period>& timeout_duration) const
+    {
+        return return_value.wait_for(timeout_duration);
+    }
+    future_holding_struct(future_holding_struct&& other) noexcept
+    {
+        this->command = std::move(other.command);
+        this->return_value = std::move(other.return_value);
+    }
+    future_holding_struct& operator=(future_holding_struct&& holder) noexcept
+    {
+        this->command.swap(holder.command);
+        this->return_value = std::move(holder.return_value);
+        return *this;
+    }
+};
 class Runner
 {
   public:
@@ -55,6 +85,7 @@ class Runner
     void CancelOne(Depends* depend);
 
   protected:
+    void WaitAll(int& rv, bool keepGoing, std::vector<future_holding_struct>& workingList);
     static void CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* ruleStack, Depends* depend,
                            EnvironmentStrings* env, bool keepGoing, std::promise<int> promise);
 

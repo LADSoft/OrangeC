@@ -33,8 +33,6 @@
 #include <list>
 #include <cstdlib>
 #include <iostream>
-#include <thread>
-#include <chrono>
 #include "BasicLogging.h"
 void Runner::DeleteOne(Depends* depend)
 {
@@ -52,80 +50,15 @@ void Runner::CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* li
     promise.set_value(retval);
     OrangeC::Utils::BasicLogger::debug("CallRunner returning from a runner: ", depend->GetGoal());
 }
-struct future_holding_struct
+void Runner::WaitAll(int& rv, bool keepGoing, std::vector<future_holding_struct>& workingList)
 {
-    std::string command;
-    std::future<int> return_value;
-    future_holding_struct(const std::string& command, std::future<int>&& return_value) :
-        command(command), return_value(std::future(std::move(return_value)))
-    {
-    }
-    int get() { return return_value.get(); }
-    bool valid() { return return_value.valid(); }
-    template <class Rep, class Period>
-    std::future_status wait_for(const std::chrono::duration<Rep, Period>& timeout_duration) const
-    {
-        return return_value.wait_for(timeout_duration);
-    }
-    future_holding_struct(future_holding_struct&& other) noexcept
-    {
-        this->command = std::move(other.command);
-        this->return_value = std::move(other.return_value);
-    }
-    future_holding_struct& operator=(future_holding_struct&& holder) noexcept
-    {
-        this->command.swap(holder.command);
-        this->return_value = std::move(holder.return_value);
-        return *this;
-    }
-};
-int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
-{
-    std::shared_ptr<RuleList> rl = depend->GetRuleList();
-    if (rl->IsBuilt())
-    {
-        rl->Wait();
-        return 0;
-    }
-    rl->SetBuilt();
-    auto ruleStack(*ruleStack_in);
-    ruleStack.push_back(rl);
-    std::vector<future_holding_struct> workingList;
-    int rv = 0;
-    bool stop = false;
-    for (auto& i : *depend)
-    {
-        std::promise<int> promise;
-        workingList.push_back(future_holding_struct(depend->GetGoal(), promise.get_future()));
-        OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: ", i->GetGoal());
-
-        std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(20ms);
-        if (MakeMain::jobs.GetValue() == 1)
-        {
-            int rv1 = workingList.back().get();
-            workingList.pop_back();
-            if (rv <= 0 && rv1 != 0)
-                rv = rv1;
-            if (rv > 0)
-            {
-                if (!keepGoing)
-                {
-                    stop = true;
-                    Spawner::Stop();
-                    OS::TerminateAll();
-                    break;
-                }
-            }
-        }
-    }
     for (auto it = workingList.begin(); it != workingList.end(); it++)
     {
         OrangeC::Utils::BasicLogger::extremedebug("Waiting for a return value from futures in the list");
         size_t distance = std::distance(it, workingList.end());
-        OrangeC::Utils::BasicLogger::extremedebug("Waiting on iterator at distance from end: ", std::to_string(distance),
-                                                  " for future get. Distance from start: ", std::distance(workingList.begin(), it));
+        OrangeC::Utils::BasicLogger::extremedebug(
+            "Waiting on iterator at distance from end: ", std::to_string(distance),
+            " f i->GetOrdered()or future get. Distance from start: ", std::distance(workingList.begin(), it));
         auto& w = *it;
         using namespace std::chrono_literals;
         while (w.wait_for(1s) != std::future_status::ready)
@@ -140,7 +73,6 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
             rv = rv1;
         if (rv > 0)
         {
-            stop = true;
             if (!keepGoing)
             {
                 OrangeC::Utils::BasicLogger::extremedebug("Terminating all subprograms");
@@ -149,6 +81,58 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
                 break;
             }
         }
+    }
+    workingList.clear();
+}
+int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* depend, EnvironmentStrings* env, bool keepGoing)
+{
+    std::shared_ptr<RuleList> rl = depend->GetRuleList();
+    if (rl->IsBuilt())
+    {
+        rl->Wait();
+        return 0;
+    }
+    rl->SetBuilt();
+    auto ruleStack(*ruleStack_in);
+    ruleStack.push_back(rl);
+    std::vector<future_holding_struct> workingList;
+    int rv = 0;
+    bool stop = false;
+    bool notOrdered = true;
+    for (auto& i : *depend)
+    {
+        if (notOrdered && i->GetOrdered())
+        {
+            if (i->GetOrdered())
+                notOrdered = false;
+            WaitAll(rv, keepGoing, workingList);
+            if (rv > 0 && !keepGoing)
+            {
+                stop = true;
+                break;
+            }
+        }
+        std::promise<int> promise;
+        workingList.push_back(future_holding_struct(depend->GetGoal(), promise.get_future()));
+        OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: ", i->GetGoal());
+
+        std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(20ms);
+        if (MakeMain::jobs.GetValue() == 1)
+        {
+            WaitAll(rv, keepGoing, workingList);
+            if (rv > 0 && !keepGoing)
+            {
+                stop = true;
+                break;
+            }
+        }
+    }
+    WaitAll(rv, keepGoing, workingList);
+    if (rv > 0 && !keepGoing)
+    {
+        stop = true;
     }
     if (stop)
     {

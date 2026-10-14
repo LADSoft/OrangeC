@@ -46,6 +46,6 @@ EXE_dependencies = GenParser.cpp Loader.cpp Tokenizer.cpp ADLMain.cpp
 tools : $(EXE)
 
 $(EXE) : $(UTIL_dependencies) $(EXE_dependencies)
-	$(CC1) $(CC1FLAGS) $(OUTSPECIFIER)$*  $(UTIL_dependencies) $(EXE_dependencies)
+	$(CC1) $(CC1FLAGS) $(OUTSPECIFIER)$*  $^
 
 DISTRIBUTE:

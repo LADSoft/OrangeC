@@ -47,12 +47,12 @@ vpath %.cpp $(UTIL)
 %.$(OBJ): %.cpp
 	$(CC1) -c $(CC1FLAGS) $<
 
-UTIL_dependencies = CmdSwitch.$(OBJ) CmdFiles.$(OBJ) Utils.$(OBJ) xml.$(OBJ) ToolChain.$(OBJ)
-EXE_dependencies = GenParser.$(OBJ) Loader.$(OBJ) Tokenizer.$(OBJ) ADLMain.$(OBJ)
+UTIL_dependencies = ToolChain.$(OBJ) CmdSwitch.$(OBJ) CmdFiles.$(OBJ) Utils.$(OBJ) xml.$(OBJ) 
+EXE_dependencies = ADLMain.$(OBJ) GenParser.$(OBJ) Tokenizer.$(OBJ) Loader.$(OBJ)  
 
 tools : $(EXE)
 
-$(EXE) : $(UTIL_dependencies) $(EXE_dependencies)
+$(EXE) : $(EXE_dependencies) $(UTIL_dependencies) 
 	$(CC1) $(L1FLAGS) $(OUTSPECIFIER)$*  $^
 
 DISTRIBUTE:

@@ -4663,6 +4663,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
         deprecateMessage(sym->tp->BaseType()->sp);
     Type* tp;
     bool initialized = MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_) || MATCHKW(Keyword::openpa_);
+    sym->sb->initialized = initialized;
     inittag = 0;
     browse_variable(sym);
     // MSIL property

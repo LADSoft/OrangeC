@@ -763,6 +763,7 @@ typedef struct sym
         unsigned deleteCopyAssign : 1;               // check if copy assignment operator needs deleteion
         unsigned deleteMove : 1;                     // check if move constructor/assignment ops need deleteion
         unsigned isxctab : 1;                        // is xception table stack block
+        unsigned initialized : 1;                    // was explicitly initialized;
         int __func__label;                           /* label number for the __func__ keyword */
         int labelCount;                              /* number of code labels within a function body */
         int offset;                                  /* address offset of data in the given seg, or optimize register */

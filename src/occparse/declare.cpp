@@ -4646,6 +4646,7 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                         error(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }
                                 }
+                                sp->sb->initialized = MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_);
                                 auto stream = GetDataTokenStream();
                                 initTokenStreams.set(sp, stream);
                             }

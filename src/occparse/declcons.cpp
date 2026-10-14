@@ -1265,7 +1265,7 @@ void createDefaultConstructors(SYMBOL* sp)
                 if (pcls->sb->storage_class == StorageClass::member_ || pcls->sb->storage_class == StorageClass::mutable_ ||
                     pcls->sb->storage_class == StorageClass::overloads_)
                 {
-                    if (pcls->sb->constructorInitializers && *pcls->sb->constructorInitializers)
+                    if (pcls->sb->initialized || (pcls->sb->constructorInitializers && *pcls->sb->constructorInitializers))
                         trivialCons = false;
                     if (tp->IsStructured())
                     {

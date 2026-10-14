@@ -38,9 +38,7 @@ OUTSPECIFIER:= /Fe
 EXE=adl.exe
 endif
 
-VPATH=$(UTIL)
-
-UTIL_dependencies = CmdSwitch.cpp CmdFiles.cpp Utils.cpp xml.cpp ToolChain.cpp
+UTIL_dependencies = $(UTIL)/CmdSwitch.cpp $(UTIL)/CmdFiles.cpp $(UTIL)/Utils.cpp $(UTIL)/xml.cpp $(UTIL)/ToolChain.cpp
 EXE_dependencies = GenParser.cpp Loader.cpp Tokenizer.cpp ADLMain.cpp
 
 tools : $(EXE)

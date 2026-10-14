@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -3800,6 +3800,31 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             {
                 rv = Optimizer::SymbolManager::Get(node->v.sp)->imvalue;
                 break;
+            }
+            if (inlineSymThisPtr.size() && inlineSymThisPtr.back() && node->v.sp->sb->thisPtr)
+            {
+                Optimizer::IMODE* rv = nullptr;
+                auto exp = inlineSymThisPtr.back();
+                if (IsLValue(exp) && exp->left->type == ExpressionNode::paramsubstitute_)
+                {
+                    rv = exp->left->v.imode;
+                }
+                if (rv && rv->mode == Optimizer::i_direct && rv->offset->type == Optimizer::se_tempref)
+                {
+                    EXPRESSION* exp = AnonymousVar(StorageClass::auto_, &stdpointer);
+                    auto ap5 = Allocate<Optimizer::IMODE>();
+                    ap5->mode = Optimizer::i_direct;
+                    ap5->size = rv->size;
+                    ap5->offset = Optimizer::SymbolManager::Get(exp);
+                    auto ap4 = Allocate<Optimizer::IMODE>();
+                    ap4->mode = Optimizer::i_immed;
+                    ap4->size = ISZ_ADDR;
+                    ap4->offset = Optimizer::SymbolManager::Get(exp);
+                    gen_icode(Optimizer::i_assn, ap5, rv, nullptr);
+                    rv = Optimizer::tempreg(ISZ_ADDR, 0);
+                    gen_icode(Optimizer::i_assn, rv, ap4, nullptr);
+                    return rv;
+                }
             }
             sym = Optimizer::SymbolManager::Get(node->v.sp);
             if (sym->storage_class == Optimizer::scc_parameter && sym->paramSubstitute)

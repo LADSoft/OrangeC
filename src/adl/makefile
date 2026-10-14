@@ -24,18 +24,19 @@
 
 # this make file does not follow the pattern of other make files as it builds
 # a program that is used during the build
+include ../pathext2.mak
 
 ifeq "$(COMPILER)" "gcc-linux"
 CC1:=g++
-CC1FLAGS := -O2 -I ..\util -std=c++17
+CC1FLAGS := -O2 -I ..$(PATHEXT2)util -std=c++17
 OUTSPECIFIER:= -o
 else
 CC1:=cl.exe
-CC1FLAGS := /O2 /EHs /nologo /I../util /DTARGET_OS_WINDOWS /std:c++17
+CC1FLAGS := /O2 /EHs /nologo /I..$(PATHEXT2)util /DTARGET_OS_WINDOWS /std:c++17
 OUTSPECIFIER:= /Fe
 endif
 
-vpath %.cpp ..\util
+vpath %.cpp ..$(PATHEXT2)util
 
 EXE_dependencies = \
 		CmdSwitch.cpp \
@@ -53,4 +54,4 @@ tools : adl.exe
 adl.exe: $(EXE_dependencies)
 	$(CC1) $(CC1FLAGS) $(OUTSPECIFIER)$*  $(EXE_dependencies)
 
-DISTRIBUTE:
+DISTRIBUTE:

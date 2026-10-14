@@ -53,6 +53,6 @@ EXE_dependencies = ADLMain.$(OBJ) GenParser.$(OBJ) Tokenizer.$(OBJ) Loader.$(OBJ
 tools : $(EXE)
 
 $(EXE) : $(EXE_dependencies) $(UTIL_dependencies) 
-	$(CC1) $(L1FLAGS) $(OUTSPECIFIER)$*  $^
+	$(CC1) $(L1FLAGS) $(OUTSPECIFIER) $*  $^
 
 DISTRIBUTE:

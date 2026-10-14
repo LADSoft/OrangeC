@@ -25,34 +25,27 @@
 # this make file does not follow the pattern of other make files as it builds
 # a program that is used during the build
 
+UTIL:=../util
 ifeq "$(COMPILER)" "gcc-linux"
 CC1:=g++
-CC1FLAGS := -O2 -I ../util -std=c++17
+CC1FLAGS := -O2 -I $(UTIL) -std=c++17
 OUTSPECIFIER:= -o
 EXE=adl
 else
 CC1:=cl.exe
-CC1FLAGS := /O2 /EHs /nologo /I../util /DTARGET_OS_WINDOWS /std:c++17
+CC1FLAGS := /O2 /EHs /nologo /I$(UTIL) /DTARGET_OS_WINDOWS /std:c++17
 OUTSPECIFIER:= /Fe
 EXE=adl.exe
 endif
 
-vpath %.cpp ../util
+VPATH=$(UTIL)
 
-EXE_dependencies = \
-		CmdSwitch.cpp \
-		CmdFiles.cpp \
-		Utils.cpp \
-		xml.cpp \
-                ToolChain.cpp \
-		GenParser.cpp \
-		Loader.cpp \
-		Tokenizer.cpp \
-		ADLMain.cpp
+UTIL_dependencies = CmdSwitch.cpp CmdFiles.cpp Utils.cpp xml.cpp ToolChain.cpp
+EXE_dependencies = GenParser.cpp Loader.cpp Tokenizer.cpp ADLMain.cpp
 
 tools : $(EXE)
 
-$(EXE) : $(EXE_dependencies)
+$(EXE) : $(UTIL_dependencies) $(EXE_dependencies)
 	$(CC1) $(CC1FLAGS) $(OUTSPECIFIER)$*  $(EXE_dependencies)
 
 DISTRIBUTE:

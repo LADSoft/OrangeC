@@ -45,12 +45,12 @@ void Runner::DeleteOne(Depends* depend)
     if (depend->ShouldDelete())
         OS::RemoveFile(depend->GetGoal());
 }
-int Runner::CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* list, Depends* depend, EnvironmentStrings* env,
-                       bool keepGoing)
+void Runner::CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* list, Depends* depend, EnvironmentStrings* env,
+                        bool keepGoing, std::promise<int> promise)
 {
     auto retval = runner->RunOne(list, depend, env, keepGoing);
+    promise.set_value(retval);
     OrangeC::Utils::BasicLogger::debug("CallRunner returning from a runner: ", depend->GetGoal());
-    return retval;
 }
 struct future_holding_struct
 {
@@ -95,10 +95,13 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
     bool stop = false;
     for (auto& i : *depend)
     {
+        std::promise<int> promise;
+        workingList.push_back(future_holding_struct(depend->GetGoal(), promise.get_future()));
         OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: ", i->GetGoal());
-        workingList.push_back(future_holding_struct(
-            depend->GetGoal(), std::async(std::launch::async, CallRunner, this, &ruleStack, i.get(), env, keepGoing)));
-        // starting too many threads in rapid succession is kinda iffy even in msvc...
+
+        std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1 || i->GetOrdered())
         {
             int rv1 = workingList.back().get();

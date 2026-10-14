@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -54,7 +54,7 @@ class Maker
     static std::string GetFullName(std::string name);
 
   protected:
-    static int CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoingf);
+    static void CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise);
     std::unique_ptr<Depends> Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err,
                                           bool top, std::string file, int line);
     bool ExistsOrMentioned(const std::string& stem, std::shared_ptr<RuleList>& ruleList, const std::string& preferredPath,

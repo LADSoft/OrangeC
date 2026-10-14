@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -55,8 +55,8 @@ class Runner
     void CancelOne(Depends* depend);
 
   protected:
-    static int CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* list, Depends* depend, EnvironmentStrings* env,
-                          bool keepGoing);
+    static void CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* ruleStack, Depends* depend,
+                           EnvironmentStrings* env, bool keepGoing, std::promise<int> promise);
 
   private:
     OutputType outputType;

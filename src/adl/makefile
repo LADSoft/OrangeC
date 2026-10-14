@@ -28,24 +28,31 @@
 UTIL:=../util
 ifeq "$(COMPILER)" "gcc-linux"
 CC1:=g++
-CC1FLAGS := -O2 -I $(UTIL) -DHAVE_UNISTD_H=1 -std=c++17
+CC1FLAGS := -c -O2 -I $(UTIL) -DHAVE_UNISTD_H=1 -std=c++17
+L1FLAGS :=
 OUTSPECIFIER:= -o
+OBJ:=o
 EXE=adl
 else
 CC1:=cl.exe
-CC1FLAGS := /O2 /EHs /nologo /I$(UTIL) /DTARGET_OS_WINDOWS /std:c++17
+CC1FLAGS := /c /O2 /EHs /nologo /I$(UTIL) /DTARGET_OS_WINDOWS /std:c++17
+L1FLAGS :=
 OUTSPECIFIER:= /Fe
+OBJ:=obj
 EXE=adl.exe
 endif
 
-VPATH=$(UTIL)
+vpath %.cpp $(UTIL)
 
-UTIL_dependencies = CmdSwitch.cpp CmdFiles.cpp Utils.cpp xml.cpp ToolChain.cpp
-EXE_dependencies = GenParser.cpp Loader.cpp Tokenizer.cpp ADLMain.cpp
+%.$(OBJ): %.cpp
+	$(CC1) -c $(CC1FLAGS) $<
+
+UTIL_dependencies = CmdSwitch.$(OBJ) CmdFiles.$(OBJ) Utils.$(OBJ) xml.$(OBJ) ToolChain.$(OBJ)
+EXE_dependencies = GenParser.$(OBJ) Loader.$(OBJ) Tokenizer.$(OBJ) ADLMain.$(OBJ)
 
 tools : $(EXE)
 
 $(EXE) : $(UTIL_dependencies) $(EXE_dependencies)
-	$(CC1) $(CC1FLAGS) $(OUTSPECIFIER)$*  $^
+	$(CC1) $(L1FLAGS) $(OUTSPECIFIER)$*  $^
 
 DISTRIBUTE:

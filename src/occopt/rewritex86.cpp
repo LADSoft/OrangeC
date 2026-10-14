@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -294,17 +294,17 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
     else if (head->dc.opcode == i_gosub && head->memberCall)
     {
         // this is here to allow member pointer thunks to base classes to work....   they start with a load from ecx...
-      auto b = head->back;
-      while (b->dc.opcode != i_parm)
-          b = b->back;
-      if (b->temps& TEMP_LEFT)
-      {
-          int tr = b->dc.left->offset->sp->i;
-          tempInfo[tr]->precolored = true;
-          b->precolored |= TEMP_LEFT;
-          tempInfo[tr]->color = R_ECX;          
-      }
-    }  
+        auto b = head->back;
+        while (b->dc.opcode != i_parm)
+            b = b->back;
+        if (b->temps & TEMP_LEFT)
+        {
+            int tr = b->dc.left->offset->sp->i;
+            tempInfo[tr]->precolored = true;
+            b->precolored |= TEMP_LEFT;
+            tempInfo[tr]->color = R_ECX;
+        }
+    }
     else if (head->dc.opcode == i_assn && head->atomic && (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))
     {
         int ta = head->ans->offset->sp->i;
@@ -1197,7 +1197,8 @@ int x86_examine_icode(QUAD* head)
             /* must be last because it changes head */
             if (head->ans && head->ans->bits)
             {
-                if (head->dc.opcode != i_assn || (head->dc.left && (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset))))
+                if (head->dc.opcode != i_assn ||
+                    (head->dc.left && (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset))))
                 {
                     IMODE* temp;
                     QUAD* q;
@@ -1236,38 +1237,30 @@ int x86_examine_icode(QUAD* head)
                     InsertInstruction(head->back, q);
                     changed = true;
                 }
-                else if (head->dc.left->mode == i_immed && head->dc.left->offset->type == se_auto)
+                else if (head->dc.left->mode == i_immed)
                 {
-                    IMODE* temp;
-                    QUAD* q;
-                    temp = AllocateTemp(ISZ_ADDR);
-                    //					tempInfo[tempCount-1] = temp->offset;
-                    q = beLocalAllocate<QUAD>();
-                    q->dc.opcode = i_assn;
-                    q->ans = temp;
-                    q->dc.left = head->dc.left;
-                    head->dc.left = temp;
-                    head->temps |= TEMP_LEFT;
-                    InsertInstruction(head->back, q);
-                    changed = true;
+                    switch (head->dc.left->offset->type)
+                    {
+                        case se_global:
+                        case se_auto:
+                        case se_pc:
+                        case se_labcon:
+                        case se_threadlocal: {
+                            IMODE* temp;
+                            QUAD* q;
+                            temp = AllocateTemp(ISZ_ADDR);
+                            q = beLocalAllocate<QUAD>();
+                            q->dc.opcode = i_assn;
+                            q->ans = temp;
+                            q->dc.left = head->dc.left;
+                            head->dc.left = temp;
+                            head->temps |= TEMP_LEFT;
+                            InsertInstruction(head->back, q);
+                            changed = true;
+                            break;
+                        }
+                    }
                 }
-                /*
-                else if (head->dc.left->mode == i_ind)
-                {
-                    IMODE *temp;
-                    QUAD *q;
-                    temp = AllocateTemp(head->dc.left->size);
-//					tempInfo[tempCount-1] = temp->offset;
-                    q = beLocalAllocate<QUAD>();
-                    q->dc.opcode = i_assn;
-                    q->ans = temp;
-                    q->dc.left = head->dc.left;
-                    head->dc.left = temp;
-                    head->temps |= TEMP_LEFT;
-                    InsertInstruction(head->back, q);
-                    changed = true;
-                }
-                */
                 break;
             case i_coswitch:
                 /* we want the switch selector to be in a reg.  This is especially important for
@@ -2368,8 +2361,8 @@ void x86InternalConflict(QUAD* head)
         case i_umod:
         case i_smod:
             /* for divs we have to make sure the answer node conflicts with anything
-              * that was used to load the numerator...
-              */
+             * that was used to load the numerator...
+             */
             if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
                 head->dc.left->offset->type == se_tempref)
             {

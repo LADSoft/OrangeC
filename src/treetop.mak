@@ -347,9 +347,14 @@ makelibdir:
 	-$(MKDIR)  $(_LIBDIR) 2> $(NULLDEV)
 
 
-lib1: | $(TOOLS)
-lib2: $(LIBS)
-library: | lib1 lib2
+# this is to force an order during a parallel build...
+library0: $(TOOLS)
+library1: $(LIBS)
+
+
+library:
+	$(MAKE) library0 -f $(_TREEROOT) -j 1
+	$(MAKE) library1 -f $(_TREEROOT)
 
 exefile: $(EXES)
 

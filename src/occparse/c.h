@@ -1010,15 +1010,15 @@ struct CallSite
     SYMBOL* rttiType;
     SYMBOL* rttiType2;
     int callLab;
-    int novtab : 1;
-    int ascall : 1;
-    int astemplate : 1;
-    int noobject : 1;
-    int asaddress : 1;
-    int vararg : 1;
-    int resolvedCall : 1;
-    int memberCall : 1;
-    int noinline : 1;
+    unsigned novtab : 1;
+    unsigned ascall : 1;
+    unsigned astemplate : 1;
+    unsigned noobject : 1;
+    unsigned asaddress : 1;
+    unsigned vararg : 1;
+    unsigned resolvedCall : 1;
+    unsigned memberCall : 1;
+    unsigned noinline : 1;
 };
 
 #define MAX_STRLEN 16384

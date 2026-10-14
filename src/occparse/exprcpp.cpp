@@ -589,7 +589,7 @@ void expression_func_type_cast(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int 
                     funcparams->thistp = tp1;
                     *exp = MakeExpression(funcparams);
                     *tp = bcall->tp;
-                    expression_arguments(funcsp, tp, exp, 0);
+                    expression_call(funcsp, tp, exp, 0);
                 }
             }
         }
@@ -1076,7 +1076,7 @@ bool FindOperatorFunction(ovcl cls, Keyword kw, SYMBOL* funcsp, Type** tp, EXPRE
             funcparams->functp = s3->tp;
             *exp = MakeExpression(funcparams);
             *tp = s3->tp;
-            expression_arguments(funcsp, tp, exp, 0, true);
+            expression_call(funcsp, tp, exp, 0, true);
             if (s3->sb->defaulted && kw == Keyword::assign_)
                 createAssignment(s3->sb->parentClass, s3);
             CheckCalledException(s3, funcparams->thisptr);

@@ -1363,7 +1363,7 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
     }
     return;
 }
-static void expression_member(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
+static void expression_member_reference(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     Type *typein = *tp, *typein2 = typein->IsArray() ? typein : nullptr;
     bool points = false;
@@ -1908,7 +1908,7 @@ static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
     }
     return in;
 }
-static void expression_bracket(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
+static void expression_array_index(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags)
 {
     Type* tp2 = nullptr;
     EXPRESSION* expr2 = nullptr;
@@ -4437,7 +4437,7 @@ static std::list<TEMPLATEPARAMPAIR>* LiftTemplateParams(std::list<TEMPLATEPARAMP
     }
     return rv;
 }
-void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex)
+void expression_call(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex)
 {
     Type* tp_cpp = *tp;
     EXPRESSION* exp_cpp = *exp;
@@ -5008,6 +5008,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                         funcparams->thisptr = DerivedToBase(base->tp, derived->tp, funcparams->thisptr, _F_VALIDPOINTER);
                     }
                 }
+                bool returnIsMemberPtr = false;
                 if ((*tp)->BaseType()->btp->IsStructured() || (*tp)->BaseType()->btp->BaseType()->type == BasicType::memberptr_)
                 {
                     if (!(flags & _F_SIZEOF) && !(*tp)->BaseType()->btp->BaseType()->sp->sb->structuredAliasType)
@@ -5015,6 +5016,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                         (*tp)->BaseType()->btp->InitializeDeferred();
                         funcparams->returnEXP = AnonymousVar(StorageClass::auto_, (*tp)->BaseType()->btp->BaseType()->sp->tp);
                         funcparams->returnSP = funcparams->returnEXP->v.sp;
+                        returnIsMemberPtr = (*tp)->BaseType()->btp->BaseType()->type == BasicType::memberptr_;
                         if (theCurrentFunc && theCurrentFunc->sb->constexpression)
                             funcparams->returnEXP->v.sp->sb->constexpression = true;
                     }
@@ -5119,7 +5121,7 @@ void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags
                             exp_in->v.t.thisptr = funcparams->returnEXP;
                             exp_in->v.t.tp = funcparams->returnSP->tp;
 
-                            if (funcparams->returnSP->tp->IsStructured())
+                            if (!returnIsMemberPtr && funcparams->returnSP->tp->IsStructured())
                             {
                                 EXPRESSION* expx = funcparams->returnEXP;
                                 CallDestructor(funcparams->returnSP->tp->BaseType()->sp, nullptr, &expx, nullptr, true, false, true,
@@ -5290,7 +5292,7 @@ static void expression_offsetof(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, boo
                     *tp = sym->tp;
                     do
                     {
-                        expression_member(funcsp, tp, exp, ismutable, flags | _F_AMPERSAND);
+                        expression_member_reference(funcsp, tp, exp, ismutable, flags | _F_AMPERSAND);
                         TakeAddress(exp);
                     } while (MATCHKW(Keyword::dot_));
                 }
@@ -5473,7 +5475,7 @@ static void expression_string(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 f->arguments->push_back(arg);
                 *exp = MakeExpression(f);
                 *tp = sym1->tp;
-                expression_arguments(funcsp, tp, exp, false, true);
+                expression_call(funcsp, tp, exp, false, true);
                 return;
             }
         }
@@ -5693,7 +5695,7 @@ static bool getSuffixedChar(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
             arg->exp = *exp;
             *exp = MakeExpression(f);
             *tp = sym1->tp;
-            expression_arguments(funcsp, tp, exp, false);
+            expression_call(funcsp, tp, exp, false);
             return true;
         }
     }
@@ -5772,7 +5774,7 @@ static bool getSuffixedNumber(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
             }
             *exp = MakeExpression(f);
             *tp = sym1->tp;
-            expression_arguments(funcsp, tp, exp, false, true);
+            expression_call(funcsp, tp, exp, false, true);
             return true;
         }
         else
@@ -5820,7 +5822,7 @@ static bool getSuffixedNumber(SYMBOL* funcsp, Type** tp, EXPRESSION** exp)
                 arg->exp = stringlit(data);
                 *exp = MakeExpression(f);
                 *tp = sym1->tp;
-                expression_arguments(funcsp, tp, exp, false);
+                expression_call(funcsp, tp, exp, false);
                 return true;
             }
         }
@@ -7661,14 +7663,14 @@ static void expression_postfix(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION*
         switch (KW())
         {
             case Keyword::openbr_:
-                expression_bracket(funcsp, tp, exp, flags);
+                expression_array_index(funcsp, tp, exp, flags);
                 break;
             case Keyword::openpa_:
-                expression_arguments(funcsp, tp, exp, flags);
+                expression_call(funcsp, tp, exp, flags);
                 break;
             case Keyword::pointsto_:
             case Keyword::dot_:
-                expression_member(funcsp, tp, exp, ismutable, flags);
+                expression_member_reference(funcsp, tp, exp, ismutable, flags);
                 break;
             case Keyword::autoinc_:
             case Keyword::autodec_:
@@ -7939,14 +7941,14 @@ void expression_cast(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, boo
                             switch (KW())
                             {
                                 case Keyword::openbr_:
-                                    expression_bracket(funcsp, tp, exp, flags);
+                                    expression_array_index(funcsp, tp, exp, flags);
                                     break;
                                 case Keyword::openpa_:
-                                    expression_arguments(funcsp, tp, exp, flags);
+                                    expression_call(funcsp, tp, exp, flags);
                                     break;
                                 case Keyword::pointsto_:
                                 case Keyword::dot_:
-                                    expression_member(funcsp, tp, exp, ismutable, flags);
+                                    expression_member_reference(funcsp, tp, exp, ismutable, flags);
                                     break;
                                 case Keyword::autoinc_:
                                 case Keyword::autodec_:

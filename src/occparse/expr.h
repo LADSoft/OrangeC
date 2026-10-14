@@ -66,7 +66,7 @@ void expression(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, int flag
 #if 1
 // expressions
 EXPRESSION* DerivedToBase(Type* tpn, Type* tpo, EXPRESSION* exp, int flags);
-void expression_arguments(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex = false);
+void expression_call(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, bool noLex = false);
 void expression_cast(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, bool* ismutable, int flags);
 #endif
 

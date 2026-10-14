@@ -643,10 +643,10 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
         }
     }
 }
-void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise)
+int Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing)
 {
     std::list<std::shared_ptr<RuleList>> list;
-    promise.set_value(runner.RunOne(&list, depend, env, keepGoing));
+    int retval = runner.RunOne(&list, depend, env, keepGoing);
     std::string goal_value = "";
     if (depend)
     {
@@ -657,6 +657,7 @@ void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env
         goal_value = "Depend was null'd out";
     }
     OrangeC::Utils::BasicLogger::debug("Cleaning a runner: " + goal_value);
+    return retval;
 }
 int Maker::RunCommands(bool keepGoing)
 {
@@ -678,12 +679,8 @@ int Maker::RunCommands(bool keepGoing)
     int rv = 0;
     for (auto& i : depends)
     {
-        std::promise<int> promise;
-        workingList.push_back(promise.get_future());
         OrangeC::Utils::BasicLogger::debug("Creating a runner: " + i->GetGoal());
-        std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise)).detach();
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(20ms);
+        workingList.push_back(std::async(std::launch::async, CallRunner, runner, i.get(), &env, keepGoing));
         if (MakeMain::jobs.GetValue() == 1)
         {
             int rv1 = workingList.back().get();

@@ -22,13 +22,6 @@
 # 
 # 
 
-ifeq "$(COMPILER)" "gcc-linux"
-COPY:=cp
-DEL:=rm -rf
-else
-COPY:= copy
-DEL:=del
-endif
 include ../pathext2.mak
 
 NAME=oasm
@@ -41,7 +34,7 @@ H_FILES=$(wildcard *.h)
 
 PRECOMPILE=tools
 include ../redirect.mak
-
+include ../shell.mak
 
 clean2:
 	-$(DEL) x64Parser.* x64Instructions.* adl*.* ..$(PATHEXT2)occ$(PATHEXT2)x64parser.cpp
@@ -50,6 +43,6 @@ tools: x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFuncti
 
 x64Parser.cpp x64Parser.h x64Instructions.cpp x64Instructions.h AdlFunctions.cpp AdlStructures.h ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp &: x64.adl
 	..$(PATHEXT2)adl$(PATHEXT2)adl x64.adl
-	$(COPY) x64Parser.cpp ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
+	-$(COPY) x64Parser.cpp ..$(PATHEXT2)occ$(PATHEXT2)x64Parser.cpp
 
 DISTRIBUTE: copyexe

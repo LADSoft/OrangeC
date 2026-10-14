@@ -22,25 +22,15 @@
 # 
 # 
 
-ifeq "$(PATHEXT2)" ""
-include pathext2.mak
-endif
 
-
-ifeq "$(COMPILER)" "gcc-linux"
-MKDIR := mkdir -p
-DEL := rm -rf
-DEL_KEEPDIR := rm -f
-COPY := cp
-else
-MKDIR := mkdir
-DEL := del /Q
-DEL_KEEPDIR := del /Q
-COPY := copy
-endif
 all:
 
 TREETOP := $(dir $(_TREEROOT))
+
+ifeq "$(PATHEXT2)" ""
+include pathext2.mak
+endif
+include $(TREETOP)/shell.mak
 
 DISTROOT := $(TREETOP)..
 

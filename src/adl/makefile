@@ -30,14 +30,14 @@ ifeq "$(COMPILER)" "gcc-linux"
 CC1:=g++
 CC1FLAGS := -c -O2 -I $(UTIL) -DHAVE_UNISTD_H=1 -std=c++17
 L1FLAGS :=
-OUTSPECIFIER:= -o
+OUTSPECIFIER= -o $@
 OBJ:=o
 EXE:=adl
 else
 CC1:=cl.exe
 CC1FLAGS := /c /O2 /EHs /nologo /I$(UTIL) /DTARGET_OS_WINDOWS /std:c++17
 L1FLAGS :=
-OUTSPECIFIER:= /Fe
+OUTSPECIFIER = /Fe$*
 OBJ:=obj
 EXE:=adl.exe
 endif
@@ -53,6 +53,6 @@ EXE_dependencies = ADLMain.$(OBJ) GenParser.$(OBJ) Tokenizer.$(OBJ) Loader.$(OBJ
 tools : $(EXE)
 
 $(EXE) : $(EXE_dependencies) $(UTIL_dependencies) 
-	$(CC1) $(L1FLAGS) $(OUTSPECIFIER) $@  $^
+	$(CC1) $(L1FLAGS) $(OUTSPECIFIER)  $^
 
 DISTRIBUTE:

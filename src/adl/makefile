@@ -32,14 +32,14 @@ CC1FLAGS := -c -O2 -I $(UTIL) -DHAVE_UNISTD_H=1 -std=c++17
 L1FLAGS :=
 OUTSPECIFIER:= -o
 OBJ:=o
-EXE=adl
+EXE:=adl
 else
 CC1:=cl.exe
 CC1FLAGS := /c /O2 /EHs /nologo /I$(UTIL) /DTARGET_OS_WINDOWS /std:c++17
 L1FLAGS :=
 OUTSPECIFIER:= /Fe
 OBJ:=obj
-EXE=adl.exe
+EXE:=adl.exe
 endif
 
 vpath %.cpp $(UTIL)

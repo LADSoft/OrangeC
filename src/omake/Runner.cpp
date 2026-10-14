@@ -102,7 +102,7 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
         std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(20ms);
-        if (MakeMain::jobs.GetValue() == 1 || i->GetOrdered())
+        if (MakeMain::jobs.GetValue() == 1)
         {
             int rv1 = workingList.back().get();
             workingList.pop_back();

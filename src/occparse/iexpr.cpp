@@ -2643,8 +2643,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     Optimizer::SimpleExpression* varargarray = nullptr;
     if (!f->sp || !f->fcall)
         return Optimizer::make_immed(ISZ_UINT, 0);
-    if (f->sp->tp->IsFunction())
-        Optimizer::SymbolManager::Get(f->sp)->functionUsed = true;
     if (!f->ascall)
     {
         if (Optimizer::cparams.prm_cplusplus && (f->sp->sb->inlineFunc.stmt || bodyTokenStreams.get(f->sp)))
@@ -2694,6 +2692,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
         }
     }
+    if (f->sp->tp->IsFunction())
+        Optimizer::SymbolManager::Get(f->sp)->functionUsed = true;
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(f->sp)))
         managed = true;

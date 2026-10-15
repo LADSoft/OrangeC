@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -27,6 +27,10 @@
 
 #include "FNV_hash.h"
 
+namespace Parser
+{
+void IncrementQuadCount();  // defined in the frontend and in optmain.cpp
+};
 namespace Optimizer
 {
 extern std::vector<TempInfo*> tempInfo;

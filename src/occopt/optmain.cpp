@@ -67,6 +67,7 @@ int usingEsp;
 Optimizer::SimpleSymbol* currentFunction;
 namespace Parser
 {
+void IncrementQuadCount() {}
 int anonymousNotAlloc;
 bool IsCompiler() { return true; }
 }  // namespace Parser

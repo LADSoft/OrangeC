@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -359,7 +359,10 @@ void genxswitch(Statement* stmt, SYMBOL* funcsp)
         ap = ap3;
     }
     Optimizer::gen_icode2(Optimizer::i_coswitch, Optimizer::make_immed(ISZ_UINT, cs.count), ap,
-                          Optimizer::make_immed(ISZ_UINT, cs.top - cs.bottom >= 0 ? cs.top - cs.bottom : (unsigned long long)cs.top - (unsigned long long)cs.bottom), stmt->label + codeLabelOffset);
+                          Optimizer::make_immed(ISZ_UINT, cs.top - cs.bottom >= 0
+                                                              ? cs.top - cs.bottom
+                                                              : (unsigned long long)cs.top - (unsigned long long)cs.bottom),
+                          stmt->label + codeLabelOffset);
     gather_cases(stmt->cases, &cs);
     qsort(cs.ptrs, cs.count, sizeof(cs.ptrs[0]), gcs_compare);
     for (i = 0; i < cs.count; i++)
@@ -841,6 +844,8 @@ Optimizer::IMODE* genstmt(std::list<Statement*>* stmts, SYMBOL* funcsp, int flag
 
         while (il != ile)
         {
+            if (InlineTooLarge())
+                return nullptr;
             auto stmt = *il;
             switch (stmt->type)
             {

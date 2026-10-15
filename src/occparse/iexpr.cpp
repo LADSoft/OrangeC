@@ -2655,7 +2655,8 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         InsertRttiType(f->rttiType);
     if (f->rttiType2)
         InsertRttiType(f->rttiType2);
-    if (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation)
+    if ((!f->sp->sb->cantInline || (f->sp->sb->mainsym && !f->sp->sb->mainsym->sb->cantInline)) &&
+        (f->sp->sb->attribs.inheritable.isInline || f->sp->sb->attribs.inheritable.excludeFromExplicitInstantiation))
     {
         StatementGenerator sg(f->sp);
         if (sg.CompileFunctionFromStream(true, true) && !f->sp->sb->noinline)
@@ -2679,6 +2680,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             }
             else
             {
+                f->sp->sb->cantInline = true;
                 f->sp->sb->generateInline = true;
                 if (Optimizer::cparams.prm_cplusplus)
                 {
@@ -2690,6 +2692,10 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                     }
                 }
             }
+        }
+        else
+        {
+            f->sp->sb->cantInline = true;
         }
     }
     if (f->sp->tp->IsFunction())

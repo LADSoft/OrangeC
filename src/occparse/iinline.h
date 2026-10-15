@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -33,5 +33,6 @@ extern std::vector<EXPRESSION*> inlineSymStructPtr;
 extern std::vector<EXPRESSION*> inlineSymThisPtr;
 
 void iinlineInit(void);
+bool InlineTooLarge();
 Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags);
 }  // namespace Parser

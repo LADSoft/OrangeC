@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -139,6 +139,7 @@ void add_intermed(Optimizer::QUAD* newQuad)
         intermed_tail = newQuad;
     }
     newQuad->block = currentBlock;
+    Parser::IncrementQuadCount();
 }
 Optimizer::IMODE* liveout2(Optimizer::QUAD* q)
 {

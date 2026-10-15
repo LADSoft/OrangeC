@@ -71,6 +71,7 @@ namespace Parser
 int anonymousNotAlloc;
 char outFile[260];
 InstructionParser* instructionParser;
+void IncrementQuadCount() {}
 bool IsCompiler() { return true; }
 }  // namespace Parser
 namespace Optimizer

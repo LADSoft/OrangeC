@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -54,6 +54,10 @@
 
 namespace Parser
 {
+
+static const int MaxInlineStatementsPerFunc = 500;
+static const int MaxInlineLinesPerFunc = 15;
+
 int noinline;
 std::vector<EXPRESSION*> inlineSymStructPtr;
 std::vector<EXPRESSION*> inlineSymThisPtr;
@@ -64,7 +68,7 @@ static std::unordered_set<SYMBOL*> inlineSymList;
 static int inlineNesting;
 static std::unordered_set<Optimizer::SimpleSymbol*> argTable;
 static Optimizer::SimpleSymbol* argCurrentFunction;
-
+static std::stack<std::tuple<int, int, int, Optimizer::QUAD*>> inlineQuadCounters;
 void iinlineInit(void)
 {
     inlineNesting = 0;
@@ -73,6 +77,44 @@ void iinlineInit(void)
     inlineSymStructPtr.clear();
     inlineSymThisPtr.clear();
     argTable.clear();
+    while (!inlineQuadCounters.empty())
+        inlineQuadCounters.pop();
+}
+bool InlineTooLarge() { return !inlineQuadCounters.empty() && std::get<0>(inlineQuadCounters.top()) > MaxInlineStatementsPerFunc; }
+void IncrementQuadCount()
+{
+    if (!inlineQuadCounters.empty())
+        std::get<0>(inlineQuadCounters.top())++;
+}
+static void PushInlineLineContext()
+{
+    inlineQuadCounters.push(std::tuple<int, int, int, Optimizer::QUAD*>(0, Optimizer::blockCount, Optimizer::baseData.size(),
+                                                                        Optimizer::intermed_tail));
+}
+static void PopInlineLineContext()
+{
+    auto counter = inlineQuadCounters.top();
+    inlineQuadCounters.pop();
+    if (std::get<0>(counter) > MaxInlineStatementsPerFunc)
+    {
+        if (std::get<3>(counter))
+        {
+            // too large, wipe all the code we just tried to add...
+            std::get<3>(counter)->fwd = nullptr;
+            Optimizer::intermed_tail = std::get<3>(counter);
+        }
+        else
+        {
+            Optimizer::intermed_tail = Optimizer::intermed_head = nullptr;
+        }
+        Optimizer::blockCount = std::get<1>(counter);
+        int target = std::get<2>(counter);
+        while (Optimizer::baseData.size() > target)
+            Optimizer::baseData.pop_back();
+    }
+
+    if (!inlineQuadCounters.empty())
+        std::get<0>(inlineQuadCounters.top()) += std::get<0>(counter);
 }
 static bool hasRelativeThis(EXPRESSION* thisPtr)
 {
@@ -475,7 +517,12 @@ static void inlineCopySyms(SymbolTable<SYMBOL>* src)
         src = src->Next();
     }
 }
-static bool inlineTooComplex(CallSite* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inlineNesting * 2 + 1); }
+static bool inlineTooComplex(CallSite* f)
+{
+    return f->sp->sb->endLine - f->sp->sb->startLine > MaxInlineLinesPerFunc;
+    // return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inlineNesting * 2 + 1);
+}
+
 static bool hasaincdec(EXPRESSION* exp)
 {
     if (exp)
@@ -639,6 +686,7 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         argTable.clear();
         argCurrentFunction = currentFunction;
     }
+    PushInlineLineContext();
     inlineNesting++;
     codeLabelOffset = Optimizer::nextLabel - INT_MIN;
     Optimizer::nextLabel += f->sp->sb->labelCount + 10;
@@ -719,7 +767,15 @@ Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     inlineSymThisPtr.pop_back();
     inlineNesting--;
     inlineSymList.erase(inlineSymList.find(f->sp));
-    ap3->wasinlined = true;
+    if (InlineTooLarge())
+    {
+        ap3 = nullptr;
+    }
+    else
+    {
+        ap3->wasinlined = true;
+    }
+    PopInlineLineContext();
     return ap3;
 }
 }  // namespace Parser

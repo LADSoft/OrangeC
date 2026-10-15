@@ -764,6 +764,7 @@ typedef struct sym
         unsigned deleteMove : 1;                     // check if move constructor/assignment ops need deleteion
         unsigned isxctab : 1;                        // is xception table stack block
         unsigned initialized : 1;                    // was explicitly initialized;
+        unsigned cantInline : 1;                     // inlining was previously tried and it failed
         int __func__label;                           /* label number for the __func__ keyword */
         int labelCount;                              /* number of code labels within a function body */
         int offset;                                  /* address offset of data in the given seg, or optimize register */

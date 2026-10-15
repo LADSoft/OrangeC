@@ -7,8 +7,8 @@ TESTS := $(TESTS:.asm=.tst)
 TESTS := $(TESTS) fastcall1.tst
 all: $(TESTS)
 
-CFLAGS= /! /1 /DWIN32_LEAN_AND_MEAN
-CXXFLAGS= /! /DWIN32_LEAN_AND_MEAN
+CFLAGS= /E- /! /1 /DWIN32_LEAN_AND_MEAN
+CXXFLAGS= /E- /! /DWIN32_LEAN_AND_MEAN
 ASFLAGS= /!
 LDFLAGS= /!
 	
@@ -74,6 +74,10 @@ hello.world.resource.tst:
 	occ /x rc hello.world.resource
 	fc /b hello.world.resource.cmpx hello.world.resource.res
 
+paranoia2.tst: %.tst : paranoia2.exe
+	$< > $*.out < $*.keys
+	fc /b $*.cmpx $*.out
+ 
 %.tst: %.exe
 	$< > $*.out
 	fc /b $*.cmpx $*.out

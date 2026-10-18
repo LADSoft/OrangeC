@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -50,7 +50,7 @@ CPPFLAGS = -std=gnu++17
 LINK=ld
 LFLAGS=-L$(_LIBDIR) -lm
 
-LIB=ar
+LIBRARIAN=ar
 LIBFLAGS= -r -s
 LIB_EXT:=.a
 LIB_PREFIX:=lib
@@ -98,7 +98,7 @@ $(_OUTPUTDIR)/%.o: %.asm
 	$(RC) $(RCFLAGS) -i $^ -o $(_OUTPUTDIR)/$@
 
 $(_LIBDIR)/$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(addprefix $(subst \,/,$(_OUTPUTDIR)/),$(LLIB_DEPENDENCIES))
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)/$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(subst \,/,$(_OUTPUTDIR)/),$(LLIB_DEPENDENCIES))
+	$(LIBRARIAN) $(LIBFLAGS) $(_LIBDIR)/$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(subst \,/,$(_OUTPUTDIR)/),$(LLIB_DEPENDENCIES))
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
 LDEPS := $(subst \,/,$(LDEPS))
 

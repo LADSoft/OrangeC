@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -64,7 +64,7 @@ endif
 LINK=$(COMPILER_PATH)\bin\olink
 LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG) $(MEMFLAGS)
 
-LIB=$(COMPILER_PATH)\bin\olib
+LIBRARIAN=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l
 LIB_PREFIX:=
 LIBFLAGS= /!
@@ -151,7 +151,7 @@ endif
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
 ifeq "$(OCCPR)" ""
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix +-$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
+	$(LIBRARIAN) $(LIBFLAGS) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix +-$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
 else
 	echo "" > $(_LIBDIR)\$(NAME)$(LIB_EXT)
 endif
@@ -169,4 +169,4 @@ ifeq "$(OCCPR)" ""
 	$(CC) -! -o$@ $^
 endif
 
-endif
+endif

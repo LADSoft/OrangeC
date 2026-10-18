@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -47,7 +47,7 @@ CCFLAGS = -c -D__MSVCRT__ -D_MINGW -U__STRICT_ANSI__
 LINK=$(COMPILER_PATH)\bin\ld
 LFLAGS=-L$(_LIBDIR)
 
-LIB=$(COMPILER_PATH)\bin\ar
+LIBRARIAN=$(COMPILER_PATH)\bin\ar
 LIBFLAGS=-r -s
 LIB_EXT:=.a
 LIB_PREFIX:=lib
@@ -94,7 +94,7 @@ vpath %.res $(_OUTPUTDIR)
 
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) 2> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
+	$(LIBRARIAN) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
  $(addprefix $(subst \,/,$(_OUTPUTDIR)/),$(LLIB_DEPENDENCIES))
 |
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
@@ -117,4 +117,4 @@ $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
 %.exe: %.cpp
 	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)
 
-endif
+endif

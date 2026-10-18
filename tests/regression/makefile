@@ -1,4 +1,4 @@
-FILES := $(wildcard *.c) $(wildcard *.cpp) $(wildcard *.asm)
+FILES := $(wildcard *.c) $(wildcard *.cpp) $(wildcard *.cxx) $(wildcard *.asm)
 EXCLUDE :=
 DEPENDENCIES := $(filter-out $(EXCLUDE), $(FILES))
 TESTS := $(DEPENDENCIES:.cpp=.tst)

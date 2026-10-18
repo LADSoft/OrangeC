@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -36,24 +36,37 @@
 #include "optmain.h"
 #include "memory.h"
 #include "ioptutil.h"
+#include "iconfl.h"
+#include <functional>
+#include <algorithm>
 
 namespace Optimizer
 {
-void conflictini(void) {}
-void resetConflict(void)
+static std::unordered_map<int, std::unordered_set<int>> conflicts;
+
+void conflictini(void) { ResetConflict(); }
+void EvaluateConflicts(int n, std::function<void(int)> func) { std::for_each(conflicts[n].begin(), conflicts[n].end(), func); }
+int ConflictNeighbors(int n)
 {
-    int i;
-    for (i = 0; i < tempCount; i++)
-    {
-        tempInfo[i]->conflicts = callocbit(tempCount);
-        tempInfo[i]->neighbors = 0;
-    }
+    // the original code never set neighbors to anything other than 0...    this is likely a bug bit it has worked a long time...
+    return 0;
+    //    return conflicts[n].size();
 }
+void ResetConflict(void) { conflicts.clear(); }
 int findPartition(int T0)
 {
     while (T0 != tempInfo[T0]->partition)
         T0 = tempInfo[T0]->partition;
     return T0;
+}
+bool isConflicting(int T0, int T1)
+{
+    int bucket;
+    T0 = findPartition(T0);
+    T1 = findPartition(T1);
+    if (T0 == T1)
+        return false;
+    return conflicts[T0].find(T1) != conflicts[T0].end();
 }
 void insertConflict(int i, int j)
 {
@@ -63,7 +76,7 @@ void insertConflict(int i, int j)
     j = findPartition(j);
     if (i == j)
         return;
-    if (isset(tempInfo[i]->conflicts, j))
+    if (isConflicting(i, j))
         return;
     ti = tempInfo[i];
     tj = tempInfo[j];
@@ -71,23 +84,14 @@ void insertConflict(int i, int j)
         return;
     if (ti->usedAsFloat != tj->usedAsFloat)
         return;
-    setbit(ti->conflicts, j);
-    setbit(tj->conflicts, i);
-}
-bool isConflicting(int T0, int T1)
-{
-    int bucket;
-    T0 = findPartition(T0);
-    T1 = findPartition(T1);
-    if (T0 == T1)
-        return false;
-    return !!isset(tempInfo[T0]->conflicts, T1);
+    conflicts[i].insert(j);
+    conflicts[j].insert(i);
 }
 void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
 {
-    int i, j;
-    BriggsSet* live = briggsAllocc(tempCount);
-    resetConflict();
+    int i;
+    std::unordered_set<int> live;
+    ResetConflict();
     for (i = 0; i < blockCount; i++)
     {
 
@@ -95,12 +99,12 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
         {
             QUAD* tail = blockArray[i]->tail;
             QUAD* head = blockArray[i]->head;
-            int j, k;
-            briggsClear(live);
+            int k;
+            live.clear();
             for (auto i : *blockArray[i]->liveOut)
             {
                 if (!nodes || briggsTest(nodes, i))
-                    briggsSet(live, i);
+                    live.insert(i);
             }
             do
             {
@@ -111,10 +115,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     struct _phiblock* pb = pd->temps;
                     if (!nodes || briggsTest(nodes, pd->T0))
                     {
-                        for (j = 0; j < live->top; j++)
-                        {
-                            insertConflict(live->data[j], pd->T0);
-                        }
+                        std::for_each(live.begin(), live.end(), [pd](int i) { insertConflict(i, pd->T0); });
                     }
                     while (pb)
                     {
@@ -125,7 +126,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                             {
                                 if (!nodes || briggsTest(nodes, pb2->Tn))
                                 {
-                                    if (briggsTest(live, pb->Tn) || briggsTest(live, pb2->Tn))
+                                    if (live.find(pb->Tn) != live.end() || live.find(pb2->Tn) != live.end())
                                         insertConflict(pb->Tn, pb2->Tn);
                                 }
                                 pb2 = pb2->next;
@@ -138,7 +139,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     {
                         if (!nodes || briggsTest(nodes, pb->Tn))
                         {
-                            briggsSet(live, pb->Tn);
+                            live.insert(pb->Tn);
                         }
                         pb = pb->next;
                     }
@@ -159,7 +160,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         {
                             if (x->fastcall > 0)
                             {
-                                briggsSet(live, x->dc.left->offset->sp->i);
+                                live.insert(x->dc.left->offset->sp->i);
                             }
                             x = x->back;
                         }
@@ -172,17 +173,14 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         // dest reg
                         if (tail->assemblyRegs[0] != 255)
                         {
-                            briggsReset(live, tail->assemblyTempRegStart);
-                            for (j = 0; j < live->top; j++)
-                            {
-                                if (live->data[j] != tail->assemblyTempRegStart)
-                                    insertConflict(live->data[j], tail->assemblyTempRegStart);
-                            }
+                            live.erase(tail->assemblyTempRegStart);
+                            std::for_each(live.begin(), live.end(),
+                                          [tail](int i) { insertConflict(i, tail->assemblyTempRegStart); });
                         }
                         // src regs
                         for (int i = 1; i < tail->assemblyRegCount; i++)
                             if (tail->assemblyRegs[i] != 255)
-                                briggsSet(live, tail->assemblyTempRegStart + i);
+                                live.insert(tail->assemblyTempRegStart + i);
                     }
                 }
                 else if (tail->temps & TEMP_ANS)
@@ -214,7 +212,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                                     }
                                 }
                             }
-                            briggsReset(live, tnum);
+                            live.erase(tnum);
                             // processor dependent
                             if (tail->atomic && (tail->temps & TEMP_RIGHT) && tail->ans->size >= ISZ_FLOAT &&
                                 tail->ans->size != ISZ_BITINT)
@@ -240,11 +238,11 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                                         insertConflict(tnum, tail->dc.right->offset2->sp->i);
                                 }
                             }
-                            for (j = 0; j < live->top; j++)
-                            {
-                                if (live->data[j] != k)
-                                    insertConflict(live->data[j], tnum);
-                            }
+
+                            std::for_each(live.begin(), live.end(), [tnum, k](int i) {
+                                if (i != k)
+                                    insertConflict(i, tnum);
+                            });
                         }
                     }
                     else if (tail->ans->mode == i_ind)
@@ -254,7 +252,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                             int tnum = tail->ans->offset->sp->i;
                             if (!nodes || briggsTest(nodes, tnum))
                             {
-                                briggsSet(live, tnum);
+                                live.insert(tnum);
                             }
                         }
                         if (tail->ans->offset2)
@@ -262,7 +260,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                             int tnum = tail->ans->offset2->sp->i;
                             if (!nodes || briggsTest(nodes, tnum))
                             {
-                                briggsSet(live, tnum);
+                                live.insert(tnum);
                             }
                         }
                     }
@@ -274,7 +272,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         int tnum = tail->dc.left->offset->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
-                            briggsSet(live, tnum);
+                            live.insert(tnum);
                         }
                     }
                     if (tail->dc.left->offset2)
@@ -282,7 +280,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         int tnum = tail->dc.left->offset2->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
-                            briggsSet(live, tnum);
+                            live.insert(tnum);
                         }
                     }
                 }
@@ -293,7 +291,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         int tnum = tail->dc.right->offset->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
-                            briggsSet(live, tnum);
+                            live.insert(tnum);
                         }
                     }
                     if (tail->dc.right->offset2)
@@ -301,7 +299,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         int tnum = tail->dc.right->offset2->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
-                            briggsSet(live, tnum);
+                            live.insert(tnum);
                         }
                     }
                 }

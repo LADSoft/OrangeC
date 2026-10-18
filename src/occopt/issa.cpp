@@ -723,8 +723,7 @@ static void partition(bool all)
         changed = false;
         CalculateConflictGraph(copied, false);
         CoalesceTemps(loopArray[loopCount - 1], all);
-        cFree();
-        briggsFreec();
+        ResetConflict();
     }
 }
 static void returnToNormal(IMODE** adr, bool all)
@@ -1129,7 +1128,6 @@ void TranslateFromSSA(bool all)
         else
             tempInfo[i]->postSSATemp = tempInfo[findPartition(i)]->postSSATemp;
     }
-    cFree();
-    briggsFreec();
+    ResetConflict();
 }
 }  // namespace Optimizer

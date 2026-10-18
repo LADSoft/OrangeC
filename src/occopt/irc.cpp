@@ -695,25 +695,20 @@ void SqueezeInit(void)
             UBYTE regs[MAX_INTERNAL_REGS];
             int j;
             int k, n;
-            BITINT* confl = tempInfo[i]->conflicts;
             memset(regs, 0, sizeof(regs));
-            for (k = 0; k < (tempCount + BITINTBITS - 1) / BITINTBITS; k++)
-                if (confl[k])
-                    for (n = k * BITINTBITS; n < k * BITINTBITS + BITINTBITS; n++)
-                        if (isset(confl, n))
-                        {
-                            if (!tempInfo[n]->precolored)
-                            {
-                                tempInfo[i]->squeeze += SqueezeChange(
-                                    i, tempInfo[n]->regClass->vertex,
-                                    +worstCase[tempInfo[i]->regClass->index * classCount + tempInfo[n]->regClass->index]);
-                                tempInfo[i]->degree++;
-                            }
-                            else
-                            {
-                                regs[tempInfo[n]->color] = true;
-                            }
-                        }
+            EvaluateConflicts(i, [i, &regs](int n) {
+                if (!tempInfo[n]->precolored)
+                {
+                    tempInfo[i]->squeeze +=
+                        SqueezeChange(i, tempInfo[n]->regClass->vertex,
+                                      +worstCase[tempInfo[i]->regClass->index * classCount + tempInfo[n]->regClass->index]);
+                    tempInfo[i]->degree++;
+                }
+                else
+                {
+                    regs[tempInfo[n]->color] = true;
+                }
+            });
             tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
             for (j = 0; j < REG_MAX; j++)
                 if (regs[j])
@@ -1101,31 +1096,34 @@ static void Build(Block* b)
 }
 static void Adjacent(int n)
 {
-    BITINT* confl = tempInfo[n]->conflicts;
-    int i;
     int x = (tempCount + BITINTBITS - 1) / BITINTBITS;
     memset(adjacent, 0, x * sizeof(BITINT));
+    std::unique_ptr<BITINT> confl(new BITINT[x]);
+    memset(confl.get(), 0, x * sizeof(BITINT));
+    EvaluateConflicts(n, [&confl](int i) { setbit(confl.get(), i); });
+    int i;
     for (i = 0; i < x; i++)
     {
         BITINT v;
-        if (confl[i])
+        if (confl.get()[i])
         {
-            adjacent[i] = confl[i] & ~(stackedTemps[i] | coalescedNodes[i]);
+            adjacent[i] = confl.get()[i] & ~(stackedTemps[i] | coalescedNodes[i]);
         }
     }
 }
 static void Adjacent1(int n)
 {
-    BITINT* confl = tempInfo[n]->conflicts;
     int i;
     int x = (tempCount + BITINTBITS - 1) / BITINTBITS;
     memset(adjacent1, 0, x * sizeof(BITINT));
+    std::unique_ptr<BITINT> confl(new BITINT[x]);
+    memset(confl.get(), 0, x * sizeof(BITINT));
+    EvaluateConflicts(n, [&confl](int i) { setbit(confl.get(), i); });
     for (i = 0; i < x; i++)
     {
-        BITINT v;
-        if (confl[i])
+        if (confl.get()[i])
         {
-            adjacent1[i] = confl[i] & ~(stackedTemps[i] | coalescedNodes[i]);
+            adjacent1[i] = confl.get()[i] & ~(stackedTemps[i] | coalescedNodes[i]);
         }
     }
 }
@@ -1282,7 +1280,7 @@ static int Combine(int u, int v)
     BITINT *tu, *tv;
     /*
     if (!tempInfo[v]->precolored && !tempInfo[u]->precolored)
-        if (tempInfo[v]->neighbors > tempInfo[u]->neighbors)
+        if (ConflictNeighbors(v) > ConflictNeighbors(u))
         {
             int n = v;
             v = u;
@@ -1350,8 +1348,13 @@ static int Combine(int u, int v)
         }
     }
     losingHiDegreeNode = tempInfo[u]->squeeze >= tempInfo[u]->regCount && tempInfo[v]->squeeze >= tempInfo[v]->regCount;
+
+    std::unique_ptr<BITINT> confl(new BITINT[max]);
+    memset(confl.get(), 0, max * sizeof(BITINT));
+    EvaluateConflicts(v, [&confl](int i) { setbit(confl.get(), i); });
+
     for (i = 0; i < max; i++)
-        if ((z = tempInfo[v]->conflicts[i] & ~coalescedNodes[i]))
+        if ((z = confl.get()[i] & ~coalescedNodes[i]))
             for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++, z >>= 1)
                 if (z & 1)
                 {
@@ -1424,19 +1427,19 @@ static bool conflictsWithSameColor(int u, int v)
 {
     if (tempInfo[u]->precolored)
     {
-        int i, j;
-        BITINT* confl = tempInfo[v]->conflicts;
-        for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-            if (confl[i])
-                for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
-                    if (isset(confl, j))
-                    {
-                        int k = findPartition(j);
-                        if (tempInfo[k]->precolored && tempInfo[k]->color == tempInfo[u]->color)
-                        {
-                            return true;
-                        }
-                    }
+        bool rv = false;
+        EvaluateConflicts(v, [&rv, u](int j) {
+            if (!rv)
+            {
+                int k = findPartition(j);
+                if (tempInfo[k]->precolored && tempInfo[k]->color == tempInfo[u]->color)
+                {
+                    rv = true;
+                }
+            }
+        });
+        if (rv)
+            return true;
     }
     return false;
 }
@@ -1668,28 +1671,23 @@ static void AssignColors(void)
             if (n != -1)
             {
                 bool regs[MAX_INTERNAL_REGS];
-                BITINT* confl = tempInfo[n]->conflicts;
                 ARCH_REGCLASS* cls = tempInfo[n]->regClass;
                 tempStack[pos] = -1;
                 for (i = 0; i < sizeof(regs); i++)
                     regs[i] = true;
-                for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-                    if (confl[i])
-                        for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
-                            if (isset(confl, j))
-                            {
-                                int u = findPartition(j);
-                                if (tempInfo[u]->color >= 0)
-                                {
-                                    int x = tempInfo[u]->color;
-                                    int k;
-                                    regs[x] = false;
-                                    for (k = 0; k < chosenAssembler->arch->regNames[x].aliasCount; k++)
-                                    {
-                                        regs[chosenAssembler->arch->regNames[x].aliases[k]] = false;
-                                    }
-                                }
-                            }
+                EvaluateConflicts(n, [&regs](int j) {
+                    int u = findPartition(j);
+                    if (tempInfo[u]->color >= 0)
+                    {
+                        int x = tempInfo[u]->color;
+                        int k;
+                        regs[x] = false;
+                        for (k = 0; k < chosenAssembler->arch->regNames[x].aliasCount; k++)
+                        {
+                            regs[chosenAssembler->arch->regNames[x].aliases[k]] = false;
+                        }
+                    }
+                });
                 for (i = 0; i < cls->regCount; i++)
                     if (regs[cls->regs[i]])
                     {
@@ -2532,8 +2530,8 @@ void AllocateRegisters(QUAD* head)
             break;
         tFree();
         briggsFreet();
-        cFree();
-        briggsFreec();
+        ResetConflict();
+
         for (i = 0; i < tempCount; i++)
         {
             if (!tempInfo[i]->precolored)
@@ -2621,8 +2619,7 @@ void AllocateRegisters(QUAD* head)
         diag("register allocator failed");
     tFree();
     briggsFreet();
-    cFree();
-    briggsFreec();
+    ResetConflict();
     registersAssigned = true;
 }
 }  // namespace Optimizer

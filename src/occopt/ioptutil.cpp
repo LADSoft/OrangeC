@@ -38,8 +38,8 @@ namespace Optimizer
 
 BITINT bittab[BITINTBITS];
 
-static std::list<BriggsSet*> tab, tabc, tabt, tabs, taba, tabz;
-std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab;
+static std::list<BriggsSet*> tab, tabt, tabs, taba, tabz;
+std::unordered_set<BITINT*> btab, tbtab, sbtab;
 
 inline static void freex(std::list<BriggsSet*>& set, std::unordered_set<BITINT*>* bits)
 {
@@ -79,7 +79,6 @@ void BitInit(void)
     for (i = 0; i < BITINTBITS; i++)
         bittab[i] = 1 << i;
     freex(tab, &btab);
-    freex(tabc, &cbtab);
     freex(tabt, &tbtab);
     freex(tabs, &sbtab);
 }
@@ -100,12 +99,6 @@ BriggsSet* briggsAlloct(unsigned size)
     tabt.push_back(p);
     return p;
 }
-BriggsSet* briggsAllocc(unsigned size)
-{
-    BriggsSet* p = allocx(size);
-    tabc.push_back(p);
-    return p;
-}
 BriggsSet* briggsAllocs(unsigned size)
 {
     BriggsSet* p = allocx(size);
@@ -114,7 +107,6 @@ BriggsSet* briggsAllocs(unsigned size)
 }
 void briggsFree() { freex(tab, &btab); }
 void briggsFreet() { freex(tabt, &tbtab); }
-void briggsFreec() { freex(tabc, &cbtab); }
 void briggsFrees() { freex(tabs, &sbtab); }
 int briggsSet(BriggsSet* p, unsigned index)
 {

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -52,8 +52,6 @@ void* aAlloc(int size);
 void aFree(void);
 void* tAlloc(int size);
 void tFree(void);
-void* cAlloc(int size);
-void cFree(void);
 void* sAlloc(int size);
 void sFree(void);
 void SetGlobalFlag(bool flag, bool& old);
@@ -94,13 +92,6 @@ template <class T>
 T* tAllocate(int sz = 1)
 {
     auto rv = static_cast<T*>(tAlloc(sz * sizeof(T)));
-    new (rv) T;
-    return rv;
-}
-template <class T>
-T* cAllocate(int sz = 1)
-{
-    auto rv = static_cast<T*>(cAlloc(sz * sizeof(T)));
     new (rv) T;
     return rv;
 }

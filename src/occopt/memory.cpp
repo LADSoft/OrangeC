@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -47,7 +47,6 @@ static MEMORY alias;
 static MEMORY temps;
 static MEMORY live;
 static MEMORY templates;
-static MEMORY conflicts;
 
 static bool globalFlag = true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
@@ -154,8 +153,6 @@ void* aAlloc(int size) { return memAlloc(&alias, size); }
 void aFree(void) { memFree(&alias, &aliasPeak); }
 void* tAlloc(int size) { return memAlloc(&temps, size); }
 void tFree(void) { memFree(&temps, &tempsPeak); }
-void* cAlloc(int size) { return memAlloc(&conflicts, size); }
-void cFree(void) { memFree(&conflicts, &conflictPeak); }
 void* sAlloc(int size) { return memAlloc(&live, size); }
 void sFree(void) { memFree(&live, &livePeak); }
 void SetGlobalFlag(bool flag, bool& old) { old = globalFlag, globalFlag = flag; }

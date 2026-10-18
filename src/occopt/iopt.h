@@ -204,7 +204,6 @@ struct TempInfo
     // this became wrong but the results were sometimes erratic, which could cause builds to fail.
     // so we introduced this field to bring things back to the original stable condition.
     QUAD* instructionUsesLast;
-    BITINT* conflicts;
     IMODE* spillVar;
     IMODE* spillAlias;
     Optimizer::SimpleExpression* enode;
@@ -242,7 +241,6 @@ struct TempInfo
     } ptrMode;
     int preSSATemp;
     int postSSATemp;
-    int neighbors;
     int spillCost;
     int* rawSqueeze;
     int squeeze;

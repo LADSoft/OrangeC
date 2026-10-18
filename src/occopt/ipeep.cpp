@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -46,9 +46,6 @@
 
 namespace Optimizer
 {
-static BITINT* occursInAbnormal;
-
-static QUAD** golist; /* list of goto statements */
 
 void peepini(void) {}
 
@@ -123,13 +120,11 @@ static void scan_gotos(QUAD* head)
                             RemoveInstruction(head);
                     }
                 }
-                golist[head->dc.v.label - firstLabel] = head;
                 break;
             case i_swbranch:
             case i_coswitch:
             case i_goto:
             case i_cmpblock:
-                golist[head->dc.v.label - firstLabel] = head;
                 break;
             default:
                 break;
@@ -381,7 +376,7 @@ void KillJumpover(Block* b, QUAD* head)
         }
     }
 }
-static int PeepAssn(Block* b, QUAD* head, bool branches)
+static int PeepAssn(std::unordered_set<int>& occursInAbnormal, Block* b, QUAD* head, bool branches)
 {
     (void)b;
     if (head->temps == (TEMP_LEFT | TEMP_ANS) && !(head->dc.right) && head->dc.left->size == head->ans->size &&
@@ -389,7 +384,7 @@ static int PeepAssn(Block* b, QUAD* head, bool branches)
     {
         int t0 = head->ans->offset->sp->i;
         int t1 = head->dc.left->offset->sp->i;
-        if (!isset(occursInAbnormal, t0) && !isset(occursInAbnormal, t1))
+        if (occursInAbnormal.find(t0) == occursInAbnormal.end() && occursInAbnormal.find(t1) == occursInAbnormal.end())
         {
             if (t0 == t1)
             {
@@ -718,7 +713,7 @@ static void PeepCompare(Block* b, QUAD* head)
         }
     }
 }
-static bool peep(Block* b, bool branches)
+static bool peep(std::unordered_set<int>& occursInAbnormal, Block* b, bool branches)
 /*
  * ICODE peep main routine
  */
@@ -774,7 +769,7 @@ static bool peep(Block* b, bool branches)
                     RemoveInstruction(head);
                 break;
             case i_assn:
-                rv = PeepAssn(b, head, branches);
+                rv = PeepAssn(occursInAbnormal, b, head, branches);
                 break;
             case i_parm:
                 if (branches && architecture != ARCHITECTURE_MSIL)
@@ -791,10 +786,9 @@ static bool peep(Block* b, bool branches)
     }
     return changed;
 }
-static void scan_abnormal(void)
+static void scan_abnormal(std::unordered_set<int>& occursInAbnormal)
 {
     int i;
-    occursInAbnormal = allocbit(tempCount);
     for (i = exitBlock; i < blockCount; i++)
     {
         if (blockArray[i] && blockArray[i]->critical && blockArray[i]->succ)
@@ -809,10 +803,10 @@ static void scan_abnormal(void)
                 struct _phiblock* pb = pd->temps;
                 while (pb && pb->block != blockArray[i])
                     pb = pb->next;
-                setbit(occursInAbnormal, pd->T0);
+                occursInAbnormal.insert(pd->T0);
                 if (pb)  // should never be null...
                 {
-                    setbit(occursInAbnormal, pb->Tn);
+                    occursInAbnormal.insert(pb->Tn);
                 }
                 head = head->fwd;
             }
@@ -823,9 +817,9 @@ void peep_icode(bool branches)
 {
     int i;
     bool changed;
-    golist = (QUAD**)calloc(1, sizeof(QUAD*) * (nextLabel - firstLabel));
+    std::unordered_set<int> occursInAbnormal;
     scan_gotos(intermed_head);
-    scan_abnormal();
+    scan_abnormal(occursInAbnormal);
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = false;
@@ -835,8 +829,7 @@ void peep_icode(bool branches)
         changed = false;
         for (i = 0; i < blockCount; i++)
             if (blockArray[i])
-                changed |= peep(blockArray[i], branches);
+                changed |= peep(occursInAbnormal, blockArray[i], branches);
     } while (changed);
-    free(golist);
 }
 }  // namespace Optimizer

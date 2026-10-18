@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -47,15 +47,14 @@
 #include "ioptutil.h"
 #include "iloop.h"
 #include "ilive.h"
+#include <algorithm>
+#include <functional>
 namespace Optimizer
 {
-int firstLabel;
 QUAD *criticalThunks, **criticalThunkPtr;
 int walkPreorder, walkPostorder;
 
 static std::unordered_map<long long, e_fgtype> edgeHash;
-
-static Block** labels;
 
 void flow_init(void) {}
 /* dump the flow graph */
@@ -113,7 +112,7 @@ static void RemoveDuplicateGotos(void)
         head = head->fwd;
     }
 }
-static void basicFlowInfo(void)
+static void basicFlowInfo(std::unordered_map<int, Block*>& labels)
 {
     QUAD *head = intermed_head, *block;
     int low = INT_MAX, high = 0;
@@ -136,8 +135,6 @@ static void basicFlowInfo(void)
         }
         head = head->fwd;
     }
-    labels = oAllocate<Block*>(high - low);
-    firstLabel = low;
     head = intermed_head;
     block = head;
     while (head)
@@ -150,13 +147,12 @@ static void basicFlowInfo(void)
         {
             if (computedLabels.find(head->dc.v.label) != computedLabels.end())
                 block->moveBarrier = true;
-            labels[head->dc.v.label - firstLabel] = block->block; /* the block num*/
+            labels[head->dc.v.label] = block->block; /* the block num*/
         }
         head = head->fwd;
     }
 }
 /* find a label on the list */
-static Block* findlab(int labnum) { return labels[labnum - firstLabel]; }
 
 /* insert on a flowgraph node */
 static void flowinsert(BLOCKLIST** pos, Block* valuesource)
@@ -167,7 +163,7 @@ static void flowinsert(BLOCKLIST** pos, Block* valuesource)
     nblock->block = valuesource;
 }
 /* create the flowgraph.  */
-static void gather_flowgraph(void)
+static void gather_flowgraph(std::unordered_map<int, Block*>& labels)
 {
     Block* temp;
     int i;
@@ -183,7 +179,7 @@ static void gather_flowgraph(void)
             {
                 case i_goto:
                 case i_asmgoto:
-                    temp = findlab(tail->dc.v.label);
+                    temp = labels[tail->dc.v.label];
                     if (temp)
                     {
                         flowinsert(&temp->pred, b);
@@ -198,7 +194,7 @@ static void gather_flowgraph(void)
                 case i_computedgoto:
                     for (auto v : computedLabels)
                     {
-                        temp = findlab(v);
+                        temp = labels[v];
                         if (temp)
                         {
                             flowinsert(&temp->pred, b);
@@ -209,7 +205,7 @@ static void gather_flowgraph(void)
                 case i_swbranch:
                     while (tail->dc.opcode == i_swbranch)
                     {
-                        temp = findlab(tail->dc.v.label);
+                        temp = labels[tail->dc.v.label];
                         if (temp)
                         {
                             flowinsert(&temp->pred, b);
@@ -224,7 +220,7 @@ static void gather_flowgraph(void)
                     }
                     // fallthrough
                 case i_coswitch:
-                    temp = findlab(tail->dc.v.label);
+                    temp = labels[tail->dc.v.label];
                     if (temp)
                     {
                         flowinsert(&temp->pred, b);
@@ -248,7 +244,7 @@ static void gather_flowgraph(void)
                 case i_jge:
                 case i_jnc:
                 case i_cmpblock:
-                    temp = findlab(tail->dc.v.label);
+                    temp = labels[tail->dc.v.label];
                     if (temp)
                     {
                         flowinsert(&temp->pred, b);
@@ -284,7 +280,7 @@ static void gather_flowgraph(void)
     }
 }
 
-static void FGWalker(int (*func)(enum e_fgtype type, Block* parent, Block* b), Block* cur, int fwd)
+static void FGWalker(std::function<int(enum e_fgtype type, Block* parent, Block* b)> func, Block* cur, int fwd)
 {
     BLOCKLIST* l;
     if (fwd)
@@ -320,7 +316,7 @@ static void FGWalker(int (*func)(enum e_fgtype type, Block* parent, Block* b), B
     cur->postWalk = walkPostorder++;
 }
 /* depth first search entry point */
-void WalkFlowgraph(Block* b, int (*func)(enum e_fgtype type, Block* parent, Block* b), int fwd)
+static void WalkFlowgraph(Block* b, int fwd, std::function<int(enum e_fgtype type, Block* parent, Block* b)> func)
 {
     int i;
     walkPreorder = 1;
@@ -377,12 +373,13 @@ static void removeBlock(Block* block)
             head = head->fwd;
     }
 }
-static void removeDeadBlocks(BriggsSet* brs, Block* back, Block* b)
+static void removeDeadBlocks(std::unordered_set<int>& brs, Block* back, Block* b)
 {
     if (b->temp)
         return;
     b->temp = true;
-    if (!briggsTest(brs, b->blocknum) && b->blocknum != exitBlock)
+    // if marked the block wasn't visitied so we can remove it...
+    if (brs.find(b->blocknum) == brs.end() && b->blocknum != exitBlock)
     {
         BLOCKLIST* bl2 = b->succ;
         while (bl2)
@@ -464,13 +461,14 @@ static void removeDeadBlocks(BriggsSet* brs, Block* back, Block* b)
         }
     }
 }
-static void removeMark(BriggsSet* bls, Block* b)
+// active mark = 0 to not have to initialize large sets
+static void removeMark(std::unordered_set<int>& bls, Block* b)
 {
     BLOCKLIST* bl;
     if (b->blocknum == exitBlock || b->temp)
         return;
     b->temp = true;
-    briggsSet(bls, b->blocknum);
+    bls.insert(b->blocknum);
     bl = b->succ;
     while (bl)
     {
@@ -482,7 +480,7 @@ void reflowConditional(Block* src, Block* dst)
 {
     BLOCKLIST *bl, *bl1 = src->succ;
     BLOCKLIST temp;
-    BriggsSet* bls = briggsAlloc(blockCount);
+    std::unordered_set<int> bls;
     int i;
     temp.block = dst;
     temp.next = nullptr;
@@ -606,7 +604,7 @@ static int domCount;
  * than with a structure like this, but, for now we'll take a minor penalty
  * for structured coding
  */
-static struct _tarjan
+struct TarJan
 {
     int blocknum;
     int parent;
@@ -615,43 +613,18 @@ static struct _tarjan
     int idom;
     int ancestor;
     int best;
-    BITINT* bucket;
-}** vectorData;
-static int domNumber(enum e_fgtype t, Block* parent, Block* b)
-{
-    (void)parent;
-    if (t == F_TREE)
-    {
-        b->dfstOrder = ++domCount;
-    }
-    return true;
-}
-static int domInit(enum e_fgtype t, Block* parent, Block* b)
-{
+    std::unordered_set<int> bucket;
+};
 
-    if (t == F_TREE && parent != nullptr)
-    {
-        struct _tarjan* t = vectorData[b->dfstOrder];
-        t->blocknum = b->blocknum;
-        t->parent = parent->dfstOrder;
-        t->succs = b->succ;
-        t->preds = b->pred;
-        t->semi = b->dfstOrder;
-        t->idom = 0;
-        t->ancestor = 0;
-        t->best = b->dfstOrder;
-    }
-    return true;
-}
-#define domLink(v, w) (vectorData[w]->ancestor = (v))
+#define DomLink(v, w) vectorData[w].ancestor = (v)
 
 #ifdef SLOW
-static int domEval(int v)
+static int domEval(std::vector<TarJan>& vectorData, int v)
 {
     int a = vectorData[v]->ancestor;
     while (vectorData[a]->ancestor)
     {
-        if (vectorData[v]->semi > vectorData[a]->semi)
+        if (vectorData[v].semi > vectorData[a].semi)
             v = a;
         a = vectorData[a]->ancestor;
     }
@@ -659,23 +632,23 @@ static int domEval(int v)
     return v;
 }
 #else
-static void domCompress(int v)
+static void domCompress(std::vector<TarJan>& vectorData, int v)
 {
-    int a = vectorData[v]->ancestor;
-    if (vectorData[a]->ancestor)
+    int a = vectorData[v].ancestor;
+    if (vectorData[a].ancestor)
     {
-        domCompress(a);
-        if (vectorData[vectorData[v]->best]->semi > vectorData[vectorData[a]->best]->semi)
-            vectorData[v]->best = vectorData[a]->best;
-        vectorData[v]->ancestor = vectorData[a]->ancestor;
+        domCompress(vectorData, a);
+        if (vectorData[vectorData[v].best].semi > vectorData[vectorData[a].best].semi)
+            vectorData[v].best = vectorData[a].best;
+        vectorData[v].ancestor = vectorData[a].ancestor;
     }
 }
-static int domEval(int v)
+static int domEval(std::vector<TarJan>& vectorData, int v)
 {
-    if (!vectorData[v]->ancestor)
+    if (!vectorData[v].ancestor)
         return v;
-    domCompress(v);
-    return vectorData[v]->best;
+    domCompress(vectorData, v);
+    return vectorData[v].best;
 }
 #endif
 static void PostDominators(void)
@@ -685,60 +658,62 @@ static void PostDominators(void)
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->dfstOrder = 0;
-    WalkFlowgraph(blockArray[exitBlock], domNumber, false);
-    vectorData = tAllocate<_tarjan*>(domCount + 1);
-    for (i = 0; i <= domCount; i++)
-    {
-        vectorData[i] = tAllocate<_tarjan>();
-        vectorData[i]->bucket = tallocbit(domCount + 1);
-    }
-    WalkFlowgraph(blockArray[exitBlock], domInit, false);
+    WalkFlowgraph(blockArray[exitBlock], false, [](enum e_fgtype type, Block* parent, Block* b) {
+        if (type == F_TREE)
+        {
+            b->dfstOrder = ++domCount;
+        }
+        return true;
+    });
+    std::vector<TarJan> vectorData(domCount + 1);
+    WalkFlowgraph(blockArray[exitBlock], false, [&vectorData](enum e_fgtype type, Block* parent, Block* b) {
+        if (type == F_TREE && parent != nullptr)
+        {
+            TarJan& t = vectorData[b->dfstOrder];
+            t.blocknum = b->blocknum;
+            t.parent = parent->dfstOrder;
+            t.succs = b->succ;
+            t.preds = b->pred;
+            t.semi = b->dfstOrder;
+            t.idom = 0;
+            t.ancestor = 0;
+            t.best = b->dfstOrder;
+        }
+        return true;
+    });
 
     for (w = domCount; w >= 2; w--)
     {
-        int p = vectorData[w]->parent;
-        struct _tarjan* v = vectorData[w];
-        BLOCKLIST* bl = v->succs;
+        int p = vectorData[w].parent;
+        TarJan& v = vectorData[w];
+        BLOCKLIST* bl = v.succs;
         while (bl)
         {
-            int u = domEval(bl->block->dfstOrder);
-            if (vectorData[w]->semi > vectorData[u]->semi)
-                vectorData[w]->semi = vectorData[u]->semi;
+            int u = domEval(vectorData, bl->block->dfstOrder);
+            if (vectorData[w].semi > vectorData[u].semi)
+                vectorData[w].semi = vectorData[u].semi;
             bl = bl->next;
         }
-        setbit(vectorData[vectorData[w]->semi]->bucket, w);
-        domLink(p, w);
-        BITINT j = 1;
-        BITINT* x = vectorData[p]->bucket;
-        for (auto v = 0; v <= domCount; v++, j <<= 1)
-        {
-            if (j == 0)
-            {
-                j = 1;
-                x++;
-            }
-            if (*x & j)
-            {
-                int u = domEval(v);
-                if (vectorData[u]->semi >= p)
-                    vectorData[v]->idom = p;
-                else
-                    vectorData[v]->idom = u;
-            }
-        }
-        bitarrayClear(vectorData[p]->bucket, domCount + 1);
+        vectorData[vectorData[w].semi].bucket.insert(w);
+        DomLink(p, w);
+        std::for_each(vectorData[p].bucket.begin(), vectorData[p].bucket.end(), [p, &vectorData](int v) {
+            int u = domEval(vectorData, v);
+            if (vectorData[u].semi >= p)
+                vectorData[v].idom = p;
+            else
+                vectorData[v].idom = u;
+        });
+        vectorData[p].bucket.clear();
     }
     for (w = 2; w <= domCount; w++)
     {
-        if (vectorData[w]->idom != vectorData[w]->semi)
+        if (vectorData[w].idom != vectorData[w].semi)
         {
-            vectorData[w]->idom = vectorData[vectorData[w]->idom]->idom;
+            vectorData[w].idom = vectorData[vectorData[w].idom].idom;
         }
         /* transfer idom to our block struct */
-        blockArray[vectorData[w]->blocknum]->pdom = vectorData[vectorData[w]->idom]->blocknum;
+        blockArray[vectorData[w].blocknum]->pdom = vectorData[vectorData[w].idom].blocknum;
     }
-    tFree();
-    briggsFreet();
 }
 static void Dominators(void)
 {
@@ -747,57 +722,61 @@ static void Dominators(void)
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->dfstOrder = 0;
-    WalkFlowgraph(blockArray[0], domNumber, true);
-    vectorData = tAllocate<_tarjan*>(domCount + 1);
-    for (i = 0; i <= domCount; i++)
-    {
-        vectorData[i] = tAllocate<_tarjan>();
-        vectorData[i]->bucket = tallocbit(domCount + 1);
-    }
-    WalkFlowgraph(blockArray[0], domInit, true);
+    WalkFlowgraph(blockArray[0], true, [](enum e_fgtype type, Block* parent, Block* b) {
+        if (type == F_TREE)
+        {
+            b->dfstOrder = ++domCount;
+        }
+        return true;
+    });
+    std::vector<TarJan> vectorData(domCount + 1);
+    WalkFlowgraph(blockArray[0], true, [&vectorData](enum e_fgtype type, Block* parent, Block* b) {
+        if (type == F_TREE && parent != nullptr)
+        {
+            TarJan& t = vectorData[b->dfstOrder];
+            t.blocknum = b->blocknum;
+            t.parent = parent->dfstOrder;
+            t.succs = b->succ;
+            t.preds = b->pred;
+            t.semi = b->dfstOrder;
+            t.idom = 0;
+            t.ancestor = 0;
+            t.best = b->dfstOrder;
+        }
+        return true;
+    });
 
     for (w = domCount; w >= 2; w--)
     {
-        int p = vectorData[w]->parent;
-        struct _tarjan* v = vectorData[w];
-        BLOCKLIST* bl = v->preds;
+        int p = vectorData[w].parent;
+        TarJan& v = vectorData[w];
+        BLOCKLIST* bl = v.preds;
         while (bl)
         {
-            int u = domEval(bl->block->dfstOrder);
-            if (vectorData[w]->semi > vectorData[u]->semi)
-                vectorData[w]->semi = vectorData[u]->semi;
+            int u = domEval(vectorData, bl->block->dfstOrder);
+            if (vectorData[w].semi > vectorData[u].semi)
+                vectorData[w].semi = vectorData[u].semi;
             bl = bl->next;
         }
-        setbit(vectorData[vectorData[w]->semi]->bucket, w);
-        domLink(p, w);
-        BITINT j = 1;
-        BITINT* x = vectorData[p]->bucket;
-        for (auto v = 0; v <= domCount; v++, j <<= 1)
-        {
-            if (j == 0)
-            {
-                j = 1;
-                x++;
-            }
-            if (*x & j)
-            {
-                int u = domEval(v);
-                if (vectorData[u]->semi >= p)
-                    vectorData[v]->idom = p;
-                else
-                    vectorData[v]->idom = u;
-            }
-        }
-        bitarrayClear(vectorData[p]->bucket, domCount + 1);
+        vectorData[vectorData[w].semi].bucket.insert(w);
+        DomLink(p, w);
+        std::for_each(vectorData[p].bucket.begin(), vectorData[p].bucket.end(), [p, &vectorData](int v) {
+            int u = domEval(vectorData, v);
+            if (vectorData[u].semi >= p)
+                vectorData[v].idom = p;
+            else
+                vectorData[v].idom = u;
+        });
+        vectorData[p].bucket.clear();
     }
     for (w = 2; w <= domCount; w++)
     {
-        if (vectorData[w]->idom != vectorData[w]->semi)
+        if (vectorData[w].idom != vectorData[w].semi)
         {
-            vectorData[w]->idom = vectorData[vectorData[w]->idom]->idom;
+            vectorData[w].idom = vectorData[vectorData[w].idom].idom;
         }
         /* transfer idom to our block struct */
-        blockArray[vectorData[w]->blocknum]->idom = vectorData[vectorData[w]->idom]->blocknum;
+        blockArray[vectorData[w].blocknum]->idom = vectorData[vectorData[w].idom].blocknum;
     }
     /* now make the forward tree */
     for (i = blockCount - 1; i >= 1; i--)
@@ -813,8 +792,6 @@ static void Dominators(void)
             ub->dominates = bl;
         }
     }
-    tFree();
-    briggsFreet();
 }
 bool dominatedby(Block* src, Block* ancestor)
 {
@@ -871,19 +848,17 @@ static void DominanceFrontier(Block* b, int* count)
     }
 }
 static long long hashfunc(unsigned i, unsigned j) { return (((long long)i) << 24) | j; }
-static int gatherEdges(enum e_fgtype type, Block* parent, Block* in)
-{
-    if (parent)
-    {
-        long long bucket = hashfunc(parent->blocknum, in->blocknum);
-        edgeHash[bucket] = type;
-    }
-    return true;
-}
 static void CalculateEdges(Block* b)
 {
     edgeHash.clear();
-    WalkFlowgraph(b, gatherEdges, true);
+    WalkFlowgraph(b, true, [](enum e_fgtype type, Block* parent, Block* in) {
+        if (parent)
+        {
+            long long bucket = hashfunc(parent->blocknum, in->blocknum);
+            edgeHash[bucket] = type;
+        }
+        return true;
+    });
 }
 enum e_fgtype getEdgeType(int first, int second)
 {
@@ -1198,7 +1173,7 @@ void doms_only(bool always)
         criticalThunks = nullptr;
         criticalThunkPtr = &criticalThunks;
     }
-    WalkFlowgraph(blockArray[0], RemoveCriticalEdges, true);
+    WalkFlowgraph(blockArray[0], true, RemoveCriticalEdges);
     if (blockCount != n)
     {
         QUAD* head = intermed_head;
@@ -1275,8 +1250,9 @@ void flows_and_doms(void)
     }
 
     RemoveDuplicateGotos();
-    basicFlowInfo();
-    gather_flowgraph();
+    std::unordered_map<int, Block*> labels;
+    basicFlowInfo(labels);
+    gather_flowgraph(labels);
     doms_only(true);
     if (icdFile)
     {

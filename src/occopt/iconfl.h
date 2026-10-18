@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -24,11 +24,13 @@
  */
 
 #pragma once
-
+#include <functional>
 namespace Optimizer
 {
 void conflictini(void);
-void resetConflict(void);
+void EvaluateConflicts(int n, std::function<void(int)> func);
+int ConflictNeighbors(int n);
+void ResetConflict(void);
 int findPartition(int T0);
 void insertConflict(int i, int j);
 void JoinConflictLists(int T0, int T1);

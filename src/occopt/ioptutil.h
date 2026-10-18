@@ -38,7 +38,7 @@ struct BriggsSet
 };
 
 extern BITINT bittab[BITINTBITS];
-extern std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab;
+extern std::unordered_set<BITINT*> btab, tbtab, sbtab;
 
 // #define TESTBITS
 #define allocbit(size) AllocBit(oAlloc, nullptr, size)
@@ -46,7 +46,6 @@ extern std::unordered_set<BITINT*> btab, cbtab, tbtab, sbtab;
 #define tallocbit(size) AllocBit(tAlloc, &tbtab, size)
 #define sallocbit(size) AllocBit(sAlloc, &sbtab, size)
 #define aallocbit(size) AllocBit(aAlloc, &abtab, size)
-#define callocbit(size) AllocBit(cAlloc, &cbtab, size)
 
 BITINT* AllocBit(void* Allocator(int), std::unordered_set<BITINT*>* tab, unsigned size);
 int isset(BITINT* array, unsigned bit);
@@ -57,11 +56,9 @@ void zfreebit(BITINT* array);
 void BitInit(void);
 BriggsSet* briggsAlloc(unsigned size);
 BriggsSet* briggsAlloct(unsigned size);
-BriggsSet* briggsAllocc(unsigned size);
 BriggsSet* briggsAllocs(unsigned size);
 void briggsFree();
 void briggsFreet();
-void briggsFreec();
 void briggsFrees();
 
 void briggsClear(BriggsSet* p);

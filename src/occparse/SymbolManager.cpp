@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -491,6 +491,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->hasParams = sym->sb->paramsize != 0;
     rv->isstructured = sym->tp->IsStructured();
     rv->anonymous = sym->sb->anonymous;
+    rv->anonymous = sym->sb->compilerDeclared;
     rv->allocate = sym->sb->allocate;
     rv->thisPtr = sym->sb->thisPtr;
     rv->stackblock = sym->sb->stackblock;

@@ -33,6 +33,7 @@ extern std::vector<EXPRESSION*> inlineSymStructPtr;
 extern std::vector<EXPRESSION*> inlineSymThisPtr;
 
 void iinlineInit(void);
+void CleanupInlineAnonymousVars();
 bool InlineTooLarge();
 Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags);
 }  // namespace Parser

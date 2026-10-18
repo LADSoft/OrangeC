@@ -50,6 +50,7 @@
 #include "symtab.h"
 #include "types.h"
 #include "constopt.h"
+#include "SymbolManager.h"
 #include <unordered_set>
 
 namespace Parser
@@ -79,6 +80,94 @@ void iinlineInit(void)
     argTable.clear();
     while (!inlineQuadCounters.empty())
         inlineQuadCounters.pop();
+}
+void CleanupInlineAnonymousVars()
+{
+    std::unordered_map<Optimizer::SimpleSymbol*, Optimizer::QUAD*> saves;
+    std::multimap<Optimizer::SimpleSymbol*, Optimizer::QUAD*> loads;
+    std::unordered_map<Optimizer::SimpleSymbol*, int> anons;
+    bool uses_substack_or_passthrough = false;
+    for (auto head = Optimizer::intermed_head; head; head = head->fwd)
+    {
+        uses_substack_or_passthrough = (head->dc.opcode == Optimizer::i_substack) || (head->dc.opcode == Optimizer::i_passthrough);
+    }
+    bool minimalOpts =
+        currentFunction->xc || !currentFunction->canThrow || Optimizer::cparams.prm_stackprotect || uses_substack_or_passthrough;
+    // find any 'variables that can also be worked with
+    //
+    for (auto head = Optimizer::intermed_head; head; head = head->fwd)
+    {
+        if (head->dc.opcode == Optimizer::i_assn)
+        {
+            if (head->ans && head->ans->mode == Optimizer::i_direct && head->ans->offset->type == Optimizer::se_auto &&
+                head->ans->offset->sp->offset <= 0 &&
+                Optimizer::sizeFromISZ(head->ans->size) <= Optimizer::chosenAssembler->arch->nativeRegisterWidth &&
+                (head->ans->offset->sp->anonymous || (!minimalOpts && head->ans->offset->sp->compilerDeclared)))
+            {
+                anons[head->ans->offset->sp]++;
+            }
+        }
+    }
+
+    // retrieve all quads with either a load or a save and cache them
+    for (auto head = Optimizer::intermed_head; head; head = head->fwd)
+    {
+        if (head->dc.opcode == Optimizer::i_assn)
+        {
+            if (head->ans && head->ans->mode == Optimizer::i_direct && head->ans->offset->type == Optimizer::se_auto)
+            {
+                if (auto t = anons.find(head->ans->offset->sp); t != anons.end() && t->second == 1)
+                {
+                    if (!head->ans->offset->sp->imaddress)
+                    {
+                        saves[t->first] = head;
+                    }
+                }
+            }
+            if (head->dc.left->mode == Optimizer::i_direct && head->dc.left->offset->type == Optimizer::se_auto)
+            {
+                if (auto t = anons.find(head->dc.left->offset->sp); t != anons.end() && t->second == 1)
+                {
+                    if (!head->dc.left->offset->sp->imaddress)
+                    {
+                        loads.insert(std::pair(t->first, head));
+                    }
+                }
+            }
+        }
+    }
+    // go through every save that only has one save point and make an equivalancy for the load
+    for (auto&& save : saves)
+    {
+        auto range1 = loads.equal_range(save.first);
+        bool doit = true;
+        if (std::distance(range1.first, range1.second))
+        {
+            auto savehead = save.second;
+            // pick a register and fix the store to use it
+            auto savereg = Optimizer::tempreg(savehead->ans->size, 0);
+            Optimizer ::temporarySymbols.push_back(savereg->offset->sp);
+            savehead->ans = savereg;
+
+            int sz = range1.first->second->ans->size;
+            for (auto&& it = range1.first; doit && it != range1.second; ++it)
+            {
+                auto loadhead = it->second;
+                doit = sz == loadhead->ans->size;
+            }
+            if (doit)
+            {
+                range1 = loads.equal_range(save.first);
+                for (auto&& it = range1.first; it != range1.second; ++it)
+                {
+                    auto loadhead = it->second;
+
+                    // change the load by changing the RHS to the register that was being saved
+                    loadhead->dc.left = savereg;
+                }
+            }
+        }
+    }
 }
 bool InlineTooLarge() { return !inlineQuadCounters.empty() && std::get<0>(inlineQuadCounters.top()) > MaxInlineStatementsPerFunc; }
 void IncrementQuadCount()

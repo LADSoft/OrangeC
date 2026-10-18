@@ -1248,6 +1248,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     StatementGenerator::FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);
 
     /* Code gen from icode */
+    CleanupInlineAnonymousVars();
     Optimizer::SymbolManager::Get(funcsp)->allocaUsed = funcsp->sb->allocaUsed;
     Optimizer::AddFunction();
 

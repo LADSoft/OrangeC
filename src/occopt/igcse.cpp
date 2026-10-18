@@ -279,7 +279,8 @@ static void GCSEProcessBlock(Block* b)
                                 {
                                     // load from temp
                                     if (!head->dc.left->retval && head->ans->size == head->dc.left->size &&
-                                        !head->ans->offset->sp->pushedtotemp && !head->genConflict)
+                                        !head->ans->offset->sp->pushedtotemp && !head->dc.left->offset->sp->pushedtotemp &&
+                                        !head->genConflict)
                                         InsertTempEquivalence(head->ans, head->dc.left);
                                 }
                             }

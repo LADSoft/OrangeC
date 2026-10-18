@@ -3405,7 +3405,7 @@ Optimizer::IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int si
                 sz = SizeFromType(node->v.ad->tp);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = Optimizer::indnode(av, sz);
-                right = gen_expr(funcsp, node->v.ad->value, F_STORE, sz);
+                right = gen_expr(funcsp, node->v.ad->value, 0, sz);
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 rv = Optimizer::tempreg(sz, 0);
                 if (needsAtomicLockFromType(node->v.ad->tp))

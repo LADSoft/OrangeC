@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -315,7 +315,7 @@ FILE* Utils::TempName(std::string& name)
         // well p can never be null based on the previos definitions but...
         if (p)
         {
-            StrCpy(tempFile + 2, strlen(tempFile) - 2, p);
+            StrCpy(tempFile + 2, sizeof(tempFile) - strlen(tempFile), p);
         }
 
         fil = fopen(tempFile, "w");

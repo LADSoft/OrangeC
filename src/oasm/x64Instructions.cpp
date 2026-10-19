@@ -2,7 +2,7 @@
 
 #include "x64Instructions.h"
 
-const char * const opcodeTable[639] = {
+const char * const opcodeTable[641] = {
 	"",
 	"",
 	"",
@@ -100,6 +100,8 @@ const char * const opcodeTable[639] = {
 	"cmpxchg8b",
 	"cmpxchg16b",
 	"cpuid",
+	"clflush",
+	"clflushopt",
 	"cqo",
 	"cwd",
 	"cwde",

@@ -108,7 +108,7 @@ done
 EXTENSIONS="\.c$|\.cpp$|\.h$|\.hpp$|\.cc$|\.cxx$"
 
 # Define third party directories
-THIRD_PARTY="libhostfxr|sqlite3|tests"
+THIRD_PARTY="libhostfxr|sqlite3|tests|libcxx"
  
 # Get list of staged files matching the extensions
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "$EXTENSIONS")
